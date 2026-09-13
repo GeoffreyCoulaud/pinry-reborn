@@ -535,14 +535,14 @@
             "pattern" : "\\S"
           },
           "transport" : {
-            "$ref" : "#/components/schemas/SessionTransport"
+            "$ref" : "#/components/schemas/SessionTransportDto"
           },
           "rememberMe" : {
             "type" : [ "boolean", "null" ]
           }
         }
       },
-      "SessionTransport" : {
+      "SessionTransportDto" : {
         "type" : "string",
         "enum" : [ "BEARER", "COOKIE" ]
       },
@@ -823,16 +823,16 @@
       }
     },
     "securitySchemes" : {
+      "BearerScheme" : {
+        "type" : "http",
+        "description" : "Session token issued by POST /api/v1/sessions, sent as 'Authorization: Bearer <token>'.",
+        "scheme" : "bearer"
+      },
       "CookieScheme" : {
         "type" : "apiKey",
         "description" : "The same session token, issued by POST /api/v1/sessions with transport COOKIE and sent by the browser on its own.",
         "name" : "pinry_session",
         "in" : "cookie"
-      },
-      "SecurityScheme" : {
-        "type" : "http",
-        "description" : "Session token issued by POST /api/v1/sessions, sent as 'Authorization: Bearer <token>'.",
-        "scheme" : "bearer"
       }
     }
   },
@@ -860,7 +860,7 @@
         "summary" : "List Boards",
         "tags" : [ "Board Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -910,7 +910,7 @@
         "summary" : "Create Board",
         "tags" : [ "Board Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -939,7 +939,7 @@
         "summary" : "List Recycled Boards",
         "tags" : [ "Board Recycle Bin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -959,7 +959,7 @@
         "summary" : "Empty Recycle Bin",
         "tags" : [ "Board Recycle Bin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -989,7 +989,7 @@
         "summary" : "Permanently Delete Board",
         "tags" : [ "Board Recycle Bin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1026,7 +1026,7 @@
         "summary" : "Restore Board",
         "tags" : [ "Board Recycle Bin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1086,7 +1086,7 @@
         "summary" : "Update Board",
         "tags" : [ "Board Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1114,7 +1114,7 @@
         "summary" : "Soft Delete Board",
         "tags" : [ "Board Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1149,7 +1149,7 @@
         "summary" : "Get Board",
         "tags" : [ "Board Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1213,7 +1213,7 @@
         "summary" : "List Board Pins",
         "tags" : [ "Board Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1260,7 +1260,7 @@
         "summary" : "Get Current User",
         "tags" : [ "Me Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1288,7 +1288,7 @@
         "summary" : "Delete Account",
         "tags" : [ "Me Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1363,7 +1363,7 @@
         },
         "tags" : [ "Me Export Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1408,7 +1408,7 @@
         "summary" : "List Exports",
         "tags" : [ "Me Export Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1462,7 +1462,7 @@
         "summary" : "Get Export",
         "tags" : [ "Me Export Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1507,7 +1507,7 @@
         "summary" : "Delete Export",
         "tags" : [ "Me Export Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1601,7 +1601,7 @@
         },
         "tags" : [ "Me Export Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1631,7 +1631,7 @@
         },
         "tags" : [ "Me Image Download Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1682,7 +1682,7 @@
         },
         "tags" : [ "Me Image Download Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1729,7 +1729,7 @@
         "summary" : "List Imports",
         "tags" : [ "Me Import Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1767,7 +1767,7 @@
         },
         "tags" : [ "Me Import Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1821,7 +1821,7 @@
         "summary" : "Get Import",
         "tags" : [ "Me Import Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1867,7 +1867,7 @@
         },
         "tags" : [ "Me Import Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -1973,7 +1973,7 @@
         },
         "tags" : [ "Me Import Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2038,7 +2038,7 @@
         },
         "tags" : [ "Me Import Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2110,7 +2110,7 @@
         },
         "tags" : [ "Me Import Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2145,7 +2145,7 @@
         "summary" : "Change Password",
         "tags" : [ "Me Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2202,7 +2202,7 @@
         "summary" : "List Pins",
         "tags" : [ "Pin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2242,7 +2242,7 @@
         "summary" : "Create Pin",
         "tags" : [ "Pin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2299,7 +2299,7 @@
         "summary" : "List Recycled Pins",
         "tags" : [ "Pin Recycle Bin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2319,7 +2319,7 @@
         "summary" : "Empty Recycle Bin",
         "tags" : [ "Pin Recycle Bin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2349,7 +2349,7 @@
         "summary" : "Permanently Delete Pin",
         "tags" : [ "Pin Recycle Bin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2386,7 +2386,7 @@
         "summary" : "Restore Pin",
         "tags" : [ "Pin Recycle Bin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2432,7 +2432,7 @@
         "summary" : "Search Pins",
         "tags" : [ "Pin Search Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2462,7 +2462,7 @@
         "summary" : "Soft Delete Pin",
         "tags" : [ "Pin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2497,7 +2497,7 @@
         "summary" : "Get Pin",
         "tags" : [ "Pin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2547,7 +2547,7 @@
         "summary" : "Set Boards",
         "tags" : [ "Pin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2626,7 +2626,7 @@
         },
         "tags" : [ "Image Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2682,7 +2682,7 @@
         "summary" : "Get Image",
         "tags" : [ "Image Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2710,7 +2710,7 @@
         "summary" : "Delete Image",
         "tags" : [ "Image Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2747,7 +2747,7 @@
         "summary" : "Get Image Status",
         "tags" : [ "Image Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2798,7 +2798,7 @@
         },
         "tags" : [ "Pin Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2820,7 +2820,7 @@
         "summary" : "Revoke All Sessions",
         "tags" : [ "Session Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2857,6 +2857,16 @@
               }
             }
           },
+          "401" : {
+            "description" : "AUTHENTICATION_FAILED: the name is unknown, the password is wrong, or the account is held closed by the attempt limiter",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "400" : {
             "description" : "Bad Request"
           }
@@ -2881,7 +2891,7 @@
         "summary" : "Revoke Current Session",
         "tags" : [ "Session Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2908,7 +2918,7 @@
         "summary" : "Get Current Session",
         "tags" : [ "Session Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2947,7 +2957,7 @@
         "summary" : "Renew Session",
         "tags" : [ "Session Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -2993,7 +3003,7 @@
         "summary" : "Search Tags",
         "tags" : [ "Tag Search Controller" ],
         "security" : [ {
-          "SecurityScheme" : [ ]
+          "BearerScheme" : [ ]
         }, {
           "CookieScheme" : [ ]
         } ]
@@ -3033,7 +3043,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "4.0.0"
+    "version" : "5.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

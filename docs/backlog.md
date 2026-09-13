@@ -57,14 +57,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   run in series because `build-image` needs `verify`, so a pull request waits about fourteen minutes.
   See `docs/handoffs/2026-09-11 - handoff - web-application.md`, which measures it, and
   `docs/handoffs/2026-09-09 - handoff - monorepo-and-pipeline.md`. New 2026-09-09, raised to `P1` 2026-09-12.
-- **Two wire names and two declarations the contract got wrong while breaking was free.**
-  `SessionTransport` is the only wire enumeration with no `Dto` suffix and outside `dtos/`, and the two
-  security schemes are `SecurityScheme` and `CookieScheme`, one naming what it is and the other nothing.
-  See `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
-- **`POST /api/v1/sessions` declares no `401` although it answers one**, and `MeImageDownloadController`
-  is the only controller declaring `application/problem+json` with `ProblemDetail` where the others
-  declare a bare description. The route every client starts on is the one that under-declares.
-  See `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
 - **Two surfaces of the first web application lot are half consumed.** `Session.renewAfter` reaches the
   client and nothing reads it, so no client renews although both renewal answers exist; and `/pins/new`
   carries no task centre, so a download requested there shows no progress until the navigation back.

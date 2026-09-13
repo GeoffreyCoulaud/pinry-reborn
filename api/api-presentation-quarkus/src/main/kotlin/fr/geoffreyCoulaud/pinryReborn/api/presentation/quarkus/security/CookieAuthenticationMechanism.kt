@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security
 
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.SessionTransportDto
 import io.quarkus.security.credential.TokenCredential
 import io.quarkus.security.identity.IdentityProviderManager
 import io.quarkus.security.identity.SecurityIdentity
@@ -28,7 +29,7 @@ class CookieAuthenticationMechanism : HttpAuthenticationMechanism {
             return Uni.createFrom().nullItem()
         }
         return identityProviderManager.authenticate(
-            TokenAuthenticationRequest(TokenCredential(token, SessionTransport.COOKIE.credentialType)),
+            TokenAuthenticationRequest(TokenCredential(token, SessionTransportDto.COOKIE.credentialType)),
         )
     }
 

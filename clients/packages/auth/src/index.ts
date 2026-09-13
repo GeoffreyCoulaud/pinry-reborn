@@ -1,7 +1,7 @@
 import { createApiClient, type ApiClient, type components } from "@pinry-reborn/api-client"
 
 /** The vehicle the session token travels in. The web application takes the cookie, the extension the header. */
-export type SessionTransport = components["schemas"]["SessionTransport"]
+export type SessionTransport = components["schemas"]["SessionTransportDto"]
 
 export type Credentials = components["schemas"]["UserInputDto"]
 

@@ -21,7 +21,7 @@ class SessionSecurityRequirementFilter : OASFilter {
     }
 
     companion object {
-        const val BEARER_SCHEME = "SecurityScheme"
+        const val BEARER_SCHEME = "BearerScheme"
         const val COOKIE_SCHEME = "CookieScheme"
         private val SCHEMES = listOf(BEARER_SCHEME, COOKIE_SCHEME)
     }

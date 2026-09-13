@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.SessionTransportDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionTokenAuthenticator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SessionTokenExpiredError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SessionTokenInvalidError
@@ -32,7 +33,7 @@ class BearerTokenIdentityProviderTest {
         }
     }
 
-    private fun request(token: String, transport: SessionTransport = SessionTransport.BEARER) =
+    private fun request(token: String, transport: SessionTransportDto = SessionTransportDto.BEARER) =
         TokenAuthenticationRequest(TokenCredential(token, transport.credentialType))
 
     private fun session() = SessionToken(
@@ -62,7 +63,7 @@ class BearerTokenIdentityProviderTest {
 
         val identity = provider.authenticate(request("good"), context).await().indefinitely()
 
-        assertEquals(SessionTransport.BEARER, identity.getSessionTransport())
+        assertEquals(SessionTransportDto.BEARER, identity.getSessionTransport())
     }
 
     @Test
@@ -72,11 +73,11 @@ class BearerTokenIdentityProviderTest {
         every { authenticator.authenticate("good") } returns session()
 
         val identity = provider
-            .authenticate(request("good", SessionTransport.COOKIE), context)
+            .authenticate(request("good", SessionTransportDto.COOKIE), context)
             .await()
             .indefinitely()
 
-        assertEquals(SessionTransport.COOKIE, identity.getSessionTransport())
+        assertEquals(SessionTransportDto.COOKIE, identity.getSessionTransport())
     }
 
     @Test
