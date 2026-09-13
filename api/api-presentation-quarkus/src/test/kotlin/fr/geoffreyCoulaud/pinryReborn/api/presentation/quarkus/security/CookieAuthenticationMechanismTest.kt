@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security
 
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.SessionTransportDto
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -39,7 +40,7 @@ class CookieAuthenticationMechanismTest {
         // Then
         assertEquals(identity, result)
         assertEquals("abc.def", captured.captured.token.token)
-        assertEquals(SessionTransport.COOKIE.credentialType, captured.captured.token.type)
+        assertEquals(SessionTransportDto.COOKIE.credentialType, captured.captured.token.type)
     }
 
     @Test

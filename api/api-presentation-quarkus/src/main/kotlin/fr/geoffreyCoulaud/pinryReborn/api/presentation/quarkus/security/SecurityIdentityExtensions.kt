@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.SessionTransportDto
 import io.quarkus.security.identity.SecurityIdentity
 import java.util.UUID
 
@@ -14,5 +15,5 @@ fun SecurityIdentity.getUserId(): UUID =
 fun SecurityIdentity.getSessionToken(): SessionToken =
     getAttribute("sessionToken") as SessionToken
 
-fun SecurityIdentity.getSessionTransport(): SessionTransport =
-    getAttribute("sessionTransport") as SessionTransport
+fun SecurityIdentity.getSessionTransport(): SessionTransportDto =
+    getAttribute("sessionTransport") as SessionTransportDto

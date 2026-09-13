@@ -4,11 +4,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.IssuedSession
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.SessionExpiryPolicy
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.SessionTransportDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.SessionCreationInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.CreatedSessionOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ExistingSessionOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.SessionCookie
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.SessionTransport
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionRenewer
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionRevoker
@@ -43,15 +43,15 @@ class SessionControllerTest {
     )
 
     private fun credentials(
-        transport: SessionTransport = SessionTransport.BEARER,
+        transport: SessionTransportDto = SessionTransportDto.BEARER,
         rememberMe: Boolean? = null,
     ) = SessionCreationInputDto("alice", "pw", transport = transport, rememberMe = rememberMe)
 
-    private fun currentSession(persistent: Boolean = false, transport: SessionTransport) =
+    private fun currentSession(persistent: Boolean = false, transport: SessionTransportDto) =
         SessionToken(randomUUID(), user, TestTime.now, persistent = persistent, createdAt = TestTime.now)
             .also {
                 every { identity.getAttribute<SessionToken>("sessionToken") } returns it
-                every { identity.getAttribute<SessionTransport>("sessionTransport") } returns transport
+                every { identity.getAttribute<SessionTransportDto>("sessionTransport") } returns transport
             }
 
     @Test
@@ -82,7 +82,7 @@ class SessionControllerTest {
         every { creator.create(any(), any(), any()) } returns issued
 
         // When
-        val response = controller.createSession(credentials(SessionTransport.BEARER))
+        val response = controller.createSession(credentials(SessionTransportDto.BEARER))
 
         // Then
         assertEquals(201, response.status)
@@ -96,7 +96,7 @@ class SessionControllerTest {
         every { creator.create(any(), any(), any()) } returns issued
 
         // When
-        val response = controller.createSession(credentials(SessionTransport.COOKIE, rememberMe = true))
+        val response = controller.createSession(credentials(SessionTransportDto.COOKIE, rememberMe = true))
 
         // Then
         assertEquals(200, response.status)
@@ -126,7 +126,7 @@ class SessionControllerTest {
     @Test
     fun `Given a bearer session, Then renewSession answers 201 with the new token and no cookie`() {
         // Given
-        val current = currentSession(transport = SessionTransport.BEARER)
+        val current = currentSession(transport = SessionTransportDto.BEARER)
         every { renewer.renew(current) } returns issued
 
         // When
@@ -142,7 +142,7 @@ class SessionControllerTest {
     @Test
     fun `Given a cookie session, Then renewSession answers 200 with a fresh cookie and no token`() {
         // Given
-        val current = currentSession(persistent = true, transport = SessionTransport.COOKIE)
+        val current = currentSession(persistent = true, transport = SessionTransportDto.COOKIE)
         every { renewer.renew(current) } returns issued
 
         // When
@@ -156,7 +156,7 @@ class SessionControllerTest {
 
     @Test
     fun `Given a current session, Then revokeCurrentSession deletes the current token`() {
-        val current = currentSession(transport = SessionTransport.BEARER)
+        val current = currentSession(transport = SessionTransportDto.BEARER)
         val response = controller.revokeCurrentSession()
         assertEquals(204, response.status)
         assertNull(response.cookies[SessionCookie.NAME])
@@ -166,7 +166,7 @@ class SessionControllerTest {
     @Test
     fun `Given a cookie session, Then revokeCurrentSession clears the cookie`() {
         // Given
-        currentSession(transport = SessionTransport.COOKIE)
+        currentSession(transport = SessionTransportDto.COOKIE)
 
         // When
         val response = controller.revokeCurrentSession()
@@ -178,7 +178,7 @@ class SessionControllerTest {
     @Test
     fun `Given the caller, Then revokeAllSessions deletes all their tokens`() {
         every { identity.getAttribute<User>("user") } returns user
-        every { identity.getAttribute<SessionTransport>("sessionTransport") } returns SessionTransport.BEARER
+        every { identity.getAttribute<SessionTransportDto>("sessionTransport") } returns SessionTransportDto.BEARER
         val response = controller.revokeAllSessions()
         assertEquals(204, response.status)
         verify { revoker.revokeAll(user) }
@@ -188,7 +188,7 @@ class SessionControllerTest {
     fun `Given a cookie session, Then revokeAllSessions clears the cookie`() {
         // Given
         every { identity.getAttribute<User>("user") } returns user
-        every { identity.getAttribute<SessionTransport>("sessionTransport") } returns SessionTransport.COOKIE
+        every { identity.getAttribute<SessionTransportDto>("sessionTransport") } returns SessionTransportDto.COOKIE
 
         // When
         val response = controller.revokeAllSessions()

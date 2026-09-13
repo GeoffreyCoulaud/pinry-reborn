@@ -20,7 +20,7 @@ class SessionSecurityRequirementFilterTest {
 
         // Then
         assertEquals(
-            listOf(setOf("SecurityScheme"), setOf("CookieScheme")),
+            listOf(setOf("BearerScheme"), setOf("CookieScheme")),
             filtered.security.map { it.schemes.keys },
         )
     }

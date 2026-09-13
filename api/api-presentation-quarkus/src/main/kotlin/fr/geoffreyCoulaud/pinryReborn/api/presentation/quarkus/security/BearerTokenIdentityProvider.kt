@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security
 
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.SessionTransportDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionTokenAuthenticator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SessionTokenExpiredError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SessionTokenInvalidError
@@ -31,7 +32,7 @@ class BearerTokenIdentityProvider(
                     .addAttribute("userId", session.user.id)
                     .addAttribute("user", session.user)
                     .addAttribute("sessionToken", session)
-                    .addAttribute("sessionTransport", SessionTransport.ofCredential(request.token.type))
+                    .addAttribute("sessionTransport", SessionTransportDto.ofCredential(request.token.type))
                     .build()
             } catch (e: SessionTokenExpiredError) {
                 // Spec §12: a dedicated SessionExpiredException subtype was tried (Task 9) but Quarkus

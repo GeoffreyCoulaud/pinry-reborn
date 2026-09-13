@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input
 
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.SessionTransport
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.SessionTransportDto
 import jakarta.validation.constraints.NotBlank
 
 /**
@@ -16,6 +16,6 @@ data class SessionCreationInputDto(
     val name: String,
     @field:NotBlank
     val password: String,
-    val transport: SessionTransport,
+    val transport: SessionTransportDto,
     val rememberMe: Boolean?,
 )
