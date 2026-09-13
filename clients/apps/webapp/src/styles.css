@@ -1,6 +1,18 @@
 @import "tailwindcss";
 
-/* Both themes follow the system. The manual switch question T asked for is a backlog item. */
+/* The switch writes the resolved theme, so `dark:` follows a choice and the system alike. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* The window between the stylesheet and `paintStoredTheme`. `dark:` utilities do not follow the
+   system here, only the form controls do; nothing of this application renders without its script. */
 :root {
   color-scheme: light dark;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
 }

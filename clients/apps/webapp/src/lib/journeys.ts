@@ -13,6 +13,7 @@ export const REQUIRED_JOURNEYS = [
   "create a pin from a URL through to the tile appearing",
   "create a pin by uploading a file",
   "a failed download surfacing in the task centre",
+  "choosing a theme against the system",
 ]
 
 /** The file under `src/journeys/` that holds a journey's test. */

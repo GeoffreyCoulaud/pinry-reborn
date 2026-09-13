@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 import { TaskCentre } from "../components/TaskCentre"
+import { ThemeSwitch } from "../components/ThemeSwitch"
 import { useCreatePin, useHandshake, type ImageSource } from "../images"
 import { uploadRefusal, type UploadRefusal } from "../lib/uploads"
 import { m } from "../paraglide/messages.js"
@@ -56,7 +57,10 @@ export function CreatePin() {
           is the one that must show it. */}
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-semibold">{m.create_pin()}</h1>
-        <TaskCentre />
+        <div className="flex items-center gap-3">
+          <TaskCentre />
+          <ThemeSwitch />
+        </div>
       </header>
       <form
         className="flex flex-col gap-3"

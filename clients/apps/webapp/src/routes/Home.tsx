@@ -14,6 +14,7 @@ import {
   WaterfallLayout,
 } from "react-aria-components"
 import { TaskCentre } from "../components/TaskCentre"
+import { ThemeSwitch } from "../components/ThemeSwitch"
 import { downloadReason } from "../downloadReasons"
 import { useHandshake } from "../images"
 import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } from "../lib/tiles"
@@ -173,6 +174,7 @@ export function Home() {
         <div className="flex items-center gap-3">
           <Link to="/pins/new">{m.create_pin()}</Link>
           <TaskCentre />
+          <ThemeSwitch />
           <button type="button" onClick={() => signOut.mutate()}>
             {m.sign_out()}
           </button>
