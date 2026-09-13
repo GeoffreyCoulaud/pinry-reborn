@@ -43,7 +43,7 @@ export function CreatePin() {
     }
     create.mutate(
       {
-        sourceContextUrl: String(fields.get("sourceContextUrl")),
+        sourceContextUrl: String(fields.get("sourceContextUrl")) || null,
         description: String(fields.get("description")),
         source,
       },
@@ -69,9 +69,10 @@ export function CreatePin() {
           void submit(new FormData(event.currentTarget))
         }}
       >
+        {/* Never required: a file from disk and a direct image address both name no page. */}
         <label className="flex flex-col gap-1">
           {m.source_page()}
-          <input name="sourceContextUrl" type="url" required className={FIELD} />
+          <input name="sourceContextUrl" type="url" className={FIELD} />
         </label>
         <label className="flex flex-col gap-1">
           {m.description()}

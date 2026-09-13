@@ -522,14 +522,17 @@ class UserDataImportRunner(
         val fault = pin?.let { pinFault(it) }
         return when {
             pin == null -> reported(UserDataImportIssueKind.LINE_MALFORMED, null, line.failure)
-            fault != null -> reported(UserDataImportIssueKind.FIELD_INVALID, pin.sourceContextUrl, fault)
+            fault != null -> reported(UserDataImportIssueKind.FIELD_INVALID, subjectOf(pin), fault)
             else -> mediaOutcome(walk, pin)
         }
     }
 
+    /** The page url names the pin in the report; a pin found on no page is named by its description. */
+    private fun subjectOf(pin: ImportedPin): String = pin.sourceContextUrl ?: pin.description
+
     private fun pinFault(pin: ImportedPin): String? =
         ImportFieldBounds.descriptionFault(pin.description)
-            ?: ImportFieldBounds.blankFault(SOURCE_CONTEXT_URL, pin.sourceContextUrl)
+            ?: pin.sourceContextUrl?.let { ImportFieldBounds.blankFault(SOURCE_CONTEXT_URL, it) }
             ?: ImportFieldBounds.referenceCountFault(TAGS_FIELD, pin.tags.size)
             ?: ImportFieldBounds.referenceCountFault(BOARDS_FIELD, pin.boards.size)
 
@@ -541,7 +544,7 @@ class UserDataImportRunner(
         val image = pin.image
         val fault = image?.let { ImportFieldBounds.entryPathFault(it.path) }
         return when {
-            image == null -> reported(UserDataImportIssueKind.PIN_HAS_NO_MEDIA, pin.sourceContextUrl, null)
+            image == null -> reported(UserDataImportIssueKind.PIN_HAS_NO_MEDIA, subjectOf(pin), null)
             fault != null -> reported(UserDataImportIssueKind.ENTRY_PATH_INVALID, image.path, fault)
             image.path !in walk.entryNames ->
                 reported(UserDataImportIssueKind.MEDIA_ENTRY_MISSING, image.path, null)

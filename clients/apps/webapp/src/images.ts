@@ -10,7 +10,7 @@ export type Download = Schemas["ImageDownloadOutputDto"]
 export type ImageSource = { url: string } | { file: File }
 
 export interface PinCreation {
-  sourceContextUrl: string
+  sourceContextUrl: string | null
   description: string
   source: ImageSource
 }

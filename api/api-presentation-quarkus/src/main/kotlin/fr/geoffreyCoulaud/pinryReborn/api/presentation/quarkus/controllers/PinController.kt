@@ -76,7 +76,7 @@ class PinController(
         val author = securityIdentity.getUser()
         val pin = pinCreator.createPin(
             author = author,
-            sourceContextUrl = creationDto.sourceContextUrl,
+            sourceContextUrl = creationDto.sourceContextUrl?.takeIf { it.isNotBlank() },
             sourceMediaUrl = creationDto.sourceMediaUrl?.takeIf { it.isNotBlank() },
             description = creationDto.description,
             tags = emptyList(),

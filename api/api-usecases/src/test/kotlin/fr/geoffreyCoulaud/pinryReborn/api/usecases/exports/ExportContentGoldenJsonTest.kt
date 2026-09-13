@@ -217,13 +217,13 @@ class ExportContentGoldenJsonTest {
     }
 
     @Test
-    fun `Given a pin with no image, Then the image field serializes as null rather than being omitted`() {
+    fun `Given a pin with no image and no source page, Then each absent field serializes as null`() {
         // Given
         val pin =
             ExportedPin(
                 id = UUID.fromString("66666666-6666-6666-6666-666666666666"),
                 description = "A pin",
-                sourceContextUrl = "https://example.org/article",
+                sourceContextUrl = null,
                 sourceMediaUrl = null,
                 createdAt = Instant.parse("2026-01-06T00:00:00Z"),
                 updatedAt = Instant.parse("2026-01-07T00:00:00Z"),
@@ -239,7 +239,7 @@ class ExportContentGoldenJsonTest {
         // Then
         assertEquals(
             """{"id":"66666666-6666-6666-6666-666666666666","description":"A pin",""" +
-                """"sourceContextUrl":"https://example.org/article","sourceMediaUrl":null,""" +
+                """"sourceContextUrl":null,"sourceMediaUrl":null,""" +
                 """"createdAt":"2026-01-06T00:00:00Z","updatedAt":"2026-01-07T00:00:00Z",""" +
                 """"deletedAt":"2026-01-08T00:00:00Z",""" +
                 """"tags":[],"boards":[],"image":null}""",

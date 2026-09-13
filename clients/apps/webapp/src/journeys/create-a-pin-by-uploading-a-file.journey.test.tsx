@@ -47,12 +47,16 @@ describe("create a pin by uploading a file", () => {
     const user = userEvent.setup()
     const created = readyPin("a cat asleep")
     let uploaded: string | null = null
+    let sentPage: unknown = "not sent"
     server.use(
       sessionRoute(() => true),
       handshakeRoute(),
       downloadsRoute(),
       onePinPage(() => [created]),
-      http.post("/api/v1/pins", () => HttpResponse.json(created, { status: 201 })),
+      http.post("/api/v1/pins", async ({ request }) => {
+        sentPage = ((await request.json()) as { sourceContextUrl: unknown }).sourceContextUrl
+        return HttpResponse.json(created, { status: 201 })
+      }),
       http.put("/api/v1/pins/:pinId/image", ({ request }) => {
         // The media type is what tells the two entries apart on one route, and it is all this
         // reads: reading the parts back costs the body, which a jsdom upload does not survive
@@ -62,8 +66,9 @@ describe("create a pin by uploading a file", () => {
       }),
     )
 
+    // The page it comes from is left empty: a file from disk was found on no page at all.
     renderApp("/pins/new")
-    await user.type(await screen.findByLabelText("Page it comes from"), PAGE)
+    await screen.findByLabelText("Page it comes from")
     await user.upload(
       screen.getByLabelText("Image file"),
       new File(["ok"], "small.png", { type: "image/png" }),
@@ -75,6 +80,7 @@ describe("create a pin by uploading a file", () => {
     // No download and no wait: the bytes are the server's before the pin leaves the screen.
     expect(await screen.findByRole("img", { name: created.description })).toBeVisible()
     expect(uploaded).toBe("multipart/form-data")
+    expect(sentPage).toBeNull()
     expect(await screen.findByRole("button", { name: "Downloads (0)" })).toBeVisible()
   }, 15_000)
 })

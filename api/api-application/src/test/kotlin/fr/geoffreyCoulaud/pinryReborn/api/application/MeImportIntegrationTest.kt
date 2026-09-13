@@ -163,23 +163,27 @@ class MeImportIntegrationTest : IntegrationTest() {
             .then().statusCode(200)
     }
 
-    private fun createPin(auth: AuthenticatedUser, slug: String, tags: List<String> = emptyList()) =
-        pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.test/$slug",
-            sourceMediaUrl = "https://example.test/$slug.jpg",
-            description = "Pin $slug",
-            tags = tags,
-        )
+    private fun createPin(
+        auth: AuthenticatedUser,
+        slug: String,
+        tags: List<String> = emptyList(),
+        sourceContextUrl: String? = "https://example.test/$slug",
+    ) = pinCreator.createPin(
+        author = auth.user,
+        sourceContextUrl = sourceContextUrl,
+        sourceMediaUrl = "https://example.test/$slug.jpg",
+        description = "Pin $slug",
+        tags = tags,
+    )
 
     /**
-     * Two active pins, one recycled pin, an active board, a recycled board holding a pin, two tags,
-     * and a fourth pin sharing the first one's medium byte for byte (spec section 13.1).
+     * Two active pins, one recycled pin naming no page, an active board, a recycled board holding a
+     * pin, two tags, and a fourth pin sharing the first one's medium byte for byte (spec section 13.1).
      */
     private fun seedRoundTripContent(auth: AuthenticatedUser) {
         val alpha = createPin(auth, ALPHA, tags = listOf("nature", "travel"))
         val beta = createPin(auth, BETA, tags = listOf("nature"))
-        val gamma = createPin(auth, GAMMA)
+        val gamma = createPin(auth, GAMMA, sourceContextUrl = null)
         val delta = createPin(auth, DELTA)
         uploadImage(auth, alpha.id, "sample.png", "image/png")
         uploadImage(auth, beta.id, "sample.jpg", "image/jpeg")
@@ -238,7 +242,7 @@ class MeImportIntegrationTest : IntegrationTest() {
     )
 
     private data class AccountFacts(
-        val pins: Map<String, PinFacts>,
+        val pins: Map<String?, PinFacts>,
         val boards: Map<String, Instant?>,
         val tags: Set<String>,
     )
@@ -303,7 +307,8 @@ class MeImportIntegrationTest : IntegrationTest() {
         val source = factsOf(origin.user)
         val copy = factsOf(destination.user)
         assertEquals(source.pins.size - 1, copy.pins.size, "the two pins sharing a medium import as one")
-        val fromTheSharedMedium = copy.pins.keys.count { it.endsWith("/$BETA") || it.endsWith("/$DELTA") }
+        val fromTheSharedMedium =
+            copy.pins.keys.count { it != null && (it.endsWith("/$BETA") || it.endsWith("/$DELTA")) }
         assertEquals(1, fromTheSharedMedium, "one of the two lines is skipped, not reported as ambiguous")
         copy.pins.forEach { (sourceContextUrl, imported) ->
             assertSamePin(source.pins.getValue(sourceContextUrl), imported)

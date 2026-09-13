@@ -46,9 +46,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 - **The grid cannot cap the pages it holds.** A capped `useInfiniteQuery` drops the pages at the far end
   and nothing reloads them upward, so block 6 ships no cap and the query keeps every page scrolled.
   See `docs/specs/2026-09-10-web-application.md`, section 4.7. New 2026-09-11.
-- **A pin cannot be created without a source page URL.** `sourceContextUrl` is non-null in `Pin`, `not
-  null` in its column and required on `PinCreationInputDto`; the file entry has no page URL to give.
-  See `docs/specs/2026-09-10-web-application.md`, section 4.8. New 2026-09-11.
 - **Every settled download refetches the whole accumulated catalogue, sequentially.** `images.ts`
   invalidates `["pins"]`, and TanStack Query refetches all stored pages in series: fifty pages scrolled
   cost fifty `GET /api/v1/pins` per settled download.

@@ -295,6 +295,22 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
     }
 
     @Test
+    fun `Given a pin with no medium and no page url, Then its issue names it by its description`() {
+        // Given: the page url is the issue's subject, and a null one leaves the report naming nothing
+        val pin = aPin(path = null).copy(sourceContextUrl = null)
+        val source = FakeArchiveSource(aManifest(), pins = listOf(TestLine(1, pin)))
+        stubWalk(source)
+        stubIssues()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(listOf(UserDataImportIssueKind.PIN_HAS_NO_MEDIA), kinds())
+        assertEquals(pin.description, savedIssues.single().subject)
+    }
+
+    @Test
     fun `Given a medium the archive does not carry, Then it is reported as missing`() {
         // Given: the entry-name set is the authority on what the archive holds
         val source = FakeArchiveSource(aManifest(), pins = listOf(TestLine(1, aPin())), media = emptyMap())

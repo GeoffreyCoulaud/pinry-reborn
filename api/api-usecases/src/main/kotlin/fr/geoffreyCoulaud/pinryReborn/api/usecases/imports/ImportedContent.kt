@@ -36,7 +36,7 @@ internal data class ImportedImage(val path: String, val sha256: String)
 /** One `pins.jsonl` line. A null [image] is a pin with no medium, which has no identity to import. */
 internal data class ImportedPin(
     val description: String,
-    val sourceContextUrl: String,
+    val sourceContextUrl: String?,
     val sourceMediaUrl: String?,
     val createdAt: Instant,
     val updatedAt: Instant,

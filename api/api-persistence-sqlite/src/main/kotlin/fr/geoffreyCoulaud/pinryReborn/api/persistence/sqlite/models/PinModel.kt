@@ -13,7 +13,7 @@ import java.util.UUID
 class PinModel(
     id: UUID,
     author: UserModel,
-    var sourceContextUrl: String,
+    var sourceContextUrl: String?,
     var sourceMediaUrl: String?,
     var description: String,
     createdAt: Instant,
