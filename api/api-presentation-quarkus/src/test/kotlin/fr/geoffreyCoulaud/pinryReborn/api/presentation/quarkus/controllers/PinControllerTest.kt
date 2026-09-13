@@ -45,7 +45,10 @@ class PinControllerTest {
     )
 
     /** Creates a pin through the controller and answers what the created pin actually carries. */
-    private fun createPinWith(sourceMediaUrl: String?): PinOutputDto {
+    private fun createPinWith(
+        sourceMediaUrl: String? = null,
+        sourceContextUrl: String? = "https://example.test/page",
+    ): PinOutputDto {
         val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every {
@@ -70,7 +73,7 @@ class PinControllerTest {
             )
         }
         val dto = PinCreationInputDto(
-            sourceContextUrl = "https://example.test/page",
+            sourceContextUrl = sourceContextUrl,
             sourceMediaUrl = sourceMediaUrl,
             description = createRandomString(),
         )
@@ -91,6 +94,21 @@ class PinControllerTest {
     @Test
     fun `Given a source media url, Then the created pin carries it`() {
         assertEquals("https://example.test/i.png", createPinWith("https://example.test/i.png").sourceMediaUrl)
+    }
+
+    @Test
+    fun `Given no source page url, Then the created pin carries none`() {
+        assertNull(createPinWith(sourceContextUrl = null).sourceContextUrl)
+    }
+
+    @Test
+    fun `Given a blank source page url, Then the created pin carries none`() {
+        assertNull(createPinWith(sourceContextUrl = "   ").sourceContextUrl)
+    }
+
+    @Test
+    fun `Given a source page url, Then the created pin carries it`() {
+        assertEquals("https://example.test/page", createPinWith().sourceContextUrl)
     }
 
     @Test

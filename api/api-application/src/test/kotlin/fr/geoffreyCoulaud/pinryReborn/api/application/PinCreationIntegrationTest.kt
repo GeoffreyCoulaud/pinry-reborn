@@ -63,6 +63,27 @@ class PinCreationIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `creating a pin with a null source context url returns the created pin, carrying none`() {
+        val auth = createAuthenticatedUser()
+
+        given()
+            .contentType(ContentType.JSON)
+            .authenticatedAs(auth)
+            .body(
+                """{
+                    "sourceContextUrl": null,
+                    "sourceMediaUrl": "https://example.com/image.jpg",
+                    "description": "A pin found on no page at all"
+                }"""
+            )
+            .`when`()
+            .post("/api/v1/pins")
+            .then()
+            .statusCode(201)
+            .body("sourceContextUrl", nullValue())
+    }
+
+    @Test
     fun `creating a pin returns 201 Created status`() {
         val auth = createAuthenticatedUser()
 

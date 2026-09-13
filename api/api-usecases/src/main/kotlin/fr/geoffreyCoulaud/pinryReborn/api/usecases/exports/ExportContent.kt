@@ -77,7 +77,7 @@ internal data class ExportedImage(
 internal data class ExportedPin(
     val id: UUID,
     val description: String,
-    val sourceContextUrl: String,
+    val sourceContextUrl: String?,
     val sourceMediaUrl: String?,
     val createdAt: Instant,
     val updatedAt: Instant,

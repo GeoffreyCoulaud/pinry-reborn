@@ -256,8 +256,7 @@
         "required" : [ "sourceContextUrl", "sourceMediaUrl", "description" ],
         "properties" : {
           "sourceContextUrl" : {
-            "type" : "string",
-            "pattern" : "\\S"
+            "type" : [ "string", "null" ]
           },
           "sourceMediaUrl" : {
             "type" : [ "string", "null" ]
@@ -348,7 +347,7 @@
             "$ref" : "#/components/schemas/UUID"
           },
           "sourceContextUrl" : {
-            "type" : "string"
+            "type" : [ "string", "null" ]
           },
           "sourceMediaUrl" : {
             "type" : [ "string", "null" ]
@@ -3043,7 +3042,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "5.0.0"
+    "version" : "6.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",
