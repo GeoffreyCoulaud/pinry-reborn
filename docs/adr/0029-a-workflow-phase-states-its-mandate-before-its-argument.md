@@ -64,7 +64,11 @@ A list written out twice drifts in one copy. MAJOR 1 is that drift.
    no justification. Then a `**Detail.**` paragraph. A reader who stops at the last bullet has read
    every rule that binds them.
 
-   **Fails if** a bullet argues, or a sentence under `**Detail.**` binds.
+   **Fails if** a bullet argues, or a sentence under `**Detail.**` binds. (Corrected: a bullet whose
+   mandate carries its justification inside its own letter is not a failure. Decision 4 keeps that
+   letter, so the two tests collide on it, and decision 4 wins: "Tier 2 is a question, so the work
+   waits for the answer" argues and stays under Scope. What this test catches is a justification the
+   bullet could drop without losing a rule.)
 
 2. **A closed list is written out in one living document: the one carrying the rule that closes it.**
    Everywhere else names the list and states no member and no total.
@@ -89,7 +93,9 @@ A list written out twice drifts in one copy. MAJOR 1 is that drift.
    **Fails if** a mandate of `git show 9a34219f:agents/workflow.md` has no place in the new document.
    The pull request body lists the two side by side.
 
-5. **The form binds `agents/*.md`. Only `agents/workflow.md` is converted here.** `agents/writing.md`
+5. **The form binds `agents/*.md`. Only `agents/workflow.md` is converted here.** (Corrected: the
+   reach is a document under `agents/`, the review mandates under `agents/reviews/` included. That is
+   what `agents/writing.md` records and what this glob excludes.) `agents/writing.md`
    records the rule; the other documents conform when something next touches them. Both findings
    above are in `agents/workflow.md`. The same review hit `agents/reviews/holistic.md` twice, but
    MINOR 4 and MINOR 7 are wrong instructions, not buried ones.

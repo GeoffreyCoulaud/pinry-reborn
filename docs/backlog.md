@@ -7,9 +7,8 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 
 - This file holds **open items only**. Do not keep a "shipped" log here: completed work is recorded by git
   history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.Z-*` tags.
-- **Banded by nature**, as the headings below show and as `agents/workflow.md`, The backlog, lists them. *Known
-  limits* points at the document that records each one and holds no copy of it; a limit is not debt and is not
-  counted as debt.
+- **Banded by nature**, as the headings below show and as `agents/workflow.md`, The backlog, lists them with
+  what each one holds. A limit is not debt and is not counted as debt.
 - **Open work is grouped by priority**, not by module. `P0` = product decisions that shape the data model and
   the UI. `P1` = client ergonomics needed for the web UI and the browser extension, and the process debt a lot
   pays for in correctness. `P2` = operational debt (not UI blockers). A priority may hold nothing.
