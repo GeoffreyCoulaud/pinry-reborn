@@ -1,6 +1,9 @@
 # 0028. The block budget follows the ecosystem, and the holistic review follows the last merge
 
-Status: Accepted
+Status: Accepted; decision 6 is amended by `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`,
+decision 6: on a lot of one block the lead offers the holistic review's waiver and the operator
+decides, rather than the review being dispatched by reflex. Where it runs, and the single
+destination for its findings, are unchanged; a lot of two blocks or more still gets it.
 Date: 2026-09-13
 Specification: this document. A lot whose subject is this process writes its ADR and no separate spec
 (`agents/workflow.md`, phase 2). Tier Spec, one block: the specification review ran on this document
