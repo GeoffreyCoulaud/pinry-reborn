@@ -67,6 +67,12 @@ runs, in the same container, and it holds five things:
 A check whose scope is the repository goes to `.dagger/`; a check whose scope is one ecosystem goes to that
 ecosystem's own gate.
 
+**It is paid where it can fail** (`docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`). Two pushes are let off, both
+because they can carry no defect the gate would catch: a pull request whose every changed path ends in `.md` runs
+`dagger call prose` in its place and builds no image, and a push whose every reference is a tag on a commit
+`origin/main` already contains runs nothing at all. One path not ending in `.md`, or one branch in the push, and the
+full gate is back.
+
 ## The image
 
 Three calls outside the gate, because minutes of image build have no place in `pre-push`:

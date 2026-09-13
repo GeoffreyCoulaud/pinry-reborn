@@ -24,22 +24,51 @@ jobs:
     # A build that stops making progress has to fail rather than hold the runner: seen twice
     # on a workstation, a Gradle task dying and the build then never reporting.
     timeout-minutes: 45
+    outputs:
+      docs-only: ${{ steps.scope.outputs.docs-only }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           # The contract guard reads the contract as origin/main has it, and the default shallow
           # checkout fetches that ref's history not at all. The gate fails naming this line.
+          # The step below reads the same ref.
           fetch-depth: 0
+      - name: Whether every changed path is a markdown file
+        id: scope
+        # A whitelist, and strict: one path not ending in .md puts the pull request back on the
+        # full gate (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decisions 1 and 3).
+        # github.base_ref is empty outside a pull request, so the release path never takes the
+        # shortcut whatever it holds.
+        run: |
+          base='${{ github.base_ref }}'
+          docs_only=false
+          if [ -n "$base" ]; then
+            changed=$(git diff --name-only "origin/$base...HEAD")
+            echo "Changed paths:"
+            echo "$changed"
+            if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -qv '\.md$'; then
+              docs_only=true
+            fi
+          fi
+          echo "Documentation only: $docs_only"
+          echo "docs-only=$docs_only" >> "$GITHUB_OUTPUT"
       - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77 # v8.4.1
-        # No `call` input: the action only installs the CLI, so the line below is the
-        # command a workstation types. The version pairs with dagger.json's engineVersion.
+        # No `call` input: the action only installs the CLI, so the lines below are the
+        # commands a workstation types. The version pairs with dagger.json's engineVersion.
         with:
           version: "0.21.9"
       - name: Gate
+        if: ${{ steps.scope.outputs.docs-only != 'true' }}
         # `--progress=plain` because the default renderer redraws in place and a runner's log
         # keeps only what was printed: without it the job shows nothing between the first
         # container and the verdict, which reads exactly like a hang.
         run: dagger call --progress=plain gate
+      - name: Prose
+        if: ${{ steps.scope.outputs.docs-only == 'true' }}
+        # What a documentation-only pull request is still made to pay: no long dash in a tracked
+        # text file, and the evidence guard's own tests. The dated documents are frozen from the
+        # first, so on a handoff or an ADR this reads nothing of the diff.
+        run: dagger call --progress=plain prose
 
   # Two calls, then the release path. `image` and `smoke` are Dagger functions (`.dagger/`),
   # so a workstation builds the same image and starts the same container before pushing. What
@@ -52,6 +81,10 @@ jobs:
   # pull request that introduced it.
   build-image:
     needs: [verify]
+    # Skipped at the job level on a documentation-only pull request, which costs it no runner, no
+    # checkout and no Dagger install (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md,
+    # decision 1). The aggregator below accepts the skip.
+    if: ${{ needs.verify.outputs.docs-only != 'true' }}
     runs-on: ubuntu-latest
     # Same reason as the verify job: the Dagger cache is cold on every runner, so a build that
     # stops making progress has to fail rather than hold the runner.
@@ -181,7 +214,12 @@ jobs:
 
   # Single required check. GitHub counts a skipped job as passing for branch
   # protection, so the gate always runs (if: always()) and fails explicitly
-  # unless every needed job actually reported "success".
+  # unless every needed job reported "success" or was skipped by its condition.
+  #
+  # Accepting "skipped" is what lets build-image carry a job-level `if:`
+  # (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decision 2). It does not
+  # let a failure through: a job skipped because the job it needs failed leaves that
+  # failure in the results, and verify has no condition of its own to be skipped by.
   gate:
     needs: [verify, build-image]
     if: ${{ always() }}
@@ -192,7 +230,7 @@ jobs:
           results="${{ join(needs.*.result, ' ') }}"
           echo "Needed job results: $results"
           for result in $results; do
-            if [ "$result" != "success" ]; then
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
               echo "::error::A required job did not succeed (results: $results)"
               exit 1
             fi
