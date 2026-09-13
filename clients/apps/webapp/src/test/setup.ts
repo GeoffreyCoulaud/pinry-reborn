@@ -42,9 +42,7 @@ globalThis.IntersectionObserver = ReachedSentinelObserver
 globalThis.createImageBitmap = () =>
   Promise.resolve({ width: 100, height: 100, close: () => {} } as ImageBitmap)
 
-// jsdom implements no matchMedia, and the theme switch reads one to resolve `system`. The stub
-// reports a light machine and never fires, so what a journey exercises is the choice; following
-// the machine is held by `resolveTheme`'s own tests.
+// jsdom implements no matchMedia, and the theme switch reads one to resolve `system`.
 globalThis.matchMedia = (media: string) =>
   ({
     media,
