@@ -138,19 +138,25 @@ export class PinryReborn {
   async gate(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
   ): Promise<string> {
-    // One Gradle invocation for both parts. Two would serialize on the shared cache volume and
-    // the second would recompile what the first had just compiled.
-    const built = this.gradleRun(source, "gate", QUARKUS_BUILD)
-    // The contract is read after the build, not beside it. Asking for both at once makes two
-    // requests for one container, and the second waits on a cache volume the first holds.
-    const [api, clients, prose, guard] = await Promise.all([
-      built.stdout(),
-      this.clientsGate(source).stdout(),
-      this.prose(source),
-      this.contractGuard(source),
-    ])
-    const contract = await this.contractIsSynchronised(built.directory("/src/contract"), source)
-    return [api, clients, prose, contract, guard].join("\n")
+    return this.gateReport(source, this.gateBuild(source))
+  }
+
+  /**
+   * Everything a pull request checks, in one call: the gate, then the image built and smoked from
+   * the fast jar the gate's own container produced. Two calls on two runners paid for that jar
+   * twice (docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md, decision 1).
+   */
+  @func()
+  async ci(
+    @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
+  ): Promise<string> {
+    const built = this.gateBuild(source)
+    const gate = await this.gateReport(source, built)
+    // Sequential: a gate that fails has to stop the run before any image is built.
+    const context = this.imageContext(source, built.directory(`/src/api/${FAST_JAR}`))
+    const image = await this.imageReport(context, [])
+    const smoke = await this.smokeReport(context)
+    return [gate, image, smoke].join("\n")
   }
 
   /**
@@ -254,13 +260,15 @@ export class PinryReborn {
 
   /**
    * The Quarkus fast-jar layout the `Dockerfile` copies, so a caller can build the image with
-   * no JDK of its own. The same build produces the contract.
+   * no JDK of its own. The gate's own build and not a build of its own: the release path calls
+   * this after `ci` on the same engine, so what it exports is the bytes `ci` smoked, at no
+   * second build.
    */
   @func()
   quarkusApp(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
   ): Directory {
-    return this.gradleRun(source, QUARKUS_BUILD).directory(`/src/api/${FAST_JAR}`)
+    return this.gateBuild(source).directory(`/src/api/${FAST_JAR}`)
   }
 
   /**
@@ -276,15 +284,7 @@ export class PinryReborn {
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
     platforms: Platform[] = [],
   ): Promise<string> {
-    const wanted = platforms.length > 0 ? platforms : [await dag.defaultPlatform()]
-    const context = this.imageContext(source)
-    const lines = await Promise.all(
-      wanted.map(async (platform) => {
-        const machine = await context.dockerBuild({ platform }).withExec(["uname", "-m"]).stdout()
-        return `${platform}: built, ${machine.trim()} inside`
-      }),
-    )
-    return lines.join("\n")
+    return this.imageReport(this.imageContext(source, this.fastJar(source)), platforms)
   }
 
   /**
@@ -296,10 +296,53 @@ export class PinryReborn {
   async smoke(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
   ): Promise<string> {
+    return this.smokeReport(this.imageContext(source, this.fastJar(source)))
+  }
+
+  /** The gate's own Gradle invocation, and the only one continuous integration ever runs. */
+  private gateBuild(source: Directory): Container {
+    // One Gradle invocation for both parts. Two would serialize on the shared cache volume and
+    // the second would recompile what the first had just compiled.
+    return this.gradleRun(source, "gate", QUARKUS_BUILD)
+  }
+
+  /** The gate's five reports, read off a build the caller may also take artefacts from. */
+  private async gateReport(source: Directory, built: Container): Promise<string> {
+    // The contract is read after the build, not beside it. Asking for both at once makes two
+    // requests for one container, and the second waits on a cache volume the first holds.
+    const [api, clients, prose, guard] = await Promise.all([
+      built.stdout(),
+      this.clientsGate(source).stdout(),
+      this.prose(source),
+      this.contractGuard(source),
+    ])
+    const contract = await this.contractIsSynchronised(built.directory("/src/contract"), source)
+    return [api, clients, prose, contract, guard].join("\n")
+  }
+
+  /** The fast jar a caller wanting the image alone needs, without the gate that precedes it. */
+  private fastJar(source: Directory): Directory {
+    return this.gradleRun(source, QUARKUS_BUILD).directory(`/src/api/${FAST_JAR}`)
+  }
+
+  /** Each line read from inside the image that was built, not from the request that asked for it. */
+  private async imageReport(context: Directory, platforms: Platform[]): Promise<string> {
+    const wanted = platforms.length > 0 ? platforms : [await dag.defaultPlatform()]
+    const lines = await Promise.all(
+      wanted.map(async (platform) => {
+        const machine = await context.dockerBuild({ platform }).withExec(["uname", "-m"]).stdout()
+        return `${platform}: built, ${machine.trim()} inside`
+      }),
+    )
+    return lines.join("\n")
+  }
+
+  /** The image started and probed by itself. */
+  private async smokeReport(context: Directory): Promise<string> {
     // The engine's own platform: an emulated container would measure the emulator. Named rather
     // than defaulted, so this is the variant `image` built and not a second build of it.
     const platform = await dag.defaultPlatform()
-    const runtime = this.imageContext(source).dockerBuild({ platform })
+    const runtime = context.dockerBuild({ platform })
     const service = runtime.withExposedPort(HTTP_PORT).asService({ useEntrypoint: true })
     // The image carries curl for its own HEALTHCHECK, so it is its own prober.
     const probe = runtime
@@ -320,11 +363,11 @@ export class PinryReborn {
    * The `Dockerfile` and the one directory it copies, and nothing else. A context built from
    * exactly what the image needs keys the build on the artefact instead of on the working tree.
    */
-  private imageContext(source: Directory): Directory {
+  private imageContext(source: Directory, fastJar: Directory): Directory {
     return dag
       .directory()
       .withFile("Dockerfile", source.file("api/Dockerfile"))
-      .withDirectory(FAST_JAR, this.quarkusApp(source))
+      .withDirectory(FAST_JAR, fastJar)
   }
 
   /**

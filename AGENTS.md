@@ -53,8 +53,8 @@ norms, its commands and its gate; this file carries what holds for the repositor
 
 ## The gate
 
-**One command, from anywhere in the repository: `dagger call gate`.** It is what `pre-push` runs and what CI
-runs, in the same container, and it holds five things:
+**One command, from anywhere in the repository: `dagger call gate`.** It is what `pre-push` runs and what
+`dagger call ci` runs on a runner, in the same container, and it holds five things:
 
 | Function                     | What it runs                                                                     |
 |------------------------------|-----------------------------------------------------------------------------------|
@@ -81,7 +81,7 @@ Three calls outside the gate, because minutes of image build have no place in `p
 |----------------------------|---------------------------------------------------------------------------------------|
 | `dagger call image`        | Builds `api/Dockerfile` for the engine's own platform and reads the machine back from inside it. `--platforms=linux/amd64,linux/arm64` builds everything the image ships on. |
 | `dagger call smoke`        | Starts the image and waits for `/q/health`. The only thing in the repository that runs what ships. |
-| `dagger call quarkus-app`  | Returns the fast-jar layout the `Dockerfile` copies, so a caller builds the image with no JDK of its own. Used by the release path alone. |
+| `dagger call quarkus-app`  | Returns the fast-jar layout the `Dockerfile` copies, so a caller builds the image with no JDK of its own. Used by the release path alone, and produced by the gate's own build: on a runner it is a cache hit of the `ci` call that precedes it, and therefore the bytes `smoke` started. |
 
 The suite reads production's `application.properties` for every key its own file leaves alone: each
 `application.properties` on the classpath is a separate configuration source and overrides **per property**, not per
@@ -96,12 +96,14 @@ at the release rather than on the pull request that introduced it.
 
 ## CI
 
-CI (`validate.yml`) **calls** the pipeline: `dagger call gate` in one job, `dagger call image` then
-`dagger call smoke` in the next, each the command a workstation types. A check added to the pipeline is on the
-next pull request with nothing to add here. What CI still holds alone is the release path, which needs a registry
-and GitHub's identity: the push to GHCR, the cosign attestations, both SBOMs and the OpenVEX predicate. That path
-calls the pipeline once too, `dagger call quarkus-app export`, so the image `buildx` pushes carries the bytes
-`dagger call smoke` started.
+CI (`validate.yml`) **calls** the pipeline: one job, one `dagger call ci`, which is the gate and then the image
+built and smoked from the fast jar the gate's own container produced
+(`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md`, decision 1). Two jobs on two runners paid for that
+jar twice. `gate`, `image` and `smoke` stay callable on their own, which is what a workstation types. A check added
+to the pipeline is on the next pull request with nothing to add here. What CI still holds alone is the release
+path, which needs a registry and GitHub's identity: the push to GHCR, the cosign attestations, both SBOMs and the
+OpenVEX predicate. That path calls the pipeline once more, `dagger call quarkus-app export`, a cache hit on the
+build `ci` already ran, so the image `buildx` pushes carries the bytes `dagger call smoke` started.
 
 ## Gotchas
 

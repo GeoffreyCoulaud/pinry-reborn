@@ -14,12 +14,17 @@ permissions:
 jobs:
   # The JDK, libvips and python3 are the Dagger function's container, not the runner's: nothing is
   # installed here beyond the CLI.
+  #
+  # One job, because a second runner rebuilds the fast jar the first already built
+  # (docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md, decision 1).
   verify:
     runs-on: ubuntu-latest
     # Not the six-hour default: a dying Gradle task has twice left a build running and never reporting.
     timeout-minutes: 45
-    outputs:
-      docs-only: ${{ steps.scope.outputs.docs-only }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # Keyless cosign signing, on the release path only.
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -46,41 +51,21 @@ jobs:
         # The action only installs the CLI; the version pairs with dagger.json's engineVersion.
         with:
           version: "0.21.9"
-      - name: Gate
+      # The gate, then the image built and smoked from the fast jar the gate itself produced. A
+      # pull request builds one architecture; buildx below builds both on the release path, so a
+      # release still ships both and a defect showing on arm64 alone surfaces there.
+      #
+      # Without --progress=plain the renderer redraws in place, a runner's log keeps only what was
+      # printed, and the job reads exactly like a hang.
+      - name: Gate, image and smoke
         if: ${{ steps.scope.outputs.docs-only != 'true' }}
-        # Without --progress=plain the renderer redraws in place, a runner's log keeps only what was
-        # printed, and the job reads exactly like a hang.
-        run: dagger call --progress=plain gate
+        run: dagger call --progress=plain ci
       - name: Prose
         if: ${{ steps.scope.outputs.docs-only == 'true' }}
         run: dagger call --progress=plain prose
 
-  # A pull request builds one architecture. buildx below builds both on the release path, so a
-  # release still ships both and a defect showing on arm64 alone surfaces there.
-  build-image:
-    needs: [verify]
-    # Skipped on a documentation-only pull request, which costs it no runner and no checkout
-    # (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decision 1).
-    if: ${{ needs.verify.outputs.docs-only != 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      contents: read
-      packages: write
-      id-token: write # Keyless cosign signing, on the release path only.
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77 # v8.4.1
-        with:
-          version: "0.21.9"
-      - name: The image builds for the platform this runner can start
-        run: dagger call --progress=plain image
-      # The only thing in the repository that starts what ships: a datasource declaration Ebean
-      # rejects survived a lot and a half of green builds.
-      - name: The image starts and reports healthy
-        run: dagger call --progress=plain smoke
-
-      # Exported rather than rebuilt, so the pushed image carries the bytes smoke started.
+      # Exported rather than rebuilt: quarkus-app is the gate's own build, so this is a cache hit
+      # on the engine ci just used and the pushed image carries the bytes smoke started.
       - name: Export the Quarkus fast jar
         if: ${{ inputs.push }}
         run: dagger call quarkus-app export --path=api/api-application/build/quarkus-app
@@ -171,7 +156,7 @@ jobs:
   # fails explicitly. It accepts "skipped" too (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md,
   # decision 2), which lets no failure through: verify has no condition of its own to be skipped by.
   gate:
-    needs: [verify, build-image]
+    needs: [verify]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
