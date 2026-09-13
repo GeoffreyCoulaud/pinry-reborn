@@ -35,6 +35,10 @@
   "sign_up_refused": "Ce compte n’a pas pu être créé.",
   "source_page": "Page d’origine",
   "task_failed": "Échec",
+  "theme": "Thème",
+  "theme_dark": "Sombre",
+  "theme_light": "Clair",
+  "theme_system": "Système",
   "task_running": "Téléchargement",
   "username": "Nom d’utilisateur"
 }

@@ -35,6 +35,10 @@
   "sign_up_refused": "That account could not be created.",
   "source_page": "Page it comes from",
   "task_failed": "Failed",
+  "theme": "Theme",
+  "theme_dark": "Dark",
+  "theme_light": "Light",
+  "theme_system": "System",
   "task_running": "Downloading",
   "username": "Username"
 }
