@@ -98,7 +98,7 @@ arrive, or arrives truncated, can be asked for again instead of costing a second
 | Tier   | Trigger                                                                    | What runs                                                                       | Reviews                                                                 |
 |--------|----------------------------------------------------------------------------|---------------------------------------------------------------------------------|-------------------------------------------------------------------------|
 | Direct | One block: no design decision, no new dependency, no public-surface change | Act, Verify, Integrate and Wrap, written inline by the lead                     | None by default; the operator may still ask for one                     |
-| Spec   | Anything else                                                              | Discuss, Spec, then Act, Verify and Integrate per block in a teammate, then Wrap | The specification review, and the holistic review at the head of Wrap    |
+| Spec   | Anything else                                                              | Discuss, Spec, then Act, Verify and Integrate per block in a teammate, then Wrap | The specification review; the holistic review at the head of Wrap, offered rather than dispatched on a lot of one block |
 
 ### What a block is
 
@@ -206,6 +206,9 @@ integration, and a background command's completion does not re-invoke an idle ag
 - **(a) The holistic review**, in an agent the lead dispatches by name on `agents/reviews/holistic.md`, over
   `git diff <previous lot tag>..origin/main`, with nothing in flight. **All of its findings go to the closing block**,
   there being no other destination. Tier Direct skips it.
+- **On a lot of one block the lead offers the waiver rather than dispatching by reflex, and the operator decides**; a
+  lot of two blocks or more gets the review. The handoff records which happened: the waiver under what is not
+  validated, the review by the findings it produced.
 - **Then the closing block, the lot's last, with its own pull request**: (b) the holistic findings fixed, each named in
   the handoff with its exit; (c) the backlog reconciled, an item closed by a block having been deleted in that block's
   own pull request; (d) the handoff in `docs/handoffs/<ISO date> - handoff - <context>.md`, written in the last code
@@ -222,7 +225,9 @@ integration, and a background command's completion does not re-invoke an idle ag
 
 **Detail.** The tag of step (e) is the base the next lot's holistic review reads, which is why it is not optional: a lot
 left untagged leaves the next review with no artefact. The single destination for holistic findings is
-`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 6, and the split leaves it unchanged; the web application
+`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 6, and the split leaves it unchanged. The waiver offered
+on a one-block lot is `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`, decision 6: a lot whose whole is one block
+leaves the review nothing the specification review and the gate did not already see. The web application
 lot's blocks 11 and 12 were that split, at 651 counted lines together against a strict 600. A lot tag is not a release
 because `release.yml` triggers on `v*` and publishes a signed image to the registry, and the `lot/` prefix cannot match
 it.
