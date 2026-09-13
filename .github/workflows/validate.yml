@@ -1,8 +1,5 @@
 name: Validate
 
-# Reusable workflow: the gate and the container image build. Called by the PR
-# workflow (push=false) and the release workflow (push=true) so both run the
-# exact same quality gate. Only the release path publishes the image to GHCR.
 on:
   workflow_call:
     inputs:
@@ -15,30 +12,23 @@ permissions:
   contents: read
 
 jobs:
-  # One call, not a list of checks. `gate` is a Dagger function (`.dagger/`) and the
-  # same command runs it on a workstation, so a check added to it is in CI the day it
-  # lands. The JDK, libvips and python3 are the function's container, not the runner's:
-  # nothing is installed here beyond the Dagger CLI.
+  # The JDK, libvips and python3 are the Dagger function's container, not the runner's: nothing is
+  # installed here beyond the CLI.
   verify:
     runs-on: ubuntu-latest
-    # A build that stops making progress has to fail rather than hold the runner: seen twice
-    # on a workstation, a Gradle task dying and the build then never reporting.
+    # Not the six-hour default: a dying Gradle task has twice left a build running and never reporting.
     timeout-minutes: 45
     outputs:
       docs-only: ${{ steps.scope.outputs.docs-only }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          # The contract guard reads the contract as origin/main has it, and the default shallow
-          # checkout fetches that ref's history not at all. The gate fails naming this line.
-          # The step below reads the same ref.
+          # The contract guard and the step below both read origin/main, which a shallow fetch lacks.
           fetch-depth: 0
       - name: Whether every changed path is a markdown file
         id: scope
-        # A whitelist, and strict: one path not ending in .md puts the pull request back on the
-        # full gate (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decisions 1 and 3).
-        # github.base_ref is empty outside a pull request, so the release path never takes the
-        # shortcut whatever it holds.
+        # docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decisions 1 to 4. github.base_ref is
+        # empty outside a pull request, which is what keeps the release path off the shortcut.
         run: |
           base='${{ github.base_ref }}'
           docs_only=false
@@ -53,46 +43,31 @@ jobs:
           echo "Documentation only: $docs_only"
           echo "docs-only=$docs_only" >> "$GITHUB_OUTPUT"
       - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77 # v8.4.1
-        # No `call` input: the action only installs the CLI, so the lines below are the
-        # commands a workstation types. The version pairs with dagger.json's engineVersion.
+        # The action only installs the CLI; the version pairs with dagger.json's engineVersion.
         with:
           version: "0.21.9"
       - name: Gate
         if: ${{ steps.scope.outputs.docs-only != 'true' }}
-        # `--progress=plain` because the default renderer redraws in place and a runner's log
-        # keeps only what was printed: without it the job shows nothing between the first
-        # container and the verdict, which reads exactly like a hang.
+        # Without --progress=plain the renderer redraws in place, a runner's log keeps only what was
+        # printed, and the job reads exactly like a hang.
         run: dagger call --progress=plain gate
       - name: Prose
         if: ${{ steps.scope.outputs.docs-only == 'true' }}
-        # What a documentation-only pull request is still made to pay: no long dash in a tracked
-        # text file, and the evidence guard's own tests. The dated documents are frozen from the
-        # first, so on a handoff or an ADR this reads nothing of the diff.
         run: dagger call --progress=plain prose
 
-  # Two calls, then the release path. `image` and `smoke` are Dagger functions (`.dagger/`),
-  # so a workstation builds the same image and starts the same container before pushing. What
-  # stays here is what needs a registry and GitHub's OIDC identity and therefore never runs
-  # locally (docs/adr/0024-three-projects-share-one-repository.md, decision 5).
-  #
-  # A pull request builds one architecture. The second is emulated and cost five and a half
-  # minutes of every run; buildx below builds both, so a release still ships both. What is
-  # accepted is a defect showing on arm64 alone reaching the release build rather than the
-  # pull request that introduced it.
+  # A pull request builds one architecture. buildx below builds both on the release path, so a
+  # release still ships both and a defect showing on arm64 alone surfaces there.
   build-image:
     needs: [verify]
-    # Skipped at the job level on a documentation-only pull request, which costs it no runner, no
-    # checkout and no Dagger install (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md,
-    # decision 1). The aggregator below accepts the skip.
+    # Skipped on a documentation-only pull request, which costs it no runner and no checkout
+    # (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decision 1).
     if: ${{ needs.verify.outputs.docs-only != 'true' }}
     runs-on: ubuntu-latest
-    # Same reason as the verify job: the Dagger cache is cold on every runner, so a build that
-    # stops making progress has to fail rather than hold the runner.
     timeout-minutes: 45
     permissions:
       contents: read
       packages: write
-      id-token: write # OIDC token for keyless cosign signing (only used when push=true)
+      id-token: write # Keyless cosign signing, on the release path only.
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77 # v8.4.1
@@ -100,15 +75,12 @@ jobs:
           version: "0.21.9"
       - name: The image builds for the platform this runner can start
         run: dagger call --progress=plain image
-      # The suite never reads production's application.properties: the test resources share its
-      # name and win by classpath order. So nothing but this starts what ships, and a datasource
-      # declaration that Ebean rejects survived a lot and a half of green builds.
+      # The only thing in the repository that starts what ships: a datasource declaration Ebean
+      # rejects survived a lot and a half of green builds.
       - name: The image starts and reports healthy
         run: dagger call --progress=plain smoke
 
-      # --- The release path (push=true only) ---
-      # The fast jar is exported from the build the two calls above already ran, so the pushed
-      # image carries the bytes the smoke test started and the runner needs no JDK of its own.
+      # Exported rather than rebuilt, so the pushed image carries the bytes smoke started.
       - name: Export the Quarkus fast jar
         if: ${{ inputs.push }}
         run: dagger call quarkus-app export --path=api/api-application/build/quarkus-app
@@ -133,17 +105,14 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha
             type=semver,pattern=v{{version}}
-      # The second build of this image, and both architectures this time. The first one is what
-      # `smoke` started; this one is what gets pushed, and cosign signs its digest, so it cannot
-      # be the other one while the registry stays out of the pipeline (decision 5 again). Both
-      # read the same Dockerfile and the same exported fast jar, and it costs a release only.
+      # A second build of the same Dockerfile and the same exported jar: cosign signs the pushed
+      # digest, which cannot be the one smoke started while the registry stays out of the pipeline
+      # (docs/adr/0024-three-projects-share-one-repository.md, decision 5).
       - name: Build and push image
         if: ${{ inputs.push }}
         id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
-          # The Dockerfile, the .dockerignore and the COPY sources all live under api/, so the
-          # context is that directory and the COPY paths inside it are unchanged by the move.
           context: ./api
           platforms: linux/amd64,linux/arm64
           push: ${{ inputs.push }}
@@ -152,14 +121,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # --- SBOM generation and signed attestations (release path only) ---
-      # Everything below runs only when push=true: there is no pushed image to
-      # attest on PRs. GHCR/OCI refs must be lowercase, but github.repository
-      # preserves the owner's original case (GeoffreyCoulaud); the SBOM/attest
-      # steps reference the image by digest directly, so lowercase it here.
       - name: Compute lowercase image ref
         if: ${{ inputs.push }}
         id: image
+        # github.repository keeps the owner's case (GeoffreyCoulaud) and an OCI reference must be
+        # lowercase.
         run: echo "ref=ghcr.io/${GITHUB_REPOSITORY,,}@${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
@@ -167,8 +133,6 @@ jobs:
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       - name: Generate CycloneDX SBOM (standard, for external consumers)
-        # Scans the final pushed image by digest; CycloneDX is the portable
-        # interchange format consumers expect.
         if: ${{ inputs.push }}
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
@@ -180,10 +144,8 @@ jobs:
           registry-password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate Syft-JSON SBOM (native, for the VEX-aware daily scan)
-        # Syft's native format preserves the image source identity
-        # (ImageMetadata: tags + repoDigests). Grype needs that to resolve
-        # image-scoped OpenVEX statements (pkg:oci/... products); CycloneDX
-        # drops it, so the daily scan reads THIS SBOM, not the CycloneDX one.
+        # Not a duplicate of the one above: Syft's own format keeps the image identity that
+        # image-scoped OpenVEX statements resolve against, which CycloneDX drops.
         if: ${{ inputs.push }}
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
@@ -195,13 +157,6 @@ jobs:
           registry-password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Attest SBOMs and VEX (keyless OIDC via cosign)
-        # Three signed attestations on the pushed image (needs id-token: write
-        # for OIDC and packages: write to push to GHCR):
-        #   - CycloneDX  : the standard SBOM for external consumers
-        #   - Syft-JSON  : consumed by grype-scan.yml (preserves image identity
-        #                  so image-scoped VEX filters correctly)
-        #   - OpenVEX    : so anyone scanning this image directly inherits the
-        #                  not_affected triage in security/vex.openvex.json
         if: ${{ inputs.push }}
         run: |
           ref='${{ steps.image.outputs.ref }}'
@@ -212,14 +167,9 @@ jobs:
           cosign attest --yes --type openvex \
             --predicate security/vex.openvex.json "$ref"
 
-  # Single required check. GitHub counts a skipped job as passing for branch
-  # protection, so the gate always runs (if: always()) and fails explicitly
-  # unless every needed job reported "success" or was skipped by its condition.
-  #
-  # Accepting "skipped" is what lets build-image carry a job-level `if:`
-  # (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decision 2). It does not
-  # let a failure through: a job skipped because the job it needs failed leaves that
-  # failure in the results, and verify has no condition of its own to be skipped by.
+  # Branch protection reads a skipped job as passing, so this single required check always runs and
+  # fails explicitly. It accepts "skipped" too (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md,
+  # decision 2), which lets no failure through: verify has no condition of its own to be skipped by.
   gate:
     needs: [verify, build-image]
     if: ${{ always() }}
