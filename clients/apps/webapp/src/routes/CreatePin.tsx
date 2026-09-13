@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
+import { TaskCentre } from "../components/TaskCentre"
 import { useCreatePin, useHandshake, type ImageSource } from "../images"
 import { uploadRefusal, type UploadRefusal } from "../lib/uploads"
 import { m } from "../paraglide/messages.js"
@@ -51,7 +52,12 @@ export function CreatePin() {
 
   return (
     <main className="mx-auto flex max-w-sm flex-col gap-4 p-8">
-      <h1 className="text-2xl font-semibold">{m.create_pin()}</h1>
+      {/* A download requested here keeps running past the navigation, so the screen that starts it
+          is the one that must show it. */}
+      <header className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-2xl font-semibold">{m.create_pin()}</h1>
+        <TaskCentre />
+      </header>
       <form
         className="flex flex-col gap-3"
         onSubmit={(event) => {

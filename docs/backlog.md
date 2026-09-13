@@ -57,9 +57,8 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   run in series because `build-image` needs `verify`, so a pull request waits about fourteen minutes.
   See `docs/handoffs/2026-09-11 - handoff - web-application.md`, which measures it, and
   `docs/handoffs/2026-09-09 - handoff - monorepo-and-pipeline.md`. New 2026-09-09, raised to `P1` 2026-09-12.
-- **Two surfaces of the first web application lot are half consumed.** `Session.renewAfter` reaches the
-  client and nothing reads it, so no client renews although both renewal answers exist; and `/pins/new`
-  carries no task centre, so a download requested there shows no progress until the navigation back.
+- **`Session.renewAfter` reaches the client and nothing reads it**, so no client renews although both
+  renewal answers exist. The `/pins/new` half of this item shipped 2026-09-13.
   See `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
 - **No manual theme switch.** Question T asked for light and dark following the system with a manual
   switch; `styles.css` sets `color-scheme: light dark` and nothing writes or reads a preference.

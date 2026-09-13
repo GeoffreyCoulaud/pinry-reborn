@@ -13,8 +13,10 @@ describe("create a pin from a URL through to the tile appearing", () => {
       ...bare,
       image: { status: "READY" as const, url: `/api/v1/pins/${bare.id}/image`, width: 800, height: 600 },
     }
-    // The download settles on the second poll, so the first render of the grid is the one that
-    // has nothing to show: what the tile waits for is the server, not the click.
+    // The download settles on the second poll that follows the request, so the first render of
+    // the grid is the one that has nothing to show: what the tile waits for is the server, not
+    // the click. Polls before the request are the creation screen's own, and settle nothing.
+    let requested = false
     let polls = 0
     const settled = () => polls > 1
     server.use(
@@ -22,12 +24,14 @@ describe("create a pin from a URL through to the tile appearing", () => {
       handshakeRoute(),
       onePinPage(() => (settled() ? [ready] : [])),
       http.post("/api/v1/pins", () => HttpResponse.json(bare, { status: 201 })),
-      http.put("/api/v1/pins/:pinId/image", () =>
-        HttpResponse.json({ status: "PENDING" }, { status: 202 }),
-      ),
+      http.put("/api/v1/pins/:pinId/image", () => {
+        requested = true
+        return HttpResponse.json({ status: "PENDING" }, { status: 202 })
+      }),
       http.get("/api/v1/me/image-downloads", () => {
-        polls += 1
-        return HttpResponse.json({ downloads: settled() ? [] : [download(bare.id, "PENDING")] })
+        if (requested) polls += 1
+        const running = requested && !settled()
+        return HttpResponse.json({ downloads: running ? [download(bare.id, "PENDING")] : [] })
       }),
     )
 
