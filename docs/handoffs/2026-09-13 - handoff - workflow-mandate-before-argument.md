@@ -132,9 +132,12 @@ ADR.
 
 ## Tier-2 questions asked
 
-None. One adjacent change was taken as tier 1 and is named in the pull request's body: the four bands
-of the backlog were a second closed list written out in two living documents, exactly what decision 2
-forbids, and `docs/backlog.md` now points at `agents/workflow.md` for them as it does for the exits.
+None, and no tier-1 fix either. The four bands of the backlog are a closed list enumerated in both
+`agents/workflow.md` and `docs/backlog.md`, so decision 2 reaches them directly: turning the
+backlog's copy into a pointer is inside this block's scope rather than an adjacent defect fixed on
+the way past. The operator confirmed that reading when the pull request first offered it as a
+boy-scout fix.
+
 One message was sent to the lead that is neither a tier-2 question nor a blocker, the brief having
 authorised it: a request for the specification review's nine findings, which no file in the working
 tree records and which this handoff has to carry.
