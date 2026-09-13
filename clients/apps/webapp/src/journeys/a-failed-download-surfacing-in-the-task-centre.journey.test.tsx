@@ -50,6 +50,20 @@ describe("a failed download surfacing in the task centre", () => {
     await waitFor(() => expect(retried).toBe(failed.id))
   })
 
+  it("Given the creation screen, Then the centre is there too and carries the running download", async () => {
+    const user = userEvent.setup()
+    server.use(
+      sessionRoute(() => true),
+      downloadsRoute(() => [download("a-pin", "PENDING")]),
+      handshakeRoute(),
+    )
+
+    renderApp("/pins/new")
+    await user.click(await screen.findByRole("button", { name: "Downloads (1)" }))
+
+    expect(await screen.findByText("Downloading")).toBeVisible()
+  })
+
   it("Given actions the API refuses, Then the centre says so rather than staying silent", async () => {
     const user = userEvent.setup()
     const failed = pin("a cat asleep", { status: "FAILED", reasonCode: "FETCH_FAILED" })
