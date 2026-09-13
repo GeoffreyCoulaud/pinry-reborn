@@ -11,8 +11,8 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   records each one and holds no copy of it. *Before beta* holds dated events no session can start early.
   *Features* is the roadmap, unsequenced. A limit is not debt and is not counted as debt.
 - **Open work is grouped by priority**, not by module. `P0` = product decisions that shape the data model and
-  the UI. `P1` = client ergonomics needed for the web UI and the browser extension. `P2` = operational debt
-  (not UI blockers). A priority may hold nothing.
+  the UI. `P1` = client ergonomics needed for the web UI and the browser extension, and the process debt a lot
+  pays for in correctness. `P2` = operational debt (not UI blockers). A priority may hold nothing.
 - **An item holds in two lines**: the symptom and where it lives, plus a pointer to the dated document that
   carries the reasoning. Never a copy of that reasoning (`agents/writing.md`, Rules). The exception is an item
   whose reasoning was only ever written here, which keeps it: dated documents are append-only, so compressing
@@ -31,8 +31,13 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 
 ## Open work
 
-### P1: Client ergonomics (needed for the web UI and browser extension)
+### P1: Client ergonomics (needed for the web UI and browser extension), and process debt
 
+- **`agents/workflow.md` is not foolproof: it states each step and its justification in one breath**, so a
+  step's closed list drifts from the phase that refines it and a reader stops before the clarification. Wanted:
+  each step short first and the essential clarification only after, plus a mermaid flowchart of the shape "for
+  each block, its steps; then the lot's steps". Its own Discuss and its own spec, no inline restructuring.
+  See `docs/handoffs/2026-09-13 - handoff - budget-follows-the-ecosystem.md`. New 2026-09-13.
 - **Browser-extension CORS origin.** Deferred from the CORS sub-project (decision B1): the extension
   does not exist yet and has no stable ID, so no origin is wired for it. When it ships, add its
   `chrome-extension://<id>` / `moz-extension://<id>` origin to `api.cors.origins`. See

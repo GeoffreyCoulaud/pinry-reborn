@@ -5,14 +5,19 @@ Date: 2026-09-13
 Specification: this document. A lot whose subject is this process writes its ADR and no separate spec
 (`agents/workflow.md`, phase 2). Tier Spec, one block: the specification review ran on this document
 in a named agent, and the holistic review runs from `main` after the block merges. This lot is the
-first exercise of decisions 4 and 6, on itself.
+first exercise of decisions 4 and 6, on itself. (Corrected: two blocks, 10 and the closing block 20,
+which is decision 6's own consequence: the holistic review's findings had no destination until it
+existed.)
 Amends: `docs/adr/0018-a-block-is-a-pull-request.md`, decision 1 (the production sub-bound becomes
 two, one per ecosystem, and gains the partition that makes it countable), decision 3 (a block table
 numbers by tens) and decision 8's third bullet (the holistic review leaves the last pull request);
 `docs/adr/0019-review-before-the-pull-request.md`, decision 1 (the holistic review no longer runs on
 the branch) and, with it, decision 4 and decision 5's second half (Corrected: the commit-range
 pinning they restored has nothing left to pin, every block being merged when the review reads them;
-the Amends line named decision 1 alone and decision 6 below already retires the range);
+the Amends line named decision 1 alone and decision 6 below already retires the range. Corrected
+again at block 20: decision 4 falls **whole** and not in its pinning alone. It says two things, and
+the first, "the mandates read a branch, not a pull request", is as dead as the second: the one
+surviving mandate reads `git diff <previous lot tag>..origin/main`, which is neither);
 `docs/adr/0020-two-reviews-and-an-inline-act.md`, decision 1 (a review agent is named,
 and the holistic review's artefact moves to `main`) and decision 4 (the count of findings against an
 already merged block is retired); `docs/adr/0023-act-in-a-teammate-per-block.md`, decision 2 (a
@@ -59,7 +64,11 @@ Counted by `git diff --numstat` over each pull request's rebased range on `main`
 prefixes decision 1 fixes. These figures supersede the ones the lot's specification carries for
 blocks 3, 6 and 10 (253 against 262, 247 against 256, 393 against 425): the specification measured at
 the first green run on the branch, this table measures the merged range, and block 2 was already
-reconciled the same way in the specification itself.
+reconciled the same way in the specification itself. (Corrected: the first two pairs were crossed.
+Block 3 is `feat/webapp-auth`, pull request 100, **247 against 262**; block 6 is `feat/webapp-grid`,
+pull request 103, **253 against 256**. The specification's figures are at
+`docs/specs/2026-09-10-web-application.md:591` and `:576`, and the table above already carries the
+merged ones in the right rows; only this sentence's pairing was wrong.)
 
 **Six of the lot's blocks are API blocks and five are client code blocks**, the twelfth being the
 closing block at one line. On the API's six: median 87, maximum 232. On the clients' five: median
@@ -183,7 +192,11 @@ decision, they were excluded by omission.
    both bounds stay strict as that decision writes them. `.dagger/` and the repository root take the
    200: markup was the argument for 400 and there is none there. A block spanning both ecosystems
    measures each against its own bound, so the figure that governs pull request 107 is its 393
-   client lines.
+   client lines. (Corrected: giving the repository root the 200 bounds nothing. The partition below
+   makes production `api/**/src/main/**`, `.dagger/src/**` and `clients/**/src/**`, so no root path
+   is ever a production line and only the 600 reaches one. `.dagger/` does have the subject the
+   sentence assumed; the root does not, and `agents/workflow.md` says so rather than assigning it a
+   bound it cannot use.)
 
    **Production is counted by prefix**, because the API's tacit `src/main` convention has no
    equivalent on the clients' side: `api/**/src/main/**`, `.dagger/src/**` and `clients/**/src/**`
@@ -239,6 +252,18 @@ decision, they were excluded by omission.
    `agents/reviews/holistic.md` is rewritten to match, its artefact, its "nothing is pushed until
    your findings are closed" and its sentence about the count all being false under this decision.
 
+   (Corrected: two things this decision left the review and the closing block without.
+   **The artefact is `git diff <previous lot tag>..origin/main`**, not `<lot base>..main`: `main` is a
+   local ref the shared working tree moves, and nothing named the base at all, which reached the
+   review through its brief alone. The repository already carries it, the previous lot's annotated
+   `lot/` tag, so the mandate names the mechanism and the review determines its own range; phase 6's
+   tag step is what keeps that true and now says so. **And the closing work splits like any other
+   block when it passes a bound**: "the closing block" is singular here and this lot's own
+   predecessor needed two pull requests, 108 and 109, 651 counted lines together against a strict
+   600. The seam is the code findings on one side and the documents, the backlog and the handoff on
+   the other, which is what those two blocks were. One destination is unchanged; it is one
+   destination, not one pull request.)
+
 7. **ADR 0023's context criterion is retired, not replaced, and this document is the record.** The
    criterion is failed as written and the operator, holding the regime satisfactory in use, retires
    it on the reading above: the ceiling halved, the worst block cut by three fifths, no compaction
@@ -293,6 +318,16 @@ measured false and which is corrected here rather than left standing; the status
 ADR 0019, ADR 0020 and ADR 0023; the handoff. Tier Spec, one pull request. The specification review
 runs on this document before the operator reads it, and the holistic review runs from `main` after
 this block merges, as decision 6 places it.
+
+**Block 20, the closing block**, `docs/closing-the-holistic-findings`: the holistic review's nine
+findings, two MAJOR and seven MINOR, each with its exit; `agents/workflow.md` (phase 3's fourth stop,
+phase 5's second run, phase 6's split and its tag, "What a block is" on the root);
+`agents/reviews/holistic.md` (the
+artefact named from the tag, and point 10 no longer moving the shared tree); `AGENTS.md` (the
+deduction bounded to the keys the test file declares and to the image); the status line of ADR 0019;
+this document's corrections above; `docs/backlog.md`, one item filed; the handoff, corrected. Tier
+Spec, one pull request, and decision 6's own first exercise: it exists because the review's findings
+had nowhere else to go. Adding this row is part of it, the document being dated and not yet frozen.
 
 **Adjacent backlog items: none.** (Corrected: the rule requires the statement and this document
 omitted it.) The file's open work is the web application's and the API's, and its `P2` band is

@@ -79,9 +79,10 @@ Three calls outside the gate, because minutes of image build have no place in `p
 
 The suite reads production's `application.properties` for every key its own file leaves alone: each
 `application.properties` on the classpath is a separate configuration source and overrides **per property**, not per
-file (Quarkus configuration reference). What the test file does declare is the deployment's own, never exercised as
-shipped, and no test starts the image at all. So a deployment defect reaches `dagger call smoke` first, and it now
-reaches it on a workstation.
+file (Quarkus configuration reference). So a key the test file leaves alone is exercised by the suite, and a defect
+in it does not wait for the image. **What waits for `dagger call smoke` is narrower**: a key the test file does
+declare, whose deployment value is then never exercised as shipped, and the image itself, no test starting it at
+all. That defect now reaches a workstation rather than only continuous integration.
 
 **A pull request builds one architecture**, the second being emulated and slow. `validate.yml` builds both with
 buildx on the release path, so a release still ships both; a defect that shows on arm64 alone therefore surfaces

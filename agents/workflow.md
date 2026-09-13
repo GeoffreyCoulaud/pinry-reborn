@@ -90,8 +90,9 @@ Three conditions:
   so and the pull request repeats it.
 - **Readable alone.** The diff stays under 600 lines, and its production lines stay under the bound of the
   ecosystem they belong to: **under 200 under `api/`, under 400 under `clients/`**, both strict
-  (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 1). `.dagger/` and the repository root take the
-  200; markup was the argument for the 400 and there is none there. A block spanning both ecosystems measures each
+  (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 1). `.dagger/` takes the 200; markup was the
+  argument for the 400 and there is none there. The repository root has no production line at all: the partition
+  below gives it none, so only the 600 ever bounds a root path. A block spanning both ecosystems measures each
   against its own bound. Past any bound the block splits, or the spec states in one line why it cannot. Outside
   the count: the dated documents (`docs/specs`, `docs/adr`, `docs/handoffs`) and the files marked
   `linguist-generated`, which are `.dagger/sdk/**`, `clients/pnpm-lock.yaml` and `contract/openapi.json`. The
@@ -126,7 +127,9 @@ request is merged before the next block starts. Wrap closes the lot.
    question to `main`, which the operator reads, and ends its turn. The operator's answer reaches it through the lead,
    by name and verbatim; the lead never answers a tier-2 question itself. A blocker takes the same path, a denied
    permission included, which is never routed through the lead. The teammate speaks only when it stops: tier-2
-   question, blocker, pull request ready.
+   question, blocker, continuous integration started, pull request ready. **Four stops, not three**
+   (`docs/adr/0023-act-in-a-teammate-per-block.md`, decision 5, as
+   `docs/adr/0028-the-budget-follows-the-ecosystem.md` amends it); phase 5 is where the third is spelled out.
 4. **Verify, entirely on the local branch. No pull request exists yet.** The teammate runs the full gate. **On the last
    code block of the lot, it writes the handoff first**, from the bodies of the lot's merged pull requests
    (`gh pr view`) and its own block, then reports. That block then merges like any other, so the handoff is on
@@ -138,7 +141,10 @@ request is merged before the next block starts. Wrap closes the lot.
    integration, the diff against the budget), tier-1 fixes, tier-2 questions with their answers, pitfalls,
    departures from the block table. It is merged only after the human has reviewed it (rebase only, no local-merge
    exemption), approval never assumed. **A red run, or a change the human asks for, returns the block to Verify**: the
-   lead forwards it by name, the teammate commits the fix, re-runs the gate and reports ready again. On the operator's
+   lead forwards it by name, the teammate commits the fix, re-runs the gate, reports that the new run has started,
+   and marks the pull request ready when the lead says that run has settled. **The stop for continuous integration
+   applies to every run of the block, not to the first alone**: ADR 0019 decision 3 puts the pull request back to
+   draft, so ready is marked again and the wait that precedes it is the same wait. On the operator's
    "merged", the lead stops the teammate by name and never messages it again, brings the shared working tree back to
    `main` (`git switch main && git pull --ff-only && git branch -d <branch>`), and the next block starts from `main`.
 
@@ -152,16 +158,24 @@ request is merged before the next block starts. Wrap closes the lot.
       branches and `ListAgents`, never from the arrival of a notice. A teammate whose report draws no answer within a
       few minutes sends it again.
 6. **Wrap.** Once per lot, and it starts after the last code block has merged. (a) **The holistic review**, in an
-   agent the lead dispatches by name on `agents/reviews/holistic.md`, over `git diff <lot base>..main` with nothing
-   in flight. **All of its findings go to the closing block**, there being no other destination
+   agent the lead dispatches by name on `agents/reviews/holistic.md`, over
+   `git diff <previous lot tag>..origin/main`, the annotated tag step (e) left behind, with nothing in flight.
+   **All of its findings go to the
+   closing block**, there being no other destination
    (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 6). Tier Direct skips it. Then the closing block,
    the lot's last, with its own pull request: (b) the holistic findings fixed, each named in the handoff with its
    exit; (c) the backlog reconciled, an item closed by a block having been deleted in that block's own pull
    request; (d) the handoff in `docs/handoffs/<ISO date> - handoff - <context>.md`, written in the last code block from
    the lot's pull requests and corrected here: current state, what was built, pitfalls, what is not validated, next
    step. After that pull request merges: (e) tag the lot, an annotated `lot/X.Y.Z-<slug>` on the
-   closing merge, pushed; (f) report what was done and the friction points, and every tier-2 question asked with the
-   answer it got. That report is the input to Improve.
+   closing merge, pushed. **That tag is the base the next lot's holistic review reads**, which is why this step is
+   not optional: a lot left untagged leaves the next review with no artefact. (f) Report what was done and the
+   friction points, and every tier-2 question asked with the answer it got. That report is the input to Improve.
+
+   **The closing work splits like any other block when it passes a bound.** "What a block is" is strict here too, so
+   findings that do not fit 600 lines become two pull requests, the seam being the code findings on one side and the
+   documents, the backlog and the handoff on the other. That is what the web application lot's blocks 11 and 12 were,
+   at 651 counted lines together. Both halves are the closing block, and decision 6's one destination is unchanged.
 
    **A lot tag is a delivery checkpoint, not a release.** `release.yml` triggers on `v*` and publishes a signed image
    to the registry; the `lot/` prefix cannot match it. A release is its own decision and its own tag.

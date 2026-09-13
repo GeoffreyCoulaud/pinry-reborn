@@ -1,7 +1,10 @@
 # Review mandate: holistic
 
-**Artefact: a whole lot on `main`**, from its base to `main`, every code block merged and nothing in
-flight. Run once per lot in tier Spec, at the head of Wrap, in an agent the lead dispatches by name;
+**Artefact: a whole lot on `main`**, `git diff <previous lot tag>..origin/main`, every code block merged and nothing
+in flight. The base is a tag and not a message: `git tag -l 'lot/*'` lists the annotated lot tags, the newest is the
+lot before this one, and you determine your own range from it rather than being told it. `origin/main` and not
+`main`, a local ref being whatever the shared working tree last left behind. Run once per lot in tier Spec, at the
+head of Wrap, in an agent the lead dispatches by name;
 the name is there so a report that does not arrive can be asked for again, which is the only second
 message you will ever get. **Your findings become the lot's closing block**, with its own pull
 request, and that is their one destination: every finding is against merged code by construction, so
@@ -9,7 +12,7 @@ none of them is counted separately and none of them gates a merge that has alrea
 
 Each pull request was read alone, by the human. Your value is what that reading cannot see: what
 the blocks do to each other, and what the lot does to the project as a whole. Read the
-specification, the handoff, then the full diff, `git diff <lot base>..main`.
+specification, the handoff, then the full diff, `git diff <previous lot tag>..origin/main`.
 
 Report findings as `SEVERITY | file:line | issue | suggested fix`, most severe first, SEVERITY one of
 `CRITICAL`, `MAJOR`, `MINOR`. **Do not edit anything.** Say plainly if you find nothing. Stay inside
@@ -46,9 +49,12 @@ the repository.
    build artefacts, leftover scaffolding, formatting churn unrelated to the work.
 10. **Red before green, across the lot.** Run `git log --oneline` over the range. Behaviour that
     arrived with no failing run behind it, in a block or in a fix applied between blocks, is a
-    finding against the process. Where a test commit's body carries no failing output, check out
-    that commit and run the test yourself before reporting. Never infer compliance from the absence
-    of evidence.
+    finding against the process. Where a test commit's body carries no failing output, run the test
+    at that commit yourself before reporting. **Never move the shared working tree**: read a file with
+    `git show <commit>:<path>`, and where a run needs a tree, make one with `git worktree add` and
+    remove it. The tree is on `main` when you start and the closing block branches from it right
+    after you, so a detached HEAD you leave behind is the next block's problem. Never infer
+    compliance from the absence of evidence.
 11. **Self-sufficient comments.** A comment states the why where it stands. One that defers to an
     identifier the reader must open elsewhere (a decision id, a section number, a ticket) explains
     nothing without that document. External references and clickable links are acceptable when they
