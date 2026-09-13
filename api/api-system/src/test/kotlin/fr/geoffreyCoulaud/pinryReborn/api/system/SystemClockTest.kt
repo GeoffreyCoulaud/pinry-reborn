@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 
+// Throwaway: one changed .kt path, so this pull request is not documentation only.
 // SystemClock is the clock adapter under test; its test compares against the real wall clock.
 @Suppress("WallClockRead")
 class SystemClockTest {
