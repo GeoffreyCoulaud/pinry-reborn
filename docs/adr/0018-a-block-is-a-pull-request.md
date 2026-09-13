@@ -6,8 +6,11 @@ two of its cuts to the block mandate, branch coverage and commit-range pinning, 
 Then by `docs/adr/0020-two-reviews-and-an-inline-act.md`: decision 4 loses its dispatch exemption,
 and decision 8's block review is removed, its three spec angles becoming one review. Then by
 `docs/adr/0023-act-in-a-teammate-per-block.md`: decision 4's inline Act moves to a named teammate
-per block in tier Spec, and the consequence on the session boundary is corrected. Decisions 1 to 3
-and 5 to 7 stand as written.
+per block in tier Spec, and the consequence on the session boundary is corrected. Then by
+`docs/adr/0028-the-budget-follows-the-ecosystem.md`: decision 1's production sub-bound becomes two,
+one per ecosystem, and gains the prefix partition that makes it countable; decision 3's block table
+numbers by tens; decision 8's third bullet moves the holistic review off the last pull request and
+onto `main` at the head of Wrap. Decision 2 and decisions 5 to 7 stand as written.
 Date: 2026-09-04
 Amends: `docs/adr/0014-review-budget-upstream.md`, whose block review this keeps, whose plan pass
 this folds into the spec pass, and whose spec pass this cuts from six angles to three.

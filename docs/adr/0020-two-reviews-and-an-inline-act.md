@@ -1,8 +1,11 @@
 # 0020. Two reviews, an inline Act, a freeze at the last merge, and a closing block
 
 Status: Accepted; decision 2 is amended by `docs/adr/0023-act-in-a-teammate-per-block.md`: in tier
-Spec, Act runs in a named teammate per block, the lead relaying the operator's answers. Decisions 1,
-3 and 4 stand as written.
+Spec, Act runs in a named teammate per block, the lead relaying the operator's answers. Then by
+`docs/adr/0028-the-budget-follows-the-ecosystem.md`: decision 1's two reviews each run in a named
+agent, and the holistic review's artefact moves from the last block's branch to `main` at the head
+of Wrap; decision 4 loses the count of findings against an already merged block, which under that
+placement every finding is. Decision 3 stands as written.
 Date: 2026-09-05
 Specification: `docs/specs/2026-09-05-p2-debt-elimination.md`, section 3 (D1, D10, D11, D12) and
 section 4.1.
