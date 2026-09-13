@@ -8,10 +8,6 @@ const LABELS: Record<ThemePreference, () => string> = {
   dark: m.theme_dark,
 }
 
-/**
- * Three states and not two: question T asked for light and dark following the system *with* a
- * manual switch, so the switch has to be able to hand the theme back.
- */
 export function ThemeSwitch() {
   const theme = useTheme()
 
