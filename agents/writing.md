@@ -35,6 +35,10 @@
 
 ## Style
 
+- **A document under `agents/` states its mandate before its argument**: short imperative bullets, one rule each and no
+  justification, then a `**Detail.**` paragraph that explains and binds nothing
+  (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). `agents/workflow.md` is
+  converted; the others conform when something next touches them.
 - **Everything in the repository is in English** (identifiers, comments, logs, commits, PRs, docs); conversation stays
   in the user's language; genuine domain data keeps its own language.
 - **Write in plain language**: lead with the point, active voice, present tense, short sentences, common words; lists,
