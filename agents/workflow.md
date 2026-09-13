@@ -103,15 +103,15 @@ arrive, or arrives truncated, can be asked for again instead of costing a second
 ### What a block is
 
 - **A block is the smallest change that can be merged to `main` on its own.** Three conditions:
-- **Green alone.** `dagger call gate` passes at the block's tip. A block therefore never ends between a red test commit
-  and the implementation that answers it.
-- **Coherent alone.** Nothing it adds is unreachable: every new port method has a caller, every configuration key is
-  read, every new state is produced somewhere. Where a surface's real consumer arrives in a later block, the spec says
-  so and the pull request repeats it.
-- **Readable alone.** The diff stays under 600 lines, and its production lines stay under the bound of the ecosystem
-  they belong to: **under 200 under `api/`, under 400 under `clients/`**, both strict. `.dagger/` takes the 200. The
-  repository root has no production line at all. A block spanning both ecosystems measures each against its own bound.
-  Past any bound the block splits, or the spec states in one line why it cannot.
+    1. **Green alone.** `dagger call gate` passes at the block's tip. A block therefore never ends between a red test
+       commit and the implementation that answers it.
+    2. **Coherent alone.** Nothing it adds is unreachable: every new port method has a caller, every configuration key
+       is read, every new state is produced somewhere. Where a surface's real consumer arrives in a later block, the
+       spec says so and the pull request repeats it.
+    3. **Readable alone.** The diff stays under 600 lines, and its production lines stay under the bound of the
+       ecosystem they belong to: **under 200 under `api/`, under 400 under `clients/`**, both strict. `.dagger/` takes
+       the 200. The repository root has no production line at all. A block spanning both ecosystems measures each
+       against its own bound. Past any bound the block splits, or the spec states in one line why it cannot.
 - **Outside the count**: the dated documents (`docs/specs`, `docs/adr`, `docs/handoffs`) and the files marked
   `linguist-generated`, which are `.dagger/sdk/**`, `clients/pnpm-lock.yaml` and `contract/openapi.json`.
 - **Production is counted by prefix**: `api/**/src/main/**`, `.dagger/src/**` and `clients/**/src/**`, less
@@ -161,8 +161,7 @@ inserted mid-lot take a number between two existing ones, so no number already w
     4. the pull request is ready.
 
 **Detail.** Four stops, not three: `docs/adr/0023-act-in-a-teammate-per-block.md`, decision 5, as
-`docs/adr/0028-the-budget-follows-the-ecosystem.md` amends it. Phase 5 operates the last two and holds the mechanics of
-all four.
+`docs/adr/0028-the-budget-follows-the-ecosystem.md` amends it. Phase 5 operates the last two.
 
 ### 4. Verify
 
@@ -244,10 +243,11 @@ it.
   (written where the decision lives, never copied to the backlog); or refused, with the reason in the handoff. Wrap
   states which exit each finding took. The default is the first.
 - **Banded by nature before priority**, four bands: Open work (`P0`, `P1`, `P2`; a priority may hold nothing), Known
-  limits (pointers to documents), Before beta (dated events), Features (the roadmap, unsequenced). A limit is not debt.
+  limits (pointers to the documents that record them, no copy kept here), Before beta (dated events no session starts
+  early), Features (the roadmap, unsequenced). A limit is not debt.
 
-**Detail.** This section is where the repository writes the two lists out; `docs/backlog.md` names them and states no
-member (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 2).
+**Detail.** This section is where the repository writes the two lists out, under the rule `agents/writing.md` carries
+in Style (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 2).
 `docs/adr/0010-review-finding-dispositions.md` decided the exits: the backlog receives what the operator refused or
 what genuinely belongs to another lot, not what was merely out of the original scope. An entry long enough to need
 scrolling is an entry nobody rereads, and a cap on the number of items would discard findings to satisfy a number,

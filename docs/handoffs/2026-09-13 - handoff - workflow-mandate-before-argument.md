@@ -7,7 +7,9 @@ Tier: Spec, implemented in a teammate. The ADR is the specification, phase 2 exe
 subject is this process from writing a separate one, and its review ran on it in a named agent. The
 holistic review has **not** run when this file is written: it runs at the head of Wrap, on `main`,
 over `git diff lot/0.12.0-budget-follows-the-ecosystem..origin/main`, so it reads this handoff after
-this block merges and block 20 corrects the file with its findings.
+this block merges and block 20 corrects the file with its findings. (Corrected: it has now run, in a
+named agent over that range, and reported no CRITICAL, two MAJOR and four MINOR, plus one tension it
+declined to call a finding. Its six findings and their exits are the section below.)
 
 ## Current state
 
@@ -115,6 +117,37 @@ ADR.
   `Falsifiable by:` become `Fails if`, decision 2's three clauses become bullets. No decision, no
   finding closure and no measurement changed in that rewrite.
 
+## The holistic review's six findings, and the exit each took
+
+The review ran at the head of Wrap over `git diff lot/0.12.0-budget-follows-the-ecosystem..origin/main`,
+in a named agent, with block 10 merged. It reported **no CRITICAL, two MAJOR and four MINOR**. **All
+six were fixed inside the lot**, in block 20: no backlog item, no accepted limit, nothing refused.
+Every one is a document finding, which is what a lot whose subject is its own process produces.
+
+| # | Finding | Exit, and where |
+|---|---|---|
+| MAJOR 1 | Decision 2's rule reached the living corpus only through `agents/workflow.md`'s `**Detail.**`, which the document's own preamble declares binds nothing. The lot made its second decision unenforceable through its first. | Fixed: the rule is a binding bullet under Style in `agents/writing.md`, scoped to the whole living corpus. What stays in `agents/workflow.md`'s `**Detail.**` is a pointer at it. |
+| MAJOR 2 | "Three conditions:" was followed by five sibling bullets: the three conditions plus "Outside the count" and "Production is counted by prefix", both of which were inside "Readable alone" at `9a34219f`. This is the previous lot's MAJOR 1 reintroduced by the restructuring that exists to prevent it. | Fixed: the three conditions are a numbered sub-list under the bullet that announces them. The two others stay siblings, which is what they are: exclusions from the count, not conditions on a block. |
+| MINOR 1 | "Phase 5 operates the last two and holds the mechanics of all four" is false. The tier-2 question and the blocker have their mechanics in phase 3's own bullets, and phase 5's `**Detail.**` already says the list lives in phase 3. | Fixed: the second half of the sentence is cut. |
+| MINOR 2 | `agents/writing.md` binds "a document under `agents/`", which includes `agents/reviews/*.md`; decision 5 of the ADR writes `agents/*.md`, a glob that excludes them, and the handoff counts the review mandates as in scope. | Fixed: a `(Corrected: ...)` on decision 5. The living document said what was meant and the ADR's glob was the narrow one. |
+| MINOR 3 | The Before beta band lost its constraint. The old backlog entry read "dated events no session can start early"; the pointer's target said only "Before beta (dated events)", and `grep -rn "start early" agents docs AGENTS.md` returned one line, in a frozen dated spec. | Fixed: the constraint is back in the target's parenthesis at `agents/workflow.md`, The backlog: "Before beta (dated events no session starts early)". |
+| MINOR 4 | `docs/backlog.md` still wrote out a member of the bands list in prose: "*Known limits* points at the document that records each one and holds no copy of it". Decision 2 says name the list and state no member. | Fixed: "no copy kept here" moves into the Known limits parenthesis at `agents/workflow.md`, and the backlog keeps the pointer plus what is its own, the reason a limit is not debt. |
+
+**A pointer is worth only what its target carries**, and MINOR 3 is what that costs. It is the lot's
+one real loss of a rule: decision 2 turned an enumeration into a pointer, and the constraint the
+enumeration carried did not survive the move because nobody checked the target for it. The two
+findings are one lesson read from both ends, MINOR 4 being a member left behind in the source and
+MINOR 3 a member arriving stripped at the target. Converting an enumeration to a pointer is a
+two-sided edit; only the source side is visible in the diff.
+
+**Decisions 1 and 4 collide on a bullet whose mandate argues in its own letter.** The review raised
+this as a tension rather than a finding, and it is the same defect in the other direction: decision 4
+says a mandate keeps its letter, decision 1's `Fails if` says a bullet that argues is a failure, and
+"Tier 2 is a question, so the work waits for the answer" under Scope is both at once. The document
+chose the letter, which is the right call, and the ADR called it a breach. Fixed here: decision 1's
+`Fails if` carries a `(Corrected: ...)` saying decision 4 wins the collision and naming that bullet,
+so what the test catches is a justification the bullet could drop without losing a rule.
+
 ## Not validated
 
 - **Nothing here is checkable by the gate.** Decision 2's own consequences say so: a grep cannot tell
@@ -123,7 +156,10 @@ ADR.
   built by hand.
 - **The form is unproven against a reader.** The signal decision 1 wants is the next lot's holistic
   review returning no finding of the shape MAJOR 1 and MINOR 5 had, and that arrives a lot too late
-  to count here.
+  to count here. (Corrected: this lot's own review already answers half of it, and the answer is no.
+  Its MAJOR 2 is the previous lot's MAJOR 1 back, in the block that restructured the document to
+  prevent it: a list flattened into its siblings. The form does not defend a list against the edit
+  that reflows it.)
 - **`agents/engineering.md`, `agents/writing.md` and `agents/reviews/*` are not converted**, by
   decision 5. Until something next touches them, `agents/` holds one document in the new form and
   four in the old, which is a mixed corpus a reader meets without warning.
@@ -149,6 +185,10 @@ Wrap. The holistic review at the head of it, in a named agent, over
 block 20, `docs/closing-the-workflow-restructure`: the review's findings with their exits, the
 backlog reconciled, this file corrected. Then the annotated `lot/0.13.0-*` tag on the closing merge,
 pushed, which is what the next lot's review will read.
+
+(Corrected: the review has run and block 20 is the closing block that answers it, this pull request.
+What is left of Wrap after it merges is phase 6's own two steps, the annotated lot tag on the closing
+merge and the report to the operator.)
 
 After the lot: the first ordinary product lot to run under both this form and ADR 0028's budget. The
 backlog's `P1` band is where its subject comes from, and the two cheapest candidates in it are the

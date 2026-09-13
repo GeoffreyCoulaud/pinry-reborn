@@ -39,6 +39,10 @@
   justification, then a `**Detail.**` paragraph that explains and binds nothing
   (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). `agents/workflow.md` is
   converted; the others conform when something next touches them.
+- **A closed list is written out in one living document**, the one carrying the rule that closes it; every other living
+  document names the list and states no member and no total
+  (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 2). The dated documents are
+  append-only and exempt. A list a document decides keeps its members there.
 - **Everything in the repository is in English** (identifiers, comments, logs, commits, PRs, docs); conversation stays
   in the user's language; genuine domain data keeps its own language.
 - **Write in plain language**: lead with the point, active voice, present tense, short sentences, common words; lists,
