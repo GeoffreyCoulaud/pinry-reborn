@@ -1,8 +1,11 @@
 # 0019. Review runs on the branch, and opening a pull request is handing it over
 
 Status: Accepted; amended by `docs/adr/0020-two-reviews-and-an-inline-act.md`, which removes the
-block review this ADR placed on the branch and the mandate its decision 5 restored. The holistic
-review's placement on the branch stands
+block review this ADR placed on the branch and the mandate its decision 5 restored. Then by
+`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 6: the holistic review no longer runs
+on the branch but on `main` at the head of Wrap, so decision 1 keeps the gate alone, and the
+commit-range pinning of decision 4 and of decision 5's second half has nothing left to pin, the
+lot's blocks being all merged when the review reads them. Decisions 2 and 3 stand as written
 Date: 2026-09-04
 Amends: `docs/adr/0018-a-block-is-a-pull-request.md`, decision 8, on where the block and holistic
 reviews run and on two of its cuts to the block mandate. Everything else in that ADR stands,

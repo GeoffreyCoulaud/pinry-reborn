@@ -1,15 +1,15 @@
 # Review mandate: holistic
 
-**Artefact: a whole lot**, from its base to the head of its last code block, after that block's
-gate has passed and its handoff is written. The earlier blocks are on `main`; the last is on its
-branch, and nothing is pushed for it until your findings are closed. Run once per lot in tier Spec,
-in a fresh subagent the lead dispatches. **Your findings become the lot's closing block**, with its
-own pull request: a
-finding against a merged block is still a finding, and the handoff counts it.
+**Artefact: a whole lot on `main`**, from its base to `main`, every code block merged and nothing in
+flight. Run once per lot in tier Spec, at the head of Wrap, in an agent the lead dispatches by name;
+the name is there so a report that does not arrive can be asked for again, which is the only second
+message you will ever get. **Your findings become the lot's closing block**, with its own pull
+request, and that is their one destination: every finding is against merged code by construction, so
+none of them is counted separately and none of them gates a merge that has already happened.
 
 Each pull request was read alone, by the human. Your value is what that reading cannot see: what
 the blocks do to each other, and what the lot does to the project as a whole. Read the
-specification, the handoff, then the full diff, `git diff <lot base>..HEAD`.
+specification, the handoff, then the full diff, `git diff <lot base>..main`.
 
 Report findings as `SEVERITY | file:line | issue | suggested fix`, most severe first, SEVERITY one of
 `CRITICAL`, `MAJOR`, `MINOR`. **Do not edit anything.** Say plainly if you find nothing. Stay inside

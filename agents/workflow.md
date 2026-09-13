@@ -31,8 +31,9 @@ Nothing is asserted without the command that established it, nothing changed wit
   `sed -i`). Exceptions: throwaway output, and commands whose declared product is the file (formatter, scaffolder,
   generator, compiler).
 - **Refuted beats plausible.** Drop a hypothesis the user's evidence contradicts.
-- **Consult the declared documentation source**, for any library, CLI or version-dependent value. The source resolves to
-  current upstream docs: Quarkus, Ebean, libvips (vips-ffm), Gradle. Name the source when a claim rests on it.
+- **Consult the current upstream documentation of the thing itself**, for any library, command line tool or
+  version-dependent value, whatever the ecosystem, through the documentation source the session declares. **Name that
+  source when a claim rests on it**, which is the rule's only observable.
 
 ## Design (how to decide)
 
@@ -56,6 +57,12 @@ A work session produces a `lot`, composed of autonomous `blocks`. Two agents sha
 lot's thread and writes no block of a tier Spec lot; and one **teammate** per block, a named background agent that
 implements it and is stopped when its pull request merges.
 
+**Every agent the lead dispatches is named, reviews included**
+(`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 4). A name buys recoverability: a report that does not
+arrive, or arrives truncated, can be asked for again instead of costing a second full review. **A review is still not
+a correspondent**: one brief out, one report back, and the lead never sends a review agent a second message except to
+ask again for a report that did not arrive.
+
 **Each block is its own branch off `main`**.   
 Branch before the first file is written.   
 Committing is cheap: commit autonomously.
@@ -68,7 +75,7 @@ both fit; if the higher trigger surfaces mid-task, stop and ask again.
 | Tier   | Trigger                                                                    | What runs                                                                       | Reviews                                                                 |
 |--------|----------------------------------------------------------------------------|---------------------------------------------------------------------------------|-------------------------------------------------------------------------|
 | Direct | One block: no design decision, no new dependency, no public-surface change | Act, Verify, Integrate and Wrap, written inline by the lead                     | None by default; the operator may still ask for one                     |
-| Spec   | Anything else                                                              | Discuss, Spec, then Act, Verify and Integrate per block in a teammate, then Wrap | The specification review, and the holistic review on the last code block |
+| Spec   | Anything else                                                              | Discuss, Spec, then Act, Verify and Integrate per block in a teammate, then Wrap | The specification review, and the holistic review at the head of Wrap    |
 
 ### What a block is
 
@@ -81,11 +88,20 @@ Three conditions:
 - **Coherent alone.** Nothing it adds is unreachable: every new port method has a caller, every configuration key is
   read, every new state is produced somewhere. Where a surface's real consumer arrives in a later block, the spec says
   so and the pull request repeats it.
-- **Readable alone.** The diff stays under 600 lines, of which under 200 of production code
-  (`docs/adr/0018-a-block-is-a-pull-request.md`). Past either bound the block splits, or the spec states in one
-  line why it cannot. Outside the count: the dated documents (`docs/specs`, `docs/adr`, `docs/handoffs`) and the
-  files marked `linguist-generated`, which are `.dagger/sdk/**`, `clients/pnpm-lock.yaml` and
-  `contract/openapi.json`. The budget measures what a human rereads.
+- **Readable alone.** The diff stays under 600 lines, and its production lines stay under the bound of the
+  ecosystem they belong to: **under 200 under `api/`, under 400 under `clients/`**, both strict
+  (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 1). `.dagger/` and the repository root take the
+  200; markup was the argument for the 400 and there is none there. A block spanning both ecosystems measures each
+  against its own bound. Past any bound the block splits, or the spec states in one line why it cannot. Outside
+  the count: the dated documents (`docs/specs`, `docs/adr`, `docs/handoffs`) and the files marked
+  `linguist-generated`, which are `.dagger/sdk/**`, `clients/pnpm-lock.yaml` and `contract/openapi.json`. The
+  budget measures what a human rereads.
+
+  **Production is counted by prefix**, the API's tacit `src/main` convention having no equivalent on the clients'
+  side, so that two readers counting the same block get the same number. Production is `api/**/src/main/**`,
+  `.dagger/src/**` and `clients/**/src/**`, less `clients/**/src/journeys/**`, `clients/**/src/test/**` and any
+  `*.test.ts` or `*.test.tsx`. Configuration, message catalogues, markdown and build files are outside the
+  production count and inside the 600.
 
 ### The phases
 
@@ -94,9 +110,15 @@ request is merged before the next block starts. Wrap closes the lot.
 
 1. **Discuss** : Explore the project, read the backlog, and ask the user questions to align. No code, no files.
 2. **Spec** : One document, `docs/specs/<ISO date>-<slug>.md` describing in detail the work to do, its block table
-   included. Reviewed once by an adversarial subagent the lead dispatches on `agents/reviews/spec.md`, its findings
-   closed, then by the user. It is delivered in the first block's pull request and freezes when the lot's last block
-   merges (`agents/writing.md`). A lot whose subject is this process writes its ADR and no separate spec.
+   included. Reviewed once by an adversarial agent the lead dispatches by name on `agents/reviews/spec.md`, its
+   findings closed, then by the user. It is delivered in the first block's pull request and freezes when the lot's
+   last block merges (`agents/writing.md`). A lot whose subject is this process writes its ADR and no separate spec.
+
+   **The block table numbers its blocks by tens**, so a block inserted mid-lot takes a number between two existing
+   ones and no number already written in the prose goes stale
+   (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 2). The block count is the table's rows, not its
+   last number; a gap means a block was dropped or a number left free, which the table says in the row it keeps or
+   in the line that removes it.
 3. **Act.** One block, in a teammate the lead spawns from `main` once the previous pull request has merged; one
    teammate lives at a time. Its brief points at the block's row in the spec, the spec, `AGENTS.md`, the branch name
    and the report shape under Integrate, and restates nothing. Strict TDD as `agents/engineering.md` states it. An
@@ -107,25 +129,38 @@ request is merged before the next block starts. Wrap closes the lot.
    question, blocker, pull request ready.
 4. **Verify, entirely on the local branch. No pull request exists yet.** The teammate runs the full gate. **On the last
    code block of the lot, it writes the handoff first**, from the bodies of the lot's merged pull requests
-   (`gh pr view`) and its own block, then reports. The lead dispatches the holistic review
-   (`agents/reviews/holistic.md`) over the whole lot, `git diff <lot base>..<that block's head>`, merged blocks
-   included: it reads the handoff, its findings against the current block go back to its teammate, and the rest
-   become the closing block, the lot's last, with its own pull request. Tier Direct skips it.
-5. **Integrate.** The teammate pushes, opens the pull request as a draft, waits for continuous integration, marks it
-   ready and sends the link to `main`. The pull request's body is the block's report, in five parts: evidence (gate,
-   continuous integration, the diff against the budget), tier-1 fixes, tier-2 questions with their answers, pitfalls,
+   (`gh pr view`) and its own block, then reports. That block then merges like any other, so the handoff is on
+   `main` for the holistic review to read: the review runs at the head of Wrap
+   (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 6), not here.
+5. **Integrate.** The teammate pushes, opens the pull request as a draft, reports that continuous integration has
+   started and ends its turn. When the lead tells it the run has settled, it marks the pull request ready and sends
+   the link to `main`. The pull request's body is the block's report, in five parts: evidence (gate, continuous
+   integration, the diff against the budget), tier-1 fixes, tier-2 questions with their answers, pitfalls,
    departures from the block table. It is merged only after the human has reviewed it (rebase only, no local-merge
    exemption), approval never assumed. **A red run, or a change the human asks for, returns the block to Verify**: the
    lead forwards it by name, the teammate commits the fix, re-runs the gate and reports ready again. On the operator's
    "merged", the lead stops the teammate by name and never messages it again, brings the shared working tree back to
    `main` (`git switch main && git pull --ff-only && git branch -d <branch>`), and the next block starts from `main`.
-6. **Wrap.** Once per lot. The first half is the closing block: (a) the holistic findings fixed, each named in the
-   handoff with its exit, and the count of those against an already merged block stated, that number being what series
-   costs in rework; (b) the backlog reconciled, an item closed by a block having been deleted in that block's own pull
-   request; (c) the handoff in `docs/handoffs/<ISO date> - handoff - <context>.md`, written in the last code block from
+
+   Three rules on how the two agents wait (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 3):
+    - **The gate runs as a foreground command**, under the tool's ten-minute ceiling, which a workstation's gate fits
+      in.
+    - **The wait for continuous integration stops the teammate.** No run of the measured lot finished under that
+      ceiling and the median was 14.2 minutes, so the foreground branch never applies here. A background command's
+      completion does not re-invoke an idle agent, so a monitor is never the mechanism.
+    - **The lead looks rather than waits**: it establishes a teammate's state from the open pull requests, the remote
+      branches and `ListAgents`, never from the arrival of a notice. A teammate whose report draws no answer within a
+      few minutes sends it again.
+6. **Wrap.** Once per lot, and it starts after the last code block has merged. (a) **The holistic review**, in an
+   agent the lead dispatches by name on `agents/reviews/holistic.md`, over `git diff <lot base>..main` with nothing
+   in flight. **All of its findings go to the closing block**, there being no other destination
+   (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 6). Tier Direct skips it. Then the closing block,
+   the lot's last, with its own pull request: (b) the holistic findings fixed, each named in the handoff with its
+   exit; (c) the backlog reconciled, an item closed by a block having been deleted in that block's own pull
+   request; (d) the handoff in `docs/handoffs/<ISO date> - handoff - <context>.md`, written in the last code block from
    the lot's pull requests and corrected here: current state, what was built, pitfalls, what is not validated, next
-   step. The second half runs after that pull request merges: (d) tag the lot, an annotated `lot/X.Y.Z-<slug>` on the
-   closing merge, pushed; (e) report what was done and the friction points, and every tier-2 question asked with the
+   step. After that pull request merges: (e) tag the lot, an annotated `lot/X.Y.Z-<slug>` on the
+   closing merge, pushed; (f) report what was done and the friction points, and every tier-2 question asked with the
    answer it got. That report is the input to Improve.
 
    **A lot tag is a delivery checkpoint, not a release.** `release.yml` triggers on `v*` and publishes a signed image

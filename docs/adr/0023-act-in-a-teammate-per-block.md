@@ -1,6 +1,13 @@
 # 0023. Act runs in a teammate per block, and the lead keeps the lot's thread
 
-Status: Accepted
+Status: Accepted; amended by `docs/adr/0028-the-budget-follows-the-ecosystem.md`: decision 2's two
+reviews are dispatched as named agents rather than plain unnamed subagents; decision 7's holistic
+review moves to `main` at the head of Wrap, with one destination for its findings and no commit
+range to freeze; and two consequences go, the context criterion retired by that ADR's decision 7 and
+the foreground wait, which moves into `agents/workflow.md` phase 5 and splits in two, the gate
+staying in the foreground and the wait for continuous integration stopping the teammate. That last
+one gives decision 5 a fourth stop, "the run has started", and turns decision 6's wait for
+continuous integration into a stop the lead ends. Decisions 1, 3 and 4 stand as written.
 Date: 2026-09-07
 Specification: this document. A lot whose subject is this process writes its ADR and no separate
 spec (`agents/workflow.md`, phase 2). Tier Spec, one block: the specification review ran on this
