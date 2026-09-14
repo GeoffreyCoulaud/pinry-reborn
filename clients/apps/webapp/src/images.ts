@@ -1,8 +1,16 @@
 import type { Schemas } from "@pinry-reborn/auth"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+  type QueryClient,
+} from "@tanstack/react-query"
 import { useEffect, useRef } from "react"
 import { auth, bodyOf } from "./api"
-import { downloadPollInterval, hasSettled, type DownloadProgress } from "./lib/downloads"
+import { downloadPollInterval, settledPinIds, type DownloadProgress } from "./lib/downloads"
+import { replacePins } from "./lib/tiles"
+import type { PinPage } from "./pins"
 
 export type Download = Schemas["ImageDownloadOutputDto"]
 
@@ -59,6 +67,30 @@ export function useHandshake() {
 }
 
 /**
+ * The settled pins written into the pages the grid already holds. Invalidating the catalogue
+ * instead costs one request per page scrolled: an infinite query is one cache entry, and
+ * TanStack Query refetches its pages in series (query invalidation guide, `maxPages`).
+ */
+async function rereadSettledPins(queryClient: QueryClient, pinIds: readonly string[]) {
+  const fresh = await Promise.all(
+    pinIds.map(async (pinId) =>
+      bodyOf(
+        await auth.client.GET("/api/v1/pins/{pinId}", { params: { path: { pinId } } }),
+        "the pin",
+      ),
+    ),
+  )
+  queryClient.setQueryData<InfiniteData<PinPage>>(PINS, (catalogue) =>
+    catalogue === undefined
+      ? catalogue
+      : {
+          ...catalogue,
+          pages: catalogue.pages.map((page) => ({ ...page, pins: replacePins(page.pins, fresh) })),
+        },
+  )
+}
+
+/**
  * The downloads running or failed, reread while the server still has work. A settled one is the
  * only thing that changes a pin without the user touching it, so it is what rereads the grid.
  */
@@ -74,10 +106,13 @@ export function useImageDownloads() {
 
   useEffect(() => {
     const current = downloads.data ?? []
-    if (hasSettled(previous.current, current)) {
-      void queryClient.invalidateQueries({ queryKey: PINS })
-    }
+    const settled = settledPinIds(previous.current, current)
     previous.current = current
+    if (settled.length === 0) return
+    // A pin that could not be read leaves the grid stale, so the catalogue answers for it instead.
+    void rereadSettledPins(queryClient, settled).catch(() =>
+      queryClient.invalidateQueries({ queryKey: PINS }),
+    )
   }, [downloads.data, queryClient])
 
   return downloads

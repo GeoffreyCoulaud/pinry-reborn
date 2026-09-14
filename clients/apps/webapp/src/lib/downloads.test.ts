@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { downloadPollInterval, hasSettled } from "./downloads"
+import { downloadPollInterval, settledPinIds } from "./downloads"
 
 const running = (pinId: string) => ({ pinId, status: "PENDING" as const })
 const failed = (pinId: string) => ({ pinId, status: "FAILED" as const })
@@ -24,18 +24,22 @@ describe("the task centre's polling", () => {
 
 describe("what the grid has to reread", () => {
   it("Given a download that left the list, Then its pin now carries an image", () => {
-    expect(hasSettled([running("a")], [])).toBe(true)
+    expect(settledPinIds([running("a")], [])).toEqual(["a"])
   })
 
   it("Given a download that failed, Then its pin's tile has a reason to show", () => {
-    expect(hasSettled([running("a")], [failed("a")])).toBe(true)
+    expect(settledPinIds([running("a")], [failed("a")])).toEqual(["a"])
+  })
+
+  it("Given two that settled at once, Then both pins are named", () => {
+    expect(settledPinIds([running("a"), running("b")], [])).toEqual(["a", "b"])
   })
 
   it("Given a download still running, Then the grid is unchanged", () => {
-    expect(hasSettled([running("a")], [running("a")])).toBe(false)
+    expect(settledPinIds([running("a")], [running("a")])).toEqual([])
   })
 
   it("Given a failure the user dismissed, Then the grid is unchanged", () => {
-    expect(hasSettled([failed("a")], [])).toBe(false)
+    expect(settledPinIds([failed("a")], [])).toEqual([])
   })
 })
