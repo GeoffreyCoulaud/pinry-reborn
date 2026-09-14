@@ -40,4 +40,16 @@ interface ImageDownloadRepositoryInterface {
 
     /** Unconditional delete of the pin's download row (idempotent). */
     fun deleteByPinId(pinId: UUID)
+
+    /**
+     * Bulk CAS on PENDING: the rows last updated before [cutoff] become FAILED with [reason],
+     * stamped [now]. The only thing that ends a download no worker is advancing any more.
+     */
+    fun failPendingBefore(cutoff: Instant, reason: DownloadReason, now: Instant): Int
+
+    /**
+     * Delete the FAILED rows last updated before [cutoff]. Unlike [findByAuthor] neither sweep
+     * filters on the pin's state: what is reclaimed is the row, not what a requester can see.
+     */
+    fun deleteFailedBefore(cutoff: Instant): Int
 }

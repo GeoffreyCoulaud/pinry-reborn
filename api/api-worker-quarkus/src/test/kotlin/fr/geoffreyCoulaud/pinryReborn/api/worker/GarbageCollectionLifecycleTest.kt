@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.worker
 
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapExpiredSessionTokens
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapOrphanedStorage
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapStaleImageDownloads
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapTombstonedAccounts
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.ReapTerminalTasks
 import io.mockk.every
@@ -18,6 +19,7 @@ class GarbageCollectionLifecycleTest {
     private val reapOrphanedStorage = mockk<ReapOrphanedStorage>(relaxed = true)
     private val reapTombstonedAccounts = mockk<ReapTombstonedAccounts>(relaxed = true)
     private val reapTerminalTasks = mockk<ReapTerminalTasks>(relaxed = true)
+    private val reapStaleImageDownloads = mockk<ReapStaleImageDownloads>(relaxed = true)
     private val executor = mockk<PeriodicScheduler>(relaxed = true)
     private val config = mockk<GarbageCollectionConfig>()
 
@@ -26,6 +28,7 @@ class GarbageCollectionLifecycleTest {
         reapOrphanedStorage = reapOrphanedStorage,
         reapTombstonedAccounts = reapTombstonedAccounts,
         reapTerminalTasks = reapTerminalTasks,
+        reapStaleImageDownloads = reapStaleImageDownloads,
         executor = executor,
         config = config,
     )
@@ -41,6 +44,7 @@ class GarbageCollectionLifecycleTest {
         verify(exactly = 1) { reapOrphanedStorage.reap() }
         verify(exactly = 1) { reapTombstonedAccounts.reap() }
         verify(exactly = 1) { reapTerminalTasks.reap() }
+        verify(exactly = 1) { reapStaleImageDownloads.reap() }
         // ... and safeAll is scheduled at the config interval (initial and fixed delay)
         verify { executor.scheduleWithFixedDelay(any(), 1000L, 1000L, TimeUnit.MILLISECONDS) }
     }
@@ -56,7 +60,7 @@ class GarbageCollectionLifecycleTest {
     }
 
     @Test
-    fun `Given every sweep succeeds, Then safeAll runs all four once`() {
+    fun `Given every sweep succeeds, Then safeAll runs all five once`() {
         // Given: no mock throws, so every sweep covers its try arm
         // When
         lifecycle().safeAll()
@@ -65,6 +69,7 @@ class GarbageCollectionLifecycleTest {
         verify(exactly = 1) { reapOrphanedStorage.reap() }
         verify(exactly = 1) { reapTombstonedAccounts.reap() }
         verify(exactly = 1) { reapTerminalTasks.reap() }
+        verify(exactly = 1) { reapStaleImageDownloads.reap() }
     }
 
     @Test
@@ -74,6 +79,7 @@ class GarbageCollectionLifecycleTest {
         every { reapOrphanedStorage.reap() } throws RuntimeException("orphan boom")
         every { reapTombstonedAccounts.reap() } throws RuntimeException("tomb boom")
         every { reapTerminalTasks.reap() } throws RuntimeException("tasks boom")
+        every { reapStaleImageDownloads.reap() } throws RuntimeException("downloads boom")
 
         // When / Then: no exception escapes (each throw is caught by its own catch arm and logged
         // at ERROR; the log itself is not asserted here, matching ExportRetentionLifecycleTest)
@@ -84,6 +90,7 @@ class GarbageCollectionLifecycleTest {
         verify(exactly = 1) { reapOrphanedStorage.reap() }
         verify(exactly = 1) { reapTombstonedAccounts.reap() }
         verify(exactly = 1) { reapTerminalTasks.reap() }
+        verify(exactly = 1) { reapStaleImageDownloads.reap() }
     }
 
     @Test

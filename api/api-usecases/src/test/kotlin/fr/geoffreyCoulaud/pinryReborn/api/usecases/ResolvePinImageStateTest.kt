@@ -163,6 +163,10 @@ class ResolvePinImageStateTest {
         override fun recordLastError(pinId: UUID, lastError: String, now: Instant): Boolean = error("not used")
         override fun deleteIfPending(pinId: UUID): Int = error("not used")
         override fun deleteByPinId(pinId: UUID) = error("not used")
+        override fun deleteFailedBefore(cutoff: Instant): Int = error("not used")
+
+        override fun failPendingBefore(cutoff: Instant, reason: DownloadReason, now: Instant): Int =
+            error("not used")
     }
 
     /** The single connection's pool: a write queued while a transaction holds it lands when that ends. */
