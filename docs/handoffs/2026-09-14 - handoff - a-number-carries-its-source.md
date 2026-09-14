@@ -83,14 +83,22 @@ the `P1` band beside the other process debt. No open item was adjacent to this l
 - **Whether ADR 0028's observation holds for a teammate.** The amendment covers the lead alone. The
   teammate half, block 11's monitor that never re-invoked it, is neither refuted nor re-established
   here, which is why the stop for continuous integration is still the teammate's rule.
-- **The holistic review.** This lot is one block, so `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`,
-  decision 6, has the lead offer the waiver and the operator decide. The closing block corrects this
-  sentence with what happened.
+- **The holistic review, waived.** This lot is one block, so
+  `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`, decision 6, has the lead offer the waiver and
+  the operator decide; the operator waived it. The reason: one block, markdown alone, no production
+  line, and a specification review that returned twenty findings all closed before the operator read
+  the ADR. **The reservation stands with it.** The mandate-before-argument conversion of
+  `agents/writing.md` and the two review mandates is the bulk of the block's diff: of the 320 lines
+  `git diff --numstat main..HEAD` counts outside the dated documents, the two mandates alone are 253
+  and decisions 1 and 2 account for about fifteen of those. A wide rewrite is exactly what a review
+  reading the lot as a whole could have caught. The waiver was granted knowing that argument, not in
+  place of it.
 
 ## Next step
 
-Wrap: the waiver offered or the holistic review dispatched, then the closing block with the backlog
-reconciled and this handoff corrected, then the annotated `lot/0.18.0-*` tag on the closing merge.
+Wrap, with the holistic review already waived and no findings to place: the closing block with the
+backlog reconciled and this handoff corrected, then the annotated `lot/0.18.0-*` tag on the closing
+merge. Step (e) is not optional: the tag is the base the next lot's holistic review reads.
 
 The thing to watch is the next lot's specification review: whether its report reaches
 `.reviews/<lot>-spec.md` and whether the marker line is at the end of the message that names it. A
