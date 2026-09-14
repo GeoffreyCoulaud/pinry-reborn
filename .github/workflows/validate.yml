@@ -25,6 +25,14 @@ jobs:
       contents: read
       packages: write
       id-token: write # Keyless cosign signing, on the release path only.
+      actions: write # Deleting the engine state entries a save replaces, on main only.
+    env:
+      # One place for the version dagger.json pins: the CLI, the engine image and the cache key.
+      ENGINE_VERSION: "0.21.9"
+      STATE_DIR: /mnt/dagger/state
+      ARCHIVE: /mnt/dagger/state.tar.zst
+      _EXPERIMENTAL_DAGGER_RUNNER_HOST: docker-container://dagger-engine
+      ZSTD_NBTHREADS: "4"
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -50,7 +58,45 @@ jobs:
       - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77 # v8.4.1
         # The action only installs the CLI; the version pairs with dagger.json's engineVersion.
         with:
-          version: "0.21.9"
+          version: ${{ env.ENGINE_VERSION }}
+
+      # The engine is the job's own, so the job owns its state and can carry it from one run to the
+      # next (docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md, decisions 2 to 5). The
+      # runner's own engine dies with the runner, which is why every run used to start from nothing.
+      - name: Prepare the engine state directory
+        run: |
+          sudo mkdir -p "$STATE_DIR"
+          sudo chown "$(id -u):$(id -g)" "$(dirname "$STATE_DIR")"
+      # Rolling key: GitHub's entries are immutable, so a fixed one would refuse every save after
+      # the first and freeze the cache on one merge.
+      - name: Restore the engine state
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.ARCHIVE }}
+          key: dagger-state-v${{ env.ENGINE_VERSION }}-${{ github.sha }}
+          restore-keys: dagger-state-v${{ env.ENGINE_VERSION }}-
+      - name: Unpack the engine state
+        run: |
+          if [ ! -f "$ARCHIVE" ]; then
+            echo "No archive restored: this run starts from nothing."
+            exit 0
+          fi
+          sudo tar --zstd -xf "$ARCHIVE" -C "$STATE_DIR"
+          sudo du -sh "$STATE_DIR"
+      - name: Start the engine on that state
+        run: |
+          docker run --detach --privileged \
+            --name dagger-engine \
+            --volume "$STATE_DIR":/var/lib/dagger \
+            --volume "$PWD/.github/engine.json":/etc/dagger/engine.json \
+            "registry.dagger.io/engine:v$ENGINE_VERSION"
+          for _ in $(seq 1 60); do
+            if dagger core version; then exit 0; fi
+            sleep 2
+          done
+          echo "::error::the engine never answered"
+          docker logs dagger-engine
+          exit 1
       # The gate, then the image built and smoked from the fast jar the gate itself produced. A
       # pull request builds one architecture; buildx below builds both on the release path, so a
       # release still ships both and a defect showing on arm64 alone surfaces there.
@@ -69,6 +115,38 @@ jobs:
       - name: Export the Quarkus fast jar
         if: ${{ inputs.push }}
         run: dagger call quarkus-app export --path=api/api-application/build/quarkus-app
+
+      # A pull request restores and never saves: the entry it wrote would be scoped to its own merge
+      # ref and no other pull request could read it. Stopped before it is read, a state captured
+      # from a running engine not being assumed restorable (ADR 0031, decisions 3 and 4).
+      - name: Stop the engine and archive its state
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          docker stop -t 180 dagger-engine
+          sudo du -sh "$STATE_DIR"
+          sudo tar --zstd -cf "$ARCHIVE" -C "$STATE_DIR" .
+          sudo chown "$(id -u):$(id -g)" "$ARCHIVE"
+          ls -l "$ARCHIVE"
+      - name: Save the engine state
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.ARCHIVE }}
+          key: dagger-state-v${{ env.ENGINE_VERSION }}-${{ github.sha }}
+      # One entry at a time is a condition and not a tidiness: the archive is about three gigabytes
+      # against the four the repository's ten-gigabyte quota leaves, so a second would evict the
+      # release path's buildx cache.
+      - name: Delete the engine state entries this run replaces
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          prefix="dagger-state-v${ENGINE_VERSION}-"
+          gh cache list --key "$prefix" --limit 100 --json id,key \
+            | jq -r --arg keep "${prefix}${{ github.sha }}" '.[] | select(.key != $keep) | .id' \
+            | xargs -r -n1 gh cache delete
+
       - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
         if: ${{ inputs.push }}
       - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0

@@ -5,13 +5,19 @@
 set -e
 
 # A push that sends no object has nothing to validate, and neither the working tree nor the gate
-# bears on it (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decision 5). That is a push
-# whose every reference is a tag on a commit origin/main already contains, which step (e) of Wrap
-# guarantees by tagging a merge. A branch in the push, or a tag the remote cannot reach, runs the
-# gate. Git feeds this hook one line per pushed reference, "<local ref> <local sha> <remote ref>
-# <remote sha>"; the loop reads standard input directly, so what it sets outlives it.
+# bears on it (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decision 5, as
+# docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md decision 8 extends it). Two such
+# pushes: a deletion, which git announces with an all-zero local sha, and a tag on a commit
+# origin/main already contains, which step (e) of Wrap guarantees by tagging a merge. A branch in
+# the push, or a tag the remote cannot reach, runs the gate. Git feeds this hook one line per pushed
+# reference, "<local ref> <local sha> <remote ref> <remote sha>"; the loop reads standard input
+# directly, so what it sets outlives it.
 sends_objects=""
 while read -r local_ref local_sha _rest; do
+    case "$local_sha" in
+        *[!0]*) ;;
+        *) continue ;;
+    esac
     case "$local_ref" in
         refs/tags/*) git merge-base --is-ancestor "$local_sha" origin/main || sends_objects=yes ;;
         *) sends_objects=yes ;;

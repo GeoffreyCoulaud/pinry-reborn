@@ -1,0 +1,17 @@
+{
+  "gc": {
+    "policies": [
+      {
+        "keepDuration": "1440h",
+        "maxUsedSpace": "7GB"
+      },
+      {
+        "maxUsedSpace": "7GB"
+      },
+      {
+        "all": true,
+        "maxUsedSpace": "7GB"
+      }
+    ]
+  }
+}
