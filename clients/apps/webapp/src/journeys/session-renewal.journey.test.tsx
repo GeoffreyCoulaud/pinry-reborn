@@ -28,8 +28,7 @@ describe("session renewal", () => {
     renderApp("/")
 
     expect(await screen.findByRole("img", { name: ready.description })).toBeVisible()
-    // The grid, the task centre and the handshake all leave together once the session answers,
-    // so a renewal each application holds separately is three where the session needs one.
+    // The grid, the task centre and the handshake leave together: an unshared renewal is three.
     await waitFor(() => expect(renewals).toBe(1))
   })
 
@@ -45,7 +44,6 @@ describe("session renewal", () => {
 
     renderApp("/")
 
-    // A deployment that refuses the renewal has not ended the session: only its own 401 does.
     expect(await screen.findByRole("img", { name: ready.description })).toBeVisible()
   })
 })

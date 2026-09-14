@@ -53,34 +53,24 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
   client.use({
     async onRequest({ request, schemaPath }) {
       if (schemaPath !== RENEWAL) await renewIfDue()
-      // After the renewal and not before: a bearer renewal answers a new token, and the call
-      // that waited for it is the first that has to carry it.
+      // After the renewal, never before: a bearer renewal answers a new token.
       if (token !== undefined) request.headers.set("Authorization", `Bearer ${token}`)
       return request
     },
   })
 
-  /**
-   * What every session answer leaves behind. A cookie answer is 200 and a bearer answer 201, so
-   * the token is absent by shape and not by a nullable field
-   * (docs/adr/0026-one-session-two-transports.md, decision 4).
-   */
+  /** A cookie answer is 200 and a bearer answer 201, so the token is absent by shape and not by a
+   * nullable field (docs/adr/0026-one-session-two-transports.md, decision 4). */
   function adopt(session: Schemas["CreatedSessionOutputDto"] | Schemas["ExistingSessionOutputDto"]): Session {
     if ("token" in session) token = session.token
     renewAfter = session.renewAfter
     return { expiresAt: session.expiresAt, renewAfter: session.renewAfter }
   }
 
-  /**
-   * The renewal the API recommended, awaited by the call that found it due so the session is
-   * pushed back before the user needs it. One renewal is shared: a page load leaves with several
-   * calls at once and each would otherwise ask for its own.
-   */
   async function renewIfDue(): Promise<void> {
     if (renewAfter === undefined || Date.parse(renewAfter) > Date.now()) return
+    // Shared, a page load leaving with several calls at once; swallowed, only the API's 401 ending a session.
     renewal ??= renew().finally(() => (renewal = undefined))
-    // A refused renewal is not an answer about the session: the call it held goes out, and the
-    // API's own 401 is what ends the session.
     await renewal.catch(() => {})
   }
 
