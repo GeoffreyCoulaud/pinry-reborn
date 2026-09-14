@@ -25,7 +25,7 @@ class EbeanImageDownloadRepository(
         val model = ImageDownload(
             pinId = pinId, sourceUrl = sourceUrl, status = DownloadStatus.PENDING, reasonCode = null,
             lastError = null, taskId = taskId, requestedAt = now, updatedAt = now,
-        ).toModel()
+        ).toModel(id = UUID.randomUUID())
         persistor.save(model)
         return model.toDomain()
     }

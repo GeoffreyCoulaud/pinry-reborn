@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<migration xmlns="http://ebean-orm.github.io/xml/ns/dbmigration">
+    <changeSet type="apply">
+        <alterColumn columnName="pin_id" tableName="image_download" currentType="uuid" notnull="true" currentNotnull="false"/>
+        <addColumn tableName="image_download">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+        </addColumn>
+        <createIndex indexName="ux_image_download_pin" tableName="image_download" columns="" definition="create unique index ux_image_download_pin on image_download (pin_id)"/>
+    </changeSet>
+</migration>

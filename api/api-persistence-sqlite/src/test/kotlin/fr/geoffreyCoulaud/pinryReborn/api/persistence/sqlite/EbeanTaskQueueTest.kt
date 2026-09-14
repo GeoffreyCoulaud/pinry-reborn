@@ -645,12 +645,14 @@ class EbeanTaskQueueTest : RepositoryTest() {
 
     @Test
     fun `Given tasks in every state, Then findLiveIds keeps the PENDING and RUNNING ones`() {
-        // Given: one task per state, plus an id no task carries
-        val pending = queue.enqueue(newTask())
-        val running = claimFresh()
+        // Given: one task per state, plus an id no task carries. The still PENDING one is enqueued
+        // last: claimFresh claims the earliest available task and not necessarily the one it just
+        // added, so a PENDING row left lying around is claimed out from under this test.
         val succeeded = claimFresh().also { queue.markSucceeded(it.id, it.leaseId, now) }
         val dead = claimFresh().also { queue.markDead(it.id, it.leaseId, now, "boom") }
         val cancelled = queue.enqueue(newTask()).also { queue.cancelPending(it.id, now) }
+        val running = claimFresh()
+        val pending = queue.enqueue(newTask())
         val gone = UUID.randomUUID()
 
         // When

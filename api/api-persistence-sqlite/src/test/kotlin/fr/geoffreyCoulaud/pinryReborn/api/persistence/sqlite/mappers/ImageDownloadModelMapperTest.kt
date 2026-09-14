@@ -18,7 +18,7 @@ class ImageDownloadModelMapperTest {
             reasonCode = null, lastError = null, taskId = randomUUID(),
             requestedAt = Instant.parse("2026-07-10T00:00:00Z"), updatedAt = Instant.parse("2026-07-10T00:00:01Z"),
         )
-        assertEquals(download, download.toModel().toDomain())
+        assertEquals(download, download.toModel(id = randomUUID()).toDomain())
     }
 
     @Test
@@ -28,6 +28,6 @@ class ImageDownloadModelMapperTest {
             reasonCode = DownloadReason.ACCESS_DENIED, lastError = "403", taskId = randomUUID(),
             requestedAt = Instant.parse("2026-07-10T00:00:00Z"), updatedAt = Instant.parse("2026-07-10T00:00:02Z"),
         )
-        assertEquals(download, download.toModel().toDomain())
+        assertEquals(download, download.toModel(id = randomUUID()).toDomain())
     }
 }

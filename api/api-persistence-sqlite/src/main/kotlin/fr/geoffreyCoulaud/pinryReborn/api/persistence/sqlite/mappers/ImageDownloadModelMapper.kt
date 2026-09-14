@@ -4,10 +4,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.ImageDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.ImageDownloadModel
+import java.util.UUID
 
 object ImageDownloadModelMapper {
-    fun ImageDownload.toModel() = ImageDownloadModel(
-        pinId = pinId, sourceUrl = sourceUrl, status = status.name, reasonCode = reasonCode?.name,
+    /** [id] is the row's surrogate key, which the domain does not carry: the pin identifies a download. */
+    fun ImageDownload.toModel(id: UUID) = ImageDownloadModel(
+        id = id, pinId = pinId, sourceUrl = sourceUrl, status = status.name, reasonCode = reasonCode?.name,
         lastError = lastError, taskId = taskId, requestedAt = requestedAt, updatedAt = updatedAt,
     )
 
