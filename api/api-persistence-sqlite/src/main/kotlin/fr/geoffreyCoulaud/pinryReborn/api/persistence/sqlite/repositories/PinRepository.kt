@@ -18,6 +18,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinBoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinTagModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QImageModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinBoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinTagModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
@@ -25,6 +26,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelPag
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.PinModelSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.PinQueries
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActiveBoard
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withPinInAnyState
 import jakarta.enterprise.context.ApplicationScoped
 import java.time.Instant
 import java.util.UUID
@@ -155,16 +157,17 @@ class PinRepository(
         pinIdsByContentHashQuery(user, contentHash).findSingleAttributeList()
 
     /**
-     * The subquery keeps author and state on the pin side while `ix_images_content_hash` serves the read.
-     * `internal` so its plan test reads this SQL, and the override above must keep delegating to it.
+     * Rooted on the image so `ix_images_content_hash` stays the selective predicate. `internal` so
+     * its plan test reads this SQL, and the override above must keep delegating to it.
      */
     internal fun pinIdsByContentHashQuery(user: User, contentHash: String) =
-        PinQueries
-            .any()
-            .author.id
+        QImageModel()
+            .withPinInAnyState()
+            .contentHash
+            .equalTo(contentHash)
+            .pin.author.id
             .equalTo(user.id)
-            .select("id")
-            .raw("id in (select pin_id from images where content_hash = ?)", contentHash)
+            .select("pinId")
 
     override fun findPinById(id: UUID): Pin? {
         val pin =

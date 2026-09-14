@@ -104,11 +104,12 @@ class PinRepositoryContentHashTest : PinRepositoryFixtures() {
         query.findSingleAttributeList<UUID>()
 
         // When
+        // Rooted on the image, the content hash is the first predicate and so binds first.
         val plan =
             database
                 .sqlQuery("explain query plan ${query.query().generatedSql}")
-                .setParameter(1, author.id.toString())
-                .setParameter(2, contentHash)
+                .setParameter(1, contentHash)
+                .setParameter(2, author.id.toString())
                 .findList()
                 .joinToString("\n") { "${it["detail"]}" }
 
