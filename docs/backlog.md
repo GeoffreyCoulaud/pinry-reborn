@@ -46,10 +46,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 - **The grid cannot cap the pages it holds.** A capped `useInfiniteQuery` drops the pages at the far end
   and nothing reloads them upward, so block 6 ships no cap and the query keeps every page scrolled.
   See `docs/specs/2026-09-10-web-application.md`, section 4.7. New 2026-09-11.
-- **`Session.renewAfter` reaches the client and nothing reads it**, so no client renews although both
-  renewal answers exist. The `/pins/new` half of this item shipped 2026-09-13.
-  See `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
-
 ### P2: Operational debt
 
 - **The `raw(` calls in production have never been audited.** Thirteen remain across nine files, and
