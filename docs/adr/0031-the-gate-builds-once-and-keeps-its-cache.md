@@ -109,16 +109,34 @@ therefore opens with a spike, and decisions 2 to 6 are conditional on it.
    collects on a runner. The bound must sit above what one gate produces and below what the quota
    affords, and **the sweep must not evict the Gradle home and pnpm store cache volumes**, which are
    the thing being kept: a policy that reclaims them destroys what decision 4 saves. The spike fixes
-   the value and establishes the policy that spares them.
+   the value and establishes the policy that spares them. (Corrected: the policy is the generated
+   list less its first entry, and the value is 7 GB. Read at `v0.21.9`, the list Dagger generates
+   when `gc.policies` is absent opens with a policy filtering `type==exec.cachemount`, which is
+   exactly these two volumes, with a `keepDuration` of 48 hours and a 512 MB cap; a restored state
+   whose volumes were last used before that loses them.
+   `internal/buildkit/cmd/buildkitd/config/gcpolicy.go`, `DefaultGCPolicy`, is where that list is
+   written, and `engine/server/gc.go`, `getDagqlGCPolicy`, is where a declared `gc.policies`
+   bypasses it entirely. So `.github/engine.json` declares the three remaining policies and drops
+   the first. 7 GB sits above the 6.2 GB one cold gate produced and, at the 0.41 compression ratio
+   the spike measured, caps the archive near 3 GB against the 4 GB the quota leaves free.)
 6. **`org.gradle.caching=true`.** Worth nothing alone, the build cache living in the engine state
    decision 4 keeps, and decision 4 is worth a quarter less without it.
 7. **`org.gradle.parallel` is refused**, on the cold failure reproduced at two memory bounds.
+8. **A push that deletes a reference runs no gate.**
+   `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`, decision 5, enumerated one push that sends
+   no object, a tag on a commit `origin/main` already contains. A deletion is the other: git
+   announces it with an all-zero local sha and it sends nothing, which is the principle that
+   decision states in its own first sentence. `.githooks/pre-push` matched on the reference name
+   alone, so deleting a branch paid a full gate.
 
 ## Consequences
 
 **A first run after an eviction or an engine version bump pays the full cold price**, and seven days
-without a push to `main` is enough to lose the entry. The failure mode is a slow run, never a wrong
-one.
+without a push to `main` is enough to lose the entry. (Corrected: seven days is GitHub's eviction of
+an entry nothing reads, and under the generated policy list it was not what bit first. Forty-eight
+hours was, and what it took was the cache volumes inside a restored entry rather than the entry
+itself. Decision 5's explicit `gc.policies` removes that policy, which leaves the seven days as the
+binding delay the sentence says it is.) The failure mode is a slow run, never a wrong one.
 
 **The lot's own cache competes with the release path's.** Decision 4 keeps one entry and deletes its
 predecessors, but that entry still occupies space the buildx cache had. If the spike measures a
@@ -139,7 +157,7 @@ runner before and one after.
 | Block | Branch | Content | Journeys |
 |---|---|---|---|
 | 10 | `ci/one-job-one-gradle-build` | Decision 1: `ci` in `.dagger/src/index.ts`, `validate.yml`, the root `AGENTS.md` | A pull request reports `validate / gate` green with one `BUILD SUCCESSFUL` line in the log instead of two, and the `verify` job's own duration under seven minutes, read from `gh run view --json jobs` rather than from wall clock; `dagger call gate`, `dagger call image` and `dagger call smoke` each still run alone on a workstation; a documentation-only pull request still runs `prose`, builds no image and reports green |
-| 20 | `ci/the-engine-keeps-its-cache` | The spike, then decisions 2 to 7 if it holds: the engine the job starts, `engine.json`, the restore, save and prune steps in `validate.yml`, `org.gradle.caching` in `api/gradle.properties` | **The spike first**, on a throwaway branch: two successive pushes, the second on a different runner, the second run's Gradle line reporting tasks from cache after a restore from `actions/cache`, and the `restore` and `save` steps timed and their entry's compressed size read from `gh api .../actions/caches`. Then the block: a throwaway pull request opened after the block merges and `main` saves, perturbing one file of `api-usecases` as the probe did, reports **at least 60 of 170 tasks from cache** against the 73 the probe measured; `gh api .../actions/cache/usage` shows one entry carrying the engine version prefix, not two |
+| 20 | `ci/the-engine-keeps-its-cache` | The spike, then decisions 2 to 7 if it holds: the engine the job starts, `engine.json`, the restore, save and prune steps in `validate.yml`, `org.gradle.caching` in `api/gradle.properties` (Corrected: decision 8 joined this block, the defect surfacing while the spike's own branch was deleted) | **The spike first**, on a throwaway branch: two successive pushes, the second on a different runner, the second run's Gradle line reporting tasks from cache after a restore from `actions/cache`, and the `restore` and `save` steps timed and their entry's compressed size read from `gh api .../actions/caches`. Then the block: a throwaway pull request opened after the block merges and `main` saves, perturbing one file of `api-usecases` as the probe did, reports **at least 60 of 170 tasks from cache** against the 73 the probe measured; `gh api .../actions/cache/usage` shows one entry carrying the engine version prefix, not two |
 
 Two blocks. Block 10 is the only one with a production line, `.dagger/src/**` against the 200 that
 prefix takes; block 20 touches configuration and one build file alone, so only the 600 bounds it.

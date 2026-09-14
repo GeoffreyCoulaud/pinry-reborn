@@ -67,11 +67,12 @@ norms, its commands and its gate; this file carries what holds for the repositor
 A check whose scope is the repository goes to `.dagger/`; a check whose scope is one ecosystem goes to that
 ecosystem's own gate.
 
-**It is paid where it can fail** (`docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`). Two pushes are let off, both
-because they can carry no defect the gate would catch: a pull request whose every changed path ends in `.md` runs
-`dagger call prose` in its place and builds no image, and a push whose every reference is a tag on a commit
-`origin/main` already contains runs nothing at all. One path not ending in `.md`, or one branch in the push, and the
-full gate is back.
+**It is paid where it can fail** (`docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`, as
+`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md` decision 8 extends it). Three pushes are let off, each
+because it can carry no defect the gate would catch: a pull request whose every changed path ends in `.md` runs
+`dagger call prose` in its place and builds no image, and a push whose every reference is either a deletion or a tag on
+a commit `origin/main` already contains runs nothing at all. One path not ending in `.md`, or one branch in the push,
+and the full gate is back.
 
 ## The image
 
@@ -104,6 +105,16 @@ to the pipeline is on the next pull request with nothing to add here. What CI st
 path, which needs a registry and GitHub's identity: the push to GHCR, the cosign attestations, both SBOMs and the
 OpenVEX predicate. That path calls the pipeline once more, `dagger call quarkus-app export`, a cache hit on the
 build `ci` already ran, so the image `buildx` pushes carries the bytes `dagger call smoke` started.
+
+**The job starts its own engine and keeps its state between runs** (`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md`,
+decisions 2 to 6). A container named `dagger-engine` is started on a state directory `actions/cache` restored, with
+`.github/engine.json` mounted at `/etc/dagger/engine.json`, and the CLI reaches it through
+`_EXPERIMENTAL_DAGGER_RUNNER_HOST`. **A pull request restores and never saves; a push to `main` stops the engine,
+archives the state, saves it under a key carrying the engine version and the commit, and deletes every older entry
+sharing that prefix.** One entry is a condition and not a tidiness: the archive is about three gigabytes against
+the four the repository's ten-gigabyte quota leaves free, so a second would evict the release path's buildx cache.
+**`.github/engine.json` declares `gc.policies` rather than a bound alone**, because the list Dagger generates
+otherwise reclaims the Gradle home and pnpm store volumes, which are the thing being kept.
 
 ## Gotchas
 

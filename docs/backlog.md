@@ -50,10 +50,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   invalidates `["pins"]`, and TanStack Query refetches all stored pages in series: fifty pages scrolled
   cost fifty `GET /api/v1/pins` per settled download.
   See `docs/handoffs/2026-09-11 - handoff - web-application.md`, finding 10. New 2026-09-12.
-- **A pull request pays two cold Gradle builds**, one in `verify` and one in `build-image`, and the two
-  run in series because `build-image` needs `verify`, so a pull request waits about fourteen minutes.
-  See `docs/handoffs/2026-09-11 - handoff - web-application.md`, which measures it, and
-  `docs/handoffs/2026-09-09 - handoff - monorepo-and-pipeline.md`. New 2026-09-09, raised to `P1` 2026-09-12.
 - **`Session.renewAfter` reaches the client and nothing reads it**, so no client renews although both
   renewal answers exist. The `/pins/new` half of this item shipped 2026-09-13.
   See `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
