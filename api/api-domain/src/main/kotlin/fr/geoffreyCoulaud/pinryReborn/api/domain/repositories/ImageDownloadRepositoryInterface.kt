@@ -42,14 +42,14 @@ interface ImageDownloadRepositoryInterface {
     fun deleteByPinId(pinId: UUID)
 
     /**
-     * Bulk CAS on PENDING: the rows last updated before [cutoff] become FAILED with [reason],
-     * stamped [now]. The only thing that ends a download no worker is advancing any more.
+     * Every PENDING row, with the task id that says whether one is still being advanced. Bounded by
+     * the downloads in flight, the sweep below being what keeps an abandoned one from staying here.
      */
-    fun failPendingBefore(cutoff: Instant, reason: DownloadReason, now: Instant): Int
+    fun findPending(): List<ImageDownload>
 
     /**
-     * Delete the FAILED rows last updated before [cutoff]. Unlike [findByAuthor] neither sweep
-     * filters on the pin's state: what is reclaimed is the row, not what a requester can see.
+     * Delete the FAILED rows last updated before [cutoff]. Neither sweep read filters on the pin's
+     * state, unlike [findByAuthor]: this is about the row, not about what a requester can see.
      */
     fun deleteFailedBefore(cutoff: Instant): Int
 }

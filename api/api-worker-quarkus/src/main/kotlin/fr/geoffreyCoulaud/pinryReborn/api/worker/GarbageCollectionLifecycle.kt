@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit
  * a string qualifier.
  */
 @ApplicationScoped
-@Suppress("LongParameterList") // CDI-injected: one parameter per sweep, plus the scheduler and its interval.
+@Suppress("LongParameterList")
 class GarbageCollectionLifecycle(
     private val reapExpiredSessionTokens: ReapExpiredSessionTokens,
     private val reapOrphanedStorage: ReapOrphanedStorage,

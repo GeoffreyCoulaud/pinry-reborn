@@ -22,7 +22,7 @@ import jakarta.enterprise.inject.Produces
 /**
  * CDI wiring for the four garbage collection sweeps whose constructor takes a primitive ARC cannot
  * resolve ([ReapOrphanedStorage] takes an `Int`, [ReapTombstonedAccounts] a `Duration`,
- * [ReapTerminalTasks] a `Duration`, [ReapStaleImageDownloads] two).
+ * [ReapTerminalTasks] and [ReapStaleImageDownloads] a `Duration`).
  * Mirrors [ExportProducers.reapExpiredUserDataExports]:
  * `GarbageCollectionConfig` lives in `api-worker-quarkus`, so a use case in `api-usecases` cannot
  * take it directly and the primitive is read here. `ReapExpiredSessionTokens` is
@@ -72,14 +72,15 @@ class GarbageCollectionProducers {
     @ApplicationScoped
     fun reapStaleImageDownloads(
         imageDownloadRepository: ImageDownloadRepositoryInterface,
+        taskQueue: TaskQueueInterface,
         clock: Clock,
         config: GarbageCollectionConfig,
     ): ReapStaleImageDownloads =
         ReapStaleImageDownloads(
             imageDownloadRepository,
+            taskQueue,
             clock,
             failedGrace = config.failedDownloadGrace(),
-            pendingGrace = config.pendingDownloadGrace(),
         )
 
     @Produces
