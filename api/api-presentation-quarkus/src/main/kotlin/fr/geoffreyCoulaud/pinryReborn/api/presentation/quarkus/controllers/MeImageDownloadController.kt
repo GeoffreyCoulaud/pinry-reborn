@@ -1,8 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ImageDownloadListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ImageDownloadDtoMapper.toDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ImageDownloads
@@ -11,6 +14,7 @@ import io.quarkus.security.identity.SecurityIdentity
 import jakarta.ws.rs.DELETE
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
+import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
@@ -36,7 +40,7 @@ class MeImageDownloadController(
     )
     @APIResponse(
         responseCode = "200",
-        description = "The caller's downloads, running and failed",
+        description = "One page of the caller's downloads, running and failed",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -44,7 +48,13 @@ class MeImageDownloadController(
             ),
         ],
     )
-    fun listImageDownloads(): ImageDownloadListOutputDto = imageDownloads.list(securityIdentity.getUser()).toDto()
+    fun listImageDownloads(
+        @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
+        @QueryParam("pageSize") pageSizeInput: Int? = null,
+    ): ImageDownloadListOutputDto =
+        imageDownloads
+            .list(securityIdentity.getUser(), cursorInput?.toDomain(), pageSizeInput ?: DEFAULT_PAGE_SIZE)
+            .toDto()
 
     @DELETE
     @Path("/{pinId}")
@@ -63,5 +73,9 @@ class MeImageDownloadController(
     fun deleteImageDownload(pinId: UUID): RestResponse<Void> {
         imageDownloads.delete(securityIdentity.getUser(), pinId)
         return RestResponse.noContent()
+    }
+
+    private companion object {
+        const val DEFAULT_PAGE_SIZE = 20
     }
 }

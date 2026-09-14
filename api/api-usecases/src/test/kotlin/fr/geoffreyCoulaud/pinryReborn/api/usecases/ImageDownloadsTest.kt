@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.ImageDownload
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
@@ -43,13 +44,14 @@ class ImageDownloadsTest {
     )
 
     @Test
-    fun `Given rows the requester owns, Then list hands back what the traversal found`() {
+    fun `Given rows the requester owns, Then list hands back the page the traversal found`() {
         // Given
         val rows = listOf(row(DownloadStatus.PENDING), row(DownloadStatus.FAILED, randomUUID()))
-        every { downloads.findByAuthor(requester.id) } returns rows
+        val page = Page(items = rows, previousCursor = null, nextCursor = null)
+        every { downloads.findByAuthor(requester.id, null, PAGE_SIZE) } returns page
 
-        // When / Then
-        assertEquals(rows, subject.list(requester))
+        // When / Then: the cursor and the page size travel through untouched
+        assertEquals(page, subject.list(requester, cursor = null, pageSize = PAGE_SIZE))
     }
 
     @Test
@@ -63,7 +65,7 @@ class ImageDownloadsTest {
         // Then
         verify { downloads.deleteByPinId(pinId) }
         // The list is every row the requester owns, and a deletion of one of them needs one.
-        verify(exactly = 0) { downloads.findByAuthor(any()) }
+        verify(exactly = 0) { downloads.findByAuthor(any(), any(), any()) }
     }
 
     @Test
@@ -84,5 +86,9 @@ class ImageDownloadsTest {
         // When / Then
         assertThrows(ImageDownloadDoesNotExistError::class.java) { subject.delete(requester, pinId) }
         verify(exactly = 0) { downloads.deleteByPinId(any()) }
+    }
+
+    private companion object {
+        const val PAGE_SIZE = 20
     }
 }

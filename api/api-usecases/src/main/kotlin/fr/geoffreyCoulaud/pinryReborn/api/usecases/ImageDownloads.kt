@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.ImageDownload
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageDownloadRepositoryInterface
@@ -19,7 +21,8 @@ class ImageDownloads(
     private val imageDownloadRepository: ImageDownloadRepositoryInterface,
     private val transactionRunner: TransactionRunner,
 ) {
-    fun list(requester: User): List<ImageDownload> = imageDownloadRepository.findByAuthor(requester.id)
+    fun list(requester: User, cursor: Cursor?, pageSize: Int): Page<ImageDownload> =
+        imageDownloadRepository.findByAuthor(requester.id, cursor, pageSize)
 
     /**
      * Drops one settled row: what the requester cannot see is absent, and a running row belongs to

@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.ImageDownload
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageDownloadRepositoryInterface
@@ -8,6 +10,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.ImageDownloadModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.ImageDownloadModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QImageDownloadModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ImageDownloadModelSortStrategy
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelPaginationHelper
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActivePin
 import jakarta.enterprise.context.ApplicationScoped
 import java.time.Instant
@@ -40,13 +45,24 @@ class EbeanImageDownloadRepository(
 
     // The recycled state is stated by the queries package and nowhere else, here through the
     // extension that navigates the association rather than a subquery this file would spell out.
-    override fun findByAuthor(authorId: UUID): List<ImageDownload> =
-        QImageDownloadModel()
-            .withActivePin()
-            .pin.author.id.equalTo(authorId)
-            .orderBy().requestedAt.desc()
-            .findList()
-            .map { it.toDomain() }
+    override fun findByAuthor(authorId: UUID, cursor: Cursor?, pageSize: Int): Page<ImageDownload> {
+        val modelCursor =
+            cursor
+                ?.let { QImageDownloadModel().id.equalTo(it.pivotId).findOne() }
+                ?.let { ModelCursor(pivot = it, direction = cursor.direction) }
+        val modelPage =
+            ModelPaginationHelper.getPage(
+                cursor = modelCursor,
+                pageSize = pageSize,
+                baseQuery = QImageDownloadModel().withActivePin().pin.author.id.equalTo(authorId),
+                sortStrategy = ImageDownloadModelSortStrategy(),
+            )
+        return Page(
+            items = modelPage.items.map { it.toDomain() },
+            nextCursor = modelPage.nextCursor?.toDomain(),
+            previousCursor = modelPage.previousCursor?.toDomain(),
+        )
+    }
 
     override fun findByAuthorAndPin(authorId: UUID, pinId: UUID): ImageDownload? =
         QImageDownloadModel()

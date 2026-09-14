@@ -1,6 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.ImageDownload
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadStatusDto
@@ -51,11 +54,39 @@ class ImageDownloadDtoMapperTest {
     }
 
     @Test
-    fun `Given a list of downloads, Then the dto holds one item per row`() {
-        // Given / When
-        val dto = listOf(download(DownloadStatus.PENDING, null)).toDto()
+    fun `Given a page of downloads, Then the dto holds one item per row and both cursors`() {
+        // Given
+        val next = Cursor(pivotId = randomUUID(), direction = CursorDirection.FORWARD)
+        val page = Page(
+            items = listOf(download(DownloadStatus.PENDING, null)),
+            previousCursor = null,
+            nextCursor = next,
+        )
+
+        // When
+        val dto = page.toDto()
 
         // Then
         assertEquals(listOf(pinId), dto.downloads.map { it.pinId })
+        assertNull(dto.pagination.previousCursor)
+        assertEquals(next.pivotId, dto.pagination.nextCursor?.pivotId)
+    }
+
+    @Test
+    fun `Given a last page, Then the dto carries the cursor back and none forward`() {
+        // Given: the mirror of the case above, so neither cursor is mapped on one branch alone
+        val previous = Cursor(pivotId = randomUUID(), direction = CursorDirection.BACKWARD)
+        val page = Page(
+            items = listOf(download(DownloadStatus.FAILED, DownloadReason.NOT_FOUND)),
+            previousCursor = previous,
+            nextCursor = null,
+        )
+
+        // When
+        val dto = page.toDto()
+
+        // Then
+        assertEquals(previous.pivotId, dto.pagination.previousCursor?.pivotId)
+        assertNull(dto.pagination.nextCursor)
     }
 }

@@ -9,6 +9,7 @@
   "dismissal_refused": "That task could not be forgotten.",
   "downloads": "Downloads ({count})",
   "downloads_empty": "Nothing is downloading.",
+  "downloads_partial": "Downloads ({count}+)",
   "file_too_heavy": "This file is heavier than this server accepts.",
   "file_too_large": "This image has more pixels than this server accepts.",
   "home_heading": "Your pins",

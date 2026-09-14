@@ -87,7 +87,12 @@ export function onePinPage(pins: () => Pin[]) {
 
 /** The task centre's list, answered from what the journey decided last. */
 export function downloadsRoute(rows: () => unknown[] = () => []) {
-  return http.get("/api/v1/me/image-downloads", () => HttpResponse.json({ downloads: rows() }))
+  return http.get("/api/v1/me/image-downloads", () => HttpResponse.json(downloadsPage(rows())))
+}
+
+/** One page of downloads, the shape the route answers: the rows, and no page after them. */
+export function downloadsPage(downloads: unknown[], nextCursor?: unknown) {
+  return { downloads, pagination: { previousCursor: null, nextCursor: nextCursor ?? null } }
 }
 
 /** The deployment's limits and rendition sizes, as narrow as the journey needs them to be. */

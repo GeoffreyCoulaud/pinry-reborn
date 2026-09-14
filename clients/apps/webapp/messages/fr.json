@@ -9,6 +9,7 @@
   "dismissal_refused": "Cette tâche n’a pas pu être oubliée.",
   "downloads": "Téléchargements ({count})",
   "downloads_empty": "Aucun téléchargement en cours.",
+  "downloads_partial": "Téléchargements ({count}+)",
   "file_too_heavy": "Ce fichier est plus lourd que ce que ce serveur accepte.",
   "file_too_large": "Cette image a plus de pixels que ce que ce serveur accepte.",
   "home_heading": "Vos épingles",

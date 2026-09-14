@@ -2,7 +2,15 @@ import { screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { HttpResponse, http } from "msw"
 import { describe, expect, it } from "vitest"
-import { download, handshakeRoute, pin, pinsRoute, renderApp, sessionRoute } from "../test/app"
+import {
+  download,
+  downloadsPage,
+  handshakeRoute,
+  pin,
+  pinsRoute,
+  renderApp,
+  sessionRoute,
+} from "../test/app"
 import { server } from "../test/server"
 
 describe("create a pin from a URL through to the tile appearing", () => {
@@ -33,7 +41,7 @@ describe("create a pin from a URL through to the tile appearing", () => {
       http.get("/api/v1/me/image-downloads", () => {
         if (requested) polls += 1
         const running = requested && !settled()
-        return HttpResponse.json({ downloads: running ? [download(bare.id, "PENDING")] : [] })
+        return HttpResponse.json(downloadsPage(running ? [download(bare.id, "PENDING")] : []))
       }),
     )
 
