@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportIssueRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ImportDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ImportPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
@@ -83,5 +84,22 @@ class UserDataImportIssueListerTest : BaseTest() {
 
         // Then
         assertEquals(page, result)
+    }
+
+    @Test
+    fun `Given a page size outside the bounds, Then list clamps it before it reaches the store`() {
+        // Given: at zero the pagination helper answers an empty page with no cursor at all, which a
+        // client honouring the contract can never advance past
+        every { repository.findById(importId) } returns importFor(userId = user.id)
+        val empty = Page<UserDataImportIssue>(items = emptyList(), previousCursor = null, nextCursor = null)
+        every { issueRepository.findAllForImport(importId, cursor, any()) } returns empty
+
+        // When
+        lister.list(user, importId, cursor, pageSize = 0)
+        lister.list(user, importId, cursor, pageSize = 10_000)
+
+        // Then
+        verify { issueRepository.findAllForImport(importId, cursor, 1) }
+        verify { issueRepository.findAllForImport(importId, cursor, PinGetter.MAX_PAGE_SIZE) }
     }
 }

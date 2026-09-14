@@ -7,12 +7,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ExportDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ExportPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
@@ -76,5 +78,21 @@ class UserDataExportGetterTest : BaseTest() {
 
         // Then
         assertEquals(page, result)
+    }
+
+    @Test
+    fun `Given a page size outside the bounds, Then list clamps it before it reaches the store`() {
+        // Given: at zero the pagination helper answers an empty page with no cursor at all, which a
+        // client honouring the contract can never advance past
+        val empty = Page<UserDataExport>(items = emptyList(), previousCursor = null, nextCursor = null)
+        every { repository.findAllForUser(user.id, null, any()) } returns empty
+
+        // When
+        getter.list(user, cursor = null, pageSize = 0)
+        getter.list(user, cursor = null, pageSize = 10_000)
+
+        // Then
+        verify { repository.findAllForUser(user.id, null, 1) }
+        verify { repository.findAllForUser(user.id, null, PinGetter.MAX_PAGE_SIZE) }
     }
 }

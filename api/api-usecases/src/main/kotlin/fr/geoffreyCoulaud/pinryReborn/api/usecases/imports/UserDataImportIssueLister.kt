@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImportIssue
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportIssueRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinGetter
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
@@ -21,6 +22,6 @@ class UserDataImportIssueLister(
         pageSize: Int,
     ): Page<UserDataImportIssue> {
         getter.get(user, importId)
-        return issueRepository.findAllForImport(importId, cursor, pageSize)
+        return issueRepository.findAllForImport(importId, cursor, pageSize.coerceIn(1, PinGetter.MAX_PAGE_SIZE))
     }
 }
