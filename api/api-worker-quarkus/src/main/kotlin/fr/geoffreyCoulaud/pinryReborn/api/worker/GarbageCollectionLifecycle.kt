@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.worker
 
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapExpiredSessionTokens
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapOrphanedStorage
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapStaleImageDownloads
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapTombstonedAccounts
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.ReapTerminalTasks
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -12,10 +13,10 @@ import jakarta.enterprise.event.Observes
 import java.util.concurrent.TimeUnit
 
 /**
- * Drives the periodic garbage collection lifecycle: runs the four `Reap*` sweeps on application
+ * Drives the periodic garbage collection lifecycle: runs the five `Reap*` sweeps on application
  * startup, keeps sweeping on a fixed delay so inert rows and orphaned files do not accumulate, and
  * stops the scheduler on shutdown. Mirrors [ExportRetentionLifecycle]; the only structural
- * difference is four sweeps instead of one, each isolated in its own try/catch inside [safeAll] so
+ * difference is five sweeps instead of one, each isolated in its own try/catch inside [safeAll] so
  * one throwing sweep is logged and does not stop the others (spec
  * docs/specs/2026-07-27-periodic-gc.md, D4). The scheduler is a [PeriodicScheduler] wired as a
  * `@Dependent` producer (one instance per lifecycle injection, so one thread per role), so the
@@ -24,11 +25,13 @@ import java.util.concurrent.TimeUnit
  * a string qualifier.
  */
 @ApplicationScoped
+@Suppress("LongParameterList") // CDI-injected: one parameter per sweep, plus the scheduler and its interval.
 class GarbageCollectionLifecycle(
     private val reapExpiredSessionTokens: ReapExpiredSessionTokens,
     private val reapOrphanedStorage: ReapOrphanedStorage,
     private val reapTombstonedAccounts: ReapTombstonedAccounts,
     private val reapTerminalTasks: ReapTerminalTasks,
+    private val reapStaleImageDownloads: ReapStaleImageDownloads,
     private val executor: PeriodicScheduler,
     private val config: GarbageCollectionConfig,
 ) {
@@ -73,6 +76,11 @@ class GarbageCollectionLifecycle(
             reapTerminalTasks.reap()
         } catch (e: Exception) {
             logger.error(e) { "terminal task sweep failed" }
+        }
+        try {
+            reapStaleImageDownloads.reap()
+        } catch (e: Exception) {
+            logger.error(e) { "stale image download sweep failed" }
         }
     }
 

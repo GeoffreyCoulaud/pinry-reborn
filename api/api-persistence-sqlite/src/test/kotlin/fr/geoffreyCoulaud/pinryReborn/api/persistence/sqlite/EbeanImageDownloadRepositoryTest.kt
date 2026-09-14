@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.util.UUID
 import java.util.UUID.randomUUID
 
 class EbeanImageDownloadRepositoryTest : RepositoryTest() {
@@ -24,6 +25,13 @@ class EbeanImageDownloadRepositoryTest : RepositoryTest() {
     private val now = Instant.parse("2026-07-10T00:00:00Z")
 
     private fun saveUser(): User = users.saveUser(User(randomUUID(), createRandomString(), createdAt = now))
+
+    private fun failedAt(updatedAt: Instant): UUID {
+        val pinId = randomUUID()
+        repository.upsertPending(pinId, "https://x/i.png", randomUUID(), updatedAt)
+        repository.markFailed(pinId, DownloadReason.NOT_FOUND, updatedAt)
+        return pinId
+    }
 
     private fun savePin(author: User): Pin =
         pins.savePin(
@@ -102,6 +110,76 @@ class EbeanImageDownloadRepositoryTest : RepositoryTest() {
         repository.deleteByPinId(pinId)
         assertNull(repository.findByPinId(pinId))
         repository.deleteByPinId(randomUUID()) // must not throw
+    }
+
+    @Test
+    fun `Given FAILED rows either side of the cutoff, Then deleteFailedBefore removes only the older`() {
+        // Given
+        val stale = failedAt(now)
+        val recent = failedAt(now.plusSeconds(SIXTY_SECONDS))
+        val pending = repository.upsertPending(randomUUID(), "https://x/i.png", randomUUID(), now).pinId
+
+        // When
+        val deleted = repository.deleteFailedBefore(now.plusSeconds(1))
+
+        // Then: the cutoff is read against updatedAt, and a PENDING row is never deleted
+        assertEquals(1, deleted)
+        assertNull(repository.findByPinId(stale))
+        assertEquals(DownloadStatus.FAILED, repository.findByPinId(recent)?.status)
+        assertEquals(DownloadStatus.PENDING, repository.findByPinId(pending)?.status)
+    }
+
+    @Test
+    fun `Given PENDING rows either side of the cutoff, Then failPendingBefore settles only the older`() {
+        // Given
+        val stale = repository.upsertPending(randomUUID(), "https://x/i.png", randomUUID(), now).pinId
+        val fresh =
+            repository.upsertPending(randomUUID(), "https://x/i.png", randomUUID(), now.plusSeconds(SIXTY_SECONDS))
+                .pinId
+        val settledAt = now.plusSeconds(SIXTY_SECONDS * 2)
+
+        // When
+        val settled = repository.failPendingBefore(now.plusSeconds(1), DownloadReason.INTERNAL_ERROR, settledAt)
+
+        // Then: the stale row carries the reason and the sweep's instant, so its own grace starts there
+        assertEquals(1, settled)
+        val row = repository.findByPinId(stale)
+        assertEquals(DownloadStatus.FAILED, row?.status)
+        assertEquals(DownloadReason.INTERNAL_ERROR, row?.reasonCode)
+        assertEquals(settledAt, row?.updatedAt)
+        assertEquals(DownloadStatus.PENDING, repository.findByPinId(fresh)?.status)
+    }
+
+    @Test
+    fun `Given a FAILED row past the cutoff, Then failPendingBefore leaves its reason alone`() {
+        // Given
+        val failed = failedAt(now)
+
+        // When
+        val settled = repository.failPendingBefore(now.plusSeconds(1), DownloadReason.INTERNAL_ERROR, now)
+
+        // Then
+        assertEquals(0, settled)
+        assertEquals(DownloadReason.NOT_FOUND, repository.findByPinId(failed)?.reasonCode)
+    }
+
+    @Test
+    fun `Given a recycled pin carrying a stale row, Then both sweeps still reach it`() {
+        // Given: the sweeps are about the row, not about what the requester can see, so unlike
+        // findByAuthor they filter on no pin state
+        val author = saveUser()
+        val recycled = savePin(author)
+        repository.upsertPending(recycled.id, "https://x/i.png", randomUUID(), now)
+        pins.softDeletePin(recycled, now)
+
+        // When
+        val settled = repository.failPendingBefore(now.plusSeconds(1), DownloadReason.INTERNAL_ERROR, now)
+        val deleted = repository.deleteFailedBefore(now.plusSeconds(1))
+
+        // Then
+        assertEquals(1, settled)
+        assertEquals(1, deleted)
+        assertNull(repository.findByPinId(recycled.id))
     }
 
     @Test

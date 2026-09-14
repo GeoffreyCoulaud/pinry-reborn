@@ -14,6 +14,9 @@ import java.time.Instant
 import java.util.UUID
 
 @ApplicationScoped
+// The port declares eleven methods, and the twelfth is the private helper three of them share:
+// inlining it to satisfy the count would spell the same PENDING predicate out three times.
+@Suppress("TooManyFunctions")
 class EbeanImageDownloadRepository(
     private val persistor: Persistor,
 ) : ImageDownloadRepositoryInterface {
@@ -75,6 +78,22 @@ class EbeanImageDownloadRepository(
     override fun deleteByPinId(pinId: UUID) {
         QImageDownloadModel().pinId.equalTo(pinId).delete()
     }
+
+    override fun failPendingBefore(cutoff: Instant, reason: DownloadReason, now: Instant): Int =
+        QImageDownloadModel()
+            .status.equalTo(DownloadStatus.PENDING.name)
+            .updatedAt.lessThan(cutoff)
+            .asUpdate()
+            .set("status", DownloadStatus.FAILED.name)
+            .set("reasonCode", reason.name)
+            .set("updatedAt", now)
+            .update()
+
+    override fun deleteFailedBefore(cutoff: Instant): Int =
+        QImageDownloadModel()
+            .status.equalTo(DownloadStatus.FAILED.name)
+            .updatedAt.lessThan(cutoff)
+            .delete()
 
     private fun pendingRows(pinId: UUID) =
         QImageDownloadModel().pinId.equalTo(pinId).status.equalTo(DownloadStatus.PENDING.name)

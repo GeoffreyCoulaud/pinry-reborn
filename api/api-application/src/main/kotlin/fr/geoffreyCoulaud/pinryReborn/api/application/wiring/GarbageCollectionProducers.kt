@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageDownloadRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
@@ -11,6 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInte
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.AccountDeletionCleaner
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapOrphanedStorage
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapStaleImageDownloads
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapTombstonedAccounts
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.ReapTerminalTasks
 import fr.geoffreyCoulaud.pinryReborn.api.worker.GarbageCollectionConfig
@@ -18,9 +20,10 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 
 /**
- * CDI wiring for the three garbage collection sweeps whose constructor takes a primitive ARC cannot
+ * CDI wiring for the four garbage collection sweeps whose constructor takes a primitive ARC cannot
  * resolve ([ReapOrphanedStorage] takes an `Int`, [ReapTombstonedAccounts] a `Duration`,
- * [ReapTerminalTasks] a `Duration`). Mirrors [ExportProducers.reapExpiredUserDataExports]:
+ * [ReapTerminalTasks] a `Duration`, [ReapStaleImageDownloads] two).
+ * Mirrors [ExportProducers.reapExpiredUserDataExports]:
  * `GarbageCollectionConfig` lives in `api-worker-quarkus`, so a use case in `api-usecases` cannot
  * take it directly and the primitive is read here. `ReapExpiredSessionTokens` is
  * `@ApplicationScoped` already (its dependencies are all injectable beans), so it has no producer
@@ -63,6 +66,20 @@ class GarbageCollectionProducers {
             accountDeletionCleaner,
             clock,
             tombstoneGrace = config.tombstoneGrace(),
+        )
+
+    @Produces
+    @ApplicationScoped
+    fun reapStaleImageDownloads(
+        imageDownloadRepository: ImageDownloadRepositoryInterface,
+        clock: Clock,
+        config: GarbageCollectionConfig,
+    ): ReapStaleImageDownloads =
+        ReapStaleImageDownloads(
+            imageDownloadRepository,
+            clock,
+            failedGrace = config.failedDownloadGrace(),
+            pendingGrace = config.pendingDownloadGrace(),
         )
 
     @Produces

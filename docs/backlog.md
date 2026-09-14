@@ -50,10 +50,10 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   nothing records which are legitimate and which stand in for a relation the model does not hold, as
   `PinRepository:167`'s `id in (select ...)` did for `ImageDownloadModel`.
   See `docs/specs/2026-09-10-web-application.md`, section 4.11. New 2026-09-11.
-- **The download list is unbounded, unpaginated and polled every second, and nothing sweeps a failed
-  row.** `GET /api/v1/me/image-downloads` returns every row the requester owns, a `FAILED` row lives
-  until the user drops it, and no periodic sweep touches `image_download` where the worker runs four.
-  See `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
+- **The download list is unpaginated, and the sweep bounds it only in time.**
+  `GET /api/v1/me/image-downloads` still returns every row the requester owns, where every other list
+  pages on a cursor; what caps it today is the seven-day grace on a `FAILED` row.
+  See `docs/handoffs/2026-09-14 - handoff - the-download-sweep.md`. New 2026-09-14.
 - **`foreign_keys` is off, so every declared key is unenforced, and that now has a consequence.**
   `datasource.db.url` sets `journal_mode`, `synchronous` and `busy_timeout` and not `foreign_keys`;
   `1.22.sql` spent a table rebuild on a constraint nothing checks, and turning the pragma on would make
