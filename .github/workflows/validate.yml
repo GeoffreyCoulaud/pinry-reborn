@@ -12,11 +12,6 @@ permissions:
   contents: read
 
 jobs:
-  # The JDK, libvips and python3 are the Dagger function's container, not the runner's: nothing is
-  # installed here beyond the CLI.
-  #
-  # One job, because a second runner rebuilds the fast jar the first already built
-  # (docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md, decision 1).
   verify:
     runs-on: ubuntu-latest
     # Not the six-hour default: a dying Gradle task has twice left a build running and never reporting.
@@ -27,7 +22,7 @@ jobs:
       id-token: write # Keyless cosign signing, on the release path only.
       actions: write # Deleting the engine state entries a save replaces, on main only.
     env:
-      # One place for the version dagger.json pins: the CLI, the engine image and the cache key.
+      # Pairs with dagger.json's engineVersion.
       ENGINE_VERSION: "0.21.9"
       STATE_DIR: /mnt/dagger/state
       ARCHIVE: /mnt/dagger/state.tar.zst
@@ -40,8 +35,8 @@ jobs:
           fetch-depth: 0
       - name: Whether every changed path is a markdown file
         id: scope
-        # docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decisions 1 to 4. github.base_ref is
-        # empty outside a pull request, which is what keeps the release path off the shortcut.
+        # github.base_ref is empty outside a pull request, which keeps the release path off the
+        # shortcut (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decisions 1 to 4).
         run: |
           base='${{ github.base_ref }}'
           docs_only=false
@@ -56,19 +51,17 @@ jobs:
           echo "Documentation only: $docs_only"
           echo "docs-only=$docs_only" >> "$GITHUB_OUTPUT"
       - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77 # v8.4.1
-        # The action only installs the CLI; the version pairs with dagger.json's engineVersion.
         with:
           version: ${{ env.ENGINE_VERSION }}
 
-      # The engine is the job's own, so the job owns its state and can carry it from one run to the
-      # next (docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md, decisions 2 to 5). The
-      # runner's own engine dies with the runner, which is why every run used to start from nothing.
+      # The runner's own engine dies with the runner, so the job starts one it can archive
+      # (docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md, decisions 2 to 5).
       - name: Prepare the engine state directory
         run: |
           sudo mkdir -p "$STATE_DIR"
           sudo chown "$(id -u):$(id -g)" "$(dirname "$STATE_DIR")"
-      # Rolling key: GitHub's entries are immutable, so a fixed one would refuse every save after
-      # the first and freeze the cache on one merge.
+      # The key rolls because GitHub's entries are immutable: a fixed one would freeze the cache on
+      # the first merge that saved it.
       - name: Restore the engine state
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -97,10 +90,6 @@ jobs:
           echo "::error::the engine never answered"
           docker logs dagger-engine
           exit 1
-      # The gate, then the image built and smoked from the fast jar the gate itself produced. A
-      # pull request builds one architecture; buildx below builds both on the release path, so a
-      # release still ships both and a defect showing on arm64 alone surfaces there.
-      #
       # Without --progress=plain the renderer redraws in place, a runner's log keeps only what was
       # printed, and the job reads exactly like a hang.
       - name: Gate, image and smoke
@@ -110,15 +99,13 @@ jobs:
         if: ${{ steps.scope.outputs.docs-only == 'true' }}
         run: dagger call --progress=plain prose
 
-      # Exported rather than rebuilt: quarkus-app is the gate's own build, so this is a cache hit
-      # on the engine ci just used and the pushed image carries the bytes smoke started.
+      # A cache hit and not a second build: quarkus-app returns the gate's own, so the pushed image
+      # carries the bytes smoke started.
       - name: Export the Quarkus fast jar
         if: ${{ inputs.push }}
         run: dagger call quarkus-app export --path=api/api-application/build/quarkus-app
 
-      # A pull request restores and never saves: the entry it wrote would be scoped to its own merge
-      # ref and no other pull request could read it. Stopped before it is read, a state captured
-      # from a running engine not being assumed restorable (ADR 0031, decisions 3 and 4).
+      # Stopped before it is read: a state captured from a running engine is not assumed restorable.
       - name: Stop the engine and archive its state
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
@@ -133,9 +120,8 @@ jobs:
         with:
           path: ${{ env.ARCHIVE }}
           key: dagger-state-v${{ env.ENGINE_VERSION }}-${{ github.sha }}
-      # One entry at a time is a condition and not a tidiness: the archive is about three gigabytes
-      # against the four the repository's ten-gigabyte quota leaves, so a second would evict the
-      # release path's buildx cache.
+      # One entry is a condition and not a tidiness: at three gigabytes against the four the quota
+      # leaves free, a second would evict the release path's buildx cache.
       - name: Delete the engine state entries this run replaces
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
@@ -168,9 +154,8 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha
             type=semver,pattern=v{{version}}
-      # A second build of the same Dockerfile and the same exported jar: cosign signs the pushed
-      # digest, which cannot be the one smoke started while the registry stays out of the pipeline
-      # (docs/adr/0024-three-projects-share-one-repository.md, decision 5).
+      # A second build of the same Dockerfile and the same jar: cosign signs the pushed digest,
+      # which the pipeline cannot produce while the registry stays out of it (ADR 0024, decision 5).
       - name: Build and push image
         if: ${{ inputs.push }}
         id: build
@@ -187,8 +172,7 @@ jobs:
       - name: Compute lowercase image ref
         if: ${{ inputs.push }}
         id: image
-        # github.repository keeps the owner's case (GeoffreyCoulaud) and an OCI reference must be
-        # lowercase.
+        # github.repository keeps the owner's case and an OCI reference must be lowercase.
         run: echo "ref=ghcr.io/${GITHUB_REPOSITORY,,}@${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
@@ -207,8 +191,8 @@ jobs:
           registry-password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate Syft-JSON SBOM (native, for the VEX-aware daily scan)
-        # Not a duplicate of the one above: Syft's own format keeps the image identity that
-        # image-scoped OpenVEX statements resolve against, which CycloneDX drops.
+        # Not a duplicate: Syft's format keeps the image identity OpenVEX resolves against, which
+        # CycloneDX drops.
         if: ${{ inputs.push }}
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
@@ -230,9 +214,8 @@ jobs:
           cosign attest --yes --type openvex \
             --predicate security/vex.openvex.json "$ref"
 
-  # Branch protection reads a skipped job as passing, so this single required check always runs and
-  # fails explicitly. It accepts "skipped" too (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md,
-  # decision 2), which lets no failure through: verify has no condition of its own to be skipped by.
+  # Branch protection reads a skipped job as passing, so the one required check always runs and
+  # fails explicitly (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decision 2).
   gate:
     needs: [verify]
     if: ${{ always() }}
