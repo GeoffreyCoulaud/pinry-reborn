@@ -119,7 +119,11 @@ none refused.
   third-party Gradle plugins under a token that could publish to GHCR, mint an OIDC token and delete
   any cache. `verify` now holds `contents: read`, hands its fast jar over as a run artefact, and the
   write scopes live in `publish` (the release path) and `prune` (`main`), neither of which builds
-  anything. `pr.yml` grants `contents: read` alone.
+  anything. **`pr.yml` still grants all four**, and that is not a leftover: a caller's grant is a
+  ceiling GitHub checks when the run starts, over every job the called workflow declares and not only
+  the ones that run. Granting `contents: read` alone failed the run before any job started, with
+  "This run likely failed because of a workflow file issue" and nothing else. What the build's token
+  carries is the `permissions` block on `verify`, which is `contents: read`.
 - **A corrupt entry would have failed every pull request.** Neither the unpack nor the engine's
   readiness loop fell back to an empty state, so one bad archive stuck until someone deleted it by
   hand. Both now empty the state directory and carry on cold.
@@ -167,9 +171,10 @@ builds, was deleted in block 20's own pull request, and no finding took the back
 - **`actions: write` is now on `verify` and therefore on both callers**, `pr.yml` included, where
   nothing is ever saved or deleted. The reusable workflow's permissions have to be granted by the
   caller or the run does not start, which is the same reason `pr.yml` already grants
-  `packages: write`. (Corrected: it is not, and it was the lot's worst finding. The write scopes now
-  sit on `publish` and `prune`, jobs a pull request never starts, and `pr.yml` grants
-  `contents: read` alone.)
+  `packages: write`. (Corrected: the sentence's second half is right and its first half was the lot's
+  worst finding. The write scopes now sit on `publish` and `prune`, jobs a pull request never starts,
+  so `verify` runs the build under `contents: read`. `pr.yml` still grants all four, and has to: the
+  caller's grant is a ceiling checked against every job the called workflow declares, whatever runs.)
 - **The engine's readiness is polled, not assumed.** `dagger core version` is the probe; a container
   that never answers prints its logs and fails the step rather than letting the gate time out at
   forty-five minutes.
@@ -200,9 +205,10 @@ builds, was deleted in block 20's own pull request, and no finding took the back
   renamed job are all first exercised by the next push to `main`; the identity is the reusable
   workflow's path, which did not change, so `grype-scan.yml` should keep verifying, but that is
   reasoning and not a run.
-- **`pr.yml` granting less than `validate.yml` declares.** A pull request now grants `contents: read`
-  where two of the called workflow's jobs ask for more. Those jobs never start on that path, so
-  nothing should ask; the closing block's own pull request is the first run that shows it.
+- **Whether the pitfall above has a way out.** The caller has to grant what every declared job asks
+  for, so `pr.yml` cannot be narrowed while `publish` and `prune` live in the workflow it calls. A
+  caller that granted less would have to call a workflow that declares less, which means splitting
+  `validate.yml` in two; nothing here measured whether that is worth its duplication.
 - **That `prose` fails on a long dash in a root-level markdown file.** The documentation-only journey
   showed the step green and the operator declined the negative test, so what is established is that
   `prose` runs on that path, not that it would refuse.
