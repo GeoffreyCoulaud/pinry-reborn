@@ -9,10 +9,7 @@ type Pin = Schemas["PinOutputDto"]
 
 const iso = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString()
 
-/**
- * What both transports agree on, which is all the application ever reads of a session. Dated
- * from the run: a fixed `renewAfter` eventually falls into the past and renews on every journey.
- */
+/** Dated from the run: a fixed `renewAfter` falls into the past and renews on every journey. */
 export const SESSION = {
   expiresAt: iso(3_600_000),
   renewAfter: iso(1_800_000),
