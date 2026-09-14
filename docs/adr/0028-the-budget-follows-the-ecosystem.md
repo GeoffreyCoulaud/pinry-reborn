@@ -3,7 +3,13 @@
 Status: Accepted; decision 6 is amended by `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`,
 decision 6: on a lot of one block the lead offers the holistic review's waiver and the operator
 decides, rather than the review being dispatched by reflex. Where it runs, and the single
-destination for its findings, are unchanged; a lot of two blocks or more still gets it.
+destination for its findings, are unchanged; a lot of two blocks or more still gets it. Decision 3 is
+amended by `docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md`, decision 6,
+on its third clause alone: a background command's completion **does** re-invoke the lead, which the
+Bash tool's own description states and which every background command of lot `0.17.0` did, so the
+lead arms a watch on a run the moment a start is reported rather than waiting for a report. The
+observation recorded here was of a teammate, on block 11, and that half is neither refuted nor
+established. Decision 3's two waiting rules stand.
 Date: 2026-09-13
 Specification: this document. A lot whose subject is this process writes its ADR and no separate spec
 (`agents/workflow.md`, phase 2). Tier Spec, one block: the specification review ran on this document
