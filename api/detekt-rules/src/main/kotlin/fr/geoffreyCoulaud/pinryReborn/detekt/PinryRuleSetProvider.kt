@@ -25,6 +25,7 @@ class PinryRuleSetProvider : RuleSetProvider {
                 ::DatabaseStaticFacadeCall,
                 ::CommentCarriesDocumentation,
                 ::RowMergedOutsideTransaction,
+                ::PageSizeForwardedUnclamped,
             ),
         )
 

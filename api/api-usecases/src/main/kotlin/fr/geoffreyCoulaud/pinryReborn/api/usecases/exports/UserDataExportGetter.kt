@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ExportDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ExportPermissionError
 import jakarta.enterprise.context.ApplicationScoped
@@ -26,6 +27,7 @@ class UserDataExportGetter(
         return export
     }
 
+    /** [pageSize] is clamped as [PinGetter] clamps it: at zero the helper answers a page with no cursor. */
     fun list(user: User, cursor: Cursor?, pageSize: Int): Page<UserDataExport> =
-        repository.findAllForUser(user.id, cursor, pageSize)
+        repository.findAllForUser(user.id, cursor, pageSize.coerceIn(1, PinGetter.MAX_PAGE_SIZE))
 }

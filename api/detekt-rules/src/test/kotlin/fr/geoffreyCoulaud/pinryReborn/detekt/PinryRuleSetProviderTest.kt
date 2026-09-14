@@ -7,16 +7,16 @@ import kotlin.io.path.readLines
 
 class PinryRuleSetProviderTest {
     /**
-     * Three of the six rules earn an activation red against the real sources, which is what proves
-     * they are loaded. `QueryBeanConstructedByQualifiedName`, `DatabaseStaticFacadeCall` and
-     * `RowMergedOutsideTransaction` cannot: no production source constructs a query bean by
-     * qualified name, calls `io.ebean.DB`, or merges a row outside its transaction unsuppressed, so
-     * each reports nothing whether it is registered or absent from the
-     * rule set entirely, and detekt fails the build for neither. Their registration is asserted here
-     * or nowhere.
+     * Three of the seven rules earn an activation red against the real sources, which is what proves
+     * they are loaded. `QueryBeanConstructedByQualifiedName`, `DatabaseStaticFacadeCall`,
+     * `RowMergedOutsideTransaction` and `PageSizeForwardedUnclamped` cannot: no production source
+     * constructs a query bean by qualified name, calls `io.ebean.DB`, merges a row outside its
+     * transaction unsuppressed, or forwards a page size unclamped, so each reports nothing whether it
+     * is registered or absent from the rule set entirely, and detekt fails the build for neither.
+     * Their registration is asserted here or nowhere.
      */
     @Test
-    fun `Given the provider, Then its rule set carries exactly the six expected rules`() {
+    fun `Given the provider, Then its rule set carries exactly the seven expected rules`() {
         // Given
         val provider = PinryRuleSetProvider()
 
@@ -29,6 +29,7 @@ class PinryRuleSetProviderTest {
             listOf(
                 "CommentCarriesDocumentation",
                 "DatabaseStaticFacadeCall",
+                "PageSizeForwardedUnclamped",
                 "QueryBeanConstructedByQualifiedName",
                 "RowMergedOutsideTransaction",
                 "SoftDeleteStateFilteredOutsideQueries",
