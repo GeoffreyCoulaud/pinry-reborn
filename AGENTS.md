@@ -70,9 +70,9 @@ ecosystem's own gate.
 **It is paid where it can fail** (`docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`, as
 `docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md` decision 8 extends it). Three pushes are let off, each
 because it can carry no defect the gate would catch: a pull request whose every changed path ends in `.md` runs
-`dagger call prose` in its place and builds no image, and a push whose every reference is either a deletion or a tag on
-a commit `origin/main` already contains runs nothing at all. One path not ending in `.md`, or one branch in the push,
-and the full gate is back.
+`dagger call prose` in its place, restores no engine state and builds no image; a push that only deletes a reference
+sends no object and runs nothing at all; and a push whose every reference is a tag on a commit `origin/main` already
+contains runs nothing either. One path not ending in `.md`, or one branch in the push, and the full gate is back.
 
 ## The image
 
@@ -97,22 +97,29 @@ at the release rather than on the pull request that introduced it.
 
 ## CI
 
-CI (`validate.yml`) **calls** the pipeline: one job, one `dagger call ci`, which is the gate and then the image
-built and smoked from the fast jar the gate's own container produced
+CI (`validate.yml`) **calls** the pipeline: a `verify` job runs one `dagger call ci`, which is the gate and then the
+image built and smoked from the fast jar the gate's own container produced
 (`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md`, decision 1). Two jobs on two runners paid for that
 jar twice. `gate`, `image` and `smoke` stay callable on their own, which is what a workstation types. A check added
-to the pipeline is on the next pull request with nothing to add here. What CI still holds alone is the release
-path, which needs a registry and GitHub's identity: the push to GHCR, the cosign attestations, both SBOMs and the
-OpenVEX predicate. That path calls the pipeline once more, `dagger call quarkus-app export`, a cache hit on the
-build `ci` already ran, so the image `buildx` pushes carries the bytes `dagger call smoke` started.
+to the pipeline is on the next pull request with nothing to add here.
 
-**The job starts its own engine and keeps its state between runs** (`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md`,
+**`verify` holds `contents: read` and nothing else**, it being the job that runs the build's third-party plugins.
+What needs a write scope is two jobs that need it and run nowhere else: **`publish`**, on the release path alone,
+which is what CI still holds that the pipeline cannot, a registry and GitHub's identity, so the push to GHCR, the
+cosign attestations, both SBOMs and the OpenVEX predicate; and **`prune`**, on `main` alone, which carries the one
+scope deleting a cache entry needs. `publish` rebuilds nothing: `verify` calls the pipeline once more,
+`dagger call quarkus-app export`, a cache hit on the build `ci` already ran, and hands that fast jar over as a run
+artefact, so the image `buildx` pushes carries the bytes `dagger call smoke` started.
+
+**`verify` starts its own engine and keeps its state between runs** (`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md`,
 decisions 2 to 6). A container named `dagger-engine` is started on a state directory `actions/cache` restored, with
 `.github/engine.json` mounted at `/etc/dagger/engine.json`, and the CLI reaches it through
 `_EXPERIMENTAL_DAGGER_RUNNER_HOST`. **A pull request restores and never saves; a push to `main` stops the engine,
-archives the state, saves it under a key carrying the engine version and the commit, and deletes every older entry
-sharing that prefix.** One entry is a condition and not a tidiness: the archive is about three gigabytes against
-the four the repository's ten-gigabyte quota leaves free, so a second would evict the release path's buildx cache.
+archives the state, saves it under a key carrying the engine version and the commit, and deletes every other entry
+under the `dagger-state-` prefix.** One entry is a condition and not a tidiness: the archive is about three gigabytes
+against the four the repository's ten-gigabyte quota leaves free, so a second would evict the release path's buildx
+cache. **A restore that does not unpack, and an engine that will not come up on it, both empty the state and carry
+on cold**, the cache being an optimisation and never a condition of a green run.
 **`.github/engine.json` declares `gc.policies` rather than a bound alone**, because the list Dagger generates
 otherwise reclaims the Gradle home and pnpm store volumes, which are the thing being kept.
 

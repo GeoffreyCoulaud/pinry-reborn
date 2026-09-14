@@ -12,27 +12,26 @@ permissions:
   contents: read
 
 jobs:
+  # Read-only: this is the job that runs the build's third-party plugins, and nothing it does needs
+  # a write scope (docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md, decision 1).
   verify:
     runs-on: ubuntu-latest
     # Not the six-hour default: a dying Gradle task has twice left a build running and never reporting.
     timeout-minutes: 45
     permissions:
       contents: read
-      packages: write
-      id-token: write # Keyless cosign signing, on the release path only.
-      actions: write # Deleting the engine state entries a save replaces, on main only.
     env:
-      # Pairs with dagger.json's engineVersion.
-      ENGINE_VERSION: "0.21.9"
       STATE_DIR: /mnt/dagger/state
       ARCHIVE: /mnt/dagger/state.tar.zst
       _EXPERIMENTAL_DAGGER_RUNNER_HOST: docker-container://dagger-engine
-      ZSTD_NBTHREADS: "4"
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           # The contract guard and the step below both read origin/main, which a shallow fetch lacks.
           fetch-depth: 0
+      - name: Read the engine version dagger.json pins
+        # One source: the command line, the image and the cache key cannot drift apart.
+        run: echo "ENGINE_VERSION=$(jq -r '.engineVersion | ltrimstr("v")' dagger.json)" >> "$GITHUB_ENV"
       - name: Whether every changed path is a markdown file
         id: scope
         # github.base_ref is empty outside a pull request, which keeps the release path off the
@@ -61,31 +60,50 @@ jobs:
           sudo mkdir -p "$STATE_DIR"
           sudo chown "$(id -u):$(id -g)" "$(dirname "$STATE_DIR")"
       # The key rolls because GitHub's entries are immutable: a fixed one would freeze the cache on
-      # the first merge that saved it.
+      # the first merge that saved it. A documentation-only run calls prose alone and has nothing to
+      # gain from three gigabytes of state.
       - name: Restore the engine state
+        if: ${{ steps.scope.outputs.docs-only != 'true' }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.ARCHIVE }}
           key: dagger-state-v${{ env.ENGINE_VERSION }}-${{ github.sha }}
           restore-keys: dagger-state-v${{ env.ENGINE_VERSION }}-
       - name: Unpack the engine state
+        if: ${{ steps.scope.outputs.docs-only != 'true' }}
         run: |
           if [ ! -f "$ARCHIVE" ]; then
             echo "No archive restored: this run starts from nothing."
             exit 0
           fi
-          sudo tar --zstd -xf "$ARCHIVE" -C "$STATE_DIR"
+          # A corrupt entry costs a slow run, never a red one.
+          if ! sudo tar --zstd -xf "$ARCHIVE" -C "$STATE_DIR"; then
+            echo "::warning::the restored state does not unpack; starting from nothing"
+            sudo rm -rf "$STATE_DIR"
+            sudo mkdir -p "$STATE_DIR"
+          fi
           sudo du -sh "$STATE_DIR"
       - name: Start the engine on that state
+        # Same rule as unpacking: an engine that will not come up on a restored state comes up
+        # without it rather than failing the run.
         run: |
-          docker run --detach --privileged \
-            --name dagger-engine \
-            --volume "$STATE_DIR":/var/lib/dagger \
-            --volume "$PWD/.github/engine.json":/etc/dagger/engine.json \
-            "registry.dagger.io/engine:v$ENGINE_VERSION"
-          for _ in $(seq 1 60); do
-            if dagger core version; then exit 0; fi
-            sleep 2
+          for attempt in restored empty; do
+            if [ "$attempt" = empty ]; then
+              echo "::warning::the engine never answered on the restored state; starting from nothing"
+              docker logs dagger-engine
+              docker rm --force dagger-engine
+              sudo rm -rf "$STATE_DIR"
+              sudo mkdir -p "$STATE_DIR"
+            fi
+            docker run --detach --privileged \
+              --name dagger-engine \
+              --volume "$STATE_DIR":/var/lib/dagger \
+              --volume "$PWD/.github/engine.json":/etc/dagger/engine.json \
+              "registry.dagger.io/engine:v$ENGINE_VERSION"
+            for _ in $(seq 1 60); do
+              if dagger core version; then exit 0; fi
+              sleep 2
+            done
           done
           echo "::error::the engine never answered"
           docker logs dagger-engine
@@ -99,53 +117,95 @@ jobs:
         if: ${{ steps.scope.outputs.docs-only == 'true' }}
         run: dagger call --progress=plain prose
 
-      # A cache hit and not a second build: quarkus-app returns the gate's own, so the pushed image
-      # carries the bytes smoke started.
+      # A cache hit and not a second build: quarkus-app returns the gate's own, so the image the
+      # publish job pushes carries the bytes smoke started.
       - name: Export the Quarkus fast jar
         if: ${{ inputs.push }}
         run: dagger call quarkus-app export --path=api/api-application/build/quarkus-app
+      - name: Hand the fast jar to the publish job
+        if: ${{ inputs.push }}
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: quarkus-app
+          path: api/api-application/build/quarkus-app
+          retention-days: 1
 
+      # Best effort, and last: the cache is an optimisation, and a failed archive or upload must not
+      # cost a green gate its image and its attestations.
       # Stopped before it is read: a state captured from a running engine is not assumed restorable.
       - name: Stop the engine and archive its state
         if: ${{ github.ref == 'refs/heads/main' }}
+        continue-on-error: true
         run: |
           docker stop -t 180 dagger-engine
+          # docker stop exits 0 after a SIGKILL too, and 137 is the live-engine state decision 3 refuses.
+          if [ "$(docker inspect -f '{{.State.ExitCode}}' dagger-engine)" = 137 ]; then
+            echo "::error::the engine was killed rather than stopped; its state is not archived"
+            exit 1
+          fi
           sudo du -sh "$STATE_DIR"
           sudo tar --zstd -cf "$ARCHIVE" -C "$STATE_DIR" .
           sudo chown "$(id -u):$(id -g)" "$ARCHIVE"
           ls -l "$ARCHIVE"
       - name: Save the engine state
         if: ${{ github.ref == 'refs/heads/main' }}
+        continue-on-error: true
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.ARCHIVE }}
           key: dagger-state-v${{ env.ENGINE_VERSION }}-${{ github.sha }}
-      # One entry is a condition and not a tidiness: at three gigabytes against the four the quota
-      # leaves free, a second would evict the release path's buildx cache.
+
+  # One entry is a condition and not tidiness: at three gigabytes against the four the quota leaves
+  # free, a second would evict the release path's buildx cache. Its own job, so that the scope to
+  # delete a cache entry stays off the job that runs the build.
+  prune:
+    needs: [verify]
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Delete the engine state entries this run replaces
-        if: ${{ github.ref == 'refs/heads/main' }}
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          prefix="dagger-state-v${ENGINE_VERSION}-"
-          gh cache list --key "$prefix" --limit 100 --json id,key \
-            | jq -r --arg keep "${prefix}${{ github.sha }}" '.[] | select(.key != $keep) | .id' \
+          # Listed on the whole prefix and not on the version: an engine bump would otherwise leave
+          # the previous version's entry behind until GitHub evicts it.
+          keep="dagger-state-v$(jq -r '.engineVersion | ltrimstr("v")' dagger.json)-${{ github.sha }}"
+          gh cache list --key dagger-state- --limit 100 --json id,key \
+            | jq -r --arg keep "$keep" '.[] | select(.key != $keep) | .id' \
             | xargs -r -n1 gh cache delete
 
+  # The registry, the identity and the signing live here alone, on the release path alone. It
+  # rebuilds nothing: the fast jar is the one verify's gate produced and smoked.
+  publish:
+    needs: [verify]
+    if: ${{ inputs.push }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # Keyless cosign signing.
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: quarkus-app
+          path: api/api-application/build/quarkus-app
+
       - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
-        if: ${{ inputs.push }}
       - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
-        if: ${{ inputs.push }}
       - name: Log in to GHCR
-        if: ${{ inputs.push }}
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Docker metadata
-        if: ${{ inputs.push }}
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
@@ -155,32 +215,29 @@ jobs:
             type=sha
             type=semver,pattern=v{{version}}
       # A second build of the same Dockerfile and the same jar: cosign signs the pushed digest,
-      # which the pipeline cannot produce while the registry stays out of it (ADR 0024, decision 5).
+      # which the pipeline cannot produce while the registry stays out of it
+      # (docs/adr/0024-three-projects-share-one-repository.md, decision 5).
       - name: Build and push image
-        if: ${{ inputs.push }}
         id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: ./api
           platforms: linux/amd64,linux/arm64
-          push: ${{ inputs.push }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Compute lowercase image ref
-        if: ${{ inputs.push }}
         id: image
         # github.repository keeps the owner's case and an OCI reference must be lowercase.
         run: echo "ref=ghcr.io/${GITHUB_REPOSITORY,,}@${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
-        if: ${{ inputs.push }}
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       - name: Generate CycloneDX SBOM (standard, for external consumers)
-        if: ${{ inputs.push }}
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           image: ${{ steps.image.outputs.ref }}
@@ -193,7 +250,6 @@ jobs:
       - name: Generate Syft-JSON SBOM (native, for the VEX-aware daily scan)
         # Not a duplicate: Syft's format keeps the image identity OpenVEX resolves against, which
         # CycloneDX drops.
-        if: ${{ inputs.push }}
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           image: ${{ steps.image.outputs.ref }}
@@ -204,7 +260,6 @@ jobs:
           registry-password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Attest SBOMs and VEX (keyless OIDC via cosign)
-        if: ${{ inputs.push }}
         run: |
           ref='${{ steps.image.outputs.ref }}'
           cosign attest --yes --type cyclonedx \
@@ -217,7 +272,7 @@ jobs:
   # Branch protection reads a skipped job as passing, so the one required check always runs and
   # fails explicitly (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decision 2).
   gate:
-    needs: [verify]
+    needs: [verify, prune, publish]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
