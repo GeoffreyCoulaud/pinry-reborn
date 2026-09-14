@@ -13,6 +13,12 @@ on:
 permissions:
   contents: read
 
+# Serialised, not cancelled: two close pushes to main would otherwise delete each other's engine
+# state entry, and cancelling the first would drop a release halfway through its attestations.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   # Job name must stay "validate": branch protection requires the "validate / gate" check.
   validate:

@@ -3,14 +3,14 @@
     "policies": [
       {
         "keepDuration": "1440h",
-        "maxUsedSpace": "7GB"
+        "maxUsedSpace": "9GB"
       },
       {
-        "maxUsedSpace": "7GB"
+        "maxUsedSpace": "9GB"
       },
       {
         "all": true,
-        "maxUsedSpace": "7GB"
+        "maxUsedSpace": "9GB"
       }
     ]
   }

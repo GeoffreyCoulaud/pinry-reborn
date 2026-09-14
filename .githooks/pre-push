@@ -1,10 +1,12 @@
 #!/bin/sh
-# The gate, in the container continuous integration runs it in (docs/adr/0024, decision 5).
+# The gate, in the container continuous integration runs it in
+# (docs/adr/0024-three-projects-share-one-repository.md, decision 5).
 set -e
 
 # A push that sends no object has nothing to validate: a deletion, which git announces with an
-# all-zero local sha, and a tag origin/main already contains (ADR 0030 decision 5, ADR 0031
-# decision 8).
+# all-zero local sha, and a tag origin/main already contains
+# (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md decision 5,
+# docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md decision 8).
 sends_objects=""
 while read -r local_ref local_sha _rest; do
     case "$local_sha" in

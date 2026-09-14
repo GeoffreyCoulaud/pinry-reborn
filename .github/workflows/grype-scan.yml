@@ -35,7 +35,7 @@ jobs:
         # jq decodes the base64 payload and extracts the predicate (the raw document).
         #
         # CERT_REGEXP points at validate.yml, NOT release.yml. The image is built,
-        # pushed and signed by the build-image job, which lives in the *reusable*
+        # pushed and signed by the publish job, which lives in the *reusable*
         # workflow validate.yml (release.yml only calls it). For a job that runs
         # inside a reusable workflow, the keyless OIDC certificate identity (SAN) is
         # the reusable workflow's ref, not the caller's, so the signer identity to

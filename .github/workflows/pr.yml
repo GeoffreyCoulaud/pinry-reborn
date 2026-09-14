@@ -11,14 +11,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job name must stay "validate": branch protection requires the "validate / gate" check. The
-  # permissions are unused here and granted because a caller must match what verify declares.
+  # Job name must stay "validate": branch protection requires the "validate / gate" check. A pull
+  # request runs verify alone, and verify reads.
   validate:
     permissions:
       contents: read
-      packages: write
-      id-token: write
-      actions: write
     uses: ./.github/workflows/validate.yml
     with:
       push: false
