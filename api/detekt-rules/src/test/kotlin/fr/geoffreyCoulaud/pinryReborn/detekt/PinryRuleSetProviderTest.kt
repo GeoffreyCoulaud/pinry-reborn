@@ -6,15 +6,7 @@ import java.nio.file.Path
 import kotlin.io.path.readLines
 
 class PinryRuleSetProviderTest {
-    /**
-     * Three of the seven rules earn an activation red against the real sources, which is what proves
-     * they are loaded. `QueryBeanConstructedByQualifiedName`, `DatabaseStaticFacadeCall`,
-     * `RowMergedOutsideTransaction` and `PageSizeForwardedUnclamped` cannot: no production source
-     * constructs a query bean by qualified name, calls `io.ebean.DB`, merges a row outside its
-     * transaction unsuppressed, or forwards a page size unclamped, so each reports nothing whether it
-     * is registered or absent from the rule set entirely, and detekt fails the build for neither.
-     * Their registration is asserted here or nowhere.
-     */
+    /** Four of the seven report nothing against the real sources: their registration is asserted here or nowhere. */
     @Test
     fun `Given the provider, Then its rule set carries exactly the seven expected rules`() {
         // Given
