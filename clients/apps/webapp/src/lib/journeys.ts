@@ -8,6 +8,7 @@ export const REQUIRED_JOURNEYS = [
   "sign in",
   "sign out",
   "session expiry",
+  "session renewal",
   "browse the grid and load a second page",
   "open a pin",
   "create a pin from a URL through to the tile appearing",

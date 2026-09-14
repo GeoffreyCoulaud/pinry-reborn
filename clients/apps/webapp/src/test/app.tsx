@@ -7,18 +7,34 @@ import { createAppRouter } from "../router"
 
 type Pin = Schemas["PinOutputDto"]
 
-/** What both transports agree on, which is all the application ever reads of a session. */
+const iso = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString()
+
+/**
+ * What both transports agree on, which is all the application ever reads of a session. Dated
+ * from the run: a fixed `renewAfter` eventually falls into the past and renews on every journey.
+ */
 export const SESSION = {
-  expiresAt: "2026-09-11T06:00:00Z",
-  renewAfter: "2026-09-10T22:00:00Z",
+  expiresAt: iso(3_600_000),
+  renewAfter: iso(1_800_000),
   persistent: false,
 }
 
+/** The same session, past the point the API recommends renewing it. */
+export const DUE_SESSION = { ...SESSION, renewAfter: iso(-60_000) }
+
 /** The route the application reads its session from, answered from what the journey decided last. */
-export function sessionRoute(isOpen: () => boolean) {
+export function sessionRoute(isOpen: () => boolean, session: typeof SESSION = SESSION) {
   return http.get("/api/v1/sessions/current", () =>
-    isOpen() ? HttpResponse.json(SESSION) : new HttpResponse(null, { status: 401 }),
+    isOpen() ? HttpResponse.json(session) : new HttpResponse(null, { status: 401 }),
   )
+}
+
+/** The renewal, answering a session no longer due and counting what asked for it. */
+export function renewRoute(onRequest: () => void = () => {}) {
+  return http.post("/api/v1/sessions/current/renew", () => {
+    onRequest()
+    return HttpResponse.json(SESSION)
+  })
 }
 
 const AUTHOR_ID = "0f5c6e58-2d6c-4a3a-9c1f-2a1f6b6d4f11"
