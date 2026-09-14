@@ -6,19 +6,13 @@ on:
 permissions:
   contents: read
 
-# Cancel a previous run when new commits are pushed to the same PR
 concurrency:
   group: pr-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # Job name must stay "validate": branch protection requires the
-  # "validate / gate" check produced by the reusable workflow's gate job.
-  # push=false: the image is built (to verify it still builds) but not
-  # published. packages:write, id-token:write and actions:write are still
-  # required here because the reusable workflow's verify job declares them; the
-  # caller must grant at least as much or the run fails to start (even though
-  # nothing is pushed, signed or saved to the cache on PRs).
+  # Job name must stay "validate": branch protection requires the "validate / gate" check. The
+  # permissions are unused here and granted because a caller must match what verify declares.
   validate:
     permissions:
       contents: read

@@ -6,8 +6,6 @@ on:
       - main
     tags:
       - "v*"
-    # Skip the release (image rebuild + publish) when a push touches only docs:
-    # nothing shippable changed. A push touching any non-doc file still triggers.
     paths-ignore:
       - "**/*.md"
       - "docs/**"
@@ -16,11 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  # Same quality gate as on PRs. Job name must stay "validate" so it produces
-  # the "validate / gate" check. push=true publishes the multi-arch image to
-  # GHCR; packages:write lets the reusable verify job push, id-token:write lets
-  # it sign the SBOM/VEX attestations via keyless cosign, and actions:write lets
-  # it delete the engine state entries its own save replaces.
+  # Job name must stay "validate": branch protection requires the "validate / gate" check.
   validate:
     permissions:
       contents: read
