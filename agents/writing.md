@@ -1,5 +1,9 @@
 # Writing and documentation
 
+**This document states its mandate before its argument**
+(`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). The bullets bind. The
+`**Detail.**` paragraph that closes a section explains and binds nothing.
+
 ## Two regimes
 
 | Regime     | Property                                                         | Rule                                                   |
@@ -20,25 +24,35 @@
   carries them. Until then a block's pull request may correct them, in the `(Corrected: ...)` form at the sentence it
   corrects, never a rewrite. After the freeze, changes go in a new dated document, cross-linked both ways, the old one
   marked `Status: Superseded by <file>`.
+- **Every measured figure in a dated document carries the identifier of what produced it**: the run id, the probe's
+  label, the pull request, the file. **It binds documents written from lot `0.18.0` on**; the dated documents already
+  written are append-only and cannot be brought into conformance.
 - **The backlog is the pressure valve**: findings the operator declined, or that genuinely belong to another lot, are
   proposed for it rather than done or lost. What the operator authorized is fixed in the lot instead.
-- **A backlog item holds in two lines**, plus a pointer to the dated document that carries its reasoning. Symptom and
-  where it lives, nothing else: the argument is usually already written in the spec or handoff of the lot that filed it,
-  and copying it here stores it twice and makes the file unreadable at the length that costs.
-- **An item whose reasoning lives nowhere else keeps it.** Dated documents are append-only, so a finding whose argument
-  was only ever written into the backlog cannot be moved out of it now:
-  compressing it would destroy it, not relocate it. The items in that state are the ones the file marks; do not put a
-  count here, which would drift on the next edit. **This is an exception to inherit, not to create**: a new item is
-  filed by a lot that has a spec and a handoff, so its reasoning goes there and the entry stays at two lines.
-- **A dated document does not put a number on a living file**: it records what it did; the count is read where it lives.
-  Say "the items this lot leaves open are 1, 2 and 14", never "the band holds three".
+- **A backlog item holds in two lines**, plus a pointer to the dated document that carries the reasoning. Symptom and
+  where it lives, nothing else.
+- **An item whose reasoning lives nowhere else keeps it**, and the file marks the items in that state. Put no count
+  here. **This is an exception to inherit, not to create**: a new item is filed by a lot that has a spec and a handoff,
+  so its reasoning goes there and the entry stays at two lines.
+- **A dated document does not put a number on a living file**: it records what it did; the count is read where it
+  lives. Say "the items this lot leaves open are 1, 2 and 14", never "the band holds three".
+
+**Detail.** A backlog item holds in two lines because the argument is usually already written in the spec or handoff of
+the lot that filed it, and copying it here stores it twice and makes the file unreadable at the length that costs. The
+inherited exception exists because dated documents are append-only: a finding whose argument was only ever written into
+the backlog cannot be moved out of it now, and compressing it would destroy it rather than relocate it. A count in this
+file would drift on the next edit. The source rule is
+`docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md`, decision 3: lot `0.17.0` transcribed a
+probe that had enabled two Gradle settings as the figure for one of them, and the raw evidence carried both the
+configuration and the label that the transcription dropped.
 
 ## Style
 
 - **A document under `agents/` states its mandate before its argument**: short imperative bullets, one rule each and no
   justification, then a `**Detail.**` paragraph that explains and binds nothing
-  (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). `agents/workflow.md` is
-  converted; the others conform when something next touches them.
+  (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). `agents/workflow.md`,
+  `agents/writing.md` and both review mandates are converted; `agents/engineering.md` conforms when something next
+  touches it.
 - **A closed list is written out in one living document**, the one carrying the rule that closes it; every other living
   document names the list and states no member and no total
   (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 2). The dated documents are

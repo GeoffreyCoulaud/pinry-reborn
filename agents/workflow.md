@@ -138,9 +138,14 @@ rereads.
 - **A lot whose subject is this process writes its ADR and no separate spec.**
 - **The block table numbers its blocks by tens.** The block count is the table's rows, not its last number; a gap means
   a block was dropped or a number left free, which the table says in the row it keeps or in the line that removes it.
+- **A journey's numeric threshold names the measurement that sets it.** Otherwise it is comparative, or it carries no
+  number at all.
 
 **Detail.** Numbering by tens (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 2) is what lets a block
-inserted mid-lot take a number between two existing ones, so no number already written in the prose goes stale.
+inserted mid-lot take a number between two existing ones, so no number already written in the prose goes stale. The
+threshold rule is `docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md`, decision 4: lot
+`0.17.0` wrote "under seven minutes" into a journey against a measurement of 8 m 26 s that the same document already
+carried three sections above, and no implementation of that block could have passed it.
 
 ### 3. Act
 
@@ -189,7 +194,12 @@ review runs at the head of Wrap (`docs/adr/0028-the-budget-follows-the-ecosystem
   working tree back to `main` (`git switch main && git pull --ff-only && git branch -d <branch>`), and the next block
   starts from `main`.
 - **The gate runs as a foreground command**, under the tool's ten-minute ceiling, which a workstation's gate fits in.
-- **The wait for continuous integration stops the teammate.** A monitor is never the mechanism.
+- **The wait for continuous integration stops the teammate, and a monitor is never the teammate's mechanism.**
+- **The lead arms a watch on the run the moment a start is reported, whether or not a pull request exists, and arms it
+  before answering the report.** `gh pr checks <number> --watch` where a pull request exists;
+  `gh run watch <id> --exit-status` otherwise, the id from
+  `gh run list --branch <branch> --limit 1 --json databaseId -q '.[0].databaseId'`. A run that has already concluded is
+  read rather than watched.
 - **The lead looks rather than waits**: it establishes a teammate's state from the open pull requests, the remote
   branches and `ListAgents`, never from the arrival of a notice. A teammate whose report draws no answer within a few
   minutes sends it again.
@@ -198,7 +208,12 @@ review runs at the head of Wrap (`docs/adr/0028-the-budget-follows-the-ecosystem
 request back to draft on a new run, so ready is marked again and the wait that precedes it is the same wait. The three
 waiting rules are `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 3: no run of the measured lot finished
 under the ten-minute ceiling and the median was 14.2 minutes, so the foreground branch never applies to continuous
-integration, and a background command's completion does not re-invoke an idle agent.
+integration. That decision's third claim, that a background command's completion does not re-invoke an idle agent, is
+amended by `docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md`, decision 6: the Bash tool
+re-invokes the lead when a background command exits, which is what the watch above rests on. ADR 0028 observed the
+claim on a teammate, and nothing since has settled that half either way, which is why the stop above is still the
+teammate's rule. The watch itself is decision 5: lot `0.17.0` left a run green at 22:57:54 and read it the next
+morning, on a spike push that had no pull request, so nothing was armed at all.
 
 ### 6. Wrap
 
