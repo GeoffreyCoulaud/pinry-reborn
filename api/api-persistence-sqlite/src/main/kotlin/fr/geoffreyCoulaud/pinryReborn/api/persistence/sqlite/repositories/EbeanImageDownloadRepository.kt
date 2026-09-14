@@ -19,6 +19,7 @@ import java.time.Instant
 import java.util.UUID
 
 @ApplicationScoped
+// Splitting would fragment one adapter of one port across artificial classes, as UserDataExportRepository says.
 @Suppress("TooManyFunctions")
 class EbeanImageDownloadRepository(
     private val persistor: Persistor,
@@ -46,10 +47,17 @@ class EbeanImageDownloadRepository(
     // The recycled state is stated by the queries package and nowhere else, here through the
     // extension that navigates the association rather than a subquery this file would spell out.
     override fun findByAuthor(authorId: UUID, cursor: Cursor?, pageSize: Int): Page<ImageDownload> {
+        // The pivot is read through the same ownership traversal as the page, so a cursor naming a
+        // row the caller cannot see behaves exactly like one naming a row that is gone.
         val modelCursor =
             cursor
-                ?.let { QImageDownloadModel().id.equalTo(it.pivotId).findOne() }
-                ?.let { ModelCursor(pivot = it, direction = cursor.direction) }
+                ?.let {
+                    QImageDownloadModel()
+                        .withActivePin()
+                        .pin.author.id.equalTo(authorId)
+                        .id.equalTo(it.pivotId)
+                        .findOne()
+                }?.let { ModelCursor(pivot = it, direction = cursor.direction) }
         val modelPage =
             ModelPaginationHelper.getPage(
                 cursor = modelCursor,

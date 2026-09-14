@@ -36,7 +36,7 @@ class MeImageDownloadController(
     @GET
     @Operation(
         summary = "List the caller's running and failed image downloads",
-        description = "Newest request first. A recycled pin's download is left out, like every other read.",
+        description = "One page, newest request first. A recycled pin's download is left out, like every other read.",
     )
     @APIResponse(
         responseCode = "200",

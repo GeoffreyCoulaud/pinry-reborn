@@ -4,8 +4,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.ImageDownloa
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QImageDownloadModel
 
 /**
- * The task centre's one order: most recently requested first, on the pair `(requestedAt, id)` for
- * the reason [UserDataExportModelSortStrategy] carries.
+ * The task centre's one order: most recently requested first, on the pair `(requestedAt, id)` and
+ * not the instant alone, a page boundary inside a group sharing an instant stalling the cursor.
  */
 class ImageDownloadModelSortStrategy : ModelSortStrategy<ImageDownloadModel, QImageDownloadModel>() {
     override fun filterCursorAndForwardNeighbors(
