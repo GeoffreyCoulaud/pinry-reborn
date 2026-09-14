@@ -24,6 +24,11 @@ class UniqueConstraintOutcomeTest {
                 "live task the dedup key already names, which is the convergence TaskQueueInterface documents. " +
                 "A violation with no live task behind it has nothing to converge on and propagates, so the " +
                 "client sees 500.",
+            "ux_image_download_pin" to
+                "No translation, deliberately: EbeanImageDownloadRepository.upsertPending deletes by pinId " +
+                "then inserts, so a second download for a pin replaces the first instead of colliding. The " +
+                "same shape as uq_images_pin_id, and RequestPinImageDownload holds the pair in one " +
+                "transaction, which is what serialises it on the single connection.",
             "uq_images_pin_id" to
                 "No translation, deliberately: EbeanImageRepository.saveWithin deletes by pinId then inserts, " +
                 "in one transaction, so a second image for a pin replaces the first instead of colliding.",
