@@ -99,13 +99,17 @@ export function useImageDownloads() {
   const previous = useRef<readonly DownloadProgress[]>([])
   const downloads = useQuery({
     queryKey: DOWNLOADS,
-    queryFn: async () =>
-      bodyOf(await auth.client.GET("/api/v1/me/image-downloads"), "the downloads").downloads,
-    refetchInterval: (query) => downloadPollInterval(query.state.data),
+    queryFn: async () => {
+      const body = bodyOf(await auth.client.GET("/api/v1/me/image-downloads"), "the downloads")
+      // One page, and whether the server holds more: the centre acts on rows it can show, and the
+      // count beside it must not claim the ones it cannot.
+      return { downloads: body.downloads, hasMore: body.pagination.nextCursor != null }
+    },
+    refetchInterval: (query) => downloadPollInterval(query.state.data?.downloads),
   })
 
   useEffect(() => {
-    const current = downloads.data ?? []
+    const current = downloads.data?.downloads ?? []
     const settled = settledPinIds(previous.current, current)
     previous.current = current
     if (settled.length === 0) return

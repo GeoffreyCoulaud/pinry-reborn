@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.repositories
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.ImageDownload
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import java.time.Instant
 import java.util.UUID
@@ -18,10 +20,10 @@ interface ImageDownloadRepositoryInterface {
     fun findByPinIds(pinIds: Collection<UUID>): Map<UUID, ImageDownload>
 
     /**
-     * The downloads of [authorId]'s pins, newest request first. Ownership is a traversal: the row
+     * One page of [authorId]'s downloads, newest request first. Ownership is a traversal: the row
      * carries no author, so it is read through the pin, and a recycled pin's row is left out.
      */
-    fun findByAuthor(authorId: UUID): List<ImageDownload>
+    fun findByAuthor(authorId: UUID, cursor: Cursor?, pageSize: Int): Page<ImageDownload>
 
     /**
      * The download of [pinId] when that pin is [authorId]'s and not recycled, else null. The same

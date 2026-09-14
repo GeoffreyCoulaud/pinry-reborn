@@ -4,6 +4,7 @@ import { HttpResponse, http } from "msw"
 import { describe, expect, it } from "vitest"
 import {
   download,
+  downloadsPage,
   downloadsRoute,
   handshakeRoute,
   onePinPage,
@@ -118,4 +119,23 @@ describe("a failed download surfacing in the task centre", () => {
     expect(await screen.findByAltText(failed.description)).toBeInTheDocument()
     expect(await screen.findByText("Downloads (0)")).toBeInTheDocument()
   }, 15_000)
+
+  it("Given a page the server has more rows after, Then the count says so rather than under-reporting", async () => {
+    const failed = pin("a cat asleep", { status: "FAILED", reasonCode: "NOT_FOUND", message: null })
+    server.use(
+      sessionRoute(() => true),
+      onePinPage(() => [failed]),
+      http.get("/api/v1/me/image-downloads", () =>
+        HttpResponse.json(
+          downloadsPage([download(failed.id, "FAILED")], { pivotId: failed.id, direction: "FORWARD" }),
+        ),
+      ),
+      handshakeRoute(),
+    )
+
+    renderApp("/")
+
+    // The centre shows the page it was given; the count must not claim the rows it cannot show.
+    expect(await screen.findByRole("button", { name: "Downloads (1+)" })).toBeVisible()
+  })
 })

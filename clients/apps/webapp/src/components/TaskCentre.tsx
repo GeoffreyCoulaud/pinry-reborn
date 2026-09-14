@@ -56,8 +56,12 @@ function Task({ download }: { download: Download }) {
  * what it failed to. A success leaves nothing here, its result being the pin (question J).
  */
 export function TaskCentre() {
-  const downloads = useImageDownloads().data ?? []
-  const label = m.downloads({ count: downloads.length })
+  const page = useImageDownloads().data
+  const downloads = page?.downloads ?? []
+  const label =
+    page?.hasMore === true
+      ? m.downloads_partial({ count: downloads.length })
+      : m.downloads({ count: downloads.length })
 
   return (
     <DialogTrigger>

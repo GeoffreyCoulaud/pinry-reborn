@@ -115,13 +115,16 @@
       },
       "ImageDownloadListOutputDto" : {
         "type" : "object",
-        "required" : [ "downloads" ],
+        "required" : [ "downloads", "pagination" ],
         "properties" : {
           "downloads" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ImageDownloadOutputDto"
             }
+          },
+          "pagination" : {
+            "$ref" : "#/components/schemas/PaginationOutputDto"
           }
         }
       },
@@ -1610,9 +1613,27 @@
       "get" : {
         "summary" : "List the caller's running and failed image downloads",
         "description" : "Newest request first. A recycled pin's download is left out, like every other read.",
+        "parameters" : [ {
+          "name" : "cursor",
+          "in" : "query",
+          "schema" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/CursorDto"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        }, {
+          "name" : "pageSize",
+          "in" : "query",
+          "schema" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          }
+        } ],
         "responses" : {
           "200" : {
-            "description" : "The caller's downloads, running and failed",
+            "description" : "One page of the caller's downloads, running and failed",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -3042,7 +3063,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "6.0.0"
+    "version" : "6.1.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

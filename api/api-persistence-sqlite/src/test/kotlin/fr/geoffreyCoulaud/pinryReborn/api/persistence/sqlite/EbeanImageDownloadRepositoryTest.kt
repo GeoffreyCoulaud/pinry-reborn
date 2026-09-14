@@ -1,7 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanImageDownloadRepository
@@ -201,11 +203,68 @@ class EbeanImageDownloadRepositoryTest : RepositoryTest() {
         repository.upsertPending(running.id, "https://x/new.png", randomUUID(), now.plusSeconds(SIXTY_SECONDS))
 
         // When
-        val found = repository.findByAuthor(author.id)
+        val found = repository.findByAuthor(author.id, cursor = null, pageSize = PAGE_SIZE)
 
         // Then
-        assertEquals(listOf(running.id, failed.id), found.map { it.pinId })
-        assertEquals(listOf(DownloadStatus.PENDING, DownloadStatus.FAILED), found.map { it.status })
+        assertEquals(listOf(running.id, failed.id), found.items.map { it.pinId })
+        assertEquals(listOf(DownloadStatus.PENDING, DownloadStatus.FAILED), found.items.map { it.status })
+        assertNull(found.nextCursor, "One page holds both rows, so nothing follows it")
+    }
+
+    @Test
+    fun `Given more downloads than the page holds, Then findByAuthor walks them through its cursors`() {
+        // Given: three downloads of one author, each a minute newer than the last
+        val author = saveUser()
+        val pins = (0..2).map { savePin(author) }
+        pins.forEachIndexed { index, pin ->
+            val requestedAt = now.plusSeconds(index * SIXTY_SECONDS)
+            repository.upsertPending(pin.id, "https://x/$index.png", randomUUID(), requestedAt)
+        }
+
+        // When: the first page of two, then the page after it, then back again
+        val first = repository.findByAuthor(author.id, cursor = null, pageSize = 2)
+        val second = repository.findByAuthor(author.id, cursor = first.nextCursor, pageSize = 2)
+        val back = repository.findByAuthor(author.id, cursor = second.previousCursor, pageSize = 2)
+
+        // Then: newest first across the pages, and the walk back lands on the first page again
+        assertEquals(listOf(pins[2].id, pins[1].id), first.items.map { it.pinId })
+        assertEquals(listOf(pins[0].id), second.items.map { it.pinId })
+        assertNull(second.nextCursor)
+        assertEquals(first.items.map { it.pinId }, back.items.map { it.pinId })
+    }
+
+    @Test
+    fun `Given a cursor whose pivot is gone, Then findByAuthor answers the first page`() {
+        // Given: the row the cursor pivots on was dropped between two pages, which the sweep and
+        // the user's own delete both do
+        val author = saveUser()
+        val kept = savePin(author)
+        repository.upsertPending(kept.id, "https://x/i.png", randomUUID(), now)
+        val stale = Cursor(pivotId = randomUUID(), direction = CursorDirection.FORWARD)
+
+        // When
+        val found = repository.findByAuthor(author.id, cursor = stale, pageSize = PAGE_SIZE)
+
+        // Then: no pivot, so no keyset filter, and the walk restarts rather than answering nothing
+        assertEquals(listOf(kept.id), found.items.map { it.pinId })
+    }
+
+    @Test
+    fun `Given downloads sharing one requestedAt, Then findByAuthor still advances past them`() {
+        // Given: the pair (requestedAt, id) is what orders a page; on requestedAt alone a page
+        // boundary inside a group sharing the instant stalls the cursor (PinModelSortStrategy's bug)
+        val author = saveUser()
+        val pins = (0..2).map { savePin(author) }
+        pins.forEach { repository.upsertPending(it.id, "https://x/i.png", randomUUID(), now) }
+
+        // When
+        val first = repository.findByAuthor(author.id, cursor = null, pageSize = 2)
+        val second = repository.findByAuthor(author.id, cursor = first.nextCursor, pageSize = 2)
+
+        // Then: every row is seen exactly once across the two pages
+        val walked = first.items.map { it.pinId } + second.items.map { it.pinId }
+        assertEquals(pins.map { it.id }.toSet(), walked.toSet())
+        assertEquals(walked.size, walked.toSet().size)
     }
 
     @Test
@@ -217,21 +276,21 @@ class EbeanImageDownloadRepositoryTest : RepositoryTest() {
         pins.softDeletePin(recycled, now)
 
         // When / Then
-        assertTrue(repository.findByAuthor(author.id).isEmpty())
+        assertTrue(repository.findByAuthor(author.id, cursor = null, pageSize = PAGE_SIZE).items.isEmpty())
     }
 
     @Test
-    fun `Given the author's downloads, Then findByAuthor reads them through a single statement`() {
+    fun `Given the author's downloads, Then findByAuthor reads a first page through a single statement`() {
         // Given
         val author = saveUser()
         repository.upsertPending(savePin(author).id, "https://x/i.png", randomUUID(), now)
 
         // When
         LoggedSql.start()
-        repository.findByAuthor(author.id)
+        repository.findByAuthor(author.id, cursor = null, pageSize = PAGE_SIZE)
         val statements = LoggedSql.stop()
 
-        // Then
+        // Then: the pivot lookup a cursor needs is the second statement, and a first page has none
         assertEquals(1, statements.size, "Expected one statement, ran ${statements.size}: $statements")
     }
 
@@ -241,7 +300,7 @@ class EbeanImageDownloadRepositoryTest : RepositoryTest() {
         repository.upsertPending(savePin(saveUser()).id, "https://x/i.png", randomUUID(), now)
 
         // When / Then
-        assertTrue(repository.findByAuthor(saveUser().id).isEmpty())
+        assertTrue(repository.findByAuthor(saveUser().id, cursor = null, pageSize = PAGE_SIZE).items.isEmpty())
     }
 
     @Test
@@ -280,5 +339,6 @@ class EbeanImageDownloadRepositoryTest : RepositoryTest() {
 
     private companion object {
         const val SIXTY_SECONDS = 60L
+        const val PAGE_SIZE = 20
     }
 }

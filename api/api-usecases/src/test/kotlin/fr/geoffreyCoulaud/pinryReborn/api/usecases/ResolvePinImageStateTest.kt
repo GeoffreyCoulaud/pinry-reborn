@@ -1,7 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Image
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.ImageDownload
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
@@ -157,7 +159,9 @@ class ResolvePinImageStateTest {
             error("not used")
 
         override fun findByPinId(pinId: UUID): ImageDownload? = error("not used")
-        override fun findByAuthor(authorId: UUID): List<ImageDownload> = error("not used")
+        override fun findByAuthor(authorId: UUID, cursor: Cursor?, pageSize: Int): Page<ImageDownload> =
+            error("not used")
+
         override fun findByAuthorAndPin(authorId: UUID, pinId: UUID): ImageDownload? = error("not used")
         override fun markFailed(pinId: UUID, reason: DownloadReason, now: Instant): Boolean = error("not used")
         override fun recordLastError(pinId: UUID, lastError: String, now: Instant): Boolean = error("not used")
