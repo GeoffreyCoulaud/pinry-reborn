@@ -52,7 +52,7 @@ describe("browse the grid and load a second page", () => {
 
     expect(await screen.findByRole("img", { name: "page 6" })).toBeVisible()
     // A cap on the infinite query drops the pages past it and nothing reloads them, which is
-    // why the grid holds every page and the virtualiser bounds the memory (question Y).
+    // why the grid holds every page and the virtualiser bounds the memory (ADR 0033).
     expect(screen.getByRole("img", { name: "page 1" })).toBeVisible()
   })
 

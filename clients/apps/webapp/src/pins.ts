@@ -10,7 +10,7 @@ const PAGE_SIZE = 40
 /**
  * The catalogue, one page at a time, in the order the API sorts it. Every page loaded is kept:
  * a cap on the query drops pages nothing reloads, and what holds the grid's memory is the
- * virtualiser, which mounts the visible tiles alone (specification 4.7, question Y).
+ * virtualiser, which mounts the visible tiles alone (ADR 0033).
  */
 export function usePins() {
   return useInfiniteQuery({
