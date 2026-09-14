@@ -152,6 +152,17 @@ none refused.
 **The backlog needed no change.** The one item this lot closes, a pull request paying two cold Gradle
 builds, was deleted in block 20's own pull request, and no finding took the backlog as its exit.
 
+**The corrected shape, on the closing block's own run 34841583111.** `validate / verify` 5 min 05 and
+`validate / gate` 4 s, with **`publish` and `prune` both skipped**, which is MAJOR 1 and MAJOR 4
+observed rather than reasoned: a pull request now starts neither the job that can publish nor the job
+that can delete a cache entry. `Read the engine version dagger.json pins` ran, so the version has one
+source and not three. `Restore the engine state` hit `main`'s entry,
+`Cache restored from key: dagger-state-v0.21.9-db6097fb...`, and `Prose`, the archive and the save
+were skipped, as a pull request of code requires. The Gradle line reads
+`170 actionable tasks: 80 executed, 90 from cache`, against the 73 from cache of pull request #127 and
+of the local probe. **One observation more and not a trend**: this branch touches files neither of the
+other two touched, so the work behind the number is not the same work.
+
 ## Pitfalls
 
 - **The compressed entry is about three gigabytes and the repository's quota is ten**, of which the
@@ -199,7 +210,13 @@ builds, was deleted in block 20's own pull request, and no finding took the back
   journey's 73 tasks from cache included, is the run that *immediately follows* a save. Nothing
   measured what a third run leaves behind, whether the state plateaus, or whether the 9 GB bound
   starts sweeping. The observable if it ever does is the Gradle line reporting well under 73 tasks
-  from cache on a warm pull request.
+  from cache on a warm pull request. The closing block's own run changes nothing here: it follows the
+  same save the others did, at 9 GB no more than at 7.
+- **The cold fallbacks have never fired.** No archive has been truncated and no engine has failed to
+  come up on a restored state, so both paths MAJOR 2 added are reasoning and not runs. What would show
+  one working is a `::warning::` line in `Unpack the engine state` or `Start the engine on that state`
+  followed by a green run whose Gradle line reports 170 of 170 executed; forcing it means saving a
+  deliberately truncated entry on `main`, which no journey was willing to spend a cold run on.
 - **The release path under the job split.** `publish` has never run. The fast jar reaching it as a
   run artefact, `buildx` building from a downloaded directory, and cosign's keyless identity under a
   renamed job are all first exercised by the next push to `main`; the identity is the reusable
