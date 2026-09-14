@@ -127,6 +127,11 @@ otherwise reclaims the Gradle home and pnpm store volumes, which are the thing b
 
 - **A local merge to `main` bypasses CI** (`enforce_admins` is false). Always push and open a PR; merge is rebase-only
   (`gh pr merge --rebase`).
+- **A throwaway push skips the gate with `git push --no-verify`**, a spike branch or a branch opened only to
+  establish a journey. The hook exempts no branch itself: it would have to read a name or a fate, and a hook that
+  trusts a naming convention is a hole in the gate rather than a shortcut through it
+  (`docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md`, Adjacent). The pusher decides, once,
+  and CI still runs the gate on whatever opens a pull request.
 - **Nothing regenerates `contract/openapi.json` for you.** The gate refuses a stale document and names the command
   that refreshes it; the `pre-commit` hook rejects em/en-dashes in staged additions and does nothing else.
 - **The gate reads git history**, the contract on `origin/main` being what a merge would replace. A shallow clone
