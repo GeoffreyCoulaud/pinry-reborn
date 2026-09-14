@@ -20,6 +20,16 @@ describe("the task centre's polling", () => {
   it("Given a list the server has not answered yet, Then there is nothing to poll for", () => {
     expect(downloadPollInterval(undefined)).toBe(false)
   })
+
+  it("Given a page of failures the server has more rows after, Then the polling carries on", () => {
+    // The running rows may sit on a page this one cannot see, so a first page of failures is not
+    // an answer about the whole list.
+    expect(downloadPollInterval([failed("a")], true)).toBeGreaterThan(0)
+  })
+
+  it("Given no page after this one, Then a page of failures still stops the polling", () => {
+    expect(downloadPollInterval([failed("a")], false)).toBe(false)
+  })
 })
 
 describe("what the grid has to reread", () => {

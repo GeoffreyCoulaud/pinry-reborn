@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit
  * a string qualifier.
  */
 @ApplicationScoped
+// One injected collection of sweeps is the structural answer, and that refactor was not asked for.
 @Suppress("LongParameterList")
 class GarbageCollectionLifecycle(
     private val reapExpiredSessionTokens: ReapExpiredSessionTokens,

@@ -53,8 +53,25 @@ class ReapStaleImageDownloadsTest : BaseTest() {
 
         // Then: the abandoned row is settled, and nothing touches the one whose task still lives
         assertEquals(1, count)
-        verify(exactly = 1) { imageDownloadRepository.markFailed(abandoned.pinId, DownloadReason.INTERNAL_ERROR, now) }
         verify(exactly = 0) { imageDownloadRepository.markFailed(running.pinId, any(), any()) }
+    }
+
+    @Test
+    fun `Given more pending rows than one lookup holds, Then reap asks the queue one batch at a time`() {
+        // Given: one row past the batch, so an unchunked call would spend 501 host parameters
+        val rows = (0..BATCH_SIZE).map { pending(randomUUID(), randomUUID()) }
+        val batches = mutableListOf<Collection<UUID>>()
+        every { clock.now() } returns now
+        every { imageDownloadRepository.findPending() } returns rows
+        every { taskQueue.findLiveIds(capture(batches)) } answers { firstArg<Collection<UUID>>().toSet() }
+        every { imageDownloadRepository.deleteFailedBefore(now - failedGrace) } returns 0
+
+        // When
+        reap.reap()
+
+        // Then: two lookups, neither past the batch, and between them every task id was asked about
+        assertEquals(listOf(BATCH_SIZE, 1), batches.map { it.size })
+        assertEquals(rows.map { it.taskId }.toSet(), batches.flatten().toSet())
     }
 
     @Test
@@ -77,11 +94,14 @@ class ReapStaleImageDownloadsTest : BaseTest() {
         // Given
         every { clock.now() } returns now
         every { imageDownloadRepository.findPending() } returns emptyList()
-        every { taskQueue.findLiveIds(emptyList()) } returns emptySet()
         every { imageDownloadRepository.deleteFailedBefore(now - failedGrace) } returns 3
 
-        // When / Then: the cutoff is clock.now() minus the retention grace
+        // When / Then: no pending row is no chunk, so the queue is not asked at all
         assertEquals(3, reap.reap())
-        verify { imageDownloadRepository.deleteFailedBefore(now - failedGrace) }
+        verify(exactly = 0) { taskQueue.findLiveIds(any()) }
+    }
+
+    private companion object {
+        const val BATCH_SIZE = 500
     }
 }

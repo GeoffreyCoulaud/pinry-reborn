@@ -50,6 +50,14 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   nothing records which are legitimate and which stand in for a relation the model does not hold, as
   `PinRepository:167`'s `id in (select ...)` did for `ImageDownloadModel`.
   See `docs/specs/2026-09-10-web-application.md`, section 4.11. New 2026-09-11.
+- **A table rebuild's row-carrying path is exercised by nothing.** `TableRebuildColumnsTest` compares
+  the three column lists as text against an empty database, so a statement filling a new `not null`
+  column before the copy (`1.24.sql`, and the same shape in `1.22.sql`) is covered by no test at all.
+  See `docs/handoffs/2026-09-14 - handoff - the-download-sweep.md`. New 2026-09-14.
+- **Three paged endpoints do not clamp `pageSize`, so `?pageSize=0` answers a page nothing advances
+  past.** `/api/v1/me/exports`, `/api/v1/me/imports` and `/api/v1/me/imports/{id}/issues`; the four
+  others coerce into `1..PinGetter.MAX_PAGE_SIZE`.
+  See `docs/handoffs/2026-09-14 - handoff - the-download-sweep.md`. New 2026-09-14.
 - **`foreign_keys` is off, so every declared key is unenforced, and that now has a consequence.**
   `datasource.db.url` sets `journal_mode`, `synchronous` and `busy_timeout` and not `foreign_keys`;
   `1.22.sql` spent a table rebuild on a constraint nothing checks, and turning the pragma on would make

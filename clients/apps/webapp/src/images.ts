@@ -105,13 +105,21 @@ export function useImageDownloads() {
       // count beside it must not claim the ones it cannot.
       return { downloads: body.downloads, hasMore: body.pagination.nextCursor != null }
     },
-    refetchInterval: (query) => downloadPollInterval(query.state.data?.downloads),
+    refetchInterval: (query) =>
+      downloadPollInterval(query.state.data?.downloads, query.state.data?.hasMore),
   })
 
   useEffect(() => {
     const current = downloads.data?.downloads ?? []
     const settled = settledPinIds(previous.current, current)
+    const shrank = current.length < previous.current.length
     previous.current = current
+    // Past one page a row can settle where this page cannot see it, so what is named is only what
+    // page one settled; the catalogue answers for the rest when the page shrinks at all.
+    if (downloads.data?.hasMore === true && shrank) {
+      void queryClient.invalidateQueries({ queryKey: PINS })
+      return
+    }
     if (settled.length === 0) return
     // A pin that could not be read leaves the grid stale, so the catalogue answers for it instead.
     void rereadSettledPins(queryClient, settled).catch(() =>

@@ -21,8 +21,9 @@ class ImageDownloads(
     private val imageDownloadRepository: ImageDownloadRepositoryInterface,
     private val transactionRunner: TransactionRunner,
 ) {
+    /** [pageSize] is clamped as [PinGetter] clamps it: at zero the helper answers an empty page with no cursor. */
     fun list(requester: User, cursor: Cursor?, pageSize: Int): Page<ImageDownload> =
-        imageDownloadRepository.findByAuthor(requester.id, cursor, pageSize)
+        imageDownloadRepository.findByAuthor(requester.id, cursor, pageSize.coerceIn(1, PinGetter.MAX_PAGE_SIZE))
 
     /**
      * Drops one settled row: what the requester cannot see is absent, and a running row belongs to

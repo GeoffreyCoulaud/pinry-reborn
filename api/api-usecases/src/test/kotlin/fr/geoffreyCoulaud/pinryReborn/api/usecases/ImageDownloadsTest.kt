@@ -55,6 +55,22 @@ class ImageDownloadsTest {
     }
 
     @Test
+    fun `Given a page size outside the bounds, Then list clamps it before it reaches the store`() {
+        // Given: at zero the pagination helper answers an empty page with no cursor at all, which a
+        // client honouring the contract can never advance past
+        val empty = Page<ImageDownload>(items = emptyList(), previousCursor = null, nextCursor = null)
+        every { downloads.findByAuthor(requester.id, null, any()) } returns empty
+
+        // When
+        subject.list(requester, cursor = null, pageSize = 0)
+        subject.list(requester, cursor = null, pageSize = 10_000)
+
+        // Then
+        verify { downloads.findByAuthor(requester.id, null, 1) }
+        verify { downloads.findByAuthor(requester.id, null, PinGetter.MAX_PAGE_SIZE) }
+    }
+
+    @Test
     fun `Given a failed row of the requester, Then delete reads that row alone and drops it`() {
         // Given
         every { downloads.findByAuthorAndPin(requester.id, pinId) } returns row(DownloadStatus.FAILED)
