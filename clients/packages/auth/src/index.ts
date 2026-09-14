@@ -42,26 +42,60 @@ export interface Auth {
 }
 
 const UNAUTHORISED = 401
+const RENEWAL = "/api/v1/sessions/current/renew"
 
 export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
   const client: ApiClient = createApiClient(baseUrl)
   let token: string | undefined
+  let renewAfter: string | undefined
+  let renewal: Promise<Session> | undefined
+
   client.use({
-    onRequest({ request }) {
+    async onRequest({ request, schemaPath }) {
+      if (schemaPath !== RENEWAL) await renewIfDue()
+      // After the renewal and not before: a bearer renewal answers a new token, and the call
+      // that waited for it is the first that has to carry it.
       if (token !== undefined) request.headers.set("Authorization", `Bearer ${token}`)
       return request
     },
   })
 
+  /**
+   * What every session answer leaves behind. A cookie answer is 200 and a bearer answer 201, so
+   * the token is absent by shape and not by a nullable field
+   * (docs/adr/0026-one-session-two-transports.md, decision 4).
+   */
+  function adopt(session: Schemas["CreatedSessionOutputDto"] | Schemas["ExistingSessionOutputDto"]): Session {
+    if ("token" in session) token = session.token
+    renewAfter = session.renewAfter
+    return { expiresAt: session.expiresAt, renewAfter: session.renewAfter }
+  }
+
+  /**
+   * The renewal the API recommended, awaited by the call that found it due so the session is
+   * pushed back before the user needs it. One renewal is shared: a page load leaves with several
+   * calls at once and each would otherwise ask for its own.
+   */
+  async function renewIfDue(): Promise<void> {
+    if (renewAfter === undefined || Date.parse(renewAfter) > Date.now()) return
+    renewal ??= renew().finally(() => (renewal = undefined))
+    // A refused renewal is not an answer about the session: the call it held goes out, and the
+    // API's own 401 is what ends the session.
+    await renewal.catch(() => {})
+  }
+
+  async function renew(): Promise<Session> {
+    const { data, response } = await client.POST(RENEWAL)
+    if (data === undefined) throw new Error(`The API refused the renewal: ${response.status}.`)
+    return adopt(data)
+  }
+
   async function openSession(credentials: Credentials, rememberMe: boolean): Promise<Session> {
     const { data, response } = await client.POST("/api/v1/sessions", {
       body: { ...credentials, transport, rememberMe },
     })
-    // A cookie answer is 200 and a bearer answer 201, so the token is absent by shape and not by
-    // a nullable field (docs/adr/0026-one-session-two-transports.md, decision 4).
     if (data === undefined) throw new Error(`The API refused the session: ${response.status}.`)
-    if ("token" in data) token = data.token
-    return { expiresAt: data.expiresAt, renewAfter: data.renewAfter }
+    return adopt(data)
   }
 
   return {
@@ -77,6 +111,7 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
       // asked to leave, and the cookie is the server's to clear.
       await client.DELETE("/api/v1/sessions/current")
       token = undefined
+      renewAfter = undefined
     },
     async currentSession() {
       const { data, response } = await client.GET("/api/v1/sessions/current")
@@ -85,7 +120,7 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
       // failure the next request would survive.
       if (response.status === UNAUTHORISED) return null
       if (data === undefined) throw new Error(`The API refused the session: ${response.status}.`)
-      return { expiresAt: data.expiresAt, renewAfter: data.renewAfter }
+      return adopt(data)
     },
   }
 }
