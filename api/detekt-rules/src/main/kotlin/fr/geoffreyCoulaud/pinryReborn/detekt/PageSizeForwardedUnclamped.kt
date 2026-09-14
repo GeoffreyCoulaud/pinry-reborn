@@ -11,28 +11,8 @@ import org.jetbrains.kotlin.psi.KtValueArgumentName
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 
 /**
- * A page size the caller asked for is clamped before the query runs.
- *
- * The bound belongs to the use case: `pageSize=0` answers a page nothing advances past, since the
- * cursor a page carries is taken from its own items, and an unbounded one lets a request read the
- * whole table. Four use cases clamped into `1..PinGetter.MAX_PAGE_SIZE` and three did not, which is
- * the defect this rule closes for the next one written.
- *
- * ## Reach
- *
- * The rule reads every mention of the parameter inside the function that declares it, and each one
- * has to be what `coerceIn` is called on. That is what a search for the word `coerceIn` cannot do:
- * a function clamping one read and forwarding the other carries the word and the defect both.
- *
- * Names, not resolved members, like the rest of this rule set. The parameter is found by the name
- * `pageSize`, so the same bound written on a parameter named otherwise goes unseen; and a member
- * named `pageSize` read on another receiver inside such a function is taken for the parameter and
- * reported. `coerceIn` is a spelling too: `coerceAtLeast(1).coerceAtMost(max)` bounds the same value
- * and is reported.
- *
- * The scope is set in `detekt.yml`, over the use cases alone. Outside them the parameter is a value
- * already bounded travelling to the query: the repositories forward it, and `ModelPaginationHelper`
- * does arithmetic on it.
+ * In a function declaring a `pageSize` parameter, every mention of it is what `coerceIn` is called
+ * on. Names, not resolved members, like the rest of this rule set; `detekt.yml` sets the scope.
  */
 class PageSizeForwardedUnclamped(
     config: Config,
@@ -53,10 +33,7 @@ class PageSizeForwardedUnclamped(
     /** `pageSize = ...` at a call site names a parameter of the callee and reads nothing. */
     private fun KtNameReferenceExpression.namesAnArgument(): Boolean = parent is KtValueArgumentName
 
-    /**
-     * Only a receiver can carry the clamp: were the mention the selector of the qualified expression,
-     * that selector would be `pageSize` rather than `coerceIn`.
-     */
+    /** Only a receiver matches: as the selector, the name compared would be `pageSize` itself. */
     private fun KtNameReferenceExpression.isClamped(): Boolean =
         (parent as? KtDotQualifiedExpression)?.selectorExpression.endsOnName() == CLAMP
 

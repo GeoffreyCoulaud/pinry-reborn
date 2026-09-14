@@ -895,9 +895,8 @@ pinry-reborn:
     excludes: ['**/test/**', '**/testFixtures/**']
   PageSizeForwardedUnclamped:
     active: true
-    # The rule keys on a parameter name, so its reach is a path filter: the use cases, which is where
-    # the bound is decided. Outside them the same name carries a value already clamped, the
-    # repositories forwarding it and the pagination helper computing on it.
+    # The rule keys on a parameter name, so its reach is a path filter: the use cases, where the bound
+    # is decided. Outside them the same name carries a value already clamped.
     includes: ['**/api-usecases/**']
     excludes: ['**/test/**', '**/testFixtures/**']
   CommentCarriesDocumentation:
