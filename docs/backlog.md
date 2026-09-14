@@ -50,10 +50,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   invalidates `["pins"]`, and TanStack Query refetches all stored pages in series: fifty pages scrolled
   cost fifty `GET /api/v1/pins` per settled download.
   See `docs/handoffs/2026-09-11 - handoff - web-application.md`, finding 10. New 2026-09-12.
-- **The `pre-push` hook runs the full gate on a throwaway branch.** Lot `0.17.0` paid it on four such
-  pushes, at the local gate's 5 m 16 s cold or 3 m 12 s warm; ADR 0031's decision 8 exempted deletions
-  and not this. See `docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md`,
-  Adjacent. New 2026-09-14.
 - **`Session.renewAfter` reaches the client and nothing reads it**, so no client renews although both
   renewal answers exist. The `/pins/new` half of this item shipped 2026-09-13.
   See `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
