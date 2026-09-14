@@ -90,6 +90,15 @@ class EbeanTaskQueue(
 
     override fun countByState(state: TaskState): Int = QTaskModel().state.equalTo(state.name).findCount()
 
+    override fun findLiveIds(ids: Collection<UUID>): Set<UUID> {
+        if (ids.isEmpty()) return emptySet()
+        return QTaskModel()
+            .id.isIn(ids)
+            .state.isIn(TaskState.PENDING.name, TaskState.RUNNING.name)
+            .findList()
+            .mapTo(mutableSetOf()) { it.id }
+    }
+
     override fun claimNext(
         now: Instant,
         leaseDuration: Duration,

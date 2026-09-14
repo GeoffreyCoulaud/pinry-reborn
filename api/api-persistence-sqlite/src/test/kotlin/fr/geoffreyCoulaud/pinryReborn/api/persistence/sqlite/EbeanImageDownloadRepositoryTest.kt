@@ -130,54 +130,36 @@ class EbeanImageDownloadRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given PENDING rows either side of the cutoff, Then failPendingBefore settles only the older`() {
+    fun `Given rows in both states, Then findPending returns the PENDING ones with their task id`() {
         // Given
-        val stale = repository.upsertPending(randomUUID(), "https://x/i.png", randomUUID(), now).pinId
-        val fresh =
-            repository.upsertPending(randomUUID(), "https://x/i.png", randomUUID(), now.plusSeconds(SIXTY_SECONDS))
-                .pinId
-        val settledAt = now.plusSeconds(SIXTY_SECONDS * 2)
+        val taskId = randomUUID()
+        val pending = repository.upsertPending(randomUUID(), "https://x/i.png", taskId, now)
+        failedAt(now)
 
         // When
-        val settled = repository.failPendingBefore(now.plusSeconds(1), DownloadReason.INTERNAL_ERROR, settledAt)
+        val found = repository.findPending()
 
-        // Then: the stale row carries the reason and the sweep's instant, so its own grace starts there
-        assertEquals(1, settled)
-        val row = repository.findByPinId(stale)
-        assertEquals(DownloadStatus.FAILED, row?.status)
-        assertEquals(DownloadReason.INTERNAL_ERROR, row?.reasonCode)
-        assertEquals(settledAt, row?.updatedAt)
-        assertEquals(DownloadStatus.PENDING, repository.findByPinId(fresh)?.status)
+        // Then: the sweep matches a row to its task, so the task id has to come back with it
+        assertEquals(listOf(pending), found)
+        assertEquals(taskId, found.single().taskId)
     }
 
     @Test
-    fun `Given a FAILED row past the cutoff, Then failPendingBefore leaves its reason alone`() {
-        // Given
-        val failed = failedAt(now)
-
-        // When
-        val settled = repository.failPendingBefore(now.plusSeconds(1), DownloadReason.INTERNAL_ERROR, now)
-
-        // Then
-        assertEquals(0, settled)
-        assertEquals(DownloadReason.NOT_FOUND, repository.findByPinId(failed)?.reasonCode)
-    }
-
-    @Test
-    fun `Given a recycled pin carrying a stale row, Then both sweeps still reach it`() {
-        // Given: the sweeps are about the row, not about what the requester can see, so unlike
-        // findByAuthor they filter on no pin state
+    fun `Given a recycled pin carrying a row, Then the sweep's two reads still reach it`() {
+        // Given: the sweep is about the row, not about what the requester can see, so unlike
+        // findByAuthor it filters on no pin state
         val author = saveUser()
         val recycled = savePin(author)
         repository.upsertPending(recycled.id, "https://x/i.png", randomUUID(), now)
         pins.softDeletePin(recycled, now)
 
         // When
-        val settled = repository.failPendingBefore(now.plusSeconds(1), DownloadReason.INTERNAL_ERROR, now)
+        val found = repository.findPending()
+        repository.markFailed(recycled.id, DownloadReason.INTERNAL_ERROR, now)
         val deleted = repository.deleteFailedBefore(now.plusSeconds(1))
 
         // Then
-        assertEquals(1, settled)
+        assertEquals(listOf(recycled.id), found.map { it.pinId })
         assertEquals(1, deleted)
         assertNull(repository.findByPinId(recycled.id))
     }

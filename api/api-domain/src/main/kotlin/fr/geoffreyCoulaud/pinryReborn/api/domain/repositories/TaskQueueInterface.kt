@@ -59,6 +59,12 @@ interface TaskQueueInterface {
      */
     fun reapExpired(now: Instant, retryFloors: Map<String, Duration>, limit: Int): Int
 
+    /**
+     * Of [ids], those whose task is still PENDING or RUNNING. A terminal task and an absent one are
+     * the same answer to the caller: nothing will advance whatever was waiting on it.
+     */
+    fun findLiveIds(ids: Collection<UUID>): Set<UUID>
+
     /** Count tasks currently in [state]. For metrics/inspection. */
     fun countByState(state: TaskState): Int
 

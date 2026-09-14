@@ -7,6 +7,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.TaskModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanTaskQueue
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import io.ebean.test.LoggedSql
 import jakarta.persistence.PersistenceException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -638,6 +639,42 @@ class EbeanTaskQueueTest : RepositoryTest() {
         // Then
         assertFalse(renewed)
         assertEquals(TaskState.SUCCEEDED, queue.findById(claimed.id)?.state)
+    }
+
+    // --- findLiveIds ---
+
+    @Test
+    fun `Given tasks in every state, Then findLiveIds keeps the PENDING and RUNNING ones`() {
+        // Given: one task per state, plus an id no task carries
+        val pending = queue.enqueue(newTask())
+        val running = claimFresh()
+        val succeeded = claimFresh().also { queue.markSucceeded(it.id, it.leaseId, now) }
+        val dead = claimFresh().also { queue.markDead(it.id, it.leaseId, now, "boom") }
+        val cancelled = queue.enqueue(newTask()).also { queue.cancelPending(it.id, now) }
+        val gone = UUID.randomUUID()
+
+        // When
+        val live = queue.findLiveIds(
+            listOf(pending.id, running.id, succeeded.id, dead.id, cancelled.id, gone),
+        )
+
+        // Then: a terminal task and an absent one are both answers the sweep reads as abandoned
+        assertEquals(setOf(pending.id, running.id), live)
+    }
+
+    @Test
+    fun `Given no ids, Then findLiveIds answers empty without a query`() {
+        // Given
+        queue.enqueue(newTask())
+
+        // When
+        LoggedSql.start()
+        val live = queue.findLiveIds(emptyList())
+        val statements = LoggedSql.stop()
+
+        // Then
+        assertTrue(live.isEmpty())
+        assertEquals(0, statements.size, "Expected no statement, ran ${statements.size}: $statements")
     }
 
     // --- deleteTerminalBefore ---

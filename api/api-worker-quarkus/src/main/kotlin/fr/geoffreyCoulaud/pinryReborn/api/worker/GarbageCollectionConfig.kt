@@ -20,8 +20,4 @@ interface GarbageCollectionConfig {
 
     @WithDefault("P7D")
     fun failedDownloadGrace(): Duration
-
-    /** Stays above `tasks.backoff_cap` plus `tasks.lease_duration`, the longest a live download goes unstamped. */
-    @WithDefault("PT1H")
-    fun pendingDownloadGrace(): Duration
 }
