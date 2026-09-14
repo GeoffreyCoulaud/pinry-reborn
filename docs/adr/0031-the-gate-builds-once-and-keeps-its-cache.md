@@ -91,7 +91,13 @@ therefore opens with a spike, and decisions 2 to 6 are conditional on it.
    `dagger call quarkus-app` returns the gate's own build rather than a build of its own, so the release
    path's export is a cache hit on `ci` instead of the second build the merge would otherwise have
    introduced, and the bytes it exports stay the bytes `smoke` started.) The root `AGENTS.md`
-   describes the two-job shape in its CI and image sections and is corrected with it.
+   describes the two-job shape in its CI and image sections and is corrected with it. (Corrected:
+   one job for the *build*, not for the run. Putting the publication in `verify` gave the job that
+   runs the build's third-party plugins `packages: write`, `id-token: write` and `actions: write` on
+   every pull request, where before the lot those scopes sat on `build-image` alone. `verify` keeps
+   `contents: read` and hands its fast jar over as a run artefact; `publish`, on the release path
+   alone, and `prune`, on `main` alone, carry the write scopes and build no Gradle target, so the
+   one Gradle build this decision buys is untouched.)
 2. **Continuous integration starts its own engine** and points the CLI at it with
    `_EXPERIMENTAL_DAGGER_RUNNER_HOST=docker-container://<name>`, so the job owns the engine's
    lifetime and its state directory. Nothing about how the gate is called changes.
@@ -103,7 +109,10 @@ therefore opens with a spike, and decisions 2 to 6 are conditional on it.
    would refuse every save after the first, GitHub's entries being immutable, and freeze the cache on
    one merge. **After a successful save the older entries sharing that prefix are deleted**, so the
    lot's footprint stays one entry and the eviction it causes is its own rather than the release
-   path's.
+   path's. (Corrected: the deletion lists on the whole `dagger-state-` prefix and spares the full
+   key. Listing on the version prefix left the previous engine's entry behind at every version bump,
+   waiting seven days for GitHub to evict it, which is exactly the second entry this decision
+   refuses.)
 5. **An `engine.json`, mounted at `/etc/dagger/engine.json` in the engine the job starts, bounds the
    cache with `gc.maxUsedSpace`.** The default policy targets 75 % of the disk and therefore never
    collects on a runner. The bound must sit above what one gate produces and below what the quota
@@ -119,6 +128,18 @@ therefore opens with a spike, and decisions 2 to 6 are conditional on it.
    bypasses it entirely. So `.github/engine.json` declares the three remaining policies and drops
    the first. 7 GB sits above the 6.2 GB one cold gate produced and, at the 0.41 compression ratio
    the spike measured, caps the archive near 3 GB against the 4 GB the quota leaves free.)
+   (Corrected: 9 GB, not 7. The bound was read against what one cold gate leaves, where the steady
+   state is warm: 6.2 GB after a cold gate and 7.4 GB after a warm run stacked on it, so 7 GB sat
+   inside the steady state and the sweep would have started biting around the third consecutive run.
+   The policy deciding then is the `all: true` one, which is the eviction of the cache mount volumes
+   this decision forbids, moved out of the generated list and into the declared one. 9 GB is 1.6 GB
+   above the highest state ever measured and, at the 0.42 ratio the two archives measured, raises the
+   entry from 2.69 GB toward 3.8 GB. That gigabyte comes out of the release path's buildx cache:
+   the quota reads 8.15 GB of 10 on the day of this correction, the buildx entries having grown back
+   to 5.46 GB, so what exceeds ten is evicted least-recently-used. It is the arbitration Consequences
+   names, taken in favour of the pull request because that is the cost this lot exists to cut, and it
+   is the operator's to reverse. A third consecutive run was never measured; what a sweep costs when
+   it comes is a slower run and nothing else.)
 6. **`org.gradle.caching=true`.** Worth nothing alone, the build cache living in the engine state
    decision 4 keeps, and decision 4 is worth a quarter less without it.
 7. **`org.gradle.parallel` is refused**, on the cold failure reproduced at two memory bounds.
@@ -137,6 +158,11 @@ an entry nothing reads, and under the generated policy list it was not what bit 
 hours was, and what it took was the cache volumes inside a restored entry rather than the entry
 itself. Decision 5's explicit `gc.policies` removes that policy, which leaves the seven days as the
 binding delay the sentence says it is.) The failure mode is a slow run, never a wrong one.
+(Corrected: block 20 shipped that as a claim and not as a mechanism. A truncated archive failed the
+unpack, and a state the engine could not come up on failed the readiness loop, so one corrupt entry
+would have failed every pull request until someone deleted it by hand. The closing block empties the
+state directory and carries on cold in both cases, and the archive and the save are best effort, so
+a failed upload no longer costs a green gate its image and its attestations.)
 
 **The lot's own cache competes with the release path's.** Decision 4 keeps one entry and deletes its
 predecessors, but that entry still occupies space the buildx cache had. If the spike measures a
@@ -150,7 +176,10 @@ reach: it bounds the engine's cache, not a developer's Gradle home.
 **The gate's perimeter does not change.** Nothing here removes a check.
 `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md` still decides when a pull request pays, and its
 documentation-only shortcut is untouched: the job it skipped no longer exists, so that path costs one
-runner before and one after.
+runner before and one after. (Corrected: true after block 10 and false after block 20, which restored
+and unpacked about 2.7 GB of engine state before running `prose`, roughly doubling a job block 10
+measured at 1 min 19. The closing block conditions the restore and the unpack on the same output the
+gate reads; starting the engine stays unconditional, `prose` being a `dagger call` too.)
 
 ## Block table
 

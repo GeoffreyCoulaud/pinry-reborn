@@ -2,7 +2,8 @@
 
 Date: 2026-09-14
 Branch: `ci/one-job-one-gradle-build`, block 10, pull request #124, merged as `910f5f3e`;
-`ci/the-engine-keeps-its-cache`, block 20, this pull request
+`ci/the-engine-keeps-its-cache`, block 20, merged as `449ab4ef` and `db6097fb`;
+`chore/closing-the-warm-cache`, the closing block
 Decision: `docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md`, which is also this lot's
 specification (`agents/workflow.md`, phase 2)
 Tier: Spec, implemented in a teammate per block. The specification review ran in a named agent and
@@ -25,11 +26,26 @@ The last column is a projection and not a measurement: no pull request has yet r
 second run, 8 min 02 for the whole job, less the 43 s of archiving and the 15 s of saving that a
 pull request does not pay.
 
+(Corrected: measured, on throwaway pull request #127, run 34831020334, opened after block 20 merged
+and `main` saved. `validate / verify` 7 min 24 and `validate / gate` 4 s. **The lot's headline is
+13 min 49 to 7 min 28, 46 %.** The entry restored was
+`dagger-state-v0.21.9-db6097fb89341d0d97a049661b815a67fe05f5fc`, 27 s to restore and 20 s to unpack;
+`Gate, image and smoke` 6 min 13 with `BUILD SUCCESSFUL in 5m 26s` and
+`170 actionable tasks: 97 executed, 73 from cache`; the archive, save and delete steps skipped, as a
+pull request must. **The total is solid and its decomposition is not.** Gradle took 5 min 26 here
+against 5 min 43 on the cold run of pull request #126, seventeen seconds apart, while cold Gradle
+across runs measured 5 min 43, 6 min 51 and 8 min 24 for identical work: runner variance swamps the
+attribution, so nothing here splits the gain between Dagger's operation cache and Gradle's build
+cache. The pull request is closed and its branch deleted.)
+
 ## What was built
 
 **Block 10, decision 1.** A `ci` function in `.dagger/src/index.ts` runs the gate, then builds and
 smokes the image from the fast jar the gate's own container produced. `validate.yml` keeps one job
-named `verify`; the `gate` aggregator needs `verify` alone. `dagger call quarkus-app` returns the
+named `verify`; the `gate` aggregator needs `verify` alone. (Corrected: the closing block splits the
+publication and the cache maintenance out of `verify`, which keeps `contents: read`, and `gate` needs
+`verify`, `prune` and `publish`. One Gradle build, which is what decision 1 buys, is unchanged.)
+`dagger call quarkus-app` returns the
 gate's own build rather than a build of its own, so the release path's export is a cache hit and the
 bytes it pushes stay the bytes `smoke` started.
 
@@ -40,9 +56,11 @@ bytes it pushes stay the bytes `smoke` started.
   lifetime and its state directory.
 - **A pull request restores and never saves; a push to `main` stops the engine, archives the state,
   saves it and deletes every older entry sharing the key's prefix.** The key carries the engine
-  version and the commit, with `restore-keys` on the version prefix.
+  version and the commit, with `restore-keys` on the version prefix. (Corrected: the deletion lists
+  on `dagger-state-` and spares the full key, the version prefix having left an entry behind at every
+  engine bump.)
 - **`.github/engine.json` declares `gc.policies`** rather than a bound alone, and bounds the cache
-  at 7 GB.
+  at 7 GB. (Corrected: 9 GB.)
 - **`org.gradle.caching=true`** in `api/gradle.properties`. `org.gradle.parallel` stays refused.
 - **`.githooks/pre-push` reads a deletion as a push that sends no object**, which is decision 8 and
   the one thing in this lot that was not in the block table.
@@ -76,7 +94,59 @@ list in place of the generated one, and the declared list has no policy filterin
 
 **The `pre-push` loop, on four inputs.** A deletion alone runs no gate; a branch push, a deletion
 beside a branch push, and a tag the remote cannot reach all run it. Removing the deletion arm makes
-the first case run the gate again, which is the mutation that fails the check.
+the first case run the gate again, which is the mutation that fails the check. The holistic review
+re-ran it on six, tag deletion and empty stdin included, and it answers as documented.
+
+**The first save on `main`**, run 34829754419, the merge of `db6097fb`: archive 29 s, save 23 s,
+purge 1 s, one entry `dagger-state-v0.21.9-db6097fb...` of 2 686 264 632 bytes on `refs/heads/main`.
+The repository's cache usage read 6.28 GB across 465 entries before the lot and 5.93 GB across 438
+just after, so the release path's buildx entries fell from 6.28 GB to 3.24 GB, about 3 GB and 28
+entries gone. **Attribution to our save is likely and not certain**: GitHub's seven-day expiry can
+account for part of it. This is the quota arbitration the ADR's Consequences anticipated, measured
+rather than feared. By the day the closing block was written the buildx entries had grown back to
+5.46 GB and the quota read 8.15 GB of 10.
+
+## What the closing block changed
+
+The holistic review ran in a named agent over `git diff lot/0.16.0-gate-paid-where-it-can-fail..origin/main`.
+It confirmed the eight decisions and the three `(Corrected: ...)` clauses are all in the diff, that the
+`index.ts` refactoring is a pure extraction, and that the living documents were corrected in the commits
+that changed behaviour. Its six major findings and seven minor ones are fixed here, none deferred and
+none refused.
+
+- **The gate's job ran under the release path's scopes.** `verify` carried `packages: write`,
+  `id-token: write` and `actions: write` and ran `dagger call ci`, so every pull request compiled
+  third-party Gradle plugins under a token that could publish to GHCR, mint an OIDC token and delete
+  any cache. `verify` now holds `contents: read`, hands its fast jar over as a run artefact, and the
+  write scopes live in `publish` (the release path) and `prune` (`main`), neither of which builds
+  anything. `pr.yml` grants `contents: read` alone.
+- **A corrupt entry would have failed every pull request.** Neither the unpack nor the engine's
+  readiness loop fell back to an empty state, so one bad archive stuck until someone deleted it by
+  hand. Both now empty the state directory and carry on cold.
+- **The 7 GB bound sat inside the warm steady state**, which is 7.4 GB after a warm run stacked on a
+  cold one, so the third consecutive run's sweep would have been the `all: true` policy deciding the
+  fate of the cache mount volumes. The bound is 9 GB.
+- **A cache hiccup could cost a green gate its image.** The archive and the save are `continue-on-error`
+  and the prune is its own job, so an upload timeout or a transient `gh cache delete` no longer fails
+  the run that produced them. The review asked for them to be moved after the publication; the job
+  split makes that inexpressible, and making them best effort is the same guarantee.
+- **A documentation-only pull request restored and unpacked about 2.7 GB to run `prose`**, roughly
+  doubling a job block 10 measured at 1 min 19. The restore and the unpack now carry the same
+  condition the gate step does; starting the engine stays unconditional.
+- **The purge listed on the version prefix**, so an engine bump left the previous entry behind for
+  seven days, and two entries plus the buildx cache exceed the quota. It lists on `dagger-state-`
+  and spares the full key.
+- **The seven minor findings**: the engine version is read once from `dagger.json` rather than
+  duplicated in `validate.yml`; `docker stop` exiting 0 after a `SIGKILL` is caught by reading the
+  container's exit code, 137 failing the step rather than archiving a live engine's state;
+  `release.yml` has a `concurrency` group that serialises rather than cancels, so two close pushes to
+  `main` no longer delete each other's entry; `AGENTS.md` enumerates the three pushes it says are let
+  off; the abbreviated ADR references in `.githooks/pre-push` and `validate.yml` are full paths again;
+  `api/gradle.properties` loses its trailing blank line; and `ZSTD_NBTHREADS`, which no line of the
+  specification asked for and no measurement justified, is gone.
+
+**The backlog needed no change.** The one item this lot closes, a pull request paying two cold Gradle
+builds, was deleted in block 20's own pull request, and no finding took the backlog as its exit.
 
 ## Pitfalls
 
@@ -86,7 +156,9 @@ the first case run the gate again, which is the mutation that fails the check.
   next release loses its buildx cache to eviction rather than anything failing loudly.
 - **The state grows.** 6.2 GB after one cold gate, 7.4 GB after one warm run stacked on it, and the
   compressed archive with it, 2.69 GB then 3.13 GB. That growth is what `gc.maxUsedSpace` bounds and
-  why the bound is not optional.
+  why the bound is not optional. (Corrected: the bound is 9 GB and not 7, 7 GB having sat inside that
+  steady state. The extra gigabyte of archive comes out of the release path's buildx cache by
+  least-recently-used eviction, which is the operator's to reverse.)
 - **The default garbage collection policy would have eaten the thing being kept.** Dagger's
   generated list opens with a policy filtering `type==exec.cachemount`, which is exactly the Gradle
   home and pnpm store volumes, with a `keepDuration` of 48 hours and a 512 MB cap. Two days without
@@ -95,7 +167,9 @@ the first case run the gate again, which is the mutation that fails the check.
 - **`actions: write` is now on `verify` and therefore on both callers**, `pr.yml` included, where
   nothing is ever saved or deleted. The reusable workflow's permissions have to be granted by the
   caller or the run does not start, which is the same reason `pr.yml` already grants
-  `packages: write`.
+  `packages: write`. (Corrected: it is not, and it was the lot's worst finding. The write scopes now
+  sit on `publish` and `prune`, jobs a pull request never starts, and `pr.yml` grants
+  `contents: read` alone.)
 - **The engine's readiness is polled, not assumed.** `dagger core version` is the probe; a container
   that never answers prints its logs and fails the step rather than letting the gate time out at
   forty-five minutes.
@@ -113,12 +187,29 @@ the first case run the gate again, which is the mutation that fails the check.
   pull request writes is invisible to another. Decision 4 rests on that rule and takes it from
   GitHub's documentation.
 - **What a pull request will actually cost.** The 7 minutes above is arithmetic on the spike's run,
-  not a run.
+  not a run. (Corrected: measured at 7 min 28 on pull request #127. What stays unestablished is the
+  split of that gain between Dagger's operation cache and Gradle's build cache, runner variance on
+  cold Gradle being larger than the difference being attributed.)
+- **The third consecutive run, and every run after it.** Every warm figure in this lot, the block 20
+  journey's 73 tasks from cache included, is the run that *immediately follows* a save. Nothing
+  measured what a third run leaves behind, whether the state plateaus, or whether the 9 GB bound
+  starts sweeping. The observable if it ever does is the Gradle line reporting well under 73 tasks
+  from cache on a warm pull request.
+- **The release path under the job split.** `publish` has never run. The fast jar reaching it as a
+  run artefact, `buildx` building from a downloaded directory, and cosign's keyless identity under a
+  renamed job are all first exercised by the next push to `main`; the identity is the reusable
+  workflow's path, which did not change, so `grype-scan.yml` should keep verifying, but that is
+  reasoning and not a run.
+- **`pr.yml` granting less than `validate.yml` declares.** A pull request now grants `contents: read`
+  where two of the called workflow's jobs ask for more. Those jobs never start on that path, so
+  nothing should ask; the closing block's own pull request is the first run that shows it.
 - **That `prose` fails on a long dash in a root-level markdown file.** The documentation-only journey
   showed the step green and the operator declined the negative test, so what is established is that
   `prose` runs on that path, not that it would refuse.
 - **The holistic review**, which Wrap decides. This lot has two blocks, so the waiver
   `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md` decision 6 offers does not apply to it.
+  (Corrected: it ran in a named agent, and the section above carries its thirteen findings and their
+  exit, which is "fixed in the lot" for every one of them.)
 
 ## Next step
 
@@ -129,3 +220,10 @@ request paying two cold Gradle builds, is deleted in this pull request.
 The first push to `main` after this merges pays the cold price and writes the first entry; the
 pull request that follows it is the one that measures decision 4. The block table asks it for at
 least 60 of 170 tasks from cache and for one entry carrying the engine version prefix, not two.
+
+(Corrected: all of that happened. The entry was written by run 34829754419, the journey ran on pull
+request #127 and reported 73 of 170 tasks from cache and one entry. What is left is step (e), the
+annotated `lot/0.17.0-*` tag on the closing merge. After that, the two things to watch are the first
+push to `main`, which is the first run of the `publish` job and of the whole release path under the
+job split, and the warm pull request after the one that follows it, which is the first third
+consecutive run and the first chance to see whether the 9 GB bound sweeps.)
