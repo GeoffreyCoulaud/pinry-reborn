@@ -1,0 +1,5 @@
+-- foreign keys and indices
+-- The generator left a "not supported" placeholder here: SQLite cannot add a foreign key to an
+-- existing table. Nothing replaces it, `1.4.sql:13-14` having created `images` with the very
+-- constraint the association now declares, so a fresh install already ends with it. The model file
+-- beside this one is the change.
