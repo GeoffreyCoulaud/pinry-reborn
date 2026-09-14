@@ -24,17 +24,18 @@ export function downloadPollInterval(
 }
 
 /**
- * Whether a download that was running has stopped, either way: a success gives its pin an image
- * and a failure gives its tile a reason, and the grid holds neither until it rereads.
+ * The pins a download that was running has just stopped feeding, either way: a success gives one
+ * its image and a failure gives its tile a reason, and the grid holds neither until that pin is
+ * read again. Their ids and not a flag, so what is reread is those pins and not the catalogue.
  */
-export function hasSettled(
+export function settledPinIds(
   previous: readonly DownloadProgress[],
   current: readonly DownloadProgress[],
-): boolean {
+): string[] {
   const running = new Set(
     current.filter((download) => download.status === "PENDING").map((download) => download.pinId),
   )
-  return previous.some(
-    (download) => download.status === "PENDING" && !running.has(download.pinId),
-  )
+  return previous
+    .filter((download) => download.status === "PENDING" && !running.has(download.pinId))
+    .map((download) => download.pinId)
 }

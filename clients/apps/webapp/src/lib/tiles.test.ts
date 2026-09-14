@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } from "./tiles"
+import {
+  placeableTiles,
+  renditionForColumn,
+  replacePins,
+  tileAspectRatio,
+  tileImageSource,
+} from "./tiles"
 
 describe("a tile's ratio", () => {
   it("Given the dimensions the API measured, Then the tile is placed at that ratio", () => {
@@ -62,5 +68,25 @@ describe("the tiles a page places", () => {
     ]
 
     expect(placeableTiles(pins).map((pin) => pin.id)).toEqual(["bare", "failed", "none"])
+  })
+})
+
+describe("a page's pins after a download settled", () => {
+  it("Given the pin read again, Then the page carries it and its neighbours are untouched", () => {
+    const page = [
+      { id: "a", n: 1 },
+      { id: "b", n: 1 },
+    ]
+
+    expect(replacePins(page, [{ id: "b", n: 2 }])).toEqual([
+      { id: "a", n: 1 },
+      { id: "b", n: 2 },
+    ])
+  })
+
+  it("Given a pin no page holds, Then the page is unchanged", () => {
+    const page = [{ id: "a", n: 1 }]
+
+    expect(replacePins(page, [{ id: "z", n: 2 }])).toEqual(page)
   })
 })

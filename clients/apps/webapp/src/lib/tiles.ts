@@ -47,3 +47,9 @@ export function placeableTiles<
 >(pins: readonly T[]): T[] {
   return pins.filter((pin) => pin.image?.status !== "PENDING")
 }
+
+/** A page's pins with the freshly read ones swapped in, the rest left as they were. */
+export function replacePins<T extends { id: string }>(pins: readonly T[], fresh: readonly T[]): T[] {
+  const byId = new Map(fresh.map((pin) => [pin.id, pin]))
+  return pins.map((pin) => byId.get(pin.id) ?? pin)
+}

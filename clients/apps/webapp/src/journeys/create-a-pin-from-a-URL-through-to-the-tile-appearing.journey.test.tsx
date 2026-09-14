@@ -2,13 +2,13 @@ import { screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { HttpResponse, http } from "msw"
 import { describe, expect, it } from "vitest"
-import { download, handshakeRoute, onePinPage, pin, renderApp, sessionRoute } from "../test/app"
+import { download, handshakeRoute, pin, pinsRoute, renderApp, sessionRoute } from "../test/app"
 import { server } from "../test/server"
 
 describe("create a pin from a URL through to the tile appearing", () => {
   it("Given an address, Then the task centre holds the work and the tile follows it", async () => {
     const user = userEvent.setup()
-    const bare = pin("a harbour at dusk")
+    const bare = pin("a harbour at dusk", { status: "PENDING" })
     const ready = {
       ...bare,
       image: { status: "READY" as const, url: `/api/v1/pins/${bare.id}/image`, width: 800, height: 600 },
@@ -18,11 +18,13 @@ describe("create a pin from a URL through to the tile appearing", () => {
     // the click. Polls before the request are the creation screen's own, and settle nothing.
     let requested = false
     let polls = 0
+    let pageRequests = 0
     const settled = () => polls > 1
     server.use(
       sessionRoute(() => true),
       handshakeRoute(),
-      onePinPage(() => (settled() ? [ready] : [])),
+      pinsRoute([[bare]], () => (pageRequests += 1)),
+      http.get("/api/v1/pins/:pinId", () => HttpResponse.json(ready)),
       http.post("/api/v1/pins", () => HttpResponse.json(bare, { status: 201 })),
       http.put("/api/v1/pins/:pinId/image", () => {
         requested = true
@@ -46,8 +48,12 @@ describe("create a pin from a URL through to the tile appearing", () => {
     expect(await screen.findByRole("button", { name: "Downloads (1)" })).toBeVisible()
     expect(screen.queryByRole("img", { name: bare.description })).toBeNull()
 
+    // The settlement reads the one pin it changed and writes it into the pages already held: a
+    // catalogue asked again here would cost one request per page scrolled.
+    const paged = pageRequests
     const tile = await screen.findByRole("img", { name: bare.description }, { timeout: 4000 })
     expect(tile).toBeVisible()
+    expect(pageRequests).toBe(paged)
     expect(await screen.findByRole("button", { name: "Downloads (0)" })).toBeVisible()
 
     // The list emptied, so nothing asks for it again.

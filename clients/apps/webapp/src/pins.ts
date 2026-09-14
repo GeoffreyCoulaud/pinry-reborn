@@ -3,6 +3,7 @@ import { useInfiniteQuery } from "@tanstack/react-query"
 import { auth } from "./api"
 
 export type Pin = Schemas["PinOutputDto"]
+export type PinPage = Schemas["PinListOutputDto"]
 
 const PAGE_SIZE = 40
 
