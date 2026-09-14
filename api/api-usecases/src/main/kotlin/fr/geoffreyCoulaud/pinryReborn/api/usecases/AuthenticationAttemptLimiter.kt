@@ -69,8 +69,8 @@ class AuthenticationAttemptLimiter(
         if (states.size <= maxTrackedKeys) return
         states.entries.removeIf { !it.value.isLiveAt(now) }
         if (states.size <= maxTrackedKeys) return
-        val closestToExpiry = states.entries.minBy { it.value.expiresAt }
-        states.remove(closestToExpiry.key, closestToExpiry.value)
+        val closestToExpiryProbe = states.entries.minBy { it.value.expiresAt }
+        states.remove(closestToExpiryProbe.key, closestToExpiryProbe.value)
     }
 
     private fun AttemptState.isLiveAt(now: Instant) = expiresAt.isAfter(now)
