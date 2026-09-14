@@ -43,9 +43,7 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   and its mirror **partial export**; **merging metadata onto a pin that already exists**, which is
   the option the v1 "skip" rule forecloses; and **making a pin with no medium travel**, which needs
   the export to carry `ImageDownload` so a pending or failed download survives the round trip.
-- **The grid cannot cap the pages it holds.** A capped `useInfiniteQuery` drops the pages at the far end
-  and nothing reloads them upward, so block 6 ships no cap and the query keeps every page scrolled.
-  See `docs/specs/2026-09-10-web-application.md`, section 4.7. New 2026-09-11.
+
 ### P2: Operational debt
 
 - **The `raw(` calls in production have never been audited.** Thirteen remain across nine files, and
@@ -81,6 +79,8 @@ Recorded where the decision lives. None is a copy: follow the pointer.
   rather than a documentation one: it pins the predicate, not the uniqueness columns that make
   `findOne()` return at most one row. `PartialUniqueIndexStates` and
   `api-persistence-sqlite/src/test/kotlin/.../migration/PartialUniqueIndexStatesTest.kt`.
+- **The grid keeps every page it scrolls**, no component carrying both a waterfall and a capped
+  bidirectional query. `docs/adr/0033-the-grid-keeps-every-page-it-scrolls.md`.
 - **Authentication attempt counters are per process, and holding one account's login closed is
   cheap.** `docs/adr/0013-in-memory-authentication-attempt-limiting.md`: decision 1 (counters reset
   on restart, correct only while the deployment is one instance), decision 3 (the measured cost of
