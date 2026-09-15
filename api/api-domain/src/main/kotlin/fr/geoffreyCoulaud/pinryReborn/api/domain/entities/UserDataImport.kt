@@ -14,7 +14,8 @@ data class UserDataImport(
     val userId: UUID,
     val state: UserDataImportState,
     val requestedAt: Instant,
-    // Not "upload": it carries the request's instant before a single chunk arrives.
+    // Not "upload": it carries the request's instant before a single chunk arrives. It stops being
+    // written once that phase ends, so a running import's value is not a liveness signal.
     val lastActivityAt: Instant,
     val taskId: UUID? = null,
     val runToken: UUID? = null,

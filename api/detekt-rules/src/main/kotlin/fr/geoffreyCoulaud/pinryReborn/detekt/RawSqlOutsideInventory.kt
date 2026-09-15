@@ -11,21 +11,13 @@ import org.jetbrains.kotlin.psi.psiUtil.isPlain
 import org.jetbrains.kotlin.psi.psiUtil.plainContent
 
 /**
- * Production raw SQL is a closed set (`docs/specs/2026-09-15-raw-sql-audited.md`, section C). The map
- * below is that set: a fragment, and the reason the query beans cannot express it. A `raw(` call
- * whose argument is not one of those fragments is reported, so a new one cannot be written without
- * its reason being written beside it, in a file the reviewer sees in the diff.
+ * Reports a `raw(` call whose argument is not a fragment of [INVENTORY], or is not a plain string
+ * literal at all. The reasons in that map are the record the prohibition rests on, and the argument
+ * for it is `docs/specs/2026-09-15-raw-sql-audited.md`, section C.
  *
- * An argument that is not a string literal is reported too: `raw(SOME_CONSTANT)` would otherwise be a
- * production raw call the inventory never sees.
- *
- * It freezes fragments and not call sites: a sixth sort strategy reusing `id <= ?` is the same forced
- * call and passes, while a genuinely new shape is a new fragment by construction. What it cannot do
- * is report a fragment that has disappeared, a rule visiting files and never asserting a set was
- * consumed. That costs a stale line in the map and no hole in the guard.
- *
- * Names, not resolved members, like the rest of this rule set: a `raw(` on another receiver is
- * reported too, which is a nuisance rather than a miss.
+ * This closes one of Ebean's doors to SQL. The others (`sqlQuery`, `sqlUpdate`, `RawSqlBuilder`,
+ * `@Sql`) are shut by `ArchitectureKonsistTest`'s confinement of `io.ebean.Database`, which is the
+ * other half of the closed-set claim.
  */
 class RawSqlOutsideInventory(
     config: Config,
@@ -37,8 +29,7 @@ class RawSqlOutsideInventory(
     override fun visitCallExpression(expression: KtCallExpression) {
         super.visitCallExpression(expression)
         if (expression.calleeExpression.endsOnName() != RAW) return
-        val argument = expression.valueArguments.firstOrNull() ?: return
-        val fragment = plainLiteralOf(argument.getArgumentExpression())
+        val fragment = plainLiteralOf(expression.valueArguments.firstOrNull()?.getArgumentExpression())
         if (fragment == null || fragment !in INVENTORY) {
             report(Finding(Entity.from(expression), messageFor(fragment)))
         }
@@ -58,7 +49,7 @@ class RawSqlOutsideInventory(
                 "cannot express it."
         }
 
-    private companion object {
+    internal companion object {
         private const val RAW = "raw"
 
         private const val NO_ORDERED_COMPARISON =
@@ -70,7 +61,7 @@ class RawSqlOutsideInventory(
                 "predicate would leave the junction and the cursor would be wrong in silence."
 
         /** Each fragment production may pass to `raw(`, against the reason the query beans cannot express it. */
-        private val INVENTORY =
+        internal val INVENTORY =
             mapOf(
                 "id <= ?" to NO_ORDERED_COMPARISON,
                 "id >= ?" to NO_ORDERED_COMPARISON,

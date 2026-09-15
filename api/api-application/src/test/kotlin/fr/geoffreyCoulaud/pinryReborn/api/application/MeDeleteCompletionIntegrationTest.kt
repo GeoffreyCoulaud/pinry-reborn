@@ -86,6 +86,7 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
     /** A terminal import whose promoted archive is on disk, which only the derived key names. */
     private fun seedCompletedImport(auth: AuthenticatedUser): UUID {
         val importId = UUID.randomUUID()
+        val seededAt = Instant.now()
         val archivePath = Path.of(importsConfig.dataDir()).resolve("imports/$importId.zip")
         Files.createDirectories(archivePath.parent)
         Files.write(archivePath, "a finished archive".toByteArray())
@@ -94,8 +95,8 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
                 id = importId,
                 userId = auth.user.id,
                 state = UserDataImportState.COMPLETED,
-                requestedAt = Instant.now(),
-                lastActivityAt = Instant.now(),
+                requestedAt = seededAt,
+                lastActivityAt = seededAt,
                 storageKey = "imports/$importId.zip",
             ),
         )

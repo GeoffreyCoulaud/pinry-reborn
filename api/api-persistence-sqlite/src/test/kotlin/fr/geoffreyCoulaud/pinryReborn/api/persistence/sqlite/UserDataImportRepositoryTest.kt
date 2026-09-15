@@ -199,7 +199,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given an import that never received a chunk, Then its request time is what the grace counts`() {
+    fun `Given an import that never received a chunk, Then the grace counts its own activity instant`() {
         // Given
         val user = createAndSaveUser()
         val stored = repository.save(awaitingImport(user.id))
