@@ -83,8 +83,8 @@ class RawSqlOutsideInventoryTest {
     }
 
     @Test
-    fun `Given a raw call with no argument at all, Then nothing is reported`() {
-        // Given: not valid Ebean, and the rule reads it rather than indexing past its end
+    fun `Given a raw call with no argument at all, Then it is reported`() {
+        // Given: not valid Ebean, and an argument the inventory cannot see is an argument it cannot see
         val code =
             """
             class Repository {
@@ -96,7 +96,17 @@ class RawSqlOutsideInventoryTest {
         val findings = rule.lint(code)
 
         // Then
-        assertEquals(0, findings.size)
+        assertEquals(1, findings.size)
+    }
+
+    @Test
+    fun `Given the inventory, Then every fragment carries a reason and not a label`() {
+        // Given: nothing else reads these values, so a one-word "forced" would pass the rule, this
+        // suite and the gate, and the map would be a set with decoration.
+        val withoutReason = RawSqlOutsideInventory.INVENTORY.filterValues { it.length < SHORTEST_REASON }
+
+        // Then
+        assertEquals(emptyMap<String, String>(), withoutReason)
     }
 
     @Test
@@ -114,5 +124,10 @@ class RawSqlOutsideInventoryTest {
 
         // Then
         assertEquals(0, findings.size)
+    }
+
+    private companion object {
+        /** Shorter than this is a label, not the reason the query beans cannot express the fragment. */
+        private const val SHORTEST_REASON = 120
     }
 }

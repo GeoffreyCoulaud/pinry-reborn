@@ -206,8 +206,9 @@ class ArchitectureKonsistTest {
 
     @Test
     fun `Given production sources, Then io_ebean Database is confined to its sanctioned homes`() {
-        // `io.ebean.Database` is confined to three sanctioned homes (ADR 0008); the `..` wildcard
-        // prefix on the paths is deliberate, since Konsist end-matches a bare name and misses `.kt`.
+        // `io.ebean.Database` is confined to three sanctioned homes (ADR 0008), which is the half of
+        // the closed-set claim `RawSqlOutsideInventory` does not hold. The `..` wildcard prefix on the
+        // paths is deliberate, since Konsist end-matches a bare name and misses `.kt`.
         Konsist
             .scopeFromProduction()
             .files
