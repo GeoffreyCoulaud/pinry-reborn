@@ -95,6 +95,7 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
                 userId = auth.user.id,
                 state = UserDataImportState.COMPLETED,
                 requestedAt = Instant.now(),
+                lastActivityAt = Instant.now(),
                 storageKey = "imports/$importId.zip",
             ),
         )

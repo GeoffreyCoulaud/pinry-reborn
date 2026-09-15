@@ -48,7 +48,8 @@ class UserDataImportChunkReceiverTest : BaseTest() {
         state: UserDataImportState = UserDataImportState.AWAITING_ARCHIVE,
         uploadedBytes: Long = 0,
     ) = UserDataImport(
-        id = importId, userId = user.id, state = state, requestedAt = now, uploadedBytes = uploadedBytes,
+        id = importId, userId = user.id, state = state, requestedAt = now, lastActivityAt = now,
+        uploadedBytes = uploadedBytes,
     )
 
     private fun receive(
@@ -112,7 +113,7 @@ class UserDataImportChunkReceiverTest : BaseTest() {
 
         // Then
         assertEquals(516, updated.uploadedBytes)
-        assertEquals(now, updated.lastUploadActivityAt)
+        assertEquals(now, updated.lastActivityAt)
         assertEquals(UserDataImportState.AWAITING_ARCHIVE, updated.state)
     }
 

@@ -255,6 +255,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
         userId = user.id,
         state = state,
         requestedAt = now,
+        lastActivityAt = now,
         storageKey = storageKey,
         startedAt = startedAt,
     )

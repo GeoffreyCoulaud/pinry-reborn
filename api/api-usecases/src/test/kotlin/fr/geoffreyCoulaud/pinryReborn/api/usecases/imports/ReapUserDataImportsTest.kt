@@ -57,6 +57,7 @@ class ReapUserDataImportsTest : BaseTest() {
         userId = userId,
         state = state,
         requestedAt = now.minus(Duration.ofDays(2)),
+        lastActivityAt = now.minus(Duration.ofDays(2)),
         storageKey = storageKey,
         taskId = taskId,
     ).also { rows[it.id] = it }

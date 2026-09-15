@@ -23,17 +23,22 @@ class UserDataImportCreator(
      * Inserts and lets the partial unique index refuse a second active import. No read answers that
      * question first (ADR 0009 decision 2): unlike the export, this has no second refusal to order.
      */
-    fun create(user: User): UserDataImport =
-        try {
+    fun create(user: User): UserDataImport {
+        // One read for both columns: a second call is a second instant, and the grace would then
+        // count inactivity from one the request never had.
+        val requestedAt = clock.now()
+        return try {
             repository.save(
                 UserDataImport(
                     id = UUID.randomUUID(),
                     userId = user.id,
                     state = UserDataImportState.AWAITING_ARCHIVE,
-                    requestedAt = clock.now(),
+                    requestedAt = requestedAt,
+                    lastActivityAt = requestedAt,
                 ),
             )
         } catch (error: ImportAlreadyInProgressException) {
             throw ImportAlreadyInProgressError(error)
         }
+    }
 }

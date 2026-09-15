@@ -43,6 +43,20 @@ class UserDataImportCreatorTest : BaseTest() {
     }
 
     @Test
+    fun `Given a clock that moves between reads, Then the request and the last activity are one instant`() {
+        // Given: a second read would stamp the two columns a tick apart, and the sweep then counts
+        // inactivity from an instant the request never had
+        val repository = WriteOnlyImportRepository { it }
+        every { clock.now() } returnsMany listOf(now, now.plusSeconds(1))
+
+        // When
+        val created = UserDataImportCreator(repository, clock).create(user)
+
+        // Then
+        assertEquals(created.requestedAt, created.lastActivityAt)
+    }
+
+    @Test
     fun `Given the index refuses a second active import, Then it surfaces as the use-case error`() {
         // Given
         val violation = ImportAlreadyInProgressException(Exception("unique constraint violated"))

@@ -14,10 +14,11 @@ data class UserDataImport(
     val userId: UUID,
     val state: UserDataImportState,
     val requestedAt: Instant,
+    // Not "upload": it carries the request's instant before a single chunk arrives.
+    val lastActivityAt: Instant,
     val taskId: UUID? = null,
     val runToken: UUID? = null,
     val uploadedBytes: Long = 0,
-    val lastUploadActivityAt: Instant? = null,
     val archiveCompletedAt: Instant? = null,
     val startedAt: Instant? = null,
     val completedAt: Instant? = null,

@@ -56,6 +56,7 @@ class MeImportControllerTest {
         userId = userId,
         state = UserDataImportState.AWAITING_ARCHIVE,
         requestedAt = Instant.parse("2026-08-14T10:00:00Z"),
+        lastActivityAt = Instant.parse("2026-08-14T10:00:00Z"),
     )
 
     @Test
