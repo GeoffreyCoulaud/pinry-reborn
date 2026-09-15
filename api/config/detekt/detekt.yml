@@ -899,6 +899,12 @@ pinry-reborn:
     # is decided. Outside them the same name carries a value already clamped.
     includes: ['**/api-usecases/**']
     excludes: ['**/test/**', '**/testFixtures/**']
+  RawSqlOutsideInventory:
+    active: true
+    # The rule keys on a call name, so its reach is a path filter: every module's production sources,
+    # the inventory being about what ships. Tests write raw fragments the inventory has no reason to
+    # carry, and `raw` on another receiver there would be a false positive.
+    excludes: ['**/test/**', '**/testFixtures/**']
   CommentCarriesDocumentation:
     active: true
     # Four lines, tests included: a long comment in a test is the same duplication as anywhere else.

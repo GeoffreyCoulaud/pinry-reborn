@@ -46,10 +46,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 
 ### P2: Operational debt
 
-- **The `raw(` calls in production have never been audited.** Thirteen remain across nine files, and
-  nothing records which are legitimate and which stand in for a relation the model does not hold, as
-  `PinRepository:167`'s `id in (select ...)` did for `ImageDownloadModel`.
-  See `docs/specs/2026-09-10-web-application.md`, section 4.11. New 2026-09-11.
 - **A table rebuild's row-carrying path is exercised by nothing.** `TableRebuildColumnsTest` compares
   the three column lists as text against an empty database, so a statement filling a new `not null`
   column before the copy (`1.24.sql`, and the same shape in `1.22.sql`) is covered by no test at all.
