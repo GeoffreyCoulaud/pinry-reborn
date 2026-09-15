@@ -42,7 +42,7 @@ class UserDataImportChunkReceiver(
         if (!archiveStore.hasFreeSpace(minimumFreeBytes)) throw ImportInsufficientStorageError()
         val uploadedBytes = append(importId, offset, bytes)
         return repository.saveWhileAwaitingArchive(transactionRunner, importId) {
-            it.copy(uploadedBytes = uploadedBytes, lastUploadActivityAt = clock.now())
+            it.copy(uploadedBytes = uploadedBytes, lastActivityAt = clock.now())
         }
     }
 

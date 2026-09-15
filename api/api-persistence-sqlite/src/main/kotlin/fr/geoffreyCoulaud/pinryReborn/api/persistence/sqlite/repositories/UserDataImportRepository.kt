@@ -76,11 +76,11 @@ class UserDataImportRepository(
         )
     }
 
-    // The grace counts inactivity, so a row that never received a chunk falls back on its request time.
+    // The grace counts inactivity, and a row that never received a chunk carries its request time.
     override fun findAbandonableBefore(instant: Instant, afterId: UUID?, limit: Int): List<UserDataImport> =
         QUserDataImportModel()
             .state.equalTo(UserDataImportState.AWAITING_ARCHIVE.name)
-            .raw("coalesce(last_upload_activity_at, requested_at) < ?", instant)
+            .lastActivityAt.lessThan(instant)
             .pageByIdAfter(afterId, limit)
             .findList()
             .map { it.toDomain() }

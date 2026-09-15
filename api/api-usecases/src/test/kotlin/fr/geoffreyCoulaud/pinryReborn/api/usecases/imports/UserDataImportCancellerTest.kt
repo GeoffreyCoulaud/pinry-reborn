@@ -53,6 +53,7 @@ class UserDataImportCancellerTest : BaseTest() {
         userId = userId,
         state = state,
         requestedAt = now,
+        lastActivityAt = now,
         taskId = taskId,
         storageKey = if (state == UserDataImportState.AWAITING_ARCHIVE) null else storageKey,
     )

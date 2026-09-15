@@ -35,6 +35,7 @@ class UserDataImportIssueRepositoryTest : RepositoryTest() {
                 userId = userId,
                 state = UserDataImportState.RUNNING,
                 requestedAt = requestedAt,
+                lastActivityAt = requestedAt,
             ),
         )
 

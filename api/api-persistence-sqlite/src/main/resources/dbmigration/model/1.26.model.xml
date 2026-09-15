@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<migration xmlns="http://ebean-orm.github.io/xml/ns/dbmigration">
+    <changeSet type="apply">
+        <addColumn tableName="user_data_imports">
+            <column name="last_activity_at" type="timestamp" notnull="true"/>
+        </addColumn>
+        <dropColumn columnName="last_upload_activity_at" tableName="user_data_imports"/>
+    </changeSet>
+</migration>

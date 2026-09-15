@@ -68,7 +68,7 @@ class MeImportSweepIntegrationTest : IntegrationTest() {
     private fun backdatePastGrace(importId: UUID) {
         val stored = requireNotNull(repository.findById(importId))
         val stale = Instant.now().minus(importsConfig.uploadGrace()).minus(Duration.ofHours(1))
-        repository.save(stored.copy(lastUploadActivityAt = stale))
+        repository.save(stored.copy(lastActivityAt = stale))
     }
 
     private fun writeArchive(importId: UUID, bytes: ByteArray): Path {

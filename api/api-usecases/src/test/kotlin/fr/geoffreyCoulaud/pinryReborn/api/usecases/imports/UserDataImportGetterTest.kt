@@ -34,6 +34,7 @@ class UserDataImportGetterTest : BaseTest() {
             userId = userId,
             state = UserDataImportState.RUNNING,
             requestedAt = now,
+            lastActivityAt = now,
         )
 
     @Test

@@ -22,7 +22,7 @@ internal object PartialUniqueIndexStates {
     /** `uq_user_data_exports_pending` (`1.11.sql:2`): a user has at most one export in these states. */
     val pendingExportStates: Set<String> = setOf(UserDataExportState.PENDING.name)
 
-    /** `uq_user_data_imports_active` (`1.21.sql:2`): a user has at most one import in these states. */
+    /** `uq_user_data_imports_active` (`1.21.sql:46`): a user has at most one import in these states. */
     val activeImportStates: Set<String> =
         UserDataImportState.entries.filter { it.isActive }.map { it.name }.toSet()
 }

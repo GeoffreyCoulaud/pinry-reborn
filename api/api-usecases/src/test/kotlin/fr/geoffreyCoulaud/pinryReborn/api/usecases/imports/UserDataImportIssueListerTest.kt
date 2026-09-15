@@ -41,6 +41,7 @@ class UserDataImportIssueListerTest : BaseTest() {
             userId = userId,
             state = UserDataImportState.COMPLETED,
             requestedAt = now,
+            lastActivityAt = now,
         )
 
     @Test

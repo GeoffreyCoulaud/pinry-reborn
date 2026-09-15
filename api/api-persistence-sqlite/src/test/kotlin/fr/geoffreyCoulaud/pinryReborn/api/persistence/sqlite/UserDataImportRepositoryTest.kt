@@ -36,6 +36,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         userId = userId,
         state = UserDataImportState.AWAITING_ARCHIVE,
         requestedAt = at,
+        lastActivityAt = at,
     )
 
     // --- save / findById ---
@@ -66,7 +67,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
                     taskId = randomUUID(),
                     runToken = runToken,
                     uploadedBytes = 4096,
-                    lastUploadActivityAt = requestedAt.plusSeconds(10),
+                    lastActivityAt = requestedAt.plusSeconds(10),
                     archiveCompletedAt = requestedAt.plusSeconds(20),
                     startedAt = requestedAt.plusSeconds(30),
                     storageKey = "imports/a.zip",
@@ -175,7 +176,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         // Given
         val user = createAndSaveUser()
         val stored =
-            repository.save(awaitingImport(user.id).copy(lastUploadActivityAt = requestedAt.plusSeconds(60)))
+            repository.save(awaitingImport(user.id).copy(lastActivityAt = requestedAt.plusSeconds(60)))
 
         // When
         val abandonable = repository.findAbandonableBefore(requestedAt.plusSeconds(120), afterId = null, limit = 10)
@@ -188,7 +189,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
     fun `Given an upload still receiving chunks, Then it is not abandonable`() {
         // Given: the grace counts inactivity, not age, so a long upload still streaming survives it
         val user = createAndSaveUser()
-        repository.save(awaitingImport(user.id).copy(lastUploadActivityAt = requestedAt.plusSeconds(300)))
+        repository.save(awaitingImport(user.id).copy(lastActivityAt = requestedAt.plusSeconds(300)))
 
         // When
         val abandonable = repository.findAbandonableBefore(requestedAt.plusSeconds(120), afterId = null, limit = 10)

@@ -21,6 +21,7 @@ class UserDataImportDtoMapperTest {
         userId = randomUUID(),
         state = UserDataImportState.AWAITING_ARCHIVE,
         requestedAt = Instant.parse("2026-08-14T10:00:00Z"),
+        lastActivityAt = Instant.parse("2026-08-14T10:00:00Z"),
     )
 
     private fun completedImport() = awaitingImport().copy(

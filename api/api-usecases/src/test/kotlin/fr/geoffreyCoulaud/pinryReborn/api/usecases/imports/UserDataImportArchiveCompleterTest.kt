@@ -61,7 +61,10 @@ class UserDataImportArchiveCompleterTest : BaseTest() {
     private val deletedArchives = mutableListOf<String>()
 
     private fun importWith(state: UserDataImportState = UserDataImportState.AWAITING_ARCHIVE) =
-        UserDataImport(id = importId, userId = user.id, state = state, requestedAt = now, uploadedBytes = 4096)
+        UserDataImport(
+            id = importId, userId = user.id, state = state, requestedAt = now, lastActivityAt = now,
+            uploadedBytes = 4096,
+        )
 
     private fun aTask() =
         Task(
