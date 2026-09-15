@@ -6,8 +6,9 @@ import dev.detekt.api.Finding
 import dev.detekt.api.Rule
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtLiteralStringTemplateEntry
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
+import org.jetbrains.kotlin.psi.psiUtil.isPlain
+import org.jetbrains.kotlin.psi.psiUtil.plainContent
 
 /**
  * Production raw SQL is a closed set (`docs/specs/2026-09-15-raw-sql-audited.md`, section C). The map
@@ -38,16 +39,14 @@ class RawSqlOutsideInventory(
         if (expression.calleeExpression.endsOnName() != RAW) return
         val argument = expression.valueArguments.firstOrNull() ?: return
         val fragment = plainLiteralOf(argument.getArgumentExpression())
-        if (fragment != null && fragment in INVENTORY) return
-        report(Finding(Entity.from(expression), messageFor(fragment)))
+        if (fragment == null || fragment !in INVENTORY) {
+            report(Finding(Entity.from(expression), messageFor(fragment)))
+        }
     }
 
     /** The text of a string literal carrying no interpolation, null for anything else. */
-    private fun plainLiteralOf(expression: KtExpression?): String? {
-        val entries = (expression as? KtStringTemplateExpression)?.entries ?: return null
-        if (entries.any { it !is KtLiteralStringTemplateEntry }) return null
-        return entries.joinToString("") { it.text }
-    }
+    private fun plainLiteralOf(expression: KtExpression?): String? =
+        (expression as? KtStringTemplateExpression)?.takeIf { it.isPlain() }?.plainContent
 
     private fun messageFor(fragment: String?): String =
         if (fragment == null) {
