@@ -2,8 +2,8 @@
 
 Date: 2026-09-15
 Spec: `docs/specs/2026-09-15-raw-sql-audited.md`
-Blocks: 10 `fix/image-holds-its-pin` (PR #141, merged), 20 `fix/import-last-activity-not-null`,
-30 `chore/raw-sql-lot-wrap` (the closing block, not yet run)
+Blocks: 10 `fix/image-holds-its-pin` (PR #141, merged), 20 `fix/import-last-activity-not-null`
+(PR #142, merged), 30 `chore/raw-sql-lot-wrap` (the closing block, this pull request)
 Tier: Spec. The holistic review runs at the head of Wrap: two code blocks, so no waiver is offered.
 
 ## Current state
@@ -68,9 +68,35 @@ the model rather than the query.
 - **`foreign_keys` is still off**, so the key block 10 recorded on `images` enforces nothing. Its own
   backlog entry stays open.
 - **The holistic review has not run**; it is the head of Wrap, over
-  `git diff <previous lot tag>..origin/main`.
+  `git diff <previous lot tag>..origin/main`. (Corrected: it ran on 2026-09-15, and the section below
+  carries its findings and their exits.)
+
+## The holistic review
+
+`.reviews/raw-sql-audited-holistic.md`, over `git diff lot/0.22.0-page-size-clamped..origin/main`:
+0 CRITICAL, 1 MAJOR, 10 MINOR, and no correctness defect. Block 30 is the only destination, so each
+finding is below with the exit it took.
+
+| Finding | Exit |
+|---|---|
+| **MAJOR.** No value of the inventory map is ever read, so an entry carrying no reason passes the rule, its suite and the gate. The map is a set with decoration. | **Fixed.** `RawSqlOutsideInventoryTest` asserts a length floor on every reason; the mutation `"id > ?" to "forced"` fails it with `expected: <{}> but was: <{id > ?=forced}>`. |
+| A `raw(` the rule cannot read is silently accepted, which inverts its posture everywhere else. | **Fixed.** The early return on a missing argument is gone, so a no-argument call falls into the "not a string literal" message with the constant and the interpolation. One branch and one test case fewer. |
+| The closed-set claim rests on two guards that do not name each other. | **Fixed.** The rule's KDoc names `ArchitectureKonsistTest`'s confinement of `io.ebean.Database` as the other half, and that assertion's comment names the rule. No code change. |
+| `lastActivityAt`'s comment explains the lower bound of the new name and not its upper one. | **Fixed.** The comment says the value stops being written once the upload phase ends, so a running import's value is not a liveness signal. |
+| The standing prohibition gained no line in `agents/engineering.md`. | **Refused**, on two counts. The operator decided on 2026-09-15 that `docs/specs/2026-09-15-raw-sql-audited.md` is the prohibition's record, which the review itself reads as a confirmation rather than a defect. And the bullet is not the cost: `agents/writing.md` makes `agents/engineering.md` conform to the mandate-before-argument style the moment something touches it, which is a lot of its own and not a line in a closing block. |
+| `ImageQueries.withPinInAnyState()` is the first no-op extension in `queries/`, and its omission is undetectable. | **Accepted limit**, already recorded where the decision lives: `SoftDeletableQueries`' KDoc, and ADR 0008 through the backlog's Known limits band. `SoftDeletableQueries.any()` has the same property by design. Widening the Konsist assertion to navigation is its own lot. |
+| `UserDataImportRepositoryTest`'s "never received a chunk" case no longer tests what its name says. | **Fixed.** Renamed to say the row's own activity instant; the claim about the request instant is the creator case's. |
+| `MeDeleteCompletionIntegrationTest` writes the two-clock-read shape the lot removed. | **Fixed.** Hoisted to one local, as `UserDataImportCreator` does. |
+| The rule's KDoc is a third copy of the spec's argument, in the one module the comment rule cannot reach. | **Fixed.** Cut to what the rule reports, that the reasons in the map are the record, and where the argument lives. |
+| `MigratedSchemaIndexesTest` asserts one direction. | **Fixed.** It now asserts both, filtering the `sqlite_autoindex_` names SQLite gives a table constraint's index and no statement declares. The mutation that drops `ix_images_content_hash` from the declared set fails it. |
+| PR #141's body reports two counted figures that do not reproduce. | **Corrected here**, the merged body being what it is. `git diff --numstat 0ee99c15..8e6610b2` less `docs/specs` gives 87 counted, and the same restricted to `api/*/src/main/*` gives 51 production, against the 92 and 54 the body claims. Block 20 reproduces: 353 counted and 178 production by the same commands over `8e6610b2..078f9d1c`, less `docs/handoffs`. |
+
+**The merged state is validated, after the fact rather than before it.** PR #142's own run,
+`34937426849`, was still in flight when the merge landed, about twelve minutes of exposure. The push
+to `main` at `078f9d1c` then ran `validate / verify` in full, run `34937994632`, 06:40:30 to
+06:52:09, success, on the rebased tip the lot now is. PR #141 is clean on both its runs.
 
 ## Next step
 
-Block 30, `chore/raw-sql-lot-wrap`: the holistic review's findings, the backlog reconciled, this
-handoff corrected, then the lot tag.
+Block 30, `chore/raw-sql-lot-wrap`, is this pull request. After it merges, the lot tag
+`lot/0.23.0-raw-sql-audited`, annotated on the closing merge and pushed.
