@@ -6,9 +6,9 @@ import java.nio.file.Path
 import kotlin.io.path.readLines
 
 class PinryRuleSetProviderTest {
-    /** Four of the seven report nothing against the real sources: their registration is asserted here or nowhere. */
+    /** Five of the eight report nothing against the real sources: their registration is asserted here or nowhere. */
     @Test
-    fun `Given the provider, Then its rule set carries exactly the seven expected rules`() {
+    fun `Given the provider, Then its rule set carries exactly the eight expected rules`() {
         // Given
         val provider = PinryRuleSetProvider()
 
@@ -23,6 +23,7 @@ class PinryRuleSetProviderTest {
                 "DatabaseStaticFacadeCall",
                 "PageSizeForwardedUnclamped",
                 "QueryBeanConstructedByQualifiedName",
+                "RawSqlOutsideInventory",
                 "RowMergedOutsideTransaction",
                 "SoftDeleteStateFilteredOutsideQueries",
                 "WallClockRead",

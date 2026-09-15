@@ -26,6 +26,7 @@ class PinryRuleSetProvider : RuleSetProvider {
                 ::CommentCarriesDocumentation,
                 ::RowMergedOutsideTransaction,
                 ::PageSizeForwardedUnclamped,
+                ::RawSqlOutsideInventory,
             ),
         )
 
