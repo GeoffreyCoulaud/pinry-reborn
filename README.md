@@ -29,7 +29,7 @@ The development server proxies `/api` to `http://localhost:8080`, so the applica
 one origin, which is what the session cookie needs (`docs/adr/0026-one-session-two-transports.md`).
 `clients/AGENTS.md` carries the rest of the commands.
 
-To run the whole product the way it is released, three containers behind one proxy on
+To run the whole product the way it is released, the containers `compose.yml` declares behind one proxy on
 <http://localhost:6258>:
 
 ```sh

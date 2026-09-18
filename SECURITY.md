@@ -2,9 +2,9 @@
 
 ## Vulnerability scanning
 
-The release path publishes two images, and they carry different material.
+Each image the release path publishes carries its own material, so read the one you pull.
 
-Every image pushed to `ghcr.io/geoffreycoulaud/pinry-reborn-api` gets three signed
+Every image pushed to `ghcr.io/geoffreycoulaud/pinry-reborn-api` gets these signed
 attestations (keyless, OIDC-based, via [cosign](https://github.com/sigstore/cosign)):
 
 - a **CycloneDX** SBOM: the standard, portable [Syft](https://github.com/anchore/syft)
@@ -14,7 +14,7 @@ attestations (keyless, OIDC-based, via [cosign](https://github.com/sigstore/cosi
 - an **[OpenVEX](https://openvex.dev/)** document (`security/vex.openvex.json`): the
   triage marking non-exploitable CVEs as `not_affected`.
 
-Every image pushed to `ghcr.io/geoffreycoulaud/pinry-reborn-webapp` gets the first two
+Every image pushed to `ghcr.io/geoffreycoulaud/pinry-reborn-webapp` gets the SBOMs above
 and no OpenVEX document: `security/vex.openvex.json` states nothing about that image, so
 attaching it there would record nothing. Nothing scans those SBOMs yet either; they are
 there for whoever pulls the image.
@@ -36,8 +36,8 @@ explicitly with `--vex security/vex.openvex.json`.
 
 ### Statements are image-scoped, and the scan reads the Syft-JSON SBOM
 
-Grype resolves a VEX statement in two passes: by the **image** identity (`pkg:oci/...`)
-then by the vulnerable **package** PURL. We use the **image-scoped** form, product
+Grype resolves a VEX statement by the **image** identity (`pkg:oci/...`) first, then by the
+vulnerable **package** PURL. We use the **image-scoped** form, product
 `pkg:oci/pinry-reborn-api` with the vulnerable package as a `subcomponent`, because it
 is the only form that is safe to attach and redistribute: it is scoped to *this* image,
 so a downstream consumer's unrelated OS or application packages are never suppressed by

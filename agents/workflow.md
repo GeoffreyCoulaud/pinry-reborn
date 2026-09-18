@@ -13,8 +13,8 @@ read every rule that section carries.
 
 - **Stay inside the repository.** Never read, list or search `$HOME`, parent directories, or another repository; a git
   worktree is its own root.
-- **An adjacent defect has three tiers**. No diff hunk should be unexplainable by the request or by the answer the
-  operator gave.
+- **An adjacent defect takes one of the tiers below**. No diff hunk should be unexplainable by the request or by
+  the answer the operator gave.
     1. **Trivial, obviously correct and contained** : fixed in the change that finds it, flagged in the final message.
     2. **Larger, and reachable inside this lot**: stop and ask the operator **at the moment of discovery**, stating the
        defect, the size of the fix and the block it would join. Not at the next boundary.
@@ -75,9 +75,9 @@ flowchart LR
 Wrap inline. The diagram carries order and nothing else.
 
 - **A work session produces a `lot`, composed of autonomous `blocks`.**
-- **Two agents share it**: the **lead**, the main loop the operator talks to, which keeps the lot's thread and writes no
-  block of a tier Spec lot; and one **teammate** per block, a named background agent that implements it and is stopped
-  when its pull request merges.
+- **The lead and one teammate per block share it**: the **lead**, the main loop the operator talks to, which keeps
+  the lot's thread and writes no block of a tier Spec lot; and the **teammate**, a named background agent that
+  implements its block and is stopped when its pull request merges.
 - **Every agent the lead dispatches is named, reviews included.**
 - **A review is still not a correspondent**: one brief out, one report back, and the lead never sends a review agent a
   second message except to ask again for a report that did not arrive.
@@ -86,7 +86,7 @@ Wrap inline. The diagram carries order and nothing else.
 - **Discuss and Spec run once for the lot. Act, Verify and Integrate run once per block, in series**, a block's pull
   request merged before the next block starts. Wrap closes the lot.
 
-**Detail.** The two roles are `docs/adr/0023-act-in-a-teammate-per-block.md`; naming every dispatched agent is
+**Detail.** The roles are `docs/adr/0023-act-in-a-teammate-per-block.md`; naming every dispatched agent is
 `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 4. A name buys recoverability: a report that does not
 arrive, or arrives truncated, can be asked for again instead of costing a second full review.
 
@@ -102,7 +102,7 @@ arrive, or arrives truncated, can be asked for again instead of costing a second
 
 ### What a block is
 
-- **A block is the smallest change that can be merged to `main` on its own.** Three conditions:
+- **A block is the smallest change that can be merged to `main` on its own**, on the conditions below:
     1. **Green alone.** `dagger call gate` passes at the block's tip. A block therefore never ends between a red test
        commit and the implementation that answers it.
     2. **Coherent alone.** Nothing it adds is unreachable: every new port method has a caller, every configuration key
@@ -154,19 +154,20 @@ carried three sections above, and no implementation of that block could have pas
 - **Its brief points at the block's row in the spec, the spec, `AGENTS.md`, the branch name and the report shape under
   Integrate, and restates nothing.**
 - **Strict TDD as `agents/engineering.md` states it.**
-- **An adjacent defect found here takes one of the three tiers under Scope, and tier 2 stops the teammate**: it sends
+- **An adjacent defect found here takes one of the tiers under Scope, and tier 2 stops the teammate**: it sends
   the question to `main`, which the operator reads, and ends its turn.
 - **The operator's answer reaches it through the lead, by name and verbatim**; the lead never answers a tier-2 question
   itself.
 - **A blocker takes the same path, a denied permission included, which is never routed through the lead.**
-- **The teammate speaks only when it stops, and there are four stops:**
+- **The teammate speaks only when it stops, and its stops are these:**
     1. a tier-2 question;
     2. a blocker;
     3. continuous integration has started;
     4. the pull request is ready.
 
-**Detail.** Four stops, not three: `docs/adr/0023-act-in-a-teammate-per-block.md`, decision 5, as
-`docs/adr/0028-the-budget-follows-the-ecosystem.md` amends it. Phase 5 operates the last two.
+**Detail.** The list is `docs/adr/0023-act-in-a-teammate-per-block.md`, decision 5, as
+`docs/adr/0028-the-budget-follows-the-ecosystem.md` amends it by adding one. Phase 5 operates the stop for
+continuous integration and the one for the pull request.
 
 ### 4. Verify
 
@@ -183,7 +184,7 @@ review runs at the head of Wrap (`docs/adr/0028-the-budget-follows-the-ecosystem
 - **The teammate pushes, opens the pull request as a draft, reports that continuous integration has started and ends
   its turn.**
 - **When the lead tells it the run has settled, it marks the pull request ready and sends the link to `main`.**
-- **The pull request's body is the block's report, in five parts**: evidence (gate, continuous integration, the diff
+- **The pull request's body is the block's report**: evidence (gate, continuous integration, the diff
   against the budget), tier-1 fixes, tier-2 questions with their answers, pitfalls, departures from the block table.
 - **It is merged only after the human has reviewed it** (rebase only, no local-merge exemption), approval never assumed.
 - **A red run, or a change the human asks for, returns the block to Verify**: the lead forwards it by name, the teammate
@@ -204,8 +205,8 @@ review runs at the head of Wrap (`docs/adr/0028-the-budget-follows-the-ecosystem
   branches and `ListAgents`, never from the arrival of a notice. A teammate whose report draws no answer within a few
   minutes sends it again.
 
-**Detail.** The two stops this phase operates are phase 3's, which carries the list. ADR 0019 decision 3 puts the pull
-request back to draft on a new run, so ready is marked again and the wait that precedes it is the same wait. The three
+**Detail.** The stops this phase operates are phase 3's, which carries the list. ADR 0019 decision 3 puts the pull
+request back to draft on a new run, so ready is marked again and the wait that precedes it is the same wait. The
 waiting rules are `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 3: no run of the measured lot finished
 under the ten-minute ceiling and the median was 14.2 minutes, so the foreground branch never applies to continuous
 integration. That decision's third claim, that a background command's completion does not re-invoke an idle agent, is
@@ -259,14 +260,14 @@ it.
 - **An item holds in two lines**, plus a pointer to the dated document carrying its reasoning, with the one exception
   `agents/writing.md` states: an item whose reasoning lives nowhere else keeps it, and says so.
 - **There is no cap on how many items the backlog holds.**
-- **A review finding has four exits**: fixed inside the lot; a backlog item (work someone will do); an accepted limit
+- **A review finding has these exits**: fixed inside the lot; a backlog item (work someone will do); an accepted limit
   (written where the decision lives, never copied to the backlog); or refused, with the reason in the handoff. Wrap
   states which exit each finding took. The default is the first.
-- **Banded by nature before priority**, four bands: Open work (`P0`, `P1`, `P2`; a priority may hold nothing), Known
+- **Banded by nature before priority**, in these bands: Open work (`P0`, `P1`, `P2`; a priority may hold nothing), Known
   limits (pointers to the documents that record them, no copy kept here), Before beta (dated events no session starts
   early), Features (the roadmap, unsequenced). A limit is not debt.
 
-**Detail.** This section is where the repository writes the two lists out, under the rule `agents/writing.md` carries
+**Detail.** This section is where the repository writes those lists out, under the rule `agents/writing.md` carries
 in Style (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 2).
 `docs/adr/0010-review-finding-dispositions.md` decided the exits: the backlog receives what the operator refused or
 what genuinely belongs to another lot, not what was merely out of the original scope. An entry long enough to need

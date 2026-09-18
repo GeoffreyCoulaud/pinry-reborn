@@ -43,7 +43,7 @@ Inside `apps/webapp/src`:
 - `pnpm --filter @pinry-reborn/api-client run generate` : rewrites `packages/api-client/src/schema.d.ts` from
   `contract/openapi.json`. **Run it after any contract change**, the gotcha below saying why an install may not.
 - **The clients' gate**: `dagger call clients-gate`, from anywhere in the repository. It is what
-  `dagger call gate` calls; its seven steps are the install above and the six below, in that order, and each
+  `dagger call gate` calls; its steps are the install above and the ones below, in that order, and each
   runs on its own too.
 - `pnpm run messages` : compiles `messages/{en,fr}.json` into typed functions under `src/paraglide/`.
   **Run it before anything that typechecks**, a fresh clone having no generated output at all.
@@ -65,7 +65,8 @@ Inside `apps/webapp/src`:
   wrote.
 - **The import graph is acyclic**, and `packages/api-client` never imports `packages/auth`: what a generator
   rewrites at every install cannot sit downstream of code written by hand. **An application never imports the
-  HTTP client either**, only the two packages do, so the transport is chosen once and not per screen.
+  HTTP client either**, only `packages/api-client` and `packages/auth` do, so the transport is chosen once and
+  not per screen.
 - Everything is in English, as everywhere else in the repository, the message catalogues excepted: they are the
   product's own text.
 
@@ -87,7 +88,7 @@ Inside `apps/webapp/src`:
   decision 4). The gate installs into an empty tree, so it always regenerates; a workstation whose lockfile is
   already satisfied skips every lifecycle script, so a contract change needs the command above.
 - **A workspace package declares `main` as well as `exports`.** dependency-cruiser's resolver ignores `exports`,
-  and a package it cannot resolve is a dependency it never reports: the two boundary rules would pass on the
+  and a package it cannot resolve is a dependency it never reports: the boundary rules above would pass on the
   import they exist to refuse.
 - **MSW starts at the top of `src/test/setup.ts`, not in `beforeAll`.** `openapi-fetch` reads `globalThis.fetch`
   when the client is built and `session.ts` builds one while it is imported, which happens after the setup file

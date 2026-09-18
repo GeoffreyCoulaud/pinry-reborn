@@ -11,7 +11,7 @@ root, so that they read the same from either file.
 
 ## Where the code lives
 
-Twelve Gradle modules (`api/settings.gradle.kts`). Layering enforced by the build graph and
+The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the build graph and
 `ArchitectureKonsistTest`.
 
 | Module                     | Role                                                                      |
