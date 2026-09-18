@@ -1,5 +1,5 @@
 # The web application's context alone; the `api` service builds under api/.dockerignore. The first
-# block is IGNORE in .dagger/src/index.ts, so the two lists stay in step.
+# block was copied from IGNORE in .dagger/src/index.ts on 2026-09-18, and nothing keeps the two in step.
 **/build
 **/.gradle
 **/.kotlin
