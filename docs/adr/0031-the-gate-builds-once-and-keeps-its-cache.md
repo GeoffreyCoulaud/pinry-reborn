@@ -112,7 +112,17 @@ therefore opens with a spike, and decisions 2 to 6 are conditional on it.
    path's. (Corrected: the deletion lists on the whole `dagger-state-` prefix and spares the full
    key. Listing on the version prefix left the previous engine's entry behind at every version bump,
    waiting seven days for GitHub to evict it, which is exactly the second entry this decision
-   refuses.)
+   refuses.) (Corrected: the deletion precedes the save, and the job `prune` is renamed
+   `engine-state` for it. "After a successful save" left the two entries coexisting for the length
+   of the save, which the numbers of 2026-09-18 made an overflow rather than a moment: the archive
+   had grown to 4.43 GB, so 4.43 × 2 + 1.87 of buildx blobs is 10.73 GB of a ten-gigabyte quota,
+   and what GitHub evicted least-recently-used was the release path's buildx cache, down from the
+   5.46 GB this decision's own correction above recorded to 1.87 GB. `verify` therefore hands the
+   archive to `engine-state` as a run artefact, the way it already hands `publish` the fast jar, and
+   `engine-state` downloads it, deletes every `dagger-state-` entry and saves the new one. The peak
+   is one entry instead of two and the size of the archive stops bounding anything. Nothing is
+   deleted before the artefact has landed: a failed download costs a cold run, where a delete with
+   no save to follow it would cost one too and leave nothing behind.)
 5. **An `engine.json`, mounted at `/etc/dagger/engine.json` in the engine the job starts, bounds the
    cache with `gc.maxUsedSpace`.** The default policy targets 75 % of the disk and therefore never
    collects on a runner. The bound must sit above what one gate produces and below what the quota

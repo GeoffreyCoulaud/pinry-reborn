@@ -108,8 +108,8 @@ to the pipeline is on the next pull request with nothing to add here.
 **`verify` holds `contents: read` and nothing else**, it being the job that runs the build's third-party plugins.
 What needs a write scope is the jobs that need it and run nowhere else: **`publish`**, on the release path alone,
 which is what CI still holds that the pipeline cannot, a registry and GitHub's identity, so the push of both images
-to GHCR, their SBOMs and their cosign attestations, the OpenVEX predicate being the API's alone; and **`prune`**, on
-`main` alone, which carries the one scope deleting a cache entry needs. `publish` rebuilds the API's image and not
+to GHCR, their SBOMs and their cosign attestations, the OpenVEX predicate being the API's alone; and **`engine-state`**,
+on `main` alone, which carries the one scope deleting and writing a cache entry needs. `publish` rebuilds the API's image and not
 its jar: `verify` calls the pipeline once more, `dagger call quarkus-app export`, a cache hit on the build `ci`
 already ran, and hands that fast jar over as a run artefact, so the API's image carries the bytes
 `dagger call smoke` started. The web application's bundle is compiled again there, no artefact of the gate's crossing
@@ -119,13 +119,16 @@ over.
 decisions 2 to 6). A container named `dagger-engine` is started on a state directory `actions/cache` restored, with
 `.github/engine.json` mounted at `/etc/dagger/engine.json`, and the CLI reaches it through
 `_EXPERIMENTAL_DAGGER_RUNNER_HOST`. **A pull request restores and never saves; a push to `main` stops the engine,
-archives the state, saves it under a key carrying the engine version and the commit, and deletes every other entry
-under the `dagger-state-` prefix.** One entry is a condition and not a tidiness: the archive is 5.1 gigabytes of the
-repository's ten-gigabyte quota (run `35381866356`, up from the three gigabytes
+archives the state, and hands the archive to `engine-state` as a run artefact, which deletes every entry under the
+`dagger-state-` prefix and only then saves the new one** under a key carrying the engine version and the commit.
+**The order is the point.** The archive is 4.4 gigabytes of the repository's ten-gigabyte quota (read on
+2026-09-18 by `gh cache list`, up from the three gigabytes
 `docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md` measured, the web application's build stage being the
-difference), so a second would evict the release path's buildx cache. **A restore that does not unpack, and an engine
-that will not come up on it, both empty the state and carry on cold**, the cache being an optimisation and never a
-condition of a green run.
+difference). Saving before deleting put two of them there at once and GitHub evicted the release path's buildx cache,
+least recently used, which is how those entries fell from 5.46 to 1.87 gigabytes. **A restore that does not unpack, and
+an engine that will not come up on it, both empty the state and carry on cold**, the cache being an optimisation and
+never a condition of a green run; for the same reason nothing is deleted until the replacement has landed on the
+`engine-state` runner.
 **`.github/engine.json` declares `gc.policies` rather than a bound alone**, because the list Dagger generates
 otherwise reclaims the Gradle home and pnpm store volumes, which are the thing being kept.
 
