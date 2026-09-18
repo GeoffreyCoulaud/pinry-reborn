@@ -50,6 +50,13 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   the three column lists as text against an empty database, so a statement filling a new `not null`
   column before the copy (`1.24.sql`, and the same shape in `1.22.sql`) is covered by no test at all.
   See `docs/handoffs/2026-09-14 - handoff - the-download-sweep.md`. New 2026-09-14.
+- **The engine state archive outgrew the Actions quota's margin.** It is 5.1 GB of ten, and `verify`
+  saves the new one before `prune` deletes the old, so the two coexist over the quota for a moment
+  and GitHub evicts by least recent use. The shape of the fix is a bound on what the engine keeps,
+  through `gc.policies` in `.github/engine.json`, rather than the cache-delete scope ADR 0031 keeps
+  off the job that runs the build's third-party plugins; its own lot, the bound being found by trial
+  at a full run on `main` each.
+  See `docs/handoffs/2026-09-18 - handoff - development-compose.md`. New 2026-09-18.
 - **`foreign_keys` is off, so every declared key is unenforced, and that now has a consequence.**
   `datasource.db.url` sets `journal_mode`, `synchronous` and `busy_timeout` and not `foreign_keys`;
   `1.22.sql` spent a table rebuild on a constraint nothing checks, and turning the pragma on would make

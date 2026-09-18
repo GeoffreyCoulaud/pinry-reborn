@@ -76,8 +76,9 @@ none open.
   own. **That margin is why block 30's second image declines a cache**, and it is now smaller than
   one entry: `verify` saves the new archive before `prune` deletes the old, so two five-gigabyte
   entries and the buildkit blobs are momentarily over the quota, and GitHub evicts by least recent
-  use. Nothing has gone red, and no block of this lot can fix it: it is ADR 0031's mechanism, and
-  the next lot's to weigh.
+  use. Nothing has gone red, and no block of this lot can fix it: it is ADR 0031's mechanism. The
+  operator's answer on 2026-09-18 was the backlog, and `docs/backlog.md` carries it under P2, filed
+  by this block for want of a closing one after it.
 - **The release path does not cache the web application's build**, which spends a `pnpm install` per
   release. The margin above is the reason, and GitHub's own eviction would take the state archive
   with it.
