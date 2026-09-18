@@ -74,14 +74,16 @@ because it can carry no defect the gate would catch: a pull request whose every 
 sends no object and runs nothing at all; and a push whose every reference is a tag on a commit `origin/main` already
 contains runs nothing either. One path not ending in `.md`, or one branch in the push, and the full gate is back.
 
-## The image
+## The images
 
-Three calls outside the gate, because minutes of image build have no place in `pre-push`:
+Five calls outside the gate, because minutes of image build have no place in `pre-push`:
 
 | Function                   | What it does                                                                        |
 |----------------------------|---------------------------------------------------------------------------------------|
 | `dagger call image`        | Builds `api/Dockerfile` for the engine's own platform and reads the machine back from inside it. `--platforms=linux/amd64,linux/arm64` builds everything the image ships on. |
 | `dagger call smoke`        | Starts the image and waits for `/q/health`. The only thing in the repository that runs what ships. |
+| `dagger call webapp-image` | Builds `clients/apps/webapp/Dockerfile` the same way, from a context it assembles out of that file, `contract/` and `clients/`. |
+| `dagger call webapp-smoke` | Starts that image and asks it for `/` and for a path that exists in the browser alone. It reads the body both times: the `index.html` fallback answers `200` to anything. |
 | `dagger call quarkus-app`  | Returns the fast-jar layout the `Dockerfile` copies, so a caller builds the image with no JDK of its own. Used by the release path alone, and produced by the gate's own build: on a runner it is a cache hit of the `ci` call that precedes it, and therefore the bytes `smoke` started. |
 
 The suite reads production's `application.properties` for every key its own file leaves alone: each
@@ -98,18 +100,20 @@ at the release rather than on the pull request that introduced it.
 ## CI
 
 CI (`validate.yml`) **calls** the pipeline: a `verify` job runs one `dagger call ci`, which is the gate and then the
-image built and smoked from the fast jar the gate's own container produced
+two images built and smoked, the API's from the fast jar the gate's own container produced
 (`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md`, decision 1). Two jobs on two runners paid for that
 jar twice. `gate`, `image` and `smoke` stay callable on their own, which is what a workstation types. A check added
 to the pipeline is on the next pull request with nothing to add here.
 
 **`verify` holds `contents: read` and nothing else**, it being the job that runs the build's third-party plugins.
 What needs a write scope is two jobs that need it and run nowhere else: **`publish`**, on the release path alone,
-which is what CI still holds that the pipeline cannot, a registry and GitHub's identity, so the push to GHCR, the
-cosign attestations, both SBOMs and the OpenVEX predicate; and **`prune`**, on `main` alone, which carries the one
-scope deleting a cache entry needs. `publish` rebuilds nothing: `verify` calls the pipeline once more,
-`dagger call quarkus-app export`, a cache hit on the build `ci` already ran, and hands that fast jar over as a run
-artefact, so the image `buildx` pushes carries the bytes `dagger call smoke` started.
+which is what CI still holds that the pipeline cannot, a registry and GitHub's identity, so the push of both images
+to GHCR, their SBOMs and their cosign attestations, the OpenVEX predicate being the API's alone; and **`prune`**, on
+`main` alone, which carries the one scope deleting a cache entry needs. `publish` rebuilds the API's image and not
+its jar: `verify` calls the pipeline once more, `dagger call quarkus-app export`, a cache hit on the build `ci`
+already ran, and hands that fast jar over as a run artefact, so the API's image carries the bytes
+`dagger call smoke` started. The web application's bundle is compiled again there, no artefact of the gate's crossing
+over.
 
 **`verify` starts its own engine and keeps its state between runs** (`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md`,
 decisions 2 to 6). A container named `dagger-engine` is started on a state directory `actions/cache` restored, with

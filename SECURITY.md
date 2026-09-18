@@ -2,6 +2,8 @@
 
 ## Vulnerability scanning
 
+The release path publishes two images, and they carry different material.
+
 Every image pushed to `ghcr.io/geoffreycoulaud/pinry-reborn-api` gets three signed
 attestations (keyless, OIDC-based, via [cosign](https://github.com/sigstore/cosign)):
 
@@ -12,7 +14,12 @@ attestations (keyless, OIDC-based, via [cosign](https://github.com/sigstore/cosi
 - an **[OpenVEX](https://openvex.dev/)** document (`security/vex.openvex.json`): the
   triage marking non-exploitable CVEs as `not_affected`.
 
-A [Grype](https://github.com/anchore/grype) scan runs daily against the attested
+Every image pushed to `ghcr.io/geoffreycoulaud/pinry-reborn-webapp` gets the first two
+and no OpenVEX document: `security/vex.openvex.json` states nothing about that image, so
+attaching it there would record nothing. Nothing scans those SBOMs yet either; they are
+there for whoever pulls the image.
+
+A [Grype](https://github.com/anchore/grype) scan runs daily against the API's attested
 Syft-JSON SBOM (`.github/workflows/grype-scan.yml`), applying the VEX. Results appear in
 the repository's **Security → Code scanning** tab as SARIF findings. The scan never
 fails the workflow: findings are triaged through VEX (see below).
@@ -22,7 +29,7 @@ fails the workflow: findings are triaged through VEX (see below).
 [OpenVEX](https://openvex.dev/) statements in `security/vex.openvex.json` tell Grype
 which CVEs are **not exploitable** in this deployment context, so they are filtered out
 of scan results automatically. The file is versioned here (the source of truth) and
-attached to each released image as a signed OpenVEX attestation: the daily scan pulls it
+attached to the API's image as a signed OpenVEX attestation: the daily scan pulls it
 **from the image** (nothing VEX-related is read from the repo checkout), and anyone who
 scans the image directly inherits the triage. For a local run, point Grype at the file
 explicitly with `--vex security/vex.openvex.json`.
