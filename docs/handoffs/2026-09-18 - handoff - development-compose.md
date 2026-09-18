@@ -5,8 +5,15 @@ Spec: `docs/specs/2026-09-18-development-compose.md`
 ADR: `docs/adr/0034-the-web-application-ships-as-an-nginx-image.md`
 Blocks: 5 `chore/an-image-name-is-not-a-repository-name` (PR #144, merged), 10
 `chore/development-compose` (PR #146, merged), 20 `chore/webapp-image-in-the-pipeline` (PR #147,
-merged), 30 `chore/publish-the-webapp-image` (this pull request, the lot's last code block)
-Tier: Spec. Four blocks, so the holistic review at the head of Wrap is not offered as a waiver.
+merged), 30 `chore/publish-the-webapp-image` (PR #148, merged, the lot's last code block), 40
+`chore/development-compose-lot-wrap` (this pull request, the closing block)
+Tier: Spec. Four code blocks, so the holistic review at the head of Wrap was dispatched rather than
+offered as a waiver; its findings and their exits are below.
+
+Range note: `git diff lot/0.23.0-raw-sql-audited..origin/main` contains one commit this lot did not
+write, `1d027a9d` ("docs(backlog): the visual-understanding features"), pushed straight to `main`
+between the previous lot's tag and block 5. The closing tag therefore spans it, and it is the
+operator's own commit rather than a block's.
 
 ## Current state
 
@@ -18,9 +25,14 @@ behind one nginx on <http://localhost:6258>. The web application has an image, b
 `docs/specs/2026-09-10-web-application.md` recorded, the `Caddyfile` row and the deployment
 documentation row, are closed, the second by being declared out of scope rather than written.
 
+`dagger call ci` stands that same topology up as three bound services and probes it through the
+proxy, so the routing `proxy.conf` carries is no longer read by hand alone.
+
 `docs/backlog.md` holds no item adjacent to this lot: the grep for `compose`, `dockerignore`,
 `dependabot` and the web application's image finds nothing there, so the lot closes none and leaves
-none open.
+none open. Block 30 filed one item of its own, the engine state archive against the Actions quota,
+which the closing block leaves open: its fix is a bound found by trial at a full run on `main` each,
+which is its own lot.
 
 ## What was built
 
@@ -42,16 +54,39 @@ none open.
   the API's: no `type=semver` tag, no build cache, no OpenVEX predicate. `SECURITY.md` says what
   each image carries, which it had to: it claimed three attestations per image and one scan reading
   them, and a second image made that false.
+- **`compose-smoke` in `.dagger/src/index.ts`, called by `ci`** (block 40). It stands the API's
+  image, the web application's image and an nginx carrying `proxy.conf` up as three bound services,
+  then asks the proxy for `/api/v1/handshake` and for `/boards/does-not-exist` and reads the status
+  and the content type back. That is block 10's observations 2 and 3, made runnable: the content
+  type is the discriminator, the web application answering `200` with HTML to every path.
+
+## The holistic review's findings
+
+Read `git diff lot/0.23.0-raw-sql-audited..origin/main`, reported in
+`.reviews/development-compose-holistic.md`: 0 critical, 2 major, 6 minor.
+
+| Finding                                                        | Exit                                                                         |
+|----------------------------------------------------------------|-------------------------------------------------------------------------------|
+| MAJOR, nothing automated ever starts the compose topology       | Fixed, block 40: `dagger call compose-smoke`, called by `ci`                  |
+| MAJOR, `client_max_body_size` level with the API's own limit    | Fixed, block 40: `64M`, so the refusal still comes from the use case          |
+| MINOR, no `name:` in `compose.yml`                              | Fixed, block 40: `name: pinry-reborn`                                        |
+| MINOR, `X-Forwarded-*` set and read by nothing                  | Fixed, block 40: the three lines deleted, `Host` alone being load bearing     |
+| MINOR, the bundle served uncompressed and with no cache policy  | Fixed, block 40: `gzip on` and `no-cache` on `index.html` alone               |
+| MINOR, `.dockerignore` claims a list nothing keeps in step      | Fixed, block 40: the claim dropped, the copy dated instead                    |
+| MINOR, the published web application image is not the smoked one | Accepted limit, recorded under what is not validated below and in `AGENTS.md` |
+| MINOR, `1d027a9d` belongs to no block of this lot               | No fix: the operator's own commit, named in the range note above              |
 
 ## Pitfalls
 
 - **The session cookie needs `localhost`.** `Secure` is unconditional, and browsers except
   `localhost` alone, so reaching the proxy at `http://192.168.x.x:6258` gives a session the browser
   stores and never sends.
-- **`proxy_set_header Host $host` drops the port, and the API's origin check reads it.** Block 10's
-  fourth observation caught `403 CORS Rejected - Invalid origin` on sign-up. `$http_host` is the
-  Host header as the client sent it, and is what makes the same-origin check true;
-  `X-Forwarded-Host` carries the same variable for the same reason.
+- **`proxy_set_header Host $http_host` is the one header `proxy.conf` still sets, and it is load
+  bearing.** `$host` drops the port, and block 10's fourth observation caught the
+  `403 CORS Rejected - Invalid origin` that follows on sign-up: `$http_host` is the Host header as
+  the client sent it, which is what makes the API's same-origin check true. Block 40 deleted the
+  three `X-Forwarded-*` headers beside it, `quarkus.http.proxy.proxy-address-forwarding` being
+  undeclared and therefore false, so nothing read them.
 - **Editing `proxy.conf` needs the container recreated, not reloaded**, the file being bind mounted:
   `docker compose up -d --force-recreate proxy`.
 - **`docker compose build` on a stale fast jar builds a stale API in silence**, and fails with
@@ -78,7 +113,7 @@ none open.
   entries and the buildkit blobs are momentarily over the quota, and GitHub evicts by least recent
   use. Nothing has gone red, and no block of this lot can fix it: it is ADR 0031's mechanism. The
   operator's answer on 2026-09-18 was the backlog, and `docs/backlog.md` carries it under P2, filed
-  by this block for want of a closing one after it.
+  by block 30 and left open by the closing block.
 - **The release path does not cache the web application's build**, which spends a `pnpm install` per
   release. The margin above is the reason, and GitHub's own eviction would take the state archive
   with it.
@@ -98,8 +133,15 @@ none open.
   <https://github.com/GeoffreyCoulaud?tab=packages>, and
   `cosign verify-attestation --type cyclonedx` on `pinry-reborn-webapp:latest` with the identity
   regexp and the issuer the specification's block table writes out.
-- **The holistic review has not run.** It is the head of Wrap, over
-  `git diff lot/0.23.0-raw-sql-audited..origin/main`.
+- **The published web application image is a different build from the one `webapp-smoke` started.**
+  The API's carries the gate's own bytes, `publish` taking the fast jar `ci` produced through
+  `dagger call quarkus-app export`; the web application's bundle is compiled again under `buildx`,
+  over floating `node:24-slim` and `nginx:1-alpine-slim` tags. There is no artefact to hand over as
+  there is for the fast jar: the gate builds the engine's own architecture and the release ships
+  two. An accepted limit rather than debt, and `AGENTS.md` carries it in the CI section.
+- **Nothing checks that the bundle is compressed or that `index.html` is not cached.** `gzip on` and
+  the `no-cache` header block 40 added are read by no test; `compose-smoke` reads status and content
+  type alone.
 - **The web application's image has never been built for arm64.** A pull request builds one
   architecture, and the second is emulated on the release path alone, so a defect showing on arm64
   surfaces at the release rather than here.
@@ -110,6 +152,5 @@ none open.
 
 ## Next step
 
-The closing block: the holistic review's findings with their exits, the backlog reconciled, this
-handoff corrected, then the annotated tag `lot/0.24.0-development-compose` on the closing merge,
-pushed.
+The annotated tag `lot/0.24.0-development-compose` on this block's merge, pushed. That tag is what
+the next lot's holistic review reads as its base.
