@@ -205,7 +205,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Docker metadata
+      - name: Docker metadata for the API's image
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
@@ -217,7 +217,7 @@ jobs:
       # A second build of the same Dockerfile and the same jar: cosign signs the pushed digest,
       # which the pipeline cannot produce while the registry stays out of it
       # (docs/adr/0024-three-projects-share-one-repository.md, decision 5).
-      - name: Build and push image
+      - name: Build and push the API's image
         id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
@@ -229,7 +229,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Compute the image ref
+      - name: Compute the API's image ref
         id: image
         # The image's name is its own, not the repository's: the two coincided once and a rename parts them.
         run: echo "ref=ghcr.io/geoffreycoulaud/pinry-reborn-api@${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
@@ -237,7 +237,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
-      - name: Generate CycloneDX SBOM (standard, for external consumers)
+      - name: Generate the API's CycloneDX SBOM (standard, for external consumers)
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           image: ${{ steps.image.outputs.ref }}
@@ -247,7 +247,7 @@ jobs:
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate Syft-JSON SBOM (native, for the VEX-aware daily scan)
+      - name: Generate the API's Syft-JSON SBOM (native, for the VEX-aware daily scan)
         # Not a duplicate: Syft's format keeps the image identity OpenVEX resolves against, which
         # CycloneDX drops.
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
@@ -259,7 +259,7 @@ jobs:
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Attest SBOMs and VEX (keyless OIDC via cosign)
+      - name: Attest the API's SBOMs and VEX (keyless OIDC via cosign)
         run: |
           ref='${{ steps.image.outputs.ref }}'
           cosign attest --yes --type cyclonedx \
@@ -268,6 +268,62 @@ jobs:
             --predicate /tmp/sbom.syft.json "$ref"
           cosign attest --yes --type openvex \
             --predicate security/vex.openvex.json "$ref"
+
+      - name: Docker metadata for the web application's image
+        id: meta_webapp
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/geoffreycoulaud/pinry-reborn-webapp
+          # No type=semver: the three artefacts version independently, under prefixed series that do
+          # not exist yet (docs/adr/0024-three-projects-share-one-repository.md, decision 6).
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+      - name: Build and push the web application's image
+        id: build_webapp
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: clients/apps/webapp/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta_webapp.outputs.tags }}
+          labels: ${{ steps.meta_webapp.outputs.labels }}
+          # No cache: the Actions quota is spent on the engine state
+          # (docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md, decision 8).
+
+      - name: Compute the web application's image ref
+        id: image_webapp
+        run: echo "ref=ghcr.io/geoffreycoulaud/pinry-reborn-webapp@${{ steps.build_webapp.outputs.digest }}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate the web application's CycloneDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ steps.image_webapp.outputs.ref }}
+          format: cyclonedx-json
+          output-file: /tmp/sbom.webapp.cyclonedx.json
+          upload-artifact: "false"
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate the web application's Syft-JSON SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ steps.image_webapp.outputs.ref }}
+          format: syft-json
+          output-file: /tmp/sbom.webapp.syft.json
+          upload-artifact: "false"
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attest the web application's SBOMs (keyless OIDC via cosign)
+        # No OpenVEX predicate: security/vex.openvex.json holds no statement about this image.
+        run: |
+          ref='${{ steps.image_webapp.outputs.ref }}'
+          cosign attest --yes --type cyclonedx \
+            --predicate /tmp/sbom.webapp.cyclonedx.json "$ref"
+          cosign attest --yes --type https://syft.dev/bom \
+            --predicate /tmp/sbom.webapp.syft.json "$ref"
 
   # Branch protection reads a skipped job as passing, so the one required check always runs and
   # fails explicitly (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decision 2).
