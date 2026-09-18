@@ -1,12 +1,12 @@
 # AGENTS.md
 
-Pinry Reborn, a self-hosted pin board: users, pins, boards, tags, images and exports. The repository holds three
-projects (`docs/adr/0024-three-projects-share-one-repository.md`): the API server that owns the business logic, and the
+Pinry Reborn, a self-hosted pin board: users, pins, boards, tags, images and exports. The repository holds the projects
+`docs/adr/0024-three-projects-share-one-repository.md` names: the API server that owns the business logic, and the
 web application and browser extension that will consume it.
 
 Process, engineering norms and writing conventions live in separate documents; read the one your task needs:
 
-- `agents/workflow.md` : phases, tiers, the two reviews (mandates under `agents/reviews/`), backlog rules.
+- `agents/workflow.md` : phases, tiers, the reviews (mandates under `agents/reviews/`), backlog rules.
 - `agents/engineering.md` : TDD, coverage, gate perimeter, Kotlin and backend norms.
 - `agents/writing.md` : documentation regimes, language and style rules.
 - `docs/handoffs/` : the newest file is the entry point (current state, pitfalls, next step).
@@ -19,7 +19,7 @@ norms, its commands and its gate; this file carries what holds for the repositor
 
 | Path        | What                                                                                                      |
 |-------------|-----------------------------------------------------------------------------------------------------------|
-| `api/`      | The Gradle build: the twelve modules, `Dockerfile`, `config/`, `.idea/`. Read `api/AGENTS.md` before touching it. |
+| `api/`      | The Gradle build: the modules `api/settings.gradle.kts` declares, `Dockerfile`, `config/`, `.idea/`. Read `api/AGENTS.md` before touching it. |
 | `contract/` | The API's interface artefact, produced by `api/` and consumed by the clients.                              |
 | `clients/`  | The pnpm workspace: `apps/webapp`, `packages/` for what the clients share. Read `clients/AGENTS.md` before touching it. The browser extension is not built yet. |
 | `.dagger/`  | The pipeline, in TypeScript (`docs/adr/0025-the-pipeline-is-written-in-typescript.md`). Belongs to no ecosystem: it calls both. |
@@ -54,7 +54,7 @@ norms, its commands and its gate; this file carries what holds for the repositor
 ## The gate
 
 **One command, from anywhere in the repository: `dagger call gate`.** It is what `pre-push` runs and what
-`dagger call ci` runs on a runner, in the same container, and it holds five things:
+`dagger call ci` runs on a runner, in the same container, and it holds what the table below lists:
 
 | Function                     | What it runs                                                                     |
 |------------------------------|-----------------------------------------------------------------------------------|
@@ -68,15 +68,15 @@ A check whose scope is the repository goes to `.dagger/`; a check whose scope is
 ecosystem's own gate.
 
 **It is paid where it can fail** (`docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`, as
-`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md` decision 8 extends it). Three pushes are let off, each
-because it can carry no defect the gate would catch: a pull request whose every changed path ends in `.md` runs
+`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md` decision 8 extends it). The pushes let off are let off
+because each can carry no defect the gate would catch: a pull request whose every changed path ends in `.md` runs
 `dagger call prose` in its place, restores no engine state and builds no image; a push that only deletes a reference
 sends no object and runs nothing at all; and a push whose every reference is a tag on a commit `origin/main` already
 contains runs nothing either. One path not ending in `.md`, or one branch in the push, and the full gate is back.
 
 ## The images
 
-Five calls outside the gate, because minutes of image build have no place in `pre-push`:
+The calls below sit outside the gate, because minutes of image build have no place in `pre-push`:
 
 | Function                   | What it does                                                                        |
 |----------------------------|---------------------------------------------------------------------------------------|
@@ -100,13 +100,13 @@ at the release rather than on the pull request that introduced it.
 ## CI
 
 CI (`validate.yml`) **calls** the pipeline: a `verify` job runs one `dagger call ci`, which is the gate and then the
-two images built and smoked, the API's from the fast jar the gate's own container produced
+images built and smoked, the API's from the fast jar the gate's own container produced
 (`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md`, decision 1). Two jobs on two runners paid for that
 jar twice. `gate`, `image` and `smoke` stay callable on their own, which is what a workstation types. A check added
 to the pipeline is on the next pull request with nothing to add here.
 
 **`verify` holds `contents: read` and nothing else**, it being the job that runs the build's third-party plugins.
-What needs a write scope is two jobs that need it and run nowhere else: **`publish`**, on the release path alone,
+What needs a write scope is the jobs that need it and run nowhere else: **`publish`**, on the release path alone,
 which is what CI still holds that the pipeline cannot, a registry and GitHub's identity, so the push of both images
 to GHCR, their SBOMs and their cosign attestations, the OpenVEX predicate being the API's alone; and **`prune`**, on
 `main` alone, which carries the one scope deleting a cache entry needs. `publish` rebuilds the API's image and not
@@ -123,8 +123,9 @@ archives the state, saves it under a key carrying the engine version and the com
 under the `dagger-state-` prefix.** One entry is a condition and not a tidiness: the archive is 5.1 gigabytes of the
 repository's ten-gigabyte quota (run `35381866356`, up from the three gigabytes
 `docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md` measured, the web application's build stage being the
-difference), so a second would evict the release path's buildx cache. **A restore that does not unpack, and an engine that will not come up on it, both empty the state and carry
-on cold**, the cache being an optimisation and never a condition of a green run.
+difference), so a second would evict the release path's buildx cache. **A restore that does not unpack, and an engine
+that will not come up on it, both empty the state and carry on cold**, the cache being an optimisation and never a
+condition of a green run.
 **`.github/engine.json` declares `gc.policies` rather than a bound alone**, because the list Dagger generates
 otherwise reclaims the Gradle home and pnpm store volumes, which are the thing being kept.
 

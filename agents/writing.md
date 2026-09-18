@@ -4,7 +4,7 @@
 (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). The bullets bind. The
 `**Detail.**` paragraph that closes a section explains and binds nothing.
 
-## Two regimes
+## The regimes
 
 | Regime     | Property                                                         | Rule                                                   |
 |------------|------------------------------------------------------------------|--------------------------------------------------------|
@@ -36,6 +36,9 @@
   so its reasoning goes there and the entry stays at two lines.
 - **A dated document does not put a number on a living file**: it records what it did; the count is read where it
   lives. Say "the items this lot leaves open are 1, 2 and 14", never "the band holds three".
+- **A living document does not count what it mentions.** At best it names where the list is read ("the modules
+  `api/settings.gradle.kts` declares"), at worst it writes the list out. Correcting a count is not enough: rephrase
+  it. Measurements, thresholds, sizes and examples are not counts and stay.
 
 **Detail.** A backlog item holds in two lines because the argument is usually already written in the spec or handoff of
 the lot that filed it, and copying it here stores it twice and makes the file unreadable at the length that costs. The

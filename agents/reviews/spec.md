@@ -9,13 +9,13 @@ bind. The `**Detail.**` paragraph that closes a section explains and binds nothi
 
 ## What you deliver
 
-- **Judge two things and settle a third**: what the document **claims to be true**, whether its
-  **acceptance criteria can be failed**, and whether the **decisions it settles have a record**.
+- **Judge what the document claims to be true and whether its acceptance criteria can be failed,
+  then settle whether the decisions it settles have a record.**
 - **Write your report to `.reviews/<lot>-<mandate>.md`**, the lot the brief names and `spec` as the
   mandate.
 - **Report findings there as `SEVERITY | file:line | issue | suggested fix`**, most severe first,
   SEVERITY one of `CRITICAL`, `MAJOR`, `MINOR`. Say plainly if a part finds nothing.
-- **Return four things in your message and nothing else**: the report's path, the counts by severity,
+- **Return these in your message and nothing else**: the report's path, the counts by severity,
   the three findings you would fix first, and the marker line.
 - **End every message you return with the line `END OF MESSAGE`**, whether or not it carries a
   report.
@@ -71,7 +71,7 @@ expensive way, planned around before anyone measures.
   how a reader would notice if one did.
 
 **Detail.** A criterion nobody can fail is declared done against a green gate with nothing
-established. The six questions after the first are the shapes that failure takes, each from a
+established. The questions after the first are the shapes that failure takes, each from a
 criterion this repository accepted once. A criterion the tree already meets tests nothing: "the
 generator reports no change" was offered as proof, and it reports no change on an untouched tree too.
 An assertion meant to require that a migration creates an index was satisfied by one that drops it,

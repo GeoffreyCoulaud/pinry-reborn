@@ -15,7 +15,7 @@ in flight. Run once per lot in tier Spec, at the head of Wrap, in an agent the l
 - **Write your report to `.reviews/<lot>-<mandate>.md`**, the lot the brief names and `holistic` as the mandate.
 - **Report findings there as `SEVERITY | file:line | issue | suggested fix`**, most severe first, SEVERITY one of
   `CRITICAL`, `MAJOR`, `MINOR`. Say plainly if you find nothing.
-- **Return four things in your message and nothing else**: the report's path, the counts by severity, the three
+- **Return these in your message and nothing else**: the report's path, the counts by severity, the three
   findings you would fix first, and the marker line.
 - **End every message you return with the line `END OF MESSAGE`**, whether or not it carries a report.
 - **Do not edit anything.** Stay inside the repository.

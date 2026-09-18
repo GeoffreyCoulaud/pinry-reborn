@@ -47,11 +47,11 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 ### P2: Operational debt
 
 - **A table rebuild's row-carrying path is exercised by nothing.** `TableRebuildColumnsTest` compares
-  the three column lists as text against an empty database, so a statement filling a new `not null`
+  the column lists as text against an empty database, so a statement filling a new `not null`
   column before the copy (`1.24.sql`, and the same shape in `1.22.sql`) is covered by no test at all.
   See `docs/handoffs/2026-09-14 - handoff - the-download-sweep.md`. New 2026-09-14.
 - **The engine state archive outgrew the Actions quota's margin.** It is 5.1 GB of ten, and `verify`
-  saves the new one before `prune` deletes the old, so the two coexist over the quota for a moment
+  saves the new one before `prune` deletes the old, so both coexist over the quota for a moment
   and GitHub evicts by least recent use. The shape of the fix is a bound on what the engine keeps,
   through `gc.policies` in `.github/engine.json`, rather than the cache-delete scope ADR 0031 keeps
   off the job that runs the build's third-party plugins; its own lot, the bound being found by trial
@@ -137,8 +137,9 @@ Dated events. No session starts these early.
 
 ### Visual understanding
 
-One image embedding per pin carries the first four items below; the faces pipeline is a separate table and a
-separate opt-in. Nothing here is specified yet: what follows is the shape, not a decision.
+One image embedding per pin carries every item below up to tag suggestion; the faces pipeline, from grouping by
+person on, is a separate table and a separate opt-in. Nothing here is specified yet: what follows is the shape,
+not a decision.
 
 - **The inference service.** A worker running ONNX Runtime through its Java bindings, shared by the image
   embedder and the faces pipeline. Weights are fetched at runtime rather than baked into the image, which
@@ -152,8 +153,8 @@ separate opt-in. Nothing here is specified yet: what follows is the shape, not a
 - **Tag suggestion.** At upload, propose the tags of the ~20 nearest pins, weighted by similarity. No fixed
   vocabulary, and it sharpens as the collection grows.
 - **Grouping by person.** YuNet detection and AuraFace-v1 recognition (both Apache 2.0), a `faces` table of its
-  own, incremental kNN clustering. Biometric data: opt-in, off by default. **Two blockers to clear before any
-  of this is committed to**: the licence on the Franca weights should anyone return to them, and above all the
+  own, incremental kNN clustering. Biometric data: opt-in, off by default. **To clear before any of this is
+  committed to**: the licence on the Franca weights should anyone return to them, and above all the
   provenance of AuraFace-v1's training data.
 - **Face quality filtering.** A minimum bounding-box size, a confidence threshold and a laplacian variance,
   plus zero-shot photo / illustration classification off the SigLIP embedding already computed. Belongs with

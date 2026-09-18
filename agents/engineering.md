@@ -119,7 +119,7 @@ The failure mode is never one endpoint being wrong: it is one endpoint being **d
 - **Error format**: RFC 7807 Problem Details as `application/problem+json`
   (`dtos/output/ProblemDetail.kt`: `type`, `title`, `status`, `detail`, `instance`, plus a `code`
   extension). Every payload built through `mappers/ProblemResponses.kt`.
-- **Status codes** come from two tables: `BaseErrorMapper.statusFor`, a `when` over `ErrorCode` with no `else`, for
+- **Status codes** come from these tables: `BaseErrorMapper.statusFor`, a `when` over `ErrorCode` with no `else`, for
   what a use case refuses; `FrameworkErrorCode` and its mapper family (`mappers/*Mapper.kt`, `docs/adr/0021`) for
   what the framework refuses before one runs. Convention: 400 malformed request, 422 well-formed but refused on its
   merits, 401 unauthenticated, 403 forbidden, 409 state conflict, 404 absent, 410 expired, 413 oversize upload, 429
@@ -130,7 +130,7 @@ The failure mode is never one endpoint being wrong: it is one endpoint being **d
   creation input declares which with a required `transport`, and the status code answers it, `201` with a token
   or `200` with a `Set-Cookie`.
 - **Not JWTs, and both schemes are declared by hand** in `openapi/OpenApiApplication.kt` (the Quarkus shortcut
-  would stamp `bearerFormat: JWT`). SmallRye stamps only the first of the two on a protected operation, so
+  would stamp `bearerFormat: JWT`). SmallRye stamps only the first of them on a protected operation, so
   `openapi/SessionSecurityRequirementFilter.kt` puts both on each: a contract that named one would tell a client
   the other is refused.
 
@@ -149,7 +149,7 @@ The failure mode is never one endpoint being wrong: it is one endpoint being **d
   meanwhile: legacy `when_created`/`when_modified` column names.
 - **A query rooted on a recyclable model is built by its `Queries` object**: models implementing
   `SoftDeletableModel` are queried through `active()`, `recycled()` or `any()`; queries rooted elsewhere filter through
-  extensions (`withActiveBoard()` etc.). Held by two Konsist assertions and the `SoftDeleteStateFilteredOutsideQueries`
+  extensions (`withActiveBoard()` etc.). Held by Konsist assertions and the `SoftDeleteStateFilteredOutsideQueries`
   detekt rule; the `io.ebean.Database` instance is confined behind `Persistor`/`TransactionControl`
   (`docs/adr/0008-structural-soft-delete-read-isolation.md`).
 - **Dependencies are injected by type, not by string qualifier**: a new dependency is a dedicated type
@@ -162,7 +162,7 @@ The failure mode is never one endpoint being wrong: it is one endpoint being **d
   holds its transaction; a new pair that does not is a defect.
 - **The database is the authority on uniqueness**: no read-before-write exists solely to answer a uniqueness question an
   index already answers; the adapter translates the violation into a domain exception. One written exception:
-  `UserDataExportRequester.createPending`'s `findPendingForUser`, which orders two refusals (409 ahead of 429).
+  `UserDataExportRequester.createPending`'s `findPendingForUser`, which orders its refusals (409 ahead of 429).
 - **A unique constraint is not complete until its outcome is named**: every one appears in
   `UniqueConstraintOutcomeTest`'s table with the answer a client gets, "no translation, deliberately" included.
 
@@ -185,6 +185,6 @@ The failure mode is never one endpoint being wrong: it is one endpoint being **d
   the DTOs in `dtos/`.
 - **No top-level functions**: a helper belongs to a class, companion or object; extension functions are the only
   exception (`queries/PinBoardQueries.kt`).
-- **Structural remedies have three homes**: `ArchitectureKonsistTest` for a project-wide declaration invariant, a detekt
+- **Structural remedies have these homes**: `ArchitectureKonsistTest` for a project-wide declaration invariant, a detekt
   rule for a prohibition inside one file's statements, a plain test (`DbMigrationModelCoverageTest`) for repository
   content.
