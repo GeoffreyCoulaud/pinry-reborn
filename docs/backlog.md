@@ -103,8 +103,9 @@ Dated events. No session starts these early.
   bin, account management, import and export, and editing or deleting a pin. The first client lot built
   sign up, sign in, the grid and creating a pin, and nothing else.
   See `docs/specs/2026-09-10-web-application.md`, sections 6 and 7. New 2026-09-12.
-- **Perceptual `ImageHash` (pHash)** for pin deduplication / merging. Flagship of the sequenced **user-segmented base
-  ** (see the roadmap section below).
+- **Perceptual `ImageHash` (pHash)** for pin deduplication / merging. Computed at ingestion, a few microseconds
+  per image, and depending on nothing in the visual-understanding section below: it warns "you have already
+  pinned this" before the pin is written. Flagship of the sequenced **user-segmented base**.
 - **Advanced pin / tag / board management** : Features that make the data model genuinely user-segmented and pleasant to
   use. To be explored.
 - **Import from 3rd party sites**
@@ -126,6 +127,30 @@ Dated events. No session starts these early.
   shared boards) and with the profile items.
 - **Two-factor / step-up authentication**: TOTP + Passkey/WebAuthn, with a possible short-lived "sudo" elevation token
   for sensitive actions.
+
+### Visual understanding
+
+One image embedding per pin carries the first four items below; the faces pipeline is a separate table and a
+separate opt-in. Nothing here is specified yet: what follows is the shape, not a decision.
+
+- **The inference service.** A worker running ONNX Runtime through its Java bindings, shared by the image
+  embedder and the faces pipeline. Weights are fetched at runtime rather than baked into the image, which
+  keeps the shipped image the size it is today and keeps their licences out of the build.
+- **Semantic search by text.** A natural-language query against what a pin *shows*, owing nothing to its tags
+  or its title. SigLIP 2 image embeddings stored as `halfvec` in pgvector, with an HNSW index.
+- **Search by image.** Upload a picture, or ask for "the ones near this pin", and read the nearest neighbours
+  out of that same index. No second model and no second index.
+- **Similar pins.** A "more like this" block on a pin's page, kNN over the embeddings already stored. Worth
+  re-judging on real content before anyone considers a second vector space for it.
+- **Tag suggestion.** At upload, propose the tags of the ~20 nearest pins, weighted by similarity. No fixed
+  vocabulary, and it sharpens as the collection grows.
+- **Grouping by person.** YuNet detection and AuraFace-v1 recognition (both Apache 2.0), a `faces` table of its
+  own, incremental kNN clustering. Biometric data: opt-in, off by default. **Two blockers to clear before any
+  of this is committed to**: the licence on the Franca weights should anyone return to them, and above all the
+  provenance of AuraFace-v1's training data.
+- **Face quality filtering.** A minimum bounding-box size, a confidence threshold and a laplacian variance,
+  plus zero-shot photo / illustration classification off the SigLIP embedding already computed. Belongs with
+  grouping by person, and gates what enters the `faces` table.
 
 Gated on audience mechanics :
 
