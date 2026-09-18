@@ -97,6 +97,18 @@ const PNPM_STORE = "/root/.local/share/pnpm/store"
 /** The port the runtime image serves on. */
 const HTTP_PORT = 8080
 
+/** The port the web application's image serves on. */
+const WEBAPP_PORT = 80
+
+/** The `Dockerfile` that builds the bundle and the nginx image that carries it. */
+const WEBAPP_DOCKERFILE = "clients/apps/webapp/Dockerfile"
+
+/** What `index.html` holds and an nginx error page does not, so a wrong answer cannot read as the bundle. */
+const WEBAPP_MARKER = '<div id="root">'
+
+/** A route that exists in the browser alone, which the image answers from its `index.html` fallback. */
+const BROWSER_ROUTE = "/boards/does-not-exist"
+
 /** How long the smoke test gives the container to answer, in seconds. */
 const SMOKE_SECONDS = 60
 
@@ -114,6 +126,24 @@ for i in $(seq 1 ${SMOKE_SECONDS}); do
 done
 echo "no answer on /q/health within ${SMOKE_SECONDS}s" >&2
 exit 1
+`
+
+/** The web application's smoke test: the image comes up, then both paths answer with the bundle. */
+const WEBAPP_POLL = `
+for i in $(seq 1 ${SMOKE_SECONDS}); do
+  wget -qO- http://webapp:${WEBAPP_PORT}/ >/dev/null 2>&1 && break
+  sleep 1
+done
+for path in / ${BROWSER_ROUTE}; do
+  if ! body=$(wget -qO- "http://webapp:${WEBAPP_PORT}$path" 2>/dev/null); then
+    echo "no answer on $path within ${SMOKE_SECONDS}s" >&2
+    exit 1
+  fi
+  case "$body" in
+    *'${WEBAPP_MARKER}'*) echo "$path served the bundle" ;;
+    *) echo "$path answered something other than the bundle" >&2; exit 1 ;;
+  esac
+done
 `
 
 /**
@@ -142,9 +172,9 @@ export class PinryReborn {
   }
 
   /**
-   * Everything a pull request checks, in one call: the gate, then the image built and smoked from
-   * the fast jar the gate's own container produced. Two calls on two runners paid for that jar
-   * twice (docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md, decision 1).
+   * Everything a pull request checks, in one call: the gate, then both images built and smoked, the
+   * API's from the fast jar the gate's own container produced. Two calls on two runners paid for
+   * that jar twice (docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md, decision 1).
    */
   @func()
   async ci(
@@ -155,8 +185,11 @@ export class PinryReborn {
     // Sequential: a gate that fails has to stop the run before any image is built.
     const context = this.imageContext(source, built.directory(`/src/api/${FAST_JAR}`))
     const image = await this.imageReport(context, [])
-    const smoke = await this.smokeReport(context)
-    return [gate, image, smoke].join("\n")
+    const smoke = await this.smokeReport(context, "api", HTTP_PORT, POLL)
+    const webapp = this.webappContext(source)
+    const webappImage = await this.imageReport(webapp, [])
+    const webappSmoke = await this.smokeReport(webapp, "webapp", WEBAPP_PORT, WEBAPP_POLL)
+    return [gate, image, smoke, webappImage, webappSmoke].join("\n")
   }
 
   /**
@@ -296,7 +329,24 @@ export class PinryReborn {
   async smoke(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
   ): Promise<string> {
-    return this.smokeReport(this.imageContext(source, this.fastJar(source)))
+    return this.smokeReport(this.imageContext(source, this.fastJar(source)), "api", HTTP_PORT, POLL)
+  }
+
+  /** The web application's image. `platforms` reads as it does on `image`. */
+  @func()
+  async webappImage(
+    @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
+    platforms: Platform[] = [],
+  ): Promise<string> {
+    return this.imageReport(this.webappContext(source), platforms)
+  }
+
+  /** The image serves the bundle, at `/` and at a route that exists in the browser alone. */
+  @func()
+  async webappSmoke(
+    @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
+  ): Promise<string> {
+    return this.smokeReport(this.webappContext(source), "webapp", WEBAPP_PORT, WEBAPP_POLL)
   }
 
   /** The gate's own Gradle invocation, and the only one continuous integration ever runs. */
@@ -338,23 +388,29 @@ export class PinryReborn {
   }
 
   /** The image started and probed by itself. */
-  private async smokeReport(context: Directory): Promise<string> {
+  private async smokeReport(
+    context: Directory,
+    name: string,
+    port: number,
+    poll: string,
+  ): Promise<string> {
     // The engine's own platform: an emulated container would measure the emulator. Named rather
     // than defaulted, so this is the variant `image` built and not a second build of it.
     const platform = await dag.defaultPlatform()
     const runtime = context.dockerBuild({ platform })
-    const service = runtime.withExposedPort(HTTP_PORT).asService({ useEntrypoint: true })
-    // The image carries curl for its own HEALTHCHECK, so it is its own prober.
+    const service = runtime.withExposedPort(port).asService({ useEntrypoint: true })
+    // Each image is its own prober: the API's carries curl for its HEALTHCHECK, nginx's the wget
+    // busybox gives it.
     const probe = runtime
-      .withServiceBinding("api", service)
-      .withExec(["sh", "-c", POLL], { expect: ReturnType.Any })
+      .withServiceBinding(name, service)
+      .withExec(["sh", "-c", poll], { expect: ReturnType.Any })
     const [status, report, failure] = await Promise.all([
       probe.exitCode(),
       probe.stdout(),
       probe.stderr(),
     ])
     if (status !== 0) {
-      throw new Error(`The image never reported healthy (exit ${status}):\n${failure}`)
+      throw new Error(`The ${name} image failed its smoke test (exit ${status}):\n${failure}`)
     }
     return report.trim()
   }
@@ -368,6 +424,15 @@ export class PinryReborn {
       .directory()
       .withFile("Dockerfile", source.file("api/Dockerfile"))
       .withDirectory(FAST_JAR, fastJar)
+  }
+
+  /** The two directories that `Dockerfile` copies, and the file itself where `dockerBuild` looks. */
+  private webappContext(source: Directory): Directory {
+    return dag
+      .directory()
+      .withFile("Dockerfile", source.file(WEBAPP_DOCKERFILE))
+      .withDirectory("contract", source.directory("contract"))
+      .withDirectory("clients", source.directory("clients"))
   }
 
   /**
