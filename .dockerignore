@@ -1,8 +1,5 @@
-# The web application's build context alone: the `api` service of compose.yml builds from
-# api/ under api/.dockerignore. What this context needs is clients/ and contract/, 836 KB
-# against 2.2 GB of working tree.
-#
-# The first block is IGNORE in .dagger/src/index.ts, so the two lists stay in step.
+# The web application's context alone; the `api` service builds under api/.dockerignore. The first
+# block is IGNORE in .dagger/src/index.ts, so the two lists stay in step.
 **/build
 **/.gradle
 **/.kotlin

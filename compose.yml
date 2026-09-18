@@ -1,13 +1,8 @@
-# The three projects run locally the way they are released: the API's image, the web
-# application's image and one frontal proxy that gives them a single origin.
-#
-# The API's image copies a fast jar Gradle produced before `docker build` ran, so
-# `(cd api && ./gradlew :api-application:quarkusBuild)` is a prerequisite of a build here.
+# `(cd api && ./gradlew :api-application:quarkusBuild)` is a prerequisite: the API's image copies a
+# fast jar Gradle produced before `docker build` ran.
 services:
   api:
     build: ./api
-    # The image defaults all three to /var/lib/pinry/*, which is its own writable layer.
-    # DB_PATH is already /data/pinry.db in the image.
     environment:
       IMAGES_DATA_DIR: /data/images
       EXPORTS_DATA_DIR: /data/exports
@@ -26,8 +21,8 @@ services:
       - "6258:6258"
     volumes:
       - ./proxy.conf:/etc/nginx/conf.d/default.conf:ro
-    # Both are load bearing: nginx resolves an upstream named in a literal proxy_pass once,
-    # at startup, and exits with `host not found in upstream` when the name is not up yet.
+    # Load bearing: nginx resolves a literal `proxy_pass` upstream once, at startup, and exits with
+    # `host not found in upstream` when the name is not up yet.
     depends_on:
       api:
         condition: service_healthy
