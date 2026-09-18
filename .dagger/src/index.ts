@@ -12,6 +12,7 @@ import {
   File,
   Platform,
   ReturnType,
+  Service,
   argument,
   func,
   object,
@@ -109,6 +110,17 @@ const WEBAPP_MARKER = '<div id="root">'
 /** A route that exists in the browser alone, which the image answers from its `index.html` fallback. */
 const BROWSER_ROUTE = "/boards/does-not-exist"
 
+/** The frontal proxy `compose.yml` runs, and the port both it and `proxy.conf` name. */
+const PROXY_IMAGE = "nginx:1-alpine-slim"
+const PROXY_PORT = 6258
+
+/** The routing, and where the nginx image reads it from. Both as `compose.yml` mounts them. */
+const PROXY_CONF = "proxy.conf"
+const PROXY_CONF_PATH = "/etc/nginx/conf.d/default.conf"
+
+/** The path the proxy must route to the API, unauthenticated and answering JSON. */
+const API_ROUTE = "/api/v1/handshake"
+
 /** How long the smoke test gives the container to answer, in seconds. */
 const SMOKE_SECONDS = 60
 
@@ -144,6 +156,27 @@ for path in / ${BROWSER_ROUTE}; do
     *) echo "$path answered something other than the bundle" >&2; exit 1 ;;
   esac
 done
+`
+
+/**
+ * The topology's smoke test. The content type is the whole discriminator: the web application
+ * answers `200` with HTML to every path, so a `location /api/` dropped, reordered or given a URI of
+ * its own answers `200` here too, with the bundle where the client asked for JSON.
+ */
+const COMPOSE_POLL = `
+for i in $(seq 1 ${SMOKE_SECONDS}); do
+  curl -fsS -o /dev/null http://proxy:${PROXY_PORT}${API_ROUTE} && break
+  sleep 1
+done
+check() {
+  answer=$(curl -sS -o /dev/null -w '%{http_code} %{content_type}' "http://proxy:${PROXY_PORT}$1")
+  case "$answer" in
+    "200 $2"*) echo "$1 answered $answer" ;;
+    *) echo "$1 answered '$answer', wanted '200 $2'" >&2; exit 1 ;;
+  esac
+}
+check ${API_ROUTE} application/json
+check ${BROWSER_ROUTE} text/html
 `
 
 /**
@@ -189,7 +222,9 @@ export class PinryReborn {
     const webapp = this.webappContext(source)
     const webappImage = await this.imageReport(webapp, [])
     const webappSmoke = await this.smokeReport(webapp, "webapp", WEBAPP_PORT, WEBAPP_POLL)
-    return [gate, image, smoke, webappImage, webappSmoke].join("\n")
+    // The context the API's own smoke built, so the topology costs one probe and no second build.
+    const compose = await this.composeReport(source, context)
+    return [gate, image, smoke, webappImage, webappSmoke, compose].join("\n")
   }
 
   /**
@@ -349,6 +384,17 @@ export class PinryReborn {
     return this.smokeReport(this.webappContext(source), "webapp", WEBAPP_PORT, WEBAPP_POLL)
   }
 
+  /**
+   * The three containers `compose.yml` runs, behind `proxy.conf`: the API's route answers JSON and
+   * a route that exists in the browser alone answers the bundle. Block 10's observations 2 and 3.
+   */
+  @func()
+  async composeSmoke(
+    @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
+  ): Promise<string> {
+    return this.composeReport(source, this.imageContext(source, this.fastJar(source)))
+  }
+
   /** The gate's own Gradle invocation, and the only one continuous integration ever runs. */
   private gateBuild(source: Directory): Container {
     // One Gradle invocation for both parts. Two would serialize on the shared cache volume and
@@ -398,10 +444,40 @@ export class PinryReborn {
     // than defaulted, so this is the variant `image` built and not a second build of it.
     const platform = await dag.defaultPlatform()
     const runtime = context.dockerBuild({ platform })
-    const service = runtime.withExposedPort(port).asService({ useEntrypoint: true })
     // Each image is its own prober: the API's carries curl for its HEALTHCHECK, nginx's the wget
     // busybox gives it.
-    const probe = runtime
+    return this.probeReport(runtime, name, this.served(runtime, port), poll)
+  }
+
+  /** The whole topology started behind the frontal proxy, and probed through it. */
+  private async composeReport(source: Directory, apiContext: Directory): Promise<string> {
+    const platform = await dag.defaultPlatform()
+    const api = apiContext.dockerBuild({ platform })
+    const webapp = this.webappContext(source).dockerBuild({ platform })
+    // The two names are the ones `proxy.conf` passes to, and nginx resolves them once, at startup.
+    const proxy = dag
+      .container()
+      .from(PROXY_IMAGE)
+      .withFile(PROXY_CONF_PATH, source.file(PROXY_CONF))
+      .withServiceBinding("api", this.served(api, HTTP_PORT))
+      .withServiceBinding("webapp", this.served(webapp, WEBAPP_PORT))
+    // The API's image is the prober, curl being what reads a content type back.
+    return this.probeReport(api, "proxy", this.served(proxy, PROXY_PORT), COMPOSE_POLL)
+  }
+
+  /** A built image as the service the prober reaches it by. */
+  private served(image: Container, port: number): Service {
+    return image.withExposedPort(port).asService({ useEntrypoint: true })
+  }
+
+  /** The prober run against the bound service, its report read or its failure raised. */
+  private async probeReport(
+    prober: Container,
+    name: string,
+    service: Service,
+    poll: string,
+  ): Promise<string> {
+    const probe = prober
       .withServiceBinding(name, service)
       .withExec(["sh", "-c", poll], { expect: ReturnType.Any })
     const [status, report, failure] = await Promise.all([
@@ -410,7 +486,7 @@ export class PinryReborn {
       probe.stderr(),
     ])
     if (status !== 0) {
-      throw new Error(`The ${name} image failed its smoke test (exit ${status}):\n${failure}`)
+      throw new Error(`The ${name} smoke test failed (exit ${status}):\n${failure}`)
     }
     return report.trim()
   }
