@@ -229,10 +229,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Compute lowercase image ref
+      - name: Compute the image ref
         id: image
-        # github.repository keeps the owner's case and an OCI reference must be lowercase.
-        run: echo "ref=ghcr.io/${GITHUB_REPOSITORY,,}@${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
+        # The image's name is its own, not the repository's: the two coincided once and a rename parts them.
+        run: echo "ref=ghcr.io/geoffreycoulaud/pinry-reborn-api@${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
