@@ -61,7 +61,7 @@ jobs:
           sudo chown "$(id -u):$(id -g)" "$(dirname "$STATE_DIR")"
       # The key rolls because GitHub's entries are immutable: a fixed one would freeze the cache on
       # the first merge that saved it. A documentation-only run calls prose alone and has nothing to
-      # gain from three gigabytes of state.
+      # gain from a restored state.
       - name: Restore the engine state
         if: ${{ steps.scope.outputs.docs-only != 'true' }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -155,9 +155,9 @@ jobs:
           path: ${{ env.ARCHIVE }}
           key: dagger-state-v${{ env.ENGINE_VERSION }}-${{ github.sha }}
 
-  # One entry is a condition and not tidiness: at three gigabytes against the four the quota leaves
-  # free, a second would evict the release path's buildx cache. Its own job, so that the scope to
-  # delete a cache entry stays off the job that runs the build.
+  # One entry is a condition and not tidiness: at 5.1 gigabytes of a ten-gigabyte quota, a second
+  # would evict the release path's buildx cache. Its own job, so that the scope to delete a cache
+  # entry stays off the job that runs the build.
   prune:
     needs: [verify]
     if: ${{ github.ref == 'refs/heads/main' }}
