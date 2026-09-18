@@ -120,9 +120,10 @@ decisions 2 to 6). A container named `dagger-engine` is started on a state direc
 `.github/engine.json` mounted at `/etc/dagger/engine.json`, and the CLI reaches it through
 `_EXPERIMENTAL_DAGGER_RUNNER_HOST`. **A pull request restores and never saves; a push to `main` stops the engine,
 archives the state, saves it under a key carrying the engine version and the commit, and deletes every other entry
-under the `dagger-state-` prefix.** One entry is a condition and not a tidiness: the archive is about three gigabytes
-against the four the repository's ten-gigabyte quota leaves free, so a second would evict the release path's buildx
-cache. **A restore that does not unpack, and an engine that will not come up on it, both empty the state and carry
+under the `dagger-state-` prefix.** One entry is a condition and not a tidiness: the archive is 5.1 gigabytes of the
+repository's ten-gigabyte quota (run `35381866356`, up from the three gigabytes
+`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md` measured, the web application's build stage being the
+difference), so a second would evict the release path's buildx cache. **A restore that does not unpack, and an engine that will not come up on it, both empty the state and carry
 on cold**, the cache being an optimisation and never a condition of a green run.
 **`.github/engine.json` declares `gc.policies` rather than a bound alone**, because the list Dagger generates
 otherwise reclaims the Gradle home and pnpm store volumes, which are the thing being kept.
