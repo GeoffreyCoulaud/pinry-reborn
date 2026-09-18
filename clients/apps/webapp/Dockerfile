@@ -1,15 +1,11 @@
-# The web application's image: the bundle built by pnpm, served by nginx.
-#
-# The build context is the repository root, not this directory: @pinry-reborn/api-client
-# generates its types from ../../../contract/openapi.json in its `prepare` script, so the
-# install fails on a context that carries clients/ without contract/.
-#
-# $BUILDPLATFORM keeps the compile on the runner's own architecture in a two architecture
-# build; what it emits is architecture independent, exactly as the API's fast jar is.
+# $BUILDPLATFORM keeps the compile off the emulator in a two architecture build; what it emits is
+# architecture independent, exactly as the API's fast jar is.
 FROM --platform=$BUILDPLATFORM node:24-slim AS build
 
 RUN npm install --global pnpm@12.3.4
 
+# The context is the repository root: @pinry-reborn/api-client generates its types from
+# ../../../contract/openapi.json in its `prepare` script, so the install needs contract/ too.
 WORKDIR /src
 COPY contract/ contract/
 COPY clients/ clients/
