@@ -40,12 +40,12 @@ jobs:
         # inside a reusable workflow, the keyless OIDC certificate identity (SAN) is
         # the reusable workflow's ref, not the caller's, so the signer identity to
         # verify against is .github/workflows/validate.yml. It keeps the repository's
-        # original case (the OIDC cert identity preserves it); IMAGE is lowercased
-        # below (OCI refs must be).
+        # original case (the OIDC cert identity preserves it), where IMAGE below is
+        # the image's own name and not the repository's.
         env:
           CERT_REGEXP: "^${{ github.server_url }}/${{ github.repository }}/.github/workflows/validate.yml@refs/"
         run: |
-          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}:latest"
+          IMAGE="ghcr.io/geoffreycoulaud/pinry-reborn-api:latest"
           verify() {  # $1 = predicate type -> stdout: the raw predicate JSON
             cosign verify-attestation \
               --type "$1" \
