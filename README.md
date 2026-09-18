@@ -29,6 +29,18 @@ The development server proxies `/api` to `http://localhost:8080`, so the applica
 one origin, which is what the session cookie needs (`docs/adr/0026-one-session-two-transports.md`).
 `clients/AGENTS.md` carries the rest of the commands.
 
+To run the whole product the way it is released, three containers behind one proxy on
+<http://localhost:6258>:
+
+```sh
+(cd api && ./gradlew :api-application:quarkusBuild) && docker compose up --build
+```
+
+The Gradle task is not optional: the API's image copies a fast jar Gradle produced before
+`docker build` ran, so a stale one builds a stale API in silence and a missing one fails the build
+with `COPY failed`. Reach the proxy at `localhost` and not at an address on the network: the session
+cookie is `Secure` unconditionally, and browsers except `localhost` alone.
+
 ## Git hooks
 
 This repo ships its git hooks in `.githooks/`. Enable them once per clone:
