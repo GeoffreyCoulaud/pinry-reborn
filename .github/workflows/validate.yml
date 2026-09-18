@@ -147,27 +147,50 @@ jobs:
           sudo tar --zstd -cf "$ARCHIVE" -C "$STATE_DIR" .
           sudo chown "$(id -u):$(id -g)" "$ARCHIVE"
           ls -l "$ARCHIVE"
-      - name: Save the engine state
+      # The archive travels as a run artefact rather than being saved here: the save has to follow
+      # the delete, and the scope to delete a cache entry stays off this job.
+      - name: Hand the engine state archive to the engine-state job
         if: ${{ github.ref == 'refs/heads/main' }}
         continue-on-error: true
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
+          name: engine-state
           path: ${{ env.ARCHIVE }}
-          key: dagger-state-v${{ env.ENGINE_VERSION }}-${{ github.sha }}
+          retention-days: 1
+          compression-level: 0 # Already zstd.
 
-  # One entry is a condition and not tidiness: at 5.1 gigabytes of a ten-gigabyte quota, a second
-  # would evict the release path's buildx cache. Its own job, so that the scope to delete a cache
-  # entry stays off the job that runs the build.
-  prune:
+  # Delete, then save. Saving first put two four-gigabyte entries under a ten-gigabyte quota at
+  # once, and what GitHub evicted was the release path's buildx cache, least recently used.
+  # Its own job, so that the scope to delete a cache entry stays off the job that runs the build.
+  engine-state:
     needs: [verify]
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       actions: write
+    env:
+      ARCHIVE: /mnt/dagger/state.tar.zst
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Delete the engine state entries this run replaces
+      - name: Read the engine version dagger.json pins
+        run: echo "ENGINE_VERSION=$(jq -r '.engineVersion | ltrimstr("v")' dagger.json)" >> "$GITHUB_ENV"
+      - name: Prepare the directory the archive lands in
+        run: |
+          sudo mkdir -p "$(dirname "$ARCHIVE")"
+          sudo chown "$(id -u):$(id -g)" "$(dirname "$ARCHIVE")"
+      # Laid down at the absolute path verify restores from, so the entry's own layout is unchanged.
+      - name: Take the archive verify produced
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: engine-state
+          path: /mnt/dagger
+      # Nothing is deleted until the replacement is on this runner: the delete costs a cold run,
+      # and the cache is an optimisation rather than a condition of a green one.
+      - name: Delete the engine state entries this archive replaces
+        if: ${{ steps.download.outcome == 'success' }}
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
@@ -175,10 +198,16 @@ jobs:
         run: |
           # Listed on the whole prefix and not on the version: an engine bump would otherwise leave
           # the previous version's entry behind until GitHub evicts it.
-          keep="dagger-state-v$(jq -r '.engineVersion | ltrimstr("v")' dagger.json)-${{ github.sha }}"
-          gh cache list --key dagger-state- --limit 100 --json id,key \
-            | jq -r --arg keep "$keep" '.[] | select(.key != $keep) | .id' \
+          gh cache list --key dagger-state- --limit 100 --json id \
+            | jq -r '.[].id' \
             | xargs -r -n1 gh cache delete
+      - name: Save the engine state
+        if: ${{ steps.download.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.ARCHIVE }}
+          key: dagger-state-v${{ env.ENGINE_VERSION }}-${{ github.sha }}
 
   # The registry, the identity and the signing live here alone, on the release path alone. It
   # rebuilds nothing: the fast jar is the one verify's gate produced and smoked.
@@ -328,7 +357,7 @@ jobs:
   # Branch protection reads a skipped job as passing, so the one required check always runs and
   # fails explicitly (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md, decision 2).
   gate:
-    needs: [verify, prune, publish]
+    needs: [verify, engine-state, publish]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:

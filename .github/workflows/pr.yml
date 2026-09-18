@@ -13,7 +13,7 @@ concurrency:
 jobs:
   # Job name must stay "validate": branch protection requires the "validate / gate" check. The
   # caller's grant is a ceiling checked when the run starts, over every job the called workflow
-  # declares and not only the ones that run, so a scope publish or prune asks for has to be granted
+  # declares and not only the ones that run, so a scope publish or engine-state asks for has to be granted
   # here even though a pull request starts neither. What the build's token actually carries is the
   # permissions block on verify, which is contents: read.
   validate:
