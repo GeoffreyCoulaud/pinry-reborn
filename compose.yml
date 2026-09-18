@@ -1,5 +1,10 @@
 # `(cd api && ./gradlew :api-application:quarkusBuild)` is a prerequisite: the API's image copies a
 # fast jar Gradle produced before `docker build` ran.
+
+# Named rather than taken from the checkout directory, which the rename to `pinry-reborn` changed:
+# two clones would otherwise be two projects on two `data` volumes.
+name: pinry-reborn
+
 services:
   api:
     build: ./api
