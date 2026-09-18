@@ -74,9 +74,11 @@ Inside `apps/webapp/src`:
 
 - **The block budget excludes `pnpm-lock.yaml`**, which `.gitattributes` marks `linguist-generated`. The budget
   measures what a human rereads. `.dagger/.gitattributes` is the precedent.
-- **`pnpm-workspace.yaml` grows a `minimumReleaseAgeExclude` entry per freshly published pin**, written by pnpm
-  itself: it holds back a version published inside its release-age window unless the file names it. Expected, not
-  a defect.
+- **A `minimumReleaseAgeExclude` entry is a finding, not maintenance.** `pnpm-workspace.yaml` declares
+  `minimumReleaseAge` and `minimumReleaseAgeStrict`, so a version published inside the window is refused with
+  `ERR_PNPM_NO_MATURE_MATCHING_VERSION` rather than installed. Left undeclared the delay does nothing: pnpm installs
+  the fresh version and writes the waiver itself, which is how the entries already there arrived. **Pin a version
+  that has aged out; never add a line to let one through.**
 - **`engines` does not refuse a wrong Node.** pnpm's own documentation says the root project's engine range always
   fails an install; pnpm 12.3.4 was measured doing the opposite, with `engine-strict` set and a range this Node
   does not satisfy. What the setting does refuse is a *dependency* declaring itself incompatible.

@@ -6,8 +6,12 @@ packages:
 # keeps every browser out of the gate: `msw/node` is all this workspace loads.
 allowBuilds:
   msw: false
-# pnpm holds back a version published inside its release-age window, so a pin read from the
-# registry on the day it is added lands here. pnpm writes these lines itself.
+# 1440 is also pnpm's default, and declaring it is what makes it refuse: undeclared, pnpm installs
+# the fresh version anyway and writes the waiver below. Measured on 12.3.4 against a two-hour-old
+# eslint on 2026-09-19.
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+# Every line here is one version that entered inside its window. Read a new one as a finding.
 minimumReleaseAgeExclude:
   - '@tanstack/history@1.162.3'
   - '@tanstack/react-router@1.170.34'
