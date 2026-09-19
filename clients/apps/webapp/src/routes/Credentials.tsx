@@ -44,7 +44,14 @@ function CredentialsForm({ title, refusal, newPassword, session, footer }: Crede
           <Label>{m.password()}</Label>
           <Input />
         </TextField>
-        <Checkbox name="rememberMe">{m.remember_me()}</Checkbox>
+        <Checkbox name="rememberMe">
+          <Checkbox.Content>
+            <Checkbox.Control>
+              <Checkbox.Indicator />
+            </Checkbox.Control>
+            {m.remember_me()}
+          </Checkbox.Content>
+        </Checkbox>
         {session.isError && <p role="alert">{refusal}</p>}
         <Button type="submit" isDisabled={session.isPending}>
           {title}

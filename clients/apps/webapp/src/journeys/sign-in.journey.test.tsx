@@ -38,6 +38,37 @@ describe("sign in", () => {
     expect(opened).toEqual({ name: "ada", password: "correct horse", transport: "COOKIE", rememberMe: false })
   })
 
+  // The handler reads the checkbox out of `FormData` by name, and an unticked one is absent either
+  // way: only a ticked one says the control still carries the field.
+  it("Given the remember me box ticked, Then the session is opened to last", async () => {
+    let opened: Record<string, unknown> | undefined
+    server.use(
+      http.post("/api/v1/sessions", async ({ request }) => {
+        opened = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json(SESSION)
+      }),
+      sessionRoute(() => opened !== undefined),
+      pinsRoute([]),
+      downloadsRoute(),
+      handshakeRoute(),
+    )
+    renderApp("/sign-in")
+    const user = userEvent.setup()
+
+    await user.type(await screen.findByLabelText(m.username()), "ada")
+    await user.type(screen.getByLabelText(m.password()), "correct horse")
+    await user.click(screen.getByRole("checkbox", { name: m.remember_me() }))
+    await user.click(screen.getByRole("button", { name: m.sign_in() }))
+
+    expect(await screen.findByRole("heading", { name: m.home_heading() })).toBeVisible()
+    expect(opened).toEqual({
+      name: "ada",
+      password: "correct horse",
+      transport: "COOKIE",
+      rememberMe: true,
+    })
+  })
+
   it("Given a password the API refuses, Then the screen says so and stays", async () => {
     server.use(http.post("/api/v1/sessions", () => new HttpResponse(null, { status: 401 })))
     renderApp("/sign-in")
