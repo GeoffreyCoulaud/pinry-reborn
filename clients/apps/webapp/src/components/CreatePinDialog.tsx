@@ -3,18 +3,9 @@ import { useEffect, useState } from "react"
 import { judgeDrop, refuse } from "../drops"
 import { useCreatePin, useHandshake, type ImageSource } from "../images"
 import { dragDepth, type DragStep } from "../lib/drags"
-import type { DropPartition, KeptFile } from "../lib/drops"
+import { entriesOf, withDrop, type DropPartition, type PinEntry } from "../lib/drops"
 import { uploadRefusal } from "../lib/uploads"
 import { m } from "../paraglide/messages.js"
-
-/** A file this deployment accepts, with the object URL its thumbnail is drawn from. */
-type Chosen = KeptFile & { preview: string }
-
-/** The thumbnail a kept file is shown by, drawn from bytes the browser already holds. */
-function shown(kept: KeptFile | undefined): Chosen | null {
-  if (kept === undefined) return null
-  return { ...kept, preview: URL.createObjectURL(kept.file) }
-}
 
 /**
  * The label follows the input so Tailwind's `peer-*` variants reach it. react-aria links the two
@@ -55,84 +46,113 @@ function Field({
 }
 
 /**
- * Two entries, one dialog: an address the server fetches, or a file from disk. The file is judged
+ * One dialog and a queue of pins: a drop carrying several images is worked through one entry at a
+ * time. Each holds an address the server fetches, a file from disk, or both. The file is judged
  * the moment it is chosen, so a refused one costs no upload and says so at once (decision M).
  */
 function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; close: () => void }) {
   const create = useCreatePin()
   const handshake = useHandshake()
-  // The drop that opened this form was judged in full before it did (decision N), so the first
-  // entry it kept is what the form opens on.
-  const [chosen, setChosen] = useState<Chosen | null>(() => shown(dropped?.files[0]))
-  const [foundAt, setFoundAt] = useState(dropped?.urls[0] ?? "")
+  // The drop that opened this form was judged in full before it did, so its own total is fixed
+  // before its first entry is shown (decision N).
+  const [entries, setEntries] = useState<readonly PinEntry[]>(() => entriesOf(dropped))
+  const [at, setAt] = useState(0)
   const [depth, setDepth] = useState(0)
+  const [preview, setPreview] = useState<string | null>(null)
+  // `at` is always inside the queue; the fallback is what `noUncheckedIndexedAccess` asks for.
+  const entry = entries[at] ?? { file: null, url: "" }
 
   function dragged(step: DragStep) {
     setDepth((current) => dragDepth(current, step))
   }
 
-  // The content is mounted only while the dialog is open, so this cleanup is what revokes the
-  // URL, on Escape and on the backdrop as much as on a pin created.
+  // The thumbnail follows the entry being worked on. The content is mounted only while the dialog
+  // is open, so this cleanup revokes the URL on Escape and on the backdrop as much as on a pin
+  // created.
   useEffect(() => {
-    const preview = chosen?.preview
-    return () => {
-      if (preview !== undefined) URL.revokeObjectURL(preview)
+    const file = entry.file?.file
+    if (file === undefined) {
+      setPreview(null)
+      return
     }
-  }, [chosen])
+    const drawn = URL.createObjectURL(file)
+    setPreview(drawn)
+    return () => URL.revokeObjectURL(drawn)
+  }, [entry.file])
 
-  /**
-   * One element dropped replaces the file this entry holds, dropping on an open form being the
-   * correction gesture; an address touches provenance alone and takes nothing away (decision H).
-   */
+  /** The entry being worked on, changed where it stands: the queue around it is untouched. */
+  function change(patch: Partial<PinEntry>) {
+    setEntries((queue) => queue.map((one, index) => (index === at ? { ...one, ...patch } : one)))
+  }
+
+  /** The queue advances on the server's word, and the last entry taken closes the dialog (K). */
+  function advance() {
+    if (at + 1 < entries.length) setAt(at + 1)
+    else close()
+  }
+
   async function take(files: readonly File[], uriList: string) {
     const drop = await judgeDrop(files, uriList, handshake.data?.limits)
     drop.refusals.forEach(refuse)
-    if (drop.files[0] !== undefined) setChosen(shown(drop.files[0]))
-    if (drop.urls[0] !== undefined) setFoundAt(drop.urls[0])
+    setEntries((queue) => withDrop(queue, at, drop))
   }
 
   function submit(fields: FormData) {
     // Provenance and bytes are independent: the address says where the picture was found and is
     // always sent, and it supplies the bytes only when no file was chosen (decision G).
-    let source: ImageSource = { url: foundAt }
-    if (chosen !== null) {
+    let source: ImageSource = { url: entry.url }
+    if (entry.file !== null) {
       // Judged again here, for the file chosen before the handshake's limits arrived.
-      const refusal = uploadRefusal(chosen.measurement, handshake.data?.limits)
+      const refusal = uploadRefusal(entry.file.measurement, handshake.data?.limits)
       // Dropped here as it would have been at the choice, so one message means one state.
       if (refusal !== null) {
         refuse(refusal)
-        setChosen(null)
+        change({ file: null })
         return
       }
-      source = { file: chosen.file }
+      source = { file: entry.file.file }
     }
     create.mutate(
       {
         sourceContextUrl: String(fields.get("sourceContextUrl")) || null,
-        sourceMediaUrl: foundAt || null,
+        sourceMediaUrl: entry.url || null,
         description: String(fields.get("description")),
         source,
       },
-      { onSuccess: close },
+      { onSuccess: advance },
     )
   }
 
   return (
     <form
+      // The description and the page are this entry's, and the fields holding them are the DOM's
+      // own: a new key is what empties them for the next entry rather than carrying them over.
+      key={at}
       className="flex flex-col gap-3"
       onSubmit={(event) => {
         event.preventDefault()
         submit(new FormData(event.currentTarget))
       }}
     >
+      {entries.length > 1 && (
+        // `role="img"` is what carries a name on something read as one unit: the two numbers are
+        // for the eye and `pin_progress` is the sentence a screen reader gets (decision J).
+        <span
+          role="img"
+          aria-label={m.pin_progress({ current: at + 1, total: entries.length })}
+          className="self-end text-sm text-muted"
+        >
+          {at + 1}/{entries.length}
+        </span>
+      )}
       {/* The address stops being required once a file is chosen: an image comes from one or the other. */}
       <Field
         name="sourceMediaUrl"
         type="url"
         label={m.image_address()}
-        isRequired={chosen === null}
-        value={foundAt}
-        onChange={setFoundAt}
+        isRequired={entry.file === null}
+        value={entry.url}
+        onChange={(url) => change({ url })}
       />
       {/* `data-dragging` carries the counter rather than a class, jsdom computing no style: it is
           what the active style hangs on and the only thing a test can read. */}
@@ -158,6 +178,7 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
             name="file"
             type="file"
             accept="image/*"
+            multiple
             className="sr-only"
             onChange={(event) => {
               const input = event.currentTarget
@@ -169,13 +190,14 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
             }}
           />
         </label>
-        {chosen !== null && (
+        {entry.file !== null && (
           <>
-            <img src={chosen.preview} alt="" className="max-h-32 rounded" />
-            <span className="text-sm text-muted">{chosen.file.name}</span>
+            {/* One render behind the file: the object URL is drawn by the effect above. */}
+            {preview !== null && <img src={preview} alt="" className="max-h-32 rounded" />}
+            <span className="text-sm text-muted">{entry.file.file.name}</span>
             {/* Positioned above the label's stretched hit area, which would otherwise take this
                 press and open the picker instead. */}
-            <Button variant="ghost" className="relative" onPress={() => setChosen(null)}>
+            <Button variant="ghost" className="relative" onPress={() => change({ file: null })}>
               {m.remove()}
             </Button>
           </>
@@ -185,10 +207,19 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
       {/* Never required: a file from disk and a direct image address both name no page. */}
       <Field name="sourceContextUrl" type="url" label={m.source_page()} />
       {create.isError && <p role="alert">{m.creation_refused()}</p>}
-      {/* Submitting before the limits arrive would send a file this deployment refuses. */}
-      <Button type="submit" className="self-end" isDisabled={create.isPending || handshake.isPending}>
-        {m.create_pin()}
-      </Button>
+      <div className="flex justify-end gap-2">
+        {/* Two verbs, two effects on the counter: `Remove` empties this entry and leaves it where
+            it is, `Ignore` abandons it and moves on (decision I). */}
+        {entries.length > 1 && (
+          <Button variant="ghost" onPress={advance}>
+            {m.ignore()}
+          </Button>
+        )}
+        {/* Submitting before the limits arrive would send a file this deployment refuses. */}
+        <Button type="submit" isDisabled={create.isPending || handshake.isPending}>
+          {m.create_pin()}
+        </Button>
+      </div>
     </form>
   )
 }
