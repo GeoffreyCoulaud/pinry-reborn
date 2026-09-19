@@ -33,6 +33,13 @@ describe("drop an image on the grid to add a pin", () => {
     fireEvent.dragEnter(main)
     expect(await screen.findByText("Drop an image here to add a pin")).toBeVisible()
 
+    // Crossing into a child fires a leave at what is being left and an enter at what is entered,
+    // and both bubble to the window that listens. The pointer never left the screen, so the offer
+    // stands: it is the depth counter that tells this exit from the real one.
+    fireEvent.dragEnter(screen.getByRole("status"))
+    fireEvent.dragLeave(main)
+    expect(screen.getByText("Drop an image here to add a pin")).toBeVisible()
+
     fireEvent.dragLeave(main)
     await waitFor(() =>
       expect(screen.queryByText("Drop an image here to add a pin")).toBeNull(),
