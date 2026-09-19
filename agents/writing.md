@@ -53,9 +53,8 @@ configuration and the label that the transcription dropped.
 
 - **A document under `agents/` states its mandate before its argument**: short imperative bullets, one rule each and no
   justification, then a `**Detail.**` paragraph that explains and binds nothing
-  (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). `agents/workflow.md`,
-  `agents/writing.md` and both review mandates are converted; `agents/engineering.md` conforms when something next
-  touches it.
+  (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). Every document under
+  `agents/` is converted.
 - **A closed list is written out in one living document**, the one carrying the rule that closes it; every other living
   document names the list and states no member and no total
   (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 2). The dated documents are
