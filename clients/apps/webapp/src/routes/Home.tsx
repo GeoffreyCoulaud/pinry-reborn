@@ -259,7 +259,7 @@ export function Home() {
         {/* `pointer-events-none` keeps the overlay out of the drag it announces: a target appearing
             under the pointer would fire an exit at the screen the pointer never left. */}
         {depth > 0 && (
-          <div className="pointer-events-none absolute inset-0 grid place-content-center bg-accent-soft/90 text-lg">
+          <div className="pointer-events-none absolute inset-0 grid place-content-center border-2 border-dashed border-accent bg-background/80 text-lg">
             {m.drop_to_add()}
           </div>
         )}
