@@ -128,15 +128,17 @@ function CreatePinForm({ close }: { close: () => void }) {
         isRequired={chosen === null}
       />
       <div
-        className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center"
+        className="relative flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center"
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault()
           void choose(event.dataTransfer.files)
         }}
       >
-        {/* The invitation is the input's accessible name, which is what Label in Name asks for. */}
-        <label className="cursor-pointer">
+        {/* The invitation is the input's accessible name, which is what Label in Name asks for.
+            Its hit area is stretched over the whole box, so the thumbnail and the padding are
+            clickable too without joining the name. */}
+        <label className="cursor-pointer before:absolute before:inset-0 before:content-['']">
           {m.drop_image()}
           <input
             name="file"
