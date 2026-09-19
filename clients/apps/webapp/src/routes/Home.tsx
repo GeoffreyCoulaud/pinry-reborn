@@ -262,7 +262,8 @@ export function Home() {
             onPress={() => signOut.mutate()}
           />
         </AppHeader>
-        <div className="min-h-0 flex-1">
+        {/* Full bleed: the scrollbar belongs to the viewport edge, not inside the shell's padding. */}
+        <div className="-mx-4 min-h-0 flex-1">
           <PinGrid />
         </div>
         {/* Anchored to the viewport rather than to `<main>`, which is one screen tall and scrolls
