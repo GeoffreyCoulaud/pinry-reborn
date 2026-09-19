@@ -10,6 +10,8 @@
   "downloads_empty": "Aucun téléchargement en cours.",
   "downloads_partial": "Téléchargements ({count}+)",
   "drop_image": "Déposez une image ici, ou choisissez-en une",
+  "drop_to_add": "Déposez une image ici pour ajouter une épingle",
+  "drop_unsupported": "Rien dans ce dépôt ne pouvait devenir une épingle.",
   "file_too_heavy": "Ce fichier est plus lourd que ce que ce serveur accepte.",
   "file_too_large": "Cette image a plus de pixels que ce que ce serveur accepte.",
   "file_unreadable": "Cette image n’a pas pu être lue. Essayez un autre fichier.",

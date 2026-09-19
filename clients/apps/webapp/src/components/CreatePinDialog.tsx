@@ -1,37 +1,19 @@
-import { Button, Input, Label, Modal, TextField, toast } from "@heroui/react"
+import { Button, Input, Label, Modal, TextField } from "@heroui/react"
 import { useEffect, useState } from "react"
+import { judgeDrop, refuse } from "../drops"
 import { useCreatePin, useHandshake, type ImageSource } from "../images"
 import { dragDepth, type DragStep } from "../lib/drags"
-import { isImageFile, uploadRefusal, type MeasuredUpload, type UploadRefusal } from "../lib/uploads"
+import type { DropPartition, KeptFile } from "../lib/drops"
+import { uploadRefusal } from "../lib/uploads"
 import { m } from "../paraglide/messages.js"
 
-const REFUSALS: Record<UploadRefusal, () => string> = {
-  TOO_MANY_BYTES: m.file_too_heavy,
-  TOO_MANY_PIXELS: m.file_too_large,
-  UNSUPPORTED_FORMAT: m.file_unsupported,
-  UNREADABLE: m.file_unreadable,
-}
-
-/** An element refused speaks where the gesture happened, and the gesture owns no form (ADR 0037). */
-function refuse(refusal: UploadRefusal) {
-  toast.danger(REFUSALS[refusal]())
-}
-
-/** The pixel count a limit is read against, which nothing short of a decoder knows. */
-async function measured(file: File): Promise<MeasuredUpload> {
-  const bitmap = await createImageBitmap(file)
-  const measurement = { size: file.size, width: bitmap.width, height: bitmap.height }
-  // A decoded bitmap is four bytes a pixel, so ten photographs held at once are hundreds of
-  // megabytes (MDN, `ImageBitmap.close()`).
-  bitmap.close()
-  return measurement
-}
-
 /** A file this deployment accepts, with the object URL its thumbnail is drawn from. */
-interface Chosen {
-  file: File
-  measurement: MeasuredUpload
-  preview: string
+type Chosen = KeptFile & { preview: string }
+
+/** The thumbnail a kept file is shown by, drawn from bytes the browser already holds. */
+function shown(kept: KeptFile | undefined): Chosen | null {
+  if (kept === undefined) return null
+  return { ...kept, preview: URL.createObjectURL(kept.file) }
 }
 
 /**
@@ -43,14 +25,25 @@ function Field({
   label,
   type,
   isRequired,
+  value,
+  onChange,
 }: {
   name: string
   label: string
   type?: "text" | "url"
   isRequired?: boolean
+  value?: string
+  onChange?: (value: string) => void
 }) {
   return (
-    <TextField name={name} type={type} isRequired={isRequired} className="relative">
+    <TextField
+      name={name}
+      type={type}
+      isRequired={isRequired}
+      value={value}
+      onChange={onChange}
+      className="relative"
+    >
       <Input placeholder=" " className="pt-6 pb-2 peer" />
       {/* The label rests centred and floats on focus as well as on content, so the caret never
           shares its line. Both positions are centred by hand against the field's height. */}
@@ -65,10 +58,13 @@ function Field({
  * Two entries, one dialog: an address the server fetches, or a file from disk. The file is judged
  * the moment it is chosen, so a refused one costs no upload and says so at once (decision M).
  */
-function CreatePinForm({ close }: { close: () => void }) {
+function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; close: () => void }) {
   const create = useCreatePin()
   const handshake = useHandshake()
-  const [chosen, setChosen] = useState<Chosen | null>(null)
+  // The drop that opened this form was judged in full before it did (decision N), so the first
+  // entry it kept is what the form opens on.
+  const [chosen, setChosen] = useState<Chosen | null>(() => shown(dropped?.files[0]))
+  const [foundAt, setFoundAt] = useState(dropped?.urls[0] ?? "")
   const [depth, setDepth] = useState(0)
 
   function dragged(step: DragStep) {
@@ -84,33 +80,20 @@ function CreatePinForm({ close }: { close: () => void }) {
     }
   }, [chosen])
 
-  async function choose(files: FileList | null) {
-    // A drop may carry several files: the first image wins, and one carrying none is refused,
-    // a drag out of another browser tab handing over an address and no file at all (decision L).
-    const file = [...(files ?? [])].find(isImageFile)
-    if (file === undefined) {
-      refuse("UNSUPPORTED_FORMAT")
-      return
-    }
-    let measurement: MeasuredUpload
-    try {
-      measurement = await measured(file)
-    } catch {
-      refuse("UNREADABLE")
-      return
-    }
-    const refusal = uploadRefusal(measurement, handshake.data?.limits)
-    if (refusal !== null) {
-      refuse(refusal)
-      return
-    }
-    setChosen({ file, measurement, preview: URL.createObjectURL(file) })
+  /**
+   * One element dropped replaces the file this entry holds, dropping on an open form being the
+   * correction gesture; an address touches provenance alone and takes nothing away (decision H).
+   */
+  async function take(files: readonly File[], uriList: string) {
+    const drop = await judgeDrop(files, uriList, handshake.data?.limits)
+    drop.refusals.forEach(refuse)
+    if (drop.files[0] !== undefined) setChosen(shown(drop.files[0]))
+    if (drop.urls[0] !== undefined) setFoundAt(drop.urls[0])
   }
 
   function submit(fields: FormData) {
     // Provenance and bytes are independent: the address says where the picture was found and is
     // always sent, and it supplies the bytes only when no file was chosen (decision G).
-    const foundAt = String(fields.get("sourceMediaUrl"))
     let source: ImageSource = { url: foundAt }
     if (chosen !== null) {
       // Judged again here, for the file chosen before the handshake's limits arrived.
@@ -148,6 +131,8 @@ function CreatePinForm({ close }: { close: () => void }) {
         type="url"
         label={m.image_address()}
         isRequired={chosen === null}
+        value={foundAt}
+        onChange={setFoundAt}
       />
       {/* `data-dragging` carries the counter rather than a class, jsdom computing no style: it is
           what the active style hangs on and the only thing a test can read. */}
@@ -161,7 +146,7 @@ function CreatePinForm({ close }: { close: () => void }) {
         onDrop={(event) => {
           event.preventDefault()
           dragged("drop")
-          void choose(event.dataTransfer.files)
+          void take([...event.dataTransfer.files], event.dataTransfer.getData("text/uri-list"))
         }}
       >
         {/* The invitation is the input's accessible name, which is what Label in Name asks for.
@@ -176,7 +161,8 @@ function CreatePinForm({ close }: { close: () => void }) {
             className="sr-only"
             onChange={(event) => {
               const input = event.currentTarget
-              void choose(input.files)
+              // What is chosen with the mouse is judged where what is dropped is (decision L).
+              void take([...(input.files ?? [])], "")
               // An input still holding a file fires no change event for that same file, so the
               // one just removed could never be chosen again.
               input.value = ""
@@ -210,9 +196,12 @@ function CreatePinForm({ close }: { close: () => void }) {
 export function CreatePinDialog({
   isOpen,
   onOpenChange,
+  dropped,
 }: {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
+  /** What the drop that opened this dialog kept, the form opening on it (decision D). */
+  dropped: DropPartition | null
 }) {
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
@@ -226,7 +215,7 @@ export function CreatePinDialog({
           <Modal.Heading level={2} className="mb-3 pe-8">
             {m.create_pin()}
           </Modal.Heading>
-          {isOpen && <CreatePinForm close={() => onOpenChange(false)} />}
+          {isOpen && <CreatePinForm dropped={dropped} close={() => onOpenChange(false)} />}
         </Modal.Dialog>
       </Modal.Container>
     </Modal.Backdrop>

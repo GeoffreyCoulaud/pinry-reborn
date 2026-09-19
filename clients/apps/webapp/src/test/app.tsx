@@ -125,6 +125,14 @@ export function download(pinId: string, status: "PENDING" | "FAILED", message: s
   }
 }
 
+/**
+ * A drop as the browser hands one over: the files, and the addresses beside them. `getData` is
+ * not optional, the drop path reading `text/uri-list` on every drop it is given.
+ */
+export function dropOf(files: File[], uriList = "") {
+  return { dataTransfer: { files, getData: () => uriList } }
+}
+
 /** The application on one route, with a cache of its own so no journey inherits another's. */
 export function renderApp(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
