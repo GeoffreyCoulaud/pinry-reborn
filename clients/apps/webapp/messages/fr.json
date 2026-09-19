@@ -17,6 +17,8 @@
   "image_file": "Fichier image",
   "image_refused": "Cette image n’a pas pu être ajoutée.",
   "password": "Mot de passe",
+  "pins_empty": "Aucune épingle à afficher pour l’instant.",
+  "pins_loading": "Chargement de vos épingles.",
   "reason_access_denied": "Le site a refusé le serveur. Envoyez plutôt l’image depuis votre disque.",
   "reason_fetch_failed": "Ce téléchargement a échoué.",
   "reason_internal_error": "Erreur temporaire. Réessayez plus tard.",
