@@ -7,8 +7,6 @@ import { useCreatePin, useHandshake, type ImageSource } from "../images"
 import { uploadRefusal, type UploadRefusal } from "../lib/uploads"
 import { m } from "../paraglide/messages.js"
 
-const FIELD = "rounded border border-current/30 px-2 py-1"
-
 const REFUSALS: Record<UploadRefusal, () => string> = {
   TOO_MANY_BYTES: m.file_too_heavy,
   TOO_MANY_PIXELS: m.file_too_large,
@@ -56,9 +54,9 @@ export function CreatePin() {
     <main className="mx-auto flex max-w-sm flex-col gap-4 p-8">
       {/* A download requested here keeps running past the navigation, so the screen that starts it
           is the one that must show it. */}
-      <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-2xl font-semibold">{m.create_pin()}</h1>
-        <div className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-separator pb-3">
+        <h1 className="text-xl font-semibold">{m.create_pin()}</h1>
+        <div className="flex flex-wrap items-center gap-2">
           <TaskCentre />
           <ThemeSwitch />
         </div>
@@ -91,7 +89,7 @@ export function CreatePin() {
             type="file"
             accept="image/*"
             onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
-            className={FIELD}
+            className="rounded-field bg-field px-3 py-2 text-sm text-field-foreground shadow-field"
           />
         </label>
         {refused !== null && <p role="alert">{REFUSALS[refused]()}</p>}
