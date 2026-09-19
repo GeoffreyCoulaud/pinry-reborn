@@ -123,6 +123,8 @@ function PinGrid() {
         {m.pins_loading()}
       </div>
     )
+  // A refusal is not an empty account, and the empty state below would state one.
+  if (pins.isError) return <p role="alert">{m.pins_unreadable()}</p>
   if (tiles.length === 0)
     return (
       <EmptyState role="status" className="grid h-full place-content-center text-center">
