@@ -1,4 +1,5 @@
-import { Button, Popover, buttonVariants } from "@heroui/react"
+import { Badge, Button, Popover, Tooltip, buttonVariants } from "@heroui/react"
+import { Download as DownloadIcon } from "lucide-react"
 import { downloadReason } from "../downloadReasons"
 import { useDropDownload, useImageDownloads, useSetPinImage, type Download } from "../images"
 import { m } from "../paraglide/messages.js"
@@ -57,14 +58,25 @@ function Task({ download }: { download: Download }) {
 export function TaskCentre() {
   const page = useImageDownloads().data
   const downloads = page?.downloads ?? []
-  const label =
-    page?.hasMore === true
-      ? m.downloads_partial({ count: downloads.length })
-      : m.downloads({ count: downloads.length })
+  const partial = page?.hasMore === true
+  const label = partial
+    ? m.downloads_partial({ count: downloads.length })
+    : m.downloads({ count: downloads.length })
 
   return (
     <Popover>
-      <Button variant="ghost">{label}</Button>
+      <Badge.Anchor>
+        <Tooltip>
+          <Button variant="ghost" isIconOnly aria-label={label}>
+            <DownloadIcon aria-hidden />
+          </Button>
+          <Tooltip.Content>{label}</Tooltip.Content>
+        </Tooltip>
+        {/* The name above already carries the count; a badge read as well would say it twice. */}
+        {downloads.length > 0 && (
+          <Badge aria-hidden>{`${downloads.length}${partial ? "+" : ""}`}</Badge>
+        )}
+      </Badge.Anchor>
       <Popover.Content className="max-w-sm">
         <Popover.Dialog aria-label={label}>
           {downloads.length === 0 ? (

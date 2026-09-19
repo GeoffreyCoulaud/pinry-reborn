@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { readPreference, resolveTheme } from "./theme"
+import { nextPreference, readPreference, resolveTheme } from "./theme"
 
 describe("readPreference", () => {
   it("keeps a preference it knows", () => {
@@ -11,6 +11,14 @@ describe("readPreference", () => {
   it("falls back to the system for an absent or unknown value", () => {
     expect(readPreference(null)).toBe("system")
     expect(readPreference("sepia")).toBe("system")
+  })
+})
+
+describe("nextPreference", () => {
+  it("steps along the preferences and wraps past the last", () => {
+    expect(nextPreference("system")).toBe("light")
+    expect(nextPreference("light")).toBe("dark")
+    expect(nextPreference("dark")).toBe("system")
   })
 })
 

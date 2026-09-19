@@ -12,7 +12,7 @@ repository root, so that they read the same from either file.
 
 | Path                   | Role                                                                                     |
 |------------------------|------------------------------------------------------------------------------------------|
-| `clients/apps/webapp`  | The web application: Vite, React, TanStack Router, Tailwind, HeroUI, Paraglide.           |
+| `clients/apps/webapp`  | The web application: Vite, React, TanStack Router, Tailwind, HeroUI, `lucide-react`, Paraglide. |
 | `clients/packages/api-client` | The typed client, generated from `contract/openapi.json` at install and knowing nothing about sessions. |
 | `clients/packages/auth`       | The session, and the transport that carries it: the web application's cookie, the extension's header. |
 

@@ -4,7 +4,13 @@ export type ThemePreference = "system" | "light" | "dark"
 /** What the page is painted in, once a preference has met the system's own. */
 export type Theme = "light" | "dark"
 
-export const THEME_PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"]
+/** A tuple rather than an array, so the cycle below reads its first entry without a null check. */
+export const THEME_PREFERENCES = ["system", "light", "dark"] as const satisfies readonly ThemePreference[]
+
+/** The preference after `current`, wrapping past the last. */
+export function nextPreference(current: ThemePreference): ThemePreference {
+  return THEME_PREFERENCES[THEME_PREFERENCES.indexOf(current) + 1] ?? THEME_PREFERENCES[0]
+}
 
 /** Anything this version does not know reads as `system`, a value an older one wrote included. */
 export function readPreference(stored: string | null): ThemePreference {
