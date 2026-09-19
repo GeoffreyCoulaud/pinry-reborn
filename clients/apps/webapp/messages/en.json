@@ -19,6 +19,7 @@
   "password": "Password",
   "pins_empty": "No pins to show yet.",
   "pins_loading": "Loading your pins.",
+  "pins_unreadable": "Your pins could not be read. Try again in a moment.",
   "reason_access_denied": "The site refused the server. Upload the image from disk instead.",
   "reason_fetch_failed": "That download failed.",
   "reason_internal_error": "A temporary error. Try again later.",

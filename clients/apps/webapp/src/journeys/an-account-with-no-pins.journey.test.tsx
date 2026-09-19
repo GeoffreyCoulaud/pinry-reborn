@@ -39,4 +39,18 @@ describe("an account with no pins", () => {
     release()
     expect(await screen.findByText(m.pins_empty())).toBeVisible()
   })
+
+  it("Given the pins route refusing, Then the user is told rather than that the account is empty", async () => {
+    server.use(
+      sessionRoute(() => true),
+      http.get("/api/v1/pins", () => new HttpResponse(null, { status: 500 })),
+      downloadsRoute(),
+      handshakeRoute(),
+    )
+
+    renderApp("/")
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(m.pins_unreadable())
+    expect(screen.queryByText(m.pins_empty())).toBeNull()
+  })
 })

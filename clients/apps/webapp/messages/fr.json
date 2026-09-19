@@ -19,6 +19,7 @@
   "password": "Mot de passe",
   "pins_empty": "Aucune épingle à afficher pour l’instant.",
   "pins_loading": "Chargement de vos épingles.",
+  "pins_unreadable": "Vos épingles n’ont pas pu être lues. Réessayez dans un instant.",
   "reason_access_denied": "Le site a refusé le serveur. Envoyez plutôt l’image depuis votre disque.",
   "reason_fetch_failed": "Ce téléchargement a échoué.",
   "reason_internal_error": "Erreur temporaire. Réessayez plus tard.",
