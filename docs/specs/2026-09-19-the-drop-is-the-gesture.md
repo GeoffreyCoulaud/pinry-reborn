@@ -104,6 +104,7 @@ what settles them.
 | 30 | `routes/Home.tsx` | Drag handlers on `<main>` (Corrected: on `window`, the paragraph below saying why), the overlay, and the dialog opened with what was dropped |
 | 30 | `messages/{en,fr}.json` | `drop_to_add`, `drop_unsupported` |
 | 35 | `routes/Home.tsx` | The grid declares its own `overflow`, so the waterfall scrolls inside its box rather than pushing the document |
+| 40 | `lib/drops.ts` | (Corrected: this row was not in the table) `entriesOf` and `withDrop`, the queue's pure half, with their tests |
 | 40 | `components/CreatePinDialog.tsx` | The queue: entries, the current index, the counter, `Ignore`, `multiple` on the picker |
 | 40 | `messages/{en,fr}.json` | `ignore`, `pin_progress` |
 
