@@ -129,7 +129,7 @@ function CreatePinForm({ close }: { close: () => void }) {
         isRequired={chosen === null}
       />
       <div
-        className="relative flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center"
+        className="relative flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-focus"
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault()
