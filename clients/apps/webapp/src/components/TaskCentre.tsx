@@ -1,8 +1,9 @@
-import { Badge, Button, Popover, Tooltip, buttonVariants } from "@heroui/react"
+import { Badge, Button, Popover, buttonVariants } from "@heroui/react"
 import { Download as DownloadIcon } from "lucide-react"
 import { downloadReason } from "../downloadReasons"
 import { useDropDownload, useImageDownloads, useSetPinImage, type Download } from "../images"
 import { m } from "../paraglide/messages.js"
+import { IconButton } from "./IconButton"
 
 /** A failed download offers what question V exists for: the same address again, or a file. */
 function Task({ download }: { download: Download }) {
@@ -66,12 +67,7 @@ export function TaskCentre() {
   return (
     <Popover>
       <Badge.Anchor>
-        <Tooltip>
-          <Button variant="ghost" isIconOnly aria-label={label}>
-            <DownloadIcon aria-hidden />
-          </Button>
-          <Tooltip.Content>{label}</Tooltip.Content>
-        </Tooltip>
+        <IconButton icon={DownloadIcon} name={label} variant="ghost" />
         {/* The name above already carries the count; a badge read as well would say it twice. */}
         {downloads.length > 0 && (
           <Badge aria-hidden>{`${downloads.length}${partial ? "+" : ""}`}</Badge>
