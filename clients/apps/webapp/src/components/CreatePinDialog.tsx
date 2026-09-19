@@ -179,7 +179,11 @@ export function CreatePinDialog({
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
       <Modal.Container size="sm">
-        <Modal.Dialog aria-label={m.create_pin()}>
+        <Modal.Dialog>
+          {/* `slot="title"` is what names the dialog, so the visible name and the read one are one. */}
+          <Modal.Heading level={2} className="mb-3">
+            {m.create_pin()}
+          </Modal.Heading>
           {isOpen && <CreatePinForm close={() => onOpenChange(false)} />}
         </Modal.Dialog>
       </Modal.Container>
