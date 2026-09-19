@@ -21,6 +21,11 @@ async function openTheDialog(user: ReturnType<typeof userEvent.setup>) {
   return within(await screen.findByRole("dialog", { name: "Add a pin" }))
 }
 
+/** The box around the `sr-only` input, which is what the drag counter and the styles hang on. */
+function dropArea(dialog: ReturnType<typeof within>) {
+  return dialog.getByLabelText(DROP_AREA).closest("div") as HTMLElement
+}
+
 afterEach(() => vi.restoreAllMocks())
 
 describe("create a pin by uploading a file", () => {
@@ -117,10 +122,53 @@ describe("create a pin by uploading a file", () => {
 
     // The input is `sr-only`, so the ring the other fields draw on themselves is declared on the
     // box around it. jsdom lays nothing out; that the variant compiles is `pnpm run build`'s word.
+    // Three stops rather than two: the close cross opens the dialog's tab order.
+    await user.tab()
     await user.tab()
     await user.tab()
     expect(area).toHaveFocus()
     expect(area.closest("div")).toHaveClass("has-[input:focus-visible]:ring-2")
+  })
+
+  it("Given a child of the drop area crossed, Then the area answers the drag throughout", async () => {
+    const user = userEvent.setup()
+    server.use(
+      sessionRoute(() => true),
+      handshakeRoute(),
+      downloadsRoute(),
+      onePinPage(() => []),
+    )
+
+    renderApp("/")
+    const dialog = await openTheDialog(user)
+    const area = dropArea(dialog)
+
+    // Crossing from the box onto its own invitation fires `dragenter` at the invitation and
+    // `dragleave` at the box the pointer never left. jsdom computes no style, so the attribute
+    // the active style hangs on is what is read here.
+    fireEvent.dragEnter(area)
+    fireEvent.dragEnter(dialog.getByText(DROP_AREA))
+    fireEvent.dragLeave(area)
+    expect(area).toHaveAttribute("data-dragging")
+
+    fireEvent.dragLeave(area)
+    expect(area).not.toHaveAttribute("data-dragging")
+  })
+
+  it("Given the close cross, Then the dialog goes without a key or a backdrop", async () => {
+    const user = userEvent.setup()
+    server.use(
+      sessionRoute(() => true),
+      handshakeRoute(),
+      downloadsRoute(),
+      onePinPage(() => []),
+    )
+
+    renderApp("/")
+    const dialog = await openTheDialog(user)
+    await user.click(dialog.getByRole("button", { name: "Close" }))
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
   })
 
   it("Given a drop carrying no file at all, Then it is refused and the choice stands", async () => {

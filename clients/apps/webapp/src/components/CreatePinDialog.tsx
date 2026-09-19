@@ -1,6 +1,7 @@
 import { Button, Input, Label, Modal, TextField } from "@heroui/react"
 import { useEffect, useState } from "react"
 import { useCreatePin, useHandshake, type ImageSource } from "../images"
+import { dragDepth, type DragStep } from "../lib/drags"
 import { isImageFile, uploadRefusal, type MeasuredUpload, type UploadRefusal } from "../lib/uploads"
 import { m } from "../paraglide/messages.js"
 
@@ -60,6 +61,11 @@ function CreatePinForm({ close }: { close: () => void }) {
   const handshake = useHandshake()
   const [chosen, setChosen] = useState<Chosen | null>(null)
   const [refused, setRefused] = useState<UploadRefusal | null>(null)
+  const [depth, setDepth] = useState(0)
+
+  function dragged(step: DragStep) {
+    setDepth((current) => dragDepth(current, step))
+  }
 
   // The content is mounted only while the dialog is open, so this cleanup is what revokes the
   // URL, on Escape and on the backdrop as much as on a pin created.
@@ -128,11 +134,18 @@ function CreatePinForm({ close }: { close: () => void }) {
         label={m.image_address()}
         isRequired={chosen === null}
       />
+      {/* `data-dragging` carries the counter rather than a class, jsdom computing no style: it is
+          what the active style hangs on and the only thing a test can read. */}
       <div
-        className="relative flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-focus"
+        className="relative flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-focus data-dragging:border-accent data-dragging:bg-accent-soft"
+        data-dragging={depth > 0 ? "" : undefined}
+        onDragEnter={() => dragged("enter")}
+        onDragLeave={() => dragged("leave")}
+        // Without this the browser fires no `drop` at all, whatever the handler below says.
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault()
+          dragged("drop")
           void choose(event.dataTransfer.files)
         }}
       >
@@ -180,8 +193,12 @@ export function CreatePinDialog({
     <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
       <Modal.Container size="sm">
         <Modal.Dialog>
+          {/* HeroUI hardcodes `aria-label="Close"` and spreads `...rest` after it, so the
+              catalogue's string wins. It places itself top right and closes through the dialog's
+              own `slot="close"`. */}
+          <Modal.CloseTrigger aria-label={m.close()} />
           {/* `slot="title"` is what names the dialog, so the visible name and the read one are one. */}
-          <Modal.Heading level={2} className="mb-3">
+          <Modal.Heading level={2} className="mb-3 pe-8">
             {m.create_pin()}
           </Modal.Heading>
           {isOpen && <CreatePinForm close={() => onOpenChange(false)} />}
