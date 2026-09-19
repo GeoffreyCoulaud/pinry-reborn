@@ -42,9 +42,9 @@ function Field({
   return (
     <TextField name={name} type={type} isRequired={isRequired} className="relative">
       <Input placeholder=" " className="pt-6 pb-2 peer" />
-      {/* Both positions are centred by hand: the floated label sits as far from the top as the
-          text does from the bottom, and the resting one is centred in the whole field. */}
-      <Label className="pointer-events-none absolute start-3 top-2 text-xs font-normal transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base motion-reduce:transition-none">
+      {/* The label rests centred and floats on focus as well as on content, so the caret never
+          shares its line. Both positions are centred by hand against the field's height. */}
+      <Label className="pointer-events-none absolute start-3 top-4 text-base font-normal transition-all peer-focus:top-2 peer-focus:text-xs peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:text-xs motion-reduce:transition-none">
         {label}
       </Label>
     </TextField>
