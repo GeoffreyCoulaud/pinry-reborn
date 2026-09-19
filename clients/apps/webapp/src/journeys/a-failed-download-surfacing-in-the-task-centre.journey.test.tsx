@@ -38,7 +38,13 @@ describe("a failed download surfacing in the task centre", () => {
     )
 
     renderApp("/")
-    await user.click(await screen.findByRole("button", { name: "Downloads (1)" }))
+    const trigger = await screen.findByRole("button", { name: "Downloads (1)" })
+    // An icon alone is not discoverable: the tooltip opens on focus and says what the name says.
+    await user.tab()
+    await user.tab()
+    expect(trigger).toHaveFocus()
+    await waitFor(() => expect(screen.getByRole("tooltip")).toHaveTextContent("Downloads (1)"))
+    await user.click(trigger)
 
     expect(await screen.findByText("Failed")).toBeVisible()
     // The reason is read from `reasonCode` through the catalogue, not from the server's own
@@ -118,6 +124,8 @@ describe("a failed download surfacing in the task centre", () => {
     renderApp("/")
     await user.click(await screen.findByRole("button", { name: "Downloads (1)" }))
     expect(badge()).toHaveTextContent("1")
+    // The trigger's name already carries the count; read as well, the badge would say it twice.
+    expect(badge()).toHaveAttribute("aria-hidden", "true")
     await user.upload(
       screen.getByLabelText("Image file"),
       new File(["ok"], "cat.png", { type: "image/png" }),
