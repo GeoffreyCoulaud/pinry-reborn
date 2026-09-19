@@ -98,3 +98,16 @@ storage accepts, and an image dragged from another browser tab being refused rat
 from the address that drop does carry. The adjacent item "What the API serves and the web
 application does not reach yet" stays open: this lot restyled controls that already existed and
 built no surface.
+
+**The second item was costed and deferred by the operator on 2026-09-19**, so its reasoning is here
+rather than in the entry. It is about fifty lines and asks nothing new of the server: the form
+already has an `Image address` field the server fetches, and such a drop carries that address in
+`dataTransfer.getData("text/uri-list")`. What it needs is a pure `uriFromDrop` with its test, the
+address field becoming controlled so a drop can fill it, and a drop handler trying files, then the
+address, then refusing. The pure function is where the work is: `text/uri-list` may carry several
+lines, a line opening with `#` is a comment, and the scheme must be filtered to `http` and `https`,
+a tab sometimes handing over a `blob:` the server cannot reach. Fetching the bytes in the browser
+instead is refused: it would need CORS on the origin site and fail often, where the server reaches
+the address from its own position, which is the whole argument behind the address field. No new
+failure mode either, an address that is not an image being refused by the server and surfacing in
+the task centre exactly as a typed one does.
