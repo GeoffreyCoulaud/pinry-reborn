@@ -1,7 +1,7 @@
 import { Button, EmptyState, Modal, Spinner } from "@heroui/react"
 import { Navigate } from "@tanstack/react-router"
 import { LogOut, Plus } from "lucide-react"
-import { useLayoutEffect, useRef, useState, type RefObject } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
 import {
   Collection,
   GridList,
@@ -192,21 +192,45 @@ export function Home() {
   const [dropped, setDropped] = useState<DropPartition | null>(null)
   const [depth, setDepth] = useState(0)
 
-  function dragged(step: DragStep) {
-    setDepth((current) => dragDepth(current, step))
-  }
-
   /**
-   * The drop is judged in full where it landed, and the form opens on what survived (decision N).
-   * A drop that kept nothing has already said so in a toast and opens no form to empty.
+   * The target is the window and not an element (decision D). `<main>` is one screen tall, so a
+   * drop past its box lands on nothing that cancels and the browser opens the image in the tab,
+   * which is what Firefox was seen doing. While the dialog is open it owns the gesture, and
+   * nothing here listens at all.
    */
-  async function receive(files: readonly File[], uriList: string) {
-    const drop = await judgeDrop(files, uriList, limits)
-    drop.refusals.forEach(refuse)
-    if (drop.files.length === 0 && drop.urls.length === 0) return
-    setDropped(drop)
-    setCreating(true)
-  }
+  useEffect(() => {
+    if (creating) return
+    const dragged = (step: DragStep) => setDepth((current) => dragDepth(current, step))
+    const enter = () => dragged("enter")
+    const leave = () => dragged("leave")
+    // Without this the browser fires no `drop` at all, whatever the handler below says.
+    const over = (event: DragEvent) => event.preventDefault()
+    const drop = (event: DragEvent) => {
+      event.preventDefault()
+      dragged("drop")
+      const transfer = event.dataTransfer
+      if (transfer === null) return
+      // The drop is judged in full where it landed, and the form opens on what survived
+      // (decision N). A drop that kept nothing has said so in a toast and opens no form to empty.
+      void judgeDrop([...transfer.files], transfer.getData("text/uri-list"), limits).then((kept) => {
+        kept.refusals.forEach(refuse)
+        if (kept.files.length === 0 && kept.urls.length === 0) return
+        setDropped(kept)
+        setCreating(true)
+      })
+    }
+    window.addEventListener("dragenter", enter)
+    window.addEventListener("dragleave", leave)
+    window.addEventListener("dragover", over)
+    window.addEventListener("drop", drop)
+    return () => {
+      window.removeEventListener("dragenter", enter)
+      window.removeEventListener("dragleave", leave)
+      window.removeEventListener("dragover", over)
+      window.removeEventListener("drop", drop)
+      setDepth(0)
+    }
+  }, [creating, limits])
 
   if (session.isPending) return null
   // A session the API could not answer for is not an expired one, and only the second sends the
@@ -216,23 +240,7 @@ export function Home() {
 
   return (
     <>
-      {/* The whole screen is the target: a full grid is a field of images, so a ring around it
-          would read as decoration, and aiming at the header or the margin is a slip (decision D).
-          The dialog is a sibling rather than a child: react-aria portals it out of the DOM, but a
-          React portal still bubbles its events along the React tree (React, Event Bubbling Through
-          Portals), so a drop on its own area would be taken twice. */}
-      <main
-        className="relative flex h-screen flex-col gap-4 p-4"
-        onDragEnter={() => dragged("enter")}
-        onDragLeave={() => dragged("leave")}
-        // Without this the browser fires no `drop` at all, whatever the handler below says.
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => {
-          event.preventDefault()
-          dragged("drop")
-          void receive([...event.dataTransfer.files], event.dataTransfer.getData("text/uri-list"))
-        }}
-      >
+      <main className="flex h-screen flex-col gap-4 p-4">
         <AppHeader heading={m.home_heading()}>
           {/* The screen's primary verb, first for the keyboard and `order-last` on the right. */}
           <IconButton
@@ -256,10 +264,12 @@ export function Home() {
         <div className="min-h-0 flex-1">
           <PinGrid />
         </div>
-        {/* `pointer-events-none` keeps the overlay out of the drag it announces: a target appearing
-            under the pointer would fire an exit at the screen the pointer never left. */}
+        {/* Anchored to the viewport rather than to `<main>`, which is one screen tall and scrolls
+            away under the page. `pointer-events-none` keeps the overlay out of the drag it
+            announces: a target appearing under the pointer would fire an exit at the screen the
+            pointer never left. */}
         {depth > 0 && (
-          <div className="pointer-events-none absolute inset-0 grid place-content-center border-2 border-dashed border-accent bg-background/80 text-lg">
+          <div className="pointer-events-none fixed inset-0 grid place-content-center border-2 border-dashed border-accent bg-background/80 text-lg">
             {m.drop_to_add()}
           </div>
         )}

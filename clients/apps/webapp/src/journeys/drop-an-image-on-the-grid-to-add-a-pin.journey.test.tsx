@@ -92,4 +92,24 @@ describe("drop an image on the grid to add a pin", () => {
     // A drop that kept nothing has said so where it happened, and opens no form to empty.
     expect(screen.queryByRole("dialog")).toBeNull()
   })
+
+  it("Given an image dropped past the screen's own box, Then the form opens on it all the same", async () => {
+    const created = readyPin("a cat asleep")
+    server.use(
+      sessionRoute(() => true),
+      handshakeRoute(),
+      downloadsRoute(),
+      onePinPage(() => [created]),
+    )
+
+    renderApp("/")
+    await theScreen()
+    // `<main>` is one screen tall, so a page scrolled past it leaves the pointer over the body,
+    // where a target that is an element cancels nothing and the browser opens the image in the
+    // tab. Seen in LibreWolf on 2026-09-19; the window is the target for this reason.
+    fireEvent.drop(document.body, dropOf([new File(["ok"], "cat.png", { type: "image/png" })], ""))
+
+    const dialog = within(await screen.findByRole("dialog", { name: "Add a pin" }))
+    expect(await dialog.findByText("cat.png")).toBeVisible()
+  })
 })

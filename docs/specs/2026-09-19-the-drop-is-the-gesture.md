@@ -101,7 +101,7 @@ what settles them.
 | 30 | `lib/uris.ts` | New. `urisFromDrop(text)`, with its test: `text/uri-list` lines, `#` comments dropped, `http` and `https` alone kept |
 | 30 | `lib/drops.ts` | New. The partition of a drop into elements kept and reasons refused, with its test |
 | 30 | `components/CreatePinDialog.tsx` | The address field becomes controlled so a drop can fill it; the drop path reads `text/uri-list` |
-| 30 | `routes/Home.tsx` | Drag handlers on `<main>`, the overlay, and the dialog opened with what was dropped |
+| 30 | `routes/Home.tsx` | Drag handlers on `<main>` (Corrected: on `window`, the paragraph below saying why), the overlay, and the dialog opened with what was dropped |
 | 30 | `messages/{en,fr}.json` | `drop_to_add`, `drop_unsupported` |
 | 40 | `components/CreatePinDialog.tsx` | The queue: entries, the current index, the counter, `Ignore`, `multiple` on the picker |
 | 40 | `messages/{en,fr}.json` | `ignore`, `pin_progress` |
@@ -119,6 +119,17 @@ of a file. It reads `Nothing in that drop could become a pin.`
 **The overlay and the dialog's area are two targets and one counter.** Each holds its own depth
 (decision A), and the dialog being portalled out of `<main>` by react-aria's `Overlay`, a drop on it
 never also reaches the grid's handler.
+
+(Corrected twice in block 30, both against the running application. First, a React portal bubbles
+its events along the React tree and not the DOM, so a drop on the dialog's area was taken twice and
+raised two identical toasts; the dialog is now a sibling of `<main>`. Then the screen's target
+stopped being an element at all: `<main>` is one screen tall, and a page scrolled past it leaves
+the pointer over the body, where nothing cancels `dragover` and the browser opens the image in the
+tab. Seen in LibreWolf, where the whole-page drop did not work at all while the dialog's own area
+did; not seen in Chromium, which was dropped on above the fold. The handlers are on `window` while
+the dialog is closed, and nothing is listening while it is open, so the dialog owns its own gesture
+and the counter cannot be entered twice. The overlay is anchored to the viewport rather than to
+`<main>`, which is the same defect seen from the other side: it scrolled away with the document.)
 
 ## 5. Blocks
 
