@@ -102,6 +102,31 @@ describe("create a pin by uploading a file", () => {
     expect(dialog.getByLabelText("Image address")).toBeRequired()
   })
 
+  it("Given a drop carrying no file at all, Then it is refused and the choice stands", async () => {
+    const user = userEvent.setup()
+    server.use(
+      sessionRoute(() => true),
+      handshakeRoute(),
+      downloadsRoute(),
+      onePinPage(() => []),
+    )
+
+    renderApp("/")
+    const dialog = await openTheDialog(user)
+    await user.upload(
+      dialog.getByLabelText(DROP_AREA),
+      new File(["ok"], "small.png", { type: "image/png" }),
+    )
+    expect(await dialog.findByText("small.png")).toBeVisible()
+    // Dragging an image out of another browser tab hands over an address and no file at all.
+    fireEvent.drop(dialog.getByLabelText(DROP_AREA), { dataTransfer: { files: [] } })
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("This file is not an image.")
+    // The drop took nothing, so it takes nothing away either.
+    expect(dialog.getByText("small.png")).toBeVisible()
+    expect(dialog.getByLabelText("Image address")).not.toBeRequired()
+  })
+
   it("Given a file the deployment stores, Then the tile is in the grid at once", async () => {
     const user = userEvent.setup()
     const created = readyPin("a cat asleep")
