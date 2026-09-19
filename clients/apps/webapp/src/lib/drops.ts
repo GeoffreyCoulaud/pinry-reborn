@@ -19,6 +19,48 @@ export interface DropPartition {
   refusals: DropRefusal[]
 }
 
+/** One pin being composed: the bytes, the address the picture was found at, or both. */
+export interface PinEntry {
+  file: KeptFile | null
+  url: string
+}
+
+/**
+ * The entries a drop becomes, a file and the address beside it being one pin and not two. Always
+ * at least one: a form opened by hand holds a blank entry, and a drop refused in full has said so
+ * in a toast and leaves the entry it landed on as it was.
+ */
+export function entriesOf(drop: DropPartition | null): PinEntry[] {
+  const count = Math.max(drop?.files.length ?? 0, drop?.urls.length ?? 0, 1)
+  return Array.from({ length: count }, (_, at) => ({
+    file: drop?.files[at] ?? null,
+    url: drop?.urls[at] ?? "",
+  }))
+}
+
+/** What one element arriving does to the entry being worked on: it corrects it (decision H). */
+function corrected(entry: PinEntry, arriving: readonly PinEntry[]): PinEntry {
+  return arriving.reduce(
+    (into, one) => ({ file: one.file ?? into.file, url: one.url || into.url }),
+    entry,
+  )
+}
+
+/**
+ * The queue after a drop landed on the open form. One element dropped corrects the entry being
+ * worked on, dropping on a form being the correction gesture; several are "add these three" and
+ * go to the end, where the total they move is one the user has already read (decisions H and N).
+ */
+export function withDrop(
+  entries: readonly PinEntry[],
+  current: number,
+  drop: DropPartition,
+): PinEntry[] {
+  const arriving = entriesOf(drop)
+  if (arriving.length > 1) return [...entries, ...arriving]
+  return entries.map((entry, at) => (at === current ? corrected(entry, arriving) : entry))
+}
+
 /**
  * The drop split into what becomes pins and what is said of the rest: one reason per distinct
  * refusal, five files too heavy being one thing to say and not five (ADR 0037).
