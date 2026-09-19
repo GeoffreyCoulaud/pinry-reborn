@@ -15,6 +15,9 @@ import { server } from "../test/server"
 /** The drop area's accessible name is its visible invitation, and nothing else names it. */
 const DROP_AREA = "Drop an image here, or pick one"
 
+/** Where the picture was found, which the server stores beside a file it never fetched. */
+const FOUND_AT = "https://example.test/cat.png"
+
 /** The dialog is opened from the grid, and everything the form holds is queried inside it. */
 async function openTheDialog(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole("button", { name: "Add a pin" }))
@@ -50,11 +53,13 @@ describe("create a pin by uploading a file", () => {
       new File(["more than four bytes"], "big.png", { type: "image/png" }),
     )
 
-    // The refusal is pronounced at the choice, and the file is not kept: the address is required
-    // again, which is what stops the submission below from sending anything.
+    // The refusal is pronounced at the choice and belongs to the gesture rather than to the
+    // form, so it is read off the toast and nowhere inside the dialog (ADR 0037). The file is
+    // not kept either, which is what stops the submission below from sending anything.
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "This file is heavier than this server accepts.",
     )
+    expect(dialog.queryByRole("alert")).toBeNull()
     const submit = dialog.getByRole("button", { name: "Add a pin" })
     await waitFor(() => expect(submit).toBeEnabled())
     await user.click(submit)
@@ -62,9 +67,8 @@ describe("create a pin by uploading a file", () => {
     expect(requests).toBe(0)
   })
 
-  it("Given a file whose bytes decode to nothing, Then the area says so and keeps it", async () => {
+  it("Given a file whose bytes decode to nothing, Then the toast says so and the choice stands", async () => {
     const user = userEvent.setup()
-    vi.spyOn(globalThis, "createImageBitmap").mockRejectedValue(new Error("damaged"))
     server.use(
       sessionRoute(() => true),
       handshakeRoute(),
@@ -76,12 +80,23 @@ describe("create a pin by uploading a file", () => {
     const dialog = await openTheDialog(user)
     await user.upload(
       dialog.getByLabelText(DROP_AREA),
+      new File(["ok"], "small.png", { type: "image/png" }),
+    )
+    expect(await dialog.findByText("small.png")).toBeVisible()
+
+    // The decoder is what refuses the second file, so it stops decoding once the first is in.
+    vi.spyOn(globalThis, "createImageBitmap").mockRejectedValue(new Error("damaged"))
+    await user.upload(
+      dialog.getByLabelText(DROP_AREA),
       new File(["not a picture"], "damaged.png", { type: "image/png" }),
     )
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "This image could not be read. Try another file.",
     )
+    expect(dialog.queryByRole("alert")).toBeNull()
+    // A file refused takes nothing from the one already accepted.
+    expect(dialog.getByText("small.png")).toBeVisible()
   })
 
   it("Given anything but an image dropped on the area, Then it is not taken", async () => {
@@ -102,6 +117,7 @@ describe("create a pin by uploading a file", () => {
     })
 
     expect(await screen.findByRole("alert")).toHaveTextContent("This file is not an image.")
+    expect(dialog.queryByRole("alert")).toBeNull()
     expect(dialog.queryByText("notes.pdf")).toBeNull()
     // No file was kept, so the other way in is required again.
     expect(dialog.getByLabelText("Image address")).toBeRequired()
@@ -191,6 +207,7 @@ describe("create a pin by uploading a file", () => {
     fireEvent.drop(dialog.getByLabelText(DROP_AREA), { dataTransfer: { files: [] } })
 
     expect(await screen.findByRole("alert")).toHaveTextContent("This file is not an image.")
+    expect(dialog.queryByRole("alert")).toBeNull()
     // The drop took nothing, so it takes nothing away either.
     expect(dialog.getByText("small.png")).toBeVisible()
     expect(dialog.getByLabelText("Image address")).not.toBeRequired()
@@ -232,23 +249,55 @@ describe("create a pin by uploading a file", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "This file is heavier than this server accepts.",
     )
+    expect(dialog.queryByRole("alert")).toBeNull()
     // The message names one recourse, choosing another file, so the screen states one thing too.
     expect(dialog.queryByText("big.png")).toBeNull()
     expect(dialog.getByLabelText("Image address")).toBeRequired()
+  })
+
+  it("Given the file removed from the thumbnail, Then the address is the way in again", async () => {
+    const user = userEvent.setup()
+    server.use(
+      sessionRoute(() => true),
+      handshakeRoute(),
+      downloadsRoute(),
+      onePinPage(() => []),
+    )
+
+    renderApp("/")
+    const dialog = await openTheDialog(user)
+    await user.upload(
+      dialog.getByLabelText(DROP_AREA),
+      new File(["ok"], "small.png", { type: "image/png" }),
+    )
+    expect(await dialog.findByText("small.png")).toBeVisible()
+
+    await user.click(dialog.getByRole("button", { name: "Remove" }))
+
+    // Nothing was refused, so nothing is said: the file is simply gone and the address is back.
+    expect(dialog.queryByText("small.png")).toBeNull()
+    expect(screen.queryByRole("alert")).toBeNull()
+    expect(dialog.getByLabelText("Image address")).toBeRequired()
+    // The picker fires no change event for a file it still holds, so the same one must go back in.
+    await user.upload(
+      dialog.getByLabelText(DROP_AREA),
+      new File(["ok"], "small.png", { type: "image/png" }),
+    )
+    expect(await dialog.findByText("small.png")).toBeVisible()
   })
 
   it("Given a file the deployment stores, Then the tile is in the grid at once", async () => {
     const user = userEvent.setup()
     const created = readyPin("a cat asleep")
     let uploaded: string | null = null
-    let sentPage: unknown = "not sent"
+    let sent: unknown = "not sent"
     server.use(
       sessionRoute(() => true),
       handshakeRoute(),
       downloadsRoute(),
       onePinPage(() => [created]),
       http.post("/api/v1/pins", async ({ request }) => {
-        sentPage = ((await request.json()) as { sourceContextUrl: unknown }).sourceContextUrl
+        sent = await request.json()
         return HttpResponse.json(created, { status: 201 })
       }),
       http.put("/api/v1/pins/:pinId/image", ({ request }) => {
@@ -269,6 +318,9 @@ describe("create a pin by uploading a file", () => {
     )
     // The thumbnail and the name are the only check that catches a wrong file before the upload.
     expect(await dialog.findByText("small.png")).toBeVisible()
+    // Provenance and bytes are independent (decision G): the address names where the picture was
+    // found, the file carries it, and the server is told both.
+    await user.type(dialog.getByLabelText("Image address"), FOUND_AT)
     const submit = dialog.getByRole("button", { name: "Add a pin" })
     await waitFor(() => expect(submit).toBeEnabled())
     await user.click(submit)
@@ -277,7 +329,7 @@ describe("create a pin by uploading a file", () => {
     // says the dialog closed on its own. No download and no wait: the bytes are the server's.
     expect(await screen.findByRole("img", { name: created.description })).toBeVisible()
     expect(uploaded).toBe("multipart/form-data")
-    expect(sentPage).toBeNull()
+    expect(sent).toEqual({ sourceContextUrl: null, sourceMediaUrl: FOUND_AT, description: "" })
     expect(await screen.findByRole("button", { name: "Downloads (0)" })).toBeVisible()
   }, 15_000)
 })

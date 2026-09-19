@@ -19,6 +19,8 @@ export type ImageSource = { url: string } | { file: File }
 
 export interface PinCreation {
   sourceContextUrl: string | null
+  /** Where the picture was found. The server stores and exports it, and never fetches it. */
+  sourceMediaUrl: string | null
   description: string
   source: ImageSource
 }
@@ -145,12 +147,8 @@ function useImageOutcome() {
 export function useCreatePin() {
   const settled = useImageOutcome()
   return useMutation({
-    mutationFn: async ({ sourceContextUrl, description, source }: PinCreation) => {
-      const body = {
-        sourceContextUrl,
-        sourceMediaUrl: "url" in source ? source.url : null,
-        description,
-      }
+    mutationFn: async ({ sourceContextUrl, sourceMediaUrl, description, source }: PinCreation) => {
+      const body = { sourceContextUrl, sourceMediaUrl, description }
       const pin = bodyOf(await auth.client.POST("/api/v1/pins", { body }), "the pin")
       await setPinImage(pin.id, source)
     },
