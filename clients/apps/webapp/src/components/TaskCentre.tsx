@@ -1,9 +1,7 @@
-import { Button, Popover } from "@heroui/react"
+import { Button, Popover, buttonVariants } from "@heroui/react"
 import { downloadReason } from "../downloadReasons"
 import { useDropDownload, useImageDownloads, useSetPinImage, type Download } from "../images"
 import { m } from "../paraglide/messages.js"
-
-const ACTION = "rounded bg-current/10 px-2 py-1 text-sm"
 
 /** A failed download offers what question V exists for: the same address again, or a file. */
 function Task({ download }: { download: Download }) {
@@ -13,20 +11,22 @@ function Task({ download }: { download: Download }) {
   const reason = downloadReason(download.reasonCode, download.message)
 
   return (
-    <li className="flex flex-col gap-1 border-b border-current/10 py-2 last:border-0">
+    <li className="flex flex-col gap-1 border-b border-separator py-2 last:border-0">
       <span className="font-medium">{failed ? m.task_failed() : m.task_running()}</span>
       <span className="truncate text-sm opacity-70">{download.sourceUrl}</span>
       {reason !== null && <span className="text-sm">{reason}</span>}
       {failed && (
         <div className="flex flex-wrap items-center gap-2">
           <Button
+            size="sm"
             onPress={() =>
               setImage.mutate({ pinId: download.pinId, source: { url: download.sourceUrl } })
             }
           >
             {m.retry()}
           </Button>
-          <label className={ACTION}>
+          {/* A file picker is no HeroUI control, so the label borrows the variant instead. */}
+          <label className={buttonVariants({ variant: "secondary", size: "sm" })}>
             {m.image_file()}
             <input
               type="file"
@@ -38,7 +38,7 @@ function Task({ download }: { download: Download }) {
               }}
             />
           </label>
-          <Button onPress={() => drop.mutate(download.pinId)}>
+          <Button size="sm" variant="ghost" onPress={() => drop.mutate(download.pinId)}>
             {m.dismiss()}
           </Button>
         </div>
@@ -64,7 +64,7 @@ export function TaskCentre() {
 
   return (
     <Popover>
-      <Button>{label}</Button>
+      <Button variant="ghost">{label}</Button>
       <Popover.Content className="max-w-sm">
         <Popover.Dialog aria-label={label}>
           {downloads.length === 0 ? (
