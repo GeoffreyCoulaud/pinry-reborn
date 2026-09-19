@@ -40,7 +40,12 @@ export function entriesOf(drop: DropPartition | null): PinEntry[] {
 /** One element arriving corrects the entry being worked on, dropping on a form being that gesture. */
 function corrected(entry: PinEntry, arriving: readonly PinEntry[]): PinEntry {
   return arriving.reduce(
-    (into, one) => ({ file: one.file ?? into.file, url: one.url || into.url }),
+    // A file arriving with no address of its own takes the old one away with it: the address says
+    // where *this* picture was found, and the picture has just been replaced.
+    (into, one) => ({
+      file: one.file ?? into.file,
+      url: one.url || (one.file === null ? into.url : ""),
+    }),
     entry,
   )
 }

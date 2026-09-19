@@ -111,6 +111,13 @@ describe("withDrop", () => {
     ).toEqual([entry(one, "https://example.test/new.png")])
   })
 
+  it("takes the address away with the picture it named, a file arriving bringing none of its own", () => {
+    const [one, two] = [kept("one.png"), kept("two.png")]
+    expect(withDrop([entry(one, "https://example.test/one.png")], 0, drop([two]))).toEqual([
+      entry(two),
+    ])
+  })
+
   it("sends several arriving to the end of the queue, which is add these and not replace mine", () => {
     const [first, second, third] = [kept("one.png"), kept("two.png"), kept("three.png")]
     expect(withDrop([entry(first)], 0, drop([second, third]))).toEqual([
