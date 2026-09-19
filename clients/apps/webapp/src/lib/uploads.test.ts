@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { uploadRefusal } from "./uploads"
+import { isImageFile, uploadRefusal } from "./uploads"
 
 const LIMITS = { maxFileBytes: 1000, maxPixels: 10_000 }
 
@@ -18,5 +18,16 @@ describe("the upload a deployment refuses", () => {
 
   it("Given a handshake that has not answered yet, Then the server is what refuses", () => {
     expect(uploadRefusal({ size: 10_000, width: 10_000, height: 10_000 }, undefined)).toBeNull()
+  })
+})
+
+describe("the file a pin's image may come from", () => {
+  it("Given a media type the browser decodes as a picture, Then the file is an image", () => {
+    expect(isImageFile({ type: "image/png" })).toBe(true)
+  })
+
+  it("Given anything else, Then it is not, whatever a drop or a picker handed over", () => {
+    expect(isImageFile({ type: "application/pdf" })).toBe(false)
+    expect(isImageFile({ type: "" })).toBe(false)
   })
 })

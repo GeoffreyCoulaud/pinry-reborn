@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react"
+import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { HttpResponse, http } from "msw"
 import { describe, expect, it } from "vitest"
@@ -6,12 +6,19 @@ import {
   download,
   downloadsPage,
   handshakeRoute,
+  onePinPage,
   pin,
   pinsRoute,
   renderApp,
   sessionRoute,
 } from "../test/app"
 import { server } from "../test/server"
+
+/** The dialog is opened from the grid, and everything the form holds is queried inside it. */
+async function openTheDialog(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole("button", { name: "Add a pin" }))
+  return within(await screen.findByRole("dialog", { name: "Add a pin" }))
+}
 
 describe("create a pin from a URL through to the tile appearing", () => {
   it("Given an address, Then the task centre holds the work and the tile follows it", async () => {
@@ -23,7 +30,7 @@ describe("create a pin from a URL through to the tile appearing", () => {
     }
     // The download settles on the second poll that follows the request, so the first render of
     // the grid is the one that has nothing to show: what the tile waits for is the server, not
-    // the click. Polls before the request are the creation screen's own, and settle nothing.
+    // the click. Polls before the request are the grid's own, and settle nothing.
     let requested = false
     let polls = 0
     let pageRequests = 0
@@ -49,11 +56,12 @@ describe("create a pin from a URL through to the tile appearing", () => {
       }),
     )
 
-    renderApp("/pins/new")
-    await user.type(await screen.findByLabelText("Page it comes from"), "https://example.test/page")
-    await user.type(screen.getByLabelText("Description"), bare.description)
-    await user.type(screen.getByLabelText("Image address"), "https://example.test/i.png")
-    const submit = screen.getByRole("button", { name: "Add a pin" })
+    renderApp("/")
+    const dialog = await openTheDialog(user)
+    await user.type(dialog.getByLabelText("Page it comes from"), "https://example.test/page")
+    await user.type(dialog.getByLabelText("Description"), bare.description)
+    await user.type(dialog.getByLabelText("Image address"), "https://example.test/i.png")
+    const submit = dialog.getByRole("button", { name: "Add a pin" })
     await waitFor(() => expect(submit).toBeEnabled())
     await user.click(submit)
 
@@ -90,6 +98,7 @@ describe("create a pin from a URL through to the tile appearing", () => {
     server.use(
       sessionRoute(() => true),
       handshakeRoute(),
+      onePinPage(() => []),
       http.get("/api/v1/me/image-downloads", () => HttpResponse.json(downloadsPage([]))),
       http.post("/api/v1/pins", () => {
         created += 1
@@ -97,13 +106,14 @@ describe("create a pin from a URL through to the tile appearing", () => {
       }),
     )
 
-    renderApp("/pins/new")
-    await user.type(await screen.findByLabelText("Page it comes from"), "https://example.test/page")
-    const submit = screen.getByRole("button", { name: "Add a pin" })
+    renderApp("/")
+    const dialog = await openTheDialog(user)
+    await user.type(dialog.getByLabelText("Page it comes from"), "https://example.test/page")
+    const submit = dialog.getByRole("button", { name: "Add a pin" })
     await waitFor(() => expect(submit).toBeEnabled())
     await user.click(submit)
 
     expect(created).toBe(0)
-    expect(screen.getByRole("heading", { name: "Add a pin" })).toBeVisible()
+    expect(screen.getByRole("dialog", { name: "Add a pin" })).toBeVisible()
   })
 })
