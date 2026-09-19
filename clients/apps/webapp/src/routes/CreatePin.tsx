@@ -1,4 +1,4 @@
-import { Button, Input, Label, TextField } from "@heroui/react"
+import { Button, Input, Label, TextField, inputVariants } from "@heroui/react"
 import { useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 import { TaskCentre } from "../components/TaskCentre"
@@ -55,7 +55,7 @@ export function CreatePin() {
       {/* A download requested here keeps running past the navigation, so the screen that starts it
           is the one that must show it. */}
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-separator pb-3">
-        <h1 className="text-xl font-semibold">{m.create_pin()}</h1>
+        <h1 className="text-2xl font-semibold">{m.create_pin()}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <TaskCentre />
           <ThemeSwitch />
@@ -89,7 +89,7 @@ export function CreatePin() {
             type="file"
             accept="image/*"
             onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
-            className="rounded-field bg-field px-3 py-2 text-sm text-field-foreground shadow-field"
+            className={inputVariants()}
           />
         </label>
         {refused !== null && <p role="alert">{REFUSALS[refused]()}</p>}
