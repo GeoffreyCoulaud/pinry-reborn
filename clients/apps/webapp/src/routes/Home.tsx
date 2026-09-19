@@ -145,12 +145,7 @@ function PinGrid() {
           aria-label={m.home_heading()}
           layout="grid"
           selectionMode="multiple"
-          // react-aria writes no `overflow` here: its `Virtualizer` keeps `useScrollView`'s
-          // `contentProps` and drops the `scrollViewProps` that carry it, with
-          // `allowsWindowScrolling: true`. Left out, the waterfall's full height spills out of
-          // this box and the window scrolls instead. The axes are separate because that is what
-          // `ScrollView` would have written for a vertical layout, a horizontal bar appearing and
-          // disappearing on resize being able to loop against the resize observer.
+          // react-aria writes no `overflow` on what it virtualizes: without this the window scrolls.
           className="h-full overflow-x-hidden overflow-y-auto outline-none"
           onAction={(key) => setOpenedId(String(key))}
         >
