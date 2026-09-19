@@ -1,4 +1,4 @@
-import { Button, Input, Label, Modal, TextField } from "@heroui/react"
+import { Button, Input, Label, Modal, TextField, toast } from "@heroui/react"
 import { useEffect, useState } from "react"
 import { useCreatePin, useHandshake, type ImageSource } from "../images"
 import { dragDepth, type DragStep } from "../lib/drags"
@@ -12,10 +12,19 @@ const REFUSALS: Record<UploadRefusal, () => string> = {
   UNREADABLE: m.file_unreadable,
 }
 
+/** An element refused speaks where the gesture happened, and the gesture owns no form (ADR 0037). */
+function refuse(refusal: UploadRefusal) {
+  toast.danger(REFUSALS[refusal]())
+}
+
 /** The pixel count a limit is read against, which nothing short of a decoder knows. */
 async function measured(file: File): Promise<MeasuredUpload> {
   const bitmap = await createImageBitmap(file)
-  return { size: file.size, width: bitmap.width, height: bitmap.height }
+  const measurement = { size: file.size, width: bitmap.width, height: bitmap.height }
+  // A decoded bitmap is four bytes a pixel, so ten photographs held at once are hundreds of
+  // megabytes (MDN, `ImageBitmap.close()`).
+  bitmap.close()
+  return measurement
 }
 
 /** A file this deployment accepts, with the object URL its thumbnail is drawn from. */
@@ -60,7 +69,6 @@ function CreatePinForm({ close }: { close: () => void }) {
   const create = useCreatePin()
   const handshake = useHandshake()
   const [chosen, setChosen] = useState<Chosen | null>(null)
-  const [refused, setRefused] = useState<UploadRefusal | null>(null)
   const [depth, setDepth] = useState(0)
 
   function dragged(step: DragStep) {
@@ -81,29 +89,35 @@ function CreatePinForm({ close }: { close: () => void }) {
     // a drag out of another browser tab handing over an address and no file at all (decision L).
     const file = [...(files ?? [])].find(isImageFile)
     if (file === undefined) {
-      setRefused("UNSUPPORTED_FORMAT")
+      refuse("UNSUPPORTED_FORMAT")
       return
     }
     let measurement: MeasuredUpload
     try {
       measurement = await measured(file)
     } catch {
-      setRefused("UNREADABLE")
+      refuse("UNREADABLE")
       return
     }
     const refusal = uploadRefusal(measurement, handshake.data?.limits)
-    setRefused(refusal)
-    if (refusal === null) setChosen({ file, measurement, preview: URL.createObjectURL(file) })
+    if (refusal !== null) {
+      refuse(refusal)
+      return
+    }
+    setChosen({ file, measurement, preview: URL.createObjectURL(file) })
   }
 
   function submit(fields: FormData) {
-    let source: ImageSource = { url: String(fields.get("sourceMediaUrl")) }
+    // Provenance and bytes are independent: the address says where the picture was found and is
+    // always sent, and it supplies the bytes only when no file was chosen (decision G).
+    const foundAt = String(fields.get("sourceMediaUrl"))
+    let source: ImageSource = { url: foundAt }
     if (chosen !== null) {
       // Judged again here, for the file chosen before the handshake's limits arrived.
       const refusal = uploadRefusal(chosen.measurement, handshake.data?.limits)
-      setRefused(refusal)
       // Dropped here as it would have been at the choice, so one message means one state.
       if (refusal !== null) {
+        refuse(refusal)
         setChosen(null)
         return
       }
@@ -112,6 +126,7 @@ function CreatePinForm({ close }: { close: () => void }) {
     create.mutate(
       {
         sourceContextUrl: String(fields.get("sourceContextUrl")) || null,
+        sourceMediaUrl: foundAt || null,
         description: String(fields.get("description")),
         source,
       },
@@ -159,17 +174,27 @@ function CreatePinForm({ close }: { close: () => void }) {
             type="file"
             accept="image/*"
             className="sr-only"
-            onChange={(event) => void choose(event.currentTarget.files)}
+            onChange={(event) => {
+              const input = event.currentTarget
+              void choose(input.files)
+              // An input still holding a file fires no change event for that same file, so the
+              // one just removed could never be chosen again.
+              input.value = ""
+            }}
           />
         </label>
         {chosen !== null && (
           <>
             <img src={chosen.preview} alt="" className="max-h-32 rounded" />
             <span className="text-sm text-muted">{chosen.file.name}</span>
+            {/* Positioned above the label's stretched hit area, which would otherwise take this
+                press and open the picker instead. */}
+            <Button variant="ghost" className="relative" onPress={() => setChosen(null)}>
+              {m.remove()}
+            </Button>
           </>
         )}
       </div>
-      {refused !== null && <p role="alert">{REFUSALS[refused]()}</p>}
       <Field name="description" label={m.description()} />
       {/* Never required: a file from disk and a direct image address both name no page. */}
       <Field name="sourceContextUrl" type="url" label={m.source_page()} />

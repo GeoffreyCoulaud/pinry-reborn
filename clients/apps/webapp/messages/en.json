@@ -32,6 +32,7 @@
   "reason_unreachable": "The server could not reach that address.",
   "reason_url_not_allowed": "That address is not allowed.",
   "remember_me": "Stay signed in",
+  "remove": "Remove",
   "retry": "Try again",
   "session_unreadable": "Your session could not be read. Try again in a moment.",
   "sign_in": "Sign in",
