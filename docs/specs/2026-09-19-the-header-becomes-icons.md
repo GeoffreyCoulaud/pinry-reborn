@@ -78,7 +78,7 @@ accepted media types, which bounds what the drop area can refuse (section 6).
 | J | Add a pin keeps a filled primary button, the other three are `ghost`, no separator | The screen's primary verb keeps its weight, stays first in the document for the keyboard, and `order-last` keeps it on the right |
 | K | `AppHeader` holds the screen's `<h1>` and renders the theme control itself; session actions are its children | The theme is the only control true on every screen, signed in or not |
 | K' | `app_name` is deleted from both catalogues | The product names itself in `index.html`'s `<title>`; a banner repeating it on every screen is the chrome this lot removes |
-| L | A drop keeps the first file whose `type` starts with `image/` | Drag and drop bypasses `accept`, which only the file picker honours |
+| L | A drop keeps the first file whose `type` starts with `image/` (Corrected in block 20: a drop carrying no image at all is refused as `file_unsupported` rather than ignored. This decision and decision M contradicted each other there, M pronouncing every refusal at the choice, and a drop that took nothing in silence would let the user believe it had.) | Drag and drop bypasses `accept`, which only the file picker honours |
 | M | Two new refusals, `file_unsupported` and `file_unreadable`, stated under the drop area, and every refusal is pronounced when the file is chosen rather than at submission | The recourse differs: choose another file, or fetch an undamaged one. Judging at choice time is also what lets the thumbnail show only an accepted file |
 | N | The dialog's content is mounted only while it is open | Fields, file, thumbnail and refusal leave with it, and the object URL is revoked by the cleanup rather than by a close path written by hand |
 
