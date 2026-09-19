@@ -102,6 +102,27 @@ describe("create a pin by uploading a file", () => {
     expect(dialog.getByLabelText("Image address")).toBeRequired()
   })
 
+  it("Given the keyboard on the drop area, Then the box shows the focus its input hides", async () => {
+    const user = userEvent.setup()
+    server.use(
+      sessionRoute(() => true),
+      handshakeRoute(),
+      downloadsRoute(),
+      onePinPage(() => []),
+    )
+
+    renderApp("/")
+    const dialog = await openTheDialog(user)
+    const area = dialog.getByLabelText(DROP_AREA)
+
+    // The input is `sr-only`, so the ring the other fields draw on themselves is declared on the
+    // box around it. jsdom lays nothing out; that the variant compiles is `pnpm run build`'s word.
+    await user.tab()
+    await user.tab()
+    expect(area).toHaveFocus()
+    expect(area.closest("div")).toHaveClass("has-[input:focus-visible]:ring-2")
+  })
+
   it("Given a drop carrying no file at all, Then it is refused and the choice stands", async () => {
     const user = userEvent.setup()
     server.use(
