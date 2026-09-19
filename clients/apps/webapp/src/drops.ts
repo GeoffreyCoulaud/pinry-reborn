@@ -12,7 +12,7 @@ const REFUSALS: Record<DropRefusal, () => string> = {
   UNSUPPORTED_DROP: m.drop_unsupported,
 }
 
-/** An element refused speaks where the gesture happened, and the gesture owns no form (ADR 0037). */
+/** An element refused speaks where the gesture happened, and the gesture owns no form. */
 export function refuse(refusal: DropRefusal) {
   toast.danger(REFUSALS[refusal]())
 }
@@ -42,9 +42,8 @@ async function judge(file: File, limits: UploadLimits | undefined): Promise<File
 }
 
 /**
- * What a gesture hands over, judged in full before anything of it is shown (decision N). The files
- * are measured in series, so one decoded bitmap is held at a time (decision M). What is chosen
- * with the mouse enters here too, so both are judged in one place (decision L).
+ * What a gesture hands over, judged in full before anything of it is shown. The files are measured
+ * in series so one decoded bitmap is held at a time, and the file picker enters here too.
  */
 export async function judgeDrop(
   files: readonly File[],

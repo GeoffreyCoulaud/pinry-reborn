@@ -192,28 +192,49 @@ export function Home() {
   const [creating, setCreating] = useState(false)
   const [dropped, setDropped] = useState<DropPartition | null>(null)
   const [depth, setDepth] = useState(0)
+  // Read inside the drop rather than closed over: the handshake landing mid-drag would otherwise
+  // resubscribe the listeners below and blink the overlay off under the pointer.
+  const limitsRef = useRef(limits)
+  useEffect(() => {
+    limitsRef.current = limits
+  }, [limits])
 
   /**
-   * The target is the window and not an element (decision D). `<main>` is one screen tall, so a
-   * drop past its box lands on nothing that cancels and the browser opens the image in the tab,
-   * which is what Firefox was seen doing. While the dialog is open it owns the gesture, and
-   * nothing here listens at all.
+   * Cancelling is unconditional, and the counting below is not: a drop the browser is left to
+   * handle navigates to the file, which while the dialog is open would take the whole queue with it.
+   */
+  useEffect(() => {
+    const cancel = (event: DragEvent) => event.preventDefault()
+    window.addEventListener("dragover", cancel)
+    window.addEventListener("drop", cancel)
+    return () => {
+      window.removeEventListener("dragover", cancel)
+      window.removeEventListener("drop", cancel)
+    }
+  }, [])
+
+  /**
+   * The target is the window and not an element. `<main>` is one screen tall, so a drop past its
+   * box lands on nothing, which is what Firefox was seen doing. While the dialog is open it owns
+   * the gesture, and nothing here counts or judges at all.
    */
   useEffect(() => {
     if (creating) return
     const dragged = (step: DragStep) => setDepth((current) => dragDepth(current, step))
     const enter = () => dragged("enter")
     const leave = () => dragged("leave")
-    // Without this the browser fires no `drop` at all, whatever the handler below says.
-    const over = (event: DragEvent) => event.preventDefault()
     const drop = (event: DragEvent) => {
-      event.preventDefault()
       dragged("drop")
       const transfer = event.dataTransfer
       if (transfer === null) return
-      // The drop is judged in full where it landed, and the form opens on what survived
-      // (decision N). A drop that kept nothing has said so in a toast and opens no form to empty.
-      void judgeDrop([...transfer.files], transfer.getData("text/uri-list"), limits).then((kept) => {
+      // The drop is judged in full where it landed, and the form opens on what survived. A drop
+      // that kept nothing has said so in a toast and opens no form to empty.
+      const judged = judgeDrop(
+        [...transfer.files],
+        transfer.getData("text/uri-list"),
+        limitsRef.current,
+      )
+      void judged.then((kept) => {
         kept.refusals.forEach(refuse)
         if (kept.files.length === 0 && kept.urls.length === 0) return
         setDropped(kept)
@@ -222,16 +243,14 @@ export function Home() {
     }
     window.addEventListener("dragenter", enter)
     window.addEventListener("dragleave", leave)
-    window.addEventListener("dragover", over)
     window.addEventListener("drop", drop)
     return () => {
       window.removeEventListener("dragenter", enter)
       window.removeEventListener("dragleave", leave)
-      window.removeEventListener("dragover", over)
       window.removeEventListener("drop", drop)
       setDepth(0)
     }
-  }, [creating, limits])
+  }, [creating])
 
   if (session.isPending) return null
   // A session the API could not answer for is not an expired one, and only the second sends the
@@ -267,10 +286,8 @@ export function Home() {
         <div className="-mx-4 min-h-0 flex-1">
           <PinGrid />
         </div>
-        {/* Anchored to the viewport rather than to `<main>`, which is one screen tall and scrolls
-            away under the page. `pointer-events-none` keeps the overlay out of the drag it
-            announces: a target appearing under the pointer would fire an exit at the screen the
-            pointer never left. */}
+        {/* Fixed to the viewport, `<main>` scrolling away under the page, and `pointer-events-none`
+            so an overlay appearing under the pointer fires no exit at the screen it never left. */}
         {depth > 0 && (
           <div className="pointer-events-none fixed inset-0 grid place-content-center border-2 border-dashed border-accent bg-background/80 text-lg">
             {m.drop_to_add()}

@@ -3,6 +3,8 @@
 Date: 2026-09-19
 Status: Drafted 2026-09-19. One specification review ran: 0 CRITICAL, 6 MAJOR and 6 MINOR, all
 closed in this document. Awaiting the operator. Frozen when the lot's closing block merges.
+(Corrected: frozen on 2026-09-20 by `fix/the-holistic-findings`. The holistic review's findings and
+the exit each took are in `docs/handoffs/2026-09-20 - handoff - the-drop-is-the-gesture.md`.)
 Branches: block 10 `feat/the-drop-area-answers-the-drag`, block 20 `feat/a-refusal-is-a-toast`,
 block 30 `feat/a-drop-on-the-grid-opens-the-form`, block 40 `feat/a-drop-carries-several-pins`
 ADRs: `docs/adr/0037-a-refused-element-speaks-in-a-toast.md` carries decision E, the application
@@ -162,6 +164,9 @@ application's CSS decides whether the collection scrolls or the window does, and
 ```
 
 Two numbers within a pixel or two of each other. Before block 35 they were 2228 and 1321.
+
+(Corrected: the result was recorded nowhere until the closing block re-ran it. The handoff carries
+both numbers and what produced them.)
 
 **`create-a-pin-by-uploading-a-file.journey.test.tsx` is rewritten across three blocks**, and its
 seven cases go as follows. The file is 235 lines today, which is why it is named here rather than

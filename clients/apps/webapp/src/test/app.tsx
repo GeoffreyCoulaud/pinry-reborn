@@ -125,10 +125,7 @@ export function download(pinId: string, status: "PENDING" | "FAILED", message: s
   }
 }
 
-/**
- * A drop as the browser hands one over: the files, and the addresses beside them. `getData` is
- * not optional, the drop path reading `text/uri-list` on every drop it is given.
- */
+/** A drop as the browser hands one over. `getData` is read on every drop, so it is not optional. */
 export function dropOf(files: File[], uriList = "") {
   return { dataTransfer: { files, getData: () => uriList } }
 }

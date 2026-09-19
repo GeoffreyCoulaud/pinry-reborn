@@ -48,6 +48,17 @@ describe("partitionDrop", () => {
     })
   })
 
+  it("takes the address of a file refused with it, the two being one picture", () => {
+    const two = kept("two.png")
+    expect(
+      partitionDrop(["TOO_MANY_BYTES", two], ["https://example.test/one.png", "https://example.test/two.png"]),
+    ).toEqual({
+      files: [two],
+      urls: ["https://example.test/two.png"],
+      refusals: ["TOO_MANY_BYTES"],
+    })
+  })
+
   it("speaks for a drop nothing else spoke for, which is the blob: a browser tab hands over", () => {
     expect(partitionDrop([], [])).toEqual({ files: [], urls: [], refusals: ["UNSUPPORTED_DROP"] })
   })
