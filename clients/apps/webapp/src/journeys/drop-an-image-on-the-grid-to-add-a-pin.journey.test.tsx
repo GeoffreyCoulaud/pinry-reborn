@@ -100,6 +100,27 @@ describe("drop an image on the grid to add a pin", () => {
     expect(screen.queryByRole("dialog")).toBeNull()
   })
 
+  it("Given the form open, Then a drop that misses it is cancelled rather than opened by the browser", async () => {
+    server.use(sessionRoute(() => true), handshakeRoute(), downloadsRoute(), onePinPage(() => []))
+
+    renderApp("/")
+    fireEvent.drop(
+      await theScreen(),
+      dropOf([new File(["ok"], "cat.png", { type: "image/png" })], FOUND_AT),
+    )
+    const dialog = within(await screen.findByRole("dialog", { name: "Add a pin" }))
+    expect(await dialog.findByText("cat.png")).toBeVisible()
+
+    // Nothing counts or judges while the dialog owns the gesture, and something must still cancel:
+    // a drop the browser handles navigates to the file, and the queue goes with the page.
+    const missed = fireEvent.drop(
+      document.body,
+      dropOf([new File(["ok"], "dog.png", { type: "image/png" })]),
+    )
+    expect(missed).toBe(false)
+    expect(dialog.getByText("cat.png")).toBeVisible()
+  })
+
   it("Given an image dropped past the screen's own box, Then the form opens on it all the same", async () => {
     const created = readyPin("a cat asleep")
     server.use(

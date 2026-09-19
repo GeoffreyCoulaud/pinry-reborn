@@ -26,9 +26,8 @@ export interface PinEntry {
 }
 
 /**
- * The entries a drop becomes, a file and the address beside it being one pin and not two. Always
- * at least one: a form opened by hand holds a blank entry, and a drop refused in full has said so
- * in a toast and leaves the entry it landed on as it was.
+ * The entries a drop becomes, a file and the address beside it being one pin and not two. Always at
+ * least one, a form opened by hand holding a blank entry.
  */
 export function entriesOf(drop: DropPartition | null): PinEntry[] {
   const count = Math.max(drop?.files.length ?? 0, drop?.urls.length ?? 0, 1)
@@ -38,7 +37,7 @@ export function entriesOf(drop: DropPartition | null): PinEntry[] {
   }))
 }
 
-/** What one element arriving does to the entry being worked on: it corrects it (decision H). */
+/** One element arriving corrects the entry being worked on, dropping on a form being that gesture. */
 function corrected(entry: PinEntry, arriving: readonly PinEntry[]): PinEntry {
   return arriving.reduce(
     (into, one) => ({ file: one.file ?? into.file, url: one.url || into.url }),
@@ -47,9 +46,8 @@ function corrected(entry: PinEntry, arriving: readonly PinEntry[]): PinEntry {
 }
 
 /**
- * The queue after a drop landed on the open form. One element dropped corrects the entry being
- * worked on, dropping on a form being the correction gesture; several are "add these three" and
- * go to the end, where the total they move is one the user has already read (decisions H and N).
+ * The queue after a drop landed on the open form: one element corrects the entry being worked on,
+ * several are "add these three" and go to the end of a total the user has already read.
  */
 export function withDrop(
   entries: readonly PinEntry[],
@@ -63,7 +61,7 @@ export function withDrop(
 
 /**
  * The drop split into what becomes pins and what is said of the rest: one reason per distinct
- * refusal, five files too heavy being one thing to say and not five (ADR 0037).
+ * refusal, five files too heavy being one thing to say and not five.
  */
 export function partitionDrop(
   verdicts: readonly FileVerdict[],
@@ -72,9 +70,12 @@ export function partitionDrop(
   const files = verdicts.filter((verdict): verdict is KeptFile => typeof verdict !== "string")
   const refused = verdicts.filter((verdict): verdict is UploadRefusal => typeof verdict === "string")
   const refusals: DropRefusal[] = [...new Set(refused)]
+  // An address stands at its own file's index, so a refusal takes the pair: compacting the files
+  // alone would pair every file behind it with the address of the one refused.
+  const kept = urls.filter((_, at) => typeof verdicts[at] !== "string")
   // A drop that kept nothing and that nothing above speaks for is the `blob:` a browser tab hands
   // over: no file to name, and no address a server could fetch.
-  if (files.length === 0 && urls.length === 0 && refusals.length === 0)
+  if (files.length === 0 && kept.length === 0 && refusals.length === 0)
     refusals.push("UNSUPPORTED_DROP")
-  return { files, urls: [...urls], refusals }
+  return { files, urls: kept, refusals }
 }

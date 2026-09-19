@@ -46,17 +46,19 @@ function Field({
 }
 
 /**
- * One dialog and a queue of pins: a drop carrying several images is worked through one entry at a
- * time. Each holds an address the server fetches, a file from disk, or both. The file is judged
- * the moment it is chosen, so a refused one costs no upload and says so at once (decision M).
+ * One dialog and a queue of pins, worked through one entry at a time: each holds an address the
+ * server fetches, a file from disk, or both, and a file is judged before a byte of it is sent.
  */
 function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; close: () => void }) {
   const create = useCreatePin()
   const handshake = useHandshake()
-  // The drop that opened this form was judged in full before it did, so its own total is fixed
-  // before its first entry is shown (decision N).
-  const [entries, setEntries] = useState<readonly PinEntry[]>(() => entriesOf(dropped))
-  const [at, setAt] = useState(0)
+  // The queue and the index it is read at move together, so a drop judged while the user advances
+  // corrects the entry the user is on now rather than the one they were on when they dropped.
+  const [queue, setQueue] = useState<{ entries: readonly PinEntry[]; at: number }>(() => ({
+    entries: entriesOf(dropped),
+    at: 0,
+  }))
+  const { entries, at } = queue
   const [depth, setDepth] = useState(0)
   const [preview, setPreview] = useState<string | null>(null)
   // `at` is always inside the queue; the fallback is what `noUncheckedIndexedAccess` asks for.
@@ -66,9 +68,8 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
     setDepth((current) => dragDepth(current, step))
   }
 
-  // The thumbnail follows the entry being worked on. The content is mounted only while the dialog
-  // is open, so this cleanup revokes the URL on Escape and on the backdrop as much as on a pin
-  // created.
+  // The content is mounted only while the dialog is open, so this cleanup revokes the URL on
+  // Escape and on the backdrop as much as on a pin created.
   useEffect(() => {
     const file = entry.file?.file
     if (file === undefined) {
@@ -82,24 +83,31 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
 
   /** The entry being worked on, changed where it stands: the queue around it is untouched. */
   function change(patch: Partial<PinEntry>) {
-    setEntries((queue) => queue.map((one, index) => (index === at ? { ...one, ...patch } : one)))
+    setQueue((current) => ({
+      ...current,
+      entries: current.entries.map((one, index) =>
+        index === current.at ? { ...one, ...patch } : one,
+      ),
+    }))
   }
 
-  /** The queue advances on the server's word, and the last entry taken closes the dialog (K). */
+  /** The queue advances on the server's word, and the last entry taken closes the dialog. */
   function advance() {
-    if (at + 1 < entries.length) setAt(at + 1)
+    // The refusal belonged to the entry that earned it, and the next one has sent nothing yet.
+    create.reset()
+    if (at + 1 < entries.length) setQueue((current) => ({ ...current, at: current.at + 1 }))
     else close()
   }
 
   async function take(files: readonly File[], uriList: string) {
     const drop = await judgeDrop(files, uriList, handshake.data?.limits)
     drop.refusals.forEach(refuse)
-    setEntries((queue) => withDrop(queue, at, drop))
+    setQueue((current) => ({ ...current, entries: withDrop(current.entries, current.at, drop) }))
   }
 
   function submit(fields: FormData) {
     // Provenance and bytes are independent: the address says where the picture was found and is
-    // always sent, and it supplies the bytes only when no file was chosen (decision G).
+    // always sent, and it supplies the bytes only when no file was chosen.
     let source: ImageSource = { url: entry.url }
     if (entry.file !== null) {
       // Judged again here, for the file chosen before the handshake's limits arrived.
@@ -136,7 +144,7 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
     >
       {entries.length > 1 && (
         // `role="img"` is what carries a name on something read as one unit: the two numbers are
-        // for the eye and `pin_progress` is the sentence a screen reader gets (decision J).
+        // for the eye and `pin_progress` is the sentence a screen reader gets.
         <span
           role="img"
           aria-label={m.pin_progress({ current: at + 1, total: entries.length })}
@@ -170,8 +178,7 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
         }}
       >
         {/* The invitation is the input's accessible name, which is what Label in Name asks for.
-            Its hit area is stretched over the whole box, so the thumbnail and the padding are
-            clickable too without joining the name. */}
+            Its hit area is stretched over the whole box without the thumbnail joining that name. */}
         <label className="cursor-pointer before:absolute before:inset-0 before:content-['']">
           {m.drop_image()}
           <input
@@ -182,7 +189,7 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
             className="sr-only"
             onChange={(event) => {
               const input = event.currentTarget
-              // What is chosen with the mouse is judged where what is dropped is (decision L).
+              // What is chosen with the mouse is judged where what is dropped is.
               void take([...(input.files ?? [])], "")
               // An input still holding a file fires no change event for that same file, so the
               // one just removed could never be chosen again.
@@ -209,7 +216,7 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
       {create.isError && <p role="alert">{m.creation_refused()}</p>}
       <div className="flex justify-end gap-2">
         {/* Two verbs, two effects on the counter: `Remove` empties this entry and leaves it where
-            it is, `Ignore` abandons it and moves on (decision I). */}
+            it is, `Ignore` abandons it and moves on. */}
         {entries.length > 1 && (
           <Button variant="ghost" onPress={advance}>
             {m.ignore()}
@@ -231,7 +238,7 @@ export function CreatePinDialog({
 }: {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  /** What the drop that opened this dialog kept, the form opening on it (decision D). */
+  /** What the drop that opened this dialog kept, the form opening on it. */
   dropped: DropPartition | null
 }) {
   return (

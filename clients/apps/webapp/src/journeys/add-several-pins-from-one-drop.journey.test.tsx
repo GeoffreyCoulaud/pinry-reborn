@@ -103,6 +103,31 @@ describe("add several pins from one drop", () => {
     expect(requests).toBe(0)
   })
 
+  it("Given an entry the server refused, Then the refusal does not follow the next one", async () => {
+    const user = userEvent.setup()
+    server.use(
+      sessionRoute(() => true),
+      handshakeRoute(),
+      downloadsRoute(),
+      onePinPage(() => []),
+      http.post("/api/v1/pins", () => new HttpResponse(null, { status: 500 })),
+    )
+
+    renderApp("/")
+    fireEvent.drop(await theScreen(), dropOf([image("one.png"), image("two.png")]))
+
+    const dialog = await theForm()
+    const submit = dialog.getByRole("button", { name: "Add a pin" })
+    await waitFor(() => expect(submit).toBeEnabled())
+    await user.click(submit)
+    expect(await dialog.findByRole("alert")).toHaveTextContent("That pin could not be added.")
+
+    // The message belongs to the entry that earned it, and nothing has been sent for the next one.
+    await user.click(dialog.getByRole("button", { name: "Ignore" }))
+    expect(await dialog.findByText("two.png")).toBeVisible()
+    expect(dialog.queryByRole("alert")).toBeNull()
+  })
+
   it("Given more images chosen on an open form, Then they join the end of the queue", async () => {
     const user = userEvent.setup()
     server.use(
