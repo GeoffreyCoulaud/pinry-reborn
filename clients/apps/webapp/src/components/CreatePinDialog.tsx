@@ -51,8 +51,7 @@ function Field({
 
 /**
  * Two entries, one dialog: an address the server fetches, or a file from disk. The file is judged
- * the moment it is chosen, so an oversized or damaged one costs no upload and says so at once
- * (specification 2026-09-19, decision M).
+ * the moment it is chosen, so a refused one costs no upload and says so at once (decision M).
  */
 function CreatePinForm({ close }: { close: () => void }) {
   const create = useCreatePin()
