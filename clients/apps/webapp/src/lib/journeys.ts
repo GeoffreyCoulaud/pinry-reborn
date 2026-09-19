@@ -14,6 +14,7 @@ export const REQUIRED_JOURNEYS = [
   "create a pin from a URL through to the tile appearing",
   "create a pin by uploading a file",
   "drop an image on the grid to add a pin",
+  "add several pins from one drop",
   "a failed download surfacing in the task centre",
   "an account with no pins",
   "choosing a theme against the system",
