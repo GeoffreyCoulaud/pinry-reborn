@@ -71,15 +71,10 @@ function CreatePinForm({ close }: { close: () => void }) {
   }, [chosen])
 
   async function choose(files: FileList | null) {
-    const candidates = [...(files ?? [])]
-    // A drop may carry several files: the first image wins, and one carrying none is refused.
-    const file = candidates.find(isImageFile) ?? candidates[0]
-    setChosen(null)
+    // A drop may carry several files: the first image wins, and one carrying none is refused,
+    // a drag out of another browser tab handing over an address and no file at all (decision L).
+    const file = [...(files ?? [])].find(isImageFile)
     if (file === undefined) {
-      setRefused(null)
-      return
-    }
-    if (!isImageFile(file)) {
       setRefused("UNSUPPORTED_FORMAT")
       return
     }
