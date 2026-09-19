@@ -17,7 +17,10 @@ import { server } from "../test/server"
 /** The dialog is opened from the grid, and everything the form holds is queried inside it. */
 async function openTheDialog(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole("button", { name: "Add a pin" }))
-  return within(await screen.findByRole("dialog", { name: "Add a pin" }))
+  const dialog = within(await screen.findByRole("dialog", { name: "Add a pin" }))
+  // A sighted user reaches the dialog from an icon, so the name it carries is visible too.
+  expect(dialog.getByRole("heading", { name: "Add a pin" })).toBeVisible()
+  return dialog
 }
 
 describe("create a pin from a URL through to the tile appearing", () => {
