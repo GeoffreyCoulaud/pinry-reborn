@@ -12,7 +12,7 @@ repository root, so that they read the same from either file.
 
 | Path                   | Role                                                                                     |
 |------------------------|------------------------------------------------------------------------------------------|
-| `clients/apps/webapp`  | The web application: Vite, React, TanStack Router, Tailwind, Paraglide.                   |
+| `clients/apps/webapp`  | The web application: Vite, React, TanStack Router, Tailwind, HeroUI, Paraglide.           |
 | `clients/packages/api-client` | The typed client, generated from `contract/openapi.json` at install and knowing nothing about sessions. |
 | `clients/packages/auth`       | The session, and the transport that carries it: the web application's cookie, the extension's header. |
 
@@ -74,11 +74,17 @@ Inside `apps/webapp/src`:
 
 - **The block budget excludes `pnpm-lock.yaml`**, which `.gitattributes` marks `linguist-generated`. The budget
   measures what a human rereads. `.dagger/.gitattributes` is the precedent.
+- **A HeroUI control is a compound component**: `Checkbox` is `Checkbox.Content` around `Checkbox.Control` around
+  `Checkbox.Indicator`, `Select` is a trigger plus a popover plus a `ListBox`. Given the old single-element shape it
+  compiles, renders no usable DOM at all, and no test goes red. **Read the rendered DOM, not the source.**
+- **`styles.css`'s import order is load bearing**: the house `@custom-variant dark` comes *after*
+  `@import "@heroui/styles"`, whose own declaration fires every `dark:` utility against the user's chosen theme on
+  a machine that prefers dark (`docs/adr/0035-a-styled-layer-over-react-aria-components.md`, decision 4).
 - **A `minimumReleaseAgeExclude` entry is a finding, not maintenance.** `pnpm-workspace.yaml` declares
   `minimumReleaseAge` and `minimumReleaseAgeStrict`, so a version published inside the window is refused with
   `ERR_PNPM_NO_MATURE_MATCHING_VERSION` rather than installed. Left undeclared the delay does nothing: pnpm installs
-  the fresh version and writes the waiver itself, which is how the entries already there arrived. **Pin a version
-  that has aged out; never add a line to let one through.**
+  the fresh version and writes the waiver itself, which is how the entries once listed here arrived; the list is
+  empty now. **Pin a version that has aged out; never add a line to let one through.**
 - **`engines` does not refuse a wrong Node.** pnpm's own documentation says the root project's engine range always
   fails an install; pnpm 12.3.4 was measured doing the opposite, with `engine-strict` set and a range this Node
   does not satisfy. What the setting does refuse is a *dependency* declaring itself incompatible.
