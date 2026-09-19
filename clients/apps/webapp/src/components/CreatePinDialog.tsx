@@ -41,8 +41,10 @@ function Field({
 }) {
   return (
     <TextField name={name} type={type} isRequired={isRequired} className="relative">
-      <Input placeholder=" " className="pt-6 pb-1 peer" />
-      <Label className="pointer-events-none absolute start-3 top-1 text-xs transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-base motion-reduce:transition-none">
+      <Input placeholder=" " className="pt-6 pb-2 peer" />
+      {/* Both positions are centred by hand: the floated label sits as far from the top as the
+          text does from the bottom, and the resting one is centred in the whole field. */}
+      <Label className="pointer-events-none absolute start-3 top-2 text-xs font-normal transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base motion-reduce:transition-none">
         {label}
       </Label>
     </TextField>
@@ -161,7 +163,7 @@ function CreatePinForm({ close }: { close: () => void }) {
       <Field name="sourceContextUrl" type="url" label={m.source_page()} />
       {create.isError && <p role="alert">{m.creation_refused()}</p>}
       {/* Submitting before the limits arrive would send a file this deployment refuses. */}
-      <Button type="submit" isDisabled={create.isPending || handshake.isPending}>
+      <Button type="submit" className="self-end" isDisabled={create.isPending || handshake.isPending}>
         {m.create_pin()}
       </Button>
     </form>
