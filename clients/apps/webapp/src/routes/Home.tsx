@@ -1,4 +1,4 @@
-import { Button, EmptyState, Modal, Spinner, Tooltip } from "@heroui/react"
+import { Button, EmptyState, Modal, Spinner } from "@heroui/react"
 import { Navigate } from "@tanstack/react-router"
 import { LogOut, Plus } from "lucide-react"
 import { useLayoutEffect, useRef, useState, type RefObject } from "react"
@@ -13,6 +13,7 @@ import {
 } from "react-aria-components"
 import { AppHeader } from "../components/AppHeader"
 import { CreatePinDialog } from "../components/CreatePinDialog"
+import { IconButton } from "../components/IconButton"
 import { TaskCentre } from "../components/TaskCentre"
 import { downloadReason } from "../downloadReasons"
 import { useHandshake } from "../images"
@@ -195,24 +196,19 @@ export function Home() {
     <main className="flex h-screen flex-col gap-4 p-4">
       <AppHeader heading={m.home_heading()}>
         {/* The screen's primary verb, first for the keyboard and `order-last` on the right. */}
-        <Tooltip>
-          <Button
-            isIconOnly
-            className="order-last"
-            aria-label={m.create_pin()}
-            onPress={() => setCreating(true)}
-          >
-            <Plus aria-hidden />
-          </Button>
-          <Tooltip.Content>{m.create_pin()}</Tooltip.Content>
-        </Tooltip>
+        <IconButton
+          icon={Plus}
+          name={m.create_pin()}
+          className="order-last"
+          onPress={() => setCreating(true)}
+        />
         <TaskCentre />
-        <Tooltip>
-          <Button variant="ghost" isIconOnly aria-label={m.sign_out()} onPress={() => signOut.mutate()}>
-            <LogOut aria-hidden />
-          </Button>
-          <Tooltip.Content>{m.sign_out()}</Tooltip.Content>
-        </Tooltip>
+        <IconButton
+          icon={LogOut}
+          name={m.sign_out()}
+          variant="ghost"
+          onPress={() => signOut.mutate()}
+        />
       </AppHeader>
       <div className="min-h-0 flex-1">
         <PinGrid />
