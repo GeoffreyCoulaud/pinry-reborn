@@ -1,14 +1,11 @@
+import { Button, Modal } from "@heroui/react"
 import { Link, Navigate } from "@tanstack/react-router"
 import { useLayoutEffect, useRef, useState, type RefObject } from "react"
 import {
-  Button,
   Collection,
-  Dialog,
   GridList,
   GridListItem,
   GridListLoadMoreItem,
-  Modal,
-  ModalOverlay,
   Size,
   Virtualizer,
   WaterfallLayout,
@@ -75,7 +72,7 @@ function Tile({ pin, smallRenditionPx }: { pin: Pin; smallRenditionPx?: number }
   )
 }
 
-function PinDialog({ pin }: { pin: Pin }) {
+function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
   return (
     <div className="flex flex-col gap-3">
       {pin.image?.url && (
@@ -96,7 +93,7 @@ function PinDialog({ pin }: { pin: Pin }) {
           <li key={board.id}>{board.name}</li>
         ))}
       </ul>
-      <Button slot="close" className="self-end rounded bg-current/10 px-2 py-1">
+      <Button className="self-end" onPress={close}>
         {m.close()}
       </Button>
     </div>
@@ -141,18 +138,19 @@ function PinGrid() {
           />
         </GridList>
       </Virtualizer>
-      <ModalOverlay
+      {/* The backdrop is the root here: a tile opens this modal, and the `Modal` root is a
+          `DialogTrigger` that warns when it has no pressable child. */}
+      <Modal.Backdrop
         isOpen={opened !== undefined}
         onOpenChange={() => setOpenedId(null)}
         isDismissable
-        className="fixed inset-0 grid place-items-center bg-black/40 p-4"
       >
-        <Modal className="max-h-full w-full max-w-2xl overflow-auto rounded bg-white p-4 dark:bg-neutral-900">
-          <Dialog aria-label={opened?.description} className="outline-none">
-            {opened && <PinDialog pin={opened} />}
-          </Dialog>
-        </Modal>
-      </ModalOverlay>
+        <Modal.Container size="lg">
+          <Modal.Dialog aria-label={opened?.description}>
+            {opened && <PinDialog pin={opened} close={() => setOpenedId(null)} />}
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
     </>
   )
 }
@@ -175,9 +173,7 @@ export function Home() {
           <Link to="/pins/new">{m.create_pin()}</Link>
           <TaskCentre />
           <ThemeSwitch />
-          <button type="button" onClick={() => signOut.mutate()}>
-            {m.sign_out()}
-          </button>
+          <Button onPress={() => signOut.mutate()}>{m.sign_out()}</Button>
         </div>
       </header>
       <div className="min-h-0 flex-1">

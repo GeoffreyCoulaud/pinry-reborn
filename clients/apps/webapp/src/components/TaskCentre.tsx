@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogTrigger, Popover } from "react-aria-components"
+import { Button, Popover } from "@heroui/react"
 import { downloadReason } from "../downloadReasons"
 import { useDropDownload, useImageDownloads, useSetPinImage, type Download } from "../images"
 import { m } from "../paraglide/messages.js"
@@ -20,7 +20,6 @@ function Task({ download }: { download: Download }) {
       {failed && (
         <div className="flex flex-wrap items-center gap-2">
           <Button
-            className={ACTION}
             onPress={() =>
               setImage.mutate({ pinId: download.pinId, source: { url: download.sourceUrl } })
             }
@@ -39,7 +38,7 @@ function Task({ download }: { download: Download }) {
               }}
             />
           </label>
-          <Button className={ACTION} onPress={() => drop.mutate(download.pinId)}>
+          <Button onPress={() => drop.mutate(download.pinId)}>
             {m.dismiss()}
           </Button>
         </div>
@@ -64,10 +63,10 @@ export function TaskCentre() {
       : m.downloads({ count: downloads.length })
 
   return (
-    <DialogTrigger>
-      <Button className={ACTION}>{label}</Button>
-      <Popover className="max-w-sm rounded border border-current/20 bg-white p-3 dark:bg-neutral-900">
-        <Dialog aria-label={label} className="outline-none">
+    <Popover>
+      <Button>{label}</Button>
+      <Popover.Content className="max-w-sm">
+        <Popover.Dialog aria-label={label}>
           {downloads.length === 0 ? (
             <p>{m.downloads_empty()}</p>
           ) : (
@@ -77,8 +76,8 @@ export function TaskCentre() {
               ))}
             </ul>
           )}
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
+        </Popover.Dialog>
+      </Popover.Content>
+    </Popover>
   )
 }

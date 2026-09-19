@@ -1,5 +1,8 @@
 @import "tailwindcss";
+@import "@heroui/styles";
 
+/* Declared last so it wins: HeroUI's own dark variant carries a prefers-color-scheme fallback that
+   fires on a light choice against a dark machine (ADR 0035). */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {

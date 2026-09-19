@@ -1,3 +1,4 @@
+import { Button, Input, Label, TextField } from "@heroui/react"
 import { useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 import { TaskCentre } from "../components/TaskCentre"
@@ -70,19 +71,19 @@ export function CreatePin() {
         }}
       >
         {/* Never required: a file from disk and a direct image address both name no page. */}
-        <label className="flex flex-col gap-1">
-          {m.source_page()}
-          <input name="sourceContextUrl" type="url" className={FIELD} />
-        </label>
-        <label className="flex flex-col gap-1">
-          {m.description()}
-          <input name="description" className={FIELD} />
-        </label>
+        <TextField name="sourceContextUrl" type="url">
+          <Label>{m.source_page()}</Label>
+          <Input />
+        </TextField>
+        <TextField name="description">
+          <Label>{m.description()}</Label>
+          <Input />
+        </TextField>
         {/* The address stops being required once a file is chosen: an image comes from one or the other. */}
-        <label className="flex flex-col gap-1">
-          {m.image_address()}
-          <input name="sourceMediaUrl" type="url" required={file === null} className={FIELD} />
-        </label>
+        <TextField name="sourceMediaUrl" type="url" isRequired={file === null}>
+          <Label>{m.image_address()}</Label>
+          <Input />
+        </TextField>
         <label className="flex flex-col gap-1">
           {m.image_file()}
           <input
@@ -96,13 +97,9 @@ export function CreatePin() {
         {refused !== null && <p role="alert">{REFUSALS[refused]()}</p>}
         {create.isError && <p role="alert">{m.creation_refused()}</p>}
         {/* Submitting before the limits arrive would send a file this deployment refuses. */}
-        <button
-          type="submit"
-          disabled={create.isPending || handshake.isPending}
-          className="rounded bg-current/10 py-1"
-        >
+        <Button type="submit" isDisabled={create.isPending || handshake.isPending}>
           {m.create_pin()}
-        </button>
+        </Button>
       </form>
     </main>
   )

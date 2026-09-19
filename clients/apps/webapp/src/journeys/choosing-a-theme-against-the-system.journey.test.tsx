@@ -15,11 +15,14 @@ describe("choosing a theme against the system", () => {
     const user = userEvent.setup()
     renderApp("/")
 
+    // The switch is a trigger and a listbox rather than a native select, so what it holds is read
+    // from its accessible name: the chosen option, then the label.
     const switcher = await screen.findByLabelText("Theme")
-    expect(switcher).toHaveValue("system")
+    expect(switcher).toHaveAccessibleName("System Theme")
     expect(document.documentElement.dataset.theme).toBe("light")
 
-    await user.selectOptions(switcher, "Dark")
+    await user.click(switcher)
+    await user.click(await screen.findByRole("option", { name: "Dark" }))
 
     expect(document.documentElement.dataset.theme).toBe("dark")
     expect(localStorage.getItem("pinry-theme")).toBe("dark")
@@ -32,7 +35,7 @@ describe("choosing a theme against the system", () => {
 
     renderApp("/pins/new")
 
-    expect(await screen.findByLabelText("Theme")).toHaveValue("dark")
+    expect(await screen.findByLabelText("Theme")).toHaveAccessibleName("Dark Theme")
     expect(document.documentElement.dataset.theme).toBe("dark")
   })
 })

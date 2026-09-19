@@ -1,3 +1,4 @@
+import { Button, Checkbox, Input, Label, TextField } from "@heroui/react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 import { m } from "../paraglide/messages.js"
@@ -11,8 +12,6 @@ interface CredentialsFormProps {
   session: OpenSessionMutation
   footer: ReactNode
 }
-
-const FIELD = "rounded border border-current/30 px-2 py-1"
 
 function CredentialsForm({ title, refusal, newPassword, session, footer }: CredentialsFormProps) {
   const navigate = useNavigate()
@@ -32,28 +31,24 @@ function CredentialsForm({ title, refusal, newPassword, session, footer }: Crede
           )
         }}
       >
-        <label className="flex flex-col gap-1">
-          {m.username()}
-          <input name="name" required autoComplete="username" className={FIELD} />
-        </label>
-        <label className="flex flex-col gap-1">
-          {m.password()}
-          <input
-            name="password"
-            type="password"
-            required
-            autoComplete={newPassword ? "new-password" : "current-password"}
-            className={FIELD}
-          />
-        </label>
-        <label className="flex items-center gap-2">
-          <input name="rememberMe" type="checkbox" />
-          {m.remember_me()}
-        </label>
+        <TextField name="name" isRequired autoComplete="username">
+          <Label>{m.username()}</Label>
+          <Input />
+        </TextField>
+        <TextField
+          name="password"
+          type="password"
+          isRequired
+          autoComplete={newPassword ? "new-password" : "current-password"}
+        >
+          <Label>{m.password()}</Label>
+          <Input />
+        </TextField>
+        <Checkbox name="rememberMe">{m.remember_me()}</Checkbox>
         {session.isError && <p role="alert">{refusal}</p>}
-        <button type="submit" disabled={session.isPending} className="rounded bg-current/10 py-1">
+        <Button type="submit" isDisabled={session.isPending}>
           {title}
-        </button>
+        </Button>
       </form>
       {footer}
     </main>
