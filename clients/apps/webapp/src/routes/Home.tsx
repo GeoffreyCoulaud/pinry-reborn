@@ -193,15 +193,16 @@ export function Home() {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-separator pb-3">
         <h1 className="text-2xl font-semibold">{m.home_heading()}</h1>
         <div className="flex flex-wrap items-center gap-2">
+          {/* The screen's primary verb, and the only control here at that weight. It comes
+              first for the keyboard and the reader, and `order-last` keeps it on the right. */}
+          <Link to="/pins/new" className={`${buttonVariants()} order-last`}>
+            {m.create_pin()}
+          </Link>
           <TaskCentre />
           <ThemeSwitch />
           <Button variant="secondary" onPress={() => signOut.mutate()}>
             {m.sign_out()}
           </Button>
-          {/* The screen's primary verb, and the only control here at that weight. */}
-          <Link to="/pins/new" className={buttonVariants()}>
-            {m.create_pin()}
-          </Link>
         </div>
       </header>
       <div className="min-h-0 flex-1">
