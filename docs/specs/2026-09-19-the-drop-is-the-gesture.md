@@ -103,6 +103,7 @@ what settles them.
 | 30 | `components/CreatePinDialog.tsx` | The address field becomes controlled so a drop can fill it; the drop path reads `text/uri-list` |
 | 30 | `routes/Home.tsx` | Drag handlers on `<main>` (Corrected: on `window`, the paragraph below saying why), the overlay, and the dialog opened with what was dropped |
 | 30 | `messages/{en,fr}.json` | `drop_to_add`, `drop_unsupported` |
+| 35 | `routes/Home.tsx` | The grid declares its own `overflow`, so the waterfall scrolls inside its box rather than pushing the document |
 | 40 | `components/CreatePinDialog.tsx` | The queue: entries, the current index, the counter, `Ignore`, `multiple` on the picker |
 | 40 | `messages/{en,fr}.json` | `ignore`, `pin_progress` |
 
@@ -138,7 +139,28 @@ and the counter cannot be entered twice. The overlay is anchored to the viewport
 | 10 | `feat/the-drop-area-answers-the-drag` | None added. `create a pin by uploading a file` gains two cases: the close cross closes the dialog, and `enter, enter, leave` over the area leaves `data-dragging` set |
 | 20 | `feat/a-refusal-is-a-toast` | None added. Four of the seven cases of `create a pin by uploading a file` move their assertion from the area to the toast (Corrected: five of them do, as the case table below already says, and an eighth case is added for `Remove`, decision I naming no other way to observe it) |
 | 30 | `feat/a-drop-on-the-grid-opens-the-form` | `drop an image on the grid to add a pin` added to `REQUIRED_JOURNEYS` |
+| 35 | `feat/the-grid-scrolls-inside-its-own-box` | None added, and none can be. jsdom computes no layout, and an assertion on the utility would test the instrument. Its check is the measurement in the browser, stated below |
 | 40 | `feat/a-drop-carries-several-pins` | `add several pins from one drop` added to `REQUIRED_JOURNEYS` |
+
+**Block 35 was not in this document and is the operator's, adopted on 2026-09-20.** Block 30's
+overlay defect was the symptom: the page scrolled where the application is built so that only the
+grid does. Measured on the running application, the document held 2228 pixels of content against a
+window of 1321, and every ancestor overflowed, `<main>` included. The grid's own box is correctly
+bounded (`clientHeight` 1224, its parent's 1224) and carries `overflow-y: visible`, so its 2147
+pixels of waterfall spill out of it.
+
+The cause is react-aria's, and it is deliberate: `Virtualizer`'s `CollectionRoot` keeps
+`useScrollView`'s `contentProps` and drops the `scrollViewProps` that carry the `overflow`, passing
+`allowsWindowScrolling: true` (`react-aria-components@1.21.1`, `dist/private/Virtualizer.mjs`). The
+application's CSS decides whether the collection scrolls or the window does, and it had not said.
+
+**Its check is a measurement, not a test.** On the running application, on the pins view:
+
+```js
+[document.scrollingElement.scrollHeight, innerHeight]
+```
+
+Two numbers within a pixel or two of each other. Before block 35 they were 2228 and 1321.
 
 **`create-a-pin-by-uploading-a-file.journey.test.tsx` is rewritten across three blocks**, and its
 seven cases go as follows. The file is 235 lines today, which is why it is named here rather than
