@@ -127,6 +127,47 @@ describe("create a pin by uploading a file", () => {
     expect(dialog.getByLabelText("Image address")).not.toBeRequired()
   })
 
+  it("Given limits that arrive after the file, Then the refusal takes the file with it", async () => {
+    const user = userEvent.setup()
+    let publish = () => {}
+    const published = new Promise<void>((resolve) => (publish = resolve))
+    server.use(
+      sessionRoute(() => true),
+      downloadsRoute(),
+      onePinPage(() => []),
+      // The one case decision M leaves to the submission: the file was judged against limits
+      // nobody had yet, so it was taken, and the answer arrives after it.
+      http.get("/api/v1/handshake", async () => {
+        await published
+        return HttpResponse.json({
+          contractVersion: "4.0.0",
+          limits: { maxFileBytes: 4, maxPixels: 50_000_000 },
+          renditionSizes: { tiny: 80, small: 240, medium: 640, large: 1600 },
+        })
+      }),
+    )
+
+    renderApp("/")
+    const dialog = await openTheDialog(user)
+    await user.upload(
+      dialog.getByLabelText(DROP_AREA),
+      new File(["more than four bytes"], "big.png", { type: "image/png" }),
+    )
+    expect(await dialog.findByText("big.png")).toBeVisible()
+
+    publish()
+    const submit = dialog.getByRole("button", { name: "Add a pin" })
+    await waitFor(() => expect(submit).toBeEnabled())
+    await user.click(submit)
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This file is heavier than this server accepts.",
+    )
+    // The message names one recourse, choosing another file, so the screen states one thing too.
+    expect(dialog.queryByText("big.png")).toBeNull()
+    expect(dialog.getByLabelText("Image address")).toBeRequired()
+  })
+
   it("Given a file the deployment stores, Then the tile is in the grid at once", async () => {
     const user = userEvent.setup()
     const created = readyPin("a cat asleep")

@@ -96,7 +96,11 @@ function CreatePinForm({ close }: { close: () => void }) {
       // Judged again here, for the file chosen before the handshake's limits arrived.
       const refusal = uploadRefusal(chosen.measurement, handshake.data?.limits)
       setRefused(refusal)
-      if (refusal !== null) return
+      // Dropped here as it would have been at the choice, so one message means one state.
+      if (refusal !== null) {
+        setChosen(null)
+        return
+      }
       source = { file: chosen.file }
     }
     create.mutate(
