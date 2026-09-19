@@ -42,9 +42,9 @@
   "source_page": "Page d’origine",
   "task_failed": "Échec",
   "theme_current": "Thème {theme}",
-  "theme_dark": "Sombre",
-  "theme_light": "Clair",
-  "theme_system": "Système",
+  "theme_dark": "sombre",
+  "theme_light": "clair",
+  "theme_system": "système",
   "task_running": "Téléchargement",
   "username": "Nom d’utilisateur"
 }
