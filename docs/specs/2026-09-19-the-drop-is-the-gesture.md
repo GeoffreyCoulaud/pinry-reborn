@@ -90,6 +90,10 @@ because a reader will otherwise read the branch on the dropped count as an accid
 J rest on that conversation and on nothing in the tree; the operator's approval of this document is
 what settles them.
 
+(Corrected: decision H decided the file half alone and was silent on the mirror. The operator
+settled it on 2026-09-20, in the closing block: a file arriving with no address of its own clears
+the entry's address, a new picture invalidating the provenance the old one named.)
+
 ## 4. The change
 
 | Block | Where | What |

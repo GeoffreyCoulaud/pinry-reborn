@@ -26,7 +26,9 @@ says `1/2` above the fields and `Pin 1 of 2` to a screen reader, and carries `Ig
 `Add a pin` while more than one entry stands. The queue advances on the server's word alone, and a
 refusal keeps the entry on screen to be corrected. The file picker takes several files too and
 enters by the path a drop does, so what is chosen with the mouse and what is dropped are judged
-once, in one place (`src/drops.ts`).
+once, in one place (`src/drops.ts`). **One element dropped on the open form corrects the entry being
+worked on**: a picture arriving with no address of its own clears the address the replaced picture
+was found at, and an address arriving alone takes no file away.
 
 **Every refusal speaks where the gesture happened**, as a toast (ADR 0037), from all four origins:
 a drop on the grid, a drop on the dialog's area, the file picker, and the re-judge at submission.
@@ -74,6 +76,10 @@ closing block; none went to the backlog, none was refused.
   never unsubscribes; only the counting and the judging are gated on the dialog being closed.
 - **MINOR, `CreatePinDialog.tsx`: `take()` corrected the entry the user had left.** Fixed: the
   entries and the index are one state, so the updater reads the index the user is on now.
+- **MINOR, `lib/drops.ts`: a file arriving alone kept the entry's address**, so a replacing picture
+  inherited the replaced one's provenance. The review left the call to the operator, who took the
+  fix on 2026-09-20: a file arriving with no address of its own clears the entry's address. The
+  specification's decision H carries the correction.
 - **MINOR, `Home.tsx`: the handshake landing mid-drag tore the listeners down.** Fixed: `limits` is
   read from a ref inside the drop, and the effect depends on the dialog's state alone.
 - **MINOR, the specification's block 35 check had no recorded result.** Fixed: re-run, below.
