@@ -69,4 +69,28 @@ describe("create a pin from a URL through to the tile appearing", () => {
     await new Promise((resolve) => setTimeout(resolve, 1200))
     expect(polls).toBe(asked)
   }, 15_000)
+
+  // The address stops being required only once a file is chosen, and nothing else enforces it.
+  it("Given neither an address nor a file, Then nothing is sent", async () => {
+    const user = userEvent.setup()
+    let created = 0
+    server.use(
+      sessionRoute(() => true),
+      handshakeRoute(),
+      http.get("/api/v1/me/image-downloads", () => HttpResponse.json(downloadsPage([]))),
+      http.post("/api/v1/pins", () => {
+        created += 1
+        return HttpResponse.json(pin("never asked for"), { status: 201 })
+      }),
+    )
+
+    renderApp("/pins/new")
+    await user.type(await screen.findByLabelText("Page it comes from"), "https://example.test/page")
+    const submit = screen.getByRole("button", { name: "Add a pin" })
+    await waitFor(() => expect(submit).toBeEnabled())
+    await user.click(submit)
+
+    expect(created).toBe(0)
+    expect(screen.getByRole("heading", { name: "Add a pin" })).toBeVisible()
+  })
 })

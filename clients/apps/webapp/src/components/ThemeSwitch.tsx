@@ -1,3 +1,4 @@
+import { Label, ListBox, Select } from "@heroui/react"
 import { THEME_PREFERENCES, type ThemePreference } from "../lib/theme"
 import { m } from "../paraglide/messages.js"
 import { useTheme } from "../theme"
@@ -12,19 +13,26 @@ export function ThemeSwitch() {
   const theme = useTheme()
 
   return (
-    <label className="flex items-center gap-1 text-sm">
-      {m.theme()}
-      <select
-        value={theme.preference}
-        onChange={(event) => theme.choose(event.currentTarget.value as ThemePreference)}
-        className="rounded bg-current/10 px-2 py-1"
-      >
-        {THEME_PREFERENCES.map((preference) => (
-          <option key={preference} value={preference}>
-            {LABELS[preference]()}
-          </option>
-        ))}
-      </select>
-    </label>
+    <Select
+      className="w-40"
+      value={theme.preference}
+      onChange={(value) => theme.choose(value as ThemePreference)}
+    >
+      <Label>{m.theme()}</Label>
+      <Select.Trigger>
+        <Select.Value />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover>
+        <ListBox>
+          {THEME_PREFERENCES.map((preference) => (
+            <ListBox.Item key={preference} id={preference} textValue={LABELS[preference]()}>
+              {LABELS[preference]()}
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
+          ))}
+        </ListBox>
+      </Select.Popover>
+    </Select>
   )
 }
