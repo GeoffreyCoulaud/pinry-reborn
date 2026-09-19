@@ -1,7 +1,11 @@
 import type { Schemas } from "@pinry-reborn/auth"
 
 /** Why this deployment will not store this file, told before a byte of it is sent. */
-export type UploadRefusal = "TOO_MANY_BYTES" | "TOO_MANY_PIXELS"
+export type UploadRefusal =
+  | "TOO_MANY_BYTES"
+  | "TOO_MANY_PIXELS"
+  | "UNSUPPORTED_FORMAT"
+  | "UNREADABLE"
 
 /** The limits the handshake publishes, read from the contract rather than retyped (4.3). */
 export type UploadLimits = Schemas["HandshakeOutputDto"]["limits"]
@@ -26,4 +30,9 @@ export function uploadRefusal(
   if (upload.size > limits.maxFileBytes) return "TOO_MANY_BYTES"
   if (upload.width * upload.height > limits.maxPixels) return "TOO_MANY_PIXELS"
   return null
+}
+
+/** A drop bypasses `accept`, which only the file picker honours, so the type is read here too. */
+export function isImageFile(file: { type: string }): boolean {
+  return file.type.startsWith("image/")
 }

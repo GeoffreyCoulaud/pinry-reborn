@@ -1,5 +1,5 @@
-import { Button, EmptyState, Modal, Spinner, Tooltip, buttonVariants } from "@heroui/react"
-import { Link, Navigate } from "@tanstack/react-router"
+import { Button, EmptyState, Modal, Spinner, Tooltip } from "@heroui/react"
+import { Navigate } from "@tanstack/react-router"
 import { LogOut, Plus } from "lucide-react"
 import { useLayoutEffect, useRef, useState, type RefObject } from "react"
 import {
@@ -12,6 +12,7 @@ import {
   WaterfallLayout,
 } from "react-aria-components"
 import { AppHeader } from "../components/AppHeader"
+import { CreatePinDialog } from "../components/CreatePinDialog"
 import { TaskCentre } from "../components/TaskCentre"
 import { downloadReason } from "../downloadReasons"
 import { useHandshake } from "../images"
@@ -182,6 +183,7 @@ function PinGrid() {
 export function Home() {
   const session = useSession()
   const signOut = useSignOut()
+  const [creating, setCreating] = useState(false)
 
   if (session.isPending) return null
   // A session the API could not answer for is not an expired one, and only the second sends the
@@ -192,16 +194,18 @@ export function Home() {
   return (
     <main className="flex h-screen flex-col gap-4 p-4">
       <AppHeader heading={m.home_heading()}>
-        {/* The screen's primary verb, first for the keyboard and `order-last` on the right. A
-            router link consumes no react-aria focus context, so its hint is the native `title`. */}
-        <Link
-          to="/pins/new"
-          aria-label={m.create_pin()}
-          title={m.create_pin()}
-          className={`${buttonVariants({ isIconOnly: true })} order-last`}
-        >
-          <Plus aria-hidden />
-        </Link>
+        {/* The screen's primary verb, first for the keyboard and `order-last` on the right. */}
+        <Tooltip>
+          <Button
+            isIconOnly
+            className="order-last"
+            aria-label={m.create_pin()}
+            onPress={() => setCreating(true)}
+          >
+            <Plus aria-hidden />
+          </Button>
+          <Tooltip.Content>{m.create_pin()}</Tooltip.Content>
+        </Tooltip>
         <TaskCentre />
         <Tooltip>
           <Button variant="ghost" isIconOnly aria-label={m.sign_out()} onPress={() => signOut.mutate()}>
@@ -213,6 +217,7 @@ export function Home() {
       <div className="min-h-0 flex-1">
         <PinGrid />
       </div>
+      <CreatePinDialog isOpen={creating} onOpenChange={setCreating} />
     </main>
   )
 }

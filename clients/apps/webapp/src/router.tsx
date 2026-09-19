@@ -5,7 +5,6 @@ import {
   type RouterHistory,
 } from "@tanstack/react-router"
 import { SignIn, SignUp } from "./routes/Credentials"
-import { CreatePin } from "./routes/CreatePin"
 import { Home } from "./routes/Home"
 
 const rootRoute = createRootRoute()
@@ -13,9 +12,8 @@ const rootRoute = createRootRoute()
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: "/", component: Home })
 const signInRoute = createRoute({ getParentRoute: () => rootRoute, path: "/sign-in", component: SignIn })
 const signUpRoute = createRoute({ getParentRoute: () => rootRoute, path: "/sign-up", component: SignUp })
-const newPinRoute = createRoute({ getParentRoute: () => rootRoute, path: "/pins/new", component: CreatePin })
 
-const routeTree = rootRoute.addChildren([homeRoute, signInRoute, signUpRoute, newPinRoute])
+const routeTree = rootRoute.addChildren([homeRoute, signInRoute, signUpRoute])
 
 /** The history is an argument so a test can drive the router without a browser. */
 export function createAppRouter(history?: RouterHistory) {

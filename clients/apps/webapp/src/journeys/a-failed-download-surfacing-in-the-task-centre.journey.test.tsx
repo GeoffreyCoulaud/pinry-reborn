@@ -54,15 +54,20 @@ describe("a failed download surfacing in the task centre", () => {
     await waitFor(() => expect(retried).toBe(failed.id))
   })
 
-  it("Given the creation screen, Then the centre is there too and carries the running download", async () => {
+  it("Given the dialog a pin is added in, Then the centre it left behind carries the download", async () => {
     const user = userEvent.setup()
     server.use(
       sessionRoute(() => true),
+      onePinPage(() => []),
       downloadsRoute(() => [download("a-pin", "PENDING")]),
       handshakeRoute(),
     )
 
-    renderApp("/pins/new")
+    renderApp("/")
+    // A download requested from the dialog keeps running past its closing, which is why the
+    // creation screen carried a centre of its own and the dialog needs none.
+    await user.click(await screen.findByRole("button", { name: "Add a pin" }))
+    await user.keyboard("{Escape}")
     await user.click(await screen.findByRole("button", { name: "Downloads (1)" }))
 
     expect(await screen.findByText("Downloading")).toBeVisible()
