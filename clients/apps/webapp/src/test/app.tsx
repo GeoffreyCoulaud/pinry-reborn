@@ -1,3 +1,4 @@
+import { Toast } from "@heroui/react"
 import type { Schemas } from "@pinry-reborn/auth"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router"
@@ -130,6 +131,8 @@ export function renderApp(path: string) {
   return render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={createAppRouter(createMemoryHistory({ initialEntries: [path] }))} />
+      {/* As `main.tsx` mounts it, so a journey reads the toasts the application really shows. */}
+      <Toast.Provider />
     </QueryClientProvider>,
   )
 }
