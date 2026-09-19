@@ -17,6 +17,8 @@
   "image_file": "Image file",
   "image_refused": "That image could not be added.",
   "password": "Password",
+  "pins_empty": "No pins to show yet.",
+  "pins_loading": "Loading your pins.",
   "reason_access_denied": "The site refused the server. Upload the image from disk instead.",
   "reason_fetch_failed": "That download failed.",
   "reason_internal_error": "A temporary error. Try again later.",

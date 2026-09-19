@@ -1,4 +1,4 @@
-import { Button, Modal } from "@heroui/react"
+import { Button, EmptyState, Modal, Spinner, buttonVariants } from "@heroui/react"
 import { Link, Navigate } from "@tanstack/react-router"
 import { useLayoutEffect, useRef, useState, type RefObject } from "react"
 import {
@@ -64,7 +64,10 @@ function Tile({ pin, smallRenditionPx }: { pin: Pin; smallRenditionPx?: number }
         />
       ) : (
         // A failed download keeps its tile and says why; a pin with no image at all says what it is.
-        <p style={ratio} className="grid place-content-center rounded bg-current/5 p-2 text-center">
+        <p
+          style={ratio}
+          className="grid place-content-center rounded bg-surface p-2 text-center shadow-surface"
+        >
           {downloadReason(image?.reasonCode, image?.message) ?? pin.description}
         </p>
       )}
@@ -108,6 +111,24 @@ function PinGrid() {
   const [openedId, setOpenedId] = useState<string | null>(null)
   const tiles = placeableTiles(pins.data?.pages.flatMap((page) => page.pins) ?? [])
   const opened = tiles.find((pin) => pin.id === openedId)
+
+  // Neither a first load nor an account with nothing in it draws a tile, and both said so with
+  // a blank rectangle until now.
+  if (pins.isPending)
+    return (
+      <div role="status" className="grid h-full place-content-center justify-items-center gap-2 text-muted">
+        {/* Hidden from the reader: the spinner carries a `status` role of its own, and the
+            sentence beside it is the one this region should announce. */}
+        <Spinner aria-hidden />
+        {m.pins_loading()}
+      </div>
+    )
+  if (tiles.length === 0)
+    return (
+      <EmptyState role="status" className="grid h-full place-content-center text-center">
+        {m.pins_empty()}
+      </EmptyState>
+    )
 
   return (
     <>
@@ -167,13 +188,18 @@ export function Home() {
 
   return (
     <main className="flex h-screen flex-col gap-4 p-4">
-      <header className="flex flex-wrap items-baseline justify-between gap-2">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-separator pb-3">
         <h1 className="text-2xl font-semibold">{m.home_heading()}</h1>
-        <div className="flex items-center gap-3">
-          <Link to="/pins/new">{m.create_pin()}</Link>
+        <div className="flex flex-wrap items-center gap-2">
           <TaskCentre />
           <ThemeSwitch />
-          <Button onPress={() => signOut.mutate()}>{m.sign_out()}</Button>
+          <Button variant="secondary" onPress={() => signOut.mutate()}>
+            {m.sign_out()}
+          </Button>
+          {/* The screen's primary verb, and the only control here at that weight. */}
+          <Link to="/pins/new" className={buttonVariants()}>
+            {m.create_pin()}
+          </Link>
         </div>
       </header>
       <div className="min-h-0 flex-1">
