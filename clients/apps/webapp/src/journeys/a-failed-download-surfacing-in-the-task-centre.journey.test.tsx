@@ -14,6 +14,9 @@ import {
 } from "../test/app"
 import { server } from "../test/server"
 
+/** The badge is `aria-hidden` and says what the trigger's name says, so it is read as an element. */
+const badge = () => document.querySelector('[data-slot="badge-anchor"] [data-slot="badge"]')
+
 describe("a failed download surfacing in the task centre", () => {
   it("Given a download that failed, Then the centre says why and offers the recourse", async () => {
     const user = userEvent.setup()
@@ -109,6 +112,7 @@ describe("a failed download surfacing in the task centre", () => {
 
     renderApp("/")
     await user.click(await screen.findByRole("button", { name: "Downloads (1)" }))
+    expect(badge()).toHaveTextContent("1")
     await user.upload(
       screen.getByLabelText("Image file"),
       new File(["ok"], "cat.png", { type: "image/png" }),
@@ -117,7 +121,9 @@ describe("a failed download surfacing in the task centre", () => {
     // open, so every role behind it is out of the accessibility tree until the popover closes,
     // and closing it on a keystroke is a race the gate's container loses.
     expect(await screen.findByAltText(failed.description)).toBeInTheDocument()
-    expect(await screen.findByText("Downloads (0)")).toBeInTheDocument()
+    // The open popover names itself after its trigger, so the selector says which of the two.
+    expect(await screen.findByLabelText("Downloads (0)", { selector: "button" })).toBeInTheDocument()
+    expect(badge()).toBeNull()
   }, 15_000)
 
   it("Given a page the server has more rows after, Then the count says so rather than under-reporting", async () => {

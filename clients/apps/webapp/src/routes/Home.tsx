@@ -1,5 +1,6 @@
-import { Button, EmptyState, Modal, Spinner, buttonVariants } from "@heroui/react"
+import { Button, EmptyState, Modal, Spinner, Tooltip, buttonVariants } from "@heroui/react"
 import { Link, Navigate } from "@tanstack/react-router"
+import { LogOut, Plus } from "lucide-react"
 import { useLayoutEffect, useRef, useState, type RefObject } from "react"
 import {
   Collection,
@@ -10,8 +11,8 @@ import {
   Virtualizer,
   WaterfallLayout,
 } from "react-aria-components"
+import { AppHeader } from "../components/AppHeader"
 import { TaskCentre } from "../components/TaskCentre"
-import { ThemeSwitch } from "../components/ThemeSwitch"
 import { downloadReason } from "../downloadReasons"
 import { useHandshake } from "../images"
 import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } from "../lib/tiles"
@@ -190,21 +191,25 @@ export function Home() {
 
   return (
     <main className="flex h-screen flex-col gap-4 p-4">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-separator pb-3">
-        <h1 className="text-2xl font-semibold">{m.home_heading()}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* The screen's primary verb, and the only control here at that weight. It comes
-              first for the keyboard and the reader, and `order-last` keeps it on the right. */}
-          <Link to="/pins/new" className={`${buttonVariants()} order-last`}>
-            {m.create_pin()}
-          </Link>
-          <TaskCentre />
-          <ThemeSwitch />
-          <Button variant="secondary" onPress={() => signOut.mutate()}>
-            {m.sign_out()}
+      <AppHeader heading={m.home_heading()}>
+        {/* The screen's primary verb, first for the keyboard and `order-last` on the right. A
+            router link consumes no react-aria focus context, so its hint is the native `title`. */}
+        <Link
+          to="/pins/new"
+          aria-label={m.create_pin()}
+          title={m.create_pin()}
+          className={`${buttonVariants({ isIconOnly: true })} order-last`}
+        >
+          <Plus aria-hidden />
+        </Link>
+        <TaskCentre />
+        <Tooltip>
+          <Button variant="ghost" isIconOnly aria-label={m.sign_out()} onPress={() => signOut.mutate()}>
+            <LogOut aria-hidden />
           </Button>
-        </div>
-      </header>
+          <Tooltip.Content>{m.sign_out()}</Tooltip.Content>
+        </Tooltip>
+      </AppHeader>
       <div className="min-h-0 flex-1">
         <PinGrid />
       </div>

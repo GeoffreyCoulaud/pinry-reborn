@@ -1,6 +1,7 @@
 import { Button, Checkbox, Input, Label, TextField } from "@heroui/react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import type { ReactNode } from "react"
+import { AppHeader } from "../components/AppHeader"
 import { m } from "../paraglide/messages.js"
 import { useSignIn, useSignUp, type OpenSessionMutation } from "../session"
 
@@ -17,7 +18,7 @@ function CredentialsForm({ title, refusal, newPassword, session, footer }: Crede
   const navigate = useNavigate()
   return (
     <main className="mx-auto flex max-w-sm flex-col gap-4 p-8">
-      <h1 className="text-2xl font-semibold">{title}</h1>
+      <AppHeader heading={title} />
       <form
         className="flex flex-col gap-3"
         onSubmit={(event) => {
