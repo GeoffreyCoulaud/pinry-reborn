@@ -3,28 +3,37 @@
 Norms, the gate perimeter, Kotlin and backend rules, and the design decisions already settled. Process is in
 `agents/workflow.md`.
 
+**This document states its mandate before its argument**
+(`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). The bullets bind. The
+`**Detail.**` paragraph that closes a section explains and binds nothing.
+
 ## Norms
 
 - **Clean architecture.** The domain is pure (no I/O, framework, clock, environment); I/O lives in adapters; the
   dependency graph is a DAG pointing inward.
-- **Strict TDD: red, green, refactor.** Write the failing test first, run it and show it fail, write the minimal
-  implementation, then refactor with tests green.
-- **100% branch coverage, verified after the fact.** Uncovered code is a missing test or code nobody asked for; never
-  lower the threshold: add the test or delete the code.
+- **Test first**: the test before the implementation, then the minimal implementation, then refactor with tests
+  green. Proving the run red is not required.
+- **100% branch coverage, verified after the fact.** Never lower the threshold: add the test or delete the code.
+
+**Detail.** Uncovered code is a missing test or code nobody asked for, which is why the threshold is the thing that
+never moves. The red run was required until 2026-09-19 and is not any more: two holistic reviews in a row found the
+proof absent and the coverage genuine, and a change whose only observable is layout or paint cannot be made red at
+all. The operator settled it that day.
 
 ## Gate perimeter
 
-- **Inside (100% branch coverage)**: the modules other than `api-application`,
-  `detekt-rules` included. Kover is applied per module with no aggregation; the bound is verified **per package**
-  (`groupBy = PACKAGE`), so a module averaging 100% still fails when one package does not reach it.
+- **Inside (100% branch coverage)**: the modules other than `api-application`, `detekt-rules` included.
+- **The bound is verified per package** (`groupBy = PACKAGE`), Kover being applied per module with no aggregation.
 - **Outside (not measured)**:
     - `api-application`: composition root, end-to-end tests only, Kover not applied.
-    - `...persistence.sqlite.models` and `models.bases`: Ebean's bytecode enhancement rewrites entity classes in place
-      and its injected bookkeeping is mis-attributed to source lines.
+    - `...persistence.sqlite.models` and `models.bases`: Ebean's bytecode enhancement rewrites entity classes in place.
     - `...models.query.Q*` and every class annotated `io.ebean.typequery.Generated`
+- **Change the perimeter in `api/build.gradle.kts` first**, where it is enforced; this table is transcribed from it.
+- **Inside never shrinks, and widening Outside requires the user's explicit agreement.**
 
-The perimeter is transcribed from `api/build.gradle.kts`, where it is enforced. Change it there first. **Inside never
-shrinks, and widening Outside requires the user's explicit agreement.**
+**Detail.** Per package rather than per module because a module averaging 100% still fails when one package does not
+reach it, which is the case the aggregate hides. Ebean's injected bookkeeping is mis-attributed to source lines, so a
+measured entity class reports coverage nobody can write a test for.
 
 ## Kotlin
 
@@ -34,9 +43,8 @@ shrinks, and widening Outside requires the user's explicit agreement.**
 - **`lateinit` only for framework-injected fields.**
 - **Closed unions are `sealed`**, `when` over them exhaustive without an `else`.
 - **Value objects are `data class` or `@JvmInline value class`**, never a bare `String` or `Int`.
-- **Verify every inline value class against the libraries that reflect over it**: inlining is erased at runtime and
-  tooling can mishandle an IVC silently (observed with Ebean's migration generation). Generate the artefact, read it,
-  pin the result in a test; where a library cannot handle it, keep the IVC in the domain and convert at the adapter.
+- **Verify every inline value class against the libraries that reflect over it**: generate the artefact, read it, pin
+  the result in a test. Where a library cannot handle it, keep the IVC in the domain and convert at the adapter.
 - **Immutability by default**: `val` over `var`, read-only collection types in signatures,
   `copy()` over mutation.
 - **Nullability at the boundary is resolved at the boundary**: a nullable wire field is converted to a validated domain
@@ -61,21 +69,21 @@ shrinks, and widening Outside requires the user's explicit agreement.**
 
 ### Structural invariants are tests, not prose (Konsist)
 
-Every structural rule the project relies on gets a Konsist test: the Design invariants below, structural ADRs, and every
-pitfall learned the hard way.
-
-- **Express the rule as what must not exist**: filter down to the violations and finish on
-  `assertEmpty()`, so the failure enumerates the offenders and the test reads as the prohibition it is.
+- **Every structural rule the project relies on gets a Konsist test**: the Design invariants below, structural ADRs,
+  and every pitfall learned the hard way.
+- **Express the rule as what must not exist**: filter down to the violations and finish on `assertEmpty()`.
 - **Use the chaining DSL** (`withX`/`withoutX`) rather than one monolithic predicate inside
   `assertTrue { }`.
 - **Layering is asserted with the architecture DSL** (`assertArchitecture` with `Layer`
   declarations), not by hand.
 
+**Detail.** A rule expressed as an absence makes the failure enumerate the offenders, and the test then reads as the
+prohibition it is. Inlining is erased at runtime and tooling can mishandle an inline value class in silence, which is
+how Ebean's migration generation was caught; the artefact is the only place that shows it.
+
 ## Backend
 
 ### The API is a contract, and contracts are uniform
-
-The failure mode is never one endpoint being wrong: it is one endpoint being **different**.
 
 - **One error format, declared once, applied everywhere**, including framework-generated responses (unauthenticated,
   unhandled media types, malformed payloads, method not allowed, the fallback handler).
@@ -129,10 +137,13 @@ The failure mode is never one endpoint being wrong: it is one endpoint being **d
   `Authorization: Bearer <token>` header, and the `pinry_session` cookie the browser sends for an `<img>`. The
   creation input declares which with a required `transport`, and the status code answers it, `201` with a token
   or `200` with a `Set-Cookie`.
-- **Not JWTs, and both schemes are declared by hand** in `openapi/OpenApiApplication.kt` (the Quarkus shortcut
-  would stamp `bearerFormat: JWT`). SmallRye stamps only the first of them on a protected operation, so
-  `openapi/SessionSecurityRequirementFilter.kt` puts both on each: a contract that named one would tell a client
-  the other is refused.
+- **Not JWTs, and both schemes are declared by hand** in `openapi/OpenApiApplication.kt`, and
+  `openapi/SessionSecurityRequirementFilter.kt` puts both on every protected operation.
+
+**Detail.** The failure mode of an API is never one endpoint being wrong: it is one endpoint being *different*, which
+is what every rule in this section is against. The Quarkus shortcut would stamp `bearerFormat: JWT`, and SmallRye
+stamps only the first scheme on a protected operation, so a contract left to it would name one transport and tell a
+client the other is refused.
 
 ## Design invariants (settled decisions)
 
@@ -154,29 +165,35 @@ The failure mode is never one endpoint being wrong: it is one endpoint being **d
   (`docs/adr/0008-structural-soft-delete-read-isolation.md`).
 - **Dependencies are injected by type, not by string qualifier**: a new dependency is a dedicated type
   (`PeriodicScheduler`); no `@Identifier("...")` for new code.
-- **One connection; a transaction is what serializes a pair of statements.** SQLite is single-writer: `minConnections`/
-  `maxConnections` pinned to 1, WAL, `synchronous=NORMAL`,
-  `busy_timeout=5000`, no `transaction_mode=IMMEDIATE` (once reintroduced a deadlock). The single connection serialises
-  each statement, **not** a pair: a check-then-insert inside one transaction is safe; the same pair as two autocommit
-  statements is racy (measured: ~340/400 interleavings without the transaction, zero with it). `EbeanTaskQueue.enqueue`
-  holds its transaction; a new pair that does not is a defect.
+- **One connection; a transaction is what serializes a pair of statements.** `minConnections`/`maxConnections` pinned
+  to 1, WAL, `synchronous=NORMAL`, `busy_timeout=5000`, no `transaction_mode=IMMEDIATE`.
+- **A pair of statements that must not interleave holds a transaction**, as `EbeanTaskQueue.enqueue` does; a new pair
+  that does not is a defect.
 - **The database is the authority on uniqueness**: no read-before-write exists solely to answer a uniqueness question an
   index already answers; the adapter translates the violation into a domain exception. One written exception:
   `UserDataExportRequester.createPending`'s `findPendingForUser`, which orders its refusals (409 ahead of 429).
 - **A unique constraint is not complete until its outcome is named**: every one appears in
   `UniqueConstraintOutcomeTest`'s table with the answer a client gets, "no translation, deliberately" included.
 
+**Detail.** SQLite is single-writer, and the single connection serialises each statement but *not* a pair: a
+check-then-insert inside one transaction is safe, the same pair as two autocommit statements is racy, measured at
+about 340 of 400 interleavings without the transaction and zero with it. `transaction_mode=IMMEDIATE` was tried once
+and reintroduced a deadlock.
+
 ## Test conventions
 
-- **A structural assertion arrives with the mutation that makes it fail**, pasted in its commit message: an
-  `assertEmpty()` chain passes just as well when the filter matches nothing.
-- **A case joins an existing integration suite**; a new `@QuarkusTest` class costs a full boot and is justified only by
-  a scenario no existing suite can host.
+- **A structural assertion arrives with the mutation that makes it fail**, pasted in its commit message.
+- **A case joins an existing integration suite**; a new `@QuarkusTest` class is justified only by a scenario no
+  existing suite can host.
 - **Test names**: backticks, `Given..., Then...` form, no "when" in the name. Bodies follow Given-When-Then with
   explicit comments.
 - **Maintainability**: helper methods for repeated setup, named variables over inline literals,
   `createRandomString()` for unique data, extend the fitting base class (`IntegrationTest`,
   `RepositoryTest`, `BaseTest`).
+
+**Detail.** The mutation is pasted because an `assertEmpty()` chain passes just as well when the filter matches
+nothing, so the assertion proves nothing until something has been shown to break it. A new `@QuarkusTest` class costs a
+full boot, which is what makes joining an existing suite the default rather than a preference.
 
 ## Code conventions
 
@@ -188,3 +205,7 @@ The failure mode is never one endpoint being wrong: it is one endpoint being **d
 - **Structural remedies have these homes**: `ArchitectureKonsistTest` for a project-wide declaration invariant, a detekt
   rule for a prohibition inside one file's statements, a plain test (`DbMigrationModelCoverageTest`) for repository
   content.
+
+**Detail.** The three homes differ by what each tool can see: Konsist reads declarations across the project, a detekt
+rule reads the statements inside one file, and neither reads the contents of a directory, which is why a migration's
+coverage is a plain test.

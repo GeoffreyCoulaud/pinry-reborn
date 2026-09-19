@@ -177,7 +177,10 @@ instead of a worded link. Block 20 removes it.
 `findByLabelText("Theme")` and an accessible name ending in ` Theme`, which block 10 deletes along
 with the `theme` message, so both go red inside block 10 unless it rewrites them. The second case
 keeps rendering `/pins/new`, which block 10 leaves standing; block 20 moves it to the credentials
-screen, which by then is the other screen carrying the control.
+screen, which by then is the other screen carrying the control. (Corrected in the closing block:
+block 10 moved that case to `/sign-in` itself, and block 20 did not touch the file. Block 10 had to
+show the control on a screen with no session, and a third case for that would have been a duplicate
+block 20 then deleted.)
 
 **The badge's observable is the element, not the text.** The badge is `aria-hidden` but present in
 the document, so `getByRole` misses it either way, and at one download the trigger's own name is
