@@ -27,13 +27,17 @@ describe("create a pin from a URL through to the tile appearing", () => {
     let requested = false
     let polls = 0
     let pageRequests = 0
+    let sent: Record<string, unknown> | undefined
     const settled = () => polls > 1
     server.use(
       sessionRoute(() => true),
       handshakeRoute(),
       pinsRoute([[bare]], () => (pageRequests += 1)),
       http.get("/api/v1/pins/:pinId", () => HttpResponse.json(ready)),
-      http.post("/api/v1/pins", () => HttpResponse.json(bare, { status: 201 })),
+      http.post("/api/v1/pins", async ({ request }) => {
+        sent = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json(bare, { status: 201 })
+      }),
       http.put("/api/v1/pins/:pinId/image", () => {
         requested = true
         return HttpResponse.json({ status: "PENDING" }, { status: 202 })
@@ -47,13 +51,22 @@ describe("create a pin from a URL through to the tile appearing", () => {
 
     renderApp("/pins/new")
     await user.type(await screen.findByLabelText("Page it comes from"), "https://example.test/page")
+    await user.type(screen.getByLabelText("Description"), bare.description)
     await user.type(screen.getByLabelText("Image address"), "https://example.test/i.png")
     const submit = screen.getByRole("button", { name: "Add a pin" })
     await waitFor(() => expect(submit).toBeEnabled())
     await user.click(submit)
 
-    // The pin exists and its image does not: the work shows in the header, not in the grid.
+    // The form is read by name out of `FormData`, and a name that no longer matches sends the
+    // string "null" without failing anything downstream.
     expect(await screen.findByRole("button", { name: "Downloads (1)" })).toBeVisible()
+    expect(sent).toEqual({
+      sourceContextUrl: "https://example.test/page",
+      description: bare.description,
+      sourceMediaUrl: "https://example.test/i.png",
+    })
+
+    // The pin exists and its image does not: the work shows in the header, not in the grid.
     expect(screen.queryByRole("img", { name: bare.description })).toBeNull()
 
     // The settlement reads the one pin it changed and writes it into the pages already held: a
