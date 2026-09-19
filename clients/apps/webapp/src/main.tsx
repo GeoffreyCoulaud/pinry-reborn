@@ -1,3 +1,4 @@
+import { Toast } from "@heroui/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { RouterProvider } from "@tanstack/react-router"
 import { StrictMode } from "react"
@@ -17,6 +18,8 @@ createRoot(container).render(
   <StrictMode>
     <QueryClientProvider client={new QueryClient()}>
       <RouterProvider router={createAppRouter()} />
+      {/* Mounted once here so anything calling `toast()` needs no provider of its own (ADR 0037). */}
+      <Toast.Provider />
     </QueryClientProvider>
   </StrictMode>,
 )

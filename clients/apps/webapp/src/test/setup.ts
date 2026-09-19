@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest"
+import { toast } from "@heroui/react"
 import { cleanup, configure } from "@testing-library/react"
 import { afterAll, afterEach } from "vitest"
 import { server } from "./server"
@@ -36,6 +37,14 @@ class ReachedSentinelObserver implements IntersectionObserver {
 }
 globalThis.IntersectionObserver = ReachedSentinelObserver
 
+// jsdom implements no ResizeObserver, and HeroUI's toast measures its own height with one. It
+// never reports: jsdom lays nothing out, so the only width it could announce is zero.
+globalThis.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
 // jsdom decodes no image, and the creation screen measures one to read it against the
 // deployment's pixel limit. The stub reports a small picture, so what a journey exercises is the
 // weight half of the refusal; the pixel half is held by `uploadRefusal`'s own tests.
@@ -57,5 +66,8 @@ globalThis.matchMedia = (media: string) =>
 
 // Testing Library cleans up by itself only when Vitest exposes its globals, which it does not here.
 afterEach(cleanup)
+// The toast queue is a module-level singleton, so a toast one journey raised outlives the render
+// that showed it and would answer the next journey's query.
+afterEach(() => toast.clear())
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())

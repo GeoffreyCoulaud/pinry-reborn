@@ -125,7 +125,7 @@ never also reaches the grid's handler.
 | Block | Branch | Journeys |
 |---|---|---|
 | 10 | `feat/the-drop-area-answers-the-drag` | None added. `create a pin by uploading a file` gains two cases: the close cross closes the dialog, and `enter, enter, leave` over the area leaves `data-dragging` set |
-| 20 | `feat/a-refusal-is-a-toast` | None added. Four of the seven cases of `create a pin by uploading a file` move their assertion from the area to the toast |
+| 20 | `feat/a-refusal-is-a-toast` | None added. Four of the seven cases of `create a pin by uploading a file` move their assertion from the area to the toast (Corrected: five of them do, as the case table below already says, and an eighth case is added for `Remove`, decision I naming no other way to observe it) |
 | 30 | `feat/a-drop-on-the-grid-opens-the-form` | `drop an image on the grid to add a pin` added to `REQUIRED_JOURNEYS` |
 | 40 | `feat/a-drop-carries-several-pins` | `add several pins from one drop` added to `REQUIRED_JOURNEYS` |
 
