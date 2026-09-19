@@ -16,7 +16,10 @@ import { CreatePinDialog } from "../components/CreatePinDialog"
 import { IconButton } from "../components/IconButton"
 import { TaskCentre } from "../components/TaskCentre"
 import { downloadReason } from "../downloadReasons"
+import { judgeDrop, refuse } from "../drops"
 import { useHandshake } from "../images"
+import { dragDepth, type DragStep } from "../lib/drags"
+import type { DropPartition } from "../lib/drops"
 import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } from "../lib/tiles"
 import { m } from "../paraglide/messages.js"
 import { usePins, type Pin } from "../pins"
@@ -184,7 +187,26 @@ function PinGrid() {
 export function Home() {
   const session = useSession()
   const signOut = useSignOut()
+  const limits = useHandshake().data?.limits
   const [creating, setCreating] = useState(false)
+  const [dropped, setDropped] = useState<DropPartition | null>(null)
+  const [depth, setDepth] = useState(0)
+
+  function dragged(step: DragStep) {
+    setDepth((current) => dragDepth(current, step))
+  }
+
+  /**
+   * The drop is judged in full where it landed, and the form opens on what survived (decision N).
+   * A drop that kept nothing has already said so in a toast and opens no form to empty.
+   */
+  async function receive(files: readonly File[], uriList: string) {
+    const drop = await judgeDrop(files, uriList, limits)
+    drop.refusals.forEach(refuse)
+    if (drop.files.length === 0 && drop.urls.length === 0) return
+    setDropped(drop)
+    setCreating(true)
+  }
 
   if (session.isPending) return null
   // A session the API could not answer for is not an expired one, and only the second sends the
@@ -193,27 +215,56 @@ export function Home() {
   if (!session.data) return <Navigate to="/sign-in" />
 
   return (
-    <main className="flex h-screen flex-col gap-4 p-4">
-      <AppHeader heading={m.home_heading()}>
-        {/* The screen's primary verb, first for the keyboard and `order-last` on the right. */}
-        <IconButton
-          icon={Plus}
-          name={m.create_pin()}
-          className="order-last"
-          onPress={() => setCreating(true)}
-        />
-        <TaskCentre />
-        <IconButton
-          icon={LogOut}
-          name={m.sign_out()}
-          variant="ghost"
-          onPress={() => signOut.mutate()}
-        />
-      </AppHeader>
-      <div className="min-h-0 flex-1">
-        <PinGrid />
-      </div>
-      <CreatePinDialog isOpen={creating} onOpenChange={setCreating} />
-    </main>
+    <>
+      {/* The whole screen is the target: a full grid is a field of images, so a ring around it
+          would read as decoration, and aiming at the header or the margin is a slip (decision D).
+          The dialog is a sibling rather than a child: react-aria portals it out of the DOM, but a
+          React portal still bubbles its events along the React tree (React, Event Bubbling Through
+          Portals), so a drop on its own area would be taken twice. */}
+      <main
+        className="relative flex h-screen flex-col gap-4 p-4"
+        onDragEnter={() => dragged("enter")}
+        onDragLeave={() => dragged("leave")}
+        // Without this the browser fires no `drop` at all, whatever the handler below says.
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault()
+          dragged("drop")
+          void receive([...event.dataTransfer.files], event.dataTransfer.getData("text/uri-list"))
+        }}
+      >
+        <AppHeader heading={m.home_heading()}>
+          {/* The screen's primary verb, first for the keyboard and `order-last` on the right. */}
+          <IconButton
+            icon={Plus}
+            name={m.create_pin()}
+            className="order-last"
+            onPress={() => {
+              // Opened by hand, so it opens empty: the last drop's entry is not this one.
+              setDropped(null)
+              setCreating(true)
+            }}
+          />
+          <TaskCentre />
+          <IconButton
+            icon={LogOut}
+            name={m.sign_out()}
+            variant="ghost"
+            onPress={() => signOut.mutate()}
+          />
+        </AppHeader>
+        <div className="min-h-0 flex-1">
+          <PinGrid />
+        </div>
+        {/* `pointer-events-none` keeps the overlay out of the drag it announces: a target appearing
+            under the pointer would fire an exit at the screen the pointer never left. */}
+        {depth > 0 && (
+          <div className="pointer-events-none absolute inset-0 grid place-content-center bg-accent-soft/90 text-lg">
+            {m.drop_to_add()}
+          </div>
+        )}
+      </main>
+      <CreatePinDialog isOpen={creating} onOpenChange={setCreating} dropped={dropped} />
+    </>
   )
 }

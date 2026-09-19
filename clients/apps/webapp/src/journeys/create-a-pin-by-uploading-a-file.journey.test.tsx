@@ -4,6 +4,7 @@ import { HttpResponse, http } from "msw"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   downloadsRoute,
+  dropOf,
   handshakeRoute,
   onePinPage,
   readyPin,
@@ -112,9 +113,7 @@ describe("create a pin by uploading a file", () => {
     const dialog = await openTheDialog(user)
     const area = dialog.getByLabelText(DROP_AREA)
     // A drop bypasses `accept`, which only the file picker honours, so it is the only way in.
-    fireEvent.drop(area, {
-      dataTransfer: { files: [new File(["%PDF"], "notes.pdf", { type: "application/pdf" })] },
-    })
+    fireEvent.drop(area, dropOf([new File(["%PDF"], "notes.pdf", { type: "application/pdf" })]))
 
     expect(await screen.findByRole("alert")).toHaveTextContent("This file is not an image.")
     expect(dialog.queryByRole("alert")).toBeNull()
@@ -187,7 +186,7 @@ describe("create a pin by uploading a file", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
   })
 
-  it("Given a drop carrying no file at all, Then it is refused and the choice stands", async () => {
+  it("Given an address dropped on the area, Then it fills the field and the file stays", async () => {
     const user = userEvent.setup()
     server.use(
       sessionRoute(() => true),
@@ -204,9 +203,37 @@ describe("create a pin by uploading a file", () => {
     )
     expect(await dialog.findByText("small.png")).toBeVisible()
     // Dragging an image out of another browser tab hands over an address and no file at all.
-    fireEvent.drop(dialog.getByLabelText(DROP_AREA), { dataTransfer: { files: [] } })
+    fireEvent.drop(dialog.getByLabelText(DROP_AREA), dropOf([], FOUND_AT))
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("This file is not an image.")
+    // An address touches provenance alone, so it has nothing to remove (decision H).
+    await waitFor(() => expect(dialog.getByLabelText("Image address")).toHaveValue(FOUND_AT))
+    expect(dialog.getByText("small.png")).toBeVisible()
+    expect(screen.queryByRole("alert")).toBeNull()
+  })
+
+  it("Given a drop carrying nothing a pin can be made of, Then it is refused and the choice stands", async () => {
+    const user = userEvent.setup()
+    server.use(
+      sessionRoute(() => true),
+      handshakeRoute(),
+      downloadsRoute(),
+      onePinPage(() => []),
+    )
+
+    renderApp("/")
+    const dialog = await openTheDialog(user)
+    await user.upload(
+      dialog.getByLabelText(DROP_AREA),
+      new File(["ok"], "small.png", { type: "image/png" }),
+    )
+    expect(await dialog.findByText("small.png")).toBeVisible()
+    // A tab dragging an image it holds in memory hands over a `blob:`, which no file and no
+    // address a server could fetch survive.
+    fireEvent.drop(dialog.getByLabelText(DROP_AREA), dropOf([], "blob:https://example.test/0f5c"))
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Nothing in that drop could become a pin.",
+    )
     expect(dialog.queryByRole("alert")).toBeNull()
     // The drop took nothing, so it takes nothing away either.
     expect(dialog.getByText("small.png")).toBeVisible()

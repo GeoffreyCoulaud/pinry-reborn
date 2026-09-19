@@ -10,6 +10,8 @@
   "downloads_empty": "Nothing is downloading.",
   "downloads_partial": "Downloads ({count}+)",
   "drop_image": "Drop an image here, or pick one",
+  "drop_to_add": "Drop an image here to add a pin",
+  "drop_unsupported": "Nothing in that drop could become a pin.",
   "file_too_heavy": "This file is heavier than this server accepts.",
   "file_too_large": "This image has more pixels than this server accepts.",
   "file_unreadable": "This image could not be read. Try another file.",

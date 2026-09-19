@@ -36,11 +36,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   `contractVersion`, `limits` and `renditionSizes` alone, so the creation dialog can only judge a format
   on `type.startsWith("image/")` and an SVG reaches the server to be refused there.
   See `docs/specs/2026-09-19-the-header-becomes-icons.md` section 6. New 2026-09-19.
-- **An image dragged from another browser tab is refused rather than fetched.** That drop carries
-  `text/uri-list` and no file at all, and the creation dialog answers "This file is not an image."; the
-  address it does carry is what `sourceMediaUrl` wants. Costed and deferred by the operator, about
-  fifty lines. See `docs/handoffs/2026-09-19 - handoff - the-header-becomes-icons.md`, what this lot
-  leaves open. New 2026-09-19.
 - **Browser-extension CORS origin.** Deferred from the CORS sub-project (decision B1): the extension
   does not exist yet and has no stable ID, so no origin is wired for it. When it ships, add its
   `chrome-extension://<id>` / `moz-extension://<id>` origin to `api.cors.origins`. See
