@@ -29,17 +29,16 @@ class PinUpdater(
         tagNames: List<String>,
         boardIds: List<UUID>,
         user: User,
-    ): Pin {
+    ): Pin = transactionRunner.inTransaction {
         val pin = pinRepository.findPinById(id = pinId) ?: throw PinUpdatePinDoesNotExistError()
         if (pin.author != user) throw PinUpdatePermissionError()
         if (pin.softDeletedAt != null) throw PinUpdateSoftDeletedPinError()
 
-        // Resolved before the transaction opens: `TagCreator` opens one of its own, and a nested one
-        // would commit ours early, `EbeanTransactionRunner` committing whatever it began.
+        // A tag this invents is rolled back with the rest when a later board refuses the whole write.
         val tags = pinTagger.resolveTags(tagNames = tagNames, user = user)
         val boards = pinBoardSetter.resolveBoards(boardIds = boardIds, user = user)
         // The fence re-reads the pin, so a recycling landed since the read is kept, not restored.
-        return pinRepository.saveFenced(transactionRunner, pinId, held = ::activeOrRefused) {
+        pinRepository.saveFenced(transactionRunner, pinId, held = ::activeOrRefused) {
             it.copy(
                 description = description,
                 sourceContextUrl = sourceContextUrl,

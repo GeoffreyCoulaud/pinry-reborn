@@ -225,6 +225,15 @@ the outer transaction would commit it, and nothing in this repository composes t
 Block 15 removes the only callers of `PinTagger.setTags` and `PinBoardSetter.setBoards`, so block 10
 splits each one's resolution and write from its `fenced` and calls those halves inside `PinUpdater`'s
 own. No nesting, and nothing to measure about Ebean.
+(Corrected in block 10, on the operator's review of PR #166: a nested `inTransaction` does **not**
+commit the outer one. `beginTransaction()` returns the same `ScopedTransaction` and Ebean counts the
+scopes, so only the outermost commit reaches the database, which
+`EbeanTransactionRunnerTest`'s `Given a write in a nested inTransaction, Then a rollback of the outer
+block discards it` has pinned since before this lot. Resolving outside the transaction was therefore
+not a safeguard but the defect: a tag `TagCreator` invented was committed on its own and orphaned
+when the write that asked for it then failed. `PinUpdater` wraps the resolutions and the save in one
+`inTransaction`, the resolution halves of `PinTagger` and `PinBoardSetter` staying split, since one
+route now writes what two used to.)
 
 ## 5. Blocks
 
@@ -320,6 +329,11 @@ Each row names how a reader notices if it changed anyway.
 - **`PinUpdater` must be one transaction and must not nest one.** `EbeanTransactionRunner` commits
   whatever `beginTransaction()` hands it, so a nested call that joined the outer transaction would
   commit it. Block 10 splits `PinTagger` and `PinBoardSetter` rather than calling them whole.
+  (Corrected in block 10, on the operator's review of PR #166: nesting is safe and is what makes the
+  write atomic. A nested `inTransaction` joins the outer scope and its commit does not reach the
+  database, measured on a probe and pinned by two cases in `EbeanTransactionRunnerTest`. The pitfall
+  is the opposite one: **anything resolved outside the transaction is committed on its own**, which
+  is how a refused write left an orphan tag behind.)
 - **A batch route resolves every identifier before its first write**, not inside the loop. Decision E
   is all or nothing, and a check interleaved with the writes makes it all or some.
 - **An identifier that fails to resolve earns 404 or 403 wherever it was named**, the body included.

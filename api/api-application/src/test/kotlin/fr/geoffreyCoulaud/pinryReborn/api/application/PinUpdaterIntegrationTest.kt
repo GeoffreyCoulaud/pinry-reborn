@@ -115,6 +115,28 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given a refused board id, Then a tag the same write names is not created either`() {
+        // Given: a name the author holds no tag for
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+        val newTag = "atagnobodyholds"
+
+        // When: the write invents that tag and then meets a board that refuses the whole call
+        update(auth, pin, tags = listOf(newTag), boardIds = listOf(UUID.randomUUID())).statusCode(404)
+
+        // Then: the tag was rolled back with the rest. Resolved outside the transaction it would
+        // stand here for good, nothing in the API sweeping an orphan tag.
+        given()
+            .authenticatedAs(auth)
+            .queryParam("q", newTag)
+            .`when`()
+            .get("/api/v1/tags/search")
+            .then()
+            .statusCode(200)
+            .body("results", emptyIterable<Any>())
+    }
+
+    @Test
     fun `Given another user's board id, Then the write returns 403 and changes nothing`() {
         // Given
         val auth = createAuthenticatedUser()

@@ -91,6 +91,15 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
         assertEquals(0, queue.countByState(TaskState.PENDING))
     }
 
+    // The other half of the pair above, and what `PinUpdater` rests on: a nested block's commit does
+    // not end the outer one, so the outer decides whether that write lands.
+    @Test
+    fun `Given a write in a nested inTransaction, Then a commit of the outer block keeps it`() {
+        val pinId = randomUUID()
+        val taskId = runner.inTransaction { runner.inTransaction { queue.enqueue(newDownloadTask(pinId)).id } }
+        assertNotNull(queue.findById(taskId))
+    }
+
     @Test
     fun `Given a committed transaction, Then an image saved within it joins and is persisted`() {
         val pin = savedPin()
