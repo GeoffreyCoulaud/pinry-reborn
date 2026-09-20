@@ -152,13 +152,15 @@ function PinGestures({
       {/* The board is chosen in the gesture rather than before it: the menu is the second half
           of one press, and there is nothing to undo if it is dismissed. */}
       <Dropdown>
-        <Button variant="ghost" isDisabled={add.isPending}>
+        <Button variant="outline" isDisabled={add.isPending}>
           {m.add_to_board()}
         </Button>
         <Dropdown.Popover>
           <Dropdown.Menu
             aria-label={m.boards()}
             items={boards.data ?? []}
+            // An account with no board yet would otherwise open an empty box and say nothing.
+            renderEmptyState={() => <p className="px-3 py-2 text-muted">{m.boards_empty()}</p>}
             onAction={(key) =>
               add.mutate({ boardId: String(key), pinIds }, spend(m.membership_refused()))
             }
@@ -169,7 +171,7 @@ function PinGestures({
       </Dropdown>
       {boardId !== undefined && (
         <Button
-          variant="ghost"
+          variant="outline"
           isDisabled={remove.isPending}
           onPress={() => remove.mutate({ boardId, pinIds }, spend(m.membership_refused()))}
         >

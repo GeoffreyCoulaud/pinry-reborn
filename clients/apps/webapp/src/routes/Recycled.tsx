@@ -76,7 +76,8 @@ function RestoreBar({
 }) {
   return (
     <SelectionBar count={selection.ids.length} clear={selection.clear}>
-      <Button variant="ghost" onPress={() => restore(selection.ids)}>
+      {/* Outlined rather than flat: a button in a row of words is one nobody presses. */}
+      <Button variant="outline" onPress={() => restore(selection.ids)}>
         {m.restore_selection()}
       </Button>
     </SelectionBar>
