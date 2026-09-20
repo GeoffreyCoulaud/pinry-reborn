@@ -179,7 +179,9 @@ export function PinGrid({ sort, label, boardId }: { sort: PinSort; label: string
         onOpenChange={() => setOpenedId(null)}
         isDismissable
       >
-        <Modal.Container size="lg">
+        {/* `inside`, the default, clips whatever the dialog cannot hold and scrolls nothing of its
+            own: at phone width the edit form's last fields and its buttons were unreachable. */}
+        <Modal.Container size="lg" scroll="outside">
           <Modal.Dialog aria-label={opened?.description}>
             {opened && <PinDialog pin={opened} close={() => setOpenedId(null)} />}
           </Modal.Dialog>
