@@ -1,6 +1,20 @@
-import { Button, Input, Label, ListBox, Select, Tag, TagGroup, TextArea, TextField } from "@heroui/react"
+import {
+  Button,
+  Input,
+  Label,
+  ListBox,
+  Select,
+  Tag,
+  TagGroup,
+  TextArea,
+  TextField,
+  buttonVariants,
+} from "@heroui/react"
 import { useState } from "react"
 import { useBoards } from "../boards"
+import { downloadReason } from "../downloadReasons"
+import { judgeDrop, refuse } from "../drops"
+import { useHandshake, useSetPinImage } from "../images"
 import { m } from "../paraglide/messages.js"
 import { useTagSearch, useUpdatePin, type Pin } from "../pins"
 
@@ -126,6 +140,66 @@ function BoardField({
 }
 
 /**
+ * The image is replaced and never deleted: one `PUT` supersedes it, keeping the old bytes until
+ * the new ones land, so nothing drops an image ahead of a fetch that can fail (decision M).
+ */
+function ImageControls({ pin }: { pin: Pin }) {
+  const setImage = useSetPinImage()
+  const limits = useHandshake().data?.limits
+  const address = pin.sourceMediaUrl
+  const replacement = pin.image?.replacement
+
+  async function replace(file: File | undefined) {
+    if (file === undefined) return
+    const judged = await judgeDrop([file], "", limits)
+    judged.refusals.forEach(refuse)
+    const kept = judged.files[0]
+    if (kept !== undefined) setImage.mutate({ pinId: pin.id, source: { file: kept.file } })
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {/* A file picker is no HeroUI control, so the label borrows the variant instead. */}
+        <label className={buttonVariants({ variant: "secondary", size: "sm" })}>
+          {m.replace_image()}
+          <input
+            type="file"
+            accept={limits?.mediaTypes.join(",") ?? "image/*"}
+            className="sr-only"
+            onChange={(event) => {
+              const input = event.currentTarget
+              void replace(input.files?.[0])
+              // An input still holding a file fires no change event for that same file.
+              input.value = ""
+            }}
+          />
+        </label>
+        {/* Absent when the pin names no address, and worded as fetching from that address: an
+            uploaded pin carries one too, and nothing here restores anything. */}
+        {address !== null && (
+          <Button
+            size="sm"
+            variant="secondary"
+            isDisabled={setImage.isPending}
+            onPress={() => setImage.mutate({ pinId: pin.id, source: { url: address } })}
+          >
+            {m.fetch_image_again()}
+          </Button>
+        )}
+      </div>
+      {/* The sub-state the contract has carried since before any client read it: the pin keeps the
+          image it has while the server downloads the one asked for. */}
+      {replacement?.status === "PENDING" && <p>{m.image_replacing()}</p>}
+      {replacement?.status === "FAILED" && (
+        <p role="alert">{downloadReason(replacement.reasonCode, replacement.message)}</p>
+      )}
+      {setImage.isError && <p role="alert">{m.image_refused()}</p>}
+    </div>
+  )
+}
+
+/**
  * What edits a pin is a set of fields, where what shows one is an image and its words (decision K).
  * Every field is sent on every save: the route replaces the pin, and an empty list clears.
  */
@@ -135,54 +209,59 @@ export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
   const [boardIds, setBoardIds] = useState<readonly string[]>(pin.boards.map((board) => board.id))
 
   return (
-    <form
-      className="flex flex-col gap-3"
-      onSubmit={(event) => {
-        event.preventDefault()
-        const fields = new FormData(event.currentTarget)
-        save.mutate(
-          {
-            pinId: pin.id,
-            body: {
-              description: String(fields.get("description")),
-              // An address emptied is an address cleared, the replacement being total.
-              sourceContextUrl: String(fields.get("sourceContextUrl")) || null,
-              sourceMediaUrl: String(fields.get("sourceMediaUrl")) || null,
-              tags: [...tags],
-              boardIds: [...boardIds],
+    <div className="flex flex-col gap-3">
+      {/* Outside the form: the image is written by a route of its own, and a file input inside
+          would join the body the save sends. */}
+      <ImageControls pin={pin} />
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(event) => {
+          event.preventDefault()
+          const fields = new FormData(event.currentTarget)
+          save.mutate(
+            {
+              pinId: pin.id,
+              body: {
+                description: String(fields.get("description")),
+                // An address emptied is an address cleared, the replacement being total.
+                sourceContextUrl: String(fields.get("sourceContextUrl")) || null,
+                sourceMediaUrl: String(fields.get("sourceMediaUrl")) || null,
+                tags: [...tags],
+                boardIds: [...boardIds],
+              },
             },
-          },
-          { onSuccess: close },
-        )
-      }}
-    >
-      <TextField name="description" defaultValue={pin.description}>
-        <Label>{m.description()}</Label>
-        <TextArea rows={3} />
-      </TextField>
-      <Field
-        name="sourceMediaUrl"
-        type="url"
-        label={m.image_address()}
-        defaultValue={pin.sourceMediaUrl ?? ""}
-      />
-      <Field
-        name="sourceContextUrl"
-        type="url"
-        label={m.source_page()}
-        defaultValue={pin.sourceContextUrl ?? ""}
-      />
-      <TagField names={tags} onChange={setTags} />
-      <BoardField ids={boardIds} onChange={setBoardIds} />
-      {save.isError && <p role="alert">{m.pin_refused()}</p>}
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" onPress={close}>
-          {m.cancel()}
-        </Button>
-        <Button type="submit" isDisabled={save.isPending}>
-          {m.save()}
-        </Button>
-      </div>
-    </form>
+            { onSuccess: close },
+          )
+        }}
+      >
+        <TextField name="description" defaultValue={pin.description}>
+          <Label>{m.description()}</Label>
+          <TextArea rows={3} />
+        </TextField>
+        <Field
+          name="sourceMediaUrl"
+          type="url"
+          label={m.image_address()}
+          defaultValue={pin.sourceMediaUrl ?? ""}
+        />
+        <Field
+          name="sourceContextUrl"
+          type="url"
+          label={m.source_page()}
+          defaultValue={pin.sourceContextUrl ?? ""}
+        />
+        <TagField names={tags} onChange={setTags} />
+        <BoardField ids={boardIds} onChange={setBoardIds} />
+        {save.isError && <p role="alert">{m.pin_refused()}</p>}
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onPress={close}>
+            {m.cancel()}
+          </Button>
+          <Button type="submit" isDisabled={save.isPending}>
+            {m.save()}
+          </Button>
+        </div>
+      </form>
+    </div>
   )
 }

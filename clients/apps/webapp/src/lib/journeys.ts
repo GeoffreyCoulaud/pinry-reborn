@@ -22,6 +22,7 @@ export const REQUIRED_JOURNEYS = [
   "create a board and rename it",
   "open a board and browse its pins",
   "edit a pin's description, tags and boards",
+  "replace a pin's image with a file",
 ]
 
 /** The file under `src/journeys/` that holds a journey's test. */
