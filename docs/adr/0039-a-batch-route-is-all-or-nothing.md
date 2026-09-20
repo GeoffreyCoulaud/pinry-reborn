@@ -77,6 +77,10 @@ collection, and the operator asked for one.
   things can still drop the body: an intermediary that strips it, and the server not binding it at
   all. Both land on decision 3's 400 rather than on a silent full delete, and the first test written
   for `DELETE /api/v1/pins` is an empty body asserting that 400, which fails loudly if the entity
-  never reaches the resource method.
+  never reaches the resource method. (Corrected in block 20: it answered 500, not 400. `@Valid`
+  alone leaves RESTEasy Reactive handing the resource method a null entity, and Kotlin's non-null
+  intrinsic throws before any validation runs. `@NotNull` beside `@Valid` on the four batch bodies
+  is what makes the sentence true, the validation interceptor then refusing before the method body
+  is entered. The empty-body test is what caught it.)
 - **The next batch route follows this shape** rather than deciding again: board oriented where it is
   about membership, all or nothing, `@NotEmpty`, no report.
