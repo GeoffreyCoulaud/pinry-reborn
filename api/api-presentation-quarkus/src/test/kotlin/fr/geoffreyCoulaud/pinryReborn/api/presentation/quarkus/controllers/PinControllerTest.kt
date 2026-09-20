@@ -40,6 +40,7 @@ class PinControllerTest {
         pinTagger = mockk(),
         pinRecycleBin = mockk(),
         pinBoardSetter = pinBoardSetter,
+        pinUpdater = mockk(),
         securityIdentity = securityIdentity,
         pinResponses = PinResponses(resolvePinImageState),
     )

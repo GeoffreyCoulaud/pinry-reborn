@@ -14,8 +14,3 @@ class PinBoardSettingPermissionError : PinBoardSettingError(
 class PinBoardSettingSoftDeletedPinError : PinBoardSettingError(
     "Cannot set boards on a soft-deleted pin", ErrorCode.PIN_ALREADY_SOFT_DELETED
 )
-
-class PinBoardSettingInvalidBoardError : PinBoardSettingError(
-    "One or more boards do not exist or are not owned by the user",
-    ErrorCode.BOARD_INVALID_MEMBERSHIP
-)

@@ -131,7 +131,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     // --- Invalid membership ---
 
     @Test
-    fun `Given an unknown board id, Then setting it on a pin returns 400`() {
+    fun `Given an unknown board id, Then setting it on a pin returns 404`() {
         // Given
         val auth = createAuthenticatedUser()
         val pin = pinCreator.createPin(
@@ -150,11 +150,11 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
             .`when`()
             .put("/api/v1/pins/${pin.id}/boards")
             .then()
-            .statusCode(400)
+            .statusCode(404)
     }
 
     @Test
-    fun `Given another user's board id, Then setting it on a pin returns 400`() {
+    fun `Given another user's board id, Then setting it on a pin returns 403`() {
         // Given
         val owner = createAuthenticatedUser()
         val attacker = createAuthenticatedUser()
@@ -175,6 +175,6 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
             .`when`()
             .put("/api/v1/pins/${pin.id}/boards")
             .then()
-            .statusCode(400)
+            .statusCode(403)
     }
 }
