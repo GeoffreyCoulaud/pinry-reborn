@@ -1,5 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
@@ -150,5 +152,147 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         // When / Then
         replacePin(owner, pin, boardIds = listOf(otherBoard.id))
             .statusCode(403)
+    }
+
+    // --- Bulk membership ---
+
+    private fun createPin(author: User, description: String = "A pin"): Pin =
+        pinCreator.createPin(
+            author = author,
+            sourceContextUrl = "https://example.com",
+            sourceMediaUrl = "https://example.com/img.jpg",
+            description = description,
+            tags = emptyList(),
+        )
+
+    private fun bulkMembership(auth: AuthenticatedUser, method: String, boardId: UUID, pinIds: List<UUID>) =
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .body(mapOf("pinIds" to pinIds.map { it.toString() }))
+            .`when`()
+            .request(method, "/api/v1/boards/$boardId/pins")
+            .then()
+
+    private fun boardsOf(auth: AuthenticatedUser, pin: Pin) =
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/pins/${pin.id}")
+            .then()
+            .statusCode(200)
+
+    @Test
+    fun `Given two owned pins, Then adding them to a board files both under it`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val first = createPin(auth.user, "First")
+        val second = createPin(auth.user, "Second")
+
+        // When
+        bulkMembership(auth, "POST", board.id, listOf(first.id, second.id)).statusCode(204)
+
+        // Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/boards/${board.id}/pins")
+            .then()
+            .statusCode(200)
+            .body("pins.id", containsInAnyOrder(first.id.toString(), second.id.toString()))
+    }
+
+    @Test
+    fun `Given a pin already on the board, Then adding it again leaves one membership`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val pin = createPin(auth.user)
+        bulkMembership(auth, "POST", board.id, listOf(pin.id)).statusCode(204)
+
+        // When
+        bulkMembership(auth, "POST", board.id, listOf(pin.id)).statusCode(204)
+
+        // Then
+        boardsOf(auth, pin).body("boards", hasSize<Any>(1))
+    }
+
+    @Test
+    fun `Given another user's pin last, Then adding files nothing`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val stranger = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val own = createPin(auth.user)
+        val theirs = createPin(stranger.user)
+
+        // When
+        bulkMembership(auth, "POST", board.id, listOf(own.id, theirs.id)).statusCode(403)
+
+        // Then
+        boardsOf(auth, own).body("boards", emptyIterable<Any>())
+    }
+
+    @Test
+    fun `Given an unknown board, Then adding pins to it returns 404`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth.user)
+
+        // When / Then
+        bulkMembership(auth, "POST", UUID.randomUUID(), listOf(pin.id)).statusCode(404)
+    }
+
+    @Test
+    fun `Given two pins on a board, Then removing them takes both out and keeps their other boards`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val kept = boardCreator.create(author = auth.user, name = "Kept", description = "")
+        val first = createPin(auth.user, "First")
+        val second = createPin(auth.user, "Second")
+        bulkMembership(auth, "POST", board.id, listOf(first.id, second.id)).statusCode(204)
+        bulkMembership(auth, "POST", kept.id, listOf(first.id)).statusCode(204)
+
+        // When
+        bulkMembership(auth, "DELETE", board.id, listOf(first.id, second.id)).statusCode(204)
+
+        // Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/boards/${board.id}/pins")
+            .then()
+            .statusCode(200)
+            .body("pins", emptyIterable<Any>())
+        boardsOf(auth, first).body("boards.id", containsInAnyOrder(kept.id.toString()))
+    }
+
+    @Test
+    fun `Given another user's pin last, Then removing takes nothing out`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val stranger = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val own = createPin(auth.user)
+        val theirs = createPin(stranger.user)
+        bulkMembership(auth, "POST", board.id, listOf(own.id)).statusCode(204)
+
+        // When
+        bulkMembership(auth, "DELETE", board.id, listOf(own.id, theirs.id)).statusCode(403)
+
+        // Then
+        boardsOf(auth, own).body("boards.id", containsInAnyOrder(board.id.toString()))
+    }
+
+    @Test
+    fun `Given an empty pinIds list, Then adding to a board returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+
+        // When / Then
+        bulkMembership(auth, "POST", board.id, emptyList()).statusCode(400)
     }
 }
