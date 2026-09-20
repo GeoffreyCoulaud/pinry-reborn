@@ -57,17 +57,6 @@ function TagField({
           }}
         />
       </TextField>
-      {offered.length > 0 && (
-        <ul className="flex flex-wrap gap-2">
-          {offered.map((name) => (
-            <li key={name}>
-              <Button size="sm" variant="ghost" onPress={() => add(name)}>
-                {name}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
       {names.length > 0 && (
         <TagGroup
           aria-label={m.tags_chosen()}
@@ -82,6 +71,19 @@ function TagField({
             )}
           </TagGroup.List>
         </TagGroup>
+      )}
+      {/* Last, and outlined: a suggestion appears and goes as the user types, so it moves nothing
+          above it, and a chip that reads as flat text is one nobody presses. */}
+      {offered.length > 0 && (
+        <ul className="flex flex-wrap gap-2">
+          {offered.map((name) => (
+            <li key={name}>
+              <Button size="sm" variant="outline" onPress={() => add(name)}>
+                {name}
+              </Button>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )
