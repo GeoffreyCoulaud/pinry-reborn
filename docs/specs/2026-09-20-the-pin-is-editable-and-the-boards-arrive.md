@@ -18,7 +18,11 @@ globalVariable, baseLocale`. The application has always taken those strings from
 always worked around them one `aria-label` at a time; block 60 is the first to put one in visible
 text. The operator settled on a block of its own, the provider sitting at the composition root and
 reaching every screen), block 80
-`feat/the-recycle-bin`, block 90 `feat/the-grid-consumes-its-selection`
+`feat/the-recycle-bin`, block 85 `feat/a-pin-is-deleted` (Corrected: added on 2026-09-20. Block 80
+measured 677 lines against a strict 600 and 402 production against a strict 400, none of it a move
+counted twice; the operator split it at the seam between the bin and the pin's own delete. The bin
+also gains a confirmation on emptying, which the first measurement did not carry), block 90
+`feat/the-grid-consumes-its-selection`
 ADRs: `docs/adr/0038-one-route-writes-a-pin.md` carries decisions B, C and H, and decision E' for
 the write of one pin; `docs/adr/0039-a-batch-route-is-all-or-nothing.md` carries decisions D, E,
 E', F and G. Decision O's
@@ -211,7 +215,8 @@ grid. It takes its own block rather than riding inside another.
 | 80 | `clients/.../routes/Recycled.tsx` | New: two `Tabs`, a grid of recycled pins with its sort, a grid of recycled boards with none, restore, delete for good, empty |
 | 80 | `clients/.../recycled.ts` | New: the queries and mutations for both collections |
 | 80 | `clients/.../router.tsx`, `components/AppNav.tsx` | `/recycled` and its icon |
-| 80 | `clients/.../lib/tiles.ts`, `pins.ts` | `removePins`, a pure walk over the cached pages beside `replacePins`; `pins.ts` keeps the `setQueryData` call |
+| 80 | `clients/.../routes/Recycled.tsx` | Emptying a bin asks first, that being the one gesture of this lot a user cannot undo |
+| 85 | `clients/.../components/PinGrid.tsx`, `pins.ts`, `lib/tiles.ts` | The pin dialog's Delete, `useRecyclePins`, and `removePins`, a pure walk over the cached pages beside `replacePins`; `pins.ts` keeps the `setQueriesData` call |
 | 90 | `clients/.../components/SelectionBar.tsx` | New: the gestures the screen passes it, with the count |
 | 90 | `clients/.../routes/Home.tsx`, `routes/Board.tsx`, `routes/Recycled.tsx` | The grids pass `selectedKeys` and render the bar when the selection is not empty |
 | 90 | `clients/.../boards.ts`, `recycled.ts` | The five batch calls block 20 serves |
@@ -262,7 +267,8 @@ route now writes what two used to.)
 | 60 | `feat/a-pin-is-editable` | `edit a pin's description, tags and boards`: one request leaves, the dialog returns to reading, and the tile carries the new description without the grid refetching a page |
 | 70 | `feat/a-pin-changes-its-image` | `replace a pin's image with a file`: one `PUT` leaves and the tile carries the new image; the fetch-again control is absent on a pin with no address and sends the pin's own address on a pin with one |
 | 75 | `feat/the-labels-follow-the-application` | None: no user path changes. The check is a case that renders a control under a browser locale of `fr-FR` and reads its visible text as English, which is red before the provider and green after |
-| 80 | `feat/the-recycle-bin` | `delete a pin and restore it from the recycle bin`: the tile leaves the grid with no page refetched, stands in the bin, and comes back |
+| 80 | `feat/the-recycle-bin` | None, the lot's bin journey belonging to block 85. The screen is green and coherent alone on its Boards tab, which block 40's board delete already fills; its Pins tab stands empty for every user until block 85 gives a pin a way in, which is the case "What a block is" admits and which that pull request repeats |
+| 85 | `feat/a-pin-is-deleted` | `delete a pin and restore it from the recycle bin`: the tile leaves the grid with no page refetched, stands in the bin, and comes back |
 | 90 | `feat/the-grid-consumes-its-selection` | `add several selected pins to a board`: two pins selected reach the board in one request, and the bar states the count |
 
 Every journey above joins `REQUIRED_JOURNEYS` in `clients/apps/webapp/src/lib/journeys.ts`, in the

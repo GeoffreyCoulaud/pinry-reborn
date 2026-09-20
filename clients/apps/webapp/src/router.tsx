@@ -5,11 +5,12 @@ import {
   type RouterHistory,
   type SearchSchemaInput,
 } from "@tanstack/react-router"
-import { pinSortOr } from "./lib/sorts"
+import { pinSortOr, recycledPinSortOr } from "./lib/sorts"
 import { Board } from "./routes/Board"
 import { Boards } from "./routes/Boards"
 import { SignIn, SignUp } from "./routes/Credentials"
 import { Home } from "./routes/Home"
+import { Recycled } from "./routes/Recycled"
 
 const rootRoute = createRootRoute()
 
@@ -35,6 +36,15 @@ const boardRoute = createRoute({
   component: Board,
   validateSearch: validateSort,
 })
+/** The bin's Pins tab serves one order the grid does not, and it is the bin's default. */
+const recycledRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/recycled",
+  component: Recycled,
+  validateSearch: (search: { sort?: string } & SearchSchemaInput) => ({
+    sort: recycledPinSortOr(search.sort),
+  }),
+})
 const signInRoute = createRoute({ getParentRoute: () => rootRoute, path: "/sign-in", component: SignIn })
 const signUpRoute = createRoute({ getParentRoute: () => rootRoute, path: "/sign-up", component: SignUp })
 
@@ -42,6 +52,7 @@ const routeTree = rootRoute.addChildren([
   homeRoute,
   boardsRoute,
   boardRoute,
+  recycledRoute,
   signInRoute,
   signUpRoute,
 ])
