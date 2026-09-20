@@ -6,6 +6,7 @@ import { Collection, GridList, GridListItem, GridListLoadMoreItem } from "react-
 import { AppHeader } from "../components/AppHeader"
 import { AppNav } from "../components/AppNav"
 import { IconButton } from "../components/IconButton"
+import { SelectionBar, SelectionTick, useSelection } from "../components/SelectionBar"
 import { SortSelect } from "../components/SortSelect"
 import { RECYCLED_PIN_SORTS, type RecycledPinSort } from "../lib/sorts"
 import { tileImageSource } from "../lib/tiles"
@@ -63,6 +64,26 @@ function RowGestures(props: { name: string; restore: () => void; deleteForGood: 
 const refused = { onError: () => toast.danger(m.bin_refused()) }
 
 /**
+ * The one gesture a selection carries in either bin. Deleting for good stays on its own row,
+ * decision F putting in bulk what a user can undo and nothing else.
+ */
+function RestoreBar({
+  selection,
+  restore,
+}: {
+  selection: ReturnType<typeof useSelection>
+  restore: (ids: string[]) => void
+}) {
+  return (
+    <SelectionBar count={selection.ids.length} clear={selection.clear}>
+      <Button variant="ghost" onPress={() => restore(selection.ids)}>
+        {m.restore_selection()}
+      </Button>
+    </SelectionBar>
+  )
+}
+
+/**
  * The other gesture that cannot be undone, and the one that reaches every row at once, so it asks
  * before it acts. A brush and not a bin: the bin drawn beside it deletes the one row it sits in,
  * and two gestures of different reach must not share a glyph. The icon is the trigger itself,
@@ -112,39 +133,47 @@ function RecycledPins({ sort }: { sort: RecycledPinSort }) {
   const restore = useRestorePins()
   const deleteForGood = useDeletePinForGood()
   const rows = pins.data?.pages.flatMap((page) => page.pins) ?? []
+  const selection = useSelection(rows)
 
   return (
     placeholder(pins, rows.length) ?? (
-      <GridList aria-label={m.pins()} className="outline-none">
-        <Collection items={rows}>
-          {(pin) => (
-            <GridListItem id={pin.id} textValue={pin.description} className={ROW}>
-              {/* Decorative: the description beside it is the row's own name. */}
-              {pin.image?.url && (
-                <img
-                  src={tileImageSource(pin.image.url, "SMALL")}
-                  alt=""
-                  className="size-12 shrink-0 rounded object-cover"
-                />
-              )}
-              <span className="min-w-0 flex-1 truncate">{pin.description}</span>
-              <RowGestures
-                name={pin.description}
-                restore={() => restore.mutate([pin.id], refused)}
-                deleteForGood={() => deleteForGood.mutate(pin.id, refused)}
-              />
-            </GridListItem>
-          )}
-        </Collection>
-        {/* Guarded for the reason `PinGrid` states: the sentinel is re-observed on every
-            collection change, its own loading flag included. */}
-        <GridListLoadMoreItem
-          onLoadMore={() => {
-            if (pins.hasNextPage && !pins.isFetchingNextPage) void pins.fetchNextPage()
-          }}
-          isLoading={pins.isFetchingNextPage}
+      <>
+        <RestoreBar
+          selection={selection}
+          restore={(pinIds) => restore.mutate(pinIds, { ...refused, onSuccess: selection.clear })}
         />
-      </GridList>
+        <GridList aria-label={m.pins()} className="outline-none" {...selection.props}>
+          <Collection items={rows}>
+            {(pin) => (
+              <GridListItem id={pin.id} textValue={pin.description} className={ROW}>
+                <SelectionTick />
+                {/* Decorative: the description beside it is the row's own name. */}
+                {pin.image?.url && (
+                  <img
+                    src={tileImageSource(pin.image.url, "SMALL")}
+                    alt=""
+                    className="size-12 shrink-0 rounded object-cover"
+                  />
+                )}
+                <span className="min-w-0 flex-1 truncate">{pin.description}</span>
+                <RowGestures
+                  name={pin.description}
+                  restore={() => restore.mutate([pin.id], refused)}
+                  deleteForGood={() => deleteForGood.mutate(pin.id, refused)}
+                />
+              </GridListItem>
+            )}
+          </Collection>
+          {/* Guarded for the reason `PinGrid` states: the sentinel is re-observed on every
+              collection change, its own loading flag included. */}
+          <GridListLoadMoreItem
+            onLoadMore={() => {
+              if (pins.hasNextPage && !pins.isFetchingNextPage) void pins.fetchNextPage()
+            }}
+            isLoading={pins.isFetchingNextPage}
+          />
+        </GridList>
+      </>
     )
   )
 }
@@ -154,24 +183,32 @@ function RecycledBoards() {
   const restore = useRestoreBoards()
   const deleteForGood = useDeleteBoardForGood()
   const rows = boards.data ?? []
+  const selection = useSelection(rows)
 
   return (
     placeholder(boards, rows.length) ?? (
-      <GridList aria-label={m.boards()} items={rows} className="outline-none">
-        {(board) => (
-          <GridListItem id={board.id} textValue={board.name} className={ROW}>
-            <div className="flex min-w-0 flex-1 flex-col">
-              <span className="font-medium">{board.name}</span>
-              <span className="truncate text-muted">{board.description}</span>
-            </div>
-            <RowGestures
-              name={board.name}
-              restore={() => restore.mutate([board.id], refused)}
-              deleteForGood={() => deleteForGood.mutate(board.id, refused)}
-            />
-          </GridListItem>
-        )}
-      </GridList>
+      <>
+        <RestoreBar
+          selection={selection}
+          restore={(boardIds) => restore.mutate(boardIds, { ...refused, onSuccess: selection.clear })}
+        />
+        <GridList aria-label={m.boards()} items={rows} className="outline-none" {...selection.props}>
+          {(board) => (
+            <GridListItem id={board.id} textValue={board.name} className={ROW}>
+              <SelectionTick />
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="font-medium">{board.name}</span>
+                <span className="truncate text-muted">{board.description}</span>
+              </div>
+              <RowGestures
+                name={board.name}
+                restore={() => restore.mutate([board.id], refused)}
+                deleteForGood={() => deleteForGood.mutate(board.id, refused)}
+              />
+            </GridListItem>
+          )}
+        </GridList>
+      </>
     )
   )
 }
