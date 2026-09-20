@@ -6,6 +6,7 @@ import {
   type SearchSchemaInput,
 } from "@tanstack/react-router"
 import { pinSortOr } from "./lib/sorts"
+import { Boards } from "./routes/Boards"
 import { SignIn, SignUp } from "./routes/Credentials"
 import { Home } from "./routes/Home"
 
@@ -21,10 +22,11 @@ const homeRoute = createRoute({
     sort: pinSortOr(search.sort),
   }),
 })
+const boardsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/boards", component: Boards })
 const signInRoute = createRoute({ getParentRoute: () => rootRoute, path: "/sign-in", component: SignIn })
 const signUpRoute = createRoute({ getParentRoute: () => rootRoute, path: "/sign-up", component: SignUp })
 
-const routeTree = rootRoute.addChildren([homeRoute, signInRoute, signUpRoute])
+const routeTree = rootRoute.addChildren([homeRoute, boardsRoute, signInRoute, signUpRoute])
 
 /** The history is an argument so a test can drive the router without a browser. */
 export function createAppRouter(history?: RouterHistory) {

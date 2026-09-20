@@ -7,6 +7,8 @@ import { HttpResponse, http } from "msw"
 import { createAppRouter } from "../router"
 
 type Pin = Schemas["PinOutputDto"]
+type Board = Schemas["BoardOutputDto"]
+type BoardInput = Schemas["BoardInputDto"]
 
 const iso = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString()
 
@@ -94,6 +96,43 @@ export function onePinPage(pins: () => Pin[]) {
   return http.get("/api/v1/pins", () =>
     HttpResponse.json({ pins: pins(), pagination: { previousCursor: null, nextCursor: null } }),
   )
+}
+
+let boardCount = 0
+
+/** A board the journey names, as `GET /api/v1/boards` answers one. */
+export function board(name: string, description = "", pinCount = 0): Board {
+  return { id: `${AUTHOR_ID.slice(0, -4)}b${boardCount++}`, name, description, pinCount }
+}
+
+/**
+ * The account's boards, served and written by the four routes the screen calls. The array is the
+ * journey's own, so what a write leaves behind is what the next read answers.
+ */
+export function boardRoutes(boards: Board[]) {
+  const at = (boardId: unknown) => boards.findIndex((one) => one.id === boardId)
+  return [
+    http.get("/api/v1/boards", () => HttpResponse.json({ boards })),
+    http.post("/api/v1/boards", async ({ request }) => {
+      const created = { ...board(""), ...((await request.json()) as BoardInput) }
+      boards.push(created)
+      return HttpResponse.json(created, { status: 201 })
+    }),
+    http.put("/api/v1/boards/:boardId", async ({ request, params }) => {
+      const index = at(params.boardId)
+      const held = boards[index]
+      if (held === undefined) return new HttpResponse(null, { status: 404 })
+      const saved = { ...held, ...((await request.json()) as BoardInput) }
+      boards[index] = saved
+      return HttpResponse.json(saved)
+    }),
+    http.delete("/api/v1/boards/:boardId", ({ params }) => {
+      const index = at(params.boardId)
+      if (index < 0) return new HttpResponse(null, { status: 404 })
+      boards.splice(index, 1)
+      return new HttpResponse(null, { status: 204 })
+    }),
+  ]
 }
 
 /** The task centre's list, answered from what the journey decided last. */

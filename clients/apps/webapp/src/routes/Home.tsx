@@ -12,6 +12,7 @@ import {
   WaterfallLayout,
 } from "react-aria-components"
 import { AppHeader } from "../components/AppHeader"
+import { AppNav } from "../components/AppNav"
 import { CreatePinDialog } from "../components/CreatePinDialog"
 import { IconButton } from "../components/IconButton"
 import { SortSelect } from "../components/SortSelect"
@@ -278,6 +279,7 @@ export function Home() {
             }}
           />
           <SortSelect value={sort} values={PIN_SORTS} />
+          <AppNav />
           <TaskCentre />
           <IconButton
             icon={LogOut}
