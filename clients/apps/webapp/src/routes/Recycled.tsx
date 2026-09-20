@@ -145,8 +145,6 @@ function RecycledPins({ sort }: { sort: RecycledPinSort }) {
           restore={(pinIds) => restore.mutate(pinIds, { ...refused, onSuccess: selection.clear })}
         />
         <GridList aria-label={m.pins()} className="outline-none" {...selection.props}>
-          {/* A collection renders its items once and keeps them: without `dependencies` the ticks
-              would not hear that the bin now holds a selection. */}
           <Collection items={rows} dependencies={[selection.ids.length > 0]}>
             {(pin) => (
               <GridListItem id={pin.id} textValue={pin.description} className={ROW}>
