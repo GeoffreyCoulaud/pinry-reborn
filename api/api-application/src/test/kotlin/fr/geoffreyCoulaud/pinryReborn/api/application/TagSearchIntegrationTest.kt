@@ -1,7 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinTagger
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
@@ -14,20 +13,11 @@ import org.junit.jupiter.api.Test
 class TagSearchIntegrationTest : IntegrationTest() {
 
     @Inject
-    lateinit var pinCreator: PinCreator
+    lateinit var tagCreator: TagCreator
 
-    @Inject
-    lateinit var pinTagger: PinTagger
-
+    // The search reads the user's tags, not a pin's, so nothing here needs a pin to hang them on.
     private fun createTagsFor(auth: AuthenticatedUser, vararg tagNames: String) {
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/image.jpg",
-            description = "Test pin",
-            tags = emptyList()
-        )
-        pinTagger.setTags(pinId = pin.id, tagNames = tagNames.toList(), user = auth.user)
+        tagNames.forEach { tagCreator.findOrCreate(name = it, user = auth.user) }
     }
 
     @Test
