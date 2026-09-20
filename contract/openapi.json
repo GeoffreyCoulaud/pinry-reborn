@@ -2,6 +2,21 @@
   "openapi" : "3.1.0",
   "components" : {
     "schemas" : {
+      "BoardIdsInputDto" : {
+        "type" : "object",
+        "required" : [ "boardIds" ],
+        "properties" : {
+          "boardIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid",
+              "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+            },
+            "minItems" : 1
+          }
+        }
+      },
       "BoardInputDto" : {
         "type" : "object",
         "required" : [ "name", "description" ],
@@ -259,6 +274,21 @@
           "description" : {
             "type" : "string",
             "maxLength" : 2000
+          }
+        }
+      },
+      "PinIdsInputDto" : {
+        "type" : "object",
+        "required" : [ "pinIds" ],
+        "properties" : {
+          "pinIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid",
+              "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+            },
+            "minItems" : 1
           }
         }
       },
@@ -977,6 +1007,42 @@
         } ]
       }
     },
+    "/api/v1/boards/recycled/restore" : {
+      "post" : {
+        "summary" : "Restore several boards",
+        "description" : "All or nothing: every identifier is resolved before the first write, and one that is unknown (404) or another user's (403) refuses the whole call with nothing written.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BoardIdsInputDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "Boards restored"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "tags" : [ "Board Recycle Bin Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      }
+    },
     "/api/v1/boards/recycled/{boardId}" : {
       "delete" : {
         "parameters" : [ {
@@ -1168,6 +1234,45 @@
       }
     },
     "/api/v1/boards/{boardId}/pins" : {
+      "delete" : {
+        "summary" : "Take several pins out of the board",
+        "description" : "All or nothing: every identifier is resolved before the first write, and one that is unknown (404) or another user's (403) refuses the whole call with nothing written.",
+        "parameters" : [ {
+          "name" : "boardId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PinIdsInputDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "tags" : [ "Board Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      },
       "get" : {
         "parameters" : [ {
           "name" : "boardId",
@@ -1223,6 +1328,48 @@
           }
         },
         "summary" : "List Board Pins",
+        "tags" : [ "Board Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      },
+      "post" : {
+        "summary" : "File several pins under the board",
+        "description" : "All or nothing: every identifier is resolved before the first write, and one that is unknown (404) or another user's (403) refuses the whole call with nothing written.",
+        "parameters" : [ {
+          "name" : "boardId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PinIdsInputDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "Pins filed under the board"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
         "tags" : [ "Board Controller" ],
         "security" : [ {
           "BearerScheme" : [ ]
@@ -2182,6 +2329,37 @@
       }
     },
     "/api/v1/pins" : {
+      "delete" : {
+        "summary" : "Recycle several pins",
+        "description" : "All or nothing: every identifier is resolved before the first write, and one that is unknown (404) or another user's (403) refuses the whole call with nothing written.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PinIdsInputDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "tags" : [ "Pin Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      },
       "get" : {
         "parameters" : [ {
           "name" : "cursor",
@@ -2347,6 +2525,42 @@
           }
         },
         "summary" : "Empty Recycle Bin",
+        "tags" : [ "Pin Recycle Bin Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/pins/recycled/restore" : {
+      "post" : {
+        "summary" : "Restore several pins",
+        "description" : "All or nothing: every identifier is resolved before the first write, and one that is unknown (404) or another user's (403) refuses the whole call with nothing written.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PinIdsInputDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "Pins restored"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
         "tags" : [ "Pin Recycle Bin Controller" ],
         "security" : [ {
           "BearerScheme" : [ ]
@@ -3021,7 +3235,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "7.0.0"
+    "version" : "7.1.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",
