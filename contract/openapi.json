@@ -437,6 +437,36 @@
           }
         }
       },
+      "PinUpdateInputDto" : {
+        "type" : "object",
+        "required" : [ "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boardIds" ],
+        "properties" : {
+          "sourceContextUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "sourceMediaUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "description" : {
+            "type" : "string",
+            "maxLength" : 2000
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "boardIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid",
+              "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+            }
+          }
+        }
+      },
       "ProblemDetail" : {
         "type" : "object",
         "properties" : {
@@ -2465,6 +2495,55 @@
       }
     },
     "/api/v1/pins/{pinId}" : {
+      "put" : {
+        "summary" : "Replace the pin",
+        "description" : "Every field is replaced by what is sent, so an unchanged field is sent as it was read and an empty list clears. A tag name is an identity per author under an ASCII fold: `Landscape` and `landscape` are one tag, and the response carries the stored spelling, not the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags.",
+        "parameters" : [ {
+          "name" : "pinId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PinUpdateInputDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PinOutputDto"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "tags" : [ "Pin Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      },
       "delete" : {
         "parameters" : [ {
           "name" : "pinId",
@@ -3069,7 +3148,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "6.2.0"
+    "version" : "6.3.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

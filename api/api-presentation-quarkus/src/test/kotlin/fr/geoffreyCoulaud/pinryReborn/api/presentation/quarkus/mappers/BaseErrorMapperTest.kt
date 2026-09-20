@@ -138,11 +138,6 @@ class BaseErrorMapperTest {
     }
 
     @Test
-    fun `Given BOARD_INVALID_MEMBERSHIP, Then status is BAD_REQUEST`() {
-        assertEquals(Response.Status.BAD_REQUEST, statusFor(ErrorCode.BOARD_INVALID_MEMBERSHIP))
-    }
-
-    @Test
     fun `Given BOARD_NAME_ALREADY_EXISTS, Then status is CONFLICT`() {
         assertEquals(Response.Status.CONFLICT, statusFor(ErrorCode.BOARD_NAME_ALREADY_EXISTS))
     }

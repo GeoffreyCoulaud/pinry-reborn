@@ -7,7 +7,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinBoardSettingInvalidBoardError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardRetrievalBoardDoesNotExistError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardRetrievalPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinBoardSettingPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinBoardSettingPinDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinBoardSettingSoftDeletedPinError
@@ -138,7 +139,7 @@ class PinBoardSetterTest {
     }
 
     @Test
-    fun `Given an unresolved boardId, Then throws PinBoardSettingInvalidBoardError and saves nothing`() {
+    fun `Given an unresolved boardId, Then throws BoardRetrievalBoardDoesNotExistError and saves nothing`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
         val pin = Pin(
@@ -158,14 +159,14 @@ class PinBoardSetterTest {
         every { boardRepository.findActiveBoardById(badBoardId) } returns null
 
         // When, Then
-        assertThrows<PinBoardSettingInvalidBoardError> {
+        assertThrows<BoardRetrievalBoardDoesNotExistError> {
             useCase.setBoards(pinId = pin.id, boardIds = listOf(badBoardId), user = user)
         }
         verify(exactly = 0) { pinRepository.savePin(any()) }
     }
 
     @Test
-    fun `Given a board owned by another user, Then throws PinBoardSettingInvalidBoardError`() {
+    fun `Given a board owned by another user, Then throws BoardRetrievalPermissionError`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
         val otherUser = User(id = randomUUID(), name = "Other", createdAt = TestTime.now)
@@ -187,7 +188,7 @@ class PinBoardSetterTest {
         every { boardRepository.findActiveBoardById(othersBoard.id) } returns othersBoard
 
         // When, Then
-        assertThrows<PinBoardSettingInvalidBoardError> {
+        assertThrows<BoardRetrievalPermissionError> {
             useCase.setBoards(pinId = pin.id, boardIds = listOf(othersBoard.id), user = user)
         }
         verify(exactly = 0) { pinRepository.savePin(any()) }

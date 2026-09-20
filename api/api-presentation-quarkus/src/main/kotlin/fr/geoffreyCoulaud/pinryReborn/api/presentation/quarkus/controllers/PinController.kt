@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinBoa
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinCreationInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinTagsInputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinUpdateInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
@@ -18,6 +19,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBin
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinTagger
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinUpdater
 import io.quarkus.security.Authenticated
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.validation.Valid
@@ -45,6 +47,7 @@ class PinController(
     private val pinTagger: PinTagger,
     private val pinRecycleBin: PinRecycleBin,
     private val pinBoardSetter: PinBoardSetter,
+    private val pinUpdater: PinUpdater,
     private val securityIdentity: SecurityIdentity,
     private val pinResponses: PinResponses,
 ) {
@@ -76,8 +79,8 @@ class PinController(
         val author = securityIdentity.getUser()
         val pin = pinCreator.createPin(
             author = author,
-            sourceContextUrl = creationDto.sourceContextUrl?.takeIf { it.isNotBlank() },
-            sourceMediaUrl = creationDto.sourceMediaUrl?.takeIf { it.isNotBlank() },
+            sourceContextUrl = creationDto.sourceContextUrl.blankAsNone(),
+            sourceMediaUrl = creationDto.sourceMediaUrl.blankAsNone(),
             description = creationDto.description,
             tags = emptyList(),
         )
@@ -112,6 +115,34 @@ class PinController(
         pinRecycleBin.softDelete(pinId = pinId, user = user)
         return RestResponse.noContent()
     }
+
+    @PUT
+    @Authenticated
+    @Path("/{pinId}")
+    @Operation(
+        summary = "Replace the pin",
+        description = "Every field is replaced by what is sent, so an unchanged field is sent as it was " +
+            "read and an empty list clears. A tag name is an identity per author under an ASCII fold: " +
+            "`Landscape` and `landscape` are one tag, and the response carries the stored spelling, not " +
+            "the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags.",
+    )
+    fun updatePin(pinId: UUID, @Valid updateDto: PinUpdateInputDto): RestResponse<PinOutputDto> {
+        val user = securityIdentity.getUser()
+        return pinUpdater
+            .update(
+                pinId = pinId,
+                description = updateDto.description,
+                sourceContextUrl = updateDto.sourceContextUrl.blankAsNone(),
+                sourceMediaUrl = updateDto.sourceMediaUrl.blankAsNone(),
+                tagNames = updateDto.tags,
+                boardIds = updateDto.boardIds,
+                user = user,
+            )
+            .let { RestResponse.ok(pinResponses.pin(it)) }
+    }
+
+    /** A blank address is no address, on the write of one pin as on its creation. */
+    private fun String?.blankAsNone(): String? = this?.takeIf { it.isNotBlank() }
 
     @PUT
     @Authenticated
