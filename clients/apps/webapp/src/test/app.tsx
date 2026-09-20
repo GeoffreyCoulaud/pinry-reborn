@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router"
 import { render } from "@testing-library/react"
 import { HttpResponse, http } from "msw"
+import { I18nProvider } from "react-aria-components"
+import { getLocale } from "../paraglide/runtime.js"
 import { createAppRouter } from "../router"
 
 type Pin = Schemas["PinOutputDto"]
@@ -202,11 +204,14 @@ export function renderApp(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
   const rendered = render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      {/* As `main.tsx` mounts it, so a journey reads the toasts the application really shows. */}
-      <Toast.Provider />
-    </QueryClientProvider>,
+    // As `main.tsx` wraps the tree, so a journey reads the words the application really shows.
+    <I18nProvider locale={getLocale()}>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        {/* As `main.tsx` mounts it, so a journey reads the toasts the application really shows. */}
+        <Toast.Provider />
+      </QueryClientProvider>
+    </I18nProvider>,
   )
   // The router comes back so a journey can read the address a control wrote.
   return Object.assign(rendered, { router })
