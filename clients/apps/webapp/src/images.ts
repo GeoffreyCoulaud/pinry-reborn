@@ -10,9 +10,12 @@ import { useEffect, useRef } from "react"
 import { auth, bodyOf } from "./api"
 import { downloadPollInterval, settledPinIds, type DownloadProgress } from "./lib/downloads"
 import { replacePins } from "./lib/tiles"
-import type { PinPage } from "./pins"
 
 export type Download = Schemas["ImageDownloadOutputDto"]
+
+// Named here rather than imported from `./pins`, which now imports the reread below: the two would
+// otherwise form a cycle, and dependency-cruiser counts a type-only import as one.
+type PinPage = Schemas["PinListOutputDto"]
 
 /** Where a pin's image comes from: an address the server fetches, or bytes from disk. */
 export type ImageSource = { url: string } | { file: File }
@@ -73,7 +76,7 @@ export function useHandshake() {
  * instead costs one request per page scrolled: an infinite query is one cache entry, and
  * TanStack Query refetches its pages in series (query invalidation guide, `maxPages`).
  */
-async function rereadSettledPins(queryClient: QueryClient, pinIds: readonly string[]) {
+export async function rereadSettledPins(queryClient: QueryClient, pinIds: readonly string[]) {
   const fresh = await Promise.all(
     pinIds.map(async (pinId) =>
       bodyOf(
