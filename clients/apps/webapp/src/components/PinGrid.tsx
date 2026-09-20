@@ -202,6 +202,7 @@ export function PinGrid({ sort, label, boardId }: { sort: PinSort; label: string
   const tiles = placeableTiles(pins.data?.pages.flatMap((page) => page.pins) ?? [])
   const opened = tiles.find((pin) => pin.id === openedId)
   const selection = useSelection(tiles)
+  const selecting = selection.ids.length > 0
 
   // Neither a first load nor an account with nothing in it draws a tile, and both said so with
   // a blank rectangle until now.
@@ -237,12 +238,14 @@ export function PinGrid({ sort, label, boardId }: { sort: PinSort; label: string
           className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto outline-none"
           onAction={(key) => setOpenedId(String(key))}
         >
-          <Collection items={tiles}>
+          {/* A collection renders its items once and keeps them: without `dependencies` the ticks
+              would not hear that the grid now holds a selection. */}
+          <Collection items={tiles} dependencies={[selecting]}>
+            {/* `group` is what the tick's reveal on hover and on focus hangs off. It replaces
+                react-aria's own class name, which nothing in this application styles. */}
             {(pin) => (
-              <GridListItem textValue={pin.description}>
-                {/* Over the picture's top corner, on a plate of its own: a tick drawn straight
-                    onto an image is invisible on half the images in a catalogue. */}
-                <SelectionTick className="absolute start-2 top-2 z-10 rounded bg-background/80 p-1" />
+              <GridListItem textValue={pin.description} className="group">
+                <SelectionTick shown={selecting} className="absolute start-2 top-2 z-10" />
                 <Tile pin={pin} smallRenditionPx={renditionSizes?.small} />
               </GridListItem>
             )}
