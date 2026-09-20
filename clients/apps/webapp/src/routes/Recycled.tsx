@@ -23,8 +23,9 @@ import {
 } from "../recycled"
 import { useSession } from "../session"
 
+/** `group` is what the row's own tick hangs its reveal on hover and on focus off. */
 const ROW =
-  "flex flex-wrap items-center gap-3 border-b border-separator px-2 py-3 outline-none last:border-0"
+  "group flex flex-wrap items-center gap-3 border-b border-separator px-2 py-3 outline-none last:border-0"
 
 const CENTRED = "grid h-full place-content-center justify-items-center gap-2 text-center text-muted"
 
@@ -144,10 +145,12 @@ function RecycledPins({ sort }: { sort: RecycledPinSort }) {
           restore={(pinIds) => restore.mutate(pinIds, { ...refused, onSuccess: selection.clear })}
         />
         <GridList aria-label={m.pins()} className="outline-none" {...selection.props}>
-          <Collection items={rows}>
+          {/* A collection renders its items once and keeps them: without `dependencies` the ticks
+              would not hear that the bin now holds a selection. */}
+          <Collection items={rows} dependencies={[selection.ids.length > 0]}>
             {(pin) => (
               <GridListItem id={pin.id} textValue={pin.description} className={ROW}>
-                <SelectionTick />
+                <SelectionTick shown={selection.ids.length > 0} />
                 {/* Decorative: the description beside it is the row's own name. */}
                 {pin.image?.url && (
                   <img
@@ -193,10 +196,16 @@ function RecycledBoards() {
           selection={selection}
           restore={(boardIds) => restore.mutate(boardIds, { ...refused, onSuccess: selection.clear })}
         />
-        <GridList aria-label={m.boards()} items={rows} className="outline-none" {...selection.props}>
+        <GridList
+          aria-label={m.boards()}
+          items={rows}
+          dependencies={[selection.ids.length > 0]}
+          className="outline-none"
+          {...selection.props}
+        >
           {(board) => (
             <GridListItem id={board.id} textValue={board.name} className={ROW}>
-              <SelectionTick />
+              <SelectionTick shown={selection.ids.length > 0} />
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="font-medium">{board.name}</span>
                 <span className="truncate text-muted">{board.description}</span>

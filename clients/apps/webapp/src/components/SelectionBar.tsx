@@ -26,12 +26,20 @@ export function useSelection(rows: readonly { id: string }[]) {
 
 /**
  * The tick a row or a tile carries. `slot="selection"` is what wires it to the `GridList` it sits
- * in: without it the list is selectable by the keyboard alone, and a pointer has no way in. The
- * slot also names it, after the row it belongs to, so nothing here writes a label of its own.
+ * in, and it names it after that row, so nothing here writes a label of its own.
+ *
+ * Out of sight until the pointer is on its own row, until focus reaches it, or until the grid holds
+ * a selection, which is what `shown` carries. `opacity` and not `display`: hidden this way it stays
+ * focusable and stays in the reader's page. Tailwind emits `hover` under `@media (hover: hover)`,
+ * so a browser that reports no hover at all, a touch screen first among them, would reveal nothing
+ * ever: there the tick simply stands, which is what the last rule says.
  */
-export function SelectionTick({ className }: { className?: string }) {
+export function SelectionTick({ shown, className }: { shown: boolean; className?: string }) {
   return (
-    <Checkbox slot="selection" className={className}>
+    <Checkbox
+      slot="selection"
+      className={`${shown ? "" : "opacity-0"} transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 ${className ?? ""}`}
+    >
       <Checkbox.Content>
         <Checkbox.Control>
           <Checkbox.Indicator />
