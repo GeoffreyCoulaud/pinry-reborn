@@ -99,10 +99,12 @@ Dated events. No session starts these early.
 
 ## Features
 
-- **What the API serves and the web application does not reach yet**: boards, tags, search, the recycle
-  bin, account management, import and export, and editing or deleting a pin. The first client lot built
-  sign up, sign in, the grid and creating a pin, and nothing else.
-  See `docs/specs/2026-09-10-web-application.md`, sections 6 and 7. New 2026-09-12.
+- **What the API serves and the web application does not reach yet**: search, account management,
+  import and export. Everything else this item asked for is built.
+  See `docs/specs/2026-09-20-the-pin-is-editable-and-the-boards-arrive.md`, sections 6 and 7.
+- **A board has no cover**, so `/boards` is a list of words: a tile grid needs either a cover field on
+  `BoardOutputDto` or one request per board.
+  See `docs/specs/2026-09-20-the-pin-is-editable-and-the-boards-arrive.md`, decision N.
 - **Perceptual `ImageHash` (pHash)** for pin deduplication / merging. Computed at ingestion, a few microseconds
   per image, and depending on nothing in the visual-understanding section below: it warns "you have already
   pinned this" before the pin is written. Flagship of the sequenced **user-segmented base**.
