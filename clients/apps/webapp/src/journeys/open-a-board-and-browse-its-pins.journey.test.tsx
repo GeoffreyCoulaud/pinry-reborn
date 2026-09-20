@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { delay, http } from "msw"
 import { describe, expect, it } from "vitest"
 import {
   board,
@@ -65,15 +66,17 @@ describe("open a board and browse its pins", () => {
     expect(sorts[0]).toBe("CREATED_AT_ASC")
   })
 
-  it("Given a board opened, Then going back home serves the catalogue and not the board", async () => {
+  it("Given a board opened, Then the home grid is not served the board's pages", async () => {
     account()
+    // The catalogue never answers, so what the home grid shows is what its own key already holds.
+    server.use(http.get("/api/v1/pins", () => delay("infinite")))
 
     renderApp(`/boards/${HARBOURS.id}`)
     expect(await screen.findByRole("img", { name: FIRST.description })).toBeVisible()
     await userEvent.click(screen.getByRole("link", { name: "Your pins" }))
 
-    // One key for two catalogues would serve the board's pages under the home grid.
-    expect(await screen.findByRole("img", { name: ELSEWHERE.description })).toBeVisible()
+    // One key for two catalogues hands the home grid the board's pages under it.
+    expect(await screen.findByText("Loading your pins.")).toBeVisible()
     expect(screen.queryByRole("img", { name: FIRST.description })).toBeNull()
   })
 
