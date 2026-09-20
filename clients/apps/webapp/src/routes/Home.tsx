@@ -278,8 +278,8 @@ export function Home() {
               setCreating(true)
             }}
           />
-          <SortSelect value={sort} values={PIN_SORTS} />
           <AppNav />
+          <SortSelect value={sort} values={PIN_SORTS} />
           <TaskCentre />
           <IconButton
             icon={LogOut}
