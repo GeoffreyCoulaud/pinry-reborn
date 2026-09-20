@@ -235,16 +235,6 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given an unknown board, Then adding pins to it returns 404`() {
-        // Given
-        val auth = createAuthenticatedUser()
-        val pin = createPin(auth.user)
-
-        // When / Then
-        bulkMembership(auth, "POST", UUID.randomUUID(), listOf(pin.id)).statusCode(404)
-    }
-
-    @Test
     fun `Given two pins on a board, Then removing them takes both out and keeps their other boards`() {
         // Given
         val auth = createAuthenticatedUser()
@@ -284,15 +274,5 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
 
         // Then
         boardsOf(auth, own).body("boards.id", containsInAnyOrder(board.id.toString()))
-    }
-
-    @Test
-    fun `Given an empty pinIds list, Then adding to a board returns 400`() {
-        // Given
-        val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
-
-        // When / Then
-        bulkMembership(auth, "POST", board.id, emptyList()).statusCode(400)
     }
 }

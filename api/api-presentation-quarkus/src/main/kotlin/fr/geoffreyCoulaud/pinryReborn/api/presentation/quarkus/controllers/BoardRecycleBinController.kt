@@ -1,7 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.BoardIdsInputDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto.Companion.ALL_OR_NOTHING
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.RecycledBoardListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BoardMapper.toDto
@@ -49,7 +48,7 @@ class BoardRecycleBinController(
     @POST
     @Authenticated
     @Path("/restore")
-    @Operation(summary = "Restore several boards", description = ALL_OR_NOTHING)
+    @Operation(summary = "Restore several boards, all or nothing")
     @APIResponse(responseCode = "204", description = "Boards restored")
     fun restoreBoards(@Valid @NotNull dto: BoardIdsInputDto): RestResponse<Void> {
         val user = securityIdentity.getUser()

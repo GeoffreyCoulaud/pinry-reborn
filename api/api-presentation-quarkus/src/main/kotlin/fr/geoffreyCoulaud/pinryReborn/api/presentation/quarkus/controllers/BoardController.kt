@@ -4,7 +4,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.BoardInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto.Companion.ALL_OR_NOTHING
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardOutputDto
@@ -158,7 +157,7 @@ class BoardController(
     @POST
     @Authenticated
     @Path("/{boardId}/pins")
-    @Operation(summary = "File several pins under the board", description = ALL_OR_NOTHING)
+    @Operation(summary = "File several pins under the board, all or nothing")
     @APIResponse(responseCode = "204", description = "Pins filed under the board")
     fun addPinsToBoard(boardId: UUID, @Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
         val user = securityIdentity.getUser()
@@ -169,7 +168,7 @@ class BoardController(
     @DELETE
     @Authenticated
     @Path("/{boardId}/pins")
-    @Operation(summary = "Take several pins out of the board", description = ALL_OR_NOTHING)
+    @Operation(summary = "Take several pins out of the board, all or nothing")
     fun removePinsFromBoard(boardId: UUID, @Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
         val user = securityIdentity.getUser()
         pinBoardSetter.removePinsFromBoard(boardId = boardId, pinIds = dto.pinIds, user = user)

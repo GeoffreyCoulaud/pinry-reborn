@@ -4,7 +4,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinCreationInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto.Companion.ALL_OR_NOTHING
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinUpdateInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
@@ -114,7 +113,7 @@ class PinController(
 
     @DELETE
     @Authenticated
-    @Operation(summary = "Recycle several pins", description = ALL_OR_NOTHING)
+    @Operation(summary = "Recycle several pins, all or nothing")
     fun softDeletePins(@Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
         val user = securityIdentity.getUser()
         pinRecycleBin.softDeleteAll(pinIds = dto.pinIds, user = user)

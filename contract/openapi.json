@@ -1009,8 +1009,7 @@
     },
     "/api/v1/boards/recycled/restore" : {
       "post" : {
-        "summary" : "Restore several boards",
-        "description" : "All or nothing: every identifier is resolved before the first write, and one that is unknown (404) or another user's (403) refuses the whole call with nothing written.",
+        "summary" : "Restore several boards, all or nothing",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -1235,8 +1234,7 @@
     },
     "/api/v1/boards/{boardId}/pins" : {
       "delete" : {
-        "summary" : "Take several pins out of the board",
-        "description" : "All or nothing: every identifier is resolved before the first write, and one that is unknown (404) or another user's (403) refuses the whole call with nothing written.",
+        "summary" : "Take several pins out of the board, all or nothing",
         "parameters" : [ {
           "name" : "boardId",
           "in" : "path",
@@ -1336,8 +1334,7 @@
         } ]
       },
       "post" : {
-        "summary" : "File several pins under the board",
-        "description" : "All or nothing: every identifier is resolved before the first write, and one that is unknown (404) or another user's (403) refuses the whole call with nothing written.",
+        "summary" : "File several pins under the board, all or nothing",
         "parameters" : [ {
           "name" : "boardId",
           "in" : "path",
@@ -2330,8 +2327,7 @@
     },
     "/api/v1/pins" : {
       "delete" : {
-        "summary" : "Recycle several pins",
-        "description" : "All or nothing: every identifier is resolved before the first write, and one that is unknown (404) or another user's (403) refuses the whole call with nothing written.",
+        "summary" : "Recycle several pins, all or nothing",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2535,8 +2531,7 @@
     },
     "/api/v1/pins/recycled/restore" : {
       "post" : {
-        "summary" : "Restore several pins",
-        "description" : "All or nothing: every identifier is resolved before the first write, and one that is unknown (404) or another user's (403) refuses the whole call with nothing written.",
+        "summary" : "Restore several pins, all or nothing",
         "requestBody" : {
           "content" : {
             "application/json" : {

@@ -47,8 +47,7 @@ class PinBoardSetter(
         pins.forEach { pinRepository.savePin(it.copy(boards = it.boardsWithout(board), updatedAt = at)) }
     }
 
-    // A recycled board is never on a mapped pin, and savePin diffs only the active memberships, so
-    // rewriting this list leaves a recycled board's join row alone.
+    // savePin diffs only the active memberships, so rewriting this list leaves a recycled board's join row alone.
     private fun Pin.boardsWithout(board: Board): List<Board> = boards.filterNot { it.id == board.id }
 
     @Suppress("ThrowsCount") // The three refusals a pin earns, wherever it was named.
