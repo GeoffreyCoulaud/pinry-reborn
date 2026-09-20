@@ -1,6 +1,6 @@
 import { AlertDialog, Button, EmptyState, Spinner, Tabs, toast } from "@heroui/react"
 import { Navigate, useSearch } from "@tanstack/react-router"
-import { Trash2, Undo2 } from "lucide-react"
+import { BrushCleaning, Trash2, Undo2 } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { Collection, GridList, GridListItem, GridListLoadMoreItem } from "react-aria-components"
 import { AppHeader } from "../components/AppHeader"
@@ -53,7 +53,7 @@ function RowGestures(props: { name: string; restore: () => void; deleteForGood: 
   return (
     <>
       <IconButton icon={Undo2} name={m.restore({ name })} variant="ghost" onPress={restore} />
-      {/* The one gesture on this screen that cannot be undone, and the only one marked as such. */}
+      {/* One of the two gestures on this screen that cannot be undone, and marked as such. */}
       <IconButton icon={Trash2} name={m.delete_for_good({ name })} variant="danger-soft" onPress={deleteForGood} />
     </>
   )
@@ -63,50 +63,47 @@ function RowGestures(props: { name: string; restore: () => void; deleteForGood: 
 const refused = { onError: () => toast.danger(m.bin_refused()) }
 
 /**
- * A tab: its rows, under the gesture that empties it. Disabled on an empty bin rather than hidden,
- * so the tab does not change shape while the user reads it, and asked before it acts: emptying is
- * the one gesture of this screen a user cannot undo, restoring being reversible and a permanent
- * delete acting on the one row it sits in.
+ * The other gesture that cannot be undone, and the one that reaches every row at once, so it asks
+ * before it acts. A brush and not a bin: the bin drawn beside it deletes the one row it sits in,
+ * and two gestures of different reach must not share a glyph. The icon is the trigger itself,
+ * `AlertDialog` being a `DialogTrigger`, which presses its first child.
  */
-function BinPanel(props: { empty: () => void; isEmpty: boolean; children: ReactNode }) {
-  const { empty, isEmpty, children } = props
+function EmptyBin({ empty }: { empty: () => void }) {
   return (
-    <div className="flex h-full flex-col gap-2">
-      {/* The button is the trigger: `AlertDialog` is a `DialogTrigger`, which presses its first
-          child, so the control keeps its own variant and its disabled state. */}
-      <AlertDialog>
-        <Button variant="danger-soft" className="self-end" isDisabled={isEmpty}>
-          {m.empty_bin()}
-        </Button>
-        <AlertDialog.Backdrop>
-          <AlertDialog.Container size="sm">
-            <AlertDialog.Dialog>
-              {({ close }) => (
-                <>
-                  <AlertDialog.Heading>{m.empty_bin_question()}</AlertDialog.Heading>
-                  <AlertDialog.Body>{m.empty_bin_warning()}</AlertDialog.Body>
-                  <AlertDialog.Footer>
-                    <Button variant="ghost" onPress={close}>
-                      {m.cancel()}
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onPress={() => {
-                        close()
-                        empty()
-                      }}
-                    >
-                      {m.empty_bin()}
-                    </Button>
-                  </AlertDialog.Footer>
-                </>
-              )}
-            </AlertDialog.Dialog>
-          </AlertDialog.Container>
-        </AlertDialog.Backdrop>
-      </AlertDialog>
-      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
-    </div>
+    <AlertDialog>
+      <IconButton
+        icon={BrushCleaning}
+        name={m.empty_bin()}
+        variant="danger-soft"
+        className="ms-auto"
+      />
+      <AlertDialog.Backdrop>
+        <AlertDialog.Container size="sm">
+          <AlertDialog.Dialog>
+            {({ close }) => (
+              <>
+                <AlertDialog.Heading>{m.empty_bin_question()}</AlertDialog.Heading>
+                <AlertDialog.Body>{m.empty_bin_warning()}</AlertDialog.Body>
+                <AlertDialog.Footer>
+                  <Button variant="ghost" onPress={close}>
+                    {m.cancel()}
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onPress={() => {
+                      close()
+                      empty()
+                    }}
+                  >
+                    {m.empty_bin()}
+                  </Button>
+                </AlertDialog.Footer>
+              </>
+            )}
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
+    </AlertDialog>
   )
 }
 
@@ -114,44 +111,41 @@ function RecycledPins({ sort }: { sort: RecycledPinSort }) {
   const pins = useRecycledPins(sort)
   const restore = useRestorePins()
   const deleteForGood = useDeletePinForGood()
-  const emptied = useEmptyPinBin()
   const rows = pins.data?.pages.flatMap((page) => page.pins) ?? []
 
   return (
-    <BinPanel empty={() => emptied.mutate(undefined, refused)} isEmpty={rows.length === 0}>
-      {placeholder(pins, rows.length) ?? (
-        <GridList aria-label={m.pins()} className="outline-none">
-          <Collection items={rows}>
-            {(pin) => (
-              <GridListItem id={pin.id} textValue={pin.description} className={ROW}>
-                {/* Decorative: the description beside it is the row's own name. */}
-                {pin.image?.url && (
-                  <img
-                    src={tileImageSource(pin.image.url, "SMALL")}
-                    alt=""
-                    className="size-12 shrink-0 rounded object-cover"
-                  />
-                )}
-                <span className="min-w-0 flex-1 truncate">{pin.description}</span>
-                <RowGestures
-                  name={pin.description}
-                  restore={() => restore.mutate([pin.id], refused)}
-                  deleteForGood={() => deleteForGood.mutate(pin.id, refused)}
+    placeholder(pins, rows.length) ?? (
+      <GridList aria-label={m.pins()} className="outline-none">
+        <Collection items={rows}>
+          {(pin) => (
+            <GridListItem id={pin.id} textValue={pin.description} className={ROW}>
+              {/* Decorative: the description beside it is the row's own name. */}
+              {pin.image?.url && (
+                <img
+                  src={tileImageSource(pin.image.url, "SMALL")}
+                  alt=""
+                  className="size-12 shrink-0 rounded object-cover"
                 />
-              </GridListItem>
-            )}
-          </Collection>
-          {/* Guarded for the reason `PinGrid` states: the sentinel is re-observed on every
-              collection change, its own loading flag included. */}
-          <GridListLoadMoreItem
-            onLoadMore={() => {
-              if (pins.hasNextPage && !pins.isFetchingNextPage) void pins.fetchNextPage()
-            }}
-            isLoading={pins.isFetchingNextPage}
-          />
-        </GridList>
-      )}
-    </BinPanel>
+              )}
+              <span className="min-w-0 flex-1 truncate">{pin.description}</span>
+              <RowGestures
+                name={pin.description}
+                restore={() => restore.mutate([pin.id], refused)}
+                deleteForGood={() => deleteForGood.mutate(pin.id, refused)}
+              />
+            </GridListItem>
+          )}
+        </Collection>
+        {/* Guarded for the reason `PinGrid` states: the sentinel is re-observed on every
+            collection change, its own loading flag included. */}
+        <GridListLoadMoreItem
+          onLoadMore={() => {
+            if (pins.hasNextPage && !pins.isFetchingNextPage) void pins.fetchNextPage()
+          }}
+          isLoading={pins.isFetchingNextPage}
+        />
+      </GridList>
+    )
   )
 }
 
@@ -159,73 +153,81 @@ function RecycledBoards() {
   const boards = useRecycledBoards()
   const restore = useRestoreBoards()
   const deleteForGood = useDeleteBoardForGood()
-  const emptied = useEmptyBoardBin()
   const rows = boards.data ?? []
 
   return (
-    <BinPanel empty={() => emptied.mutate(undefined, refused)} isEmpty={rows.length === 0}>
-      {placeholder(boards, rows.length) ?? (
-        <GridList aria-label={m.boards()} items={rows} className="outline-none">
-          {(board) => (
-            <GridListItem id={board.id} textValue={board.name} className={ROW}>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="font-medium">{board.name}</span>
-                <span className="truncate text-muted">{board.description}</span>
-              </div>
-              <RowGestures
-                name={board.name}
-                restore={() => restore.mutate([board.id], refused)}
-                deleteForGood={() => deleteForGood.mutate(board.id, refused)}
-              />
-            </GridListItem>
-          )}
-        </GridList>
-      )}
-    </BinPanel>
+    placeholder(boards, rows.length) ?? (
+      <GridList aria-label={m.boards()} items={rows} className="outline-none">
+        {(board) => (
+          <GridListItem id={board.id} textValue={board.name} className={ROW}>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="font-medium">{board.name}</span>
+              <span className="truncate text-muted">{board.description}</span>
+            </div>
+            <RowGestures
+              name={board.name}
+              restore={() => restore.mutate([board.id], refused)}
+              deleteForGood={() => deleteForGood.mutate(board.id, refused)}
+            />
+          </GridListItem>
+        )}
+      </GridList>
+    )
   )
 }
 
 /**
- * One screen for both collections, which carry the same three gestures (decision J). The order
- * selector belongs to the Pins tab alone: `GET /api/v1/boards/recycled` takes no sort, and passing
- * one would write a search parameter no request reads (specification 2.5).
+ * One screen for both collections, which carry the same three gestures (decision J). One toolbar
+ * row holds what belongs to the open tab: which collection it is, the order it is read in, and the
+ * gesture that empties it. The order is the Pins tab's alone, `GET /api/v1/boards/recycled` taking
+ * no sort, so passing one would write a search parameter no request reads (specification 2.5).
  */
 export function Recycled() {
   const { sort } = useSearch({ from: "/recycled" })
   const session = useSession()
   const [tab, setTab] = useState("pins")
+  const emptyPins = useEmptyPinBin()
+  const emptyBoards = useEmptyBoardBin()
 
   if (session.isPending) return null
   if (session.isError) return <p role="alert">{m.session_unreadable()}</p>
   if (!session.data) return <Navigate to="/sign-in" />
 
+  const empty = tab === "pins" ? emptyPins : emptyBoards
+
   return (
     <main className="flex h-screen flex-col gap-4 px-4 pt-4">
+      {/* The screen's own header carries what belongs to the screen, the tab's controls being on
+          the row below it: the order no longer appears and disappears above the heading. */}
       <AppHeader heading={m.recycle_bin()}>
         <AppNav />
-        {tab === "pins" && <SortSelect value={sort} values={RECYCLED_PIN_SORTS} />}
       </AppHeader>
       <Tabs
         selectedKey={tab}
         onSelectionChange={(key) => setTab(String(key))}
-        className="flex min-h-0 flex-1 flex-col"
+        className="flex min-h-0 flex-1 flex-col gap-3"
       >
-        <Tabs.ListContainer className="self-start">
-          <Tabs.List aria-label={m.recycle_bin()}>
-            <Tabs.Tab id="pins">
-              <Tabs.Indicator />
-              {m.pins()}
-            </Tabs.Tab>
-            <Tabs.Tab id="boards">
-              <Tabs.Indicator />
-              {m.boards()}
-            </Tabs.Tab>
-          </Tabs.List>
-        </Tabs.ListContainer>
-        <Tabs.Panel id="pins" className="min-h-0 flex-1">
+        <div className="flex flex-wrap items-center gap-3">
+          <Tabs.ListContainer>
+            <Tabs.List aria-label={m.recycle_bin()}>
+              <Tabs.Tab id="pins">
+                <Tabs.Indicator />
+                {m.pins()}
+              </Tabs.Tab>
+              <Tabs.Tab id="boards">
+                <Tabs.Indicator />
+                {m.boards()}
+              </Tabs.Tab>
+            </Tabs.List>
+          </Tabs.ListContainer>
+          {tab === "pins" && <SortSelect value={sort} values={RECYCLED_PIN_SORTS} />}
+          <EmptyBin empty={() => empty.mutate(undefined, refused)} />
+        </div>
+        {/* The panel is the scroll box: the toolbar above it stays put while the rows move. */}
+        <Tabs.Panel id="pins" className="mt-0! min-h-0 flex-1 overflow-y-auto">
           <RecycledPins sort={sort} />
         </Tabs.Panel>
-        <Tabs.Panel id="boards" className="min-h-0 flex-1">
+        <Tabs.Panel id="boards" className="mt-0! min-h-0 flex-1 overflow-y-auto">
           <RecycledBoards />
         </Tabs.Panel>
       </Tabs>
