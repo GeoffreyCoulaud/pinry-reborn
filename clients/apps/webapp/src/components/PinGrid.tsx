@@ -15,6 +15,7 @@ import type { PinSort } from "../lib/sorts"
 import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } from "../lib/tiles"
 import { m } from "../paraglide/messages.js"
 import { usePins, type Pin } from "../pins"
+import { PinEditForm } from "./PinEditForm"
 
 /**
  * Every bound here is finite, and two of them have to be. `WaterfallLayout` reads the scroll
@@ -72,7 +73,12 @@ function Tile({ pin, smallRenditionPx }: { pin: Pin; smallRenditionPx?: number }
   )
 }
 
+/** The pin as it reads, until the Edit button swaps it for the form that writes it (decision K). */
 function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
+  const [editing, setEditing] = useState(false)
+
+  if (editing) return <PinEditForm pin={pin} close={() => setEditing(false)} />
+
   return (
     <div className="flex flex-col gap-3">
       {pin.image?.url && (
@@ -93,9 +99,12 @@ function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
           <li key={board.id}>{board.name}</li>
         ))}
       </ul>
-      <Button className="self-end" onPress={close}>
-        {m.close()}
-      </Button>
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" onPress={() => setEditing(true)}>
+          {m.edit_pin()}
+        </Button>
+        <Button onPress={close}>{m.close()}</Button>
+      </div>
     </div>
   )
 }
