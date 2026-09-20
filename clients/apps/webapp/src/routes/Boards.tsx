@@ -119,7 +119,8 @@ function BoardRow({ board, rename }: { board: Board; rename: () => void }) {
 
 /**
  * The boards as a list and not a grid of tiles: the contract serves no cover, so there is nothing
- * to show but the words (decision N). `GridList` is the accessibility role, and the screen carries
+ * to show but the words (specification 2026-09-20, decision N). `GridList` is the accessibility
+ * role, and the screen carries
  * no selection bar, a board being deleted from its own row (decision O).
  */
 function BoardList({ rename }: { rename: (board: Board) => void }) {

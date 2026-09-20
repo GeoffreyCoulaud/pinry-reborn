@@ -10,14 +10,14 @@ import { useSession } from "../session"
 
 /**
  * One board's pins, in the grid the home screen renders. The drop that creates a pin is not here:
- * a board is not a place a drop files one (specification, section 5).
+ * a board is not a place a drop files one (specification 2026-09-20, section 5).
  */
 export function Board() {
   const { boardId } = useParams({ from: "/boards/$boardId" })
   const { sort } = useSearch({ from: "/boards/$boardId" })
   const session = useSession()
   // The list arrives whole and is the query the boards screen already holds, so a board opened
-  // from that screen costs no request of its own (specification 2.7).
+  // from that screen costs no request of its own (2.7).
   const boards = useBoards()
   const board = boards.data?.find((one) => one.id === boardId)
 

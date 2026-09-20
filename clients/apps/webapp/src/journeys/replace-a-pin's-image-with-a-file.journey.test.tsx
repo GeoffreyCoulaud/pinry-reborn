@@ -50,8 +50,8 @@ function account(
       record.written.push({ pin: (await request.json()) as { sourceMediaUrl: string | null } })
       return HttpResponse.json(reread())
     }),
-    // What the write rereads into the pages the grid holds (decision P), served as the pin was
-    // read: a tile that changes shape can then only have followed the image write.
+    // What the write rereads into the pages the grid holds (specification 2026-09-20, decision P),
+    // served as the pin was read: a tile that changes shape can then only have followed the write.
     http.get("/api/v1/pins/:pinId", () => HttpResponse.json(reread())),
     http.put("/api/v1/pins/:pinId/image", async ({ request }) => {
       const type = request.headers.get("content-type")?.split(";")[0] ?? null

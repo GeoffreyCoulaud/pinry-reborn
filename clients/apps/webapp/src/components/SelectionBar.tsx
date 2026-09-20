@@ -46,8 +46,8 @@ export function SelectionTick({ shown, className }: { shown: boolean; className?
 
 /**
  * The bar a grid raises while its selection is not empty. The gestures are the screen's own
- * (decision O); what the bar holds itself is the count and the way out. Sticky, because the bin's
- * tabs scroll around it where the catalogue's grid scrolls under it.
+ * (specification 2026-09-20, decision O); what the bar holds is the count and the way out. Sticky,
+ * because the bin's tabs scroll around it where the catalogue's grid scrolls under it.
  */
 export function SelectionBar({
   count,

@@ -52,7 +52,7 @@ describe("add several pins from one drop", () => {
 
     renderApp("/")
     // The drop is judged in full where it lands, so its own total is fixed before its first
-    // entry is shown (decision N).
+    // entry is shown (specification 2026-09-19-the-drop-is-the-gesture, decision N).
     fireEvent.drop(await theScreen(), dropOf([image("one.png"), image("two.png")]))
 
     const dialog = await theForm()

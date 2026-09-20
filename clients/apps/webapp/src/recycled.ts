@@ -25,7 +25,7 @@ export function useRecycledPins(sort: RecycledPinSort) {
   })
 }
 
-/** The boards the bin holds, whole: the route takes neither a cursor nor a sort (specification 2.5). */
+/** The boards the bin holds, whole: the route takes no cursor and no sort (specification 2026-09-20, 2.5). */
 export function useRecycledBoards() {
   return useQuery({
     queryKey: RECYCLED_BOARDS,

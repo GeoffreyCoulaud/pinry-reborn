@@ -54,7 +54,8 @@ function Task({ download }: { download: Download }) {
 
 /**
  * The indicator the header carries, and the list behind it: what the server is downloading and
- * what it failed to. A success leaves nothing here, its result being the pin (question J).
+ * what it failed to. A success leaves nothing here, its result being the pin (specification
+ * 2026-09-10, question J).
  */
 export function TaskCentre() {
   const page = useImageDownloads().data

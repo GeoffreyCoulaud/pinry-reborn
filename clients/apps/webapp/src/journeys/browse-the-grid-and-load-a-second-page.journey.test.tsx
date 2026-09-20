@@ -70,7 +70,7 @@ describe("browse the grid and load a second page", () => {
 
     expect(await screen.findByRole("img", { name: ready.description })).toBeVisible()
     // The breakpoint was a constant no route published, which a deployment narrowing `small`
-    // then upscaled every tile against (specification 4.3).
+    // then upscaled every tile against (specification 2026-09-10, 4.3).
     await waitFor(() => expect(asked).toBe(1))
   })
 

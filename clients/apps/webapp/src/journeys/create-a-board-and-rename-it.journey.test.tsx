@@ -24,7 +24,7 @@ function account(boards: Parameters<typeof boardRoutes>[0]) {
   )
 }
 
-/** The row a board holds, which is where its own rename and delete live (decision O). */
+/** The row a board holds, where its rename and delete live (specification 2026-09-20, decision O). */
 function row(name: string) {
   return screen.getByRole("row", { name: new RegExp(name) })
 }

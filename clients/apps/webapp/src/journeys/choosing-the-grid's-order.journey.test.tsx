@@ -37,7 +37,8 @@ describe("choosing the grid's order", () => {
     renderApp("/")
 
     expect(await screen.findByRole("img", { name: NEWEST.description })).toBeVisible()
-    // The API's own default is oldest first, which buries a pin just created (specification 2.6).
+    // The API's own default is oldest first, which buries a pin just created (specification
+    // 2026-09-20, 2.6).
     expect(sorts).toEqual(["CREATED_AT_DESC"])
     expect(tileOrder()).toEqual([NEWEST.description, OLDEST.description])
   })

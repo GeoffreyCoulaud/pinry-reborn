@@ -34,7 +34,8 @@ const PIN_IMAGE = "/api/v1/pins/{pinId}/image"
 
 /**
  * One route for both entries, told apart by the request's media type: bytes answer with the image
- * itself, an address answers `202` and the download joins the task centre (specification 4.8).
+ * itself, an address answers `202` and the download joins the task centre (specification
+ * 2026-09-10, 4.8).
  */
 async function setPinImage(pinId: string, source: ImageSource): Promise<void> {
   const params = { path: { pinId } }

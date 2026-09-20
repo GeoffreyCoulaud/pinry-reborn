@@ -106,7 +106,8 @@ describe("edit a pin's description, tags and boards", () => {
     // The dialog is back to reading, and the tile carries the new description.
     expect(await within(dialog).findByText(saved.description)).toBeVisible()
     expect(screen.getByRole("img", { name: saved.description })).toBeVisible()
-    // The discriminating half: the catalogue is written through, never refetched (decision P).
+    // The discriminating half: the catalogue is written through, never refetched (specification
+    // 2026-09-20, decision P).
     expect(record.pages).toBe(1)
   })
 

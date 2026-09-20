@@ -44,7 +44,7 @@ function useColumnWidth(ref: RefObject<HTMLElement | null>): number {
 
 /**
  * The tile carries its ratio so the layout measures it at its true height on the first pass and
- * its column settles once, before a byte of the image arrives (specification 4.7).
+ * its column settles once, before a byte of the image arrives (specification 2026-09-10, 4.7).
  */
 function Tile({ pin, smallRenditionPx }: { pin: Pin; smallRenditionPx?: number }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -75,7 +75,7 @@ function Tile({ pin, smallRenditionPx }: { pin: Pin; smallRenditionPx?: number }
   )
 }
 
-/** The pin as it reads, until the Edit button swaps it for the form that writes it (decision K). */
+/** The pin as it reads, until Edit swaps it for the form (specification 2026-09-20, decision K). */
 function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
   const [editing, setEditing] = useState(false)
   const recycle = useRecyclePins()

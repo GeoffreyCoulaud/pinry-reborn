@@ -3,8 +3,9 @@ import type { LucideIcon } from "lucide-react"
 
 /**
  * An icon alone is not discoverable, and a tooltip worded differently from the accessible name
- * gives a sighted user and a screen reader two words for one control (decision D). One string
- * here is what holds them together at every site.
+ * gives a sighted user and a screen reader two words for one control (specification
+ * 2026-09-19-the-header-becomes-icons, decision D). One string here is what holds them together
+ * at every site.
  */
 export function IconButton({
   icon: Icon,

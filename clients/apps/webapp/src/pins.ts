@@ -25,7 +25,8 @@ const BOARDS = ["boards"]
 
 /**
  * The catalogue, one page at a time, in the order the API sorts it, or one board's share of it:
- * `GET /api/v1/boards/{boardId}/pins` has the signature of `GET /api/v1/pins` (specification 2.5).
+ * `GET /api/v1/boards/{boardId}/pins` has the signature of `GET /api/v1/pins` (specification
+ * 2026-09-20, 2.5).
  * Every page loaded is kept: a cap on the query drops pages nothing reloads, and what holds the
  * grid's memory is the virtualiser, which mounts the visible tiles alone (ADR 0033).
  */

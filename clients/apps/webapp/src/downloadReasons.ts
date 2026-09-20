@@ -2,8 +2,8 @@ import { m } from "./paraglide/messages.js"
 
 /**
  * One sentence per `DownloadReason`. The contract leaves `reasonCode` a plain string on purpose,
- * a response enum gaining a value being a break (specification 4.10), so a code this bundle does
- * not know is a miss here rather than a compile error.
+ * a response enum gaining a value being a break (specification 2026-09-10, 4.10), so a code this
+ * bundle does not know is a miss here rather than a compile error.
  */
 const REASONS: Record<string, () => string> = {
   URL_NOT_ALLOWED: m.reason_url_not_allowed,
