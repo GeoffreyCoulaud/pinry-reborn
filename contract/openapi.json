@@ -1024,14 +1024,21 @@
           "204" : {
             "description" : "Boards restored"
           },
+          "400" : {
+            "description" : "The body is missing, or its list of identifiers is empty",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Not Authorized"
           },
           "403" : {
             "description" : "Not Allowed"
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "tags" : [ "Board Recycle Bin Controller" ],
@@ -1255,7 +1262,17 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content"
+            "description" : "Pins taken out of the board"
+          },
+          "400" : {
+            "description" : "The body is missing, or its list of identifiers is empty",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401" : {
             "description" : "Not Authorized"
@@ -1357,14 +1374,21 @@
           "204" : {
             "description" : "Pins filed under the board"
           },
+          "400" : {
+            "description" : "The body is missing, or its list of identifiers is empty",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Not Authorized"
           },
           "403" : {
             "description" : "Not Allowed"
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "tags" : [ "Board Controller" ],
@@ -2340,7 +2364,17 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content"
+            "description" : "Pins recycled"
+          },
+          "400" : {
+            "description" : "The body is missing, or its list of identifiers is empty",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401" : {
             "description" : "Not Authorized"
@@ -2546,14 +2580,21 @@
           "204" : {
             "description" : "Pins restored"
           },
+          "400" : {
+            "description" : "The body is missing, or its list of identifiers is empty",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Not Authorized"
           },
           "403" : {
             "description" : "Not Allowed"
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "tags" : [ "Pin Recycle Bin Controller" ],
@@ -3230,7 +3271,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "7.1.0"
+    "version" : "7.2.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

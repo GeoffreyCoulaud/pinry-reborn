@@ -4,6 +4,7 @@ import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.architecture.KoArchitectureCreator.assertArchitecture
 import com.lemonappdev.konsist.api.architecture.Layer
 import com.lemonappdev.konsist.api.ext.list.withAnnotationNamed
+import com.lemonappdev.konsist.api.ext.list.parameters
 import com.lemonappdev.konsist.api.ext.list.withImport
 import com.lemonappdev.konsist.api.ext.list.withName
 import com.lemonappdev.konsist.api.ext.list.withNameStartingWith
@@ -66,6 +67,27 @@ class ArchitectureKonsistTest {
         // annotation is what this asserts; the other half of the condition (no extension installing a
         // global Vert.x body handler) is not visible from any source declaration.
         requestBodyStreamEndpoints.withoutAnnotationNamed("Blocking").assertEmpty()
+    }
+
+    /** The request bodies the endpoints validate, which is what the pair of assertions below reads. */
+    private val validatedRequestBodies =
+        Konsist
+            .scopeFromProduction()
+            .functions(includeNested = true)
+            .parameters
+            .withAnnotationNamed("Valid")
+
+    @Test
+    fun `Given production sources, Then some endpoint validates its request body`() {
+        validatedRequestBodies.assertNotEmpty()
+    }
+
+    @Test
+    fun `Given the validated request bodies, Then each one also refuses a missing body`() {
+        // RESTEasy Reactive binds no body it did not receive and hands the resource method a null
+        // entity, so Kotlin's non-null intrinsic throws before validation runs and the client reads
+        // 500 where 400 is owed (ADR 0039, last consequence).
+        validatedRequestBodies.withoutAnnotationNamed("NotNull").assertEmpty()
     }
 
     @Test

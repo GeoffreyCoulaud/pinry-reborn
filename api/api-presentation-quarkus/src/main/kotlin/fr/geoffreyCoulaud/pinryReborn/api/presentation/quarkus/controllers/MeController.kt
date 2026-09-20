@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.PasswordChanger
 import io.quarkus.security.Authenticated
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.DELETE
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.HeaderParam
@@ -31,7 +32,7 @@ class MeController(
     @PUT
     @Path("/password")
     @Authenticated
-    fun changePassword(@Valid dto: PasswordChangeInputDto): RestResponse<Void> {
+    fun changePassword(@Valid @NotNull dto: PasswordChangeInputDto): RestResponse<Void> {
         passwordChanger.changePassword(securityIdentity.getUser(), dto.currentPassword, dto.newPassword)
         return RestResponse.noContent()
     }
