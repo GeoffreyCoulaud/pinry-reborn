@@ -1,18 +1,21 @@
 import { ListBox, Select } from "@heroui/react"
 import { useNavigate } from "@tanstack/react-router"
-import { pinSortOr, type PinSort } from "../lib/sorts"
+import { recycledPinSortOr, type RecycledPinSort } from "../lib/sorts"
 import { m } from "../paraglide/messages.js"
 
-const LABELS: Record<PinSort, () => string> = {
+const LABELS: Record<RecycledPinSort, () => string> = {
   CREATED_AT_ASC: m.sort_created_at_asc,
   CREATED_AT_DESC: m.sort_created_at_desc,
+  DELETED_AT_DESC: m.sort_deleted_at_desc,
 }
 
 /**
  * The order lives in the address, so a reload and the back button both keep it with nothing
- * stored. The screen passes the orders it has: a board's grid and the bin do not offer the same.
+ * stored. The screen passes the orders it has: a board's grid and the bin do not offer the same,
+ * and the route's own validator narrows what this one writes.
  */
-export function SortSelect({ value, values }: { value: PinSort; values: readonly PinSort[] }) {
+export function SortSelect(props: { value: RecycledPinSort; values: readonly RecycledPinSort[] }) {
+  const { value, values } = props
   const navigate = useNavigate()
 
   return (
@@ -22,7 +25,7 @@ export function SortSelect({ value, values }: { value: PinSort; values: readonly
       aria-label={m.sort_order()}
       value={value}
       onChange={(chosen) =>
-        void navigate({ to: ".", search: (previous) => ({ ...previous, sort: pinSortOr(chosen) }) })
+        void navigate({ to: ".", search: (previous) => ({ ...previous, sort: recycledPinSortOr(chosen) }) })
       }
     >
       <Select.Trigger>

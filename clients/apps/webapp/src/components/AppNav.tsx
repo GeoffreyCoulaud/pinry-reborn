@@ -1,6 +1,6 @@
 import { Focusable, Tooltip, buttonVariants } from "@heroui/react"
 import { Link, type LinkProps } from "@tanstack/react-router"
-import { House, LayoutGrid, type LucideIcon } from "lucide-react"
+import { House, LayoutGrid, Trash2, type LucideIcon } from "lucide-react"
 import { m } from "../paraglide/messages.js"
 
 /**
@@ -36,6 +36,7 @@ export function AppNav() {
     <>
       <NavIcon to="/" icon={House} name={m.home_heading()} />
       <NavIcon to="/boards" icon={LayoutGrid} name={m.boards()} />
+      <NavIcon to="/recycled" icon={Trash2} name={m.recycle_bin()} />
     </>
   )
 }
