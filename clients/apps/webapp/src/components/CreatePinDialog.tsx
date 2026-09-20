@@ -1,11 +1,11 @@
 import { Button, Input, Label, Modal, TextField } from "@heroui/react"
 import { useEffect, useState } from "react"
-import { judgeDrop, refuse } from "../drops"
+import { refuse } from "../drops"
 import { useCreatePin, useHandshake, type ImageSource } from "../images"
-import { dragDepth, type DragStep } from "../lib/drags"
 import { entriesOf, withDrop, type DropPartition, type PinEntry } from "../lib/drops"
 import { isStorableFile, uploadRefusal } from "../lib/uploads"
 import { m } from "../paraglide/messages.js"
+import { ImageDropBox } from "./ImageDropBox"
 
 /**
  * The label follows the input so Tailwind's `peer-*` variants reach it. react-aria links the two
@@ -59,14 +59,9 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
     at: 0,
   }))
   const { entries, at } = queue
-  const [depth, setDepth] = useState(0)
   const [preview, setPreview] = useState<string | null>(null)
   // `at` is always inside the queue; the fallback is what `noUncheckedIndexedAccess` asks for.
   const entry = entries[at] ?? { file: null, url: "" }
-
-  function dragged(step: DragStep) {
-    setDepth((current) => dragDepth(current, step))
-  }
 
   // The content is mounted only while the dialog is open, so this cleanup revokes the URL on
   // Escape and on the backdrop as much as on a pin created.
@@ -99,9 +94,7 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
     else close()
   }
 
-  async function take(files: readonly File[], uriList: string) {
-    const drop = await judgeDrop(files, uriList, handshake.data?.limits)
-    drop.refusals.forEach(refuse)
+  function take(drop: DropPartition) {
     setQueue((current) => ({ ...current, entries: withDrop(current.entries, current.at, drop) }))
   }
 
@@ -166,41 +159,7 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
         value={entry.url}
         onChange={(url) => change({ url })}
       />
-      {/* `data-dragging` carries the counter rather than a class, jsdom computing no style: it is
-          what the active style hangs on and the only thing a test can read. */}
-      <div
-        className="relative flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-focus data-dragging:border-accent data-dragging:bg-accent-soft"
-        data-dragging={depth > 0 ? "" : undefined}
-        onDragEnter={() => dragged("enter")}
-        onDragLeave={() => dragged("leave")}
-        // Without this the browser fires no `drop` at all, whatever the handler below says.
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => {
-          event.preventDefault()
-          dragged("drop")
-          void take([...event.dataTransfer.files], event.dataTransfer.getData("text/uri-list"))
-        }}
-      >
-        {/* The invitation is the input's accessible name, which is what Label in Name asks for.
-            Its hit area is stretched over the whole box without the thumbnail joining that name. */}
-        <label className="cursor-pointer before:absolute before:inset-0 before:content-['']">
-          {m.drop_image()}
-          <input
-            name="file"
-            type="file"
-            accept={handshake.data?.limits.mediaTypes.join(",") ?? "image/*"}
-            multiple
-            className="sr-only"
-            onChange={(event) => {
-              const input = event.currentTarget
-              // What is chosen with the mouse is judged where what is dropped is.
-              void take([...(input.files ?? [])], "")
-              // An input still holding a file fires no change event for that same file, so the
-              // one just removed could never be chosen again.
-              input.value = ""
-            }}
-          />
-        </label>
+      <ImageDropBox limits={handshake.data?.limits} multiple onDrop={take}>
         {entry.file !== null && (
           <>
             {/* One render behind the file: the object URL is drawn by the effect above. */}
@@ -213,7 +172,7 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
             </Button>
           </>
         )}
-      </div>
+      </ImageDropBox>
       <Field name="description" label={m.description()} />
       {/* Never required: a file from disk and a direct image address both name no page. */}
       <Field name="sourceContextUrl" type="url" label={m.source_page()} />

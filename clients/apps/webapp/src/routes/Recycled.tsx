@@ -194,27 +194,23 @@ function RecycledBoards() {
           selection={selection}
           restore={(boardIds) => restore.mutate(boardIds, { ...refused, onSuccess: selection.clear })}
         />
-        <GridList
-          aria-label={m.boards()}
-          items={rows}
-          dependencies={[selection.ids.length > 0]}
-          className="outline-none"
-          {...selection.props}
-        >
-          {(board) => (
-            <GridListItem id={board.id} textValue={board.name} className={ROW}>
-              <SelectionTick shown={selection.ids.length > 0} />
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="font-medium">{board.name}</span>
-                <span className="truncate text-muted">{board.description}</span>
-              </div>
-              <RowGestures
-                name={board.name}
-                restore={() => restore.mutate([board.id], refused)}
-                deleteForGood={() => deleteForGood.mutate(board.id, refused)}
-              />
-            </GridListItem>
-          )}
+        <GridList aria-label={m.boards()} className="outline-none" {...selection.props}>
+          <Collection items={rows} dependencies={[selection.ids.length > 0]}>
+            {(board) => (
+              <GridListItem id={board.id} textValue={board.name} className={ROW}>
+                <SelectionTick shown={selection.ids.length > 0} />
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="font-medium">{board.name}</span>
+                  <span className="truncate text-muted">{board.description}</span>
+                </div>
+                <RowGestures
+                  name={board.name}
+                  restore={() => restore.mutate([board.id], refused)}
+                  deleteForGood={() => deleteForGood.mutate(board.id, refused)}
+                />
+              </GridListItem>
+            )}
+          </Collection>
         </GridList>
       </>
     )

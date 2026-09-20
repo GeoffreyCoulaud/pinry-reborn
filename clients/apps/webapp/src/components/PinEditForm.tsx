@@ -14,43 +14,12 @@ import {
 import { useEffect, useState } from "react"
 import { useBoards } from "../boards"
 import { downloadReason } from "../downloadReasons"
-import { judgeDrop, refuse } from "../drops"
 import { useHandshake, useSetPinImage, type ImageSource } from "../images"
-import { dragDepth } from "../lib/drags"
 import type { KeptFile } from "../lib/drops"
 import { tileImageSource } from "../lib/tiles"
-import type { UploadLimits } from "../lib/uploads"
 import { m } from "../paraglide/messages.js"
 import { useTagSearch, useUpdatePin, type Pin } from "../pins"
-
-function Field({
-  name,
-  label,
-  type,
-  defaultValue,
-  value,
-  onChange,
-}: {
-  name?: string
-  label: string
-  type?: "text" | "url"
-  defaultValue?: string
-  value?: string
-  onChange?: (value: string) => void
-}) {
-  return (
-    <TextField
-      name={name}
-      type={type}
-      defaultValue={defaultValue}
-      value={value}
-      onChange={onChange}
-    >
-      <Label>{label}</Label>
-      <Input />
-    </TextField>
-  )
-}
+import { ImageDropBox } from "./ImageDropBox"
 
 /**
  * Free text over the author's own names. The server decides which names are one tag, folding to
@@ -200,72 +169,6 @@ function ImagePreview({ pin, chosen }: { pin: Pin; chosen: KeptFile | null }) {
 }
 
 /**
- * The file that replaces the image, chosen the way the creation screen has one chosen: the same
- * box, the same judging before a byte is sent, and the address a drop carried taken as well.
- */
-function ReplaceField({
-  chosen,
-  limits,
-  onFile,
-  onAddress,
-}: {
-  chosen: KeptFile | null
-  limits: UploadLimits | undefined
-  onFile: (file: KeptFile | null) => void
-  onAddress: (url: string) => void
-}) {
-  const [depth, setDepth] = useState(0)
-
-  async function take(files: readonly File[], uriList: string) {
-    const judged = await judgeDrop(files, uriList, limits)
-    judged.refusals.forEach(refuse)
-    if (judged.files[0] !== undefined) onFile(judged.files[0])
-    if (judged.urls[0] !== undefined) onAddress(judged.urls[0])
-  }
-
-  return (
-    // `data-dragging` carries the counter rather than a class, jsdom computing no style.
-    <div
-      className="relative flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-focus data-dragging:border-accent data-dragging:bg-accent-soft"
-      data-dragging={depth > 0 ? "" : undefined}
-      onDragEnter={() => setDepth((current) => dragDepth(current, "enter"))}
-      onDragLeave={() => setDepth((current) => dragDepth(current, "leave"))}
-      // Without this the browser fires no `drop` at all, whatever the handler below says.
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
-        event.preventDefault()
-        setDepth((current) => dragDepth(current, "drop"))
-        void take([...event.dataTransfer.files], event.dataTransfer.getData("text/uri-list"))
-      }}
-    >
-      <label className="cursor-pointer before:absolute before:inset-0 before:content-['']">
-        {m.drop_image()}
-        <input
-          type="file"
-          accept={limits?.mediaTypes.join(",") ?? "image/*"}
-          className="sr-only"
-          onChange={(event) => {
-            const input = event.currentTarget
-            void take([...(input.files ?? [])], "")
-            // An input still holding a file fires no change event for that same file.
-            input.value = ""
-          }}
-        />
-      </label>
-      {chosen !== null && (
-        <>
-          <span className="text-sm text-muted">{chosen.file.name}</span>
-          {/* Above the label's stretched hit area, which would otherwise open the picker. */}
-          <Button variant="ghost" className="relative" onPress={() => onFile(null)}>
-            {m.remove()}
-          </Button>
-        </>
-      )}
-    </div>
-  )
-}
-
-/**
  * What edits a pin is a set of fields, where what shows one is an image and its words (decision K).
  * Every field is sent on every save: the route replaces the pin, and an empty list clears.
  */
@@ -334,7 +237,10 @@ export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
           )
         }}
       >
-        <Field type="url" label={m.image_address()} value={address} onChange={changeAddress} />
+        <TextField type="url" value={address} onChange={changeAddress}>
+          <Label>{m.image_address()}</Label>
+          <Input />
+        </TextField>
         <RadioGroup value={intent} onChange={(value) => setIntent(value as ImageIntent)}>
           <Label>{m.image()}</Label>
           <ImageOption value="keep" label={m.image_keep()} />
@@ -342,24 +248,35 @@ export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
           {/* On the field's value and not on the pin's: an address just typed is one to fetch from. */}
           {fetchable && <ImageOption value="fetch" label={m.fetch_image_from_url()} />}
         </RadioGroup>
+        {/* The file replacing the image is chosen the way the creation screen has one chosen, and
+            an address the same drop carried is taken as well. */}
         {intent === "replace" && (
-          <ReplaceField
-            chosen={chosen}
+          <ImageDropBox
             limits={limits}
-            onFile={setChosen}
-            onAddress={changeAddress}
-          />
+            onDrop={(drop) => {
+              if (drop.files[0] !== undefined) setChosen(drop.files[0])
+              if (drop.urls[0] !== undefined) changeAddress(drop.urls[0])
+            }}
+          >
+            {chosen !== null && (
+              <>
+                <span className="text-sm text-muted">{chosen.file.name}</span>
+                {/* Above the label's stretched hit area, which would otherwise open the picker. */}
+                <Button variant="ghost" className="relative" onPress={() => setChosen(null)}>
+                  {m.remove()}
+                </Button>
+              </>
+            )}
+          </ImageDropBox>
         )}
         <TextField name="description" defaultValue={pin.description}>
           <Label>{m.description()}</Label>
           <TextArea rows={3} />
         </TextField>
-        <Field
-          name="sourceContextUrl"
-          type="url"
-          label={m.source_page()}
-          defaultValue={pin.sourceContextUrl ?? ""}
-        />
+        <TextField name="sourceContextUrl" type="url" defaultValue={pin.sourceContextUrl ?? ""}>
+          <Label>{m.source_page()}</Label>
+          <Input />
+        </TextField>
         <TagField names={tags} onChange={setTags} />
         <BoardField ids={boardIds} onChange={setBoardIds} />
         {/* Two halves, two sentences: the pin is written before its image, so a refused image

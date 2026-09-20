@@ -57,7 +57,8 @@ export function useRestorePins() {
   return useBinWrite(
     (pinIds: readonly string[]) =>
       auth.client.POST("/api/v1/pins/recycled/restore", { body: { pinIds: [...pinIds] } }),
-    [RECYCLED_PINS, PINS],
+    // The boards too: a board counts the pins it holds that are active, and a restore moves that.
+    [RECYCLED_PINS, PINS, BOARDS],
   )
 }
 

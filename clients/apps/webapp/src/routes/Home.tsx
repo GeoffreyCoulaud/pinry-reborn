@@ -1,5 +1,5 @@
 import { Navigate, useSearch } from "@tanstack/react-router"
-import { LogOut, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { AppHeader } from "../components/AppHeader"
 import { AppNav } from "../components/AppNav"
@@ -7,19 +7,17 @@ import { CreatePinDialog } from "../components/CreatePinDialog"
 import { IconButton } from "../components/IconButton"
 import { PinGrid } from "../components/PinGrid"
 import { SortSelect } from "../components/SortSelect"
-import { TaskCentre } from "../components/TaskCentre"
 import { judgeDrop, refuse } from "../drops"
 import { useHandshake } from "../images"
 import { dragDepth, type DragStep } from "../lib/drags"
 import type { DropPartition } from "../lib/drops"
 import { PIN_SORTS } from "../lib/sorts"
 import { m } from "../paraglide/messages.js"
-import { useSession, useSignOut } from "../session"
+import { useSession } from "../session"
 
 export function Home() {
   const { sort } = useSearch({ from: "/" })
   const session = useSession()
-  const signOut = useSignOut()
   const limits = useHandshake().data?.limits
   const [creating, setCreating] = useState(false)
   const [dropped, setDropped] = useState<DropPartition | null>(null)
@@ -106,15 +104,8 @@ export function Home() {
               setCreating(true)
             }}
           />
-          <AppNav />
           <SortSelect value={sort} values={PIN_SORTS} />
-          <TaskCentre />
-          <IconButton
-            icon={LogOut}
-            name={m.sign_out()}
-            variant="ghost"
-            onPress={() => signOut.mutate()}
-          />
+          <AppNav />
         </AppHeader>
         {/* Full bleed: the scrollbar belongs to the viewport edge, not inside the shell's padding. */}
         <div className="-mx-4 min-h-0 flex-1">
