@@ -29,7 +29,9 @@ export function SortSelect({ value, values }: { value: PinSort; values: readonly
         <Select.Value />
         <Select.Indicator />
       </Select.Trigger>
-      <Select.Popover>
+      {/* Wider than the trigger: the popover floors at the trigger's width, where the check mark
+          the selected option carries lands on the last letters of its label. */}
+      <Select.Popover className="min-w-44">
         <ListBox aria-label={m.sort_order()}>
           {values.map((sort) => (
             <ListBox.Item key={sort} id={sort} textValue={LABELS[sort]()}>
