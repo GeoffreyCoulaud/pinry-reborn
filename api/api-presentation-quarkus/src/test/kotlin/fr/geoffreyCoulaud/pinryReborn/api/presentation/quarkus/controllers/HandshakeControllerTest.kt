@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.ImageFormat
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ContractConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ImagesConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.RenditionsConfig
@@ -36,6 +37,25 @@ class HandshakeControllerTest {
         assertEquals(SMALL, dto.renditionSizes.small)
         assertEquals(MEDIUM, dto.renditionSizes.medium)
         assertEquals(LARGE, dto.renditionSizes.large)
+    }
+
+    @Test
+    fun `Given the formats the probe accepts, Then the handshake publishes their media types`() {
+        // Given
+        every { imagesConfig.maxFileBytes() } returns MAX_FILE_BYTES
+        every { imagesConfig.maxPixels() } returns MAX_PIXELS
+        every { renditionsConfig.tiny() } returns TINY
+        every { renditionsConfig.small() } returns SMALL
+        every { renditionsConfig.medium() } returns MEDIUM
+        every { renditionsConfig.large() } returns LARGE
+        every { contractConfig.infoVersion() } returns CONTRACT_VERSION
+
+        // When
+        val mediaTypes = controller.getHandshake().limits.mediaTypes
+
+        // Then: the stored formats themselves, so a format added to the enum reaches the client
+        assertEquals(ImageFormat.entries.map { it.mimeType }, mediaTypes)
+        assertEquals(listOf("image/png", "image/jpeg", "image/webp", "image/gif"), mediaTypes)
     }
 
     private companion object {

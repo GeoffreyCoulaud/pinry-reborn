@@ -32,10 +32,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 
 ### P1: Client ergonomics (needed for the web UI and browser extension), and process debt
 
-- **The handshake does not publish the media types the storage accepts.** `HandshakeOutputDto` carries
-  `contractVersion`, `limits` and `renditionSizes` alone, so the creation dialog can only judge a format
-  on `type.startsWith("image/")` and an SVG reaches the server to be refused there.
-  See `docs/specs/2026-09-19-the-header-becomes-icons.md` section 6. New 2026-09-19.
 - **Browser-extension CORS origin.** Deferred from the CORS sub-project (decision B1): the extension
   does not exist yet and has no stable ID, so no origin is wired for it. When it ships, add its
   `chrome-extension://<id>` / `moz-extension://<id>` origin to `api.cors.origins`. See

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.ImageFormat
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ContractConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ImagesConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.RenditionsConfig
@@ -21,6 +22,7 @@ class HandshakeController(
         limits = HandshakeOutputDto.LimitsDto(
             maxFileBytes = imagesConfig.maxFileBytes(),
             maxPixels = imagesConfig.maxPixels(),
+            mediaTypes = ImageFormat.entries.map { it.mimeType },
         ),
         renditionSizes = HandshakeOutputDto.RenditionSizesDto(
             tiny = renditionsConfig.tiny(),

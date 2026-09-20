@@ -13,6 +13,8 @@ data class HandshakeOutputDto(
     data class LimitsDto(
         val maxFileBytes: Long,
         val maxPixels: Long,
+        /** The media types the storage accepts; anything else the probe refuses. */
+        val mediaTypes: List<String>,
     )
 
     /** Shortest side, in pixels, each `size` of `GET /api/v1/pins/{pinId}/image` answers. */

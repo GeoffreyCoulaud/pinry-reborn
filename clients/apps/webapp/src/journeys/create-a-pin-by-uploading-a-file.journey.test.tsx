@@ -6,6 +6,7 @@ import {
   downloadsRoute,
   dropOf,
   handshakeRoute,
+  MEDIA_TYPES,
   onePinPage,
   readyPin,
   renderApp,
@@ -115,11 +116,35 @@ describe("create a pin by uploading a file", () => {
     // A drop bypasses `accept`, which only the file picker honours, so it is the only way in.
     fireEvent.drop(area, dropOf([new File(["%PDF"], "notes.pdf", { type: "application/pdf" })]))
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("This file is not an image.")
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This file is not in a format this server accepts.",
+    )
     expect(dialog.queryByRole("alert")).toBeNull()
     expect(dialog.queryByText("notes.pdf")).toBeNull()
     // No file was kept, so the other way in is required again.
     expect(dialog.getByLabelText("Image address")).toBeRequired()
+  })
+
+  it("Given a picture in a format the handshake does not publish, Then it never reaches the server", async () => {
+    const user = userEvent.setup()
+    server.use(
+      sessionRoute(() => true),
+      handshakeRoute(),
+      downloadsRoute(),
+      onePinPage(() => []),
+    )
+
+    renderApp("/")
+    const dialog = await openTheDialog(user)
+    const area = dialog.getByLabelText(DROP_AREA)
+    // An image the browser decodes and libvips does not: the media types the handshake publishes
+    // are what tells the two apart, `image/` alone taking it as far as the server's refusal.
+    fireEvent.drop(area, dropOf([new File(["<svg/>"], "logo.svg", { type: "image/svg+xml" })]))
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This file is not in a format this server accepts.",
+    )
+    expect(dialog.queryByText("logo.svg")).toBeNull()
   })
 
   it("Given the keyboard on the drop area, Then the box shows the focus its input hides", async () => {
@@ -254,7 +279,7 @@ describe("create a pin by uploading a file", () => {
         await published
         return HttpResponse.json({
           contractVersion: "4.0.0",
-          limits: { maxFileBytes: 4, maxPixels: 50_000_000 },
+          limits: { maxFileBytes: 4, maxPixels: 50_000_000, mediaTypes: MEDIA_TYPES },
           renditionSizes: { tiny: 80, small: 240, medium: 640, large: 1600 },
         })
       }),

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.ImageFormat
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
@@ -62,6 +63,15 @@ class HandshakeIntegrationTest {
         assertEquals(HandshakeTestProfile.SMALL, body.getInt("renditionSizes.small"))
         assertEquals(HandshakeTestProfile.MEDIUM, body.getInt("renditionSizes.medium"))
         assertEquals(HandshakeTestProfile.LARGE, body.getInt("renditionSizes.large"))
+    }
+
+    @Test
+    fun `Given the formats the storage accepts, Then the handshake answers their media types`() {
+        // Given / When / Then
+        assertEquals(
+            ImageFormat.entries.map { it.mimeType },
+            handshake().getList<String>("limits.mediaTypes"),
+        )
     }
 
     @Test

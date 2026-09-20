@@ -32,7 +32,13 @@ export function uploadRefusal(
   return null
 }
 
-/** A drop bypasses `accept`, which only the file picker honours, so the type is read here too. */
-export function isImageFile(file: { type: string }): boolean {
-  return file.type.startsWith("image/")
+/**
+ * A drop bypasses `accept`, which only the file picker honours, so the type is read here too. The
+ * formats are the deployment's, as the limits are: an SVG is a picture the browser decodes and the
+ * storage refuses. Before the handshake answers, only what the browser calls a picture passes, and
+ * the format then meets the server's own answer.
+ */
+export function isStorableFile(file: { type: string }, limits: UploadLimits | undefined): boolean {
+  if (limits === undefined) return file.type.startsWith("image/")
+  return limits.mediaTypes.includes(file.type)
 }

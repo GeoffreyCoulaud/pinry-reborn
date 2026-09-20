@@ -96,6 +96,9 @@ export function downloadsPage(downloads: unknown[], nextCursor?: unknown) {
   return { downloads, pagination: { previousCursor: null, nextCursor: nextCursor ?? null } }
 }
 
+/** What the API's `ImageFormat` holds, which is what a real handshake publishes. */
+export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"]
+
 /** The deployment's limits and rendition sizes, as narrow as the journey needs them to be. */
 export function handshakeRoute({
   maxFileBytes = 30 * 1024 * 1024,
@@ -106,7 +109,7 @@ export function handshakeRoute({
     onRequest()
     return HttpResponse.json({
       contractVersion: "4.0.0",
-      limits: { maxFileBytes, maxPixels: 50_000_000 },
+      limits: { maxFileBytes, maxPixels: 50_000_000, mediaTypes: MEDIA_TYPES },
       renditionSizes: { tiny: 80, small, medium: 640, large: 1600 },
     })
   })

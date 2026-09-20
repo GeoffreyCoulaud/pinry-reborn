@@ -4,7 +4,7 @@ import { judgeDrop, refuse } from "../drops"
 import { useCreatePin, useHandshake, type ImageSource } from "../images"
 import { dragDepth, type DragStep } from "../lib/drags"
 import { entriesOf, withDrop, type DropPartition, type PinEntry } from "../lib/drops"
-import { uploadRefusal } from "../lib/uploads"
+import { isStorableFile, uploadRefusal } from "../lib/uploads"
 import { m } from "../paraglide/messages.js"
 
 /**
@@ -110,8 +110,12 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
     // always sent, and it supplies the bytes only when no file was chosen.
     let source: ImageSource = { url: entry.url }
     if (entry.file !== null) {
-      // Judged again here, for the file chosen before the handshake's limits arrived.
-      const refusal = uploadRefusal(entry.file.measurement, handshake.data?.limits)
+      // Judged again here, for the file chosen before the handshake's limits arrived, the format
+      // included: until they do, a picture is judged on being one rather than on being stored.
+      const limits = handshake.data?.limits
+      const refusal = isStorableFile(entry.file.file, limits)
+        ? uploadRefusal(entry.file.measurement, limits)
+        : "UNSUPPORTED_FORMAT"
       // Dropped here as it would have been at the choice, so one message means one state.
       if (refusal !== null) {
         refuse(refusal)
@@ -184,7 +188,7 @@ function CreatePinForm({ dropped, close }: { dropped: DropPartition | null; clos
           <input
             name="file"
             type="file"
-            accept="image/*"
+            accept={handshake.data?.limits.mediaTypes.join(",") ?? "image/*"}
             multiple
             className="sr-only"
             onChange={(event) => {

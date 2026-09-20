@@ -1,6 +1,6 @@
 import { toast } from "@heroui/react"
 import { partitionDrop, type DropPartition, type DropRefusal, type FileVerdict } from "./lib/drops"
-import { isImageFile, uploadRefusal, type MeasuredUpload, type UploadLimits } from "./lib/uploads"
+import { isStorableFile, uploadRefusal, type MeasuredUpload, type UploadLimits } from "./lib/uploads"
 import { urisFromDrop } from "./lib/uris"
 import { m } from "./paraglide/messages.js"
 
@@ -31,7 +31,7 @@ async function measured(file: File): Promise<MeasuredUpload> {
 async function judge(file: File, limits: UploadLimits | undefined): Promise<FileVerdict> {
   // A drop bypasses `accept`, which only the file picker honours, so a format refused costs no
   // decode at all.
-  if (!isImageFile(file)) return "UNSUPPORTED_FORMAT"
+  if (!isStorableFile(file, limits)) return "UNSUPPORTED_FORMAT"
   let measurement: MeasuredUpload
   try {
     measurement = await measured(file)

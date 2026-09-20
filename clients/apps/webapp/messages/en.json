@@ -15,7 +15,7 @@
   "file_too_heavy": "This file is heavier than this server accepts.",
   "file_too_large": "This image has more pixels than this server accepts.",
   "file_unreadable": "This image could not be read. Try another file.",
-  "file_unsupported": "This file is not an image.",
+  "file_unsupported": "This file is not in a format this server accepts.",
   "home_heading": "Your pins",
   "ignore": "Ignore",
   "image_address": "Image address",
