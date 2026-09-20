@@ -154,15 +154,6 @@ class MeImportIntegrationTest : IntegrationTest() {
             .then().statusCode(201)
     }
 
-    private fun putPinInBoards(auth: AuthenticatedUser, pinId: UUID, boardIds: List<UUID>) {
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body("""{"boardIds": [${boardIds.joinToString(",") { "\"$it\"" }}]}""")
-            .`when`().put("/api/v1/pins/$pinId/boards")
-            .then().statusCode(200)
-    }
-
     private fun createPin(
         auth: AuthenticatedUser,
         slug: String,
@@ -193,7 +184,7 @@ class MeImportIntegrationTest : IntegrationTest() {
         uploadImage(auth, delta.id, "sample.jpg", "image/jpeg")
         val activeBoard = boardCreator.create(auth.user, "Active board", "kept")
         val recycledBoard = boardCreator.create(auth.user, "Recycled board", "recycled")
-        putPinInBoards(auth, alpha.id, listOf(activeBoard.id, recycledBoard.id))
+        replacePin(auth, alpha, boardIds = listOf(activeBoard.id, recycledBoard.id)).statusCode(200)
         given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${recycledBoard.id}").then().statusCode(204)
         given().authenticatedAs(auth).`when`().delete("/api/v1/pins/${gamma.id}").then().statusCode(204)
     }
@@ -524,7 +515,7 @@ class MeImportIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         val pin = createPin(auth, "held", tags = listOf("voyage"))
         val board = boardCreator.create(auth.user, "Summer", "the account's own")
-        putPinInBoards(auth, pin.id, listOf(board.id))
+        replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
         val archive =
             ImportArchiveBuilder(objectMapper)
                 .manifest(announcedPins = 0)

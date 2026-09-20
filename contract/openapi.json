@@ -246,20 +246,6 @@
           }
         }
       },
-      "PinBoardsInputDto" : {
-        "type" : "object",
-        "required" : [ "boardIds" ],
-        "properties" : {
-          "boardIds" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "format" : "uuid",
-              "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
-            }
-          }
-        }
-      },
       "PinCreationInputDto" : {
         "type" : "object",
         "required" : [ "sourceContextUrl", "sourceMediaUrl", "description" ],
@@ -424,18 +410,6 @@
       "PinSortStrategyInputEnum" : {
         "type" : "string",
         "enum" : [ "CREATED_AT_ASC", "CREATED_AT_DESC" ]
-      },
-      "PinTagsInputDto" : {
-        "type" : "object",
-        "required" : [ "tags" ],
-        "properties" : {
-          "tags" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          }
-        }
       },
       "PinUpdateInputDto" : {
         "type" : "object",
@@ -2608,56 +2582,6 @@
         } ]
       }
     },
-    "/api/v1/pins/{pinId}/boards" : {
-      "put" : {
-        "parameters" : [ {
-          "name" : "pinId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "$ref" : "#/components/schemas/UUID"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PinBoardsInputDto"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PinOutputDto"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Set Boards",
-        "tags" : [ "Pin Controller" ],
-        "security" : [ {
-          "BearerScheme" : [ ]
-        }, {
-          "CookieScheme" : [ ]
-        } ]
-      }
-    },
     "/api/v1/pins/{pinId}/image" : {
       "put" : {
         "summary" : "Set the pin's canonical image (upload bytes, or request a server-side fetch)",
@@ -2851,57 +2775,6 @@
         },
         "summary" : "Get Image Status",
         "tags" : [ "Image Controller" ],
-        "security" : [ {
-          "BearerScheme" : [ ]
-        }, {
-          "CookieScheme" : [ ]
-        } ]
-      }
-    },
-    "/api/v1/pins/{pinId}/tags" : {
-      "put" : {
-        "summary" : "Replace the pin's tags",
-        "description" : "A tag name is an identity per author under an ASCII fold: `Landscape` and `landscape` are one tag, and the response carries the stored spelling, not the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags.",
-        "parameters" : [ {
-          "name" : "pinId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "$ref" : "#/components/schemas/UUID"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PinTagsInputDto"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PinOutputDto"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "tags" : [ "Pin Controller" ],
         "security" : [ {
           "BearerScheme" : [ ]
         }, {
@@ -3148,7 +3021,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "6.3.0"
+    "version" : "7.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

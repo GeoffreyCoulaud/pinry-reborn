@@ -1,6 +1,5 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
@@ -40,13 +39,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         )
 
         // When
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body(replacing(pin, boardIds = listOf(board1.id, board2.id)))
-            .`when`()
-            .put("/api/v1/pins/${pin.id}")
-            .then()
+        replacePin(auth, pin, boardIds = listOf(board1.id, board2.id))
             .statusCode(200)
             .body("boards", hasSize<Any>(2))
             .body("boards.id", containsInAnyOrder(board1.id.toString(), board2.id.toString()))
@@ -81,16 +74,8 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
             description = "Pin 2",
             tags = emptyList(),
         )
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body(replacing(pin1, boardIds = listOf(board.id)))
-            .put("/api/v1/pins/${pin1.id}")
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body(replacing(pin2, boardIds = listOf(board.id)))
-            .put("/api/v1/pins/${pin2.id}")
+        replacePin(auth, pin1, boardIds = listOf(board.id)).statusCode(200)
+        replacePin(auth, pin2, boardIds = listOf(board.id)).statusCode(200)
 
         // When / Then
         given()
@@ -144,13 +129,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         )
 
         // When / Then
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body(replacing(pin, boardIds = listOf(UUID.randomUUID())))
-            .`when`()
-            .put("/api/v1/pins/${pin.id}")
-            .then()
+        replacePin(auth, pin, boardIds = listOf(UUID.randomUUID()))
             .statusCode(404)
     }
 
@@ -169,23 +148,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         )
 
         // When / Then
-        given()
-            .authenticatedAs(owner)
-            .contentType(ContentType.JSON)
-            .body(replacing(pin, boardIds = listOf(otherBoard.id)))
-            .`when`()
-            .put("/api/v1/pins/${pin.id}")
-            .then()
+        replacePin(owner, pin, boardIds = listOf(otherBoard.id))
             .statusCode(403)
     }
-
-    /** The whole pin as it was read, with the boards alone replaced: the write is a replacement. */
-    private fun replacing(pin: Pin, boardIds: List<UUID>): Map<String, Any?> =
-        mapOf(
-            "description" to pin.description,
-            "sourceContextUrl" to pin.sourceContextUrl,
-            "sourceMediaUrl" to pin.sourceMediaUrl,
-            "tags" to emptyList<String>(),
-            "boardIds" to boardIds.map { it.toString() },
-        )
 }

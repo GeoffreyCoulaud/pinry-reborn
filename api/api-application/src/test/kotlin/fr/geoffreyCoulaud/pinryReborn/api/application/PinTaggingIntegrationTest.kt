@@ -1,6 +1,5 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
@@ -31,13 +30,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
             tags = emptyList()
         )
 
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body(replacing(pin, tags = listOf("nature", "landscape")))
-            .`when`()
-            .put("/api/v1/pins/${pin.id}")
-            .then()
+        replacePin(auth, pin, tags = listOf("nature", "landscape"))
             .statusCode(200)
             .body("id", equalTo(pin.id.toString()))
             .body("tags", hasSize<Any>(2))
@@ -64,13 +57,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
             description = "Another pin",
             tags = emptyList(),
         )
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body(replacing(other, tags = listOf("Landscape")))
-            .`when`()
-            .put("/api/v1/pins/${other.id}")
-            .then()
+        replacePin(auth, other, tags = listOf("Landscape"))
             .statusCode(200)
             // Then: the stored spelling comes back, not the one that was sent. Before the fold
             // reached the read, this created a second tag named `Landscape`.
@@ -99,13 +86,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
             tags = listOf("oldtag1", "oldtag2")
         )
 
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body(replacing(pin, tags = listOf("newtag")))
-            .`when`()
-            .put("/api/v1/pins/${pin.id}")
-            .then()
+        replacePin(auth, pin, tags = listOf("newtag"))
             .statusCode(200)
             .body("tags", hasSize<Any>(1))
             .body("tags[0].name", equalTo("newtag"))
@@ -123,13 +104,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
             tags = listOf("tag1", "tag2")
         )
 
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body(replacing(pin, tags = emptyList()))
-            .`when`()
-            .put("/api/v1/pins/${pin.id}")
-            .then()
+        replacePin(auth, pin, tags = emptyList())
             .statusCode(200)
             .body("tags", emptyIterable<Any>())
     }
@@ -147,13 +122,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
             tags = emptyList()
         )
 
-        given()
-            .authenticatedAs(attacker)
-            .contentType(ContentType.JSON)
-            .body(replacing(pin, tags = listOf("hacked")))
-            .`when`()
-            .put("/api/v1/pins/${pin.id}")
-            .then()
+        replacePin(attacker, pin, tags = listOf("hacked"))
             .statusCode(403)
     }
 
@@ -166,15 +135,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .contentType(ContentType.JSON)
-            .body(
-                mapOf(
-                    "description" to "My pin",
-                    "sourceContextUrl" to null,
-                    "sourceMediaUrl" to null,
-                    "tags" to listOf("tag"),
-                    "boardIds" to emptyList<String>(),
-                ),
-            )
+            .body(wholePin(tags = listOf("tag")))
             .`when`()
             .put("/api/v1/pins/$nonExistentPinId")
             .then()
@@ -195,19 +156,19 @@ class PinTaggingIntegrationTest : IntegrationTest() {
 
         given()
             .contentType(ContentType.JSON)
-            .body(replacing(pin, tags = listOf("tag")))
+            .body(wholePin(tags = listOf("tag")))
             .`when`()
             .put("/api/v1/pins/${pin.id}")
             .then()
             .statusCode(401)
     }
 
-    /** The whole pin as it was read, with the tags alone replaced: the write is a replacement. */
-    private fun replacing(pin: Pin, tags: List<String>): Map<String, Any?> =
+    /** The two cases the base class's helper cannot serve: no pin to read, and no session to send. */
+    private fun wholePin(tags: List<String>): Map<String, Any?> =
         mapOf(
-            "description" to pin.description,
-            "sourceContextUrl" to pin.sourceContextUrl,
-            "sourceMediaUrl" to pin.sourceMediaUrl,
+            "description" to "My pin",
+            "sourceContextUrl" to "https://example.com/page",
+            "sourceMediaUrl" to "https://example.com/image.jpg",
             "tags" to tags,
             "boardIds" to emptyList<String>(),
         )
