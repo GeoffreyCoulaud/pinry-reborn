@@ -260,6 +260,34 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given an empty body, Then the bulk removal returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+
+        // When / Then: the body has to reach the resource method for @NotEmpty to ever be read.
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .`when`()
+            .delete("/api/v1/boards/${board.id}/pins")
+            .then()
+            .statusCode(400)
+    }
+
+    @Test
+    fun `Given a recycled pin, Then adding it to a board returns 409`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val pin = createPin(auth.user)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/pins/${pin.id}").then().statusCode(204)
+
+        // When / Then: the third arm of the batch grammar, beside 404 and 403 (ADR 0039, decision 2).
+        bulkMembership(auth, "POST", board.id, listOf(pin.id)).statusCode(409)
+    }
+
+    @Test
     fun `Given another user's pin last, Then removing takes nothing out`() {
         // Given
         val auth = createAuthenticatedUser()

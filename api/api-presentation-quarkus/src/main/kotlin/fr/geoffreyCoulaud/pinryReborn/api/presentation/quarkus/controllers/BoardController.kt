@@ -13,6 +13,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BoardMapp
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinSortStrategyMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BATCH_BODY_REFUSED
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
@@ -73,7 +74,7 @@ class BoardController(
         description = BOARD_NAME_ALREADY_EXISTS,
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
     )
-    fun createBoard(@Valid dto: BoardInputDto): RestResponse<BoardOutputDto> {
+    fun createBoard(@Valid @NotNull dto: BoardInputDto): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
         val board = boardCreator.create(author = user, name = dto.name, description = dto.description)
         return ResponseBuilder
@@ -120,7 +121,7 @@ class BoardController(
         description = BOARD_NAME_ALREADY_EXISTS,
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
     )
-    fun updateBoard(boardId: UUID, @Valid dto: BoardInputDto): RestResponse<BoardOutputDto> {
+    fun updateBoard(boardId: UUID, @Valid @NotNull dto: BoardInputDto): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
         val board = boardUpdater.update(boardId = boardId, name = dto.name, description = dto.description, user = user)
         val count = boardGetter.countActivePinsForUserBoard(boardId, user)
@@ -159,6 +160,11 @@ class BoardController(
     @Path("/{boardId}/pins")
     @Operation(summary = "File several pins under the board, all or nothing")
     @APIResponse(responseCode = "204", description = "Pins filed under the board")
+    @APIResponse(
+        responseCode = "400",
+        description = BATCH_BODY_REFUSED,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
+    )
     fun addPinsToBoard(boardId: UUID, @Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
         val user = securityIdentity.getUser()
         pinBoardSetter.addPinsToBoard(boardId = boardId, pinIds = dto.pinIds, user = user)
@@ -169,6 +175,12 @@ class BoardController(
     @Authenticated
     @Path("/{boardId}/pins")
     @Operation(summary = "Take several pins out of the board, all or nothing")
+    @APIResponse(responseCode = "204", description = "Pins taken out of the board")
+    @APIResponse(
+        responseCode = "400",
+        description = BATCH_BODY_REFUSED,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
+    )
     fun removePinsFromBoard(boardId: UUID, @Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
         val user = securityIdentity.getUser()
         pinBoardSetter.removePinsFromBoard(boardId = boardId, pinIds = dto.pinIds, user = user)

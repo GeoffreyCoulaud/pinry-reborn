@@ -25,6 +25,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ImageRenditionSize
 import io.quarkus.security.Authenticated
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.Consumes
 import jakarta.ws.rs.DELETE
 import jakarta.ws.rs.GET
@@ -186,7 +187,10 @@ class ImageController(
             ),
         ],
     )
-    fun requestImageDownload(pinId: UUID, @Valid body: PinImageDownloadInputDto): RestResponse<PinImageStateDto> {
+    fun requestImageDownload(
+        pinId: UUID,
+        @Valid @NotNull body: PinImageDownloadInputDto,
+    ): RestResponse<PinImageStateDto> {
         val requester = securityIdentity.getUser()
         requestPinImageDownload.request(pinId, requester, body.sourceUrl)
         val dto = PinImageState(PinImageStatus.PENDING, null, null, null).toDto(pinId)

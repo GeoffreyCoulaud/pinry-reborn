@@ -2,9 +2,12 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.BoardIdsInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardOutputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.RecycledBoardListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BoardMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BoardMapper.toRecycledDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BATCH_BODY_REFUSED
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardRecycleBin
@@ -17,6 +20,8 @@ import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
 import org.eclipse.microprofile.openapi.annotations.Operation
+import org.eclipse.microprofile.openapi.annotations.media.Content
+import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 import java.util.UUID
@@ -50,6 +55,11 @@ class BoardRecycleBinController(
     @Path("/restore")
     @Operation(summary = "Restore several boards, all or nothing")
     @APIResponse(responseCode = "204", description = "Boards restored")
+    @APIResponse(
+        responseCode = "400",
+        description = BATCH_BODY_REFUSED,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
+    )
     fun restoreBoards(@Valid @NotNull dto: BoardIdsInputDto): RestResponse<Void> {
         val user = securityIdentity.getUser()
         boardRecycleBin.restoreAll(boardIds = dto.boardIds, user = user)

@@ -8,9 +8,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSor
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinUpdateInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinSortStrategyMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BATCH_BODY_REFUSED
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
@@ -70,7 +73,7 @@ class PinController(
             ),
         ],
     )
-    fun createPin(@Valid creationDto: PinCreationInputDto): RestResponse<PinOutputDto> {
+    fun createPin(@Valid @NotNull creationDto: PinCreationInputDto): RestResponse<PinOutputDto> {
         val author = securityIdentity.getUser()
         val pin = pinCreator.createPin(
             author = author,
@@ -114,6 +117,12 @@ class PinController(
     @DELETE
     @Authenticated
     @Operation(summary = "Recycle several pins, all or nothing")
+    @APIResponse(responseCode = "204", description = "Pins recycled")
+    @APIResponse(
+        responseCode = "400",
+        description = BATCH_BODY_REFUSED,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
+    )
     fun softDeletePins(@Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
         val user = securityIdentity.getUser()
         pinRecycleBin.softDeleteAll(pinIds = dto.pinIds, user = user)
@@ -130,7 +139,7 @@ class PinController(
             "`Landscape` and `landscape` are one tag, and the response carries the stored spelling, not " +
             "the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags.",
     )
-    fun updatePin(pinId: UUID, @Valid updateDto: PinUpdateInputDto): RestResponse<PinOutputDto> {
+    fun updatePin(pinId: UUID, @Valid @NotNull updateDto: PinUpdateInputDto): RestResponse<PinOutputDto> {
         val user = securityIdentity.getUser()
         return pinUpdater
             .update(

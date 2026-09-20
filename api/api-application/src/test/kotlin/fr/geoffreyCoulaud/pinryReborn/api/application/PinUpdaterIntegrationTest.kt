@@ -161,6 +161,22 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
             tags = tags,
         )
 
+    @Test
+    fun `Given an empty body, Then the write returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+
+        // When / Then: the body has to reach the resource method for its validation to ever run.
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .`when`()
+            .put("/api/v1/pins/${pin.id}")
+            .then()
+            .statusCode(400)
+    }
+
     @Suppress("LongParameterList") // The whole pin, which is what the route under test writes.
     private fun update(
         auth: AuthenticatedUser,

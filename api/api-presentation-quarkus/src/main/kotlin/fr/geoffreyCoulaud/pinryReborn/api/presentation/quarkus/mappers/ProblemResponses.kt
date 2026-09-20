@@ -10,6 +10,12 @@ import jakarta.ws.rs.core.UriInfo
 object ProblemResponses {
     const val PROBLEM_JSON_MEDIA_TYPE = "application/problem+json"
 
+    /**
+     * What every batch route publishes for its refused body, the five reading as one grammar
+     * (`docs/adr/0039-a-batch-route-is-all-or-nothing.md`, decision 3).
+     */
+    const val BATCH_BODY_REFUSED = "The body is missing, or its list of identifiers is empty"
+
     /** RFC 7807 challenge value: opaque bearer token, no realm. */
     const val WWW_AUTHENTICATE_BEARER = "Bearer"
 

@@ -6,9 +6,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIds
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinRecycleBinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinRecycleBinSortStrategyMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BATCH_BODY_REFUSED
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBin
@@ -23,6 +26,8 @@ import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import org.eclipse.microprofile.openapi.annotations.Operation
+import org.eclipse.microprofile.openapi.annotations.media.Content
+import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 import java.util.UUID
@@ -66,6 +71,11 @@ class PinRecycleBinController(
     @Path("/restore")
     @Operation(summary = "Restore several pins, all or nothing")
     @APIResponse(responseCode = "204", description = "Pins restored")
+    @APIResponse(
+        responseCode = "400",
+        description = BATCH_BODY_REFUSED,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
+    )
     fun restorePins(@Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
         val user = securityIdentity.getUser()
         pinRecycleBin.restoreAll(pinIds = dto.pinIds, user = user)

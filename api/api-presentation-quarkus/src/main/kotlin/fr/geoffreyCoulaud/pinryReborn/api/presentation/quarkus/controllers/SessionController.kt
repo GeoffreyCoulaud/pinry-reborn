@@ -23,6 +23,7 @@ import io.quarkus.security.Authenticated
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.DELETE
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
@@ -51,7 +52,7 @@ class SessionController(
         content = [Content(mediaType = JSON, schema = Schema(implementation = ExistingSessionOutputDto::class))])
     @APIResponse(responseCode = "401", description = AUTHENTICATION_FAILED,
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))])
-    fun createSession(@Valid dto: SessionCreationInputDto): RestResponse<Any> {
+    fun createSession(@Valid @NotNull dto: SessionCreationInputDto): RestResponse<Any> {
         val persistent = dto.rememberMe ?: false
         val issued = try {
             sessionCreator.create(name = dto.name, password = dto.password, persistent = persistent)
