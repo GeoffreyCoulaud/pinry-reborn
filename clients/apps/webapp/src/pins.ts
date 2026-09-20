@@ -1,8 +1,15 @@
 import type { Schemas } from "@pinry-reborn/auth"
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+} from "@tanstack/react-query"
 import { auth, bodyOf } from "./api"
 import { rereadSettledPins } from "./images"
 import type { PinSort } from "./lib/sorts"
+import { removePins } from "./lib/tiles"
 
 export type Pin = Schemas["PinOutputDto"]
 export type PinPage = Schemas["PinListOutputDto"]
@@ -54,6 +61,29 @@ export function useUpdatePin() {
         "the pin",
       )
       await rereadSettledPins(queryClient, [pinId])
+    },
+  })
+}
+
+/**
+ * The delete, which sends the pins to the bin rather than away (decision R), in bulk so block 90's
+ * selection sends the same shape. The tiles leave the pages the grid already holds rather than the
+ * catalogue being reloaded (decision P), and every board and order is its own cached catalogue, so
+ * the write reaches each of them rather than the one key this screen happens to hold.
+ */
+export function useRecyclePins() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (pinIds: readonly string[]) => {
+      const { response } = await auth.client.DELETE("/api/v1/pins", {
+        body: { pinIds: [...pinIds] },
+      })
+      if (!response.ok) throw new Error(`The API kept the pins: ${response.status}.`)
+      queryClient.setQueriesData<InfiniteData<PinPage>>({ queryKey: ["pins"] }, (catalogue) =>
+        catalogue === undefined
+          ? catalogue
+          : { ...catalogue, pages: removePins(catalogue.pages, pinIds) },
+      )
     },
   })
 }

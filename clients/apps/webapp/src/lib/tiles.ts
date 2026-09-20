@@ -53,3 +53,15 @@ export function replacePins<T extends { id: string }>(pins: readonly T[], fresh:
   const byId = new Map(fresh.map((pin) => [pin.id, pin]))
   return pins.map((pin) => byId.get(pin.id) ?? pin)
 }
+
+/**
+ * The cached pages with the deleted pins taken out of them. A page left with no pin is kept: the
+ * cursors run page to page, and dropping one breaks the chain the next fetch reads (decision P).
+ */
+export function removePins<Page extends { pins: { id: string }[] }>(
+  pages: readonly Page[],
+  deleted: readonly string[],
+): Page[] {
+  const gone = new Set(deleted)
+  return pages.map((page) => ({ ...page, pins: page.pins.filter((pin) => !gone.has(pin.id)) }))
+}

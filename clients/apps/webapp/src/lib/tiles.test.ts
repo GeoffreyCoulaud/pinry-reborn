@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   placeableTiles,
+  removePins,
   renditionForColumn,
   replacePins,
   tileAspectRatio,
@@ -88,5 +89,31 @@ describe("a page's pins after a download settled", () => {
     const page = [{ id: "a", n: 1 }]
 
     expect(replacePins(page, [{ id: "z", n: 2 }])).toEqual(page)
+  })
+})
+
+describe("the cached pages after a delete", () => {
+  const page = (cursor: string | null, ...ids: string[]) => ({
+    pins: ids.map((id) => ({ id })),
+    pagination: { previousCursor: null, nextCursor: cursor },
+  })
+
+  it("Given the pins deleted, Then they leave the pages and the others stay put", () => {
+    const pages = [page("1", "a", "b"), page(null, "c")]
+
+    expect(removePins(pages, ["b"])).toEqual([page("1", "a"), page(null, "c")])
+  })
+
+  it("Given a page emptied by the delete, Then the page is kept and its cursor with it", () => {
+    const pages = [page("1", "a"), page(null, "b")]
+
+    // Dropping the page would break the chain the next fetch reads its cursor from.
+    expect(removePins(pages, ["a"])).toEqual([page("1"), page(null, "b")])
+  })
+
+  it("Given a pin no page holds, Then the pages are unchanged", () => {
+    const pages = [page(null, "a")]
+
+    expect(removePins(pages, ["z"])).toEqual(pages)
   })
 })

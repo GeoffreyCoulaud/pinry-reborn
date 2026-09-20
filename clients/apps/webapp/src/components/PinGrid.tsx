@@ -1,4 +1,4 @@
-import { Button, EmptyState, Modal, Spinner } from "@heroui/react"
+import { Button, EmptyState, Modal, Spinner, toast } from "@heroui/react"
 import { useLayoutEffect, useRef, useState, type RefObject } from "react"
 import {
   Collection,
@@ -14,7 +14,7 @@ import { useHandshake } from "../images"
 import type { PinSort } from "../lib/sorts"
 import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } from "../lib/tiles"
 import { m } from "../paraglide/messages.js"
-import { usePins, type Pin } from "../pins"
+import { useRecyclePins, usePins, type Pin } from "../pins"
 import { PinEditForm } from "./PinEditForm"
 
 /**
@@ -76,6 +76,7 @@ function Tile({ pin, smallRenditionPx }: { pin: Pin; smallRenditionPx?: number }
 /** The pin as it reads, until the Edit button swaps it for the form that writes it (decision K). */
 function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
   const [editing, setEditing] = useState(false)
+  const recycle = useRecyclePins()
 
   if (editing) return <PinEditForm pin={pin} close={() => setEditing(false)} />
 
@@ -100,6 +101,21 @@ function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
         ))}
       </ul>
       <div className="flex justify-end gap-2">
+        {/* Kept away from Close at the other end: it is the one button here that changes the
+            account, and no confirmation guards it, the bin being how the pin comes back. */}
+        <Button
+          variant="ghost"
+          className="me-auto"
+          isDisabled={recycle.isPending}
+          onPress={() =>
+            recycle.mutate([pin.id], {
+              onSuccess: close,
+              onError: () => toast.danger(m.pin_deletion_refused()),
+            })
+          }
+        >
+          {m.delete_pin()}
+        </Button>
         <Button variant="ghost" onPress={() => setEditing(true)}>
           {m.edit_pin()}
         </Button>
