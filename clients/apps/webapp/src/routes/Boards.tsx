@@ -1,5 +1,5 @@
 import { Button, EmptyState, Input, Label, Modal, Spinner, TextField, toast } from "@heroui/react"
-import { Navigate } from "@tanstack/react-router"
+import { Link, Navigate } from "@tanstack/react-router"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { GridList, GridListItem } from "react-aria-components"
@@ -76,7 +76,15 @@ function BoardRow({ board, rename }: { board: Board; rename: () => void }) {
       {/* The description under the name rather than beside it: at a phone's width a row has no
           space for both, and truncating it to two words says nothing at all. */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="font-medium">{board.name}</span>
+        {/* The name is the way in: a board's own grid is a screen, so it answers a middle click
+            and opens in a new tab like any other address. */}
+        <Link
+          to="/boards/$boardId"
+          params={{ boardId: board.id }}
+          className="self-start font-medium hover:underline"
+        >
+          {board.name}
+        </Link>
         <span className="truncate text-muted">{board.description}</span>
       </div>
       <span className="text-sm text-muted">{m.board_pin_count({ count: board.pinCount })}</span>
