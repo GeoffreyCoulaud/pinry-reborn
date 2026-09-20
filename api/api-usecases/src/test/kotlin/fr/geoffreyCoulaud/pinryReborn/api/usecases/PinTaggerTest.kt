@@ -1,251 +1,31 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinTaggingPermissionError
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinTaggingPinDoesNotExistError
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinTaggingSoftDeletedPinError
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import java.time.Instant
 import java.util.UUID.randomUUID
 
 class PinTaggerTest {
     private val tagCreator = mockk<TagCreator>()
-    private val pinRepository = mockk<PinRepositoryInterface>()
-    private val clockInstant = Instant.parse("2026-07-23T10:00:00Z")
-    private val clock = mockk<Clock> { every { now() } returns clockInstant }
-    private val useCase =
-        PinTagger(
-            tagCreator = tagCreator,
-            pinRepository = pinRepository,
-            clock = clock,
-            transactionRunner = PassthroughTransactionRunner(),
-        )
+    private val useCase = PinTagger(tagCreator = tagCreator)
 
     @Test
-    fun `Setting tags replaces existing tags`() {
+    fun `Given several names, Then resolveTags answers the tag each one resolves to, in order`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val existingTag = Tag(id = randomUUID(), name = "oldtag", author = user, createdAt = TestTime.now)
-        val pin = Pin(
-            id = randomUUID(),
-            author = user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "A pin",
-            tags = listOf(existingTag),
-            boards = emptyList(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
-        val newTagNames = listOf("newtag1", "newtag2")
-        val newTag1 = Tag(id = randomUUID(), name = "newtag1", author = user, createdAt = TestTime.now)
-        val newTag2 = Tag(id = randomUUID(), name = "newtag2", author = user, createdAt = TestTime.now)
-
-        every { pinRepository.findPinById(pin.id) } returns pin
-        every { tagCreator.findOrCreate(name = "newtag1", user = user) } returns newTag1
-        every { tagCreator.findOrCreate(name = "newtag2", user = user) } returns newTag2
-        every { pinRepository.savePin(any()) } answers { firstArg() }
+        val first = Tag(id = randomUUID(), name = "nature", author = user, createdAt = TestTime.now)
+        val second = Tag(id = randomUUID(), name = "mountain", author = user, createdAt = TestTime.now)
+        every { tagCreator.findOrCreate(name = "nature", user = user) } returns first
+        every { tagCreator.findOrCreate(name = "mountain", user = user) } returns second
 
         // When
-        val result = useCase.setTags(pinId = pin.id, tagNames = newTagNames, user = user)
+        val result = useCase.resolveTags(tagNames = listOf("nature", "mountain"), user = user)
 
         // Then
-        assertEquals(listOf(newTag1, newTag2), result.tags)
+        assertEquals(listOf(first, second), result)
     }
-
-    @Test
-    fun `Setting empty list clears all tags`() {
-        // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val existingTag = Tag(id = randomUUID(), name = "oldtag", author = user, createdAt = TestTime.now)
-        val pin = Pin(
-            id = randomUUID(),
-            author = user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "A pin",
-            tags = listOf(existingTag),
-            boards = emptyList(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
-
-        every { pinRepository.findPinById(pin.id) } returns pin
-        every { pinRepository.savePin(any()) } answers { firstArg() }
-
-        // When
-        val result = useCase.setTags(pinId = pin.id, tagNames = emptyList(), user = user)
-
-        // Then
-        assertEquals(emptyList<Tag>(), result.tags)
-    }
-
-    @Test
-    fun `Setting same tags is idempotent`() {
-        // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val existingTag = Tag(id = randomUUID(), name = "sametag", author = user, createdAt = TestTime.now)
-        val pin = Pin(
-            id = randomUUID(),
-            author = user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "A pin",
-            tags = listOf(existingTag),
-            boards = emptyList(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
-
-        every { pinRepository.findPinById(pin.id) } returns pin
-        every { tagCreator.findOrCreate(name = "sametag", user = user) } returns existingTag
-        every { pinRepository.savePin(any()) } answers { firstArg() }
-
-        // When
-        val result = useCase.setTags(pinId = pin.id, tagNames = listOf("sametag"), user = user)
-
-        // Then
-        assertEquals(listOf(existingTag), result.tags)
-    }
-
-    @Test
-    fun `Setting tags on non-existent pin throws error`() {
-        // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val nonExistentPinId = randomUUID()
-
-        every { pinRepository.findPinById(nonExistentPinId) } returns null
-
-        // When, Then
-        assertThrows<PinTaggingPinDoesNotExistError> {
-            useCase.setTags(pinId = nonExistentPinId, tagNames = listOf("tag"), user = user)
-        }
-    }
-
-    @Test
-    fun `Setting tags on another user's pin throws permission error`() {
-        // Given
-        val owner = User(id = randomUUID(), name = "Owner", createdAt = TestTime.now)
-        val otherUser = User(id = randomUUID(), name = "Other", createdAt = TestTime.now)
-        val pin = Pin(
-            id = randomUUID(),
-            author = owner,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "A pin",
-            tags = emptyList(),
-            boards = emptyList(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
-
-        every { pinRepository.findPinById(pin.id) } returns pin
-
-        // When, Then
-        assertThrows<PinTaggingPermissionError> {
-            useCase.setTags(pinId = pin.id, tagNames = listOf("tag"), user = otherUser)
-        }
-    }
-
-    @Test
-    fun `Given soft-deleted pin, Then throws PinTaggingSoftDeletedPinError`() {
-        // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val pin = Pin(
-            id = randomUUID(),
-            author = user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "A pin",
-            tags = emptyList(),
-            boards = emptyList(),
-            softDeletedAt = TestTime.now,
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
-
-        every { pinRepository.findPinById(pin.id) } returns pin
-
-        // When, Then
-        assertThrows<PinTaggingSoftDeletedPinError> {
-            useCase.setTags(pinId = pin.id, tagNames = listOf("tag"), user = user)
-        }
-    }
-
-    @Test
-    fun `Given a pin recycled between the read and the fence, Then setTags refuses and saves nothing`() {
-        // Given: the first read answers an active pin, the fence's re-read a recycled one
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val pin = pin(user)
-        val tag = Tag(id = randomUUID(), name = "tag", author = user, createdAt = TestTime.now)
-        every { pinRepository.findPinById(pin.id) } returnsMany listOf(pin, pin.copy(softDeletedAt = TestTime.now))
-        every { tagCreator.findOrCreate(name = "tag", user = user) } returns tag
-        every { pinRepository.savePin(any()) } answers { firstArg() }
-
-        // When, Then
-        assertThrows<PinTaggingSoftDeletedPinError> {
-            useCase.setTags(pinId = pin.id, tagNames = listOf("tag"), user = user)
-        }
-        verify(exactly = 0) { pinRepository.savePin(any()) }
-    }
-
-    @Test
-    fun `Given a pin gone between the read and the fence, Then setTags refuses it as absent`() {
-        // Given: the fence's re-read finds no row
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val pin = pin(user)
-        every { pinRepository.findPinById(pin.id) } returnsMany listOf(pin, null)
-        every { tagCreator.findOrCreate(name = "tag", user = user) } returns
-            Tag(id = randomUUID(), name = "tag", author = user, createdAt = TestTime.now)
-
-        // When, Then
-        assertThrows<PinTaggingPinDoesNotExistError> {
-            useCase.setTags(pinId = pin.id, tagNames = listOf("tag"), user = user)
-        }
-    }
-
-    @Test
-    fun `Given boards set between the read and the fence, Then the saved pin carries them`() {
-        // Given: the fence's re-read carries a board the first read did not
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val board = Board(id = randomUUID(), author = user, name = "B", description = "",
-            createdAt = TestTime.now, updatedAt = TestTime.now)
-        val pin = pin(user)
-        val tag = Tag(id = randomUUID(), name = "tag", author = user, createdAt = TestTime.now)
-        every { pinRepository.findPinById(pin.id) } returnsMany listOf(pin, pin.copy(boards = listOf(board)))
-        every { tagCreator.findOrCreate(name = "tag", user = user) } returns tag
-        every { pinRepository.savePin(any()) } answers { firstArg() }
-
-        // When
-        val result = useCase.setTags(pinId = pin.id, tagNames = listOf("tag"), user = user)
-
-        // Then
-        assertEquals(listOf(board), result.boards)
-        assertEquals(listOf(tag), result.tags)
-    }
-
-    private fun pin(author: User) =
-        Pin(
-            id = randomUUID(),
-            author = author,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "A pin",
-            tags = emptyList(),
-            boards = emptyList(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
 }

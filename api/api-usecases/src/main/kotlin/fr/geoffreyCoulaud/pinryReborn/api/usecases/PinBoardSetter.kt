@@ -22,15 +22,6 @@ class PinBoardSetter(
     private val clock: Clock,
     private val transactionRunner: TransactionRunner,
 ) {
-    fun setBoards(pinId: UUID, boardIds: List<UUID>, user: User): Pin {
-        resolvePin(pinId = pinId, user = user)
-        val boards = resolveBoards(boardIds = boardIds, user = user)
-        // The fence re-reads the pin, so a recycling or a setTags landed since the read is kept, not restored.
-        return pinRepository.saveFenced(transactionRunner, pinId, held = ::activeOrRefused) {
-            it.copy(boards = boards, updatedAt = clock.now())
-        } ?: throw PinBoardSettingPinDoesNotExistError()
-    }
-
     /** All or nothing: the board and every pin are resolved before the first write (ADR 0039, decision 2). */
     fun addPinsToBoard(boardId: UUID, pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
         val board = resolveBoard(boardId, user)
@@ -58,12 +49,7 @@ class PinBoardSetter(
         return pin
     }
 
-    private fun activeOrRefused(pin: Pin): Boolean {
-        if (pin.softDeletedAt != null) throw PinBoardSettingSoftDeletedPinError()
-        return true
-    }
-
-    /** The resolution half, outside any transaction, so [PinUpdater] runs it before opening its own. */
+    /** The resolution half, split from the write, so [PinUpdater] runs it inside its own transaction. */
     fun resolveBoards(boardIds: List<UUID>, user: User): List<Board> = boardIds.map { resolveBoard(it, user) }
 
     // A board named in a body earns what a board named in a path earns (ADR 0038, decision 2).
