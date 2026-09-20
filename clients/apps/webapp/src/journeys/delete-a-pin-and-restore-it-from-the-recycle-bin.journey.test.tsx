@@ -50,7 +50,7 @@ function account(pins: Pin[], record: ReturnType<typeof recorder>, refusal?: num
   )
 }
 
-/** The dialog a tile opens, which is where the delete lives (decision K). */
+/** The dialog a tile opens, where the delete lives (specification 2026-09-20, decision K). */
 async function openThePin(user: ReturnType<typeof userEvent.setup>, description: string) {
   await user.click(await screen.findByRole("img", { name: description }))
   return screen.getByRole("dialog")

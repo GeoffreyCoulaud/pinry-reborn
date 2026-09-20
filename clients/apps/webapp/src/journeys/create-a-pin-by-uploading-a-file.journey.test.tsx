@@ -230,7 +230,8 @@ describe("create a pin by uploading a file", () => {
     // Dragging an image out of another browser tab hands over an address and no file at all.
     fireEvent.drop(dialog.getByLabelText(DROP_AREA), dropOf([], FOUND_AT))
 
-    // An address touches provenance alone, so it has nothing to remove (decision H).
+    // An address touches provenance alone, so it has nothing to remove
+    // (specification 2026-09-19-the-drop-is-the-gesture, decision H).
     await waitFor(() => expect(dialog.getByLabelText("Image address")).toHaveValue(FOUND_AT))
     expect(dialog.getByText("small.png")).toBeVisible()
     expect(screen.queryByRole("alert")).toBeNull()

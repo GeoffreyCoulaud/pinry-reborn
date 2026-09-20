@@ -2,7 +2,7 @@ import type { Schemas } from "@pinry-reborn/auth"
 
 export type PinSort = Schemas["PinSortStrategyInputEnum"]
 
-/** The grid's orders and the one the bin adds to them (specification 2.5). */
+/** The grid's orders and the one the bin adds to them (specification 2026-09-20, 2.5). */
 export type RecycledPinSort = Schemas["PinRecycleBinSortStrategyInputEnum"]
 
 /** Newest first leads, being the order the grid defaults to and not the one the API does. */

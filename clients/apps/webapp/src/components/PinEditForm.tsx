@@ -24,7 +24,7 @@ import { ImageDropBox } from "./ImageDropBox"
 /**
  * Free text over the author's own names. The server decides which names are one tag, folding to
  * ASCII, so the field asks it on every keystroke and offers what it answers rather than deciding
- * it is looking at a new tag (decision L).
+ * it is looking at a new tag (specification 2026-09-20, decision L).
  */
 function TagField({
   names,

@@ -66,7 +66,8 @@ describe("drop an image on the grid to add a pin", () => {
 
     renderApp("/")
     // A picture dragged out of another browser tab hands over the bytes and the address it was
-    // found at, and the second is provenance the server stores (decision G).
+    // found at, and the second is provenance the server stores
+    // (specification 2026-09-19-the-drop-is-the-gesture, decision G).
     fireEvent.drop(
       await theScreen(),
       dropOf([new File(["ok"], "cat.png", { type: "image/png" })], FOUND_AT),

@@ -13,8 +13,8 @@ const SMALL_RENDITION_PX = 240
 /**
  * The CSS `aspect-ratio` the tile is placed with. `WaterfallLayout` takes no per-item size and
  * measures the node instead, so a tile that knows its ratio settles into its column at mount,
- * before a byte of the image arrives (specification 4.7, question AA). A tile the API gave no
- * dimensions for is square, which is one measurement like any other.
+ * before a byte of the image arrives (specification 2026-09-10, 4.7 and question AA). A tile the
+ * API gave no dimensions for is square, which is one measurement like any other.
  */
 export function tileAspectRatio(
   width: number | null | undefined,
@@ -56,7 +56,8 @@ export function replacePins<T extends { id: string }>(pins: readonly T[], fresh:
 
 /**
  * The cached pages with the deleted pins taken out of them. A page left with no pin is kept: the
- * cursors run page to page, and dropping one breaks the chain the next fetch reads (decision P).
+ * cursors run page to page, and dropping one breaks the chain the next fetch reads (specification
+ * 2026-09-20, decision P).
  */
 export function removePins<Page extends { pins: { id: string }[] }>(
   pages: readonly Page[],

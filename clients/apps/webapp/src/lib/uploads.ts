@@ -19,8 +19,9 @@ export interface MeasuredUpload {
 
 /**
  * The limits are the deployment's, so they are read from the handshake rather than held here: a
- * bound written into the bundle drifts from the instance that configures it (specification 4.3).
- * Unknown limits refuse nothing, and the upload then meets the server's own answer.
+ * bound written into the bundle drifts from the instance that configures it (specification
+ * 2026-09-10, 4.3). Unknown limits refuse nothing, and the upload then meets the server's own
+ * answer.
  */
 export function uploadRefusal(
   upload: MeasuredUpload,

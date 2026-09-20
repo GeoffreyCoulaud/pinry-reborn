@@ -35,7 +35,8 @@ function saved(answer: { data?: Board; response: Response }): Board {
 
 /**
  * Every board the account holds, in one request: `GET /api/v1/boards` takes no cursor and a board
- * carries no cover, so there is no page to chase and nothing to load lazily (specification 2.7).
+ * carries no cover, so there is no page to chase and nothing to load lazily (specification
+ * 2026-09-20, 2.7).
  */
 export function useBoards() {
   return useQuery({

@@ -49,7 +49,7 @@ function placeholder(query: { isPending: boolean; isError: boolean }, rows: numb
   return null
 }
 
-/** The two gestures a row of either bin carries: back out of it, or gone for good (decision F). */
+/** Either bin's row: back out of it, or gone for good (specification 2026-09-20, decision F). */
 function RowGestures(props: { name: string; restore: () => void; deleteForGood: () => void }) {
   const { name, restore, deleteForGood } = props
   return (

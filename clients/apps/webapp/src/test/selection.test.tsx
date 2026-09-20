@@ -58,7 +58,8 @@ describe("a selection on a board's own grid", () => {
     await user.click(screen.getByRole("button", { name: m.remove_from_board() }))
 
     expect(removed).toEqual([{ boardId: HARBOURS.id, pinIds: [FIRST.id, SECOND.id] }])
-    // The tiles leave the cached pages rather than the board being read again (decision P).
+    // The tiles leave the cached pages rather than the board being read again (specification
+    // 2026-09-20, decision P).
     expect(await screen.findByRole("status")).toHaveTextContent(m.pins_empty())
     expect(pages).toBe(1)
   })

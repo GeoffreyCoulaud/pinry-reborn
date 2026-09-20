@@ -49,7 +49,7 @@ describe("a failed download surfacing in the task centre", () => {
 
     expect(await screen.findByText("Failed")).toBeVisible()
     // The reason is read from `reasonCode` through the catalogue, not from the server's own
-    // English sentence, which a French reader would otherwise get (specification 4.8).
+    // English sentence, which a French reader would otherwise get (specification 2026-09-10, 4.8).
     expect(screen.getByText("That download failed.")).toBeVisible()
     expect(screen.queryByText("The server could not fetch it.")).toBeNull()
     // The recourse question V exists for: the address again, a file from disk, or neither.
