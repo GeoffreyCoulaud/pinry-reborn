@@ -33,7 +33,12 @@ collection, and the operator asked for one.
 2. **A batch route is all or nothing.** Every identifier is resolved before the first write; one
    that fails refuses the whole call and nothing is written. An identifier that resolves to nothing
    earns 404 and one that is another user's earns 403, whether it was named in the path or in the
-   body. There is no per-identifier report and no partial success.
+   body. There is no per-identifier report and no partial success. (Corrected in the closing block:
+   the grammar has a third arm, **409**, which the routes answered from the day they shipped and
+   this decision did not state. A recycled pin named to `POST /api/v1/boards/{boardId}/pins` raises
+   `PinBoardSettingSoftDeletedPinError`, and an already recycled one named to `DELETE /api/v1/pins`
+   raises `PinDeletionPinAlreadySoftDeletedError`; both match what the single-identifier routes
+   answer. `BoardMembershipIntegrationTest` now carries the bulk case.)
 
    **Fails if** a client acts on identifiers it did not just read, which is a client defect and not
    a case to serve.
@@ -81,6 +86,15 @@ collection, and the operator asked for one.
   alone leaves RESTEasy Reactive handing the resource method a null entity, and Kotlin's non-null
   intrinsic throws before any validation runs. `@NotNull` beside `@Valid` on the four batch bodies
   is what makes the sentence true, the validation interceptor then refusing before the method body
-  is entered. The empty-body test is what caught it.)
+  is entered. The empty-body test is what caught it.) (Corrected in the closing block: **five**
+  batch bodies, not four, `addPinsToBoard`, `removePinsFromBoard`, `softDeletePins`, `restorePins`
+  and `restoreBoards`. The same block put the pair on every validated body in the presentation
+  module, the route this lot added and the seven that predate it alike, and
+  `ArchitectureKonsistTest` now refuses a `@Valid` parameter that carries no `@NotNull`, so the
+  next route inherits the answer rather than the defect.)
 - **The next batch route follows this shape** rather than deciding again: board oriented where it is
-  about membership, all or nothing, `@NotEmpty`, no report.
+  about membership, all or nothing, `@NotEmpty`, no report. (Corrected in the closing block: it also
+  declares both of its answers, the `204` and the `400` with the problem payload, by hand. SmallRye
+  publishes a validation `400` for a `POST` carrying a validated body and not for a `DELETE`, so
+  three of the five published a refusal their two twins did not until the declaration was written
+  out. Contract `7.2.0`.)
