@@ -8,6 +8,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardDeletionBoard
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardDeletionBoardDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardDeletionBoardNotSoftDeletedError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardDeletionPermissionError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
@@ -26,7 +27,11 @@ class BoardRecycleBinTest {
     private val boardRepository: BoardRepositoryInterface = mockk()
     private val clock = mockk<Clock>()
     private val transitionInstant = Instant.parse("2026-07-29T08:30:00Z")
-    private val useCase = BoardRecycleBin(boardRepository = boardRepository, clock = clock)
+    private val useCase = BoardRecycleBin(
+        boardRepository = boardRepository,
+        clock = clock,
+        transactionRunner = PassthroughTransactionRunner(),
+    )
 
     @BeforeEach
     fun stubClock() {
@@ -258,5 +263,42 @@ class BoardRecycleBinTest {
         // Then
         assertEquals(expected, result)
         verify { boardRepository.findRecycledBoardsForUser(user) }
+    }
+
+    // --- Bulk restore ---
+
+    @Test
+    fun `Given two owned recycled boards, Then restoreAll restores both on the clock's instant`() {
+        // Given
+        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val first = createBoard(author = user, softDeletedAt = TestTime.now)
+        val second = createBoard(author = user, softDeletedAt = TestTime.now)
+        every { boardRepository.findBoardById(first.id) } returns first
+        every { boardRepository.findBoardById(second.id) } returns second
+        every { boardRepository.restoreBoard(board = any(), at = any()) } answers { firstArg() }
+
+        // When
+        useCase.restoreAll(boardIds = listOf(first.id, second.id), user = user)
+
+        // Then
+        verify { boardRepository.restoreBoard(board = first, at = transitionInstant) }
+        verify { boardRepository.restoreBoard(board = second, at = transitionInstant) }
+    }
+
+    @Test
+    fun `Given another user's board last, Then restoreAll refuses before restoring the first`() {
+        // Given
+        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val stranger = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val own = createBoard(author = user, softDeletedAt = TestTime.now)
+        val theirs = createBoard(author = stranger, softDeletedAt = TestTime.now)
+        every { boardRepository.findBoardById(own.id) } returns own
+        every { boardRepository.findBoardById(theirs.id) } returns theirs
+
+        // When, Then
+        assertThrows<BoardDeletionPermissionError> {
+            useCase.restoreAll(boardIds = listOf(own.id, theirs.id), user = user)
+        }
+        verify(exactly = 0) { boardRepository.restoreBoard(board = any(), at = any()) }
     }
 }

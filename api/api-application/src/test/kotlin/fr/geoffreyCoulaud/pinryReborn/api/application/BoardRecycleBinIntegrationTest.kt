@@ -13,6 +13,7 @@ import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.Matchers.emptyIterable
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
@@ -435,5 +436,64 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
             .statusCode(200)
             .body("boards", hasSize<Any>(1))
             .body("boards[0].id", equalTo(board2.id.toString()))
+    }
+
+    // --- Bulk restore ---
+
+    private fun bulkRestore(auth: AuthenticatedUser, boardIds: List<UUID>) =
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .body(mapOf("boardIds" to boardIds.map { it.toString() }))
+            .`when`()
+            .post("/api/v1/boards/recycled/restore")
+            .then()
+
+    @Test
+    fun `Given two recycled boards, Then the bulk restore restores both`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val first = boardCreator.create(author = auth.user, name = "First", description = "")
+        val second = boardCreator.create(author = auth.user, name = "Second", description = "")
+        given().authenticatedAs(auth).delete("/api/v1/boards/${first.id}")
+        given().authenticatedAs(auth).delete("/api/v1/boards/${second.id}")
+
+        // When
+        bulkRestore(auth, listOf(first.id, second.id)).statusCode(204)
+
+        // Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/boards")
+            .then()
+            .statusCode(200)
+            .body("boards", hasSize<Any>(2))
+    }
+
+    @Test
+    fun `Given an empty boardIds list, Then the bulk restore returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+
+        // When / Then
+        bulkRestore(auth, emptyList()).statusCode(400)
+    }
+
+    @Test
+    fun `Given another user's board last, Then the bulk restore refuses and restores nothing`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val stranger = createAuthenticatedUser()
+        val own = boardCreator.create(author = auth.user, name = "Mine", description = "")
+        val theirs = boardCreator.create(author = stranger.user, name = "Theirs", description = "")
+        given().authenticatedAs(auth).delete("/api/v1/boards/${own.id}")
+        given().authenticatedAs(stranger).delete("/api/v1/boards/${theirs.id}")
+
+        // When
+        bulkRestore(auth, listOf(own.id, theirs.id)).statusCode(403)
+
+        // Then
+        assertNotNull(reloadBoard(own.id).softDeletedAt, "the first board should still be recycled")
     }
 }

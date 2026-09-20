@@ -253,7 +253,8 @@ class SessionAuthIntegrationTest : IntegrationTest() {
 
     @Test
     fun `Given a method the path does not serve, Then the response is 405 METHOD_NOT_ALLOWED`() {
-        given().delete("/api/v1/pins")
+        // PUT, the collection now serving GET, POST and DELETE alike.
+        given().put("/api/v1/pins")
             .then().statusCode(405).contentType(PROBLEM_JSON).body("code", equalTo("METHOD_NOT_ALLOWED"))
     }
 
