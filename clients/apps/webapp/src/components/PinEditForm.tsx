@@ -190,7 +190,7 @@ function ImageControls({ pin }: { pin: Pin }) {
       </div>
       {/* The sub-state the contract has carried since before any client read it: the pin keeps the
           image it has while the server downloads the one asked for. */}
-      {replacement?.status === "PENDING" && <p>{m.image_replacing()}</p>}
+      {replacement?.status === "PENDING" && <p role="status">{m.image_replacing()}</p>}
       {replacement?.status === "FAILED" && (
         <p role="alert">{downloadReason(replacement.reasonCode, replacement.message)}</p>
       )}
