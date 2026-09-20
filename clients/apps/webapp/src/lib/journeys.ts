@@ -18,6 +18,7 @@ export const REQUIRED_JOURNEYS = [
   "a failed download surfacing in the task centre",
   "an account with no pins",
   "choosing a theme against the system",
+  "choosing the grid's order",
 ]
 
 /** The file under `src/journeys/` that holds a journey's test. */
