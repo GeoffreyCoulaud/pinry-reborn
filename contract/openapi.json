@@ -192,7 +192,7 @@
       },
       "LimitsDto" : {
         "type" : "object",
-        "required" : [ "maxFileBytes", "maxPixels" ],
+        "required" : [ "maxFileBytes", "maxPixels", "mediaTypes" ],
         "properties" : {
           "maxFileBytes" : {
             "type" : "integer",
@@ -201,6 +201,12 @@
           "maxPixels" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "mediaTypes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -3063,7 +3069,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "6.1.0"
+    "version" : "6.2.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

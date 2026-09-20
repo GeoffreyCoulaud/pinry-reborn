@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { isImageFile, uploadRefusal } from "./uploads"
+import { isStorableFile, uploadRefusal } from "./uploads"
 
-const LIMITS = { maxFileBytes: 1000, maxPixels: 10_000 }
+const LIMITS = {
+  maxFileBytes: 1000,
+  maxPixels: 10_000,
+  mediaTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+}
 
 describe("the upload a deployment refuses", () => {
   it("Given a file inside both limits, Then nothing is refused", () => {
@@ -22,12 +26,22 @@ describe("the upload a deployment refuses", () => {
 })
 
 describe("the file a pin's image may come from", () => {
-  it("Given a media type the browser decodes as a picture, Then the file is an image", () => {
-    expect(isImageFile({ type: "image/png" })).toBe(true)
+  it("Given a media type the handshake publishes, Then the deployment stores the file", () => {
+    expect(isStorableFile({ type: "image/png" }, LIMITS)).toBe(true)
+  })
+
+  it("Given a picture in a format the storage refuses, Then it is refused here", () => {
+    expect(isStorableFile({ type: "image/svg+xml" }, LIMITS)).toBe(false)
+    expect(isStorableFile({ type: "image/tiff" }, LIMITS)).toBe(false)
   })
 
   it("Given anything else, Then it is not, whatever a drop or a picker handed over", () => {
-    expect(isImageFile({ type: "application/pdf" })).toBe(false)
-    expect(isImageFile({ type: "" })).toBe(false)
+    expect(isStorableFile({ type: "application/pdf" }, LIMITS)).toBe(false)
+    expect(isStorableFile({ type: "" }, LIMITS)).toBe(false)
+  })
+
+  it("Given a handshake that has not answered yet, Then only a picture passes", () => {
+    expect(isStorableFile({ type: "image/svg+xml" }, undefined)).toBe(true)
+    expect(isStorableFile({ type: "application/pdf" }, undefined)).toBe(false)
   })
 })
