@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
@@ -10,9 +11,12 @@ import jakarta.inject.Inject
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.nullValue
+import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.emptyIterable
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
@@ -563,5 +567,119 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         // When / Then
         replacePin(auth, pin, tags = listOf("newtag"))
             .statusCode(409)
+    }
+
+    // --- Bulk recycle and restore ---
+
+    private fun createPin(author: User, description: String = "A pin"): Pin =
+        pinCreator.createPin(
+            author = author,
+            sourceContextUrl = "https://example.com",
+            sourceMediaUrl = "https://example.com/img.jpg",
+            description = description,
+            tags = emptyList(),
+        )
+
+    private fun bulk(auth: AuthenticatedUser, method: String, path: String, pinIds: List<UUID>) =
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .body(mapOf("pinIds" to pinIds.map { it.toString() }))
+            .`when`()
+            .request(method, path)
+            .then()
+
+    @Test
+    fun `Given an empty body, Then the bulk recycle returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+
+        // When / Then: the body has to reach the resource method for @NotEmpty to ever be read.
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .`when`()
+            .delete("/api/v1/pins")
+            .then()
+            .statusCode(400)
+    }
+
+    @Test
+    fun `Given an empty pinIds list, Then the bulk recycle returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+
+        // When / Then
+        bulk(auth, "DELETE", "/api/v1/pins", emptyList()).statusCode(400)
+    }
+
+    @Test
+    fun `Given two owned pins, Then the bulk recycle recycles both`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val first = createPin(auth.user, "First")
+        val second = createPin(auth.user, "Second")
+
+        // When
+        bulk(auth, "DELETE", "/api/v1/pins", listOf(first.id, second.id)).statusCode(204)
+
+        // Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/pins/recycled")
+            .then()
+            .statusCode(200)
+            .body("pins.id", containsInAnyOrder(first.id.toString(), second.id.toString()))
+    }
+
+    @Test
+    fun `Given another user's pin last, Then the bulk recycle refuses and recycles nothing`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val stranger = createAuthenticatedUser()
+        val own = createPin(auth.user)
+        val theirs = createPin(stranger.user)
+
+        // When
+        bulk(auth, "DELETE", "/api/v1/pins", listOf(own.id, theirs.id)).statusCode(403)
+
+        // Then
+        assertNull(reloadPin(own.id).softDeletedAt, "the first pin should be untouched")
+    }
+
+    @Test
+    fun `Given two recycled pins, Then the bulk restore restores both`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val first = createPin(auth.user, "First")
+        val second = createPin(auth.user, "Second")
+        bulk(auth, "DELETE", "/api/v1/pins", listOf(first.id, second.id)).statusCode(204)
+
+        // When
+        bulk(auth, "POST", "/api/v1/pins/recycled/restore", listOf(first.id, second.id)).statusCode(204)
+
+        // Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/pins")
+            .then()
+            .statusCode(200)
+            .body("pins.id", containsInAnyOrder(first.id.toString(), second.id.toString()))
+    }
+
+    @Test
+    fun `Given an unknown pin last, Then the bulk restore refuses and restores nothing`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val own = createPin(auth.user)
+        bulk(auth, "DELETE", "/api/v1/pins", listOf(own.id)).statusCode(204)
+
+        // When
+        bulk(auth, "POST", "/api/v1/pins/recycled/restore", listOf(own.id, UUID.randomUUID())).statusCode(404)
+
+        // Then
+        assertNotNull(reloadPin(own.id).softDeletedAt, "the first pin should still be recycled")
     }
 }

@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinDeletionPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinDeletionPinAlreadySoftDeletedError
@@ -15,6 +16,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 @ApplicationScoped
+@Suppress("LongParameterList") // CDI-injected: every parameter is a collaborator provided by the container.
 class PinRecycleBin(
     private val pinRepository: PinRepositoryInterface,
     private val imageRepository: ImageRepositoryInterface,
@@ -22,6 +24,7 @@ class PinRecycleBin(
     private val clearPinDownload: ClearPinDownload,
     private val renditionCache: RenditionCache,
     private val clock: Clock,
+    private val transactionRunner: TransactionRunner,
 ) {
     private fun findPinAndValidateOwnership(pinId: UUID, user: User): Pin {
         val pin = pinRepository.findPinById(id = pinId) ?: throw PinDeletionPinDoesNotExistError()
@@ -29,21 +32,38 @@ class PinRecycleBin(
         return pin
     }
 
-    fun softDelete(pinId: UUID, user: User): Pin {
-        val pin = findPinAndValidateOwnership(pinId, user)
-        if (pin.softDeletedAt != null) throw PinDeletionPinAlreadySoftDeletedError()
-        return pinRepository.softDeletePin(pin = pin, at = clock.now())
+    private fun activeOrRefused(pinId: UUID, user: User): Pin =
+        findPinAndValidateOwnership(pinId, user).also {
+            if (it.softDeletedAt != null) throw PinDeletionPinAlreadySoftDeletedError()
+        }
+
+    private fun recycledOrRefused(pinId: UUID, user: User): Pin =
+        findPinAndValidateOwnership(pinId, user).also {
+            if (it.softDeletedAt == null) throw PinDeletionPinNotSoftDeletedError()
+        }
+
+    fun softDelete(pinId: UUID, user: User): Pin =
+        pinRepository.softDeletePin(pin = activeOrRefused(pinId, user), at = clock.now())
+
+    /** All or nothing: every pin is resolved before the first write (ADR 0039, decision 2). */
+    fun softDeleteAll(pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
+        val pins = pinIds.map { activeOrRefused(it, user) }
+        val at = clock.now()
+        pins.forEach { pinRepository.softDeletePin(pin = it, at = at) }
     }
 
-    fun restore(pinId: UUID, user: User): Pin {
-        val pin = findPinAndValidateOwnership(pinId, user)
-        if (pin.softDeletedAt == null) throw PinDeletionPinNotSoftDeletedError()
-        return pinRepository.restorePin(pin = pin, at = clock.now())
+    fun restore(pinId: UUID, user: User): Pin =
+        pinRepository.restorePin(pin = recycledOrRefused(pinId, user), at = clock.now())
+
+    /** All or nothing, as [softDeleteAll] is. */
+    fun restoreAll(pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
+        val pins = pinIds.map { recycledOrRefused(it, user) }
+        val at = clock.now()
+        pins.forEach { pinRepository.restorePin(pin = it, at = at) }
     }
 
     fun permanentlyDelete(pinId: UUID, user: User) {
-        val pin = findPinAndValidateOwnership(pinId, user)
-        if (pin.softDeletedAt == null) throw PinDeletionPinNotSoftDeletedError()
+        val pin = recycledOrRefused(pinId, user)
         clearPinDownload.clear(pin.id)
         val image = imageRepository.findByPinId(pin.id)
         imageRepository.deleteByPinId(pin.id)

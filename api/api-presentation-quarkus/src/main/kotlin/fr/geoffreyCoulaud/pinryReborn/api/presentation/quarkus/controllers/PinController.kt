@@ -3,6 +3,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinCreationInputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto.Companion.ALL_OR_NOTHING
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinUpdateInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
@@ -19,6 +21,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinUpdater
 import io.quarkus.security.Authenticated
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.DELETE
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
@@ -106,6 +109,15 @@ class PinController(
     fun softDeletePin(pinId: UUID): RestResponse<Void> {
         val user = securityIdentity.getUser()
         pinRecycleBin.softDelete(pinId = pinId, user = user)
+        return RestResponse.noContent()
+    }
+
+    @DELETE
+    @Authenticated
+    @Operation(summary = "Recycle several pins", description = ALL_OR_NOTHING)
+    fun softDeletePins(@Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
+        val user = securityIdentity.getUser()
+        pinRecycleBin.softDeleteAll(pinIds = dto.pinIds, user = user)
         return RestResponse.noContent()
     }
 

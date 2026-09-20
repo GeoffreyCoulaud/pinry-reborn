@@ -2,6 +2,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto.Companion.ALL_OR_NOTHING
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinRecycleBinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
@@ -14,11 +16,15 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBin
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBinGetter
 import io.quarkus.security.Authenticated
 import io.quarkus.security.identity.SecurityIdentity
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.DELETE
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
+import org.eclipse.microprofile.openapi.annotations.Operation
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 import java.util.UUID
 
@@ -54,6 +60,17 @@ class PinRecycleBinController(
         return pinRecycleBin
             .restore(pinId = pinId, user = user)
             .let { RestResponse.ok(pinResponses.pin(it)) }
+    }
+
+    @POST
+    @Authenticated
+    @Path("/restore")
+    @Operation(summary = "Restore several pins", description = ALL_OR_NOTHING)
+    @APIResponse(responseCode = "204", description = "Pins restored")
+    fun restorePins(@Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
+        val user = securityIdentity.getUser()
+        pinRecycleBin.restoreAll(pinIds = dto.pinIds, user = user)
+        return RestResponse.noContent()
     }
 
     @DELETE

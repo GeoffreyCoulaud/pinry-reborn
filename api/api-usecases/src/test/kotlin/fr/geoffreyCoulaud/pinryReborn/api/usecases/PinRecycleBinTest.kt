@@ -12,6 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinDeletionPermiss
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinDeletionPinAlreadySoftDeletedError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinDeletionPinDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinDeletionPinNotSoftDeletedError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.justRun
@@ -43,6 +44,7 @@ class PinRecycleBinTest {
         clearPinDownload = clearPinDownload,
         renditionCache = renditionCache,
         clock = clock,
+        transactionRunner = PassthroughTransactionRunner(),
     )
 
     @BeforeEach
@@ -381,5 +383,76 @@ class PinRecycleBinTest {
         assertDoesNotThrow { useCase.emptyRecycleBin(user = user) }
         verify { pinRepository.permanentlyDeleteAllSoftDeletedPinsForUser(user) }
         verify { imageStore.delete(image.storageKey) }
+    }
+
+    // --- Bulk recycle and restore ---
+
+    @Test
+    fun `Given two owned active pins, Then softDeleteAll recycles both on the clock's instant`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val first = createPin(author = user)
+        val second = createPin(author = user)
+        every { pinRepository.findPinById(first.id) } returns first
+        every { pinRepository.findPinById(second.id) } returns second
+        every { pinRepository.softDeletePin(pin = any(), at = any()) } answers { firstArg() }
+
+        // When
+        useCase.softDeleteAll(pinIds = listOf(first.id, second.id), user = user)
+
+        // Then
+        verify { pinRepository.softDeletePin(pin = first, at = transitionInstant) }
+        verify { pinRepository.softDeletePin(pin = second, at = transitionInstant) }
+    }
+
+    @Test
+    fun `Given another user's pin last, Then softDeleteAll refuses before recycling the first`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val stranger = User(id = randomUUID(), name = "Jane Roe", createdAt = TestTime.now)
+        val own = createPin(author = user)
+        val theirs = createPin(author = stranger)
+        every { pinRepository.findPinById(own.id) } returns own
+        every { pinRepository.findPinById(theirs.id) } returns theirs
+
+        // When, Then
+        assertThrows<PinDeletionPermissionError> {
+            useCase.softDeleteAll(pinIds = listOf(own.id, theirs.id), user = user)
+        }
+        verify(exactly = 0) { pinRepository.softDeletePin(pin = any(), at = any()) }
+    }
+
+    @Test
+    fun `Given two owned recycled pins, Then restoreAll restores both`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val first = createPin(author = user, softDeletedAt = TestTime.now)
+        val second = createPin(author = user, softDeletedAt = TestTime.now)
+        every { pinRepository.findPinById(first.id) } returns first
+        every { pinRepository.findPinById(second.id) } returns second
+        every { pinRepository.restorePin(pin = any(), at = any()) } answers { firstArg() }
+
+        // When
+        useCase.restoreAll(pinIds = listOf(first.id, second.id), user = user)
+
+        // Then
+        verify { pinRepository.restorePin(pin = first, at = transitionInstant) }
+        verify { pinRepository.restorePin(pin = second, at = transitionInstant) }
+    }
+
+    @Test
+    fun `Given an active pin last, Then restoreAll refuses before restoring the first`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val recycled = createPin(author = user, softDeletedAt = TestTime.now)
+        val active = createPin(author = user)
+        every { pinRepository.findPinById(recycled.id) } returns recycled
+        every { pinRepository.findPinById(active.id) } returns active
+
+        // When, Then
+        assertThrows<PinDeletionPinNotSoftDeletedError> {
+            useCase.restoreAll(pinIds = listOf(recycled.id, active.id), user = user)
+        }
+        verify(exactly = 0) { pinRepository.restorePin(pin = any(), at = any()) }
     }
 }
