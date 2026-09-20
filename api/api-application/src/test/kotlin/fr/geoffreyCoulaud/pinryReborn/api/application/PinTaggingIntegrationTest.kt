@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
@@ -33,9 +34,9 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .contentType(ContentType.JSON)
-            .body("""{"tags": ["nature", "landscape"]}""")
+            .body(replacing(pin, tags = listOf("nature", "landscape")))
             .`when`()
-            .put("/api/v1/pins/${pin.id}/tags")
+            .put("/api/v1/pins/${pin.id}")
             .then()
             .statusCode(200)
             .body("id", equalTo(pin.id.toString()))
@@ -66,9 +67,9 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .contentType(ContentType.JSON)
-            .body("""{"tags": ["Landscape"]}""")
+            .body(replacing(other, tags = listOf("Landscape")))
             .`when`()
-            .put("/api/v1/pins/${other.id}/tags")
+            .put("/api/v1/pins/${other.id}")
             .then()
             .statusCode(200)
             // Then: the stored spelling comes back, not the one that was sent. Before the fold
@@ -101,9 +102,9 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .contentType(ContentType.JSON)
-            .body("""{"tags": ["newtag"]}""")
+            .body(replacing(pin, tags = listOf("newtag")))
             .`when`()
-            .put("/api/v1/pins/${pin.id}/tags")
+            .put("/api/v1/pins/${pin.id}")
             .then()
             .statusCode(200)
             .body("tags", hasSize<Any>(1))
@@ -125,9 +126,9 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .contentType(ContentType.JSON)
-            .body("""{"tags": []}""")
+            .body(replacing(pin, tags = emptyList()))
             .`when`()
-            .put("/api/v1/pins/${pin.id}/tags")
+            .put("/api/v1/pins/${pin.id}")
             .then()
             .statusCode(200)
             .body("tags", emptyIterable<Any>())
@@ -149,9 +150,9 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(attacker)
             .contentType(ContentType.JSON)
-            .body("""{"tags": ["hacked"]}""")
+            .body(replacing(pin, tags = listOf("hacked")))
             .`when`()
-            .put("/api/v1/pins/${pin.id}/tags")
+            .put("/api/v1/pins/${pin.id}")
             .then()
             .statusCode(403)
     }
@@ -165,9 +166,17 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .contentType(ContentType.JSON)
-            .body("""{"tags": ["tag"]}""")
+            .body(
+                mapOf(
+                    "description" to "My pin",
+                    "sourceContextUrl" to null,
+                    "sourceMediaUrl" to null,
+                    "tags" to listOf("tag"),
+                    "boardIds" to emptyList<String>(),
+                ),
+            )
             .`when`()
-            .put("/api/v1/pins/$nonExistentPinId/tags")
+            .put("/api/v1/pins/$nonExistentPinId")
             .then()
             .statusCode(404)
     }
@@ -186,10 +195,20 @@ class PinTaggingIntegrationTest : IntegrationTest() {
 
         given()
             .contentType(ContentType.JSON)
-            .body("""{"tags": ["tag"]}""")
+            .body(replacing(pin, tags = listOf("tag")))
             .`when`()
-            .put("/api/v1/pins/${pin.id}/tags")
+            .put("/api/v1/pins/${pin.id}")
             .then()
             .statusCode(401)
     }
+
+    /** The whole pin as it was read, with the tags alone replaced: the write is a replacement. */
+    private fun replacing(pin: Pin, tags: List<String>): Map<String, Any?> =
+        mapOf(
+            "description" to pin.description,
+            "sourceContextUrl" to pin.sourceContextUrl,
+            "sourceMediaUrl" to pin.sourceMediaUrl,
+            "tags" to tags,
+            "boardIds" to emptyList<String>(),
+        )
 }
