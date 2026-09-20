@@ -25,14 +25,9 @@ export function useSelection(rows: readonly { id: string }[]) {
 }
 
 /**
- * The tick a row or a tile carries. `slot="selection"` is what wires it to the `GridList` it sits
- * in, and it names it after that row, so nothing here writes a label of its own.
- *
- * Out of sight until the pointer is on its own row, until focus reaches it, or until the grid holds
- * a selection, which is what `shown` carries. `opacity` and not `display`: hidden this way it stays
- * focusable and stays in the reader's page. Tailwind emits `hover` under `@media (hover: hover)`,
- * so a browser that reports no hover at all, a touch screen first among them, would reveal nothing
- * ever: there the tick simply stands, which is what the last rule says.
+ * The tick a row or a tile carries, wired to its `GridList` and named after its row by
+ * `slot="selection"`. Hidden with `opacity` and never `display`, so it stays focusable while out of
+ * sight; the last rule is for a browser reporting no hover, where nothing would reveal it.
  */
 export function SelectionTick({ shown, className }: { shown: boolean; className?: string }) {
   return (
