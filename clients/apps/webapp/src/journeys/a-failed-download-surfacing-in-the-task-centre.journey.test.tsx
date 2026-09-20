@@ -40,6 +40,8 @@ describe("a failed download surfacing in the task centre", () => {
     renderApp("/")
     const trigger = await screen.findByRole("button", { name: "Downloads (1)" })
     // An icon alone is not discoverable: the tooltip opens on focus and says what the name says.
+    // Three tabs: the bar carries the creation button and the order before the task centre.
+    await user.tab()
     await user.tab()
     await user.tab()
     expect(trigger).toHaveFocus()

@@ -79,6 +79,16 @@ export function pinsRoute(pages: Pin[][], onRequest: () => void = () => {}) {
   })
 }
 
+/** One page, ordered by the `sort` the grid asked for, which the journey also reads. */
+export function sortedPinsRoute(oldestFirst: Pin[], onSort: (sort: string | null) => void) {
+  return http.get("/api/v1/pins", ({ request }) => {
+    const sort = new URL(request.url).searchParams.get("sort")
+    onSort(sort)
+    const pins = sort === "CREATED_AT_ASC" ? oldestFirst : [...oldestFirst].reverse()
+    return HttpResponse.json({ pins, pagination: { previousCursor: null, nextCursor: null } })
+  })
+}
+
 /** The catalogue as a single page, reread each time the journey's own state changes it. */
 export function onePinPage(pins: () => Pin[]) {
   return http.get("/api/v1/pins", () =>
@@ -136,11 +146,14 @@ export function dropOf(files: File[], uriList = "") {
 /** The application on one route, with a cache of its own so no journey inherits another's. */
 export function renderApp(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(
+  const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
+  const rendered = render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={createAppRouter(createMemoryHistory({ initialEntries: [path] }))} />
+      <RouterProvider router={router} />
       {/* As `main.tsx` mounts it, so a journey reads the toasts the application really shows. */}
       <Toast.Provider />
     </QueryClientProvider>,
   )
+  // The router comes back so a journey can read the address a control wrote.
+  return Object.assign(rendered, { router })
 }

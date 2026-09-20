@@ -1,0 +1,44 @@
+import { ListBox, Select } from "@heroui/react"
+import { useNavigate } from "@tanstack/react-router"
+import { pinSortOr, type PinSort } from "../lib/sorts"
+import { m } from "../paraglide/messages.js"
+
+const LABELS: Record<PinSort, () => string> = {
+  CREATED_AT_ASC: m.sort_created_at_asc,
+  CREATED_AT_DESC: m.sort_created_at_desc,
+}
+
+/**
+ * The order lives in the address, so a reload and the back button both keep it with nothing
+ * stored. The screen passes the orders it has: a board's grid and the bin do not offer the same.
+ */
+export function SortSelect({ value, values }: { value: PinSort; values: readonly PinSort[] }) {
+  const navigate = useNavigate()
+
+  return (
+    <Select
+      // react-aria names the trigger with the chosen order and then this, in that order, so the
+      // bar carries no visible label and a reader still hears which control it is on.
+      aria-label={m.sort_order()}
+      value={value}
+      onChange={(chosen) =>
+        void navigate({ to: ".", search: (previous) => ({ ...previous, sort: pinSortOr(chosen) }) })
+      }
+    >
+      <Select.Trigger>
+        <Select.Value />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover>
+        <ListBox aria-label={m.sort_order()}>
+          {values.map((sort) => (
+            <ListBox.Item key={sort} id={sort} textValue={LABELS[sort]()}>
+              {LABELS[sort]()}
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
+          ))}
+        </ListBox>
+      </Select.Popover>
+    </Select>
+  )
+}

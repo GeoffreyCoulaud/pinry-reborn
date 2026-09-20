@@ -82,7 +82,9 @@ async function rereadSettledPins(queryClient: QueryClient, pinIds: readonly stri
       ),
     ),
   )
-  queryClient.setQueryData<InfiniteData<PinPage>>(PINS, (catalogue) =>
+  // Every order is its own cached catalogue, so the fresh pin is written into each one the user
+  // has loaded rather than into the key one of them happens to hold.
+  queryClient.setQueriesData<InfiniteData<PinPage>>({ queryKey: PINS }, (catalogue) =>
     catalogue === undefined
       ? catalogue
       : {

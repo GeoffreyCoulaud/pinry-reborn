@@ -1,5 +1,5 @@
 import { Button, EmptyState, Modal, Spinner } from "@heroui/react"
-import { Navigate } from "@tanstack/react-router"
+import { Navigate, useSearch } from "@tanstack/react-router"
 import { LogOut, Plus } from "lucide-react"
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
 import {
@@ -14,12 +14,14 @@ import {
 import { AppHeader } from "../components/AppHeader"
 import { CreatePinDialog } from "../components/CreatePinDialog"
 import { IconButton } from "../components/IconButton"
+import { SortSelect } from "../components/SortSelect"
 import { TaskCentre } from "../components/TaskCentre"
 import { downloadReason } from "../downloadReasons"
 import { judgeDrop, refuse } from "../drops"
 import { useHandshake } from "../images"
 import { dragDepth, type DragStep } from "../lib/drags"
 import type { DropPartition } from "../lib/drops"
+import { PIN_SORTS, type PinSort } from "../lib/sorts"
 import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } from "../lib/tiles"
 import { m } from "../paraglide/messages.js"
 import { usePins, type Pin } from "../pins"
@@ -109,8 +111,8 @@ function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
   )
 }
 
-function PinGrid() {
-  const pins = usePins()
+function PinGrid({ sort }: { sort: PinSort }) {
+  const pins = usePins(sort)
   // The breakpoint a tile picks its rendition on is the deployment's, not a constant: `small`
   // lowered in the configuration would otherwise upscale every tile (specification 4.3).
   const renditionSizes = useHandshake().data?.renditionSizes
@@ -186,6 +188,7 @@ function PinGrid() {
 }
 
 export function Home() {
+  const { sort } = useSearch({ from: "/" })
   const session = useSession()
   const signOut = useSignOut()
   const limits = useHandshake().data?.limits
@@ -274,6 +277,7 @@ export function Home() {
               setCreating(true)
             }}
           />
+          <SortSelect value={sort} values={PIN_SORTS} />
           <TaskCentre />
           <IconButton
             icon={LogOut}
@@ -284,7 +288,7 @@ export function Home() {
         </AppHeader>
         {/* Full bleed: the scrollbar belongs to the viewport edge, not inside the shell's padding. */}
         <div className="-mx-4 min-h-0 flex-1">
-          <PinGrid />
+          <PinGrid sort={sort} />
         </div>
         {/* Fixed to the viewport, `<main>` scrolling away under the page, and `pointer-events-none`
             so an overlay appearing under the pointer fires no exit at the screen it never left. */}
