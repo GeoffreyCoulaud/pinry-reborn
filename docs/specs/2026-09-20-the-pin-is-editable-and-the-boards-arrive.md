@@ -10,7 +10,14 @@ them there would have cleared the strict 600; the operator settled on a block of
 block 20, which already touches `PinBoardSetter.kt`), block 30 `feat/the-grid-chooses-its-order`,
 block 40
 `feat/the-boards-have-a-screen`, block 50 `feat/a-board-has-a-grid`, block 60
-`feat/a-pin-is-editable`, block 70 `feat/a-pin-changes-its-image`, block 80
+`feat/a-pin-is-editable`, block 70 `feat/a-pin-changes-its-image`, block 75
+`feat/the-labels-follow-the-application` (Corrected: added on 2026-09-20. Block 60 read the board
+select in a browser set to `fr-FR` and found react-aria joining its values with "et" under an
+English label, react-aria reading `navigator.language` where paraglide resolves through `cookie,
+globalVariable, baseLocale`. The application has always taken those strings from the browser and has
+always worked around them one `aria-label` at a time; block 60 is the first to put one in visible
+text. The operator settled on a block of its own, the provider sitting at the composition root and
+reaching every screen), block 80
 `feat/the-recycle-bin`, block 90 `feat/the-grid-consumes-its-selection`
 ADRs: `docs/adr/0038-one-route-writes-a-pin.md` carries decisions B, C and H, and decision E' for
 the write of one pin; `docs/adr/0039-a-batch-route-is-all-or-nothing.md` carries decisions D, E,
@@ -200,6 +207,7 @@ grid. It takes its own block rather than riding inside another.
 | 60 | `clients/.../routes/Home.tsx` | The pin dialog gains its Edit button and holds which mode it is in |
 | 60 | `clients/.../pins.ts`, `images.ts` | `useUpdatePin`, one `PUT`, then `rereadSettledPins`, which `images.ts` exports for it |
 | 70 | `clients/.../components/PinEditForm.tsx` | The two image controls, both calling `useSetPinImage` as it stands, and the `replacement` sub-state shown while a fetch runs |
+| 75 | `clients/.../main.tsx`, `src/test/app.tsx` | An `I18nProvider` at the composition root, its locale being paraglide's `getLocale()`, so react-aria's own strings follow the application rather than the browser |
 | 80 | `clients/.../routes/Recycled.tsx` | New: two `Tabs`, a grid of recycled pins with its sort, a grid of recycled boards with none, restore, delete for good, empty |
 | 80 | `clients/.../recycled.ts` | New: the queries and mutations for both collections |
 | 80 | `clients/.../router.tsx`, `components/AppNav.tsx` | `/recycled` and its icon |
@@ -253,6 +261,7 @@ route now writes what two used to.)
 | 50 | `feat/a-board-has-a-grid` | `open a board and browse its pins`: the board's grid holds the pins the board holds and not the others, and loads a second page |
 | 60 | `feat/a-pin-is-editable` | `edit a pin's description, tags and boards`: one request leaves, the dialog returns to reading, and the tile carries the new description without the grid refetching a page |
 | 70 | `feat/a-pin-changes-its-image` | `replace a pin's image with a file`: one `PUT` leaves and the tile carries the new image; the fetch-again control is absent on a pin with no address and sends the pin's own address on a pin with one |
+| 75 | `feat/the-labels-follow-the-application` | None: no user path changes. The check is a case that renders a control under a browser locale of `fr-FR` and reads its visible text as English, which is red before the provider and green after |
 | 80 | `feat/the-recycle-bin` | `delete a pin and restore it from the recycle bin`: the tile leaves the grid with no page refetched, stands in the bin, and comes back |
 | 90 | `feat/the-grid-consumes-its-selection` | `add several selected pins to a board`: two pins selected reach the board in one request, and the bar states the count |
 
