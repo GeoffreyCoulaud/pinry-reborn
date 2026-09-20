@@ -55,11 +55,11 @@ is the short return message being cut, and that message is not a report.
 8. **Reference integrity.** Do cross-file references, relative links and heading anchors still resolve?
 9. **Diff hygiene.** Files that should not have changed, refactors nobody requested, generated or build artefacts,
    leftover scaffolding, formatting churn unrelated to the work.
-10. **Red before green, across the lot.** Run `git log --oneline` over the range. Behaviour that arrived with no
-    failing run behind it, in a block or in a fix applied between blocks, is a finding against the process. Where a test
-    commit's body carries no failing output, run the test at that commit yourself before reporting. **Never move the
-    shared working tree**: read a file with `git show <commit>:<path>`, and where a run needs a tree, make one with
-    `git worktree add` and remove it. **Never infer compliance from the absence of evidence.**
+10. **Test evidence, across the lot.** `agents/engineering.md` retired the red run on 2026-09-19, so behaviour that
+    arrived with no failing run behind it is not a finding. What is: behaviour no test exercises, a structural
+    assertion nothing was shown to break, and a threshold met by a test that would pass against a broken
+    implementation. **Never move the shared working tree**: read a file with `git show <commit>:<path>`, and where a
+    run needs a tree, make one with `git worktree add` and remove it.
 11. **Self-sufficient comments.** A comment states the why where it stands. One that defers to an identifier the reader
     must open elsewhere (a decision id, a section number, a ticket) explains nothing without that document. External
     references and clickable links are acceptable when they carry enough context.
