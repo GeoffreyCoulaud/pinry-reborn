@@ -63,21 +63,36 @@ export function readyPin(description: string, width = 800, height = 600): Pin {
 }
 
 /**
- * The catalogue the grid pages through. A cursor is the index of the page it answers, which is
- * all the client may assume of it: block 5 made it an opaque string.
+ * The page a request's cursor names. A cursor is the index of the page it answers, which is all
+ * the client may assume of it: block 5 made it an opaque string.
  */
+function pageAt(pages: Pin[][], request: Request) {
+  const index = Number(new URL(request.url).searchParams.get("cursor") ?? 0)
+  return HttpResponse.json({
+    pins: pages[index] ?? [],
+    pagination: {
+      previousCursor: index > 0 ? String(index - 1) : null,
+      nextCursor: index + 1 < pages.length ? String(index + 1) : null,
+    },
+  })
+}
+
+/** The catalogue the grid pages through. */
 export function pinsRoute(pages: Pin[][], onRequest: () => void = () => {}) {
   return http.get("/api/v1/pins", ({ request }) => {
     onRequest()
-    const cursor = new URL(request.url).searchParams.get("cursor")
-    const index = cursor === null ? 0 : Number(cursor)
-    return HttpResponse.json({
-      pins: pages[index] ?? [],
-      pagination: {
-        previousCursor: index > 0 ? String(index - 1) : null,
-        nextCursor: index + 1 < pages.length ? String(index + 1) : null,
-      },
-    })
+    return pageAt(pages, request)
+  })
+}
+
+/** One board's own catalogue, paged the way `GET /api/v1/pins` is and answering that board alone. */
+export function boardPinsRoute(
+  pages: Record<string, Pin[][]>,
+  onSort: (sort: string | null) => void = () => {},
+) {
+  return http.get("/api/v1/boards/:boardId/pins", ({ request, params }) => {
+    onSort(new URL(request.url).searchParams.get("sort"))
+    return pageAt(pages[String(params.boardId)] ?? [], request)
   })
 }
 

@@ -4,6 +4,7 @@
   "board_name_taken": "You already have a board with that name.",
   "board_pin_count": "Pins: {count}",
   "board_refused": "That board could not be saved.",
+  "board_unknown": "That board could not be found.",
   "boards": "Boards",
   "boards_empty": "No boards yet.",
   "boards_loading": "Loading your boards.",

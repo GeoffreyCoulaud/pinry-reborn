@@ -4,6 +4,7 @@
   "board_name_taken": "Vous avez déjà un tableau de ce nom.",
   "board_pin_count": "Épingles : {count}",
   "board_refused": "Ce tableau n’a pas pu être enregistré.",
+  "board_unknown": "Ce tableau est introuvable.",
   "boards": "Tableaux",
   "boards_empty": "Aucun tableau pour l’instant.",
   "boards_loading": "Chargement de vos tableaux.",
