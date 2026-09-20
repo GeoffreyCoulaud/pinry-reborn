@@ -16,6 +16,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactio
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -272,6 +273,85 @@ class PinBoardSetterTest {
         assertEquals(listOf(tag), result.tags)
         assertEquals(listOf(board), result.boards)
     }
+
+    // --- Bulk membership ---
+
+    @Test
+    fun `Given a pin already in another board, Then addPinsToBoard keeps that one and adds the target`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val other = board(user, "Other")
+        val target = board(user, "Target")
+        val subject = pin(user).copy(boards = listOf(other))
+        every { boardRepository.findActiveBoardById(target.id) } returns target
+        every { pinRepository.findPinById(subject.id) } returns subject
+        every { pinRepository.savePin(any()) } answers { firstArg() }
+
+        // When
+        useCase.addPinsToBoard(boardId = target.id, pinIds = listOf(subject.id), user = user)
+
+        // Then
+        val saved = slot<Pin>()
+        verify { pinRepository.savePin(capture(saved)) }
+        assertEquals(listOf(other, target), saved.captured.boards)
+        assertEquals(clockInstant, saved.captured.updatedAt)
+    }
+
+    @Test
+    fun `Given a pin in the target board, Then removePinsFromBoard drops it and keeps the other`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val other = board(user, "Other")
+        val target = board(user, "Target")
+        val subject = pin(user).copy(boards = listOf(other, target))
+        every { boardRepository.findActiveBoardById(target.id) } returns target
+        every { pinRepository.findPinById(subject.id) } returns subject
+        every { pinRepository.savePin(any()) } answers { firstArg() }
+
+        // When
+        useCase.removePinsFromBoard(boardId = target.id, pinIds = listOf(subject.id), user = user)
+
+        // Then
+        val saved = slot<Pin>()
+        verify { pinRepository.savePin(capture(saved)) }
+        assertEquals(listOf(other), saved.captured.boards)
+    }
+
+    @Test
+    fun `Given another user's pin last, Then addPinsToBoard refuses before writing the first`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val stranger = User(id = randomUUID(), name = "Jane Roe", createdAt = TestTime.now)
+        val target = board(user, "Target")
+        val own = pin(user)
+        val theirs = pin(stranger)
+        every { boardRepository.findActiveBoardById(target.id) } returns target
+        every { pinRepository.findPinById(own.id) } returns own
+        every { pinRepository.findPinById(theirs.id) } returns theirs
+
+        // When, Then
+        assertThrows<PinBoardSettingPermissionError> {
+            useCase.addPinsToBoard(boardId = target.id, pinIds = listOf(own.id, theirs.id), user = user)
+        }
+        verify(exactly = 0) { pinRepository.savePin(any()) }
+    }
+
+    @Test
+    fun `Given an unknown board, Then removePinsFromBoard throws BoardRetrievalBoardDoesNotExistError`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val unknownBoardId = randomUUID()
+        every { boardRepository.findActiveBoardById(unknownBoardId) } returns null
+
+        // When, Then
+        assertThrows<BoardRetrievalBoardDoesNotExistError> {
+            useCase.removePinsFromBoard(boardId = unknownBoardId, pinIds = listOf(randomUUID()), user = user)
+        }
+    }
+
+    private fun board(author: User, name: String) =
+        Board(id = randomUUID(), author = author, name = name, description = "",
+            createdAt = TestTime.now, updatedAt = TestTime.now)
 
     private fun pin(author: User) =
         Pin(

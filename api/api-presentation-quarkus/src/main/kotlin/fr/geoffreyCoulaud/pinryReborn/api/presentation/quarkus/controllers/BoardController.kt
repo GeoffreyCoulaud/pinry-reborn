@@ -3,6 +3,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.BoardInputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto.Companion.ALL_OR_NOTHING
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardOutputDto
@@ -20,9 +22,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardPinLister
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardRecycleBin
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardUpdater
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinBoardSetter
 import io.quarkus.security.Authenticated
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.DELETE
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
@@ -30,6 +34,7 @@ import jakarta.ws.rs.PUT
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
+import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
@@ -46,6 +51,7 @@ class BoardController(
     private val boardUpdater: BoardUpdater,
     private val boardPinLister: BoardPinLister,
     private val boardRecycleBin: BoardRecycleBin,
+    private val pinBoardSetter: PinBoardSetter,
     private val securityIdentity: SecurityIdentity,
     private val pinResponses: PinResponses,
 ) {
@@ -147,6 +153,27 @@ class BoardController(
         return boardPinLister
             .listActivePinsForBoard(reader = user, boardId = boardId, cursor = cursor, pageSize = pageSize, sort = sort)
             .let { RestResponse.ok(pinResponses.page(it)) }
+    }
+
+    @POST
+    @Authenticated
+    @Path("/{boardId}/pins")
+    @Operation(summary = "File several pins under the board", description = ALL_OR_NOTHING)
+    @APIResponse(responseCode = "204", description = "Pins filed under the board")
+    fun addPinsToBoard(boardId: UUID, @Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
+        val user = securityIdentity.getUser()
+        pinBoardSetter.addPinsToBoard(boardId = boardId, pinIds = dto.pinIds, user = user)
+        return RestResponse.noContent()
+    }
+
+    @DELETE
+    @Authenticated
+    @Path("/{boardId}/pins")
+    @Operation(summary = "Take several pins out of the board", description = ALL_OR_NOTHING)
+    fun removePinsFromBoard(boardId: UUID, @Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
+        val user = securityIdentity.getUser()
+        pinBoardSetter.removePinsFromBoard(boardId = boardId, pinIds = dto.pinIds, user = user)
+        return RestResponse.noContent()
     }
 
     companion object {

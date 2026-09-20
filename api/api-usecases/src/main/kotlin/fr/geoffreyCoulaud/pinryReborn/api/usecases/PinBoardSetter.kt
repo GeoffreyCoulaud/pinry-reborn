@@ -23,15 +23,40 @@ class PinBoardSetter(
     private val transactionRunner: TransactionRunner,
 ) {
     fun setBoards(pinId: UUID, boardIds: List<UUID>, user: User): Pin {
-        val pin = pinRepository.findPinById(id = pinId) ?: throw PinBoardSettingPinDoesNotExistError()
-        if (pin.author != user) throw PinBoardSettingPermissionError()
-        if (pin.softDeletedAt != null) throw PinBoardSettingSoftDeletedPinError()
-
+        resolvePin(pinId = pinId, user = user)
         val boards = resolveBoards(boardIds = boardIds, user = user)
         // The fence re-reads the pin, so a recycling or a setTags landed since the read is kept, not restored.
         return pinRepository.saveFenced(transactionRunner, pinId, held = ::activeOrRefused) {
             it.copy(boards = boards, updatedAt = clock.now())
         } ?: throw PinBoardSettingPinDoesNotExistError()
+    }
+
+    /** All or nothing: the board and every pin are resolved before the first write (ADR 0039, decision 2). */
+    fun addPinsToBoard(boardId: UUID, pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
+        val board = resolveBoard(boardId, user)
+        val pins = pinIds.map { resolvePin(pinId = it, user = user) }
+        val at = clock.now()
+        pins.forEach { pinRepository.savePin(it.copy(boards = it.boardsWithout(board) + board, updatedAt = at)) }
+    }
+
+    /** All or nothing, as [addPinsToBoard] is. */
+    fun removePinsFromBoard(boardId: UUID, pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
+        val board = resolveBoard(boardId, user)
+        val pins = pinIds.map { resolvePin(pinId = it, user = user) }
+        val at = clock.now()
+        pins.forEach { pinRepository.savePin(it.copy(boards = it.boardsWithout(board), updatedAt = at)) }
+    }
+
+    // A recycled board is never on a mapped pin, and savePin diffs only the active memberships, so
+    // rewriting this list leaves a recycled board's join row alone.
+    private fun Pin.boardsWithout(board: Board): List<Board> = boards.filterNot { it.id == board.id }
+
+    @Suppress("ThrowsCount") // The three refusals a pin earns, wherever it was named.
+    private fun resolvePin(pinId: UUID, user: User): Pin {
+        val pin = pinRepository.findPinById(id = pinId) ?: throw PinBoardSettingPinDoesNotExistError()
+        if (pin.author != user) throw PinBoardSettingPermissionError()
+        if (pin.softDeletedAt != null) throw PinBoardSettingSoftDeletedPinError()
+        return pin
     }
 
     private fun activeOrRefused(pin: Pin): Boolean {
