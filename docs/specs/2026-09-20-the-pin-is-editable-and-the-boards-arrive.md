@@ -4,7 +4,11 @@ Date: 2026-09-20
 Status: Draft, awaiting the operator's review; one specification review ran, its 1 CRITICAL,
 8 MAJOR and 7 MINOR closed in this document. Frozen when the lot's closing block merges.
 Branches: block 10 `feat/one-route-writes-a-pin`, block 15 `feat/the-sub-routes-go`, block 20
-`feat/the-batch-routes`, block 30 `feat/the-grid-chooses-its-order`, block 40
+`feat/the-batch-routes`, block 25 `feat/the-dead-setters-go` (Corrected: added on 2026-09-20. Block
+15 left `PinTagger.setTags` and `PinBoardSetter.setBoards` without a production caller, and removing
+them there would have cleared the strict 600; the operator settled on a block of their own after
+block 20, which already touches `PinBoardSetter.kt`), block 30 `feat/the-grid-chooses-its-order`,
+block 40
 `feat/the-boards-have-a-screen`, block 50 `feat/a-board-has-a-grid`, block 60
 `feat/a-pin-is-editable`, block 70 `feat/a-pin-changes-its-image`, block 80
 `feat/the-recycle-bin`, block 90 `feat/the-grid-consumes-its-selection`
@@ -181,6 +185,7 @@ grid. It takes its own block rather than riding inside another.
 | 20 | `api/.../controllers/BoardController.kt` | `POST` and `DELETE /{boardId}/pins` added |
 | 20 | `api/api-usecases/.../PinRecycleBin.kt`, `BoardRecycleBin.kt`, `PinBoardSetter.kt` | The bulk methods, each one transaction, each resolving every identifier before its first write |
 | 20 | `api/api-application/src/main/resources/application.properties`, `contract/openapi.json` | `info-version` to `7.1.0`, document regenerated |
+| 25 | `api/api-usecases/.../PinTagger.kt`, `PinBoardSetter.kt`, `exceptions/PinTaggingError.kt`, `PinBoardSettingError.kt` | `setTags` and `setBoards` deleted with the error families only they raise, and the bulk of `PinTaggerTest.kt` and `PinBoardSetterTest.kt` with them. No `ErrorCode` arm goes: both families reuse `PIN_DOES_NOT_EXIST`, `PIN_INSUFFICIENT_PERMISSIONS` and `PIN_ALREADY_SOFT_DELETED` |
 | 30 | `clients/.../components/SortSelect.tsx` | New: a `Select` over the sort values a screen passes it, writing the route's `sort` search parameter |
 | 30 | `clients/.../pins.ts` | `usePins` takes a sort and sends it; the query key carries it |
 | 30 | `clients/.../router.tsx`, `routes/Home.tsx` | The home route validates `sort`, defaulting to `CREATED_AT_DESC`; `Home` passes the selector to `AppHeader` |
@@ -242,6 +247,7 @@ route now writes what two used to.)
 | 10 | `feat/one-route-writes-a-pin` | None: no client path changes. `PinUpdaterIntegrationTest` covers the new route, one case per field, one for the empty `tags` and `boardIds` that clear, and one each for an unknown board and another user's board asserting 404 and 403 |
 | 15 | `feat/the-sub-routes-go` | None. The two integration tests move onto the new route with every case kept, which is what proves nothing was served only by the routes removed |
 | 20 | `feat/the-batch-routes` | None. Each route gets a case whose last identifier is another user's, asserting the status and then reading back that the first identifier's state is unchanged, which is how "nothing is written" is observed. `DELETE /api/v1/pins` with an empty body asserts 400, which fails loudly if the body never reaches the resource method |
+| 25 | `feat/the-dead-setters-go` | None: no route and no client path reaches either method. `command grep` over `api/**/src/main` returning nothing but the definitions is what says they are dead, and the gate is silent about it because their unit tests still cover them, which is why the deletion is a block rather than a tier-1 fix |
 | 30 | `feat/the-grid-chooses-its-order` | `choosing the grid's order`: the selector changes the request the grid sends and the order of the tiles, and the choice survives a reload of the same address |
 | 40 | `feat/the-boards-have-a-screen` | `create a board and rename it`: a board created appears in the list, its new name survives a reload, and deleting it takes it out of the list. The credentials screen still carries the theme control and no navigation icon |
 | 50 | `feat/a-board-has-a-grid` | `open a board and browse its pins`: the board's grid holds the pins the board holds and not the others, and loads a second page |
