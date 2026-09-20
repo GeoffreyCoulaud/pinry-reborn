@@ -279,6 +279,15 @@ window's drag listeners, the creation dialog, the pin dialog and the grid; only 
 sort move. The drag gesture stays on the home screen, a board's grid not being a place a drop
 creates a pin.
 
+**Block 50 stands over both bounds and does not split, which is the operator's decision of
+2026-09-20.** Measured at its tip, `git diff --numstat` against `main`: 609 lines total against a
+strict 600, and 480 production lines under `clients/` against a strict 400. Of those 480, 357 are
+one move: `components/PinGrid.tsx` created at 181 lines and `routes/Home.tsx` shortened by 176 of
+the same code, which `git diff --numstat` counts on both sides. A split was measured and offered,
+the extraction alone against the board's screen, at 358 and 251 lines; the operator declined it
+because the budget measures what a human rereads and a reader of this block rereads the move once.
+Nothing here was trimmed to fit, there being no padding to trim.
+
 ## 6. Adjacent backlog items
 
 | Item | Exit |
