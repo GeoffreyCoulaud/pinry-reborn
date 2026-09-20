@@ -47,11 +47,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
             description = "Pin",
             tags = emptyList(),
         )
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body("""{"boardIds": ["${board.id}"]}""")
-            .put("/api/v1/pins/${pin.id}/boards")
+        replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
 
         // When
         given()
@@ -161,11 +157,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
             description = "Pin",
             tags = emptyList(),
         )
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body("""{"boardIds": ["${board.id}"]}""")
-            .put("/api/v1/pins/${pin.id}/boards")
+        replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
         given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}")
 
         // When
@@ -244,11 +236,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
             description = "Pin",
             tags = emptyList(),
         )
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body("""{"boardIds": ["${board.id}"]}""")
-            .put("/api/v1/pins/${pin.id}/boards")
+        replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
         given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}")
 
         // When
@@ -361,11 +349,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
             description = "Pin",
             tags = emptyList(),
         )
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body("""{"boardIds": ["${board.id}"]}""")
-            .put("/api/v1/pins/${pin.id}/boards")
+        replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
         given().authenticatedAs(auth).delete("/api/v1/pins/${pin.id}")
 
         // When
@@ -398,22 +382,12 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
             description = "Pin",
             tags = emptyList(),
         )
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body("""{"boardIds": ["${board.id}"]}""")
-            .put("/api/v1/pins/${pin.id}/boards")
+        replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
         given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}")
 
-        // When - re-saving the pin (setting tags) must not drop the recycled board's join row
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body("""{"tags": ["nature"]}""")
-            .`when`()
-            .put("/api/v1/pins/${pin.id}/tags")
-            .then()
-            .statusCode(200)
+        // When - re-saving the pin must not drop the recycled board's join row. The write sends no
+        // board, the recycled one being invisible to a read, and the row still has to stand.
+        replacePin(auth, pin, tags = listOf("nature")).statusCode(200)
         given()
             .authenticatedAs(auth)
             .post("/api/v1/boards/recycled/${board.id}/restore")
@@ -442,11 +416,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
             description = "Pin",
             tags = emptyList(),
         )
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body("""{"boardIds": ["${board1.id}", "${board2.id}"]}""")
-            .put("/api/v1/pins/${pin.id}/boards")
+        replacePin(auth, pin, boardIds = listOf(board1.id, board2.id)).statusCode(200)
 
         // When
         given()

@@ -2,10 +2,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinBoardsInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinCreationInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSortStrategyInputEnum
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinTagsInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinUpdateInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
@@ -14,11 +12,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinRespon
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinSortStrategyMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinBoardSetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBin
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinTagger
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinUpdater
 import io.quarkus.security.Authenticated
 import io.quarkus.security.identity.SecurityIdentity
@@ -40,13 +36,10 @@ import java.net.URI
 import java.util.UUID
 
 @Path("/api/v1/pins")
-@Suppress("LongParameterList") // CDI-injected: every parameter is a collaborator provided by the container.
 class PinController(
     private val pinCreator: PinCreator,
     private val pinGetter: PinGetter,
-    private val pinTagger: PinTagger,
     private val pinRecycleBin: PinRecycleBin,
-    private val pinBoardSetter: PinBoardSetter,
     private val pinUpdater: PinUpdater,
     private val securityIdentity: SecurityIdentity,
     private val pinResponses: PinResponses,
@@ -143,32 +136,6 @@ class PinController(
 
     /** A blank address is no address, on the write of one pin as on its creation. */
     private fun String?.blankAsNone(): String? = this?.takeIf { it.isNotBlank() }
-
-    @PUT
-    @Authenticated
-    @Path("/{pinId}/tags")
-    @Operation(
-        summary = "Replace the pin's tags",
-        description = "A tag name is an identity per author under an ASCII fold: `Landscape` and `landscape` " +
-            "are one tag, and the response carries the stored spelling, not the one sent. The fold covers " +
-            "A to Z only, so `ÉTÉ` and `été` stay two tags.",
-    )
-    fun setTags(pinId: UUID, @Valid tagsDto: PinTagsInputDto): RestResponse<PinOutputDto> {
-        val user = securityIdentity.getUser()
-        return pinTagger
-            .setTags(pinId = pinId, tagNames = tagsDto.tags, user = user)
-            .let { RestResponse.ok(pinResponses.pin(it)) }
-    }
-
-    @PUT
-    @Authenticated
-    @Path("/{pinId}/boards")
-    fun setBoards(pinId: UUID, @Valid boardsDto: PinBoardsInputDto): RestResponse<PinOutputDto> {
-        val user = securityIdentity.getUser()
-        return pinBoardSetter
-            .setBoards(pinId = pinId, boardIds = boardsDto.boardIds, user = user)
-            .let { RestResponse.ok(pinResponses.pin(it)) }
-    }
 
     companion object {
         const val DEFAULT_PAGE_SIZE = 20

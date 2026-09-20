@@ -547,7 +547,7 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
     // --- Tag soft-deleted pin ---
 
     @Test
-    fun `Given soft-deleted pin, Then tagging returns 409`() {
+    fun `Given soft-deleted pin, Then writing it returns 409`() {
         // Given
         val auth = createAuthenticatedUser()
         val pin = pinCreator.createPin(
@@ -561,13 +561,7 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         given().authenticatedAs(auth).delete("/api/v1/pins/${pin.id}")
 
         // When / Then
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body("""{"tags": ["newtag"]}""")
-            .`when`()
-            .put("/api/v1/pins/${pin.id}/tags")
-            .then()
+        replacePin(auth, pin, tags = listOf("newtag"))
             .statusCode(409)
     }
 }

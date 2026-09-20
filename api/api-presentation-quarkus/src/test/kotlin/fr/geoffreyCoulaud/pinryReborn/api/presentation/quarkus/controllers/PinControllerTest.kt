@@ -6,12 +6,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDirectionDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinBoardsInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinCreationInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinBoardSetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinImageState
@@ -28,7 +26,6 @@ import java.util.UUID.randomUUID
 class PinControllerTest {
     private val pinCreator = mockk<PinCreator>()
     private val pinGetter = mockk<PinGetter>()
-    private val pinBoardSetter = mockk<PinBoardSetter>()
     private val securityIdentity = mockk<SecurityIdentity>()
     // The real assembler over a stubbed resolver: the responses under assertion are the mapped ones.
     private val resolvePinImageState = mockk<ResolvePinImageState>().also {
@@ -37,9 +34,7 @@ class PinControllerTest {
     private val controller = PinController(
         pinCreator = pinCreator,
         pinGetter = pinGetter,
-        pinTagger = mockk(),
         pinRecycleBin = mockk(),
-        pinBoardSetter = pinBoardSetter,
         pinUpdater = mockk(),
         securityIdentity = securityIdentity,
         pinResponses = PinResponses(resolvePinImageState),
@@ -162,35 +157,5 @@ class PinControllerTest {
 
         // Then
         assertEquals(200, response.status)
-    }
-
-    @Test
-    fun `Given board ids, Then setBoards sets them and returns the updated pin`() {
-        // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val pinId = randomUUID()
-        val boardIds = listOf(randomUUID(), randomUUID())
-        val dto = PinBoardsInputDto(boardIds = boardIds)
-        val pin = Pin(
-            id = pinId,
-            author = user,
-            sourceContextUrl = createRandomString(),
-            sourceMediaUrl = null,
-            description = createRandomString(),
-            tags = emptyList(),
-            boards = emptyList(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
-        every { securityIdentity.getAttribute<User>("user") } returns user
-        every { pinBoardSetter.setBoards(pinId = pinId, boardIds = boardIds, user = user) } returns pin
-
-        // When
-        val response = controller.setBoards(pinId, dto)
-
-        // Then
-        assertEquals(200, response.status)
-        val body = response.entity as PinOutputDto
-        assertEquals(pin.id, body.id)
     }
 }

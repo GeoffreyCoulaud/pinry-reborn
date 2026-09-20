@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.UserCreator
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -7,9 +8,11 @@ import io.ebean.DB
 import io.ebean.Database
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
+import io.restassured.response.ValidatableResponse
 import io.restassured.specification.RequestSpecification
 import jakarta.inject.Inject
 import org.junit.jupiter.api.BeforeEach
+import java.util.UUID
 
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a shared test base for concrete subclasses.
 abstract class IntegrationTest {
@@ -59,6 +62,33 @@ abstract class IntegrationTest {
             .path<String>("token")
         return AuthenticatedUser(user, token)
     }
+
+    /**
+     * Write a pin over `PUT /api/v1/pins/{pinId}`, which replaces the whole pin: what the case does
+     * not change is sent as the pin carries it, so a tag or a board survives a write about the other.
+     */
+    protected fun replacePin(
+        auth: AuthenticatedUser,
+        pin: Pin,
+        tags: List<String> = pin.tags.map { it.name },
+        boardIds: List<UUID> = pin.boards.map { it.id },
+    ): ValidatableResponse =
+        RestAssured
+            .given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .body(
+                mapOf(
+                    "description" to pin.description,
+                    "sourceContextUrl" to pin.sourceContextUrl,
+                    "sourceMediaUrl" to pin.sourceMediaUrl,
+                    "tags" to tags,
+                    "boardIds" to boardIds.map { it.toString() },
+                ),
+            )
+            .`when`()
+            .put("/api/v1/pins/${pin.id}")
+            .then()
 
     /** Attach `Authorization: Bearer <token>` to a REST-Assured request. */
     protected fun RequestSpecification.authenticatedAs(auth: AuthenticatedUser): RequestSpecification =

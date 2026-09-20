@@ -213,15 +213,6 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
             tags = tags,
         )
 
-    private fun putPinInBoard(auth: IntegrationTest.AuthenticatedUser, pinId: UUID, boardId: UUID) {
-        given()
-            .authenticatedAs(auth)
-            .contentType(ContentType.JSON)
-            .body("""{"boardIds": ["$boardId"]}""")
-            .`when`().put("/api/v1/pins/$pinId/boards")
-            .then().statusCode(200)
-    }
-
     private fun seedArchiveContent(auth: IntegrationTest.AuthenticatedUser): SeededContent {
         val taggedPin = createPin(auth, "tagged", tags = listOf("nature"))
         val imagePin = createPin(auth, "image")
@@ -235,7 +226,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
 
         val activeBoard = boardCreator.create(author = auth.user, name = "Active board", description = "")
         val recycledBoard = boardCreator.create(author = auth.user, name = "Recycled board", description = "")
-        putPinInBoard(auth, taggedPin.id, recycledBoard.id)
+        replacePin(auth, taggedPin, boardIds = listOf(recycledBoard.id)).statusCode(200)
         given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${recycledBoard.id}").then().statusCode(204)
 
         return SeededContent(
