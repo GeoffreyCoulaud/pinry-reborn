@@ -1,4 +1,4 @@
-import { Button, EmptyState, Modal, Spinner, toast } from "@heroui/react"
+import { Button, Dropdown, EmptyState, Modal, Spinner, toast } from "@heroui/react"
 import { useLayoutEffect, useRef, useState, type RefObject } from "react"
 import {
   Collection,
@@ -9,6 +9,7 @@ import {
   Virtualizer,
   WaterfallLayout,
 } from "react-aria-components"
+import { useAddPinsToBoard, useBoards, useRemovePinsFromBoard } from "../boards"
 import { downloadReason } from "../downloadReasons"
 import { useHandshake } from "../images"
 import type { PinSort } from "../lib/sorts"
@@ -16,6 +17,7 @@ import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } 
 import { m } from "../paraglide/messages.js"
 import { useRecyclePins, usePins, type Pin } from "../pins"
 import { PinEditForm } from "./PinEditForm"
+import { SelectionBar, SelectionTick, useSelection } from "./SelectionBar"
 
 /**
  * Every bound here is finite, and two of them have to be. `WaterfallLayout` reads the scroll
@@ -126,6 +128,66 @@ function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
 }
 
 /**
+ * What the selection bar offers over tiles. Two gestures on the catalogue and three on a board's
+ * grid: taking pins out of a board is only a gesture where there is a board to take them out of,
+ * and every one of them is a single all-or-nothing request (ADR 0039).
+ */
+function PinGestures({
+  pinIds,
+  boardId,
+  clear,
+}: {
+  pinIds: readonly string[]
+  boardId?: string
+  clear: () => void
+}) {
+  const boards = useBoards()
+  const add = useAddPinsToBoard()
+  const remove = useRemovePinsFromBoard()
+  const recycle = useRecyclePins()
+  const spend = (message: string) => ({ onSuccess: clear, onError: () => toast.danger(message) })
+
+  return (
+    <>
+      {/* The board is chosen in the gesture rather than before it: the menu is the second half
+          of one press, and there is nothing to undo if it is dismissed. */}
+      <Dropdown>
+        <Button variant="ghost" isDisabled={add.isPending}>
+          {m.add_to_board()}
+        </Button>
+        <Dropdown.Popover>
+          <Dropdown.Menu
+            aria-label={m.boards()}
+            items={boards.data ?? []}
+            onAction={(key) =>
+              add.mutate({ boardId: String(key), pinIds }, spend(m.membership_refused()))
+            }
+          >
+            {(held) => <Dropdown.Item id={held.id}>{held.name}</Dropdown.Item>}
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
+      {boardId !== undefined && (
+        <Button
+          variant="ghost"
+          isDisabled={remove.isPending}
+          onPress={() => remove.mutate({ boardId, pinIds }, spend(m.membership_refused()))}
+        >
+          {m.remove_from_board()}
+        </Button>
+      )}
+      <Button
+        variant="danger-soft"
+        isDisabled={recycle.isPending}
+        onPress={() => recycle.mutate(pinIds, spend(m.pin_deletion_refused()))}
+      >
+        {m.delete_pin()}
+      </Button>
+    </>
+  )
+}
+
+/**
  * The catalogue as tiles, or one board's share of it. The home screen and a board's screen render
  * the same grid; what surrounds it, the drop that creates a pin included, is the screen's own.
  */
@@ -137,6 +199,7 @@ export function PinGrid({ sort, label, boardId }: { sort: PinSort; label: string
   const [openedId, setOpenedId] = useState<string | null>(null)
   const tiles = placeableTiles(pins.data?.pages.flatMap((page) => page.pins) ?? [])
   const opened = tiles.find((pin) => pin.id === openedId)
+  const selection = useSelection(tiles)
 
   // Neither a first load nor an account with nothing in it draws a tile, and both said so with
   // a blank rectangle until now.
@@ -159,19 +222,25 @@ export function PinGrid({ sort, label, boardId }: { sort: PinSort; label: string
     )
 
   return (
-    <>
+    <div className="flex h-full flex-col gap-2">
+      <SelectionBar count={selection.ids.length} clear={selection.clear}>
+        <PinGestures pinIds={selection.ids} boardId={boardId} clear={selection.clear} />
+      </SelectionBar>
       <Virtualizer layout={WaterfallLayout} layoutOptions={LAYOUT}>
         <GridList
           aria-label={label}
           layout="grid"
-          selectionMode="multiple"
+          {...selection.props}
           // react-aria writes no `overflow` on what it virtualizes: without this the window scrolls.
-          className="h-full overflow-x-hidden overflow-y-auto outline-none"
+          className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto outline-none"
           onAction={(key) => setOpenedId(String(key))}
         >
           <Collection items={tiles}>
             {(pin) => (
               <GridListItem textValue={pin.description}>
+                {/* Over the picture's top corner, on a plate of its own: a tick drawn straight
+                    onto an image is invisible on half the images in a catalogue. */}
+                <SelectionTick className="absolute start-2 top-2 z-10 rounded bg-background/80 p-1" />
                 <Tile pin={pin} smallRenditionPx={renditionSizes?.small} />
               </GridListItem>
             )}
@@ -203,6 +272,6 @@ export function PinGrid({ sort, label, boardId }: { sort: PinSort; label: string
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>
-    </>
+    </div>
   )
 }

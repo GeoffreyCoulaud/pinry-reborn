@@ -37,6 +37,10 @@ class ReachedSentinelObserver implements IntersectionObserver {
 }
 globalThis.IntersectionObserver = ReachedSentinelObserver
 
+// jsdom implements no Web Animations API, and react-aria reads the animations of the element it
+// carries from one tab to the next. Nothing animates under test, so there are none to report.
+Element.prototype.getAnimations = () => []
+
 // jsdom implements no ResizeObserver, and HeroUI's toast measures its own height with one. It
 // never reports: jsdom lays nothing out, so the only width it could announce is zero.
 globalThis.ResizeObserver = class {

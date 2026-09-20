@@ -1,11 +1,19 @@
 import type { Schemas } from "@pinry-reborn/auth"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query"
 import { auth, bodyOf } from "./api"
+import { removePins } from "./lib/tiles"
+import type { PinPage } from "./pins"
 
 export type Board = Schemas["BoardOutputDto"]
 export type BoardInput = Schemas["BoardInputDto"]
 
+/** The pins a gesture files under one board, or takes out of it, in one call (ADR 0039). */
+type Membership = { boardId: string; pinIds: readonly string[] }
+
 const BOARDS = ["boards"]
+
+/** The board's own catalogue, as `usePins` keys it: `["pins", boardId, sort]`. */
+const catalogueOf = (boardId: string) => ["pins", boardId]
 
 /** A board the API refused. 409 is a name this account already holds, which is the user's to fix. */
 export class BoardRefusal extends Error {
@@ -64,5 +72,50 @@ export function useDeleteBoard() {
       params: { path: { boardId } },
     })
     if (!response.ok) throw new BoardRefusal(response.status)
+  })
+}
+
+/**
+ * The selection filed under a board. The pins stay in every catalogue that already shows them, a
+ * board being one more place they appear; what changes is the board's own, which is read again the
+ * next time it is shown, and the pin counts the boards screen carries.
+ */
+export function useAddPinsToBoard() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ boardId, pinIds }: Membership) => {
+      const { response } = await auth.client.POST("/api/v1/boards/{boardId}/pins", {
+        params: { path: { boardId } },
+        body: { pinIds: [...pinIds] },
+      })
+      if (!response.ok) throw new BoardRefusal(response.status)
+      await queryClient.invalidateQueries({ queryKey: catalogueOf(boardId) })
+      await queryClient.invalidateQueries({ queryKey: BOARDS })
+    },
+  })
+}
+
+/**
+ * The selection taken out of the board whose grid it was read on. The tiles leave the pages that
+ * grid already holds rather than it being reloaded (decision P), every order being its own key.
+ */
+export function useRemovePinsFromBoard() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ boardId, pinIds }: Membership) => {
+      const { response } = await auth.client.DELETE("/api/v1/boards/{boardId}/pins", {
+        params: { path: { boardId } },
+        body: { pinIds: [...pinIds] },
+      })
+      if (!response.ok) throw new BoardRefusal(response.status)
+      queryClient.setQueriesData<InfiniteData<PinPage>>(
+        { queryKey: catalogueOf(boardId) },
+        (catalogue) =>
+          catalogue === undefined
+            ? catalogue
+            : { ...catalogue, pages: removePins(catalogue.pages, pinIds) },
+      )
+      await queryClient.invalidateQueries({ queryKey: BOARDS })
+    },
   })
 }
