@@ -73,8 +73,12 @@ function BoardRow({ board, rename }: { board: Board; rename: () => void }) {
       textValue={board.name}
       className="flex flex-wrap items-center gap-3 border-b border-separator px-2 py-3 outline-none last:border-0"
     >
-      <span className="font-medium">{board.name}</span>
-      <span className="min-w-0 flex-1 truncate text-muted">{board.description}</span>
+      {/* The description under the name rather than beside it: at a phone's width a row has no
+          space for both, and truncating it to two words says nothing at all. */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="font-medium">{board.name}</span>
+        <span className="truncate text-muted">{board.description}</span>
+      </div>
       <span className="text-sm text-muted">{m.board_pin_count({ count: board.pinCount })}</span>
       <IconButton
         icon={Pencil}
