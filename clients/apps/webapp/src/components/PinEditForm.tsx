@@ -1,9 +1,21 @@
-import { Button, Input, Label, ListBox, Select, Tag, TagGroup, TextArea, TextField } from "@heroui/react"
+import {
+  Button,
+  Input,
+  Label,
+  ListBox,
+  Radio,
+  RadioGroup,
+  Select,
+  Tag,
+  TagGroup,
+  TextArea,
+  TextField,
+} from "@heroui/react"
 import { useEffect, useState } from "react"
 import { useBoards } from "../boards"
 import { downloadReason } from "../downloadReasons"
 import { judgeDrop, refuse } from "../drops"
-import { useHandshake, useSetPinImage } from "../images"
+import { useHandshake, useSetPinImage, type ImageSource } from "../images"
 import { dragDepth } from "../lib/drags"
 import type { KeptFile } from "../lib/drops"
 import { tileImageSource } from "../lib/tiles"
@@ -142,6 +154,22 @@ function BoardField({
   )
 }
 
+/** What the save does to the image, one of three and applied after the pin is written. */
+type ImageIntent = "keep" | "replace" | "fetch"
+
+function ImageOption({ value, label }: { value: ImageIntent; label: string }) {
+  return (
+    <Radio value={value}>
+      <Radio.Content>
+        <Radio.Control>
+          <Radio.Indicator />
+        </Radio.Control>
+        {label}
+      </Radio.Content>
+    </Radio>
+  )
+}
+
 /** What the form is editing: the picture the pin carries, or the file about to replace it. */
 function ImagePreview({ pin, chosen }: { pin: Pin; chosen: KeptFile | null }) {
   const [preview, setPreview] = useState<string | null>(null)
@@ -247,22 +275,36 @@ export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
   const limits = useHandshake().data?.limits
   const [tags, setTags] = useState<readonly string[]>(pin.tags.map((tag) => tag.name))
   const [boardIds, setBoardIds] = useState<readonly string[]>(pin.boards.map((board) => board.id))
-  // The address is the form's, not the pin's: the fetch below reads what is typed now, so an
-  // address added during this edit is fetchable without saving and reopening the dialog.
+  // The address is the form's, not the pin's: the fetch is offered on what the field holds now,
+  // so an address added during this edit needs no save and no second edit to be fetched from.
   const [address, setAddress] = useState(pin.sourceMediaUrl ?? "")
+  const [intent, setIntent] = useState<ImageIntent>("keep")
   const [chosen, setChosen] = useState<KeptFile | null>(null)
   const replacement = pin.image?.replacement
+  const fetchable = address.trim() !== ""
+
+  /** What the save applies to the image once the pin itself is written, or nothing. */
+  function source(): ImageSource | null {
+    if (intent === "replace" && chosen !== null) return { file: chosen.file }
+    if (intent === "fetch") return { url: address }
+    return null
+  }
+
+  function changeAddress(typed: string) {
+    setAddress(typed)
+    // The fetch reads that field, so an address taken away takes the option with it.
+    if (typed.trim() === "" && intent === "fetch") setIntent("keep")
+  }
 
   return (
     <div className="flex flex-col gap-3">
-      <ImagePreview pin={pin} chosen={chosen} />
+      <ImagePreview pin={pin} chosen={intent === "replace" ? chosen : null} />
       {/* The sub-state the contract has carried since before any client read it: the pin keeps the
           image it has while the server downloads the one asked for. */}
       {replacement?.status === "PENDING" && <p role="status">{m.image_replacing()}</p>}
       {replacement?.status === "FAILED" && (
         <p role="alert">{downloadReason(replacement.reasonCode, replacement.message)}</p>
       )}
-      {setImage.isError && <p role="alert">{m.image_refused()}</p>}
       <form
         className="flex flex-col gap-3"
         onSubmit={(event) => {
@@ -281,34 +323,33 @@ export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
               },
             },
             {
-              // The pin first, then its image, as the creation screen writes the two.
+              // The pin first, then the option chosen: a fetch then reads the address the pin
+              // holds rather than one the server has never seen. A refused pin touches no image.
               onSuccess: () => {
-                if (chosen === null) close()
-                else
-                  setImage.mutate({ pinId: pin.id, source: { file: chosen.file } }, { onSuccess: close })
+                const chosenSource = source()
+                if (chosenSource === null) close()
+                else setImage.mutate({ pinId: pin.id, source: chosenSource }, { onSuccess: close })
               },
             },
           )
         }}
       >
-        <Field type="url" label={m.image_address()} value={address} onChange={setAddress} />
-        {/* On the field's value and not on the pin's: an address just typed is one to fetch from. */}
-        {address.trim() !== "" && (
-          <Button
-            variant="secondary"
-            className="self-start"
-            isDisabled={setImage.isPending}
-            onPress={() => setImage.mutate({ pinId: pin.id, source: { url: address } })}
-          >
-            {m.fetch_image_from_url()}
-          </Button>
+        <Field type="url" label={m.image_address()} value={address} onChange={changeAddress} />
+        <RadioGroup value={intent} onChange={(value) => setIntent(value as ImageIntent)}>
+          <Label>{m.image()}</Label>
+          <ImageOption value="keep" label={m.image_keep()} />
+          <ImageOption value="replace" label={m.image_replace()} />
+          {/* On the field's value and not on the pin's: an address just typed is one to fetch from. */}
+          {fetchable && <ImageOption value="fetch" label={m.fetch_image_from_url()} />}
+        </RadioGroup>
+        {intent === "replace" && (
+          <ReplaceField
+            chosen={chosen}
+            limits={limits}
+            onFile={setChosen}
+            onAddress={changeAddress}
+          />
         )}
-        <ReplaceField
-          chosen={chosen}
-          limits={limits}
-          onFile={setChosen}
-          onAddress={setAddress}
-        />
         <TextField name="description" defaultValue={pin.description}>
           <Label>{m.description()}</Label>
           <TextArea rows={3} />
@@ -321,12 +362,19 @@ export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
         />
         <TagField names={tags} onChange={setTags} />
         <BoardField ids={boardIds} onChange={setBoardIds} />
+        {/* Two halves, two sentences: the pin is written before its image, so a refused image
+            leaves the fields saved and only the image to try again. */}
         {save.isError && <p role="alert">{m.pin_refused()}</p>}
+        {setImage.isError && <p role="alert">{m.image_refused()}</p>}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onPress={close}>
             {m.cancel()}
           </Button>
-          <Button type="submit" isDisabled={save.isPending || setImage.isPending}>
+          <Button
+            type="submit"
+            // Replace with nothing chosen would save as though the image were being kept.
+            isDisabled={save.isPending || setImage.isPending || (intent === "replace" && chosen === null)}
+          >
             {m.save()}
           </Button>
         </div>
