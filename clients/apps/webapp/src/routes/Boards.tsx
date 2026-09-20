@@ -13,9 +13,19 @@ import { useSession } from "../session"
 /** What the dialog is open on: a board being renamed, or a board that does not exist yet. */
 type Edited = Board | "new" | null
 
-function Field({ name, label, defaultValue }: { name: string; label: string; defaultValue: string }) {
+function Field({
+  name,
+  label,
+  defaultValue,
+  isRequired,
+}: {
+  name: string
+  label: string
+  defaultValue: string
+  isRequired?: boolean
+}) {
   return (
-    <TextField name={name} defaultValue={defaultValue} isRequired={name === "name"}>
+    <TextField name={name} defaultValue={defaultValue} isRequired={isRequired}>
       <Label>{label}</Label>
       <Input />
     </TextField>
@@ -43,7 +53,7 @@ function BoardForm({ edited, close }: { edited: Board | "new"; close: () => void
         else save.mutate({ boardId: board.id, body }, { onSuccess: close })
       }}
     >
-      <Field name="name" label={m.name()} defaultValue={board?.name ?? ""} />
+      <Field name="name" label={m.name()} defaultValue={board?.name ?? ""} isRequired />
       <Field name="description" label={m.description()} defaultValue={board?.description ?? ""} />
       {refusal !== null && (
         <p role="alert">

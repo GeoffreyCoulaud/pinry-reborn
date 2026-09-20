@@ -15,7 +15,11 @@ const BOARDS = ["boards"]
 /** The board's own catalogue, as `usePins` keys it: `["pins", boardId, sort]`. */
 const catalogueOf = (boardId: string) => ["pins", boardId]
 
-/** A board the API refused. 409 is a name this account already holds, which is the user's to fix. */
+/**
+ * A board the create and the rename refused. 409 is a name this account already holds, which is the
+ * user's to fix; on any other write of this file 409 means a recycled pin, so they throw a plain
+ * `Error` rather than a flag that would read as a name taken.
+ */
 export class BoardRefusal extends Error {
   readonly nameTaken: boolean
   constructor(status: number) {
@@ -71,7 +75,7 @@ export function useDeleteBoard() {
     const { response } = await auth.client.DELETE("/api/v1/boards/{boardId}", {
       params: { path: { boardId } },
     })
-    if (!response.ok) throw new BoardRefusal(response.status)
+    if (!response.ok) throw new Error(`The API kept the board: ${response.status}.`)
   })
 }
 
@@ -88,7 +92,7 @@ export function useAddPinsToBoard() {
         params: { path: { boardId } },
         body: { pinIds: [...pinIds] },
       })
-      if (!response.ok) throw new BoardRefusal(response.status)
+      if (!response.ok) throw new Error(`The API filed nothing: ${response.status}.`)
       await queryClient.invalidateQueries({ queryKey: catalogueOf(boardId) })
       await queryClient.invalidateQueries({ queryKey: BOARDS })
     },
@@ -107,7 +111,7 @@ export function useRemovePinsFromBoard() {
         params: { path: { boardId } },
         body: { pinIds: [...pinIds] },
       })
-      if (!response.ok) throw new BoardRefusal(response.status)
+      if (!response.ok) throw new Error(`The API took nothing out: ${response.status}.`)
       queryClient.setQueriesData<InfiniteData<PinPage>>(
         { queryKey: catalogueOf(boardId) },
         (catalogue) =>

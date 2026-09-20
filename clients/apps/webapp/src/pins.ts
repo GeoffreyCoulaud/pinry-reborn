@@ -20,6 +20,9 @@ const PAGE_SIZE = 40
 /** Enough names to choose from without a scroll, the field offering them under the input. */
 const TAG_SUGGESTIONS = 8
 
+const PINS = ["pins"]
+const BOARDS = ["boards"]
+
 /**
  * The catalogue, one page at a time, in the order the API sorts it, or one board's share of it:
  * `GET /api/v1/boards/{boardId}/pins` has the signature of `GET /api/v1/pins` (specification 2.5).
@@ -56,11 +59,30 @@ export function useUpdatePin() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ pinId, body }: { pinId: string; body: PinUpdate }) => {
-      bodyOf(
+      const saved = bodyOf(
         await auth.client.PUT("/api/v1/pins/{pinId}", { params: { path: { pinId } }, body }),
         "the pin",
       )
-      await rereadSettledPins(queryClient, [pinId])
+      // A pin written and then not read back is still written, so the catalogue answers for the
+      // reread rather than the mutation failing over a pin the user has saved.
+      await rereadSettledPins(queryClient, [pinId]).catch(() =>
+        queryClient.invalidateQueries({ queryKey: PINS }),
+      )
+      // An edit is also a membership write: a board the pin left keeps no tile of it, the tile
+      // having just been written back into every catalogue by the reread above.
+      const held = new Set(saved.boards.map((board) => board.id))
+      queryClient.setQueriesData<InfiniteData<PinPage>>(
+        {
+          queryKey: PINS,
+          predicate: ({ queryKey }) => typeof queryKey[1] === "string" && !held.has(queryKey[1]),
+        },
+        (catalogue) =>
+          catalogue === undefined
+            ? catalogue
+            : { ...catalogue, pages: removePins(catalogue.pages, [pinId]) },
+      )
+      // The counts a board carries are what the memberships just moved.
+      await queryClient.invalidateQueries({ queryKey: BOARDS })
     },
   })
 }
@@ -79,11 +101,13 @@ export function useRecyclePins() {
         body: { pinIds: [...pinIds] },
       })
       if (!response.ok) throw new Error(`The API kept the pins: ${response.status}.`)
-      queryClient.setQueriesData<InfiniteData<PinPage>>({ queryKey: ["pins"] }, (catalogue) =>
+      queryClient.setQueriesData<InfiniteData<PinPage>>({ queryKey: PINS }, (catalogue) =>
         catalogue === undefined
           ? catalogue
           : { ...catalogue, pages: removePins(catalogue.pages, pinIds) },
       )
+      // A board counts the pins it holds that are still active, so a recycled one moves it.
+      await queryClient.invalidateQueries({ queryKey: BOARDS })
     },
   })
 }

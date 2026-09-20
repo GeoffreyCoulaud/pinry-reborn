@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react"
+import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { HttpResponse, http } from "msw"
 import { describe, expect, it } from "vitest"
@@ -6,6 +6,7 @@ import { m } from "../paraglide/messages.js"
 import type { Pin } from "../pins"
 import {
   board,
+  boardPinsRoute,
   boardRoutes,
   downloadsRoute,
   handshakeRoute,
@@ -142,6 +143,31 @@ describe("edit a pin's description, tags and boards", () => {
     expect(record.bodies).toEqual([
       expect.objectContaining({ tags: [], boardIds: [] }),
     ])
+  })
+
+  it("Given the edit takes the pin out of the board it is read on, Then its tile leaves that grid", async () => {
+    const original = { ...held(), boards: [{ id: EVENINGS.id, name: EVENINGS.name }] }
+    const kept = { ...readyPin("a cat asleep"), boards: [{ id: EVENINGS.id, name: EVENINGS.name }] }
+    const record = recorder()
+    account(original, { ...original, boards: [] }, record)
+    server.use(boardPinsRoute({ [EVENINGS.id]: [[original, kept]] }))
+    renderApp(`/boards/${EVENINGS.id}`)
+    const user = userEvent.setup()
+
+    const dialog = await openTheForm(user, original.description)
+    await user.click(within(dialog).getByRole("button", { name: new RegExp(EVENINGS.name) }))
+    await user.click(await screen.findByRole("option", { name: EVENINGS.name }))
+    await user.keyboard("{Escape}")
+    await user.click(within(dialog).getByRole("button", { name: m.save() }))
+
+    // The tile leaves the grid it no longer belongs to rather than standing there until a reload,
+    // which is what the same outcome reached through the selection bar already does. The pin the
+    // edit did not touch stays, so what left is the one that left the board. Read with `hidden`:
+    // the dialog is still over the grid on a save that changes no membership.
+    const grid = await screen.findByRole("grid", { name: EVENINGS.name, hidden: true })
+    const tile = (name: string) => within(grid).queryByRole("img", { name, hidden: true })
+    await waitFor(() => expect(tile(original.description)).toBeNull())
+    expect(tile(kept.description)).toBeInTheDocument()
   })
 
   it("Given the API refuses the write, Then the form stays open and says so", async () => {

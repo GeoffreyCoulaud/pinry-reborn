@@ -1,7 +1,10 @@
 import { Focusable, Tooltip, buttonVariants } from "@heroui/react"
 import { Link, type LinkProps } from "@tanstack/react-router"
-import { House, LayoutGrid, Trash2, type LucideIcon } from "lucide-react"
+import { House, LayoutGrid, LogOut, Trash2, type LucideIcon } from "lucide-react"
 import { m } from "../paraglide/messages.js"
+import { useSignOut } from "../session"
+import { IconButton } from "./IconButton"
+import { TaskCentre } from "./TaskCentre"
 
 /**
  * A link and not a button: the icon goes somewhere, so it opens in a new tab and answers a middle
@@ -27,16 +30,27 @@ function NavIcon({ to, icon: Icon, name }: { to: LinkProps["to"]; icon: LucideIc
 }
 
 /**
- * The screens a signed-in user moves between. `AppHeader` renders it nowhere: the credentials
+ * What every signed-in screen's bar carries: the screens the user moves between, the downloads
+ * still running, and the way out of the session. `AppHeader` renders it nowhere: the credentials
  * screen carries the same bar, and an icon put inside it would be offered to a visitor with no
- * session (specification decision I).
+ * session (specification 2026-09-20, decision I).
  */
 export function AppNav() {
+  const signOut = useSignOut()
+
   return (
     <>
       <NavIcon to="/" icon={House} name={m.home_heading()} />
       <NavIcon to="/boards" icon={LayoutGrid} name={m.boards()} />
       <NavIcon to="/recycled" icon={Trash2} name={m.recycle_bin()} />
+      {/* A download outlives the screen it was started from, so what reports it is on all of them. */}
+      <TaskCentre />
+      <IconButton
+        icon={LogOut}
+        name={m.sign_out()}
+        variant="ghost"
+        onPress={() => signOut.mutate()}
+      />
     </>
   )
 }
