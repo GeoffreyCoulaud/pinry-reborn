@@ -38,8 +38,10 @@ export function SearchField({ term, boardName }: { term?: string; boardName?: st
           <SearchFieldInput placeholder={name} />
         </SearchFieldGroup>
       </SearchFieldRoot>
+      {/* Underlined at rest: nothing else says this one is a link, the bar's other ways out
+          being icons and this one carrying no colour of its own. */}
       {boardName !== undefined && term !== undefined && (
-        <Link to="/" search={{ q: term }} className="text-sm text-muted hover:underline">
+        <Link to="/" search={{ q: term }} className="text-sm text-muted underline">
           {m.search_everywhere()}
         </Link>
       )}
