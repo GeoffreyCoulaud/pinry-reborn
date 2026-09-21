@@ -2,12 +2,9 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SearchResult
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinSearchOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinMapper.toDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.SearchResultMapper.toPinSearchDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinImageState
 import jakarta.enterprise.context.ApplicationScoped
 
@@ -20,7 +17,4 @@ class PinResponses(private val resolvePinImageState: ResolvePinImageState) {
     fun pin(pin: Pin): PinOutputDto = pin.toDto(resolvePinImageState.statesFor(listOf(pin)))
 
     fun page(page: Page<Pin>): PinListOutputDto = page.toDto(resolvePinImageState.statesFor(page.items))
-
-    fun searchResults(results: List<SearchResult<Pin>>): PinSearchOutputDto =
-        results.toPinSearchDto(resolvePinImageState.statesFor(results.map { it.item }))
 }

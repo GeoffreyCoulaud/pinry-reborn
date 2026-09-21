@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 import com.fasterxml.jackson.databind.ObjectMapper
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
@@ -255,8 +256,17 @@ class MeImportIntegrationTest : IntegrationTest() {
         )
     }
 
+    /** The account's active pins. No case here seeds more than a handful, so one page holds them. */
+    private fun activePinsOf(user: User): List<Pin> =
+        pinRepository.findPinsForUser(
+            reader = user,
+            cursor = null,
+            pageSize = 50,
+            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+        ).items
+
     private fun factsOf(user: User): AccountFacts {
-        val pins = pinRepository.findAllPinsForUser(user) + pinRepository.findAllSoftDeletedPinsForUser(user)
+        val pins = activePinsOf(user) + pinRepository.findAllSoftDeletedPinsForUser(user)
         val boards = boardRepository.findActiveBoardsForUser(user) + boardRepository.findRecycledBoardsForUser(user)
         return AccountFacts(
             pins = pins.associate { it.sourceContextUrl to factsOf(it) },
@@ -345,7 +355,7 @@ class MeImportIntegrationTest : IntegrationTest() {
         uploadChunk(auth, importId, chunks[2], reportedLength).then().statusCode(200)
         completeArchive(auth, importId)
         assertEquals("COMPLETED", pollUntilSettled(auth, importId))
-        assertEquals(1, pinRepository.findAllPinsForUser(auth.user).size)
+        assertEquals(1, activePinsOf(auth.user).size)
     }
 
     @Test
@@ -430,8 +440,7 @@ class MeImportIntegrationTest : IntegrationTest() {
         // Then: the whole report, so a seventh issue no one asked for fails here. Sorted rather than
         // in the walk's order, which is the report's paging to decide and not what this case is about.
         assertEquals(EXPECTED_ANOMALIES.sorted(), issueKinds(auth, importId).sorted())
-        assertEquals(listOf("https://example.test/good"), pinRepository.findAllPinsForUser(auth.user)
-            .map { it.sourceContextUrl })
+        assertEquals(listOf("https://example.test/good"), activePinsOf(auth.user).map { it.sourceContextUrl })
         assertTrue(boardRepository.findActiveBoardsForUser(auth.user).isEmpty(), "the over-long name is refused")
     }
 
@@ -461,7 +470,7 @@ class MeImportIntegrationTest : IntegrationTest() {
         val importId = importArchive(auth, archive)
 
         // Then
-        val pin = pinRepository.findAllPinsForUser(auth.user).single()
+        val pin = activePinsOf(auth.user).single()
         val image = requireNotNull(imageRepository.findByPinId(pin.id))
         assertEquals("image/png", image.mimeType, "the probe decides the stored type, never the archive")
         assertEquals(listOf("MEDIA_DIGEST_MISMATCH"), issueKinds(auth, importId))
@@ -501,7 +510,7 @@ class MeImportIntegrationTest : IntegrationTest() {
 
         // Then: no row, no promoted object, no staged temp file
         assertEquals(listOf("MEDIA_AMBIGUOUS"), issueKinds(auth, importId))
-        assertEquals(2, pinRepository.findAllPinsForUser(auth.user).size)
+        assertEquals(2, activePinsOf(auth.user).size)
         assertEquals(2, storedBefore, "the two uploads are what the count compares against")
         assertEquals(storedBefore, storedObjectCount(auth.user.id), "an ambiguous line promotes nothing")
         assertEquals(stagedBefore, stagedFiles(), "an ambiguous line stages nothing")

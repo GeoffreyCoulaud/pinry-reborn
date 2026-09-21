@@ -412,31 +412,6 @@
         "type" : "string",
         "enum" : [ "CREATED_AT_ASC", "CREATED_AT_DESC", "DELETED_AT_DESC" ]
       },
-      "PinSearchOutputDto" : {
-        "type" : "object",
-        "required" : [ "results" ],
-        "properties" : {
-          "results" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/PinSearchResultOutputDto"
-            }
-          }
-        }
-      },
-      "PinSearchResultOutputDto" : {
-        "type" : "object",
-        "required" : [ "pin", "score" ],
-        "properties" : {
-          "pin" : {
-            "$ref" : "#/components/schemas/PinOutputDto"
-          },
-          "score" : {
-            "type" : "number",
-            "format" : "double"
-          }
-        }
-      },
       "PinSortStrategyInputEnum" : {
         "type" : "string",
         "enum" : [ "CREATED_AT_ASC", "CREATED_AT_DESC" ]
@@ -2684,52 +2659,6 @@
         } ]
       }
     },
-    "/api/v1/pins/search" : {
-      "get" : {
-        "parameters" : [ {
-          "name" : "limit",
-          "in" : "query",
-          "schema" : {
-            "type" : [ "integer", "null" ],
-            "format" : "int32"
-          },
-          "required" : true
-        }, {
-          "name" : "q",
-          "in" : "query",
-          "schema" : {
-            "type" : [ "string", "null" ],
-            "pattern" : "\\S"
-          },
-          "required" : true
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PinSearchOutputDto"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          }
-        },
-        "summary" : "Search Pins",
-        "tags" : [ "Pin Search Controller" ],
-        "security" : [ {
-          "BearerScheme" : [ ]
-        }, {
-          "CookieScheme" : [ ]
-        } ]
-      }
-    },
     "/api/v1/pins/{pinId}" : {
       "put" : {
         "summary" : "Replace the pin",
@@ -3283,7 +3212,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "7.3.0"
+    "version" : "8.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

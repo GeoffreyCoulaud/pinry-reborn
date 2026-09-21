@@ -9,10 +9,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import java.time.Instant
 import java.util.UUID
 
-// 12 methods trips detekt's default per-interface threshold. Suppressed rather than split,
-// mirroring TaskQueueInterface's precedent for the same rule: it's one cohesive repository
-// surface, and splitting it would fragment it across artificial interfaces for no readability
-// gain.
+// Over detekt's per-interface threshold. Suppressed rather than split, as TaskQueueInterface is
+// for the same rule: one cohesive repository surface, and splitting it buys no readability.
 @Suppress("TooManyFunctions")
 interface PinRepositoryInterface {
     /**
@@ -40,11 +38,6 @@ interface PinRepositoryInterface {
         sortStrategy: PinSortStrategy,
         query: String? = null,
     ): Page<Pin>
-
-    /**
-     * Find all active pins for a user (excludes soft-deleted)
-     */
-    fun findAllPinsForUser(user: User): List<Pin>
 
     /**
      * All pin ids for the author (active and soft-deleted), without mapping the author - safe

@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -16,6 +17,15 @@ import java.time.Instant
  * detekt's `LargeClass` threshold (mirrors `PinRepositoryPaginationTest`'s precedent).
  */
 class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
+    /** The user's active pins, unpaginated in practice: no case here holds more than a handful. */
+    private fun activePinsOf(user: User): List<Pin> =
+        repository.findPinsForUser(
+            reader = user,
+            cursor = null,
+            pageSize = 10,
+            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+        ).items
+
     @Test
     fun `Given soft-deleted pin, Then findPinsForUser excludes it`() {
         // Given
@@ -33,20 +43,6 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
 
         // Then
         assertTrue(page.items.isEmpty())
-    }
-
-    @Test
-    fun `Given soft-deleted pin, Then findAllPinsForUser excludes it`() {
-        // Given
-        val user = createAndSaveUser()
-        val pin = createAndSavePin(user)
-        repository.softDeletePin(pin, storableNow())
-
-        // When
-        val pins = repository.findAllPinsForUser(user)
-
-        // Then
-        assertTrue(pins.isEmpty())
     }
 
     @Test
@@ -303,7 +299,7 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
         repository.permanentlyDeleteAllPinsForUser(user)
 
         // Then
-        assertEquals(emptyList<Pin>(), repository.findAllPinsForUser(user))
+        assertEquals(emptyList<Pin>(), activePinsOf(user))
         assertEquals(emptyList<Pin>(), repository.findAllSoftDeletedPinsForUser(user))
         assertNull(repository.findPinById(activePin.id))
         assertNull(repository.findPinById(toSoftDelete.id))
@@ -318,7 +314,7 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
         repository.permanentlyDeleteAllPinsForUser(user)
 
         // Then
-        assertEquals(emptyList<Pin>(), repository.findAllPinsForUser(user))
+        assertEquals(emptyList<Pin>(), activePinsOf(user))
         assertEquals(emptyList<Pin>(), repository.findAllSoftDeletedPinsForUser(user))
     }
 
