@@ -37,6 +37,23 @@ class TagSearchControllerTest {
     }
 
     @Test
+    fun `Given a limit below one, Then the searcher is asked for one row`() {
+        // Given: a non-positive row bound is no bound at all once the repository hands it to setMaxRows
+        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val query = createRandomString()
+        every { securityIdentity.getAttribute<User>("user") } returns user
+        every {
+            tagSearcher.searchTags(user = user, query = query, limit = TagSearchController.MIN_LIMIT)
+        } returns emptyList()
+
+        // When
+        val response = controller.searchTags(query = query, limitParam = 0)
+
+        // Then
+        assertEquals(200, response.status)
+    }
+
+    @Test
     fun `Given a limit above the max and no query, Then the searcher is asked a blank term at the max limit`() {
         // Given: an absent `q` is a caller that did not mean to search, and the use case is what refuses it
         val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)

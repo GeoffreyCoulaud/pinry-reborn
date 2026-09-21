@@ -14,7 +14,6 @@ jandex = "2.3.0"
 kotlin-logging = "8.0.4"
 slf4j = "2.0.3"
 jbcrypt = "0.4"
-commons-text = "1.15.0"
 smallrye-config = "3.18.0"
 microprofile-config = "3.1.1"
 quarkus-junit = "3.37.1"
@@ -89,7 +88,6 @@ sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
 
 jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
-commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 
 vips-ffm-core = { module = "app.photofox.vips-ffm:vips-ffm-core", version.ref = "vips-ffm" }
 

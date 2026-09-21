@@ -14,6 +14,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMap
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinSortStrategyMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BATCH_BODY_REFUSED
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BLANK_QUERY_REFUSED
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
@@ -140,6 +141,23 @@ class BoardController(
     @GET
     @Authenticated
     @Path("/{boardId}/pins")
+    // SmallRye stops generating the success response as soon as an operation declares one of its own,
+    // so the 200 is written out beside the 400 rather than dropped from the contract.
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [
+            Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = Schema(implementation = PinListOutputDto::class),
+            ),
+        ],
+    )
+    @APIResponse(
+        responseCode = "400",
+        description = BLANK_QUERY_REFUSED,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
+    )
     fun listBoardPins(
         boardId: UUID,
         @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
