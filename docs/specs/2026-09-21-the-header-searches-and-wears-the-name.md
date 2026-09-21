@@ -259,8 +259,8 @@ Taken the other way round the first half does not compile, let alone go green.
 
 Estimated diffs, in lines `git diff --numstat` would count: block 10 about 280, of which about 110
 production under `api/`; block 20 about 530, of
-which about 115 production (Corrected: block 20 measured 636 and 136, read by
-`git diff --numstat main...HEAD` at commit `f51834d8` on 2026-09-21. It passes the strict 600 under
+which about 115 production (Corrected: block 20 measured 622 and 136, read by
+`git diff --numstat main...HEAD` at commit `d30891b9` on 2026-09-21. It passes the strict 600 under
 the waiver the operator granted on 2026-09-21, answering the block's tier-2 question on
 `findAllPinsForUser`: delete it in block 20, and the block may pass the bound. The production count
 stays under its own 200. The method's removal is 11 production lines and 28 test lines the estimate
