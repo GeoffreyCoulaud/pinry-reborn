@@ -1314,6 +1314,12 @@
             "format" : "int32"
           }
         }, {
+          "name" : "q",
+          "in" : "query",
+          "schema" : {
+            "type" : [ "string", "null" ]
+          }
+        }, {
           "name" : "sort",
           "in" : "query",
           "schema" : {
@@ -2409,6 +2415,12 @@
             "format" : "int32"
           }
         }, {
+          "name" : "q",
+          "in" : "query",
+          "schema" : {
+            "type" : [ "string", "null" ]
+          }
+        }, {
           "name" : "sort",
           "in" : "query",
           "schema" : {
@@ -3271,7 +3283,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "7.2.0"
+    "version" : "7.3.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

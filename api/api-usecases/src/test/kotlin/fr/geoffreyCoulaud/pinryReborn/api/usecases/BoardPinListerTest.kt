@@ -7,6 +7,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardRetrievalBoardDoesNotExistError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SearchEmptyQueryError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
@@ -97,5 +98,37 @@ class BoardPinListerTest {
                 sortStrategy = sort,
             )
         }
+    }
+
+    @Test
+    fun `Given a term, Then listActivePinsForBoard hands it to the repository`() {
+        // Given
+        val page = Page<Pin>(items = emptyList(), previousCursor = null, nextCursor = null)
+        every { boardGetter.getActiveBoardForUser(boardId, reader) } returns board
+        every {
+            pinRepository.findActivePinsForBoard(
+                reader = reader,
+                boardId = boardId,
+                cursor = null,
+                pageSize = 20,
+                sortStrategy = sort,
+                query = "cat",
+            )
+        } returns page
+
+        // When
+        val result = useCase.listActivePinsForBoard(reader, boardId, null, 20, sort, "cat")
+
+        // Then
+        assertSame(page, result)
+    }
+
+    @Test
+    fun `Given a blank term, Then listActivePinsForBoard refuses it before reading the board`() {
+        // When, Then: absent is the whole board, blank is a caller that did not mean to search
+        assertThrows<SearchEmptyQueryError> {
+            useCase.listActivePinsForBoard(reader, boardId, null, 20, sort, " ")
+        }
+        verify(exactly = 0) { boardGetter.getActiveBoardForUser(boardId, reader) }
     }
 }

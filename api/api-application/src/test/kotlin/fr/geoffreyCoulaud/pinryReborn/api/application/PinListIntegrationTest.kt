@@ -14,6 +14,7 @@ import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.specification.RequestSpecification
 import jakarta.inject.Inject
+import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.emptyIterable
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasSize
@@ -337,6 +338,52 @@ class PinListIntegrationTest : IntegrationTest() {
             .then()
             .statusCode(200)
             .body("pins", hasSize<Any>(1))
+    }
+
+    @Test
+    fun `Given a term, Then the page holds the pins whose description or tag matches and no other`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val described = pinCreator.createPin(
+            author = auth.user, sourceContextUrl = null, sourceMediaUrl = null,
+            description = "A cat on a wall", tags = emptyList(),
+        )
+        val tagged = pinCreator.createPin(
+            author = auth.user, sourceContextUrl = null, sourceMediaUrl = null,
+            description = "A photograph", tags = listOf("cat"),
+        )
+        pinCreator.createPin(
+            author = auth.user, sourceContextUrl = null, sourceMediaUrl = null,
+            description = "A dog", tags = listOf("puppy"),
+        )
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .queryParam("q", "cat")
+            .`when`()
+            .get("/api/v1/pins")
+            .then()
+            .statusCode(200)
+            .body("pins", hasSize<Any>(2))
+            .body("pins.id", containsInAnyOrder(described.id.toString(), tagged.id.toString()))
+    }
+
+    @Test
+    fun `Given a blank term, Then the catalogue refuses it under SEARCH_EMPTY_QUERY`() {
+        // Given: a caller that did not mean to search, which is not a caller asking for everything
+        val auth = createAuthenticatedUser()
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .queryParam("q", " ")
+            .`when`()
+            .get("/api/v1/pins")
+            .then()
+            .statusCode(400)
+            .contentType("application/problem+json")
+            .body("code", equalTo("SEARCH_EMPTY_QUERY"))
     }
 
     @Test
