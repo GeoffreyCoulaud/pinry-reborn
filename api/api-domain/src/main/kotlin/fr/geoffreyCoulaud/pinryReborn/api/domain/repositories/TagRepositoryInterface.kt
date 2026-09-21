@@ -24,6 +24,16 @@ interface TagRepositoryInterface {
     fun findAllTagsForUser(user: User): List<Tag>
 
     /**
+     * Find at most [limit] of the user's tags whose name holds [query], those beginning with it
+     * first. The fold is the index's own, ASCII case only.
+     */
+    fun findTagsForUserMatching(
+        user: User,
+        query: String,
+        limit: Int,
+    ): List<Tag>
+
+    /**
      * Delete all tags for a user
      */
     fun deleteAllTagsForUser(user: User)

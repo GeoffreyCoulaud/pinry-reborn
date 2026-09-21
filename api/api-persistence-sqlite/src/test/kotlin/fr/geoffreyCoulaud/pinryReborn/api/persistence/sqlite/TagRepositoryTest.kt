@@ -230,6 +230,112 @@ class TagRepositoryTest : RepositoryTest() {
         assertEquals(UPPERCASE_ACCENTED_NAME, tag.name)
     }
 
+    // --- Matching ---
+
+    private fun matching(user: User, query: String, limit: Int = 10) =
+        repository.findTagsForUserMatching(user = user, query = query, limit = limit)
+
+    @Test
+    fun `Given a name beginning with the term and one merely holding it, Then the first comes first`() {
+        // Given
+        val user = createAndSaveUser()
+        val contained = saveTag("landscape", user)
+        val prefixed = saveTag("scapegoat", user)
+
+        // When
+        val found = matching(user, "scape")
+
+        // Then: what you are typing the start of is the suggestion you meant
+        assertEquals(listOf(prefixed.id, contained.id), found.map { it.id })
+    }
+
+    @Test
+    fun `Given a name matching neither, Then findTagsForUserMatching leaves it out`() {
+        // Given
+        val user = createAndSaveUser()
+        val cat = saveTag("cat", user)
+        saveTag("dog", user)
+
+        // When
+        val found = matching(user, "cat")
+
+        // Then
+        assertEquals(listOf(cat.id), found.map { it.id })
+    }
+
+    @Test
+    fun `Given a tag stored Cat, Then a lower-case term finds it`() {
+        // Given: SQLite's LIKE folds A to Z, which is the fold ix_tags_author_name_nocase defines
+        val user = createAndSaveUser()
+        val tag = saveTag("Cat", user)
+
+        // When
+        val found = matching(user, "cat")
+
+        // Then
+        assertEquals(listOf(tag.id), found.map { it.id })
+    }
+
+    @Test
+    fun `Given a tag stored Cafe accented, Then the accented term finds it and the bare one does not`() {
+        // Given
+        val user = createAndSaveUser()
+        val tag = saveTag("Café", user)
+
+        // When
+        val accented = matching(user, "café")
+        val bare = matching(user, "cafe")
+
+        // Then: no accent folding, and this assertion is what says so the day someone adds it
+        assertEquals(listOf(tag.id), accented.map { it.id })
+        assertTrue(bare.isEmpty(), "$bare")
+    }
+
+    @Test
+    fun `Given more prefix matches than the limit, Then the contains query is not asked`() {
+        // Given
+        val user = createAndSaveUser()
+        saveTag("cat", user)
+        saveTag("catalogue", user)
+        saveTag("bobcat", user)
+
+        // When
+        val found = matching(user, "cat", limit = 2)
+
+        // Then: the limit is the caller's, and it is spent before the second query is reached
+        assertEquals(2, found.size)
+        assertTrue(found.none { it.name == "bobcat" }, "$found")
+    }
+
+    @Test
+    fun `Given a name matching both halves, Then it is served once`() {
+        // Given
+        val user = createAndSaveUser()
+        saveTag("cat", user)
+        saveTag("bobcat", user)
+
+        // When
+        val found = matching(user, "cat")
+
+        // Then
+        assertEquals(listOf("cat", "bobcat"), found.map { it.name })
+    }
+
+    @Test
+    fun `Given another author's matching tag, Then findTagsForUserMatching leaves it out`() {
+        // Given
+        val user = createAndSaveUser()
+        val other = createAndSaveUser()
+        val own = saveTag("cat", user)
+        saveTag("cat", other)
+
+        // When
+        val found = matching(user, "cat")
+
+        // Then
+        assertEquals(listOf(own.id), found.map { it.id })
+    }
+
     // --- Creation timestamps ---
 
     @Test

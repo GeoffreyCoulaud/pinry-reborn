@@ -145,6 +145,9 @@ class TagCreatorTest {
 
         override fun findAllTagsForUser(user: User): List<Tag> = error("A tagging lists no tag")
 
+        override fun findTagsForUserMatching(user: User, query: String, limit: Int): List<Tag> =
+            error("A tagging matches no tag")
+
         override fun deleteAllTagsForUser(user: User) = error("A tagging deletes no tag")
 
         private fun foldedKey(user: User, name: String): String = "${user.id}:${name.lowercase()}"
