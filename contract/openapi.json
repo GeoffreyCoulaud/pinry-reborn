@@ -589,14 +589,10 @@
       },
       "TagSearchResultOutputDto" : {
         "type" : "object",
-        "required" : [ "tag", "score" ],
+        "required" : [ "tag" ],
         "properties" : {
           "tag" : {
             "$ref" : "#/components/schemas/TagOutputDto"
-          },
-          "score" : {
-            "type" : "number",
-            "format" : "double"
           }
         }
       },
@@ -3146,8 +3142,7 @@
           "name" : "q",
           "in" : "query",
           "schema" : {
-            "type" : [ "string", "null" ],
-            "pattern" : "\\S"
+            "type" : [ "string", "null" ]
           },
           "required" : true
         } ],
@@ -3212,7 +3207,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "8.0.0"
+    "version" : "9.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

@@ -5,8 +5,8 @@ import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
 import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.Matchers.greaterThan
 import org.hamcrest.Matchers.hasSize
+import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
 
 @QuarkusTest
@@ -21,31 +21,32 @@ class TagSearchIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given tags exist, Then search returns ranked results`() {
+    fun `Given tags exist, Then search returns the prefix matches first and carries no score`() {
         // Given
         val auth = createAuthenticatedUser()
-        createTagsFor(auth, "landscape", "nature", "mountain")
+        createTagsFor(auth, "landscape", "scapegoat", "mountain")
 
         // When, Then
         given()
             .authenticatedAs(auth)
-            .queryParam("q", "landscape")
+            .queryParam("q", "scape")
             .`when`()
             .get("/api/v1/tags/search")
             .then()
             .statusCode(200)
-            .body("results", hasSize<Any>(greaterThan(0)))
-            .body("results[0].tag.name", equalTo("landscape"))
-            .body("results[0].score", equalTo(1.0f))
+            .body("results", hasSize<Any>(2))
+            .body("results[0].tag.name", equalTo("scapegoat"))
+            .body("results[1].tag.name", equalTo("landscape"))
+            .body("results[0].score", nullValue())
     }
 
     @Test
-    fun `Given typo in query, Then search returns fuzzy matches`() {
-        // Given
+    fun `Given a typo in the query, Then search returns nothing`() {
+        // Given: similarity left the product, so a term is a substring or it is not a match
         val auth = createAuthenticatedUser()
         createTagsFor(auth, "landscape", "nature", "mountain")
 
-        // When, Then - "landscpe" should match "landscape" with high score
+        // When, Then
         given()
             .authenticatedAs(auth)
             .queryParam("q", "landscpe")
@@ -53,8 +54,7 @@ class TagSearchIntegrationTest : IntegrationTest() {
             .get("/api/v1/tags/search")
             .then()
             .statusCode(200)
-            .body("results", hasSize<Any>(greaterThan(0)))
-            .body("results[0].tag.name", equalTo("landscape"))
+            .body("results", hasSize<Any>(0))
     }
 
     @Test
@@ -71,12 +71,12 @@ class TagSearchIntegrationTest : IntegrationTest() {
             .then()
             .statusCode(400)
             .contentType("application/problem+json")
-            .body("code", equalTo("VALIDATION_ERROR"))
+            .body("code", equalTo("SEARCH_EMPTY_QUERY"))
     }
 
     @Test
     fun `Given no query parameter, Then returns 400`() {
-        // Given
+        // Given: the refusal is the use case's on both routes, so one emptiness carries one code
         val auth = createAuthenticatedUser()
 
         // When, Then
@@ -87,7 +87,7 @@ class TagSearchIntegrationTest : IntegrationTest() {
             .then()
             .statusCode(400)
             .contentType("application/problem+json")
-            .body("code", equalTo("VALIDATION_ERROR"))
+            .body("code", equalTo("SEARCH_EMPTY_QUERY"))
     }
 
     @Test

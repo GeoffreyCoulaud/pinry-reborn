@@ -41,6 +41,38 @@ class TagRepository(
             .findList()
             .map { it.toDomain() }
 
+    // `contains` and `startsWith` rather than their case-insensitive twins: a bare LIKE folds A to Z
+    // as ix_tags_author_name_nocase does, where `icontains` lowercases the bind in Java and would
+    // disagree with the index on a name outside ASCII, as findUserTagByName's comment records.
+    override fun findTagsForUserMatching(
+        user: User,
+        query: String,
+        limit: Int,
+    ): List<Tag> {
+        val prefixed = QTagModel()
+            .author.id
+            .equalTo(user.id)
+            .name
+            .startsWith(query)
+            .setMaxRows(limit)
+            .findList()
+        val remaining = limit - prefixed.size
+        if (remaining == 0) return prefixed.map { it.toDomain() }
+
+        val contained = QTagModel()
+            .author.id
+            .equalTo(user.id)
+            .name
+            .contains(query)
+            .not()
+            .name
+            .startsWith(query)
+            .endNot()
+            .setMaxRows(remaining)
+            .findList()
+        return (prefixed + contained).map { it.toDomain() }
+    }
+
     override fun deleteAllTagsForUser(user: User) {
         val tagIds = QTagModel().author.id.equalTo(user.id).findList().map { it.id }
         if (tagIds.isEmpty()) return

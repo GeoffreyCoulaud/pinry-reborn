@@ -6,7 +6,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagSearcher
 import io.quarkus.security.Authenticated
 import io.quarkus.security.identity.SecurityIdentity
-import jakarta.validation.constraints.NotBlank
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
@@ -20,15 +19,17 @@ class TagSearchController(
     @GET
     @Authenticated
     @Path("/search")
+    // No validation annotation: none says "absent, yes; blank, no", and here neither is a search.
+    // The use case refuses both, so this route and the catalogue answer one code (spec decision C).
     fun searchTags(
-        @QueryParam("q") @NotBlank query: String?,
+        @QueryParam("q") query: String?,
         @QueryParam("limit") limitParam: Int?,
     ): RestResponse<TagSearchOutputDto> {
         val user = securityIdentity.getUser()
         val limit = (limitParam ?: DEFAULT_LIMIT).coerceAtMost(MAX_LIMIT)
 
         return tagSearcher
-            .searchTags(user = user, query = requireNotNull(query), limit = limit)
+            .searchTags(user = user, query = query.orEmpty(), limit = limit)
             .toTagSearchDto()
             .let { RestResponse.ok(it) }
     }

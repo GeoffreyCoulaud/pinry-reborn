@@ -27,7 +27,6 @@
     <ID>CommentCarriesDocumentation:SessionAuthenticationError.kt:SessionAuthenticationError : Exception</ID>
     <ID>CommentCarriesDocumentation:SetPinImage.kt:SetPinImage$fun set: SetPinImageResult</ID>
     <ID>CommentCarriesDocumentation:StorageCleanup.kt:StorageCleanup</ID>
-    <ID>CommentCarriesDocumentation:TagSearcher.kt:TagSearcher$fun searchTags: List&lt;SearchResult&lt;Tag&gt;&gt;</ID>
     <ID>CommentCarriesDocumentation:TaskContext.kt:TaskContext</ID>
     <ID>CommentCarriesDocumentation:TaskProcessor.kt:TaskProcessor</ID>
     <ID>CommentCarriesDocumentation:TextSimilarity.kt:TextSimilarity$fun combinedSimilarity: Double</ID>
