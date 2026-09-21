@@ -28,10 +28,6 @@
     <ID>CommentCarriesDocumentation:StorageCleanup.kt:StorageCleanup</ID>
     <ID>CommentCarriesDocumentation:TaskContext.kt:TaskContext</ID>
     <ID>CommentCarriesDocumentation:TaskProcessor.kt:TaskProcessor</ID>
-    <ID>CommentCarriesDocumentation:TextSimilarity.kt:TextSimilarity$fun combinedSimilarity: Double</ID>
-    <ID>CommentCarriesDocumentation:TextSimilarity.kt:TextSimilarity$fun generateTrigrams: Set&lt;String&gt;</ID>
-    <ID>CommentCarriesDocumentation:TextSimilarity.kt:TextSimilarity$fun jaroWinklerSimilarity: Double</ID>
-    <ID>CommentCarriesDocumentation:TextSimilarity.kt:TextSimilarity$fun trigramSimilarity: Double</ID>
     <ID>CommentCarriesDocumentation:ThrottledError.kt:ThrottledError</ID>
     <ID>CommentCarriesDocumentation:UserAuthenticator.kt:UserAuthenticator</ID>
     <ID>CommentCarriesDocumentation:UserDataExportBuilder.kt:UserDataExportBuilder</ID>
@@ -46,8 +42,6 @@
     <ID>CommentCarriesDocumentation:UserDataExportGetter.kt:UserDataExportGetter</ID>
     <ID>CommentCarriesDocumentation:UserDataExportRequester.kt:UserDataExportRequester</ID>
     <ID>CommentCarriesDocumentation:UserDataExportRequester.kt:UserDataExportRequester$private fun savePending: UserDataExport</ID>
-    <ID>MagicNumber:TextSimilarity.kt:TextSimilarity$0.9</ID>
-    <ID>MagicNumber:TextSimilarity.kt:TextSimilarity$3</ID>
     <ID>ThrowsCount:DeletePinImage.kt:DeletePinImage$fun delete</ID>
     <ID>ThrowsCount:GetPinImage.kt:GetPinImage$fun get: Image</ID>
     <ID>ThrowsCount:SetPinImage.kt:SetPinImage$fun set: SetPinImageResult</ID>
