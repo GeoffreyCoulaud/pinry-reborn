@@ -204,6 +204,7 @@ those already held. The limit is the caller's, capped at 20 by the route
 | 20 | `api-presentation-quarkus/.../controllers/PinSearchController.kt`, `dtos/output/PinSearchOutputDto.kt` | Deleted |
 | 20 | `api-presentation-quarkus/.../mappers/SearchResultMapper.kt`, `PinResponses.kt` | The pin search halves go; the tag half stays |
 | 20 | `api-usecases/.../PinSearcher.kt` and its test, `PinSearchIntegrationTest.kt`, `PinSearchControllerTest.kt` | Deleted |
+| 20 | `api-domain/.../PinRepositoryInterface.kt`, `api-persistence-sqlite/.../PinRepository.kt` | (Corrected: this row is added on 2026-09-21, the table having no row for it.) `findAllPinsForUser` deleted, `PinSearcher` being its last production caller. Its eight test callers read the catalogue instead, and the soft-delete case named for it goes, the case above it asserting the same exclusion through `findPinsForUser` |
 | 20 | `application.properties` | `info-version` to `8.0.0`; `contract/openapi.json` regenerated |
 | 30 | `api-domain/.../TagRepositoryInterface.kt`, `api-persistence-sqlite/.../TagRepository.kt` | `findTagsForUserMatching(user, query, limit)`, prefix first then contains |
 | 30 | `api-usecases/.../TagSearcher.kt` and `TagSearcherTest.kt` | Delegates to the repository; the scoring, the threshold and the sort go, and the test that asserts all three is rewritten around the order the repository now serves |
@@ -258,7 +259,12 @@ Taken the other way round the first half does not compile, let alone go green.
 
 Estimated diffs, in lines `git diff --numstat` would count: block 10 about 280, of which about 110
 production under `api/`; block 20 about 530, of
-which about 115 production; block 30 about 450, of which about 130 production; block 35 about 345,
+which about 115 production (Corrected: block 20 measured 636 and 136, read by
+`git diff --numstat main...HEAD` at commit `f51834d8` on 2026-09-21. It passes the strict 600 under
+the waiver the operator granted on 2026-09-21, answering the block's tier-2 question on
+`findAllPinsForUser`: delete it in block 20, and the block may pass the bound. The production count
+stays under its own 200. The method's removal is 11 production lines and 28 test lines the estimate
+did not carry; the rest is the estimate being an estimate); block 30 about 450, of which about 130 production; block 35 about 345,
 of which 82 production; block 40 about 80 and block 50 about 280 under `clients/`. The estimate is
 not evidence: each block sums `git diff --numstat` against `main` at its first green run and says so
 in its pull request. **Block 30 is the one to watch**: a rewritten line counts twice, and its three
