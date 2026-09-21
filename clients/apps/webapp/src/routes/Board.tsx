@@ -3,6 +3,7 @@ import { useBoards } from "../boards"
 import { AppHeader } from "../components/AppHeader"
 import { AppNav } from "../components/AppNav"
 import { PinGrid } from "../components/PinGrid"
+import { SearchField } from "../components/SearchField"
 import { SortSelect } from "../components/SortSelect"
 import { PIN_SORTS } from "../lib/sorts"
 import { m } from "../paraglide/messages.js"
@@ -14,7 +15,7 @@ import { useSession } from "../session"
  */
 export function Board() {
   const { boardId } = useParams({ from: "/boards/$boardId" })
-  const { sort } = useSearch({ from: "/boards/$boardId" })
+  const { sort, q } = useSearch({ from: "/boards/$boardId" })
   const session = useSession()
   // The list arrives whole and is the query the boards screen already holds, so a board opened
   // from that screen costs no request of its own (2.7).
@@ -32,7 +33,10 @@ export function Board() {
 
   return (
     <main className="flex h-screen flex-col gap-4 px-4 pt-4">
-      <AppHeader heading={heading}>
+      <AppHeader
+        heading={heading}
+        search={!unknown && <SearchField term={q} boardName={heading} />}
+      >
         <AppNav />
         {!unknown && <SortSelect value={sort} values={PIN_SORTS} />}
       </AppHeader>
@@ -44,7 +48,7 @@ export function Board() {
             {m.board_unknown()}
           </p>
         ) : (
-          <PinGrid sort={sort} label={heading} boardId={boardId} />
+          <PinGrid sort={sort} label={heading} boardId={boardId} term={q} />
         )}
       </div>
     </main>

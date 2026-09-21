@@ -6,6 +6,7 @@ import { AppNav } from "../components/AppNav"
 import { CreatePinDialog } from "../components/CreatePinDialog"
 import { IconButton } from "../components/IconButton"
 import { PinGrid } from "../components/PinGrid"
+import { SearchField } from "../components/SearchField"
 import { SortSelect } from "../components/SortSelect"
 import { judgeDrop, refuse } from "../drops"
 import { useHandshake } from "../images"
@@ -16,7 +17,7 @@ import { m } from "../paraglide/messages.js"
 import { useSession } from "../session"
 
 export function Home() {
-  const { sort } = useSearch({ from: "/" })
+  const { sort, q } = useSearch({ from: "/" })
   const session = useSession()
   const limits = useHandshake().data?.limits
   const [creating, setCreating] = useState(false)
@@ -92,7 +93,11 @@ export function Home() {
     <>
       {/* No padding at the bottom: the grid is the last child and reaches the viewport's edge. */}
       <main className="flex h-screen flex-col gap-4 px-4 pt-4">
-        <AppHeader>
+        {/* The home screen is the one with no title of its own, until a search gives it one. */}
+        <AppHeader
+          heading={q === undefined ? undefined : m.search_results()}
+          search={<SearchField term={q} />}
+        >
           {/* The screen's primary verb, first for the keyboard and `order-last` on the right. */}
           <IconButton
             icon={Plus}
@@ -109,7 +114,7 @@ export function Home() {
         </AppHeader>
         {/* Full bleed: the scrollbar belongs to the viewport edge, not inside the shell's padding. */}
         <div className="-mx-4 min-h-0 flex-1">
-          <PinGrid sort={sort} label={m.home_heading()} />
+          <PinGrid sort={sort} label={m.home_heading()} term={q} />
         </div>
         {/* Fixed to the viewport, `<main>` scrolling away under the page, and `pointer-events-none`
             so an overlay appearing under the pointer fires no exit at the screen it never left. */}

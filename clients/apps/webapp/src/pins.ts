@@ -30,13 +30,17 @@ const BOARDS = ["boards"]
  * Every page loaded is kept: a cap on the query drops pages nothing reloads, and what holds the
  * grid's memory is the virtualiser, which mounts the visible tiles alone (ADR 0033).
  */
-export function usePins(sort: PinSort, boardId?: string) {
+export function usePins(sort: PinSort, boardId?: string, term?: string) {
   return useInfiniteQuery({
-    // The board and the order are both part of the key: two catalogues sharing one would serve
-    // either's pages under the other, and the grid would show a page it never requested.
-    queryKey: ["pins", boardId ?? null, sort],
+    // The board, the order and the term are all part of the key: two catalogues sharing one would
+    // serve either's pages under the other, and the grid would show a page it never requested. A
+    // term changed also restarts the query with no cursor, which is what keeps a cursor with the
+    // `q` it was minted under (specification 2026-09-21, section 7).
+    queryKey: ["pins", boardId ?? null, sort, term ?? null],
     queryFn: async ({ pageParam }) => {
-      const query = { cursor: pageParam, pageSize: PAGE_SIZE, sort }
+      // An absent `q` is omitted rather than sent empty, the route refusing a blank one
+      // (decision C); `openapi-fetch` drops an undefined parameter.
+      const query = { cursor: pageParam, pageSize: PAGE_SIZE, sort, q: term }
       const answer =
         boardId === undefined
           ? await auth.client.GET("/api/v1/pins", { params: { query } })
