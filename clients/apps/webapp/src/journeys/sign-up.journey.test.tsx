@@ -14,7 +14,7 @@ import {
 import { server } from "../test/server"
 
 describe("sign up", () => {
-  it("Given a fresh instance, Then creating an account lands on the pins", async () => {
+  it("Given a fresh instance, Then creating an account lands on the home screen", async () => {
     let created: Record<string, unknown> | undefined
     let opened = false
     server.use(
@@ -38,7 +38,9 @@ describe("sign up", () => {
     await user.type(screen.getByLabelText(m.password()), "correct horse")
     await user.click(screen.getByRole("button", { name: m.sign_up() }))
 
-    expect(await screen.findByRole("heading", { name: m.home_heading() })).toBeVisible()
+    // The bar's name heads the credentials screen too, so the home screen's own control is what
+    // says the session opened (specification 2026-09-21, decision I').
+    expect(await screen.findByRole("button", { name: m.create_pin() })).toBeVisible()
     expect(created).toEqual({ name: "ada", password: "correct horse" })
   })
 

@@ -11,7 +11,9 @@ describe("session expiry", () => {
     renderApp("/")
 
     expect(await screen.findByRole("heading", { name: m.sign_in() })).toBeVisible()
-    expect(screen.queryByRole("heading", { name: m.home_heading() })).toBeNull()
+    // The name heads the credentials screen too, so what says the grid never came is the grid's
+    // own control (specification 2026-09-21, decision I').
+    expect(screen.queryByRole("button", { name: m.create_pin() })).toBeNull()
   })
 
   it("Given the session route failing, Then the user is told rather than signed out", async () => {

@@ -16,9 +16,9 @@ import { server } from "../test/server"
 /** The drop area's accessible name is its visible invitation, and nothing else names it. */
 const DROP_AREA = "Drop an image here, or pick one"
 
-/** The whole screen is the drop target, and the heading is what names it from the inside. */
+/** The whole screen is the drop target, and the bar's name is what reaches it from the inside. */
 async function theScreen() {
-  return (await screen.findByRole("heading", { name: "Your pins" })).closest("main") as HTMLElement
+  return (await screen.findByRole("heading", { name: "Pinry Reborn" })).closest("main") as HTMLElement
 }
 
 /** An image the thumbnail names, which is how one entry is told from the next. */

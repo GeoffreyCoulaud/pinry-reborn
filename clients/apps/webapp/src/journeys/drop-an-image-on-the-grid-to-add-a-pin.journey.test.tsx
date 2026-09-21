@@ -16,9 +16,9 @@ import { server } from "../test/server"
 /** Where the picture was found, which a picture dragged out of another tab carries with it. */
 const FOUND_AT = "https://example.test/cat.png"
 
-/** The whole screen is the drop target, and the heading is what names it from the inside. */
+/** The whole screen is the drop target, and the bar's name is what reaches it from the inside. */
 async function theScreen() {
-  return (await screen.findByRole("heading", { name: "Your pins" })).closest("main") as HTMLElement
+  return (await screen.findByRole("heading", { name: "Pinry Reborn" })).closest("main") as HTMLElement
 }
 
 describe("drop an image on the grid to add a pin", () => {

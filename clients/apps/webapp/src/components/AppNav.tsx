@@ -1,6 +1,6 @@
 import { Focusable, Tooltip, buttonVariants } from "@heroui/react"
 import { Link, type LinkProps } from "@tanstack/react-router"
-import { House, LayoutGrid, LogOut, Trash2, type LucideIcon } from "lucide-react"
+import { LayoutGrid, LogOut, Trash2, type LucideIcon } from "lucide-react"
 import { m } from "../paraglide/messages.js"
 import { useSignOut } from "../session"
 import { IconButton } from "./IconButton"
@@ -40,7 +40,8 @@ export function AppNav() {
 
   return (
     <>
-      <NavIcon to="/" icon={House} name={m.home_heading()} />
+      {/* No way home here: the bar's name is the one, and two controls doing one thing is chrome
+          (specification 2026-09-21, decision J). */}
       <NavIcon to="/boards" icon={LayoutGrid} name={m.boards()} />
       <NavIcon to="/recycled" icon={Trash2} name={m.recycle_bin()} />
       {/* A download outlives the screen it was started from, so what reports it is on all of them. */}

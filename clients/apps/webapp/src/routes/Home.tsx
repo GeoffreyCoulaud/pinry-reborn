@@ -92,7 +92,7 @@ export function Home() {
     <>
       {/* No padding at the bottom: the grid is the last child and reaches the viewport's edge. */}
       <main className="flex h-screen flex-col gap-4 px-4 pt-4">
-        <AppHeader heading={m.home_heading()}>
+        <AppHeader>
           {/* The screen's primary verb, first for the keyboard and `order-last` on the right. */}
           <IconButton
             icon={Plus}
