@@ -33,11 +33,11 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
 
 - Native libvips: `brew install vips` (macOS) or `libvips42t64` (Ubuntu 24.04), otherwise
   `api-imaging-vips` and image-touching integration tests cannot load the library.
-- **`JAVA_HOME` on JDK 25**, exported before any `./gradlew` **and before any `git commit`**, the `pre-commit` hook
-  running Gradle too: `export JAVA_HOME=~/.sdkman/candidates/java/25.0.4-tem`. The candidate's name carries the patch
-  version and moves with it, so `ls ~/.sdkman/candidates/java/` names the one installed. A shell that falls back to
-  JDK 21 fails detekt on `class file version 69`. The toolchain the build compiles against is provisioned
-  automatically; the JVM Gradle itself runs on is not.
+- **`JAVA_HOME` on JDK 25**, exported before any `./gradlew`:
+  `export JAVA_HOME=~/.sdkman/candidates/java/25.0.4-tem`. The candidate's name carries the patch version and moves
+  with it, so `ls ~/.sdkman/candidates/java/` names the one installed. A shell that falls back to JDK 21 fails detekt
+  on `class file version 69`. The toolchain the build compiles against is provisioned automatically; the JVM Gradle
+  itself runs on is not. `pre-commit` runs no Gradle, only the dash check; `pre-push` runs the gate, through Dagger.
 
 ## Commands
 

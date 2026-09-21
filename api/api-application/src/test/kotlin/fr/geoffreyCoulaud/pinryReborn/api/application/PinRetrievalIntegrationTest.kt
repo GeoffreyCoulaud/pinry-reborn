@@ -253,4 +253,19 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
             .then()
             .statusCode(404) // Invalid UUID format results in 404
     }
+
+    @Test
+    fun `Given the search route is gone, Then its path reaches this one and answers 404`() {
+        // Given
+        val auth = createAuthenticatedUser()
+
+        // When, Then: a literal @Path("/search") would win over the template and answer 400 on the
+        // missing q, so this discriminates (spec 2026-09-21, block 20)
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/pins/search")
+            .then()
+            .statusCode(404)
+    }
 }
