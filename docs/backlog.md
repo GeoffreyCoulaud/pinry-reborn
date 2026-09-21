@@ -43,6 +43,9 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   and its mirror **partial export**; **merging metadata onto a pin that already exists**, which is
   the option the v1 "skip" rule forecloses; and **making a pin with no medium travel**, which needs
   the export to carry `ImageDownload` so a pending or failed download survives the round trip.
+- **The client suite spends more on starting than on testing**, and `vitest doctor` is what settles
+  which pool and isolation it should run under.
+  See `docs/specs/2026-09-21-the-header-searches-and-wears-the-name.md`, section 6. New 2026-09-21.
 
 ### P2: Operational debt
 
@@ -99,9 +102,12 @@ Dated events. No session starts these early.
 
 ## Features
 
-- **What the API serves and the web application does not reach yet**: search, account management,
-  import and export. Everything else this item asked for is built.
+- **What the API serves and the web application does not reach yet**: account management, import
+  and export. Everything else this item asked for is built.
   See `docs/specs/2026-09-20-the-pin-is-editable-and-the-boards-arrive.md`, sections 6 and 7.
+- **Search matches by substring and tolerates no typo**, similarity matching having left the
+  product; restoring it wants an engine that can index for it, which is a standalone Postgres.
+  See `docs/specs/2026-09-21-the-header-searches-and-wears-the-name.md`, decision G and section 6.
 - **A board has no cover**, so `/boards` is a list of words: a tile grid needs either a cover field on
   `BoardOutputDto` or one request per board.
   See `docs/specs/2026-09-20-the-pin-is-editable-and-the-boards-arrive.md`, decision N.
