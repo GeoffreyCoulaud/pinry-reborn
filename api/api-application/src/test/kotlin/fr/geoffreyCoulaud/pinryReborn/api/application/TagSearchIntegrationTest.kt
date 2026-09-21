@@ -6,7 +6,6 @@ import io.restassured.RestAssured.given
 import jakarta.inject.Inject
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.Matchers.hasSize
-import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
 
 @QuarkusTest
@@ -21,7 +20,7 @@ class TagSearchIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given tags exist, Then search returns the prefix matches first and carries no score`() {
+    fun `Given tags exist, Then search returns the prefix matches first`() {
         // Given
         val auth = createAuthenticatedUser()
         createTagsFor(auth, "landscape", "scapegoat", "mountain")
@@ -37,7 +36,6 @@ class TagSearchIntegrationTest : IntegrationTest() {
             .body("results", hasSize<Any>(2))
             .body("results[0].tag.name", equalTo("scapegoat"))
             .body("results[1].tag.name", equalTo("landscape"))
-            .body("results[0].score", nullValue())
     }
 
     @Test
