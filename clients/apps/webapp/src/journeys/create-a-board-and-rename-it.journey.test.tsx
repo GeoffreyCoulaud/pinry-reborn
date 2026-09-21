@@ -48,7 +48,8 @@ describe("create a board and rename it", () => {
     renderApp("/")
     await userEvent.click(await screen.findByRole("link", { name: "Boards" }))
 
-    expect(await screen.findByRole("heading", { name: "Boards" })).toBeVisible()
+    // The screen passes no title of its own now, so its list is what names it.
+    expect(await screen.findByRole("grid", { name: "Boards" })).toBeVisible()
     // The list carries what the contract serves and nothing else: no cover, so no tile.
     expect(within(row("Harbours")).getByText("Where the boats are")).toBeVisible()
     expect(within(row("Harbours")).getByText("Pins: 3")).toBeVisible()
@@ -106,14 +107,18 @@ describe("create a board and rename it", () => {
     )
   })
 
-  it("Given the credentials screen, Then it carries the theme control and no navigation icon", async () => {
+  it("Given the credentials screen, Then it carries the name and the theme control and nothing else", async () => {
     server.use(sessionRoute(() => false))
 
     renderApp("/sign-in")
 
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeVisible()
+    expect(screen.getByRole("link", { name: "Pinry Reborn" })).toHaveAttribute("href", "/")
     expect(screen.getByRole("button", { name: "System theme" })).toBeVisible()
     // The bar is the same component on both screens, and the icons are the signed-in screens' own.
+    // A field here would search nothing, which is why the screens with a grid pass it in instead
+    // (specification 2026-09-21, decision I').
     expect(screen.queryByRole("link", { name: "Boards" })).toBeNull()
+    expect(screen.queryByRole("searchbox")).toBeNull()
   })
 })

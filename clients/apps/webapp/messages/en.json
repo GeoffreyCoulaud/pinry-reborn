@@ -1,6 +1,7 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "add_to_board": "Add to a board",
+  "app_name": "Pinry Reborn",
   "board_deletion_refused": "That board could not be deleted.",
   "board_name_taken": "You already have a board with that name.",
   "board_pin_count": "Pins: {count}",

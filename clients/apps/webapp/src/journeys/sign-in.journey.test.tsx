@@ -14,7 +14,7 @@ import {
 import { server } from "../test/server"
 
 describe("sign in", () => {
-  it("Given credentials the API accepts, Then the pins are on screen", async () => {
+  it("Given credentials the API accepts, Then the home screen is on screen", async () => {
     let opened: Record<string, unknown> | undefined
     server.use(
       http.post("/api/v1/sessions", async ({ request }) => {
@@ -33,7 +33,9 @@ describe("sign in", () => {
     await user.type(screen.getByLabelText(m.password()), "correct horse")
     await user.click(screen.getByRole("button", { name: m.sign_in() }))
 
-    expect(await screen.findByRole("heading", { name: m.home_heading() })).toBeVisible()
+    // The bar's name heads the credentials screen too, so the home screen's own control is what
+    // says the session opened (specification 2026-09-21, decision I').
+    expect(await screen.findByRole("button", { name: m.create_pin() })).toBeVisible()
     // The transport is the whole point of the package: a browser cannot send a header on an <img>.
     expect(opened).toEqual({ name: "ada", password: "correct horse", transport: "COOKIE", rememberMe: false })
   })
@@ -60,7 +62,7 @@ describe("sign in", () => {
     await user.click(screen.getByRole("checkbox", { name: m.remember_me() }))
     await user.click(screen.getByRole("button", { name: m.sign_in() }))
 
-    expect(await screen.findByRole("heading", { name: m.home_heading() })).toBeVisible()
+    expect(await screen.findByRole("button", { name: m.create_pin() })).toBeVisible()
     expect(opened).toEqual({
       name: "ada",
       password: "correct horse",

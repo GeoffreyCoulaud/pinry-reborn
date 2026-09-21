@@ -73,7 +73,7 @@ describe("open a board and browse its pins", () => {
 
     renderApp(`/boards/${HARBOURS.id}`)
     expect(await screen.findByRole("img", { name: FIRST.description })).toBeVisible()
-    await userEvent.click(screen.getByRole("link", { name: "Your pins" }))
+    await userEvent.click(screen.getByRole("link", { name: "Pinry Reborn" }))
 
     // One key for two catalogues hands the home grid the board's pages under it.
     expect(await screen.findByText("Loading your pins.")).toBeVisible()

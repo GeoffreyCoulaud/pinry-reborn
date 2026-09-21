@@ -159,7 +159,7 @@ export function Boards() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
-      <AppHeader heading={m.boards()}>
+      <AppHeader>
         <IconButton
           icon={Plus}
           name={m.create_board()}
