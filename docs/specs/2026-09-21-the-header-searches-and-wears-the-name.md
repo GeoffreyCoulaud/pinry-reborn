@@ -4,15 +4,18 @@ Date: 2026-09-21
 Status: Approved by the operator on 2026-09-21; one specification review ran, its 0 CRITICAL,
 6 MAJOR and 9 MINOR closed in this document. Frozen when the lot's closing block merges.
 Branches: block 10 `feat/the-catalogue-takes-a-query`, block 20 `feat/the-pin-search-route-goes`,
-block 30 `feat/the-tags-match-in-sql`, block 35 `feat/the-similarity-goes`, block 40
-`feat/the-header-wears-the-name`, block 50 `feat/the-header-searches`
+block 25 `feat/the-tag-field-pauses`, block 30 `feat/the-tags-match-in-sql`, block 35
+`feat/the-similarity-goes`, block 40 `feat/the-header-wears-the-name`, block 50
+`feat/the-header-searches`
 ADRs: `docs/adr/0040-search-is-a-parameter-of-the-catalogue.md`, written in block 10, carries
 decisions A, B, C, D, E and F, all of which move the public surface `contract/openapi.json`
 publishes, C being an error contract. Decision H, the versions, goes to no record: the contract
 guard reads each block's `info-version` against `origin/main` and refuses one that hides what it
 did, so the rule is enforced where it is written rather than decided here. Decisions I to N are the
 web application's own: no library, no storage format, no protocol, no boundary and no error
-contract, so they go to this document and nowhere else.
+contract, so they go to this document and nowhere else. (Corrected on 2026-09-21: decision Q, added
+in block 25, goes to this document for the same reason. It moves a test bound and nothing a client
+or a deployment can see.)
 
 `docs/specs/2026-09-20-the-pin-is-editable-and-the-boards-arrive.md` gave the web application the
 rest of a pin's life and left, in its section 6, the item this lot starts on: search is one of the
@@ -165,8 +168,9 @@ nothing on those two routes reaches it. Decision C is what changes that.
 | K | The field writes `q` into the address of the current route, after a 300 ms pause, with `replace: true` | The address is the state: a reload, a bookmark and the back button all keep the search with nothing stored. `replace` keeps one history entry per search rather than one per keystroke, and the pause keeps one request per search rather than one per keystroke |
 | L | On a board, the field searches that board, and a link under it offers the same term over everything | The operator's decision, Discuss question F: a bar whose reach changes with the screen is a trap unless the screen says so. The placeholder names the board and the link names the way out |
 | M | The grid's accessible name stays `home_heading`, and `app_name` returns to both catalogues | `home_heading` is what names the grid to a reader, and it is no longer a visible title. `app_name` was deleted by `docs/specs/2026-09-19-the-header-becomes-icons.md`, decision K', when the banner went; the name is back, this time as the way home |
-| P | One `useDebounced(value, delay)` in `src/debounce.ts`, used by the search field and by the edit form's tag field | The tag field has no pause today and costs one request per character, which is the defect behind the journey that nearly timed out. Block 50 writes a pause anyway: shared, it removes the cause rather than adding a second copy beside it. The hook holds a timer and state, so it cannot live in `lib/`, which is pure functions and the whole coverage perimeter |
+| P | One `useDebounced(value, delay)` in `src/debounce.ts`, used by the search field and by the edit form's tag field | The tag field has no pause today and costs one request per character. ~~which is the defect behind the journey that nearly timed out~~ Block 50 writes a pause anyway: shared, it removes the cause rather than adding a second copy beside it. The hook holds a timer and state, so it cannot live in `lib/`, which is pure functions and the whole coverage perimeter. (Corrected: the struck clause is refuted, and the hook is in block 25 rather than block 50. Block 25 measured the nine requests at 34 ms of a 653 ms case, so they are not what put the journey near the timeout and the pause claims nothing about test time. What justifies the pause is the user in front of the field: a tag typed fires one request against the API and not nine. Section 5's block 25 row carries the measurement) |
 | N | An empty result says the term found nothing, not that the account is empty | `pins_empty` states an empty account, which is false of a search that matched nothing, and the recourse differs: add a pin, or search for something else |
+| Q | The client suite's `testTimeout` is 15000 ms and no longer Vitest's default 5000 ms | (Added on 2026-09-21, in block 25.) The operator's decision, taken once block 25 had shown decision P does not lower the failing case. The bound is fixed and the machine is not: the same suite runs in 13.3 s here and 2 m 18 s on a GitHub runner, so a case measured at 955 ms here is expected near 9.5 s there, and 5000 ms refuses it for the runner's speed rather than for anything the case does. 15000 ms is about 1.6 times that expectation. Raising it hides no regression a reader would otherwise see: nothing reads the suite's duration, and what the bound catches is a test that hangs |
 
 **Decision B is one predicate, and it is composed as a closed junction.** The pin's tags are not a
 path on `QPinModel`: `PinTagModel` is a join entity with no collection mapped on either side, so
@@ -179,11 +183,14 @@ rather than absorbed into it. Pitfalls, section 8, carries what that costs if it
 caller that did not mean to search, and the 400 says so where a silent full catalogue would not.
 
 **One adjacent defect, tier 2, answered by the operator on 2026-09-21.** No field in the web
-application debounces anything: the edit form's tag suggestions fire a request per character, which
-is what put one journey of the previous lot within a timeout of failing. It is tier 2 and not tier
-1 by reach, the fix touching a component this lot otherwise leaves alone. Asked at the moment of
-discovery, answered by decision P, which folds it into block 50 because that block writes the pause
-either way.
+application debounces anything: the edit form's tag suggestions fire a request per character,
+~~which is what put one journey of the previous lot within a timeout of failing~~. It is tier 2 and
+not tier 1 by reach, the fix touching a component this lot otherwise leaves alone. Asked at the
+moment of discovery, answered by decision P, which folds it into ~~block 50 because that block
+writes the pause either way~~ block 25. (Corrected: the struck clause is refuted, and the operator
+moved the tag field's half into block 25 on 2026-09-21, before that measurement was taken. The
+requests are a defect and they are not that journey's cost; block 25's row in section 5 carries
+what they cost and what does.)
 
 **Decision F needs no ranking expression.** The prefix matches and the contains matches are two
 bounded queries, the second one asked only for the places the first left free, its results less
@@ -206,6 +213,9 @@ those already held. The limit is the caller's, capped at 20 by the route
 | 20 | `api-usecases/.../PinSearcher.kt` and its test, `PinSearchIntegrationTest.kt`, `PinSearchControllerTest.kt` | Deleted |
 | 20 | `api-domain/.../PinRepositoryInterface.kt`, `api-persistence-sqlite/.../PinRepository.kt` | (Corrected: this row is added on 2026-09-21, the table having no row for it.) `findAllPinsForUser` deleted, `PinSearcher` being its last production caller. Its eight test callers read the catalogue instead, and the soft-delete case named for it goes, the case above it asserting the same exclusion through `findPinsForUser` |
 | 20 | `application.properties` | `info-version` to `8.0.0`; `contract/openapi.json` regenerated |
+| 25 | `debounce.ts` | New. `useDebounced(value, delay)`, decision P. (Corrected: this row and the two below it are added on 2026-09-21, the operator having pulled decision P's tag-field half out of block 50 into a block of its own) |
+| 25 | `components/PinEditForm.tsx` | The tag field reads its suggestions off the debounced term, after a 300 ms pause, decision K's value |
+| 25 | `vite.config.ts` | `testTimeout` raised from Vitest's default 5000 ms to 15000 ms, decision Q |
 | 30 | `api-domain/.../TagRepositoryInterface.kt`, `api-persistence-sqlite/.../TagRepository.kt` | `findTagsForUserMatching(user, query, limit)`, prefix first then contains |
 | 30 | `api-usecases/.../TagSearcher.kt` and `TagSearcherTest.kt` | Delegates to the repository; the scoring, the threshold and the sort go, and the test that asserts all three is rewritten around the order the repository now serves |
 | 30 | `api-presentation-quarkus/.../controllers/TagSearchController.kt` | `@NotBlank` goes; `TagSearcher` throws `SearchEmptyQueryError` instead, decision C |
@@ -220,8 +230,8 @@ those already held. The limit is the caller's, capped at 20 by the route
 | 40 | `messages/en.json`, `messages/fr.json` | `app_name` added back |
 | 40 | The seven journey files of section 2's third command | Four read the heading, which becomes `m.app_name()`; `open a board and browse its pins` clicks that link instead of the house icon; `drop-an-image-on-the-grid` and `add-several-pins-from-one-drop` reach `<main>` through that same heading at line 21 and follow it to the new name |
 | 50 | `components/SearchField.tsx` | New. The input, the navigation, and on a board the link that widens the search |
-| 50 | `debounce.ts` | New. `useDebounced(value, delay)`, decision P |
-| 50 | `components/PinEditForm.tsx` | The tag field reads its suggestions off the debounced term, one line |
+| ~~50~~ | ~~`debounce.ts`~~ | ~~New. `useDebounced(value, delay)`, decision P~~ (Corrected: both rows moved to block 25 on 2026-09-21. The hook exists when block 50 starts, so the search field imports it and writes none of it) |
+| ~~50~~ | ~~`components/PinEditForm.tsx`~~ | ~~The tag field reads its suggestions off the debounced term, one line~~ |
 | 50 | `components/AppHeader.tsx` | A second slot, between the name and the actions, for the screens that pass a field. `AppHeader` renders none itself, decision I' |
 | 50 | `lib/searches.ts` and its test | `searchTermOr(value)`, the address's `q` read into a term or nothing, as `pinSortOr` reads the order |
 | 50 | `router.tsx` | `/` and `/boards/$boardId` validate `q` beside `sort` |
@@ -237,10 +247,11 @@ those already held. The limit is the caller's, capped at 20 by the route
 |---|---|---|
 | 10 | `feat/the-catalogue-takes-a-query` | A pin whose tag matches and whose description does not is in the page; a pin matching neither is not; the same on a board's route, where a matching pin in another board stays out; a blank `q` earns 400 with `code` `SEARCH_EMPTY_QUERY` and content type `application/problem+json`; a tag stored `Cat` is found by `cat`, and a description holding `café` is found by `café` and not by `cafe`; **a second page read with a cursor holds only matching pins**, which is the junction pitfall's own test; a plan assertion in the repository test names a `SUBQUERY` line, the pin table being scanned here by design so the absence of `SCAN` proves nothing |
 | 20 | `feat/the-pin-search-route-goes` | ~~`GET /api/v1/pins/search` answers 404, which discriminates: a controller still registered answers 400 on a missing `q`, the literal path winning over `@Path("/{pinId}")`~~; the contract holds no such path; `oasdiff` accepts `8.0.0`. (Corrected: the struck criterion was written as a test and the operator refused it on review of pull request #183, on 2026-09-21, as dead the day the lot ends. **What holds the block up is the contract**: the gate regenerates `contract/openapi.json` and refuses a committed document that differs, so a controller put back and not regenerated fails the gate, and one put back and regenerated restores the path the document no longer carries. The compile is the other half, `PinSearcher` and `PinSearchOutputDto` being gone) |
+| 25 | `feat/the-tag-field-pauses` | (Added on 2026-09-21, decision P's tag-field half pulled out of block 50 and decision Q joining it.) The journey `edit a pin's description, tags and boards` keeps every assertion it carries and gains one: the nine characters typed into the tag field ask `/api/v1/tags/search` for `Landscape` once, where the recorded terms were `L`, `La`, ... `Landscape`. That count is the block's whole observable, and it is a count and not a duration for the reason the measurements below give |
 | 30 | `feat/the-tags-match-in-sql` | A name beginning with the term comes before a name merely containing it; a name matching neither is absent; a tag stored `Café` is found by `café` and not by `cafe`, and one stored `Cat` is found by `cat`; the limit is honoured across the two queries and holds no duplicate; the body carries no `score`; a blank `q` earns `SEARCH_EMPTY_QUERY` and no longer `VALIDATION_ERROR` |
 | 35 | `feat/the-similarity-goes` | The suite that exists, less the tests deleted with the code. What would show the block wrong is a compile failure: a caller of `TextSimilarity` or `SearchResult` left standing |
 | 40 | `feat/the-header-wears-the-name` | The name is a heading and a link, and clicking it from a board lands on the home screen; the home screen shows no second title; no control in the bar is named `Your pins` any more; the credentials screen carries the name and no search field, which holds for block 50 too |
-| 50 | `feat/the-header-searches` | Journey **search from the header**: typing a term on the home screen puts it in the address, the grid holds the pins that match and not the others, a reload keeps both the term and the field's value, and emptying the field brings the whole catalogue back. Journey **search inside a board and widen it**: the same on a board, scoped to it, and the link under the field lands on the home screen with the term kept and the board dropped. Decision P's own check is a count: a term typed in one go asks the API once, not once per character, and the same holds of the tag field, whose journey is the one that measured 647 ms |
+| 50 | `feat/the-header-searches` | Journey **search from the header**: typing a term on the home screen puts it in the address, the grid holds the pins that match and not the others, a reload keeps both the term and the field's value, and emptying the field brings the whole catalogue back. Journey **search inside a board and widen it**: the same on a board, scoped to it, and the link under the field lands on the home screen with the term kept and the board dropped. Decision P's own check is a count: a term typed in one go asks the API once, not once per character. ~~and the same holds of the tag field, whose journey is the one that measured 647 ms~~ (Corrected: the tag field's half is block 25's, done on 2026-09-21. Block 50 imports `useDebounced` and writes none of it) |
 
 Each block is green and coherent alone. Block 10 leaves `/pins/search` standing
 and working; block 20 removes it with its use case, so nothing is left callerless behind it; block
@@ -251,7 +262,36 @@ field.
 
 **The client blocks follow the API blocks, and cannot precede them.** `packages/api-client` is
 generated from `contract/openapi.json` at install: `q` has to be in the contract before `pins.ts`
-can send it and typecheck.
+can send it and typecheck. (Corrected on 2026-09-21: block 25 is the exception, and it is one
+because it sends nothing new. `/api/v1/tags/search` is a route the client already calls and this
+lot does not move; block 25 changes when that call is made and nothing about its shape, so it
+needs no contract that is not already on `main` and may sit anywhere.)
+
+**Block 25 measured what it was decided to fix, and it was not that.** The block was pulled forward
+as the root-cause fix for `Given the form, Then one request carries the whole pin and the tile
+follows it`, which had timed out twice at 5000 ms in continuous integration. It is not. A probe in
+that case, `performance.now()` around each step under
+`pnpm exec vitest run --reporter=verbose --silent=false`, read on 2026-09-21 on the workstation's
+12 cores:
+
+| Step | Without the pause | With the pause |
+|---|---|---|
+| Open the dialogue | 260 ms | 263 ms |
+| Type 17 characters into the description | 65 ms | 62 ms |
+| Type 9 characters into the tag field | 104 ms | 70 ms |
+| Wait for the suggestion | 15 ms | 334 ms |
+| Requests to `/api/v1/tags/search` | 9 | 1 |
+
+**The eight requests removed are worth 34 ms, and the pause costs 319.** The case goes from 653 ms
+to 955 ms, and under four cores saturated by four busy loops (`taskset -c 0-3`, three runs each)
+from 895, 896, 899 ms to 1292, 1203, 1204 ms. The pause is a fixed wait, so it does not grow with a
+slower machine, but neither does it shrink the part that does: 903 ms against 895 ms under load is
+noise. A runner about ten times slower therefore still crosses 5000 ms, by 300 ms more than before.
+Two candidate levers were measured and refused with it: the pause set to 10 ms leaves the case at
+662 ms against 653, so the requests cost nothing measurable at all, and `userEvent.setup({ delay:
+null })` returns about 30 ms. What dominates the case is opening the dialogue, 260 of 653 ms, which
+no block of this lot touches. Hence decision Q, which is the fix for the timeout, and decision P,
+which is the fix for the requests, and neither one is the other.
 
 **The order of blocks 30 and 35 is not free.** `TextSimilarity` and `SearchResult` keep a caller
 until `TagSearcher` has stopped scoring, so the matching lands first and the deletion follows it.
@@ -264,7 +304,9 @@ which about 115 production (Corrected: block 20 measured 622 and 136, read by
 the waiver the operator granted on 2026-09-21, answering the block's tier-2 question on
 `findAllPinsForUser`: delete it in block 20, and the block may pass the bound. The production count
 stays under its own 200. The method's removal is 11 production lines and 28 test lines the estimate
-did not carry; the rest is the estimate being an estimate); block 30 about 450, of which about 130 production; block 35 about 345,
+did not carry; the rest is the estimate being an estimate); block 25 measured 35 and 32, read by
+`git diff --numstat main...HEAD` on 2026-09-21, and takes about 20 lines off block 50's estimate;
+block 30 about 450, of which about 130 production; block 35 about 345,
 of which 82 production; block 40 about 80 and block 50 about 280 under `clients/`. The estimate is
 not evidence: each block sums `git diff --numstat` against `main` at its first green run and says so
 in its pull request. **Block 30 is the one to watch**: a rewritten line counts twice, and its three
@@ -346,12 +388,17 @@ What this lot does not change, and how a reader notices if it did:
   matching, the real call passing the same null.
 - **The catalogue's default order is not the grid's.** The routes default to `CREATED_AT_ASC` and
   the client sends `CREATED_AT_DESC`. A search changes neither.
-- **A request per keystroke is a timeout waiting to happen, and nothing in the client debounces
-  anything today.** `PinEditForm.tsx:37` calls `useTagSearch(typed)` on every character; React
-  Query caches by term, so a prefix already typed is a cache hit and a new one is a request. One
-  journey of the previous lot sat at 647 ms on the workstation and timed out once inside
-  `dagger call gate`. Decisions K and P are the two halves of the answer: the search field pauses,
-  and the tag field pauses with it through the same hook.
+- **A request per keystroke is a request per keystroke, and it is not what times a test out.**
+  ~~A request per keystroke is a timeout waiting to happen, and nothing in the client debounces
+  anything today.~~ `PinEditForm.tsx:37` calls `useTagSearch(typed)` on every character; React
+  Query caches by term, so a prefix already typed is a cache hit and a new one is a request.
+  ~~One journey of the previous lot sat at 647 ms on the workstation and timed out once inside
+  `dagger call gate`.~~ Decisions K and P are the two halves of the answer: the search field
+  pauses, and the tag field pauses with it through the same hook. (Corrected on 2026-09-21 by
+  block 25, which measured it: that journey did sit at 647 ms and did time out, and the nine
+  requests were 34 ms of it. Section 5 carries the measurement and decision Q carries the fix.
+  The lesson the pitfall was reaching for holds against the API and not against the clock: count
+  the requests, and measure the duration before blaming them for it.)
 - **A debounced field's test waits for the value, not for the timer.** `findBy*` and `waitFor`
   already poll; a fake clock installed around react-aria's own timers is what breaks first.
 - **The gate renders nothing and sees no layout.** Both client blocks are read in a headless
