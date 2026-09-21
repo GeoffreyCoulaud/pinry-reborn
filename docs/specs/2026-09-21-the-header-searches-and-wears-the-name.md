@@ -329,10 +329,28 @@ test files hold 377 lines between them (`TagSearcherTest` 166, `TagSearchIntegra
   being Postgres, but what they wait on is the inference service and the embeddings, not the storage
   engine: neither becomes reachable by moving a `LIKE` into SQL. That is the operator's to accept.
 
-This lot files one item, decision G:
+This lot files ~~one item, decision G~~ two items. (Corrected on 2026-09-21: the second is added
+with block 25, which is what measured it. The closing block files both entries.)
 
 - Search matches by substring and no longer tolerates a typo. Restoring it wants an engine that can
   index for it, which is the study of a standalone Postgres rather than SQLite.
+- The client suite spends more on starting than on testing. `vitest doctor` is what settles it,
+  and this section carries the reasoning.
+
+**The second item, and why block 25 did not do it.** Vitest reports the suite's own shape at the
+end of `pnpm run test`: 34 workers, `~803ms startup each (spawn + environment, per file)`, against
+13.3 s of tests on the workstation and 2 m 18 s on a GitHub runner. That is more spent on starting
+than on testing, and it is the plausible share of the runner's figure that decision Q does not
+touch: Q moves a per-case bound, not the suite's duration. What settles it is `vitest doctor`,
+which runs the suite against `pool: 'threads'`, `pool: 'vmThreads'` and `isolate: false`, three
+runs each, and reports the measured gain of each beside the baseline (Vitest documentation,
+`docs/guide/cli.md`; the command exists in the 5.0.0 the workspace pins, read by
+`pnpm exec vitest doctor --help` on 2026-09-21). It is not done here because the likeliest of those
+answers is the one this suite is least ready for: `isolate: false` shares one environment between
+the files of a worker, and this suite keeps state at module level, MSW starting at the top of
+`src/test/setup.ts` and `session.ts` building its client while it is imported, which
+`clients/AGENTS.md` records as a gotcha already. A change of that reach is measured cold, on a
+suite whose continuous integration is green, and not while it is red.
 
 ## 7. Out of scope
 
