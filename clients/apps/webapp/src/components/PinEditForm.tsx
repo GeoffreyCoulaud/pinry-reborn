@@ -13,6 +13,7 @@ import {
 } from "@heroui/react"
 import { useEffect, useState } from "react"
 import { useBoards } from "../boards"
+import { useDebounced } from "../debounce"
 import { downloadReason } from "../downloadReasons"
 import { useHandshake, useSetPinImage, type ImageSource } from "../images"
 import type { KeptFile } from "../lib/drops"
@@ -21,10 +22,14 @@ import { m } from "../paraglide/messages.js"
 import { useTagSearch, useUpdatePin, type Pin } from "../pins"
 import { ImageDropBox } from "./ImageDropBox"
 
+/** The pause a field waits out before it asks the API, decision K's value for decision P's hook. */
+const SUGGESTION_PAUSE_MS = 300
+
 /**
  * Free text over the author's own names. The server decides which names are one tag, folding to
- * ASCII, so the field asks it on every keystroke and offers what it answers rather than deciding
- * it is looking at a new tag (specification 2026-09-20, decision L).
+ * ASCII, so the field asks it and offers what it answers rather than deciding it is looking at a
+ * new tag (specification 2026-09-20, decision L). It asks once the typing pauses, not once per
+ * character (specification 2026-09-21, decision P).
  */
 function TagField({
   names,
@@ -34,7 +39,8 @@ function TagField({
   onChange: (names: readonly string[]) => void
 }) {
   const [typed, setTyped] = useState("")
-  const offered = (useTagSearch(typed).data ?? []).filter((name) => !names.includes(name))
+  const asked = useDebounced(typed, SUGGESTION_PAUSE_MS)
+  const offered = (useTagSearch(asked).data ?? []).filter((name) => !names.includes(name))
 
   function add(name: string) {
     const held = name.trim()

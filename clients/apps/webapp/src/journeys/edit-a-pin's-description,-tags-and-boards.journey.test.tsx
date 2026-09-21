@@ -109,6 +109,9 @@ describe("edit a pin's description, tags and boards", () => {
     // The discriminating half: the catalogue is written through, never refetched (specification
     // 2026-09-20, decision P).
     expect(record.pages).toBe(1)
+    // The field pauses, so a term typed in one go is asked for once and not once per character
+    // (specification 2026-09-21, decision P).
+    expect(record.queries).toEqual(["Landscape"])
   })
 
   it("Given a name the account holds under another case, Then the tag it holds is offered", async () => {
