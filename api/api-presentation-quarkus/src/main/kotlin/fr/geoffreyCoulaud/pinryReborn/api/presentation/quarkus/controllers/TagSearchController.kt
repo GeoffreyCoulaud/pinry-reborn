@@ -19,8 +19,6 @@ class TagSearchController(
     @GET
     @Authenticated
     @Path("/search")
-    // No validation annotation: none says "absent, yes; blank, no", and here neither is a search.
-    // The use case refuses both, so this route and the catalogue answer one code (spec decision C).
     fun searchTags(
         @QueryParam("q") query: String?,
         @QueryParam("limit") limitParam: Int?,
