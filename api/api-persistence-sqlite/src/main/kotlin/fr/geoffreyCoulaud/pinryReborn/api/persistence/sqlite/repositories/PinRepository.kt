@@ -25,6 +25,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCur
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelPaginationHelper
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.PinModelSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.PinQueries
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.matchingText
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActiveBoard
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withPinInAnyState
 import jakarta.enterprise.context.ApplicationScoped
@@ -184,12 +185,13 @@ class PinRepository(
         cursor: Cursor?,
         pageSize: Int,
         sortStrategy: PinSortStrategy,
+        query: String?,
     ): Page<Pin> {
         val modelPage =
             ModelPaginationHelper.getPage(
                 cursor = findCursorPivot(cursor),
                 pageSize = pageSize,
-                baseQuery = PinQueries.active().author.id.equalTo(reader.id),
+                baseQuery = PinQueries.active().author.id.equalTo(reader.id).matchingText(query),
                 sortStrategy = PinModelSortStrategy.fromDomain(sortStrategy),
             )
         return Page(
@@ -284,25 +286,29 @@ class PinRepository(
         )
     }
 
+    // ignoreOverridden is not among the rule's options, so the override repeats the exception.
+    @Suppress("LongParameterList")
     override fun findActivePinsForBoard(
         reader: User,
         boardId: UUID,
         cursor: Cursor?,
         pageSize: Int,
         sortStrategy: PinSortStrategy,
+        query: String?,
     ): Page<Pin> {
         // Loads the board's pin ids up front; acceptable for v1, called out in spec §11 as a
         // scaling risk (large boards mean a large IN clause).
         val pinIdsInBoard =
             QPinBoardModel().board.id.equalTo(boardId).findList().map { it.pin.id }
+        val boardQuery = PinQueries
+            .active()
+            .author.id.equalTo(reader.id)
+            .id.isIn(pinIdsInBoard)
         val modelPage =
             ModelPaginationHelper.getPage(
                 cursor = findCursorPivot(cursor),
                 pageSize = pageSize,
-                baseQuery = PinQueries
-                    .active()
-                    .author.id.equalTo(reader.id)
-                    .id.isIn(pinIdsInBoard),
+                baseQuery = boardQuery.matchingText(query),
                 sortStrategy = PinModelSortStrategy.fromDomain(sortStrategy),
             )
         return Page(

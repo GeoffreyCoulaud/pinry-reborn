@@ -303,4 +303,46 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         // Then
         boardsOf(auth, own).body("boards.id", containsInAnyOrder(board.id.toString()))
     }
+
+    // --- Searching inside a board ---
+
+    @Test
+    fun `Given a term, Then the board's page holds its own matching pins and no other`() {
+        // Given: one match inside the board, one outside it, one inside matching nothing
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val inside = createPin(auth.user, "A cat indoors")
+        createPin(auth.user, "A cat elsewhere")
+        val unrelated = createPin(auth.user, "A dog")
+        bulkMembership(auth, "POST", board.id, listOf(inside.id, unrelated.id)).statusCode(204)
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .queryParam("q", "cat")
+            .`when`()
+            .get("/api/v1/boards/${board.id}/pins")
+            .then()
+            .statusCode(200)
+            .body("pins", hasSize<Any>(1))
+            .body("pins[0].id", equalTo(inside.id.toString()))
+    }
+
+    @Test
+    fun `Given a blank term, Then the board's page refuses it under SEARCH_EMPTY_QUERY`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+
+        // When / Then: one refusal, one code, whichever catalogue route expresses it
+        given()
+            .authenticatedAs(auth)
+            .queryParam("q", " ")
+            .`when`()
+            .get("/api/v1/boards/${board.id}/pins")
+            .then()
+            .statusCode(400)
+            .contentType("application/problem+json")
+            .body("code", equalTo("SEARCH_EMPTY_QUERY"))
+    }
 }

@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SearchEmptyQueryError
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
@@ -14,13 +15,18 @@ class BoardPinLister(
     private val boardGetter: BoardGetter,
     private val pinRepository: PinRepositoryInterface,
 ) {
+    // Six parameters, for the reason PinRepositoryInterface.findActivePinsForBoard carries.
+    @Suppress("LongParameterList")
     fun listActivePinsForBoard(
         reader: User,
         boardId: UUID,
         cursor: Cursor?,
         pageSize: Int,
         sort: PinSortStrategy,
+        query: String? = null,
     ): Page<Pin> {
+        // An absent term is the whole board; a blank one is a caller that did not mean to search.
+        if (query != null && query.isBlank()) throw SearchEmptyQueryError()
         boardGetter.getActiveBoardForUser(boardId = boardId, reader = reader)
         return pinRepository.findActivePinsForBoard(
             reader = reader,
@@ -28,6 +34,7 @@ class BoardPinLister(
             cursor = cursor,
             pageSize = pageSize.coerceIn(1, PinGetter.MAX_PAGE_SIZE),
             sortStrategy = sort,
+            query = query,
         )
     }
 }

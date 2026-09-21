@@ -30,6 +30,7 @@ interface PinRepositoryInterface {
      * @param cursor The cursor to find pins relative to
      * @param pageSize Number of pins to return (will be capped at server max)
      * @param sortStrategy The sort strategy
+     * @param query A term the description or one of the tag names contains; null is every pin
      * @return A page of pins with pagination information
      */
     fun findPinsForUser(
@@ -37,6 +38,7 @@ interface PinRepositoryInterface {
         cursor: Cursor?,
         pageSize: Int,
         sortStrategy: PinSortStrategy,
+        query: String? = null,
     ): Page<Pin>
 
     /**
@@ -92,15 +94,17 @@ interface PinRepositoryInterface {
     fun findAllSoftDeletedPinsForUser(user: User): List<Pin>
 
     /**
-     * Find active pins belonging to a board, with pagination support.
-     * Excludes soft-deleted pins. The board's own existence/ownership is checked by the caller.
+     * Find active pins belonging to a board, with pagination support. Excludes soft-deleted pins;
+     * the board's existence and ownership are the caller's to check. A null [query] is every pin.
      */
+    @Suppress("LongParameterList") // The catalogue's five parameters plus the term (spec 2026-09-21, decision O)
     fun findActivePinsForBoard(
         reader: User,
         boardId: UUID,
         cursor: Cursor?,
         pageSize: Int,
         sortStrategy: PinSortStrategy,
+        query: String? = null,
     ): Page<Pin>
 
     /**

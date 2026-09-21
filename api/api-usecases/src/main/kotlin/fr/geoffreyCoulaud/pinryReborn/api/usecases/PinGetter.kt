@@ -8,6 +8,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinRetrievalPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinRetrievalPinDoesNotExistError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SearchEmptyQueryError
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
@@ -29,7 +30,10 @@ class PinGetter(
         cursor: Cursor?,
         pageSize: Int,
         sort: PinSortStrategy,
+        query: String? = null,
     ): Page<Pin> {
+        // An absent term is the whole catalogue; a blank one is a caller that did not mean to search.
+        if (query != null && query.isBlank()) throw SearchEmptyQueryError()
         if (cursor != null) {
             // If a cursor is provided, check that it points to a user-readable pin
             getPinForUser(pinId = cursor.pivotId, reader = reader)
@@ -38,7 +42,8 @@ class PinGetter(
             reader = reader,
             cursor = cursor,
             pageSize = pageSize.coerceIn(1, MAX_PAGE_SIZE),
-            sortStrategy = sort
+            sortStrategy = sort,
+            query = query,
         )
     }
 

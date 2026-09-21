@@ -145,13 +145,22 @@ class BoardController(
         @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
         @QueryParam("pageSize") pageSizeInput: Int? = null,
         @QueryParam("sort") sortInput: PinSortStrategyInputEnum? = null,
+        // No validation annotation, for the reason PinController.listPins states.
+        @QueryParam("q") query: String? = null,
     ): RestResponse<PinListOutputDto> {
         val user = securityIdentity.getUser()
         val pageSize = pageSizeInput ?: DEFAULT_PAGE_SIZE
         val sort = if (sortInput != null) sortInput.toDomain() else PinSortStrategy.CREATED_AT_ASC
         val cursor = cursorInput?.toDomain()
         return boardPinLister
-            .listActivePinsForBoard(reader = user, boardId = boardId, cursor = cursor, pageSize = pageSize, sort = sort)
+            .listActivePinsForBoard(
+                reader = user,
+                boardId = boardId,
+                cursor = cursor,
+                pageSize = pageSize,
+                sort = sort,
+                query = query,
+            )
             .let { RestResponse.ok(pinResponses.page(it)) }
     }
 

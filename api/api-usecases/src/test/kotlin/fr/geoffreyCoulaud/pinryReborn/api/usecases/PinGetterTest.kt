@@ -9,6 +9,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinRetrievalPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinRetrievalPinDoesNotExistError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SearchEmptyQueryError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
@@ -146,5 +147,50 @@ class PinGetterTest {
 
         // Then
         assertEquals(expectedPage, result)
+    }
+
+    @Test
+    fun `Given a term, Then listPinsPaginatedForUser hands it to the repository`() {
+        // Given
+        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val expectedPage = Page<Pin>(items = emptyList(), previousCursor = null, nextCursor = null)
+        every {
+            pinRepository.findPinsForUser(
+                reader = reader,
+                cursor = null,
+                pageSize = 20,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+                query = "cat",
+            )
+        } returns expectedPage
+
+        // When
+        val result = useCase.listPinsPaginatedForUser(
+            reader = reader,
+            cursor = null,
+            pageSize = 20,
+            sort = PinSortStrategy.CREATED_AT_ASC,
+            query = "cat",
+        )
+
+        // Then
+        assertEquals(expectedPage, result)
+    }
+
+    @Test
+    fun `Given a blank term, Then listPinsPaginatedForUser refuses it`() {
+        // Given: absent is the whole catalogue, blank is a caller that did not mean to search
+        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+
+        // When, Then
+        assertThrows<SearchEmptyQueryError> {
+            useCase.listPinsPaginatedForUser(
+                reader = reader,
+                cursor = null,
+                pageSize = 20,
+                sort = PinSortStrategy.CREATED_AT_ASC,
+                query = " ",
+            )
+        }
     }
 }
