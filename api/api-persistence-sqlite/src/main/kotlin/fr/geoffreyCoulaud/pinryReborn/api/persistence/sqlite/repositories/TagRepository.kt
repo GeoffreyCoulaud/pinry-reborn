@@ -60,19 +60,21 @@ class TagRepository(
             .setMaxRows(limit)
             .findList()
         val remaining = limit - prefixed.size
-        if (remaining == 0) return prefixed.map { it.toDomain() }
-
-        val contained = QTagModel()
-            .author.id
-            .equalTo(user.id)
-            .name
-            .contains(query)
-            .not()
-            .name
-            .startsWith(query)
-            .endNot()
-            .setMaxRows(remaining)
-            .findList()
+        val contained = if (remaining == 0) {
+            emptyList()
+        } else {
+            QTagModel()
+                .author.id
+                .equalTo(user.id)
+                .name
+                .contains(query)
+                .not()
+                .name
+                .startsWith(query)
+                .endNot()
+                .setMaxRows(remaining)
+                .findList()
+        }
         return (prefixed + contained).map { it.toDomain() }
     }
 
