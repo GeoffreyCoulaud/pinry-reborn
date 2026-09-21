@@ -6,10 +6,12 @@ ADRs: `docs/adr/0040-search-is-a-parameter-of-the-catalogue.md`
 Blocks: 10 `feat/the-catalogue-takes-a-query` (#182), 20 `feat/the-pin-search-route-goes` (#183),
 25 `feat/the-tag-field-pauses` (#185), 30 `feat/the-tags-match-in-sql` (#184), 35
 `feat/the-similarity-goes` (#186), 40 `feat/the-header-wears-the-name` (#187), 50
-`feat/the-header-searches` (this one). Written in the last code block, and the closing block
-corrects it.
+`feat/the-header-searches` (#188). Written in the last code block, and corrected in the closing
+block `fix/the-holistic-findings`.
 Tier: Spec. The specification review ran before a line was written: 0 CRITICAL, 6 MAJOR, 9 MINOR,
-all closed in the document.
+all closed in the document. The holistic review ran at the head of Wrap: 0 CRITICAL, 4 MAJOR,
+6 MINOR, every one of them fixed in the closing block `fix/the-holistic-findings`, which is where
+this document is corrected.
 
 ## Current state
 
@@ -26,18 +28,27 @@ is on.
   folding, no relevance: the order stays the user's, through the grid's selector.
 - **An absent `q` is the whole catalogue; a present and blank one earns 400** under the `code`
   `SEARCH_EMPTY_QUERY`, thrown by the use case, on the tag route too. `@NotBlank` refuses null,
-  which is the absent parameter, so no annotation could express it.
+  which is the absent parameter, so no annotation could express it. The three routes that take a
+  `q` declare that 400 in the contract, under one shared description, `BLANK_QUERY_REFUSED`.
 - **The tag suggestions are two bounded queries**: the names beginning with the term, then the
   names merely holding it, less what the first held. No `score` in the body.
-- **The contract stands at `9.0.0`**, one major per block that broke it: `7.3.0` for `q`, `8.0.0`
-  for the pin search route's removal, `9.0.0` for the tag body losing `score`.
+- **The contract stands at `9.1.0`**, one major per block that broke it: `7.3.0` for `q`, `8.0.0`
+  for the pin search route's removal, `9.0.0` for the tag body losing `score`. (Corrected in the
+  closing block on 2026-09-21: it read `9.0.0`, and the closing block's own three declared 400s
+  are the additive `9.1.0`.)
 - **The header's `<h1>` is the application's name and the way home.** The house icon left
   `AppNav`; a screen with a title of its own renders it as an `<h2>` beside the name, with a `·`
   between them. The credentials screen carries the name and no search field.
-- **The search field writes `q` after a 300 ms pause, with `replace: true`.** The address is the
-  state: a reload, a bookmark and the back button keep the search with nothing stored, and one
-  history entry is kept per search rather than one per keystroke. On a board the field searches
-  that board and a link under it offers the same term over everything.
+- **The search field writes `q` after a 300 ms pause, with `replace: true`, and reads it back.**
+  The address is the state: a reload and a bookmark keep the search with nothing stored, and an
+  address the field did not write is adopted, which is what makes the application's name the way
+  out of a search. ~~the back button keep the search with nothing stored, and one history entry is
+  kept per search rather than one per keystroke~~ On a board the field searches that board and a
+  link under it offers the same term over everything. (Corrected in the closing block on
+  2026-09-21: the struck clause is refuted. Every write replaces, the first one included, so
+  there is one history entry per screen visit and none per search: the back button leaves the
+  screen rather than stepping out of the search. That is the behaviour, not a defect the closing
+  block left standing, and the specification's decision K carries the same correction.)
 - **An empty result names the term.** `pins_empty` states an empty account, which is false of a
   search that matched nothing, and the recourse differs.
 
@@ -54,7 +65,8 @@ is on.
   holds into a term or nothing. Read by the route validator and by the field, so the client never
   sends the blank `q` the API refuses.
 - `clients/apps/webapp/src/debounce.ts`: `useDebounced(value, delay)`, used by the search field and
-  by the edit form's tag field. It holds a timer and state, so it is not in `lib/`.
+  by the edit form's tag field. It holds a timer and state, so it is not in `lib/`. The 300 ms is
+  its own default, stated once here, neither caller passing a delay.
 
 ## Block 25, which did not exist when the specification was written
 
@@ -71,6 +83,24 @@ dominates it is opening the dialogue, 260 ms, which no block of this lot touches
 answer, asked at the moment of discovery, was to keep the pause for what it actually does, one
 request per typed tag instead of nine, and to raise the suite's `testTimeout` to 15000 ms as the
 separate fix for the timeout (decision Q). Section 5 of the specification carries the table.
+
+## The holistic review's findings, and the exit each one took
+
+Ten findings, 0 CRITICAL, 4 MAJOR and 6 MINOR. **All ten were fixed inside the lot**, in the
+closing block; none was refused, backlogged or accepted as a limit.
+
+| Finding | Exit |
+|---|---|
+| MAJOR, the search field could not be cleared by the application's name, and adopted no address it had not written | Fixed. The field keeps the term it last wrote in a `useRef` and adopts `term` when the two differ. A journey case joins `search from the header`, and the reading below is what shows it in a browser |
+| MAJOR, the new 400 was in no operation's contract | Fixed. `GET /api/v1/pins`, `GET /api/v1/boards/{boardId}/pins` and `GET /api/v1/tags/search` declare it, the contract regenerated at `9.1.0` |
+| MAJOR, `commons-text` outlived `TextSimilarity` | Fixed. The three build lines are gone |
+| MAJOR, `limit` on the tag route had lost its lower bound | Fixed, and at the root rather than only at the edge: `TagRepository.findTagsForUserMatching` serves nothing for a non-positive limit, and the controller clamps with `coerceIn(MIN_LIMIT, MAX_LIMIT)` as the catalogue's `pageSize` does |
+| MINOR, the tag subquery was not scoped to the reader | Fixed. `matchingText` takes the reader, and the subquery filters on `tag.author.id` |
+| MINOR, one pause declared as two constants with the same comment twice | Fixed. `useDebounced`'s `delay` defaults to 300 and both callers ask for no delay |
+| MINOR, a journey stub served a `score` the contract no longer declares | Fixed. The field is out of the stub |
+| MINOR, `replace: true` on every write, against what three documents claimed | Fixed in the documents, the behaviour being the one that was wanted: this file and the specification's decision K both say one entry per screen visit now |
+| MINOR, the plan case bound three parameters by position | Fixed. The binds come from the statement's own `?` count, which is what let the author scope above be added without the case throwing |
+| MINOR, `boardQuery` read as a value and was a builder | Fixed. `findActivePinsForBoard` chains in one expression, as `findPinsForUser` does |
 
 ## Pitfalls
 
@@ -94,6 +124,14 @@ separate fix for the timeout (decision Q). Section 5 of the specification carrie
   journey counts them and breaks on any control added to the bar.
 - **The gate renders nothing and sees no layout.** Every client block of this lot but block 25 was
   read in a headless browser against the built bundle, and that reading caught a defect in both.
+- **A declared `@APIResponse` silences the generated one.** SmallRye stops deriving the success
+  response as soon as an operation declares any response of its own, so adding the 400 alone took
+  the `200` off all three routes: the first regeneration was 13 insertions against 34 deletions,
+  a break dressed as an addition. The 200 is written out beside it.
+- **A field that writes the address has to read it too.** The route component stays mounted across
+  a search-only change of the address, so state seeded once at mount is state that fights every
+  navigation the field did not originate. The journey that catches it changes the address from
+  outside while the field is mounted; one that mounts fresh on the address passes either way.
 
 ## What is not validated
 
@@ -110,13 +148,17 @@ separate fix for the timeout (decision Q). Section 5 of the specification carrie
   records, and the backlog carries the engine study.
 - **No search was ever run against a real API from the browser.** The journeys stub the matching
   and the headless reading served a stub too; what the two sides agree on is the contract.
-- **The holistic review has not run**, this document being written in the last code block. The
-  closing block records its findings here.
+- ~~**The holistic review has not run**, this document being written in the last code block. The
+  closing block records its findings here.~~ (Corrected in the closing block on 2026-09-21: it
+  ran, and the table above is what it found.)
+- **The three declared 400s are declared and not exercised as declared.** The integration tests
+  assert the status, the content type and the `code` against a live server, and the gate refuses a
+  contract that differs from the sources; nothing compares the two.
+- **The tag route's lower bound on `limit` is held twice and measured once.** The repository's
+  refusal has a test at `limit = 0`; the controller's clamp is asserted through the searcher it
+  calls, not against a running server.
 
 ## Next step
 
-Wrap: the holistic review over `git diff lot/0.30.0-the-pin-is-editable-and-the-boards-arrive..origin/main`,
-then the closing block, which fixes its findings, files the lot's two backlog items (the engine
-study behind fuzzy search, and the client suite spending more on starting than on testing),
-rewrites the Features item "What the API serves and the web application does not reach yet" to
-hold the three that are left, corrects this document, and then the lot tag.
+The lot tag: an annotated `lot/X.Y.Z-the-header-searches-and-wears-the-name` on the closing
+merge, pushed. Then Improve, over the report the closing block's pull request carries.
