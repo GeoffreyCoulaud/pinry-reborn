@@ -25,6 +25,8 @@ export const REQUIRED_JOURNEYS = [
   "replace a pin's image with a file",
   "delete a pin and restore it from the recycle bin",
   "add several selected pins to a board",
+  "search from the header",
+  "search inside a board and widen it",
 ]
 
 /** The file under `src/journeys/` that holds a journey's test. */

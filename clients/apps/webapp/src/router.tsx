@@ -5,6 +5,7 @@ import {
   type RouterHistory,
   type SearchSchemaInput,
 } from "@tanstack/react-router"
+import { searchTermOr } from "./lib/searches"
 import { pinSortOr, recycledPinSortOr } from "./lib/sorts"
 import { Board } from "./routes/Board"
 import { Boards } from "./routes/Boards"
@@ -15,26 +16,26 @@ import { Recycled } from "./routes/Recycled"
 const rootRoute = createRootRoute()
 
 /**
- * Each grid reads its order from its own address. `SearchSchemaInput` is what marks the order
- * optional to a caller: without it the router reads the validator's output as its input and every
- * `Navigate` here has to carry a sort.
+ * Each grid reads its order and its search term from its own address. `SearchSchemaInput` is what
+ * marks them optional to a caller: without it the router reads the validator's output as its input
+ * and every `Navigate` here has to carry a sort.
  */
-function validateSort(search: { sort?: string } & SearchSchemaInput) {
-  return { sort: pinSortOr(search.sort) }
+function validateGrid(search: { sort?: string; q?: string } & SearchSchemaInput) {
+  return { sort: pinSortOr(search.sort), q: searchTermOr(search.q) }
 }
 
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: Home,
-  validateSearch: validateSort,
+  validateSearch: validateGrid,
 })
 const boardsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/boards", component: Boards })
 const boardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/boards/$boardId",
   component: Board,
-  validateSearch: validateSort,
+  validateSearch: validateGrid,
 })
 /** The bin's Pins tab serves one order the grid does not, and it is the bin's default. */
 const recycledRoute = createRoute({

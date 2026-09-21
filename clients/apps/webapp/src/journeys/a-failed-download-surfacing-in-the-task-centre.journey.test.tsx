@@ -40,9 +40,10 @@ describe("a failed download surfacing in the task centre", () => {
     renderApp("/")
     const trigger = await screen.findByRole("button", { name: "Downloads (1)" })
     // An icon alone is not discoverable: the tooltip opens on focus and says what the name says.
-    // Six stops is the home header's own order, and where the centre sits in it is the assertion:
-    // add a pin, the sort selector, then the three navigation icons.
-    for (let tabs = 0; tabs < 6; tabs++) await user.tab()
+    // Seven stops is the home header's own order, and where the centre sits in it is the
+    // assertion: the name, the search field, add a pin, the sort selector, then the three
+    // navigation icons.
+    for (let tabs = 0; tabs < 7; tabs++) await user.tab()
     expect(trigger).toHaveFocus()
     await waitFor(() => expect(screen.getByRole("tooltip")).toHaveTextContent("Downloads (1)"))
     await user.click(trigger)

@@ -193,8 +193,18 @@ function PinGestures({
  * The catalogue as tiles, or one board's share of it. The home screen and a board's screen render
  * the same grid; what surrounds it, the drop that creates a pin included, is the screen's own.
  */
-export function PinGrid({ sort, label, boardId }: { sort: PinSort; label: string; boardId?: string }) {
-  const pins = usePins(sort, boardId)
+export function PinGrid({
+  sort,
+  label,
+  boardId,
+  term,
+}: {
+  sort: PinSort
+  label: string
+  boardId?: string
+  term?: string
+}) {
+  const pins = usePins(sort, boardId, term)
   // The breakpoint a tile picks its rendition on is the deployment's, not a constant: `small`
   // lowered in the configuration would otherwise upscale every tile (specification 4.3).
   const renditionSizes = useHandshake().data?.renditionSizes
@@ -217,10 +227,12 @@ export function PinGrid({ sort, label, boardId }: { sort: PinSort; label: string
     )
   // A refusal is not an empty account, and the empty state below would state one.
   if (pins.isError) return <p role="alert">{m.pins_unreadable()}</p>
+  // A search that matched nothing is not an empty account, and the recourse differs: add a pin,
+  // or search for something else (specification 2026-09-21, decision N).
   if (tiles.length === 0)
     return (
       <EmptyState role="status" className="grid h-full place-content-center text-center">
-        {m.pins_empty()}
+        {term === undefined ? m.pins_empty() : m.search_empty({ term })}
       </EmptyState>
     )
 

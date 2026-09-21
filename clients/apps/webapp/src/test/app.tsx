@@ -108,6 +108,20 @@ export function sortedPinsRoute(oldestFirst: Pin[], onSort: (sort: string | null
   })
 }
 
+/**
+ * One page of whichever pins match the `q` the grid sent, as the API matches them: a substring of
+ * the description. Every term is reported, the absent one included, so a journey reads how many
+ * requests a typed term cost.
+ */
+export function searchedPage(pins: Pin[], onTerm: (term: string | null) => void) {
+  return ({ request }: { request: Request }) => {
+    const term = new URL(request.url).searchParams.get("q")
+    onTerm(term)
+    const held = term === null ? pins : pins.filter((one) => one.description.includes(term))
+    return HttpResponse.json({ pins: held, pagination: { previousCursor: null, nextCursor: null } })
+  }
+}
+
 /** The catalogue as a single page, reread each time the journey's own state changes it. */
 export function onePinPage(pins: () => Pin[]) {
   return http.get("/api/v1/pins", () =>
