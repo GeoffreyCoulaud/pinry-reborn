@@ -1312,6 +1312,16 @@
               }
             }
           },
+          "400" : {
+            "description" : "The q parameter is present and blank",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Not Authorized"
           },
@@ -2413,6 +2423,16 @@
               }
             }
           },
+          "400" : {
+            "description" : "The q parameter is present and blank",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Not Authorized"
           },
@@ -3157,6 +3177,16 @@
               }
             }
           },
+          "400" : {
+            "description" : "The q parameter is present and blank",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Not Authorized"
           },
@@ -3207,7 +3237,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "9.0.0"
+    "version" : "9.1.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

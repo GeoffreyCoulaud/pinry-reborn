@@ -1,28 +1,34 @@
 import { SearchFieldGroup, SearchFieldInput, SearchFieldRoot, SearchFieldSearchIcon } from "@heroui/react"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useDebounced } from "../debounce"
 import { searchTermOr } from "../lib/searches"
 import { m } from "../paraglide/messages.js"
 
-/** The pause a field waits out before it asks the API, decision K's value for decision P's hook. */
-const SEARCH_PAUSE_MS = 300
-
 /**
  * The header's search. The term lives in the address of the screen the field is on, so a reload, a
  * bookmark and the back button all keep the search with nothing stored, and a board searches that
- * board (specification 2026-09-21, decisions K and L). `replace` keeps one history entry per
- * search rather than one per keystroke, and the pause keeps one request per search.
+ * board (specification 2026-09-21, decisions K and L). The pause keeps one request per search
+ * rather than one per keystroke.
  */
 export function SearchField({ term, boardName }: { term?: string; boardName?: string }) {
   const [typed, setTyped] = useState(term ?? "")
-  const asked = searchTermOr(useDebounced(typed, SEARCH_PAUSE_MS))
+  const asked = searchTermOr(useDebounced(typed))
+  const written = useRef(term)
   const navigate = useNavigate()
 
   useEffect(() => {
-    // The address is the state, so what the field holds is written to it and read back from it:
-    // a term already there is not written again, which is what stops the loop.
+    // The address is the state, and the field reads it as well as writes it: an address the field
+    // did not write is adopted, which is what makes the application's name a way out of a search
+    // and the back button a way through one. A term already there is not written again, which is
+    // what stops the loop.
+    if (term !== written.current) {
+      written.current = term
+      setTyped(term ?? "")
+      return
+    }
     if (asked === term) return
+    written.current = asked
     void navigate({ to: ".", search: (previous) => ({ ...previous, q: asked }), replace: true })
   }, [asked, term, navigate])
 

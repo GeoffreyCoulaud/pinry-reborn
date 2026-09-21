@@ -49,6 +49,9 @@ class TagRepository(
         query: String,
         limit: Int,
     ): List<Tag> {
+        // setMaxRows reads a non-positive bound as no bound, so the refusal is here where every caller passes.
+        if (limit <= 0) return emptyList()
+
         val prefixed = QTagModel()
             .author.id
             .equalTo(user.id)

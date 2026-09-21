@@ -22,9 +22,6 @@ import { m } from "../paraglide/messages.js"
 import { useTagSearch, useUpdatePin, type Pin } from "../pins"
 import { ImageDropBox } from "./ImageDropBox"
 
-/** The pause a field waits out before it asks the API, decision K's value for decision P's hook. */
-const SUGGESTION_PAUSE_MS = 300
-
 /**
  * Free text over the author's own names. The server decides which names are one tag, folding to
  * ASCII, so the field asks it and offers what it answers rather than deciding it is looking at a
@@ -39,7 +36,7 @@ function TagField({
   onChange: (names: readonly string[]) => void
 }) {
   const [typed, setTyped] = useState("")
-  const asked = useDebounced(typed, SUGGESTION_PAUSE_MS)
+  const asked = useDebounced(typed)
   const offered = (useTagSearch(asked).data ?? []).filter((name) => !names.includes(name))
 
   function add(name: string) {

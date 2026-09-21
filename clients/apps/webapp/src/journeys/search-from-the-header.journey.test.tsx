@@ -75,6 +75,22 @@ describe("search from the header", () => {
     expect(terms).toEqual(["cat", "none"])
   })
 
+  it("Given a search on the home screen, Then the application's name clears it", async () => {
+    const terms: string[] = []
+    account(terms)
+
+    const { router } = renderApp("/?q=cat")
+    expect(await screen.findByRole("img", { name: CAT.description })).toBeVisible()
+    await userEvent.click(screen.getByRole("link", { name: "Pinry Reborn" }))
+
+    // The name is the way home, so the field adopts the address it did not write rather than
+    // putting the term straight back.
+    expect(await screen.findByRole("img", { name: HARBOUR.description })).toBeVisible()
+    expect(router.state.location.search.q).toBeUndefined()
+    expect(field()).toHaveValue("")
+    expect(terms).toEqual(["cat", "none"])
+  })
+
   it("Given a term nothing matches, Then the grid says the search found nothing", async () => {
     const terms: string[] = []
     account(terms)

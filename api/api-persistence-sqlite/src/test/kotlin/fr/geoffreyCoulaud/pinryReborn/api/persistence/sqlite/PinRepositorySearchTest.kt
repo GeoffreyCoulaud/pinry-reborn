@@ -146,18 +146,16 @@ class PinRepositorySearchTest : PinRepositoryFixtures() {
     fun `Given the text predicate as Ebean builds it, Then its plan reads the tags through a subquery`() {
         // Given: the query the repository runs, executed so Ebean records the SQL it generated
         val author = createAndSaveUser()
-        val query = PinQueries.active().author.id.equalTo(author.id).matchingText("cat")
+        val query = PinQueries.active().author.id.equalTo(author.id).matchingText(author, "cat")
         query.findList()
 
         // When
-        val plan =
-            database
-                .sqlQuery("explain query plan ${query.query().generatedSql}")
-                .setParameter(1, author.id.toString())
-                .setParameter(2, "%cat%")
-                .setParameter(3, "%cat%")
-                .findList()
-                .joinToString("\n") { "${it["detail"]}" }
+        val sql = query.query().generatedSql
+        val explain = database.sqlQuery("explain query plan $sql")
+        // The count and the order of the binds are the predicate's: bound from the statement's own
+        // placeholders, a clause added to it fails this case on the plan rather than on a mismatch.
+        for (position in 1..sql.count { character -> character == '?' }) explain.setParameter(position, "%cat%")
+        val plan = explain.findList().joinToString("\n") { "${it["detail"]}" }
 
         // Then: the pin table is scanned here by design, so the absence of SCAN would prove nothing
         assertTrue(plan.contains("SUBQUERY"), plan)

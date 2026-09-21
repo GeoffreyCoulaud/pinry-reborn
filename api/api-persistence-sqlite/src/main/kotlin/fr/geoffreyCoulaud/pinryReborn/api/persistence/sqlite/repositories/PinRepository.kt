@@ -191,7 +191,7 @@ class PinRepository(
             ModelPaginationHelper.getPage(
                 cursor = findCursorPivot(cursor),
                 pageSize = pageSize,
-                baseQuery = PinQueries.active().author.id.equalTo(reader.id).matchingText(query),
+                baseQuery = PinQueries.active().author.id.equalTo(reader.id).matchingText(reader, query),
                 sortStrategy = PinModelSortStrategy.fromDomain(sortStrategy),
             )
         return Page(
@@ -292,15 +292,15 @@ class PinRepository(
         // scaling risk (large boards mean a large IN clause).
         val pinIdsInBoard =
             QPinBoardModel().board.id.equalTo(boardId).findList().map { it.pin.id }
-        val boardQuery = PinQueries
-            .active()
-            .author.id.equalTo(reader.id)
-            .id.isIn(pinIdsInBoard)
         val modelPage =
             ModelPaginationHelper.getPage(
                 cursor = findCursorPivot(cursor),
                 pageSize = pageSize,
-                baseQuery = boardQuery.matchingText(query),
+                baseQuery = PinQueries
+                    .active()
+                    .author.id.equalTo(reader.id)
+                    .id.isIn(pinIdsInBoard)
+                    .matchingText(reader, query),
                 sortStrategy = PinModelSortStrategy.fromDomain(sortStrategy),
             )
         return Page(

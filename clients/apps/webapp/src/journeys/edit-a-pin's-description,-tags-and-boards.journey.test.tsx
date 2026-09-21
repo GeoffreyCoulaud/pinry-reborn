@@ -48,7 +48,7 @@ function account(
     http.get("/api/v1/pins/:pinId", () => HttpResponse.json(saved)),
     http.get("/api/v1/tags/search", ({ request }) => {
       record.queries.push(new URL(request.url).searchParams.get("q"))
-      return HttpResponse.json({ results: [{ tag: { name: "landscape" }, score: 1 }] })
+      return HttpResponse.json({ results: [{ tag: { name: "landscape" } }] })
     }),
     ...boardRoutes([EVENINGS]),
     downloadsRoute(),

@@ -322,6 +322,20 @@ class TagRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun `Given a limit of zero, Then findTagsForUserMatching serves nothing`() {
+        // Given: Ebean's setMaxRows reads zero as unbounded, so an unguarded limit would serve the lot
+        val user = createAndSaveUser()
+        saveTag("cat", user)
+        saveTag("bobcat", user)
+
+        // When
+        val found = matching(user, "cat", limit = 0)
+
+        // Then
+        assertTrue(found.isEmpty(), "$found")
+    }
+
+    @Test
     fun `Given another author's matching tag, Then findTagsForUserMatching leaves it out`() {
         // Given
         val user = createAndSaveUser()

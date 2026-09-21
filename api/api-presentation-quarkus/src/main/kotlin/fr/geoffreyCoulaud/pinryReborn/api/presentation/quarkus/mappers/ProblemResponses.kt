@@ -16,6 +16,9 @@ object ProblemResponses {
      */
     const val BATCH_BODY_REFUSED = "The body is missing, or its list of identifiers is empty"
 
+    /** What every route taking a `q` publishes for a term that is present and blank, the three reading as one. */
+    const val BLANK_QUERY_REFUSED = "The q parameter is present and blank"
+
     /** RFC 7807 challenge value: opaque bearer token, no realm. */
     const val WWW_AUTHENTICATE_BEARER = "Bearer"
 
