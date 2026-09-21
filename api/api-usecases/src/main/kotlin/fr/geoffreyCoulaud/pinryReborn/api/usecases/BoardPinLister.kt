@@ -25,7 +25,6 @@ class BoardPinLister(
         sort: PinSortStrategy,
         query: String? = null,
     ): Page<Pin> {
-        // An absent term is the whole board; a blank one is a caller that did not mean to search.
         if (query != null && query.isBlank()) throw SearchEmptyQueryError()
         boardGetter.getActiveBoardForUser(boardId = boardId, reader = reader)
         return pinRepository.findActivePinsForBoard(

@@ -145,7 +145,6 @@ class BoardController(
         @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
         @QueryParam("pageSize") pageSizeInput: Int? = null,
         @QueryParam("sort") sortInput: PinSortStrategyInputEnum? = null,
-        // No validation annotation, for the reason PinController.listPins states.
         @QueryParam("q") query: String? = null,
     ): RestResponse<PinListOutputDto> {
         val user = securityIdentity.getUser()

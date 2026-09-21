@@ -94,8 +94,6 @@ class PinController(
         @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
         @QueryParam("pageSize") pageSizeInput: Int? = null,
         @QueryParam("sort") sortInput: PinSortStrategyInputEnum? = null,
-        // No validation annotation says "absent, yes; blank, no", so the use case refuses a blank
-        // term with SEARCH_EMPTY_QUERY (docs/adr/0040, decision 3).
         @QueryParam("q") query: String? = null,
     ): RestResponse<PinListOutputDto> {
         val user = securityIdentity.getUser()
