@@ -32,7 +32,6 @@ class PinGetter(
         sort: PinSortStrategy,
         query: String? = null,
     ): Page<Pin> {
-        // An absent term is the whole catalogue; a blank one is a caller that did not mean to search.
         if (query != null && query.isBlank()) throw SearchEmptyQueryError()
         if (cursor != null) {
             // If a cursor is provided, check that it points to a user-readable pin

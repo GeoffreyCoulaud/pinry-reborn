@@ -132,6 +132,12 @@ parameters**, and so does `BoardPinLister.listActivePinsForBoard`: a sixth trips
 `LongParameterList` at `allowedFunctionParameters: 5`, with `ignoreDefaultParameters: false`, so
 three functions need an exception, which decision O grants and explains. No
 `@Suppress("LongParameterList")` exists anywhere under `api/*/src/main` today.
+(Corrected: false, and the pathspec is why. `api/*/src/main` matches no nested path, so the command
+that established the claim returned nothing on a tree that holds dozens of them.
+`git grep -n 'Suppress("LongParameterList")' -- api | command grep src/main | wc -l` prints 32 on
+`origin/main`, read on 2026-09-21 at commit `67f655c4`. The annotation is this repository's usual
+way of saying why a function is long, so decision O's three follow the house pattern rather than
+setting a precedent. Decision O itself is unchanged.)
 
 **A blank query earns 400 today through bean validation, not through the error the use case
 throws.** Both search controllers declare `@QueryParam("q") @NotBlank query: String?`
