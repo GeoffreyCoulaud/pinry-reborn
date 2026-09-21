@@ -14,7 +14,9 @@ export function AppHeader({ heading, children }: { heading?: string; children?: 
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-separator pb-3">
       <div className="flex flex-wrap items-baseline gap-2">
         <h1 className="text-2xl font-semibold">
-          <Link to="/">{m.app_name()}</Link>
+          <Link to="/" className="hover:underline">
+            {m.app_name()}
+          </Link>
         </h1>
         {heading !== undefined && (
           <>
