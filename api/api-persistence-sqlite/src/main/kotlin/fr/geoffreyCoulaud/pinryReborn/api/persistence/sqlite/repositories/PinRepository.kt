@@ -201,14 +201,6 @@ class PinRepository(
         )
     }
 
-    override fun findAllPinsForUser(user: User): List<Pin> =
-        PinQueries
-            .active()
-            .author.id
-            .equalTo(user.id)
-            .findList()
-            .map { it.toDomain(getTagsForPin(it.id), getBoardsForPin(it.id)) }
-
     override fun findAllPinIdsForUser(user: User): List<UUID> =
         PinQueries.any().author.id.equalTo(user.id).findList().map { it.id }
 

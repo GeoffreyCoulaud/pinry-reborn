@@ -149,11 +149,12 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         // When / Then
         given()
             .authenticatedAs(auth)
+            .queryParam("q", "landscape")
             .`when`()
-            .get("/api/v1/pins/search?q=landscape")
+            .get("/api/v1/pins")
             .then()
             .statusCode(200)
-            .body("results", emptyIterable<Any>())
+            .body("pins", emptyIterable<Any>())
     }
 
     @Test
