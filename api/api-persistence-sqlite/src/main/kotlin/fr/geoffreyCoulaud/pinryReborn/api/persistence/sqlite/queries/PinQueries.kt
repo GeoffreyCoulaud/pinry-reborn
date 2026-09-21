@@ -13,9 +13,7 @@ private const val PIN_ID_PATH = "pin.id"
 
 /**
  * Pins whose description or tag name contains [query]; a null [query] filters nothing. The tag half
- * is a subquery, and the junction is closed so the cursor's clauses do not join the disjunction.
- * The subquery is scoped to [reader] as well: the outer filter would discard the other accounts'
- * rows anyway, but only after the join had been scanned across every tenant on the instance.
+ * is a subquery scoped to [reader], and its junction is closed so the cursor's clauses stay outside it.
  */
 fun QPinModel.matchingText(reader: User, query: String?): QPinModel =
     if (query == null) {
