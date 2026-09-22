@@ -71,6 +71,35 @@ describe("open the account and sign out everywhere", () => {
     expect(renewalsWhenSigningIn).toBe(0)
   })
 
+  it("Given the API refusing to close them, Then the screen says so and stays", async () => {
+    server.use(
+      sessionRoute(() => true),
+      http.get("/api/v1/me", () => HttpResponse.json(ACCOUNT)),
+      http.delete("/api/v1/sessions", () => new HttpResponse(null, { status: 500 })),
+      downloadsRoute(),
+    )
+    renderApp("/account")
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole("button", { name: m.sign_out_everywhere() }))
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(m.sign_out_everywhere_refused())
+    expect(screen.getByRole("heading", { name: ACCOUNT.name })).toBeVisible()
+  })
+
+  it("Given an account the API cannot answer for, Then the screen says so", async () => {
+    server.use(
+      sessionRoute(() => true),
+      http.get("/api/v1/me", () => new HttpResponse(null, { status: 500 })),
+      downloadsRoute(),
+    )
+    renderApp("/account")
+
+    // Every other screen names a read it could not make; a plausible heading over a password form
+    // about to fail for the same reason is what this one showed instead.
+    expect(await screen.findByRole("alert")).toHaveTextContent(m.account_unreadable())
+  })
+
   it("Given no session, Then the account screen is the credentials screen", async () => {
     server.use(sessionRoute(() => false))
     renderApp("/account")

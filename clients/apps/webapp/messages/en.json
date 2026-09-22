@@ -4,6 +4,7 @@
   "account_danger": "Dangerous actions",
   "account_danger_note": "Each of these closes every session, this one included, and a deleted account does not come back.",
   "account_refused": "That could not be done. Try again in a moment.",
+  "account_unreadable": "This account could not be read. Try again in a moment.",
   "add_to_board": "Add to a board",
   "app_name": "Pinry Reborn",
   "board_deletion_refused": "That board could not be deleted.",

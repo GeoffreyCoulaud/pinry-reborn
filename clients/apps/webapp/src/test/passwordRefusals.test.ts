@@ -38,4 +38,11 @@ describe("the sentence a refused password write shows", () => {
   it("Given a refusal carrying no code at all, Then the user gets the general sentence", () => {
     expect(passwordRefusal(null)).toBe(m.account_refused())
   })
+
+  it("Given a code `Object.prototype` answers for, Then the user gets the general sentence", () => {
+    // The code is the server's own string and the one input here the bundle does not control.
+    // `constructor` reaches an object, which React throws on as a child, taking the screen down.
+    expect(passwordRefusal("constructor")).toBe(m.account_refused())
+    expect(passwordRefusal("toString")).toBe(m.account_refused())
+  })
 })

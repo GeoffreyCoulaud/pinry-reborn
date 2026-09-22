@@ -4,6 +4,7 @@
   "account_danger": "Actions dangereuses",
   "account_danger_note": "Chacune de ces actions ferme toutes les sessions, celle-ci comprise, et un compte supprimé ne revient pas.",
   "account_refused": "L’opération n’a pas pu aboutir. Réessayez dans un instant.",
+  "account_unreadable": "Ce compte n’a pas pu être lu. Réessayez dans un instant.",
   "add_to_board": "Ajouter à un tableau",
   "app_name": "Pinry Reborn",
   "board_deletion_refused": "Ce tableau n’a pas pu être supprimé.",

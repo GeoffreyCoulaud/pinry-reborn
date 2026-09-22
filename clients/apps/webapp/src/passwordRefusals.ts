@@ -19,5 +19,8 @@ const REFUSALS: Record<string, () => string> = {
  * which is nothing to tell the user about.
  */
 export function passwordRefusal(code: string | null): string {
-  return REFUSALS[code ?? ""]?.() ?? m.account_refused()
+  const key = code ?? ""
+  // `hasOwn` and not the lookup alone: the code is the server's string, and `constructor` would
+  // otherwise answer with an object, which React throws on as a child.
+  return (Object.hasOwn(REFUSALS, key) ? REFUSALS[key]?.() : undefined) ?? m.account_refused()
 }

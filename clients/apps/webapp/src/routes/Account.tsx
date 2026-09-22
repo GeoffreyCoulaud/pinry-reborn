@@ -1,7 +1,7 @@
 import { AlertDialog, Button, Input, Label, TextField, toast } from "@heroui/react"
 import { AppHeader } from "../components/AppHeader"
 import { AppNav } from "../components/AppNav"
-import { useChangePassword, useDeleteAccount, useMe } from "../me"
+import { AccountRefusal, useChangePassword, useDeleteAccount, useMe } from "../me"
 import { m } from "../paraglide/messages.js"
 import { passwordRefusal } from "../passwordRefusals"
 import { useSignOutEverywhere } from "../session"
@@ -23,19 +23,26 @@ function PasswordField({
   )
 }
 
-/** Why a write was refused, where the gesture that earned it happened. */
-function Refusal({ code }: { code: string | null }) {
-  return <p role="alert">{passwordRefusal(code)}</p>
+/**
+ * Why a write was refused, where the gesture that earned it happened. The error is narrowed here
+ * and not declared at the mutation: a fetch that never reached the API is not an `AccountRefusal`,
+ * and the general sentence is the right one for it, as `Boards.tsx` narrows its own.
+ */
+function Refusal({ error }: { error: Error }) {
+  return <p role="alert">{passwordRefusal(error instanceof AccountRefusal ? error.code : null)}</p>
 }
 
-/** The password, and with it the sessions the old one opened (decisions C and H). */
+/**
+ * The password, and with it the sessions the old one opened (specification 2026-09-22, decisions
+ * C and H).
+ */
 function PasswordForm() {
   const change = useChangePassword()
 
   return (
     <section className="flex flex-col gap-2">
       <h3 className="text-lg font-semibold">{m.change_password()}</h3>
-      {/* The consequence before the gesture, not after it (decision C). */}
+      {/* The consequence before the gesture, not after it (specification 2026-09-22, decision C). */}
       <p className="text-muted">{m.change_password_note()}</p>
       <form
         className="flex max-w-sm flex-col gap-3"
@@ -54,7 +61,7 @@ function PasswordForm() {
           autoComplete="current-password"
         />
         <PasswordField name="newPassword" label={m.new_password()} autoComplete="new-password" />
-        {change.error !== null && <Refusal code={change.error.code} />}
+        {change.error !== null && <Refusal error={change.error} />}
         <Button type="submit" className="self-start" isDisabled={change.isPending}>
           {m.change_password()}
         </Button>
@@ -66,8 +73,9 @@ function PasswordForm() {
 /**
  * The password again, in a dialog: it is the factor `X-Reauthentication` requires anyway, so the
  * friction is real rather than decorative, and a delete button never sits armed on an open screen
- * (decision B). The button is the trigger itself, `AlertDialog` being a `DialogTrigger`, which
- * presses its first child. Nothing closes the dialog on a refusal: the retry is inside it.
+ * (specification 2026-09-22, decision B). The button is the trigger itself, `AlertDialog` being a
+ * `DialogTrigger`, which presses its first child. Nothing closes the dialog on a refusal: the
+ * retry is inside it.
  */
 function DeleteAccount() {
   const remove = useDeleteAccount()
@@ -95,7 +103,7 @@ function DeleteAccount() {
                     label={m.password()}
                     autoComplete="current-password"
                   />
-                  {remove.error !== null && <Refusal code={remove.error.code} />}
+                  {remove.error !== null && <Refusal error={remove.error} />}
                 </AlertDialog.Body>
                 <AlertDialog.Footer>
                   <Button variant="ghost" onPress={close}>
@@ -129,6 +137,9 @@ export function Account() {
       <AppHeader heading={me.data?.name ?? m.account()}>
         <AppNav />
       </AppHeader>
+      {/* A read that failed is named, as every other screen names its own: a plausible heading
+          over a password form about to fail for the same reason says nothing. */}
+      {me.isError && <p role="alert">{m.account_unreadable()}</p>}
       <PasswordForm />
       <section className="flex flex-col items-start gap-2">
         <h3 className="text-lg font-semibold">{m.account_danger()}</h3>
