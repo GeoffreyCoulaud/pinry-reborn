@@ -51,14 +51,27 @@ the gain is the size of the noise. It is also a constant calibrated on twelve co
 - **A flake that appears after this is a state leak, not a flake.** The fix is the test that leaks,
   never a return to `isolate: true`.
 
+## The runner, which is where it was worth it
+
+Read with `gh run view <id> --log` on 2026-09-22. The suite's own reported duration, and the wall
+clock of the gate step that carries it:
+
+| Run | Suite | Step |
+|---|---|---|
+| `35656525990`, `main`, before | 96.90 s | 2 m 15 s |
+| `35704751098`, `main`, before | 88.61 s | 1 m 55 s |
+| `35714806870`, this branch | 24.02 s | 53.5 s |
+
+**The runner gained more than the workstation**, 73% against 42%, which is the shape of the defect
+rather than a surprise: the per-file environment was 37 spawns of about 869 ms, and a runner has
+too few cores to hide them behind each other. This is also where the 2 m 18 s of the backlog item
+went.
+
 ## What is not validated
 
-- **The runner's own figure.** The client gate took 2 m 18 s on GitHub; nothing here measures what
-  it becomes. The pull request's run is the first reading.
-- No holistic review and no specification review: tier Direct runs neither.
+No holistic review and no specification review: tier Direct runs neither.
 
 ## Next step
 
-Read the client gate's duration on the merge run. If the drop is far short of the processor time
-saved here, the runner is bound by something else and `maxWorkers` deserves a second look, this
-time measured where it runs.
+Nothing this leaves open. `maxWorkers` deserves a second look only if the client gate becomes the
+run's critical path again, and it would then be measured on the runner rather than here.
