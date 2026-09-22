@@ -1,5 +1,5 @@
 import { AlertDialog, Button, EmptyState, Spinner, Tabs, toast } from "@heroui/react"
-import { Navigate, useSearch } from "@tanstack/react-router"
+import { useSearch } from "@tanstack/react-router"
 import { BrushCleaning, Trash2, Undo2 } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { Collection, GridList, GridListItem, GridListLoadMoreItem } from "react-aria-components"
@@ -21,7 +21,6 @@ import {
   useRestoreBoards,
   useRestorePins,
 } from "../recycled"
-import { useSession } from "../session"
 
 /** `group` is what the row's own tick hangs its reveal on hover and on focus off. */
 const ROW =
@@ -225,14 +224,9 @@ function RecycledBoards() {
  */
 export function Recycled() {
   const { sort } = useSearch({ from: "/recycled" })
-  const session = useSession()
   const [tab, setTab] = useState("pins")
   const emptyPins = useEmptyPinBin()
   const emptyBoards = useEmptyBoardBin()
-
-  if (session.isPending) return null
-  if (session.isError) return <p role="alert">{m.session_unreadable()}</p>
-  if (!session.data) return <Navigate to="/sign-in" />
 
   const empty = tab === "pins" ? emptyPins : emptyBoards
 

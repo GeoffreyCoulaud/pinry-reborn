@@ -1,5 +1,7 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "account": "Compte",
+  "account_danger": "Actions dangereuses",
   "add_to_board": "Ajouter à un tableau",
   "app_name": "Pinry Reborn",
   "board_deletion_refused": "Ce tableau n’a pas pu être supprimé.",
@@ -91,6 +93,9 @@
   "sign_in": "Se connecter",
   "sign_in_refused": "Ce nom d’utilisateur et ce mot de passe n’ont pas fonctionné.",
   "sign_out": "Se déconnecter",
+  "sign_out_everywhere": "Fermer toutes les sessions",
+  "sign_out_everywhere_note": "Toutes les sessions sont fermées, celle-ci comprise. Vous devrez vous reconnecter.",
+  "sign_out_everywhere_refused": "Vos sessions n’ont pas pu être fermées. Réessayez dans un instant.",
   "sign_up": "Créer un compte",
   "sign_up_refused": "Ce compte n’a pas pu être créé.",
   "sort_created_at_asc": "Les plus anciennes d’abord",

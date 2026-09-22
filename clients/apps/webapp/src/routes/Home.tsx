@@ -1,4 +1,4 @@
-import { Navigate, useSearch } from "@tanstack/react-router"
+import { useSearch } from "@tanstack/react-router"
 import { Plus } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { AppHeader } from "../components/AppHeader"
@@ -14,11 +14,9 @@ import { dragDepth, type DragStep } from "../lib/drags"
 import type { DropPartition } from "../lib/drops"
 import { PIN_SORTS } from "../lib/sorts"
 import { m } from "../paraglide/messages.js"
-import { useSession } from "../session"
 
 export function Home() {
   const { sort, q } = useSearch({ from: "/" })
-  const session = useSession()
   const limits = useHandshake().data?.limits
   const [creating, setCreating] = useState(false)
   const [dropped, setDropped] = useState<DropPartition | null>(null)
@@ -82,12 +80,6 @@ export function Home() {
       setDepth(0)
     }
   }, [creating])
-
-  if (session.isPending) return null
-  // A session the API could not answer for is not an expired one, and only the second sends the
-  // user back to the credentials screen.
-  if (session.isError) return <p role="alert">{m.session_unreadable()}</p>
-  if (!session.data) return <Navigate to="/sign-in" />
 
   return (
     <>
