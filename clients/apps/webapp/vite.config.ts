@@ -22,6 +22,10 @@ export default defineConfig({
     // The slowest case measures 955 ms here and a GitHub runner is about ten times slower, so the
     // default 5000 ms sits under what is expected there (specification 2026-09-21, block 25).
     testTimeout: 15_000,
+    // One environment per worker rather than per file: `pnpm run test` goes 13.88 s to 8.03 s
+    // here, 120 s to 65 s of processor time, measured on 2026-09-22. No pool helps: `vitest
+    // doctor` measures `threads` at ±0% and both VM pools fail on MSW.
+    isolate: false,
     coverage: {
       provider: "v8",
       // The bound covers the pure functions and not the view, which jsdom renders

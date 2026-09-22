@@ -43,9 +43,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   and its mirror **partial export**; **merging metadata onto a pin that already exists**, which is
   the option the v1 "skip" rule forecloses; and **making a pin with no medium travel**, which needs
   the export to carry `ImageDownload` so a pending or failed download survives the round trip.
-- **The client suite spends more on starting than on testing**, and `vitest doctor` is what settles
-  which pool and isolation it should run under.
-  See `docs/specs/2026-09-21-the-header-searches-and-wears-the-name.md`, section 6. New 2026-09-21.
 
 ### P2: Operational debt
 
