@@ -36,7 +36,7 @@ function PasswordForm() {
     <section className="flex flex-col gap-2">
       <h3 className="text-lg font-semibold">{m.change_password()}</h3>
       {/* The consequence before the gesture, not after it (decision C). */}
-      <p className="text-muted">{m.session_ends_note()}</p>
+      <p className="text-muted">{m.change_password_note()}</p>
       <form
         className="flex max-w-sm flex-col gap-3"
         onSubmit={(event) => {
@@ -132,7 +132,8 @@ export function Account() {
       <PasswordForm />
       <section className="flex flex-col items-start gap-2">
         <h3 className="text-lg font-semibold">{m.account_danger()}</h3>
-        <p className="text-muted">{m.session_ends_note()}</p>
+        {/* One line for the section: both controls end the session, and one of them the account. */}
+        <p className="text-muted">{m.account_danger_note()}</p>
         <Button
           variant="danger"
           isDisabled={signOutEverywhere.isPending}
