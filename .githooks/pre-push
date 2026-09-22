@@ -8,14 +8,38 @@ set -e
 # (docs/adr/0030-the-gate-is-paid-where-it-can-fail.md decision 5,
 # docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md decision 8).
 sends_objects=""
+# And a branch whose every changed path against origin/main ends in .md runs prose alone, the same
+# reading validate.yml's `scope` step makes of the pull request this push opens (ADR 0030, decision
+# 1). Anything else clears it: a tag, main itself, an unresolvable base, a path git had to quote.
+prose_only=yes
 while read -r local_ref local_sha _rest; do
     case "$local_sha" in
         *[!0]*) ;;
         *) continue ;;
     esac
     case "$local_ref" in
-        refs/tags/*) git merge-base --is-ancestor "$local_sha" origin/main || sends_objects=yes ;;
-        *) sends_objects=yes ;;
+        refs/tags/*)
+            git merge-base --is-ancestor "$local_sha" origin/main && continue
+            sends_objects=yes
+            prose_only=""
+            ;;
+        refs/heads/main)
+            sends_objects=yes
+            prose_only=""
+            ;;
+        *)
+            sends_objects=yes
+            base=$(git merge-base origin/main "$local_sha") || { prose_only=""; continue; }
+            # A here-document, the paths of this repository carrying spaces.
+            while IFS= read -r path; do
+                case "$path" in
+                    *.md) ;;
+                    *) prose_only="" ;;
+                esac
+            done <<EOF
+$(git diff --name-only "$base" "$local_sha")
+EOF
+            ;;
     esac
 done
 
@@ -30,6 +54,11 @@ if ! git diff HEAD --quiet; then
     echo "pre-push: working tree differs from HEAD (uncommitted changes)." >&2
     echo "Commit or stash first; the gate validates HEAD only on a clean tree." >&2
     exit 1
+fi
+
+if [ -n "$prose_only" ]; then
+    echo "pre-push: every changed path against origin/main is a markdown file. Prose alone."
+    exec dagger call prose
 fi
 
 exec dagger call gate

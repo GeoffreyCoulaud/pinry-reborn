@@ -73,6 +73,9 @@ because each can carry no defect the gate would catch: a pull request whose ever
 `dagger call prose` in its place, restores no engine state and builds no image; a push that only deletes a reference
 sends no object and runs nothing at all; and a push whose every reference is a tag on a commit `origin/main` already
 contains runs nothing either. One path not ending in `.md`, or one branch in the push, and the full gate is back.
+**`pre-push` makes the same reading of the push it carries**, diffing each branch against its merge base with
+`origin/main`, so a documentation branch waits on `dagger call prose` rather than on the whole gate. A tag, `main`
+itself and a base git cannot resolve each put the full gate back, the hook reading paths and never a branch name.
 
 ## The images
 
