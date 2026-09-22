@@ -28,6 +28,8 @@ export const REQUIRED_JOURNEYS = [
   "search from the header",
   "search inside a board and widen it",
   "open the account and sign out everywhere",
+  "change the password",
+  "delete the account",
 ]
 
 /** The file under `src/journeys/` that holds a journey's test. */
