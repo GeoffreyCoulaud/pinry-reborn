@@ -35,6 +35,12 @@ export interface Auth {
   signIn(credentials: Credentials, rememberMe?: boolean): Promise<Session>
   signOut(): Promise<void>
   /**
+   * Stops believing in the session, and calls nothing: the API has already revoked it. Left out
+   * after such a write, the middleware below spends a renewal on the next request
+   * (specification 2026-09-22, decision E).
+   */
+  forget(): void
+  /**
    * The session the request already carries, or null when the API answers `401`. Any other
    * refusal throws: a deployment that is briefly unreachable has not ended the session.
    */
@@ -88,8 +94,14 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
     return adopt(data)
   }
 
+  function forget() {
+    token = undefined
+    renewAfter = undefined
+  }
+
   return {
     client,
+    forget,
     async signUp(credentials, rememberMe = false) {
       const { data, response } = await client.POST("/api/v1/users", { body: credentials })
       if (data === undefined) throw new Error(`The API refused the account: ${response.status}.`)

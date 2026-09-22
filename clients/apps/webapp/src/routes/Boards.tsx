@@ -1,5 +1,5 @@
 import { Button, EmptyState, Input, Label, Modal, Spinner, TextField, toast } from "@heroui/react"
-import { Link, Navigate } from "@tanstack/react-router"
+import { Link } from "@tanstack/react-router"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { GridList, GridListItem } from "react-aria-components"
@@ -8,7 +8,6 @@ import { AppHeader } from "../components/AppHeader"
 import { AppNav } from "../components/AppNav"
 import { IconButton } from "../components/IconButton"
 import { m } from "../paraglide/messages.js"
-import { useSession } from "../session"
 
 /** What the dialog is open on: a board being renamed, or a board that does not exist yet. */
 type Edited = Board | "new" | null
@@ -150,12 +149,7 @@ function BoardList({ rename }: { rename: (board: Board) => void }) {
 }
 
 export function Boards() {
-  const session = useSession()
   const [edited, setEdited] = useState<Edited>(null)
-
-  if (session.isPending) return null
-  if (session.isError) return <p role="alert">{m.session_unreadable()}</p>
-  if (!session.data) return <Navigate to="/sign-in" />
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">

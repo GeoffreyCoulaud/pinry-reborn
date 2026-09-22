@@ -37,3 +37,27 @@ export function useSignOut() {
     onSuccess: () => queryClient.setQueryData(SESSION_KEY, null),
   })
 }
+
+/**
+ * What the writes the API revokes a session inside of leave to do: stop believing in one. No
+ * cookie is cleared here, only `DELETE /api/v1/sessions` clearing `pinry_session`
+ * (specification 2026-09-22, decision C).
+ */
+export function useEndSession() {
+  const queryClient = useQueryClient()
+  return () => {
+    auth.forget()
+    queryClient.setQueryData(SESSION_KEY, null)
+  }
+}
+
+export function useSignOutEverywhere() {
+  const endSession = useEndSession()
+  return useMutation({
+    mutationFn: async () => {
+      const { response } = await auth.client.DELETE("/api/v1/sessions")
+      if (!response.ok) throw new Error(`The API kept the sessions: ${response.status}.`)
+    },
+    onSuccess: endSession,
+  })
+}
