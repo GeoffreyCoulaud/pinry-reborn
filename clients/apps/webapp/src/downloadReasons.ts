@@ -26,5 +26,8 @@ export function downloadReason(
   reasonCode: string | null | undefined,
   message: string | null | undefined,
 ): string | null {
-  return REASONS[reasonCode ?? ""]?.() ?? message ?? null
+  const key = reasonCode ?? ""
+  // `hasOwn` and not the lookup alone: the code is the server's string, and `Object.prototype`
+  // would otherwise answer for a dozen names this table never wrote.
+  return (Object.hasOwn(REASONS, key) ? REASONS[key]?.() : undefined) ?? message ?? null
 }

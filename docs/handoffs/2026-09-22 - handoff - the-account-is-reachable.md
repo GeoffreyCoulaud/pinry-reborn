@@ -3,11 +3,12 @@
 Date: 2026-09-22
 Specification: `docs/specs/2026-09-22-the-account-is-reachable.md`
 ADRs: none. Every decision is the web application's own and lives in the specification.
-Blocks: 10 `feat/the-account-screen` (#193), 20 `feat/the-password-and-the-account-go` (#194).
-Written in block 20, the lot's last code block.
+Blocks: 10 `feat/the-account-screen` (#193), 20 `feat/the-password-and-the-account-go` (#194),
+and the closing block `fix/the-holistic-findings`.
+Written in block 20, the lot's last code block, and corrected in the closing one.
 Tier: Spec. The specification review ran before a line was written: 0 CRITICAL, 6 MAJOR,
-12 MINOR, all closed in the document. The holistic review runs at the head of Wrap, this lot
-holding two blocks, and the closing block corrects this document with what it found.
+12 MINOR, all closed in the document. The holistic review ran at the head of Wrap: 0 CRITICAL,
+2 MAJOR, 8 MINOR, and the section below names each finding with the exit it took.
 
 ## Current state
 
@@ -20,12 +21,14 @@ Four routes the API served and the bundle never called are now called.
   what its controls cost. On `204` or `202` the application calls `auth.forget()` and puts `null`
   in the session query; the route guard then lands the user on `/sign-in`. No cookie is cleared:
   only `DELETE /api/v1/sessions` clears `pinry_session`, and after the two `/me` writes the cookie
-  survives and is dead.
+  survives and is dead. **Every query but the session goes with it**, the ordinary sign out
+  included: the client outlives the credentials screen, and an inactive query is kept five minutes.
 - **`packages/auth` gained `forget()`**, which clears `token` and `renewAfter` and calls nothing.
   Without it the package keeps a `renewAfter` in the past and its middleware spends a refused
   renewal on the credentials screen's first request.
 - **The session guard is `guarded` in `router.tsx`**, wrapping a screen at its route declaration.
-  The four route bodies lost three statements each; `src/test/guards.test.ts` holds it.
+  The four route bodies lost three statements each; `src/test/guards.test.ts` holds it, by the
+  redirect written once and by the count of wrapped declarations. The redirect replaces.
 - **A refusal is read by its `code`, never its status.** `src/lib/refusals.ts` pulls the code out
   of the problem body openapi-fetch parsed, and `src/passwordRefusals.ts` gives five of the six
   codes a sentence of their own. `PASSWORD_CHANGED_TOO_SOON` and
@@ -40,6 +43,25 @@ Four routes the API served and the bundle never called are now called.
 
 Closes the account-management half of the `Features` item "What the API serves and the web
 application does not reach yet", rewritten in block 20's pull request. Import and export stay.
+
+## The holistic review's findings
+
+Eleven, and the exit each one took: ten fixed in the closing block, one the backlog's. The report's
+own count line reads "2 MAJOR, 8 MINOR" and its body carries nine MINOR; nothing was dropped.
+
+| Finding | Exit |
+|---|---|
+| MAJOR `session.ts`: ending a session left every other query in the cache, so the next account signed in on this browser was painted the previous one's | Fixed. `useEndSession` removes every query but the session, and `useSignOut` goes through it. A case in `sign-out.journey.test.tsx` holds the second account's own page back and reads what the grid paints in that window |
+| MAJOR `guards.test.ts`: three of the five guarded routes would lose their guard with the suite green | Fixed. The file counts `component: guarded(` against the declarations, less the two credentials routes |
+| MINOR `passwordRefusals.ts`: an inherited prototype key answers the lookup, and `constructor` takes the screen down | Fixed in both that file and `downloadReasons.ts`, the precedent it copied, with a test each |
+| MINOR `me.ts`: the mutations declared an error type they cannot guarantee | Fixed. Both generics dropped, and `Refusal` narrows on `AccountRefusal` as `Boards.tsx` narrows its own |
+| MINOR `Account.tsx`: a failed read of the account was silent | Fixed. `me.isError` renders the alert its sibling screens do, `account_unreadable` in both catalogues |
+| MINOR `Account.tsx`: the refused revocation's toast was the lot's one error path no test reached | Fixed. A case in the account journey answers `DELETE /api/v1/sessions` with a 500 |
+| MINOR `router.tsx`: the redirect pushed, so Back never left the credentials screen | Fixed. `<Navigate to="/sign-in" replace />` |
+| MINOR `clients/AGENTS.md`: the `lib/` norm read absolute against `btoa` and `TextEncoder` | Fixed. The row names what the norm is about: no I/O and no ambient present, a deterministic global allowed |
+| MINOR the specification's decision C described a screen that was built and then changed | Fixed. A `(Corrected: …)` clause on that decision |
+| MINOR `Account.tsx`: three comments cited a decision letter with no document | Fixed. The full form in all three |
+| MINOR the contract declares none of the refusal codes and statuses the client reads | The backlog, P1. It is API work this lot does not touch, and section 7 says so with its observable |
 
 ## Pitfalls
 
@@ -59,6 +81,10 @@ application does not reach yet", rewritten in block 20's pull request. Import an
 - **The refusal sentences are tested where they live.** `passwordRefusals.ts` sits at `src/` and
   not `src/lib/`, importing the message catalogue as `downloadReasons.ts` does, so its table has a
   test in `src/test/` rather than coverage from the bound.
+- **`queryClient.clear()` on the way out takes the redirect with it.** A removed query leaves its
+  observer watching a destroyed one, so the guard never re-renders and the user stays on the screen
+  they just left; all four session-ending journeys went red on it. The session query is written
+  first and everything else removed around it.
 - **Two controls in one section want one sentence, not the same one twice.** The first reading of
   the built screen showed the same line under the password form and under the dangerous section.
   A green gate cannot see that.
@@ -73,8 +99,8 @@ application does not reach yet", rewritten in block 20's pull request. Import an
   reads codes for are not in it.
 - **`Retry-After` is dropped deliberately.** Both 429s carry one and neither sentence names a
   wait.
-- **The holistic review has not run**, this document being written in the last code block. The
-  closing block records its findings here.
+- **The holistic review ran and its findings are closed**, the table above naming each exit. What
+  it named and nobody fixed is the contract's silence, which is the backlog's and not this lot's.
 
 ## Next step
 

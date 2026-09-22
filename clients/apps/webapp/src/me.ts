@@ -8,7 +8,8 @@ import { useEndSession } from "./session"
 /**
  * A write the API refused, carrying the `code` of the problem body it answered with. The screen
  * turns that into a sentence; the status is not enough, two refusals sharing a 429
- * (specification 2026-09-22, decision D).
+ * (specification 2026-09-22, decision D). The mutations below declare no error type: a fetch that
+ * never reached the API rejects with a `TypeError`, and a generic would promise otherwise.
  */
 export class AccountRefusal extends Error {
   readonly code: string | null
@@ -36,8 +37,8 @@ export function useMe() {
  */
 export function useChangePassword() {
   const endSession = useEndSession()
-  return useMutation<void, AccountRefusal, Schemas["PasswordChangeInputDto"]>({
-    mutationFn: async (body) => {
+  return useMutation({
+    mutationFn: async (body: Schemas["PasswordChangeInputDto"]) => {
       // `response.ok` and never `data`: a 204 leaves it undefined whatever the write did.
       const { error, response } = await auth.client.PUT("/api/v1/me/password", { body })
       if (!response.ok) throw new AccountRefusal(error, response.status)
@@ -49,8 +50,8 @@ export function useChangePassword() {
 /** The account, on the password the dialog asked for: the factor `X-Reauthentication` requires. */
 export function useDeleteAccount() {
   const endSession = useEndSession()
-  return useMutation<void, AccountRefusal, string>({
-    mutationFn: async (password) => {
+  return useMutation({
+    mutationFn: async (password: string) => {
       const { error, response } = await auth.client.DELETE("/api/v1/me", {
         params: { header: { "X-Reauthentication": passwordFactor(password) } },
       })

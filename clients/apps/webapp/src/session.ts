@@ -31,23 +31,28 @@ export function useSignUp(): OpenSessionMutation {
 }
 
 export function useSignOut() {
-  const queryClient = useQueryClient()
+  const endSession = useEndSession()
   return useMutation({
     mutationFn: () => auth.signOut(),
-    onSuccess: () => queryClient.setQueryData(SESSION_KEY, null),
+    onSuccess: endSession,
   })
 }
 
 /**
- * What the writes the API revokes a session inside of leave to do: stop believing in one. No
- * cookie is cleared here, only `DELETE /api/v1/sessions` clearing `pinry_session`
- * (specification 2026-09-22, decision C).
+ * Every way a session ends, ordinary sign out included. No cookie is cleared here, only
+ * `DELETE /api/v1/sessions` clearing `pinry_session` (specification 2026-09-22, decision C).
  */
 export function useEndSession() {
   const queryClient = useQueryClient()
   return () => {
     auth.forget()
     queryClient.setQueryData(SESSION_KEY, null)
+    // Everything else goes: the client outlives the credentials screen, and an inactive query is
+    // kept five minutes, so the next account signing in on this browser is painted the previous
+    // one's pins and name until its own requests land. The session is what the guard then reads,
+    // and `clear()` would take it with the rest: a removed query leaves its observer watching a
+    // destroyed one, so nothing re-renders and no redirect happens.
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== SESSION_KEY[0] })
   }
 }
 

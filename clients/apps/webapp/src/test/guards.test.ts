@@ -26,4 +26,13 @@ describe("the session guard", () => {
 
     expect(written).toBe(1)
   })
+
+  it("Given the router, Then every route but the two credentials ones is wrapped", () => {
+    const source = Object.values(router).join("")
+    const occurrences = (needle: string) => source.split(needle).length - 1
+
+    // The redirect lives inside `guarded`, so dropping the wrapper from a declaration leaves both
+    // assertions above green and the screen open to a visitor. This is what counts the call sites.
+    expect(occurrences("component: guarded(")).toBe(occurrences("createRoute(") - 2)
+  })
 })

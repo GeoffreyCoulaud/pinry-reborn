@@ -92,7 +92,10 @@ what keeps a delete button from sitting armed on an open screen. Retyping the ac
 refused: one more field, and a copy and paste crosses it.
 
 **C. The three writes end the session, and the screen says so before and acts on it after.** A line
-under each control states that it closes every session, this one included. On `204` or `202` the
+~~under each control~~ under each section states that it closes every session, this one included.
+(Corrected: one line per section on 2026-09-22. The dangerous section holds two controls, and the
+same sentence under both read as a duplicate; found by reading the built screen, which the gate
+cannot do. Commit `3a014f23`.) On `204` or `202` the
 application clears the session and lands on `/sign-in`. Reopening a session behind the user's back
 with the new password was refused: it keeps a credential in memory to replay a sign-in.
 
