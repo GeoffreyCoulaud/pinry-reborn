@@ -99,9 +99,9 @@ Dated events. No session starts these early.
 
 ## Features
 
-- **What the API serves and the web application does not reach yet**: account management, import
-  and export. Everything else this item asked for is built.
-  See `docs/specs/2026-09-20-the-pin-is-editable-and-the-boards-arrive.md`, sections 6 and 7.
+- **What the API serves and the web application does not reach yet**: import and export, which is a
+  machine with states and a resumable upload. Account management is built.
+  See `docs/specs/2026-09-22-the-account-is-reachable.md`, section 6.
 - **Search matches by substring and tolerates no typo**, similarity matching having left the
   product; restoring it wants an engine that can index for it, which is a standalone Postgres.
   See `docs/specs/2026-09-21-the-header-searches-and-wears-the-name.md`, decision G and section 6.
