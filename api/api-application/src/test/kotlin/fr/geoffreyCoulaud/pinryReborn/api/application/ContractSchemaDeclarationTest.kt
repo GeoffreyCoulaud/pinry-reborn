@@ -139,6 +139,24 @@ class ContractSchemaDeclarationTest {
     }
 
     @Test
+    fun `Given the published contract, Then every declared refusal carries its codes`() {
+        // Given
+        val declared = declaredRefusalCodes()
+
+        // When
+        val codeless = declared.filterValues { it.isEmpty() }.keys
+
+        // Then
+        assertEquals(
+            emptySet<String>(),
+            codeless,
+            "A refusal the contract declares carries a ProblemDetail and the enum of its codes " +
+                "(docs/adr/0042-the-presentation-owns-the-refusal-codes.md). Regenerate after " +
+                "declaring them: $regenerate",
+        )
+    }
+
+    @Test
     fun `Given the published contract, Then every protected operation's 401 is the shared one`() {
         // Given
         val shared = "#/components/responses/${SharedRefusalsFilter.UNAUTHENTICATED}"
