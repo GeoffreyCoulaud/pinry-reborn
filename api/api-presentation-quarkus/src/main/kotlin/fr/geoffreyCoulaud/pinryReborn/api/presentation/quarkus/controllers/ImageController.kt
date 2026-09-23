@@ -86,7 +86,7 @@ class ImageController(
             ),
         ],
     )
-    fun setImage(pinId: UUID, @RestForm("file") file: FileUpload): RestResponse<ImageOutputDto> {
+    fun setImage(pinId: UUID, @RestForm("file") @NotNull file: FileUpload): RestResponse<ImageOutputDto> {
         val requester = securityIdentity.getUser()
         val result = Files.newInputStream(file.uploadedFile()).use { upload ->
             setPinImage.set(
