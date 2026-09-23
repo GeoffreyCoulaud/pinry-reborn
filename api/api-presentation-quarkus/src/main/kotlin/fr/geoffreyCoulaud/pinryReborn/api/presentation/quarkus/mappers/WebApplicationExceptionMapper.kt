@@ -24,7 +24,7 @@ class WebApplicationExceptionMapper : ExceptionMapper<WebApplicationException> {
         val named = Response.Status.fromStatusCode(status)
         val title = if (named == null) "HTTP $status" else named.reasonPhrase
         return ProblemResponses
-            .problemResponse(status, title, exception.message, FrameworkErrorCode.HTTP_ERROR.name, uriInfo)
+            .problemResponse(status, title, exception.message, ProblemCode.HTTP_ERROR, uriInfo)
             .build()
     }
 }

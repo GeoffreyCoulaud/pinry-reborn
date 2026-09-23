@@ -127,9 +127,11 @@ how Ebean's migration generation was caught; the artefact is the only place that
 - **Error format**: RFC 7807 Problem Details as `application/problem+json`
   (`dtos/output/ProblemDetail.kt`: `type`, `title`, `status`, `detail`, `instance`, plus a `code`
   extension). Every payload built through `mappers/ProblemResponses.kt`.
-- **Status codes** come from these tables: `BaseErrorMapper.statusFor`, a `when` over `ErrorCode` with no `else`, for
-  what a use case refuses; `FrameworkErrorCode` and its mapper family (`mappers/*Mapper.kt`, `docs/adr/0021`) for
-  what the framework refuses before one runs. Convention: 400 malformed request, 422 well-formed but refused on its
+- **The wire's codes are `mappers/ProblemCode.kt`**, never `ErrorCode`, which stays inside
+  (`docs/adr/0042-the-presentation-owns-the-refusal-codes.md`).
+- **Status codes** come from the mappers: `BaseErrorMapper.problemFor`, a `when` over `ErrorCode` with no `else`
+  giving each its `ProblemCode` and status, for what a use case refuses; the mapper family (`mappers/*Mapper.kt`,
+  `docs/adr/0021`) for what the framework refuses before one runs. Convention: 400 malformed request, 422 well-formed but refused on its
   merits, 401 unauthenticated, 403 forbidden, 409 state conflict, 404 absent, 410 expired, 413 oversize upload, 429
   rate limit.
 - **Authentication**: opaque session tokens, issued by `POST /api/v1/sessions` and validated by

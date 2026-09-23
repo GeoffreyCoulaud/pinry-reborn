@@ -17,7 +17,7 @@ class NotAllowedExceptionMapper : ExceptionMapper<NotAllowedException> {
         ProblemResponses.problemResponse(
             Response.Status.METHOD_NOT_ALLOWED,
             "The path is served, not with this method",
-            FrameworkErrorCode.METHOD_NOT_ALLOWED.name,
+            ProblemCode.METHOD_NOT_ALLOWED,
             uriInfo,
         ).build()
 }

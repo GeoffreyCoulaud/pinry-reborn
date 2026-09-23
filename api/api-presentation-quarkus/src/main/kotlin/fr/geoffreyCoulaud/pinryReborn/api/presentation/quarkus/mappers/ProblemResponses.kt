@@ -25,7 +25,7 @@ object ProblemResponses {
     fun problemResponse(
         status: Response.Status,
         detail: String?,
-        code: String,
+        code: ProblemCode,
         uriInfo: UriInfo,
     ): Response.ResponseBuilder = problemResponse(status.statusCode, status.reasonPhrase, detail, code, uriInfo)
 
@@ -35,7 +35,7 @@ object ProblemResponses {
         status: Int,
         title: String,
         detail: String?,
-        code: String,
+        code: ProblemCode,
         uriInfo: UriInfo,
         currentLength: Long? = null,
     ): Response.ResponseBuilder =
@@ -47,7 +47,7 @@ object ProblemResponses {
                     status = status,
                     detail = detail,
                     instance = uriInfo.path,
-                    code = code,
+                    code = code.name,
                     currentLength = currentLength,
                 ),
             )
@@ -58,7 +58,7 @@ object ProblemResponses {
         problemResponse(
             status = Response.Status.BAD_REQUEST,
             detail = malformedBodyDetail(exception),
-            code = FrameworkErrorCode.MALFORMED_BODY.name,
+            code = ProblemCode.MALFORMED_BODY,
             uriInfo = uriInfo,
         )
 
@@ -67,7 +67,7 @@ object ProblemResponses {
         problemResponse(
             status = Response.Status.INTERNAL_SERVER_ERROR,
             detail = null,
-            code = FrameworkErrorCode.INTERNAL_ERROR.name,
+            code = ProblemCode.INTERNAL_ERROR,
             uriInfo = uriInfo,
         )
 

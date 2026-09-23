@@ -16,7 +16,7 @@ class ConstraintViolationExceptionMapper : ExceptionMapper<ConstraintViolationEx
         val detail = exception.constraintViolations
             .joinToString(separator = "; ") { "${it.propertyPath}: ${it.message}" }
         return ProblemResponses
-            .problemResponse(Response.Status.BAD_REQUEST, detail, FrameworkErrorCode.VALIDATION_ERROR.name, uriInfo)
+            .problemResponse(Response.Status.BAD_REQUEST, detail, ProblemCode.VALIDATION_ERROR, uriInfo)
             .build()
     }
 }

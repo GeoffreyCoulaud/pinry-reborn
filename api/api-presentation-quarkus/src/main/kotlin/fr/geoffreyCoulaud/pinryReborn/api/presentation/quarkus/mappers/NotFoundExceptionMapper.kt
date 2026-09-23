@@ -18,7 +18,7 @@ class NotFoundExceptionMapper : ExceptionMapper<NotFoundException> {
         val detail =
             if (exception.cause == null) "No resource serves this path" else "A path or query value could not be read"
         return ProblemResponses
-            .problemResponse(Response.Status.NOT_FOUND, detail, FrameworkErrorCode.UNKNOWN_ROUTE.name, uriInfo)
+            .problemResponse(Response.Status.NOT_FOUND, detail, ProblemCode.UNKNOWN_ROUTE, uriInfo)
             .build()
     }
 }
