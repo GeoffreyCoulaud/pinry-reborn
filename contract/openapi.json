@@ -1052,6 +1052,91 @@
             }
           }
         }
+      },
+      "PinInBodyNotFound" : {
+        "description" : "A pin the body names does not exist",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "PIN_DOES_NOT_EXIST" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "PinNotRecycled" : {
+        "description" : "The pin is not in the recycle bin",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "PIN_NOT_SOFT_DELETED" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "BoardForbidden" : {
+        "description" : "A board the request names belongs to another account",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "BOARD_INSUFFICIENT_PERMISSIONS" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "BoardNotFound" : {
+        "description" : "The board does not exist, or a path value could not be read",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "BOARD_DOES_NOT_EXIST", "UNKNOWN_ROUTE" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "BoardNotRecycled" : {
+        "description" : "The board is not in the recycle bin",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "BOARD_NOT_SOFT_DELETED" ]
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -1202,20 +1287,36 @@
             "description" : "Boards restored"
           },
           "400" : {
-            "description" : "The body is missing, or its list of identifiers is empty",
+            "$ref" : "#/components/responses/InvalidBatchBody"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/BoardForbidden"
+          },
+          "404" : {
+            "description" : "A board the body names does not exist",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "BOARD_DOES_NOT_EXIST" ]
+                    }
+                  }
                 }
               }
             }
           },
+          "409" : {
+            "$ref" : "#/components/responses/BoardNotRecycled"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "tags" : [ "Board Recycle Bin Controller" ],
@@ -1240,11 +1341,17 @@
           "204" : {
             "description" : "No Content"
           },
+          "403" : {
+            "$ref" : "#/components/responses/BoardForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/BoardNotFound"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/BoardNotRecycled"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Permanently Delete Board",
@@ -1277,11 +1384,17 @@
               }
             }
           },
+          "403" : {
+            "$ref" : "#/components/responses/BoardForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/BoardNotFound"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/BoardNotRecycled"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Restore Board",
@@ -2633,21 +2746,7 @@
             "$ref" : "#/components/responses/PinForbidden"
           },
           "404" : {
-            "description" : "A pin the body names does not exist",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "allOf" : [ {
-                    "$ref" : "#/components/schemas/ProblemDetail"
-                  } ],
-                  "properties" : {
-                    "code" : {
-                      "enum" : [ "PIN_DOES_NOT_EXIST" ]
-                    }
-                  }
-                }
-              }
-            }
+            "$ref" : "#/components/responses/PinInBodyNotFound"
           },
           "409" : {
             "$ref" : "#/components/responses/PinAlreadyRecycled"
@@ -2818,11 +2917,14 @@
               }
             }
           },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/PinNotFound"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "List Recycled Pins",
@@ -2872,20 +2974,22 @@
             "description" : "Pins restored"
           },
           "400" : {
-            "description" : "The body is missing, or its list of identifiers is empty",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/InvalidBatchBody"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/PinInBodyNotFound"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/PinNotRecycled"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "tags" : [ "Pin Recycle Bin Controller" ],
@@ -2910,11 +3014,17 @@
           "204" : {
             "description" : "No Content"
           },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/PinNotFound"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/PinNotRecycled"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Permanently Delete Pin",
@@ -2947,11 +3057,17 @@
               }
             }
           },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/PinNotFound"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/PinNotRecycled"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Restore Pin",
@@ -3617,7 +3733,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "12.0.0"
+    "version" : "13.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

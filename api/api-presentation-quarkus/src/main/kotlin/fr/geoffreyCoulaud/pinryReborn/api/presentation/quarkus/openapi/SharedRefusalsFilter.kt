@@ -43,6 +43,11 @@ class SharedRefusalsFilter : OASFilter {
         const val PIN_FORBIDDEN = "PinForbidden"
         const val PIN_NOT_FOUND = "PinNotFound"
         const val PIN_ALREADY_RECYCLED = "PinAlreadyRecycled"
+        const val PIN_IN_BODY_NOT_FOUND = "PinInBodyNotFound"
+        const val PIN_NOT_RECYCLED = "PinNotRecycled"
+        const val BOARD_FORBIDDEN = "BoardForbidden"
+        const val BOARD_NOT_FOUND = "BoardNotFound"
+        const val BOARD_NOT_RECYCLED = "BoardNotRecycled"
 
         private val SHARED = mapOf(
             UNAUTHENTICATED to refusal(
@@ -94,6 +99,27 @@ class SharedRefusalsFilter : OASFilter {
             PIN_ALREADY_RECYCLED to refusal(
                 "The pin is in the recycle bin",
                 ProblemCode.PIN_ALREADY_SOFT_DELETED,
+            ),
+            PIN_IN_BODY_NOT_FOUND to refusal(
+                "A pin the body names does not exist",
+                ProblemCode.PIN_DOES_NOT_EXIST,
+            ),
+            PIN_NOT_RECYCLED to refusal(
+                "The pin is not in the recycle bin",
+                ProblemCode.PIN_NOT_SOFT_DELETED,
+            ),
+            BOARD_FORBIDDEN to refusal(
+                "A board the request names belongs to another account",
+                ProblemCode.BOARD_INSUFFICIENT_PERMISSIONS,
+            ),
+            BOARD_NOT_FOUND to refusal(
+                "The board does not exist, or a path value could not be read",
+                ProblemCode.BOARD_DOES_NOT_EXIST,
+                ProblemCode.UNKNOWN_ROUTE,
+            ),
+            BOARD_NOT_RECYCLED to refusal(
+                "The board is not in the recycle bin",
+                ProblemCode.BOARD_NOT_SOFT_DELETED,
             ),
         )
 

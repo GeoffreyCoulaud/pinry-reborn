@@ -148,9 +148,7 @@ class PinController(
     @APIResponse(responseCode = "204", description = "Pins recycled")
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BATCH_BODY)
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
-    @APIResponse(responseCode = "404", description = "A pin the body names does not exist",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["PIN_DOES_NOT_EXIST"])]))])
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_IN_BODY_NOT_FOUND)
     @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.PIN_ALREADY_RECYCLED)
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun softDeletePins(@Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
