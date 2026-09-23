@@ -11,14 +11,17 @@ export type Credentials = components["schemas"]["UserInputDto"]
  */
 export type Schemas = components["schemas"]
 
-/** Every `code` the contract declares one operation's refusals can carry, shared entries included. */
+/**
+ * Every `code` the contract declares one operation's refusals can carry, shared entries included. A
+ * refusal declaring no enum adds nothing rather than widening the union to `string`.
+ */
 export type RefusalCode<Path extends keyof paths, Method extends keyof paths[Path]> =
   paths[Path][Method] extends { responses: infer Responses }
     ? {
         [Status in keyof Responses]: Responses[Status] extends {
           content: { "application/problem+json": { code?: infer Code } }
         }
-          ? Code
+          ? Code extends string ? (string extends Code ? never : Code) : never
           : never
       }[keyof Responses]
     : never
