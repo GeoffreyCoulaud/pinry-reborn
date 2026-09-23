@@ -61,7 +61,7 @@ class MeController(
     @Authenticated
     @APIResponse(responseCode = "202", description = "Account deletion accepted")
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.UNSUPPORTED_REAUTHENTICATION_FACTOR)
-    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.REAUTHENTICATION_FAILED)
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.REAUTHENTICATION_HEADER_FAILED)
     @APIResponse(responseCode = "429", ref = SharedRefusalsFilter.TOO_MANY_AUTHENTICATION_ATTEMPTS)
     fun deleteAccount(@HeaderParam(ReauthenticationHeader.HEADER) reauthHeader: String?): RestResponse<Void> {
         val factor = ReauthenticationHeader.parsePasswordFactor(reauthHeader)
