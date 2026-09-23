@@ -39,5 +39,7 @@ anywhere would raise the contract's major, on routes whose behaviour did not cha
 - **Each refusal has three names**: its exception class, its `ErrorCode` constant, and the wire's
   `ProblemCode`. Removing `ErrorCode` for a sealed `BaseError` hierarchy was weighed and left for
   later: it touches every exception class for no gain at the boundary.
-- **A new route declares its refusals or the gate refuses it**, once the lot's last block adds the
-  test that every non-2xx response carries a `code` enum.
+- **A declared refusal without codes is refused by the gate**, once the lot's last block adds the
+  test. An undeclared one is not: a new route's refusals stay the reviewer's to check.
+- **Most blocks of the lot raise the contract's major**: `oasdiff` rates an enum added to a response
+  that already has a body as a break. Accepted while `contract/frozen/` is empty.
