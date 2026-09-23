@@ -9,6 +9,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.Probl
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.SessionDtoMapper.toCreatedDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.SessionDtoMapper.toExistingDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.SessionCookie
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getSessionToken
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getSessionTransport
@@ -31,6 +32,7 @@ import jakarta.ws.rs.Path
 import jakarta.ws.rs.core.MediaType
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 
@@ -50,8 +52,12 @@ class SessionController(
         content = [Content(mediaType = JSON, schema = Schema(implementation = CreatedSessionOutputDto::class))])
     @APIResponse(responseCode = "200", description = COOKIE_ANSWER,
         content = [Content(mediaType = JSON, schema = Schema(implementation = ExistingSessionOutputDto::class))])
+    @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
     @APIResponse(responseCode = "401", description = AUTHENTICATION_FAILED,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))])
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["AUTHENTICATION_FAILED"])]))])
+    @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
+    @APIResponse(responseCode = "429", ref = SharedRefusalsFilter.TOO_MANY_AUTHENTICATION_ATTEMPTS)
     fun createSession(@Valid @NotNull dto: SessionCreationInputDto): RestResponse<Any> {
         val persistent = dto.rememberMe ?: false
         val issued = try {
@@ -134,7 +140,6 @@ class SessionController(
         const val BEARER_ANSWER = "Bearer session, with the token the client sends back as a header"
         const val COOKIE_ANSWER = "Cookie session, carried by the pinry_session cookie and never in the body"
         const val REVOKED = "Session revoked, and the pinry_session cookie cleared when the request carried one"
-        const val AUTHENTICATION_FAILED = "AUTHENTICATION_FAILED: the name is unknown, the password is wrong, " +
-            "or the account is held closed by the attempt limiter"
+        const val AUTHENTICATION_FAILED = "The name is unknown or the password is wrong"
     }
 }

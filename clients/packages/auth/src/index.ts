@@ -1,4 +1,4 @@
-import { createApiClient, type ApiClient, type components } from "@pinry-reborn/api-client"
+import { createApiClient, type ApiClient, type components, type paths } from "@pinry-reborn/api-client"
 
 /** The vehicle the session token travels in. The web application takes the cookie, the extension the header. */
 export type SessionTransport = components["schemas"]["SessionTransportDto"]
@@ -10,6 +10,18 @@ export type Credentials = components["schemas"]["UserInputDto"]
  * generator rewrites at every install.
  */
 export type Schemas = components["schemas"]
+
+/** Every `code` the contract declares one operation's refusals can carry, shared entries included. */
+export type RefusalCode<Path extends keyof paths, Method extends keyof paths[Path]> =
+  paths[Path][Method] extends { responses: infer Responses }
+    ? {
+        [Status in keyof Responses]: Responses[Status] extends {
+          content: { "application/problem+json": { code?: infer Code } }
+        }
+          ? Code
+          : never
+      }[keyof Responses]
+    : never
 
 /**
  * What both transports agree on. A bearer answer also carries the token, which never leaves this
