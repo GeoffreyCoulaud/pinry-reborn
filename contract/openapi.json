@@ -1340,9 +1340,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "List Boards",
@@ -1386,9 +1383,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Create Board",
@@ -1415,9 +1409,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "List Recycled Boards",
@@ -1435,9 +1426,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Empty Recycle Bin",
@@ -1940,9 +1928,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Get Current User",
@@ -2097,9 +2082,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "List Exports",
@@ -2321,9 +2303,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "tags" : [ "Me Image Download Controller" ],
@@ -2372,9 +2351,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "tags" : [ "Me Image Download Controller" ],
@@ -2421,9 +2397,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "List Imports",
@@ -2467,9 +2440,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "tags" : [ "Me Import Controller" ],
@@ -3013,9 +2983,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Create Pin",
@@ -3093,9 +3060,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Empty Recycle Bin",
@@ -3677,9 +3641,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Revoke All Sessions",
@@ -3761,9 +3722,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Revoke Current Session",
@@ -3788,9 +3746,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Get Current Session",
@@ -3827,9 +3782,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Renew Session",
@@ -3878,9 +3830,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Search Tags",
@@ -3946,7 +3895,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "16.0.0"
+    "version" : "16.1.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

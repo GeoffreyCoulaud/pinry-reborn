@@ -18,6 +18,10 @@ import org.eclipse.microprofile.openapi.models.responses.APIResponse
 @OpenApiFilter(stages = [OpenApiFilter.RunStage.BUILD])
 class SharedRefusalsFilter : OASFilter {
     override fun filterOperation(operation: Operation): Operation {
+        // SmallRye's own 403 on a protected operation carries no body, and no role check here refuses one.
+        operation.responses.getAPIResponse("403")
+            ?.takeIf { it.content == null && it.ref == null }
+            ?.let { operation.responses.removeAPIResponse("403") }
         // Protected is what SmallRye stamped a requirement on, as SessionSecurityRequirementFilter reads it.
         if (!operation.security.isNullOrEmpty()) {
             operation.responses.addAPIResponse("401", OASFactory.createAPIResponse().ref(UNAUTHENTICATED))

@@ -29,6 +29,24 @@ class SharedRefusalsFilterTest {
     }
 
     @Test
+    fun `Given the bodyless 403 SmallRye adds, Then it is dropped and a declared 403 stays`() {
+        // Given
+        val bodyless = OASFactory.createAPIResponse().description("Not Allowed")
+        val referenced = OASFactory.createAPIResponse().ref(SharedRefusalsFilter.PIN_FORBIDDEN)
+        val inline = OASFactory.createAPIResponse().content(OASFactory.createContent())
+
+        // When
+        val kept = listOf(bodyless, referenced, inline).map { response ->
+            filter.filterOperation(
+                OASFactory.createOperation().responses(OASFactory.createAPIResponses().addAPIResponse("403", response)),
+            ).responses.getAPIResponse("403")
+        }
+
+        // Then
+        assertEquals(listOf(null, referenced, inline), kept)
+    }
+
+    @Test
     fun `Given an operation SmallRye left open, Then it gets no 401`() {
         // Given
         val operation = OASFactory.createOperation().responses(OASFactory.createAPIResponses())
