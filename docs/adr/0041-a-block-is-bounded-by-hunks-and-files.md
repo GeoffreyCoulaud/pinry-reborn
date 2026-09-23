@@ -2,7 +2,8 @@
 
 Status: Accepted
 Date: 2026-09-23
-Supersedes: `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 1.
+Supersedes: `docs/adr/0018-a-block-is-a-pull-request.md`, decision 1's bounds, and
+`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 1.
 
 ## Context
 
@@ -24,13 +25,13 @@ operator's preference, informed by Adrienne Braganza's *Looks Good to Me* (Manni
    added counts, and the block costs the sum. A line edited in place costs one; an addition and a
    deletion in separate places cost both.
 3. **The exclusions do not move**: the dated documents and the `linguist-generated` files count
-   toward neither bound.
+   toward neither bound. A binary file counts one file and no line.
 
-**Fails if** blocks start splitting along seams that make each half unreadable alone, which
-condition 2 of "What a block is" already refuses.
+**Fails if** a lot's split blocks each need the other to be reviewed: a pull request whose review
+comments ask for a sibling's diff.
 
 ## Consequences
 
 - `agents/workflow.md` carries the measuring command, so two readers reach the same number.
 - Blocks that were legal can now be refused, and the reverse: a block of in-place edits costs about
-  half what it did.
+  half what it did. Pull request #194, 572 lines over 14 files, would now split.

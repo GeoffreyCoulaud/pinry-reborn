@@ -10,7 +10,9 @@ per block in tier Spec, and the consequence on the session boundary is corrected
 `docs/adr/0028-the-budget-follows-the-ecosystem.md`: decision 1's production sub-bound becomes two,
 one per ecosystem, and gains the prefix partition that makes it countable; decision 3's block table
 numbers by tens; decision 8's third bullet moves the holistic review off the last pull request and
-onto `main` at the head of Wrap. Decision 2 and decisions 5 to 7 stand as written.
+onto `main` at the head of Wrap. Then by `docs/adr/0041-a-block-is-bounded-by-hunks-and-files.md`:
+decision 1's bounds are replaced whole, total and production alike. Decision 2 and decisions 5 to 7
+stand as written.
 Date: 2026-09-04
 Amends: `docs/adr/0014-review-budget-upstream.md`, whose block review this keeps, whose plan pass
 this folds into the spec pass, and whose spec pass this cuts from six angles to three.
