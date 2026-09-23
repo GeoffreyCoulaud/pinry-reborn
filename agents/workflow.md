@@ -113,17 +113,19 @@ arrive, or arrives truncated, can be asked for again instead of costing a second
 - **A changed line is counted per hunk of `git diff -U0`**: each hunk costs the larger of its deleted and added
   counts, and the block costs the sum. A line edited in place costs one.
 - **Outside both counts**: the dated documents (`docs/specs`, `docs/adr`, `docs/handoffs`) and the files marked
-  `linguist-generated`, which are `.dagger/sdk/**`, `clients/pnpm-lock.yaml` and `contract/openapi.json`.
-- **Measured on the committed branch**, an untracked file counting for nothing:
+  `linguist-generated`, which are `.dagger/sdk/**`, `clients/pnpm-lock.yaml` and `contract/openapi.json`. A binary
+  file counts one file and no line.
+- **Measured on the committed branch**, from anywhere in the repository, an untracked file counting for nothing:
 
-```sh
-X=(-- . ':!docs/specs' ':!docs/adr' ':!docs/handoffs' ':!.dagger/sdk' ':!clients/pnpm-lock.yaml' ':!contract/openapi.json')
+```bash
+X=(-- ':/' ':/!docs/specs' ':/!docs/adr' ':/!docs/handoffs' ':(top,exclude,attr:linguist-generated)')
 git diff -U0 main...HEAD "${X[@]}" | awk '/^@@/ { split($2, o, ","); split($3, n, ","); b = (2 in o) ? o[2] : 1; d = (2 in n) ? n[2] : 1; s += (b > d ? b : d) } END { print s + 0 }'
 git diff --name-only main...HEAD "${X[@]}" | wc -l
 ```
 
-**Detail.** The bounds are `docs/adr/0041-a-block-is-bounded-by-hunks-and-files.md`, which supersedes
-`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 1. The file bound is where Microsoft measured useful
+**Detail.** The bounds are `docs/adr/0041-a-block-is-bounded-by-hunks-and-files.md`, which supersedes the bounds of
+`docs/adr/0018-a-block-is-a-pull-request.md` and `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 1 of
+each. The file bound is where Microsoft measured useful
 review feedback starting to fall; the line bound is the operator's. Counting per hunk rather than per file is what
 keeps an addition at the top of a file and an unrelated deletion at its foot from paying for each other. The budget
 measures what a human rereads.
