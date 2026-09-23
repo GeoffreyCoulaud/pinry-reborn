@@ -43,6 +43,9 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   and its mirror **partial export**; **merging metadata onto a pin that already exists**, which is
   the option the v1 "skip" rule forecloses; and **making a pin with no medium travel**, which needs
   the export to carry `ImageDownload` so a pending or failed download survives the round trip.
+- **The web application's journey tests time out under local load**: a full `dagger call gate` on a busy
+  machine goes red on 15-second timeouts, green on rerun and in CI. See
+  `docs/handoffs/2026-09-23 - handoff - the-refusals-are-declared.md`.
 
 ### P2: Operational debt
 
