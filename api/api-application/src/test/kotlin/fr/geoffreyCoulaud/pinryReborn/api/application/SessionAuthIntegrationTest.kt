@@ -148,6 +148,22 @@ class SessionAuthIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given a garbage token on a public route, Then the route answers as it would without one`() {
+        // A revoked cookie stays in the browser, and signing in again must still work.
+        // Given
+        val name = createRandomString()
+        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+
+        // When
+        val response = given().header("Authorization", "Bearer not-a-real-token").contentType(ContentType.JSON)
+            .body(mapOf("name" to name, "password" to DEFAULT_PASSWORD, "transport" to "BEARER"))
+            .post("/api/v1/sessions")
+
+        // Then
+        response.then().statusCode(201)
+    }
+
+    @Test
     fun `Given a valid token, Then GET me returns the caller`() {
         val auth = createAuthenticatedUser()
         given().authenticatedAs(auth).get("/api/v1/me")
