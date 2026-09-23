@@ -914,6 +914,23 @@
           }
         }
       },
+      "ReauthenticationHeaderFailed" : {
+        "description" : "The X-Reauthentication header is absent, or the password it carries is wrong",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "REAUTHENTICATION_FAILED" ]
+                }
+              }
+            }
+          }
+        }
+      },
       "UnsupportedReauthenticationFactor" : {
         "description" : "The X-Reauthentication header names no factor the route accepts",
         "content" : {
@@ -1953,7 +1970,7 @@
             "$ref" : "#/components/responses/UnsupportedReauthenticationFactor"
           },
           "403" : {
-            "$ref" : "#/components/responses/ReauthenticationFailed"
+            "$ref" : "#/components/responses/ReauthenticationHeaderFailed"
           },
           "429" : {
             "$ref" : "#/components/responses/TooManyAuthenticationAttempts"
@@ -1998,7 +2015,7 @@
             "$ref" : "#/components/responses/UnsupportedReauthenticationFactor"
           },
           "403" : {
-            "$ref" : "#/components/responses/ReauthenticationFailed"
+            "$ref" : "#/components/responses/ReauthenticationHeaderFailed"
           },
           "409" : {
             "description" : "This account already has a pending export",

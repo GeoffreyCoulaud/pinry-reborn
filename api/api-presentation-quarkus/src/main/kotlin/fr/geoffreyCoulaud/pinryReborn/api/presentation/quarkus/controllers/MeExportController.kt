@@ -73,7 +73,7 @@ class MeExportController(
         ],
     )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.UNSUPPORTED_REAUTHENTICATION_FACTOR)
-    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.REAUTHENTICATION_FAILED)
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.REAUTHENTICATION_HEADER_FAILED)
     @APIResponse(responseCode = "409", description = "This account already has a pending export",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code", enumeration = ["EXPORT_ALREADY_IN_PROGRESS"])]))])

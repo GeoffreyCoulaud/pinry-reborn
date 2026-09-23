@@ -35,6 +35,7 @@ class SharedRefusalsFilter : OASFilter {
         const val INVALID_BODY = "InvalidBody"
         const val UNSUPPORTED_MEDIA_TYPE = "UnsupportedMediaType"
         const val REAUTHENTICATION_FAILED = "ReauthenticationFailed"
+        const val REAUTHENTICATION_HEADER_FAILED = "ReauthenticationHeaderFailed"
         const val UNSUPPORTED_REAUTHENTICATION_FACTOR = "UnsupportedReauthenticationFactor"
         const val TOO_MANY_AUTHENTICATION_ATTEMPTS = "TooManyAuthenticationAttempts"
         const val INVALID_BATCH_BODY = "InvalidBatchBody"
@@ -76,6 +77,10 @@ class SharedRefusalsFilter : OASFilter {
             ),
             REAUTHENTICATION_FAILED to refusal(
                 "The current password is wrong",
+                ProblemCode.REAUTHENTICATION_FAILED,
+            ),
+            REAUTHENTICATION_HEADER_FAILED to refusal(
+                "The X-Reauthentication header is absent, or the password it carries is wrong",
                 ProblemCode.REAUTHENTICATION_FAILED,
             ),
             UNSUPPORTED_REAUTHENTICATION_FACTOR to refusal(
