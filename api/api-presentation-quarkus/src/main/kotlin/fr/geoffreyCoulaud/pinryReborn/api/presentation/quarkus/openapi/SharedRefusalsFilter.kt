@@ -53,6 +53,10 @@ class SharedRefusalsFilter : OASFilter {
         const val BOARD_OR_PIN_NOT_FOUND = "BoardOrPinNotFound"
         const val IMAGE_FORBIDDEN = "ImageForbidden"
         const val IMAGE_NOT_FOUND = "ImageNotFound"
+        const val EXPORT_FORBIDDEN = "ExportForbidden"
+        const val EXPORT_NOT_FOUND = "ExportNotFound"
+        const val IMPORT_FORBIDDEN = "ImportForbidden"
+        const val IMPORT_NOT_FOUND = "ImportNotFound"
 
         private val SHARED = mapOf(
             UNAUTHENTICATED to refusal(
@@ -75,7 +79,7 @@ class SharedRefusalsFilter : OASFilter {
                 ProblemCode.REAUTHENTICATION_FAILED,
             ),
             UNSUPPORTED_REAUTHENTICATION_FACTOR to refusal(
-                "The X-Reauthentication header is missing or names no factor the route accepts",
+                "The X-Reauthentication header names no factor the route accepts",
                 ProblemCode.UNSUPPORTED_REAUTHENTICATION_FACTOR,
             ),
             TOO_MANY_AUTHENTICATION_ATTEMPTS to refusal(
@@ -149,6 +153,24 @@ class SharedRefusalsFilter : OASFilter {
             IMAGE_NOT_FOUND to refusal(
                 "The pin, its image or its download does not exist, or a path or query value could not be read",
                 ProblemCode.IMAGE_DOES_NOT_EXIST,
+                ProblemCode.UNKNOWN_ROUTE,
+            ),
+            EXPORT_FORBIDDEN to refusal(
+                "The export belongs to another account",
+                ProblemCode.EXPORT_INSUFFICIENT_PERMISSIONS,
+            ),
+            EXPORT_NOT_FOUND to refusal(
+                "The export does not exist, or a path value could not be read",
+                ProblemCode.EXPORT_DOES_NOT_EXIST,
+                ProblemCode.UNKNOWN_ROUTE,
+            ),
+            IMPORT_FORBIDDEN to refusal(
+                "The import belongs to another account",
+                ProblemCode.IMPORT_INSUFFICIENT_PERMISSIONS,
+            ),
+            IMPORT_NOT_FOUND to refusal(
+                "The import does not exist, or a path or query value could not be read",
+                ProblemCode.IMPORT_DOES_NOT_EXIST,
                 ProblemCode.UNKNOWN_ROUTE,
             ),
         )

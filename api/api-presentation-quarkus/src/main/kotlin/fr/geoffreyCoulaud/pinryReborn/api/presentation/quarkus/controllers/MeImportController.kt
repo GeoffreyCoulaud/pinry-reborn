@@ -9,6 +9,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMap
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDataImportDtoMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDataImportIssueDtoMapper.toDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportArchiveCompleter
@@ -73,11 +74,9 @@ class MeImportController(
             ),
         ],
     )
-    @APIResponse(
-        responseCode = "409",
-        description = "IMPORT_ALREADY_IN_PROGRESS: this account already has an active import",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "409", description = "This account already has an active import",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["IMPORT_ALREADY_IN_PROGRESS"])]))])
     fun createImport(): RestResponse<UserDataImportOutputDto> {
         val user = securityIdentity.getUser()
         val userDataImport = creator.create(user)
@@ -107,22 +106,13 @@ class MeImportController(
             ),
         ],
     )
-    @APIResponse(
-        responseCode = "403",
-        description = IMPORT_INSUFFICIENT_PERMISSIONS,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "404",
-        description = IMPORT_DOES_NOT_EXIST,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "409",
-        description = "IMPORT_NOT_AWAITING_ARCHIVE, or IMPORT_CHUNK_OFFSET_MISMATCH whose currentLength " +
-            "member names the length to resume from",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMPORT_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMPORT_NOT_FOUND)
+    @APIResponse(responseCode = "409", description = "The import no longer awaits its archive, or the offset " +
+        "is not the upload's length, which the currentLength member names to resume from",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["IMPORT_NOT_AWAITING_ARCHIVE", "IMPORT_CHUNK_OFFSET_MISMATCH"])]))])
     @APIResponse(responseCode = "413", description = "IMPORT_ARCHIVE_TOO_LARGE: the chunk would carry the upload " +
         "past imports.max_archive_bytes. BODY_TOO_LARGE: the Content-Length is past " +
         "quarkus.http.limits.max-body-size, which is above imports.max_chunk_bytes; a chunked body past it gets " +
@@ -130,11 +120,10 @@ class MeImportController(
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code",
                 enumeration = ["IMPORT_ARCHIVE_TOO_LARGE", "BODY_TOO_LARGE"])]))])
-    @APIResponse(
-        responseCode = "507",
-        description = "IMPORT_INSUFFICIENT_STORAGE: free space is under imports.minimum_free_bytes",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
+    @APIResponse(responseCode = "507", description = "Free space is under imports.minimum_free_bytes",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["IMPORT_INSUFFICIENT_STORAGE"])]))])
     fun uploadChunk(
         id: UUID,
         @QueryParam("offset")
@@ -165,21 +154,12 @@ class MeImportController(
             ),
         ],
     )
-    @APIResponse(
-        responseCode = "403",
-        description = IMPORT_INSUFFICIENT_PERMISSIONS,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "404",
-        description = IMPORT_DOES_NOT_EXIST,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "409",
-        description = "IMPORT_NOT_AWAITING_ARCHIVE, or IMPORT_ARCHIVE_EMPTY when no chunk ever landed",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMPORT_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMPORT_NOT_FOUND)
+    @APIResponse(responseCode = "409", description = "The import no longer awaits its archive, or no chunk ever landed",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["IMPORT_NOT_AWAITING_ARCHIVE", "IMPORT_ARCHIVE_EMPTY"])]))])
     fun completeArchive(id: UUID): RestResponse<UserDataImportOutputDto> {
         val user = securityIdentity.getUser()
         val userDataImport = archiveCompleter.complete(user, id)
@@ -187,6 +167,10 @@ class MeImportController(
     }
 
     @GET
+    @APIResponse(responseCode = "200", description = "OK",
+        content = [Content(mediaType = MediaType.APPLICATION_JSON,
+            schema = Schema(implementation = UserDataImportListOutputDto::class))])
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.UNREADABLE_QUERY)
     fun listImports(
         @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
         @QueryParam("pageSize") pageSizeInput: Int? = null,
@@ -209,16 +193,8 @@ class MeImportController(
             ),
         ],
     )
-    @APIResponse(
-        responseCode = "403",
-        description = IMPORT_INSUFFICIENT_PERMISSIONS,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "404",
-        description = IMPORT_DOES_NOT_EXIST,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMPORT_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMPORT_NOT_FOUND)
     fun getImport(id: UUID): RestResponse<UserDataImportOutputDto> {
         val user = securityIdentity.getUser()
         return RestResponse.ok(getter.get(user, id).toDto())
@@ -241,16 +217,8 @@ class MeImportController(
             ),
         ],
     )
-    @APIResponse(
-        responseCode = "403",
-        description = IMPORT_INSUFFICIENT_PERMISSIONS,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "404",
-        description = IMPORT_DOES_NOT_EXIST,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMPORT_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMPORT_NOT_FOUND)
     fun listIssues(
         id: UUID,
         @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
@@ -270,16 +238,8 @@ class MeImportController(
             "already created stay, and only the archive and the work still to do are dropped.",
     )
     @APIResponse(responseCode = "204", description = "Import cancelled")
-    @APIResponse(
-        responseCode = "403",
-        description = IMPORT_INSUFFICIENT_PERMISSIONS,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "404",
-        description = IMPORT_DOES_NOT_EXIST,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMPORT_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMPORT_NOT_FOUND)
     fun cancelImport(id: UUID): RestResponse<Void> {
         val user = securityIdentity.getUser()
         canceller.cancel(user, id)
@@ -288,10 +248,6 @@ class MeImportController(
 
     companion object {
         const val DEFAULT_PAGE_SIZE = 20
-
-        private const val IMPORT_DOES_NOT_EXIST = "IMPORT_DOES_NOT_EXIST: no import of the caller carries this id"
-        private const val IMPORT_INSUFFICIENT_PERMISSIONS =
-            "IMPORT_INSUFFICIENT_PERMISSIONS: this import belongs to another account"
 
         // Spec section 14 promises this sentence to the API documentation, not only to itself.
         private const val IMPORT_IS_NOT_ATOMIC =

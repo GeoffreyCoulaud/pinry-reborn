@@ -11,6 +11,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.http.RangeHeader
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDataExportDtoMapper.toDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.ReauthenticationHeader
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
@@ -32,6 +33,7 @@ import jakarta.ws.rs.core.StreamingOutput
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder
@@ -70,27 +72,16 @@ class MeExportController(
             ),
         ],
     )
-    @APIResponse(
-        responseCode = "400",
-        description = "UNSUPPORTED_REAUTHENTICATION_FACTOR: the reauthentication header names no password factor",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "403",
-        description = "REAUTHENTICATION_FAILED: the reauthentication header is absent or its password is wrong",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "409",
-        description = "EXPORT_ALREADY_IN_PROGRESS: this account already has a pending export",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "429",
-        description = "EXPORT_TOO_SOON: the last request is inside exports.minimum_interval, and Retry-After " +
-            "names the wait",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.UNSUPPORTED_REAUTHENTICATION_FACTOR)
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.REAUTHENTICATION_FAILED)
+    @APIResponse(responseCode = "409", description = "This account already has a pending export",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["EXPORT_ALREADY_IN_PROGRESS"])]))])
+    @APIResponse(responseCode = "429", description = "The attempt limiter, or the last request is inside " +
+        "exports.minimum_interval; Retry-After names the wait",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["EXPORT_TOO_SOON", "TOO_MANY_AUTHENTICATION_ATTEMPTS"])]))])
     fun requestExport(
         @HeaderParam(ReauthenticationHeader.HEADER) reauthHeader: String?,
     ): RestResponse<UserDataExportOutputDto> {
@@ -111,6 +102,7 @@ class MeExportController(
             ),
         ],
     )
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.UNREADABLE_QUERY)
     fun listExports(
         @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
         @QueryParam("pageSize") pageSizeInput: Int? = null,
@@ -133,16 +125,8 @@ class MeExportController(
             ),
         ],
     )
-    @APIResponse(
-        responseCode = "403",
-        description = EXPORT_INSUFFICIENT_PERMISSIONS,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "404",
-        description = EXPORT_DOES_NOT_EXIST,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.EXPORT_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.EXPORT_NOT_FOUND)
     fun getExport(id: UUID): RestResponse<UserDataExportOutputDto> {
         val user = securityIdentity.getUser()
         return RestResponse.ok(getter.get(user, id).toDto())
@@ -164,31 +148,18 @@ class MeExportController(
         description = "The requested byte range, Content-Range set",
         content = [Content(mediaType = ARCHIVE_MEDIA_TYPE)],
     )
-    @APIResponse(
-        responseCode = "403",
-        description = EXPORT_INSUFFICIENT_PERMISSIONS,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "404",
-        description = EXPORT_DOES_NOT_EXIST,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "409",
-        description = "EXPORT_NOT_READY: the export is still pending or has failed",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "410",
-        description = "EXPORT_GONE: the archive expired, was deleted or was superseded by a newer export",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "416",
-        description = "RANGE_NOT_SATISFIABLE: the Range header names bytes past the archive's end",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.EXPORT_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.EXPORT_NOT_FOUND)
+    @APIResponse(responseCode = "409", description = "The export is still pending or has failed",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["EXPORT_NOT_READY"])]))])
+    @APIResponse(responseCode = "410",
+        description = "The archive expired, was deleted or was superseded by a newer export",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["EXPORT_GONE"])]))])
+    @APIResponse(responseCode = "416", description = "The Range header names bytes past the archive's end",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["RANGE_NOT_SATISFIABLE"])]))])
     fun downloadExport(id: UUID, @HeaderParam("Range") rangeHeader: String?): RestResponse<StreamingOutput> {
         val user = securityIdentity.getUser()
         // Opened at 0 always: the size needed to parse the Range header is only known once the
@@ -205,16 +176,8 @@ class MeExportController(
     @DELETE
     @Path("/{id}")
     @APIResponse(responseCode = "204", description = "Export deleted, its archive released")
-    @APIResponse(
-        responseCode = "403",
-        description = EXPORT_INSUFFICIENT_PERMISSIONS,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "404",
-        description = EXPORT_DOES_NOT_EXIST,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.EXPORT_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.EXPORT_NOT_FOUND)
     fun deleteExport(id: UUID): RestResponse<Void> {
         val user = securityIdentity.getUser()
         deleter.delete(user, id)
@@ -275,8 +238,5 @@ class MeExportController(
         private const val FALLBACK_FILE_STEM = "export"
 
         private const val ARCHIVE_MEDIA_TYPE = "application/zip"
-        private const val EXPORT_DOES_NOT_EXIST = "EXPORT_DOES_NOT_EXIST: no export of the caller carries this id"
-        private const val EXPORT_INSUFFICIENT_PERMISSIONS =
-            "EXPORT_INSUFFICIENT_PERMISSIONS: this export belongs to another account"
     }
 }
