@@ -51,6 +51,8 @@ class SharedRefusalsFilter : OASFilter {
         const val BOARD_NAME_TAKEN = "BoardNameTaken"
         const val BOARD_OR_PIN_FORBIDDEN = "BoardOrPinForbidden"
         const val BOARD_OR_PIN_NOT_FOUND = "BoardOrPinNotFound"
+        const val IMAGE_FORBIDDEN = "ImageForbidden"
+        const val IMAGE_NOT_FOUND = "ImageNotFound"
 
         private val SHARED = mapOf(
             UNAUTHENTICATED to refusal(
@@ -138,6 +140,15 @@ class SharedRefusalsFilter : OASFilter {
                 "The board, or a pin the body names, does not exist, or a path value could not be read",
                 ProblemCode.BOARD_DOES_NOT_EXIST,
                 ProblemCode.PIN_DOES_NOT_EXIST,
+                ProblemCode.UNKNOWN_ROUTE,
+            ),
+            IMAGE_FORBIDDEN to refusal(
+                "The pin belongs to another account",
+                ProblemCode.IMAGE_INSUFFICIENT_PERMISSIONS,
+            ),
+            IMAGE_NOT_FOUND to refusal(
+                "The pin, its image or its download does not exist, or a path or query value could not be read",
+                ProblemCode.IMAGE_DOES_NOT_EXIST,
                 ProblemCode.UNKNOWN_ROUTE,
             ),
         )
