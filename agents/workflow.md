@@ -108,21 +108,25 @@ arrive, or arrives truncated, can be asked for again instead of costing a second
     2. **Coherent alone.** Nothing it adds is unreachable: every new port method has a caller, every configuration key
        is read, every new state is produced somewhere. Where a surface's real consumer arrives in a later block, the
        spec says so and the pull request repeats it.
-    3. **Readable alone.** The diff stays under 600 lines, and its production lines stay under the bound of the
-       ecosystem they belong to: **under 200 under `api/`, under 400 under `clients/`**, both strict. `.dagger/` takes
-       the 200. The repository root has no production line at all. A block spanning both ecosystems measures each
-       against its own bound. Past any bound the block splits, or the spec states in one line why it cannot.
-- **Outside the count**: the dated documents (`docs/specs`, `docs/adr`, `docs/handoffs`) and the files marked
+    3. **Readable alone.** **Under 500 changed lines and under 20 changed files**, both strict, the same for the
+       whole repository. Past either bound the block splits, or the spec states in one line why it cannot.
+- **A changed line is counted per hunk of `git diff -U0`**: each hunk costs the larger of its deleted and added
+  counts, and the block costs the sum. A line edited in place costs one.
+- **Outside both counts**: the dated documents (`docs/specs`, `docs/adr`, `docs/handoffs`) and the files marked
   `linguist-generated`, which are `.dagger/sdk/**`, `clients/pnpm-lock.yaml` and `contract/openapi.json`.
-- **Production is counted by prefix**: `api/**/src/main/**`, `.dagger/src/**` and `clients/**/src/**`, less
-  `clients/**/src/journeys/**`, `clients/**/src/test/**` and any `*.test.ts` or `*.test.tsx`. Configuration, message
-  catalogues, markdown and build files are outside the production count and inside the 600.
+- **Measured on the committed branch**, an untracked file counting for nothing:
 
-**Detail.** The bounds are `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 1. Markup was the argument for
-the 400 and there is none under `.dagger/`; the partition above leaves the repository root no production line, so only
-the 600 ever bounds a root path. Counting by prefix is what makes two readers of the same block reach the same number,
-the API's tacit `src/main` convention having no equivalent on the clients' side. The budget measures what a human
-rereads.
+```sh
+X=(-- . ':!docs/specs' ':!docs/adr' ':!docs/handoffs' ':!.dagger/sdk' ':!clients/pnpm-lock.yaml' ':!contract/openapi.json')
+git diff -U0 main...HEAD "${X[@]}" | awk '/^@@/ { split($2, o, ","); split($3, n, ","); b = (2 in o) ? o[2] : 1; d = (2 in n) ? n[2] : 1; s += (b > d ? b : d) } END { print s + 0 }'
+git diff --name-only main...HEAD "${X[@]}" | wc -l
+```
+
+**Detail.** The bounds are `docs/adr/0041-a-block-is-bounded-by-hunks-and-files.md`, which supersedes
+`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 1. The file bound is where Microsoft measured useful
+review feedback starting to fall; the line bound is the operator's. Counting per hunk rather than per file is what
+keeps an addition at the top of a file and an unrelated deletion at its foot from paying for each other. The budget
+measures what a human rereads.
 
 ### 1. Discuss
 
@@ -235,7 +239,7 @@ morning, on a spike push that had no pull request, so nothing was armed at all.
 - **(f) Report what was done and the friction points, and every tier-2 question asked with the answer it got.** That
   report is the input to Improve.
 - **The closing work splits like any other block when it passes a bound.** "What a block is" is strict here too, so
-  findings that do not fit 600 lines become two pull requests, the seam being the code findings on one side and the
+  findings that do not fit its bounds become two pull requests, the seam being the code findings on one side and the
   documents, the backlog and the handoff on the other. Both halves are the closing block.
 - **A lot tag is a delivery checkpoint, not a release.** A release is its own decision and its own tag.
 
@@ -244,7 +248,7 @@ left untagged leaves the next review with no artefact. The single destination fo
 `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 6, and the split leaves it unchanged. The waiver offered
 on a one-block lot is `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`, decision 6: a lot whose whole is one block
 leaves the review nothing the specification review and the gate did not already see. The web application
-lot's blocks 11 and 12 were that split, at 651 counted lines together against a strict 600. A lot tag is not a release
+lot's blocks 11 and 12 were that split, at 651 counted lines together against the strict 600 of the time. A lot tag is not a release
 because `release.yml` triggers on `v*` and publishes a signed image to the registry, and the `lot/` prefix cannot match
 it.
 
