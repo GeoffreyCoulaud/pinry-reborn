@@ -563,9 +563,6 @@
         "type" : "string",
         "enum" : [ "BEARER", "COOKIE" ]
       },
-      "StreamingOutput" : {
-        "type" : "object"
-      },
       "TagOutputDto" : {
         "type" : "object",
         "required" : [ "name" ],
@@ -1183,6 +1180,40 @@
               "properties" : {
                 "code" : {
                   "enum" : [ "BOARD_DOES_NOT_EXIST", "PIN_DOES_NOT_EXIST", "UNKNOWN_ROUTE" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ImageForbidden" : {
+        "description" : "The pin belongs to another account",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "IMAGE_INSUFFICIENT_PERMISSIONS" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ImageNotFound" : {
+        "description" : "The pin, its image or its download does not exist, or a path or query value could not be read",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "IMAGE_DOES_NOT_EXIST", "UNKNOWN_ROUTE" ]
                 }
               }
             }
@@ -2218,6 +2249,9 @@
               }
             }
           },
+          "404" : {
+            "$ref" : "#/components/responses/UnreadableQuery"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
           },
@@ -2250,21 +2284,21 @@
             "description" : "Download dropped"
           },
           "404" : {
-            "description" : "IMAGE_DOES_NOT_EXIST: no download of the caller carries this pin id",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/ImageNotFound"
           },
           "409" : {
-            "description" : "IMAGE_DOWNLOAD_IN_PROGRESS: the download is still running, and the worker owns its row",
+            "description" : "The download is still running, and the worker owns its row",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "IMAGE_DOWNLOAD_IN_PROGRESS" ]
+                    }
+                  }
                 }
               }
             }
@@ -3379,6 +3413,29 @@
               }
             }
           },
+          "400" : {
+            "description" : "The upload has no file part, the body is not JSON or breaks a constraint, or the source URL is not an http or https address",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "IMAGE_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403" : {
+            "$ref" : "#/components/responses/ImageForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ImageNotFound"
+          },
           "413" : {
             "description" : "IMAGE_TOO_LARGE: the upload is past images.max_file_bytes. BODY_TOO_LARGE: the Content-Length is past quarkus.http.limits.max-body-size, which is above images.max_file_bytes; a chunked body past it gets a 413 with no body",
             "content" : {
@@ -3390,6 +3447,26 @@
                   "properties" : {
                     "code" : {
                       "enum" : [ "IMAGE_TOO_LARGE", "BODY_TOO_LARGE" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "422" : {
+            "description" : "The upload is not an image the server reads, or it is past images.max_pixels",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "IMAGE_INVALID" ]
                     }
                   }
                 }
@@ -3408,9 +3485,6 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "tags" : [ "Image Controller" ],
@@ -3452,20 +3526,36 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "OK",
+            "description" : "The original, or a WebP rendition",
             "content" : {
-              "application/json" : {
+              "image/*" : { }
+            }
+          },
+          "400" : {
+            "description" : "The size names no rendition",
+            "content" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StreamingOutput"
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "IMAGE_RENDITION_SIZE_INVALID" ]
+                    }
+                  }
                 }
               }
             }
           },
+          "403" : {
+            "$ref" : "#/components/responses/ImageForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ImageNotFound"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Get Image",
@@ -3489,11 +3579,14 @@
           "204" : {
             "description" : "No Content"
           },
+          "403" : {
+            "$ref" : "#/components/responses/ImageForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ImageNotFound"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Delete Image",
@@ -3526,11 +3619,14 @@
               }
             }
           },
+          "403" : {
+            "$ref" : "#/components/responses/ImageForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ImageNotFound"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Get Image Status",
@@ -3819,7 +3915,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "14.0.0"
+    "version" : "15.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

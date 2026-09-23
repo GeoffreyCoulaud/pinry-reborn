@@ -12,6 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.Probl
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ImageMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinImageStateMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.DeletePinImage
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.GetPinImageRendition
@@ -89,9 +90,20 @@ class ImageController(
             ),
         ],
     )
+    @APIResponse(responseCode = "400", description = INVALID_REQUEST,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["IMAGE_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY"])]))])
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMAGE_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMAGE_NOT_FOUND)
     @APIResponse(responseCode = "413", description = TOO_LARGE,
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_TOO_LARGE", "BODY_TOO_LARGE"])]))])
+    @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
+    @APIResponse(responseCode = "422",
+        description = "The upload is not an image the server reads, or it is past images.max_pixels",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_INVALID"])]))])
     fun setImage(pinId: UUID, @RestForm("file") @NotNull file: FileUpload): RestResponse<ImageOutputDto> {
         val requester = securityIdentity.getUser()
         val result = Files.newInputStream(file.uploadedFile()).use { upload ->
@@ -110,6 +122,13 @@ class ImageController(
 
     @GET
     @Path("/{pinId}/image")
+    @APIResponse(responseCode = "200", description = "The original, or a WebP rendition",
+        content = [Content(mediaType = "image/*")])
+    @APIResponse(responseCode = "400", description = "The size names no rendition",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_RENDITION_SIZE_INVALID"])]))])
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMAGE_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMAGE_NOT_FOUND)
     fun getImage(
         pinId: UUID,
         @QueryParam("size") size: String?,
@@ -173,6 +192,9 @@ class ImageController(
 
     @DELETE
     @Path("/{pinId}/image")
+    @APIResponse(responseCode = "204", description = "No Content")
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMAGE_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMAGE_NOT_FOUND)
     fun deleteImage(pinId: UUID): RestResponse<Void> {
         val requester = securityIdentity.getUser()
         deletePinImage.delete(pinId = pinId, requester = requester)
@@ -193,9 +215,16 @@ class ImageController(
             ),
         ],
     )
+    @APIResponse(responseCode = "400", description = INVALID_REQUEST,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["IMAGE_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY"])]))])
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMAGE_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMAGE_NOT_FOUND)
     @APIResponse(responseCode = "413", description = TOO_LARGE,
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_TOO_LARGE", "BODY_TOO_LARGE"])]))])
+    @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun requestImageDownload(
         pinId: UUID,
         @Valid @NotNull body: PinImageDownloadInputDto,
@@ -210,6 +239,11 @@ class ImageController(
 
     @GET
     @Path("/{pinId}/image/status")
+    @APIResponse(responseCode = "200", description = "OK",
+        content = [Content(mediaType = MediaType.APPLICATION_JSON,
+            schema = Schema(implementation = PinImageStateDto::class))])
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMAGE_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMAGE_NOT_FOUND)
     fun getImageStatus(pinId: UUID): RestResponse<PinImageStateDto> {
         val requester = securityIdentity.getUser()
         val state = resolvePinImageState.resolve(pinId = pinId, requester = requester)
@@ -223,9 +257,11 @@ class ImageController(
         const val SET_IMAGE_OPERATION_SUMMARY =
             "Set the pin's canonical image (upload bytes, or request a server-side fetch)"
 
-        // Both arms declare it identically, SmallRye merging them (spec 2026-09-23, section 3).
+        // Both arms declare these identically, SmallRye merging them (spec 2026-09-23, section 3).
         const val TOO_LARGE = "IMAGE_TOO_LARGE: the upload is past images.max_file_bytes. BODY_TOO_LARGE: the " +
             "Content-Length is past quarkus.http.limits.max-body-size, which is above images.max_file_bytes; " +
             "a chunked body past it gets a 413 with no body"
+        const val INVALID_REQUEST = "The upload has no file part, the body is not JSON or breaks a constraint, " +
+            "or the source URL is not an http or https address"
     }
 }

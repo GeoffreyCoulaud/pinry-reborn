@@ -7,6 +7,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMap
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ImageDownloadDtoMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ImageDownloads
 import io.quarkus.security.Authenticated
@@ -19,6 +20,7 @@ import jakarta.ws.rs.core.MediaType
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 import java.util.UUID
@@ -48,6 +50,7 @@ class MeImageDownloadController(
             ),
         ],
     )
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.UNREADABLE_QUERY)
     fun listImageDownloads(
         @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
         @QueryParam("pageSize") pageSizeInput: Int? = null,
@@ -60,16 +63,10 @@ class MeImageDownloadController(
     @Path("/{pinId}")
     @Operation(summary = "Drop one settled download", description = "The pin and its image are untouched.")
     @APIResponse(responseCode = "204", description = "Download dropped")
-    @APIResponse(
-        responseCode = "404",
-        description = "IMAGE_DOES_NOT_EXIST: no download of the caller carries this pin id",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
-    @APIResponse(
-        responseCode = "409",
-        description = "IMAGE_DOWNLOAD_IN_PROGRESS: the download is still running, and the worker owns its row",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMAGE_NOT_FOUND)
+    @APIResponse(responseCode = "409", description = "The download is still running, and the worker owns its row",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_DOWNLOAD_IN_PROGRESS"])]))])
     fun deleteImageDownload(pinId: UUID): RestResponse<Void> {
         imageDownloads.delete(securityIdentity.getUser(), pinId)
         return RestResponse.noContent()
