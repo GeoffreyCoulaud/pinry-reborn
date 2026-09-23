@@ -20,13 +20,27 @@ class SharedRefusalsFilter : OASFilter {
     override fun filterOperation(operation: Operation): Operation {
         // SmallRye's own 403 on a protected operation carries no body, and no role check here refuses one.
         operation.responses.getAPIResponse("403")
-            ?.takeIf { it.content == null && it.ref == null }
+            ?.takeIf { it.description == SMALLRYE_FORBIDDEN && it.content == null && it.ref == null }
             ?.let { operation.responses.removeAPIResponse("403") }
         // Protected is what SmallRye stamped a requirement on, as SessionSecurityRequirementFilter reads it.
         if (!operation.security.isNullOrEmpty()) {
             operation.responses.addAPIResponse("401", OASFactory.createAPIResponse().ref(UNAUTHENTICATED))
         }
+        // OversizeBodyRefusal answers every route, so every operation reading a body declares its code.
+        if (operation.requestBody != null) declareBodyTooLarge(operation)
         return operation
+    }
+
+    private fun declareBodyTooLarge(operation: Operation) {
+        val own = operation.responses.getAPIResponse("413")
+        if (own == null) {
+            operation.responses.addAPIResponse("413", OASFactory.createAPIResponse().ref(BODY_TOO_LARGE))
+            return
+        }
+        val code = own.content.getMediaType(PROBLEM_JSON_MEDIA_TYPE).schema.properties.getValue("code")
+        if (ProblemCode.BODY_TOO_LARGE.name !in code.enumeration) {
+            code.addEnumeration(ProblemCode.BODY_TOO_LARGE.name)
+        }
     }
 
     override fun filterOpenAPI(openAPI: OpenAPI) {
@@ -38,7 +52,7 @@ class SharedRefusalsFilter : OASFilter {
         const val UNAUTHENTICATED = "Unauthenticated"
         const val INVALID_BODY = "InvalidBody"
         const val UNSUPPORTED_MEDIA_TYPE = "UnsupportedMediaType"
-        const val REAUTHENTICATION_FAILED = "ReauthenticationFailed"
+        const val BODY_TOO_LARGE = "BodyTooLarge"
         const val REAUTHENTICATION_HEADER_FAILED = "ReauthenticationHeaderFailed"
         const val UNSUPPORTED_REAUTHENTICATION_FACTOR = "UnsupportedReauthenticationFactor"
         const val TOO_MANY_AUTHENTICATION_ATTEMPTS = "TooManyAuthenticationAttempts"
@@ -63,6 +77,8 @@ class SharedRefusalsFilter : OASFilter {
         const val IMPORT_FORBIDDEN = "ImportForbidden"
         const val IMPORT_NOT_FOUND = "ImportNotFound"
 
+        private const val SMALLRYE_FORBIDDEN = "Not Allowed"
+
         private val SHARED = mapOf(
             UNAUTHENTICATED to refusal(
                 "No session, or its token is unknown, revoked or expired",
@@ -79,16 +95,17 @@ class SharedRefusalsFilter : OASFilter {
                 "The route does not read this Content-Type",
                 ProblemCode.UNSUPPORTED_MEDIA_TYPE,
             ),
-            REAUTHENTICATION_FAILED to refusal(
-                "The current password is wrong",
-                ProblemCode.REAUTHENTICATION_FAILED,
+            BODY_TOO_LARGE to refusal(
+                "The Content-Length is past quarkus.http.limits.max-body-size; a chunked body past it gets a 413 " +
+                    "with no body",
+                ProblemCode.BODY_TOO_LARGE,
             ),
             REAUTHENTICATION_HEADER_FAILED to refusal(
                 "The X-Reauthentication header is absent, or the password it carries is wrong",
                 ProblemCode.REAUTHENTICATION_FAILED,
             ),
             UNSUPPORTED_REAUTHENTICATION_FACTOR to refusal(
-                "The X-Reauthentication header names no factor the route accepts",
+                "The X-Reauthentication header is malformed, or names no factor the route accepts",
                 ProblemCode.UNSUPPORTED_REAUTHENTICATION_FACTOR,
             ),
             TOO_MANY_AUTHENTICATION_ATTEMPTS to refusal(

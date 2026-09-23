@@ -6,10 +6,12 @@ import com.lemonappdev.konsist.api.declaration.KoAnnotationDeclaration
 import com.lemonappdev.konsist.api.declaration.KoFunctionDeclaration
 import com.lemonappdev.konsist.api.ext.list.withAnnotationNamed
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BaseErrorMapper
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemCode
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinImageStatus
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ErrorCode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -157,6 +159,48 @@ class ContractSchemaDeclarationTest {
     }
 
     @Test
+    fun `Given the published contract, Then every declared refusal code sits under the status it is answered with`() {
+        // Given
+        val mapper = BaseErrorMapper()
+        val statusOf = FRAMEWORK_STATUSES +
+            ErrorCode.entries.map { mapper.problemFor(it) }.associate { (code, status) -> code.name to "$status" }
+
+        // When
+        val misplaced = declaredRefusalCodes().flatMap { (refusal, codes) ->
+            codes.filter { statusOf[it] != refusal.substringAfterLast(' ') }.map { "$refusal $it: ${statusOf[it]}" }
+        }
+
+        // Then
+        assertEquals(
+            emptyList<String>(),
+            misplaced,
+            "These codes are declared under a status the server never answers them with, the one after the " +
+                "colon. A framework code with none takes its entry in FRAMEWORK_STATUSES. Regenerate: $regenerate",
+        )
+    }
+
+    @Test
+    fun `Given the published contract, Then every operation reading a body declares BODY_TOO_LARGE`() {
+        // Given
+        val readingABody = operations().filterValues { it.has("requestBody") }
+
+        // When
+        val missing = readingABody.filterValues { operation ->
+            val tooLarge = operation.path("responses").path("413")
+            tooLarge.isMissingNode || ProblemCode.BODY_TOO_LARGE.name !in refusalCodes(tooLarge)
+        }.keys
+
+        // Then
+        assertTrue(readingABody.isNotEmpty(), "The contract declares no operation reading a body.")
+        assertEquals(
+            emptySet<String>(),
+            missing,
+            "OversizeBodyRefusal answers every route, and SharedRefusalsFilter declares it on every operation " +
+                "reading a body. Regenerate: $regenerate",
+        )
+    }
+
+    @Test
     fun `Given the published contract, Then every protected operation's 401 is the shared one`() {
         // Given
         val shared = "#/components/responses/${SharedRefusalsFilter.UNAUTHENTICATED}"
@@ -256,6 +300,19 @@ class ContractSchemaDeclarationTest {
     private companion object {
         const val PATH = "Path"
         val HTTP_METHODS = setOf("GET", "POST", "PUT", "DELETE", "PATCH")
+
+        /** The status of each code the framework mappers and the HTTP layer answer, `problemFor` owning the rest. */
+        val FRAMEWORK_STATUSES = mapOf(
+            ProblemCode.VALIDATION_ERROR.name to "400",
+            ProblemCode.MALFORMED_BODY.name to "400",
+            ProblemCode.AUTHENTICATION_REQUIRED.name to "401",
+            ProblemCode.AUTHENTICATION_FAILED.name to "401",
+            ProblemCode.SESSION_EXPIRED.name to "401",
+            ProblemCode.UNKNOWN_ROUTE.name to "404",
+            ProblemCode.BODY_TOO_LARGE.name to "413",
+            ProblemCode.UNSUPPORTED_MEDIA_TYPE.name to "415",
+            ProblemCode.RANGE_NOT_SATISFIABLE.name to "416",
+        )
 
         /**
          * What a route writes to name a status, and the status it names. `notModified` is left out:

@@ -131,14 +131,20 @@ how Ebean's migration generation was caught; the artefact is the only place that
   (`docs/adr/0042-the-presentation-owns-the-refusal-codes.md`).
 - **Status codes** come from the mappers: `BaseErrorMapper.problemFor`, a `when` over `ErrorCode` with no `else`
   giving each its `ProblemCode` and status, for what a use case refuses; the mapper family (`mappers/*Mapper.kt`,
-  `docs/adr/0021`) for what the framework refuses before one runs. Convention: 400 malformed request, 422 well-formed but refused on its
-  merits, 401 unauthenticated, 403 forbidden, 409 state conflict, 404 absent, 410 expired, 413 oversize upload, 429
-  rate limit.
+  `docs/adr/0021`) for what the framework refuses before one runs. Convention: 400 malformed request, 422
+  well-formed but refused on its merits, 401 unauthenticated, 403 forbidden, 409 state conflict, 404 absent, 410
+  expired, 413 oversize body, 429 rate limit.
+- **Every operation declares its success and each refusal it can return**, one `@APIResponse` per status with
+  `allOf: [ProblemDetail]` and the `enum` of its `code`s, or a `ref` to an `openapi/SharedRefusalsFilter.kt` entry
+  when several operations repeat it. The filter adds the shared `401` and the `413` with `BODY_TOO_LARGE`;
+  `ContractSchemaDeclarationTest` holds each code to a `ProblemCode` and its status. An undeclared refusal is
+  review's to catch.
 - **Authentication**: opaque session tokens, issued by `POST /api/v1/sessions` and validated by
   `SessionTokenAuthenticator`. One token, two transports (`docs/adr/0026-one-session-two-transports.md`): the
   `Authorization: Bearer <token>` header, and the `pinry_session` cookie the browser sends for an `<img>`. The
   creation input declares which with a required `transport`, and the status code answers it, `201` with a token
-  or `200` with a `Set-Cookie`.
+  or `200` with a `Set-Cookie`. **Authentication is lazy** (`quarkus.http.auth.proactive=false`), so a stale token
+  refuses only a protected route, never a public one, sign-in included.
 - **Not JWTs, and both schemes are declared by hand** in `openapi/OpenApiApplication.kt`, and
   `openapi/SessionSecurityRequirementFilter.kt` puts both on every protected operation.
 
