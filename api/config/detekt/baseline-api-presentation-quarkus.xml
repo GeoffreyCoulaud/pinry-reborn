@@ -10,7 +10,6 @@
     <ID>CommentCarriesDocumentation:BearerTokenIdentityProvider.kt:BearerTokenIdentityProvider$override fun authenticate: Uni&lt;SecurityIdentity&gt;</ID>
     <ID>CommentCarriesDocumentation:ContentDispositionFileName.kt:ContentDispositionFileName</ID>
     <ID>CommentCarriesDocumentation:ContentDispositionFileNameTest.kt:ContentDispositionFileNameTest$@Test fun `Given a username with path traversal, Then no slash survives`</ID>
-    <ID>CommentCarriesDocumentation:ImageController.kt:ImageController$@GET @Path("/{pinId}/image") fun getImage: RestResponse&lt;StreamingOutput&gt;</ID>
     <ID>CommentCarriesDocumentation:MeExportController.kt:MeExportController</ID>
     <ID>CommentCarriesDocumentation:MeExportController.kt:MeExportController$private fun copyBounded</ID>
     <ID>CommentCarriesDocumentation:OpenApiApplication.kt:OpenApiApplication : Application</ID>

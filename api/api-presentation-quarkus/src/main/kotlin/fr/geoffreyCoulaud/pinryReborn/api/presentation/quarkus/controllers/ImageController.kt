@@ -138,11 +138,8 @@ class ImageController(
         val requester = securityIdentity.getUser()
         val requestedPx = size?.let { resolveSizePx(it) }
         val served = getPinImageRendition.get(pinId, requester, requestedPx, animated ?: true)
-        // Assigned per-branch rather than `return when (served) { ... }`: the latter is a `when`
-        // used as an expression, which Kotlin compiles with a defensive `else -> throw
-        // NoWhenBranchMatchedException()` even though the sealed `when` is already exhaustive.
-        // That synthetic branch is unreachable (no third `ServedImage` subtype exists) but still
-        // counts as an uncovered Kover branch. As a statement, `when` needs no such fallback.
+        // A statement, not `return when`: the expression form compiles a synthetic
+        // `NoWhenBranchMatchedException` branch that Kover counts as uncovered.
         val response: RestResponse<StreamingOutput>
         when (served) {
             is ServedImage.Original -> response = serveOriginal(served.image, ifNoneMatch)
