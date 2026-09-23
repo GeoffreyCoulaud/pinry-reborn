@@ -1105,7 +1105,7 @@
         }
       },
       "BoardNotFound" : {
-        "description" : "The board does not exist, or a path value could not be read",
+        "description" : "The board does not exist, or a path or query value could not be read",
         "content" : {
           "application/problem+json" : {
             "schema" : {
@@ -1137,6 +1137,57 @@
             }
           }
         }
+      },
+      "BoardNameTaken" : {
+        "description" : "This account already holds a board of that name, ASCII case folded, and a recycled board holds its name until the bin is emptied",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "BOARD_NAME_ALREADY_EXISTS" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "BoardOrPinForbidden" : {
+        "description" : "The board, or a pin the body names, belongs to another account",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "BOARD_INSUFFICIENT_PERMISSIONS", "PIN_INSUFFICIENT_PERMISSIONS" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "BoardOrPinNotFound" : {
+        "description" : "The board, or a pin the body names, does not exist, or a path value could not be read",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "BOARD_DOES_NOT_EXIST", "PIN_DOES_NOT_EXIST", "UNKNOWN_ROUTE" ]
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -1150,6 +1201,23 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BoardListOutputDto"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "A board left the list while it was being read",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "BOARD_DOES_NOT_EXIST" ]
+                    }
+                  }
                 }
               }
             }
@@ -1191,24 +1259,20 @@
               }
             }
           },
+          "400" : {
+            "$ref" : "#/components/responses/InvalidBody"
+          },
           "409" : {
-            "description" : "BOARD_NAME_ALREADY_EXISTS: this account already holds a board of that name, ASCII case folded, and a recycled board holds its name until the bin is emptied",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/BoardNameTaken"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "summary" : "Create Board",
@@ -1437,24 +1501,23 @@
               }
             }
           },
+          "400" : {
+            "$ref" : "#/components/responses/InvalidBody"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/BoardForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/BoardNotFound"
+          },
           "409" : {
-            "description" : "BOARD_NAME_ALREADY_EXISTS: this account already holds a board of that name, ASCII case folded, and a recycled board holds its name until the bin is emptied",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/BoardNameTaken"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "summary" : "Update Board",
@@ -1478,11 +1541,31 @@
           "204" : {
             "description" : "No Content"
           },
+          "403" : {
+            "$ref" : "#/components/responses/BoardForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/BoardNotFound"
+          },
+          "409" : {
+            "description" : "The board is in the recycle bin",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "BOARD_ALREADY_SOFT_DELETED" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Soft Delete Board",
@@ -1513,11 +1596,14 @@
               }
             }
           },
+          "403" : {
+            "$ref" : "#/components/responses/BoardForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/BoardNotFound"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Get Board",
@@ -1555,20 +1641,22 @@
             "description" : "Pins taken out of the board"
           },
           "400" : {
-            "description" : "The body is missing, or its list of identifiers is empty",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/InvalidBatchBody"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/BoardOrPinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/BoardOrPinNotFound"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/PinAlreadyRecycled"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "tags" : [ "Board Controller" ],
@@ -1632,20 +1720,16 @@
             }
           },
           "400" : {
-            "description" : "The q parameter is present and blank",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/BlankQuery"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/BoardForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/BoardNotFound"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "List Board Pins",
@@ -1681,20 +1765,22 @@
             "description" : "Pins filed under the board"
           },
           "400" : {
-            "description" : "The body is missing, or its list of identifiers is empty",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/InvalidBatchBody"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/BoardOrPinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/BoardOrPinNotFound"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/PinAlreadyRecycled"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "tags" : [ "Board Controller" ],
@@ -3733,7 +3819,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "13.0.0"
+    "version" : "14.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",
