@@ -115,7 +115,8 @@ arrive, or arrives truncated, can be asked for again instead of costing a second
 - **Outside both counts**: the dated documents (`docs/specs`, `docs/adr`, `docs/handoffs`) and the files marked
   `linguist-generated`, which are `.dagger/sdk/**`, `clients/pnpm-lock.yaml` and `contract/openapi.json`. A binary
   file counts one file and no line.
-- **Measured on the committed branch**, from anywhere in the repository, an untracked file counting for nothing:
+- **Measured after committing**, from anywhere in the repository: the command reads commits, so a file not yet
+  committed is missing from the count, however long.
 
 ```bash
 X=(-- ':/' ':/!docs/specs' ':/!docs/adr' ':/!docs/handoffs' ':(top,exclude,attr:linguist-generated)')
