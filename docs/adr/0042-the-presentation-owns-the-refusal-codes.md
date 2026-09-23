@@ -1,4 +1,4 @@
-# 0041. The presentation owns the refusal codes, and each response declares its own
+# 0042. The presentation owns the refusal codes, and each response declares its own
 
 Status: Accepted
 Date: 2026-09-23
@@ -27,6 +27,10 @@ anywhere would raise the contract's major, on routes whose behaviour did not cha
    response is a break, since that route's behaviour changed; adding one elsewhere is not.
 4. **A contract test holds every declared code to a `ProblemCode` name**, the annotation taking
    string literals the compiler does not check.
+5. **Every refusal the contract declares carries a body.** The build filter drops the bodyless
+   responses SmallRye adds on its own, and gives every protected operation one shared `401`
+   response carrying its three codes. A refusal no operation owns (an unserved path, `405`, `500`)
+   is not declared.
 
 **Fails if** a use case needs to branch on a refusal's code: it then reads the exception's class.
 
@@ -35,5 +39,5 @@ anywhere would raise the contract's major, on routes whose behaviour did not cha
 - **Each refusal has three names**: its exception class, its `ErrorCode` constant, and the wire's
   `ProblemCode`. Removing `ErrorCode` for a sealed `BaseError` hierarchy was weighed and left for
   later: it touches every exception class for no gain at the boundary.
-- **A route declares its codes only once someone annotates it.** Until then its `code` reads as a
-  plain `string`.
+- **A new route declares its refusals or the gate refuses it**, once the lot's last block adds the
+  test that every non-2xx response carries a `code` enum.
