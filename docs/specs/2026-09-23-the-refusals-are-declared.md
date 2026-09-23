@@ -1,8 +1,8 @@
 # The refusals are declared
 
 Date: 2026-09-23
-Status: Draft; two adversarial reviews closed, their findings recorded in this document. Frozen
-when the last block merges.
+Status: Approved by the operator on 2026-09-23; two adversarial reviews closed, their findings
+recorded in this document. Frozen when the last block merges.
 ADR: `docs/adr/0042-the-presentation-owns-the-refusal-codes.md`.
 
 ## 1. Goal
