@@ -165,6 +165,21 @@ class ImageHostingIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given a multipart upload with no file part, Then it returns 400 VALIDATION_ERROR`() {
+        // Given
+        val (auth, pinId) = createPinForNewUser()
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .multiPart("other", fixture("sample.png"), "image/png")
+            .`when`().put("/api/v1/pins/$pinId/image")
+            .then()
+            .statusCode(400)
+            .body("code", equalTo("VALIDATION_ERROR"))
+    }
+
+    @Test
     fun `Given a pin with no image, Then GET returns 404`() {
         // Given
         val (auth, pinId) = createPinForNewUser()
