@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi
 
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemCode
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BATCH_BODY_REFUSED
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BLANK_QUERY_REFUSED
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE
 import io.quarkus.smallrye.openapi.OpenApiFilter
 import org.eclipse.microprofile.openapi.OASFactory
@@ -35,6 +37,12 @@ class SharedRefusalsFilter : OASFilter {
         const val REAUTHENTICATION_FAILED = "ReauthenticationFailed"
         const val UNSUPPORTED_REAUTHENTICATION_FACTOR = "UnsupportedReauthenticationFactor"
         const val TOO_MANY_AUTHENTICATION_ATTEMPTS = "TooManyAuthenticationAttempts"
+        const val INVALID_BATCH_BODY = "InvalidBatchBody"
+        const val BLANK_QUERY = "BlankQuery"
+        const val UNREADABLE_QUERY = "UnreadableQuery"
+        const val PIN_FORBIDDEN = "PinForbidden"
+        const val PIN_NOT_FOUND = "PinNotFound"
+        const val PIN_ALREADY_RECYCLED = "PinAlreadyRecycled"
 
         private val SHARED = mapOf(
             UNAUTHENTICATED to refusal(
@@ -63,6 +71,29 @@ class SharedRefusalsFilter : OASFilter {
             TOO_MANY_AUTHENTICATION_ATTEMPTS to refusal(
                 "The attempt limiter holds this account closed; Retry-After says for how long",
                 ProblemCode.TOO_MANY_AUTHENTICATION_ATTEMPTS,
+            ),
+            INVALID_BATCH_BODY to refusal(
+                BATCH_BODY_REFUSED,
+                ProblemCode.VALIDATION_ERROR,
+                ProblemCode.MALFORMED_BODY,
+            ),
+            BLANK_QUERY to refusal(BLANK_QUERY_REFUSED, ProblemCode.SEARCH_EMPTY_QUERY),
+            UNREADABLE_QUERY to refusal(
+                "A query value could not be read",
+                ProblemCode.UNKNOWN_ROUTE,
+            ),
+            PIN_FORBIDDEN to refusal(
+                "A pin the request names belongs to another account",
+                ProblemCode.PIN_INSUFFICIENT_PERMISSIONS,
+            ),
+            PIN_NOT_FOUND to refusal(
+                "A pin the request names does not exist, or a path or query value could not be read",
+                ProblemCode.PIN_DOES_NOT_EXIST,
+                ProblemCode.UNKNOWN_ROUTE,
+            ),
+            PIN_ALREADY_RECYCLED to refusal(
+                "The pin is in the recycle bin",
+                ProblemCode.PIN_ALREADY_SOFT_DELETED,
             ),
         )
 

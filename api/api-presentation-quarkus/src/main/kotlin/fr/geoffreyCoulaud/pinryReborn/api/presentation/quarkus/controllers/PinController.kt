@@ -12,9 +12,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.Probl
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinSortStrategyMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BATCH_BODY_REFUSED
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BLANK_QUERY_REFUSED
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
@@ -32,9 +31,11 @@ import jakarta.ws.rs.PUT
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
+import jakarta.ws.rs.core.MediaType.APPLICATION_JSON as JSON
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder
@@ -53,6 +54,10 @@ class PinController(
     @GET
     @Authenticated
     @Path("/{pinId}")
+    @APIResponse(responseCode = "200", description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))])
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_NOT_FOUND)
     fun getPin(pinId: UUID): RestResponse<PinOutputDto> {
         val user = securityIdentity.getUser()
         return pinGetter
@@ -74,6 +79,8 @@ class PinController(
             ),
         ],
     )
+    @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
+    @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun createPin(@Valid @NotNull creationDto: PinCreationInputDto): RestResponse<PinOutputDto> {
         val author = securityIdentity.getUser()
         val pin = pinCreator.createPin(
@@ -103,11 +110,9 @@ class PinController(
             ),
         ],
     )
-    @APIResponse(
-        responseCode = "400",
-        description = BLANK_QUERY_REFUSED,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.BLANK_QUERY)
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_NOT_FOUND)
     fun listPins(
         @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
         @QueryParam("pageSize") pageSizeInput: Int? = null,
@@ -127,6 +132,10 @@ class PinController(
     @DELETE
     @Authenticated
     @Path("/{pinId}")
+    @APIResponse(responseCode = "204", description = "No Content")
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_NOT_FOUND)
+    @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.PIN_ALREADY_RECYCLED)
     fun softDeletePin(pinId: UUID): RestResponse<Void> {
         val user = securityIdentity.getUser()
         pinRecycleBin.softDelete(pinId = pinId, user = user)
@@ -137,11 +146,13 @@ class PinController(
     @Authenticated
     @Operation(summary = "Recycle several pins, all or nothing")
     @APIResponse(responseCode = "204", description = "Pins recycled")
-    @APIResponse(
-        responseCode = "400",
-        description = BATCH_BODY_REFUSED,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BATCH_BODY)
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
+    @APIResponse(responseCode = "404", description = "A pin the body names does not exist",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["PIN_DOES_NOT_EXIST"])]))])
+    @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.PIN_ALREADY_RECYCLED)
+    @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun softDeletePins(@Valid @NotNull dto: PinIdsInputDto): RestResponse<Void> {
         val user = securityIdentity.getUser()
         pinRecycleBin.softDeleteAll(pinIds = dto.pinIds, user = user)
@@ -158,6 +169,19 @@ class PinController(
             "`Landscape` and `landscape` are one tag, and the response carries the stored spelling, not " +
             "the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags.",
     )
+    @APIResponse(responseCode = "200", description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))])
+    @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
+    @APIResponse(responseCode = "403", description = "The pin, or a board the body names, belongs to another account",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["PIN_INSUFFICIENT_PERMISSIONS", "BOARD_INSUFFICIENT_PERMISSIONS"])]))])
+    @APIResponse(responseCode = "404", description = "The pin, or a board the body names, does not exist",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["PIN_DOES_NOT_EXIST", "BOARD_DOES_NOT_EXIST", "UNKNOWN_ROUTE"])]))])
+    @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.PIN_ALREADY_RECYCLED)
+    @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun updatePin(pinId: UUID, @Valid @NotNull updateDto: PinUpdateInputDto): RestResponse<PinOutputDto> {
         val user = securityIdentity.getUser()
         return pinUpdater

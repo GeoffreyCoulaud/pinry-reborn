@@ -1,10 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.TagSearchOutputDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.BLANK_QUERY_REFUSED
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.SearchResultMapper.toTagSearchDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagSearcher
 import io.quarkus.security.Authenticated
@@ -38,11 +36,8 @@ class TagSearchController(
             ),
         ],
     )
-    @APIResponse(
-        responseCode = "400",
-        description = BLANK_QUERY_REFUSED,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.BLANK_QUERY)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.UNREADABLE_QUERY)
     fun searchTags(
         @QueryParam("q") query: String?,
         @QueryParam("limit") limitParam: Int?,

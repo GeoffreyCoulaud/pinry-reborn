@@ -950,6 +950,108 @@
             }
           }
         }
+      },
+      "InvalidBatchBody" : {
+        "description" : "The body is missing, or its list of identifiers is empty",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "VALIDATION_ERROR", "MALFORMED_BODY" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "BlankQuery" : {
+        "description" : "The q parameter is present and blank",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "SEARCH_EMPTY_QUERY" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "UnreadableQuery" : {
+        "description" : "A query value could not be read",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "UNKNOWN_ROUTE" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "PinForbidden" : {
+        "description" : "A pin the request names belongs to another account",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "PIN_INSUFFICIENT_PERMISSIONS" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "PinNotFound" : {
+        "description" : "A pin the request names does not exist, or a path or query value could not be read",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "PIN_DOES_NOT_EXIST", "UNKNOWN_ROUTE" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "PinAlreadyRecycled" : {
+        "description" : "The pin is in the recycle bin",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "PIN_ALREADY_SOFT_DELETED" ]
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -2525,20 +2627,36 @@
             "description" : "Pins recycled"
           },
           "400" : {
-            "description" : "The body is missing, or its list of identifiers is empty",
+            "$ref" : "#/components/responses/InvalidBatchBody"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "description" : "A pin the body names does not exist",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "PIN_DOES_NOT_EXIST" ]
+                    }
+                  }
                 }
               }
             }
           },
+          "409" : {
+            "$ref" : "#/components/responses/PinAlreadyRecycled"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "tags" : [ "Pin Controller" ],
@@ -2595,20 +2713,16 @@
             }
           },
           "400" : {
-            "description" : "The q parameter is present and blank",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/BlankQuery"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/PinNotFound"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "List Pins",
@@ -2641,14 +2755,17 @@
               }
             }
           },
+          "400" : {
+            "$ref" : "#/components/responses/InvalidBody"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "summary" : "Create Pin",
@@ -2879,14 +2996,51 @@
               }
             }
           },
-          "401" : {
-            "$ref" : "#/components/responses/Unauthenticated"
+          "400" : {
+            "$ref" : "#/components/responses/InvalidBody"
           },
           "403" : {
-            "description" : "Not Allowed"
+            "description" : "The pin, or a board the body names, belongs to another account",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "PIN_INSUFFICIENT_PERMISSIONS", "BOARD_INSUFFICIENT_PERMISSIONS" ]
+                    }
+                  }
+                }
+              }
+            }
           },
-          "400" : {
-            "description" : "Bad Request"
+          "404" : {
+            "description" : "The pin, or a board the body names, does not exist",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "PIN_DOES_NOT_EXIST", "BOARD_DOES_NOT_EXIST", "UNKNOWN_ROUTE" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409" : {
+            "$ref" : "#/components/responses/PinAlreadyRecycled"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "tags" : [ "Pin Controller" ],
@@ -2909,11 +3063,17 @@
           "204" : {
             "description" : "No Content"
           },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/PinNotFound"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/PinAlreadyRecycled"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Soft Delete Pin",
@@ -2944,11 +3104,14 @@
               }
             }
           },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/PinNotFound"
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Get Pin",
@@ -3379,14 +3542,10 @@
             }
           },
           "400" : {
-            "description" : "The q parameter is present and blank",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/BlankQuery"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/UnreadableQuery"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
@@ -3458,7 +3617,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "11.0.0"
+    "version" : "12.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",
