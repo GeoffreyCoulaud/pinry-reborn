@@ -847,6 +847,110 @@
         "name" : "pinry_session",
         "in" : "cookie"
       }
+    },
+    "responses" : {
+      "Unauthenticated" : {
+        "description" : "No session, or its token is unknown, revoked or expired",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "AUTHENTICATION_REQUIRED", "AUTHENTICATION_FAILED", "SESSION_EXPIRED" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "InvalidBody" : {
+        "description" : "The body is not JSON, or a field breaks its constraint",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "VALIDATION_ERROR", "MALFORMED_BODY" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "UnsupportedMediaType" : {
+        "description" : "The route does not read this Content-Type",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "UNSUPPORTED_MEDIA_TYPE" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ReauthenticationFailed" : {
+        "description" : "The current password is wrong",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "REAUTHENTICATION_FAILED" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "UnsupportedReauthenticationFactor" : {
+        "description" : "The X-Reauthentication header is missing or names no factor the route accepts",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "UNSUPPORTED_REAUTHENTICATION_FACTOR" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "TooManyAuthenticationAttempts" : {
+        "description" : "The attempt limiter holds this account closed; Retry-After says for how long",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "TOO_MANY_AUTHENTICATION_ATTEMPTS" ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "paths" : {
@@ -864,7 +968,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -911,7 +1015,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -943,7 +1047,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -963,7 +1067,7 @@
             "description" : "No Content"
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1006,7 +1110,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1035,7 +1139,7 @@
             "description" : "No Content"
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1072,7 +1176,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1129,7 +1233,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1160,7 +1264,7 @@
             "description" : "No Content"
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1195,7 +1299,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1246,7 +1350,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1323,7 +1427,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1372,7 +1476,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1418,7 +1522,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1445,11 +1549,17 @@
           "202" : {
             "description" : "Account deletion accepted"
           },
-          "401" : {
-            "description" : "Not Authorized"
+          "400" : {
+            "$ref" : "#/components/responses/UnsupportedReauthenticationFactor"
           },
           "403" : {
-            "description" : "Not Allowed"
+            "$ref" : "#/components/responses/ReauthenticationFailed"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyAuthenticationAttempts"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "summary" : "Delete Account",
@@ -1525,7 +1635,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "tags" : [ "Me Export Controller" ],
@@ -1566,7 +1676,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1623,7 +1733,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "summary" : "Get Export",
@@ -1668,7 +1778,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "summary" : "Delete Export",
@@ -1763,7 +1873,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "tags" : [ "Me Export Controller" ],
@@ -1808,7 +1918,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1859,7 +1969,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1905,7 +2015,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -1944,7 +2054,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2000,7 +2110,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "summary" : "Get Import",
@@ -2047,7 +2157,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "tags" : [ "Me Import Controller" ],
@@ -2153,7 +2263,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "tags" : [ "Me Import Controller" ],
@@ -2218,7 +2328,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "tags" : [ "Me Import Controller" ],
@@ -2290,7 +2400,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "tags" : [ "Me Import Controller" ],
@@ -2315,16 +2425,70 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content"
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
+            "description" : "Password changed, and every session of the account revoked"
           },
           "400" : {
-            "description" : "Bad Request"
+            "$ref" : "#/components/responses/InvalidBody"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/ReauthenticationFailed"
+          },
+          "409" : {
+            "description" : "Another change of this password landed first",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "PASSWORD_CHANGE_COLLISION" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "422" : {
+            "description" : "The account has held this password before",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "PASSWORD_PREVIOUSLY_USED" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "The attempt limiter, or a change too soon after the last",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "TOO_MANY_AUTHENTICATION_ATTEMPTS", "PASSWORD_CHANGED_TOO_SOON" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
           }
         },
         "summary" : "Change Password",
@@ -2364,7 +2528,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2434,7 +2598,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2471,7 +2635,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2531,7 +2695,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2551,7 +2715,7 @@
             "description" : "No Content"
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2594,7 +2758,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2623,7 +2787,7 @@
             "description" : "No Content"
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2660,7 +2824,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2709,7 +2873,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2739,7 +2903,7 @@
             "description" : "No Content"
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2774,7 +2938,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2854,7 +3018,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2909,7 +3073,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2937,7 +3101,7 @@
             "description" : "No Content"
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2974,7 +3138,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -2996,7 +3160,7 @@
             "description" : "Session revoked, and the pinry_session cookie cleared when the request carried one"
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -3042,18 +3206,31 @@
               }
             }
           },
+          "400" : {
+            "$ref" : "#/components/responses/InvalidBody"
+          },
           "401" : {
-            "description" : "AUTHENTICATION_FAILED: the name is unknown, the password is wrong, or the account is held closed by the attempt limiter",
+            "description" : "The name is unknown or the password is wrong",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "AUTHENTICATION_FAILED" ]
+                    }
+                  }
                 }
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request"
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyAuthenticationAttempts"
           }
         },
         "summary" : "Create Session",
@@ -3067,7 +3244,7 @@
             "description" : "Session revoked, and the pinry_session cookie cleared when the request carried one"
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -3094,7 +3271,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -3133,7 +3310,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -3188,7 +3365,7 @@
             }
           },
           "401" : {
-            "description" : "Not Authorized"
+            "$ref" : "#/components/responses/Unauthenticated"
           },
           "403" : {
             "description" : "Not Allowed"
@@ -3217,7 +3394,7 @@
         },
         "responses" : {
           "200" : {
-            "description" : "OK",
+            "description" : "The account created",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -3227,7 +3404,27 @@
             }
           },
           "400" : {
-            "description" : "Bad Request"
+            "$ref" : "#/components/responses/InvalidBody"
+          },
+          "409" : {
+            "description" : "Another account holds this name, whatever its case",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "USERNAME_ALREADY_EXISTS" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           }
         },
         "summary" : "Create User",
@@ -3237,7 +3434,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "9.1.0"
+    "version" : "10.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

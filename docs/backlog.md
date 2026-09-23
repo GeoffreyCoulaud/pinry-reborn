@@ -36,12 +36,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   does not exist yet and has no stable ID, so no origin is wired for it. When it ships, add its
   `chrome-extension://<id>` / `moz-extension://<id>` origin to `api.cors.origins`. See
   `docs/handoffs/2026-07-21 - handoff - cors.md`.
-- **The contract declares none of the refusals the web application reads.** `PUT /api/v1/me/password`
-  and `DELETE /api/v1/me` carry no `409`, `422` or `429` and no `ProblemDetail` body, so renaming an
-  `ErrorCode` leaves `oasdiff` and the gate green and the client showing the general sentence.
-  Annotating the two controllers is the whole of it. See
-  `docs/specs/2026-09-22-the-account-is-reachable.md` section 7 and
-  `docs/handoffs/2026-09-22 - handoff - the-account-is-reachable.md`. New 2026-09-22.
 - **Import follow-ons.** Import shipped (`docs/specs/2026-08-14-user-data-import.md`,
   `docs/adr/0015-import-identifies-by-natural-key.md`, branch `feat/user-data-import`); what it
   deliberately left out is here rather than in the spec's out-of-scope list, because these are work

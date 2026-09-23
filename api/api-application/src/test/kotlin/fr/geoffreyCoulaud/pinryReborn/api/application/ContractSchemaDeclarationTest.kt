@@ -6,6 +6,9 @@ import com.lemonappdev.konsist.api.declaration.KoAnnotationDeclaration
 import com.lemonappdev.konsist.api.declaration.KoFunctionDeclaration
 import com.lemonappdev.konsist.api.ext.list.withAnnotationNamed
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemCode
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinImageStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -13,7 +16,7 @@ import org.junit.jupiter.api.Test
 
 /**
  * The contract declares what the server emits: an opaque cursor, the values of a status filled
- * from an enum's name, and the status code a route builds for itself.
+ * from an enum's name, the status code a route builds for itself, and the codes a refusal carries.
  */
 class ContractSchemaDeclarationTest {
     private val nullableString = setOf("string", "null")
@@ -117,6 +120,44 @@ class ContractSchemaDeclarationTest {
     }
 
     @Test
+    fun `Given the published contract, Then every declared refusal code is a ProblemCode`() {
+        // Given
+        val declared = declaredRefusalCodes()
+        val known = ProblemCode.entries.map { it.name }.toSet()
+
+        // When
+        val unknown = declared.mapValues { (_, codes) -> codes - known }.filterValues { it.isNotEmpty() }
+
+        // Then
+        assertTrue(declared.values.any { it.isNotEmpty() }, "The contract declares no refusal code at all.")
+        assertEquals(
+            emptyMap<String, Set<String>>(),
+            unknown,
+            "An annotation's enumeration is a string the compiler does not check; these name no " +
+                "ProblemCode. Regenerate after fixing the annotation: $regenerate",
+        )
+    }
+
+    @Test
+    fun `Given the published contract, Then every protected operation's 401 is the shared one`() {
+        // Given
+        val shared = "#/components/responses/${SharedRefusalsFilter.UNAUTHENTICATED}"
+
+        // When
+        val wrong = operations()
+            .filterValues { !it.path("security").isEmpty }
+            .filterValues { it.path("responses").path("401").path("\$ref").asText() != shared }
+            .keys
+
+        // Then
+        assertEquals(
+            emptySet<String>(),
+            wrong,
+            "SharedRefusalsFilter points every protected operation's 401 at $shared. Regenerate: $regenerate",
+        )
+    }
+
+    @Test
     fun `Given production sources, Then every route building a response of its own is read here`() {
         // Given
         val routes = restResponseRoutes()
@@ -211,6 +252,35 @@ class ContractSchemaDeclarationTest {
             "Status.PARTIAL_CONTENT" to "206",
             "Status.OK" to "200",
             ".ok(" to "200",
+        )
+    }
+
+    /** Every operation of the contract, keyed as `METHOD /path`. */
+    private fun operations(): Map<String, JsonNode> =
+        PublishedContract.document
+            .path("paths")
+            .properties()
+            .flatMap { (path, operations) ->
+                operations.properties().map { (method, operation) -> "${method.uppercase()} $path" to operation }
+            }.toMap()
+
+    /** The codes each refusal declares, keyed as `METHOD /path status`, a shared entry read through its `$ref`. */
+    private fun declaredRefusalCodes(): Map<String, Set<String>> =
+        operations().flatMap { (name, operation) ->
+            operation.path("responses").properties()
+                .filterNot { (status, _) -> status.startsWith("2") }
+                .map { (status, response) -> "$name $status" to refusalCodes(response) }
+        }.toMap()
+
+    private fun refusalCodes(response: JsonNode): Set<String> {
+        val resolved = if (response.has("\$ref")) {
+            PublishedContract.document.at(response.path("\$ref").asText().removePrefix("#"))
+        } else {
+            response
+        }
+        assertTrue(!resolved.isMissingNode, "The contract names ${response.path("\$ref")}, which it declares nowhere.")
+        return enumeration(
+            resolved.path("content").path(PROBLEM_JSON_MEDIA_TYPE).path("schema").path("properties").path("code"),
         )
     }
 
