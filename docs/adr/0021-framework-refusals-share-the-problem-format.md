@@ -1,6 +1,9 @@
 # 0021. Framework refusals share the problem format
 
-Status: Accepted
+Status: Accepted; decision 2 is superseded by `docs/adr/0042-the-presentation-owns-the-refusal-codes.md`,
+and the Consequence "The oversize body stays outside the format" is amended by the refusals lot
+(`docs/specs/2026-09-23-the-refusals-are-declared.md`): `OversizeBodyRefusal` answers a body declaring its
+length past the limit with a problem, and only a chunked one stays bodyless.
 Date: 2026-09-07
 Specification: `docs/specs/2026-09-05-p2-debt-elimination.md`, section 3 (D6) and section 4.5.
 Related: `docs/adr/0020-two-reviews-and-an-inline-act.md` (the lot's regime); `agents/engineering.md`,
