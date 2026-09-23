@@ -20,7 +20,7 @@ class RangeNotSatisfiableExceptionMapper : ExceptionMapper<RangeNotSatisfiableEx
         ProblemResponses.problemResponse(
             status = Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE,
             detail = exception.message,
-            code = FrameworkErrorCode.RANGE_NOT_SATISFIABLE.name,
+            code = ProblemCode.RANGE_NOT_SATISFIABLE,
             uriInfo = uriInfo,
         ).header("Content-Range", "bytes */${exception.totalSize}").build()
 }

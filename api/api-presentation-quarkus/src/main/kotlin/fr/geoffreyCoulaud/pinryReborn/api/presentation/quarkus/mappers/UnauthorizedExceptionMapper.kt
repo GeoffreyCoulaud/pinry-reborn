@@ -19,7 +19,7 @@ class UnauthorizedExceptionMapper : ExceptionMapper<UnauthorizedException> {
         ProblemResponses.problemResponse(
             status = Response.Status.UNAUTHORIZED,
             detail = "Authentication required",
-            code = FrameworkErrorCode.AUTHENTICATION_REQUIRED.name,
+            code = ProblemCode.AUTHENTICATION_REQUIRED,
             uriInfo = uriInfo,
         ).header("WWW-Authenticate", ProblemResponses.WWW_AUTHENTICATE_BEARER).build()
 }

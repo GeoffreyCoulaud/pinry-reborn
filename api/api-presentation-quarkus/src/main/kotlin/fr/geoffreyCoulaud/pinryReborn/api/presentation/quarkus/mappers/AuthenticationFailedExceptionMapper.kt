@@ -28,10 +28,10 @@ class AuthenticationFailedExceptionMapper : ExceptionMapper<AuthenticationFailed
 
     // Cause-inspection lives here (not in a mapped subtype): a subtype of the final
     // AuthenticationFailedException never reached this chain at runtime (see BearerTokenIdentityProvider).
-    private fun describe(exception: AuthenticationFailedException): Pair<String, String> =
+    private fun describe(exception: AuthenticationFailedException): Pair<ProblemCode, String> =
         if (exception.cause is SessionTokenExpiredError) {
-            FrameworkErrorCode.SESSION_EXPIRED.name to "Session expired"
+            ProblemCode.SESSION_EXPIRED to "Session expired"
         } else {
-            FrameworkErrorCode.AUTHENTICATION_FAILED.name to "Authentication failed"
+            ProblemCode.AUTHENTICATION_FAILED to "Authentication failed"
         }
 }

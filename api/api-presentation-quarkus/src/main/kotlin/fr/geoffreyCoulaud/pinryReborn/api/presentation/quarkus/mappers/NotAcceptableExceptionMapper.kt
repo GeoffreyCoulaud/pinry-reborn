@@ -17,7 +17,7 @@ class NotAcceptableExceptionMapper : ExceptionMapper<NotAcceptableException> {
         ProblemResponses.problemResponse(
             Response.Status.NOT_ACCEPTABLE,
             "The route produces none of the Accept types",
-            FrameworkErrorCode.NOT_ACCEPTABLE.name,
+            ProblemCode.NOT_ACCEPTABLE,
             uriInfo,
         ).build()
 }

@@ -28,6 +28,19 @@ class BaseErrorMapperTest {
     }
 
     @Test
+    fun `Given every ErrorCode, Then its problem carries the code of the same name`() {
+        // Given: the wire codes are ProblemCode's now, spelled as ErrorCode spelled them, and clients read them
+        val renamed = ErrorCode.entries.filter { code ->
+            // When
+            val body = mapper.toResponse(BaseError(message = "boom", code = code)).entity as ProblemDetail
+            body.code != code.name
+        }
+
+        // Then
+        assertEquals(emptyList<ErrorCode>(), renamed)
+    }
+
+    @Test
     fun `Given USERNAME_ALREADY_EXISTS, Then status is CONFLICT`() {
         assertEquals(Response.Status.CONFLICT, statusFor(ErrorCode.USERNAME_ALREADY_EXISTS))
     }

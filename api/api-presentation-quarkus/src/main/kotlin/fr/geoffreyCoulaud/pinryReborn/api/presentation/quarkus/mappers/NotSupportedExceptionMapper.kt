@@ -17,7 +17,7 @@ class NotSupportedExceptionMapper : ExceptionMapper<NotSupportedException> {
         ProblemResponses.problemResponse(
             Response.Status.UNSUPPORTED_MEDIA_TYPE,
             "The route does not read this Content-Type",
-            FrameworkErrorCode.UNSUPPORTED_MEDIA_TYPE.name,
+            ProblemCode.UNSUPPORTED_MEDIA_TYPE,
             uriInfo,
         ).build()
 }
