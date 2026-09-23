@@ -8,8 +8,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.Renditions
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinImageDownloadInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ImageOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinImageStateDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ImageMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinImageStateMapper.toDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.DeletePinImage
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.GetPinImageRendition
@@ -39,6 +41,7 @@ import jakarta.ws.rs.core.StreamingOutput
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestForm
 import org.jboss.resteasy.reactive.RestResponse
@@ -86,6 +89,9 @@ class ImageController(
             ),
         ],
     )
+    @APIResponse(responseCode = "413", description = TOO_LARGE,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_TOO_LARGE", "BODY_TOO_LARGE"])]))])
     fun setImage(pinId: UUID, @RestForm("file") @NotNull file: FileUpload): RestResponse<ImageOutputDto> {
         val requester = securityIdentity.getUser()
         val result = Files.newInputStream(file.uploadedFile()).use { upload ->
@@ -187,6 +193,9 @@ class ImageController(
             ),
         ],
     )
+    @APIResponse(responseCode = "413", description = TOO_LARGE,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_TOO_LARGE", "BODY_TOO_LARGE"])]))])
     fun requestImageDownload(
         pinId: UUID,
         @Valid @NotNull body: PinImageDownloadInputDto,
@@ -213,5 +222,10 @@ class ImageController(
         // Operation. Keeping the summary in one place avoids the two annotations drifting apart.
         const val SET_IMAGE_OPERATION_SUMMARY =
             "Set the pin's canonical image (upload bytes, or request a server-side fetch)"
+
+        // Both arms declare it identically, SmallRye merging them (spec 2026-09-23, section 3).
+        const val TOO_LARGE = "IMAGE_TOO_LARGE: the upload is past images.max_file_bytes. BODY_TOO_LARGE: the " +
+            "Content-Length is past quarkus.http.limits.max-body-size, which is above images.max_file_bytes; " +
+            "a chunked body past it gets a 413 with no body"
     }
 }

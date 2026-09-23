@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.MediaType
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
@@ -122,11 +123,13 @@ class MeImportController(
             "member names the length to resume from",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
     )
-    @APIResponse(
-        responseCode = "413",
-        description = "IMPORT_ARCHIVE_TOO_LARGE: the chunk would carry the upload past imports.max_archive_bytes",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(implementation = ProblemDetail::class))],
-    )
+    @APIResponse(responseCode = "413", description = "IMPORT_ARCHIVE_TOO_LARGE: the chunk would carry the upload " +
+        "past imports.max_archive_bytes. BODY_TOO_LARGE: the Content-Length is past " +
+        "quarkus.http.limits.max-body-size, which is above imports.max_chunk_bytes; a chunked body past it gets " +
+        "a 413 with no body",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["IMPORT_ARCHIVE_TOO_LARGE", "BODY_TOO_LARGE"])]))])
     @APIResponse(
         responseCode = "507",
         description = "IMPORT_INSUFFICIENT_STORAGE: free space is under imports.minimum_free_bytes",

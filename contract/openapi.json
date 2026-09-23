@@ -2243,11 +2243,18 @@
             }
           },
           "413" : {
-            "description" : "IMPORT_ARCHIVE_TOO_LARGE: the chunk would carry the upload past imports.max_archive_bytes",
+            "description" : "IMPORT_ARCHIVE_TOO_LARGE: the chunk would carry the upload past imports.max_archive_bytes. BODY_TOO_LARGE: the Content-Length is past quarkus.http.limits.max-body-size, which is above imports.max_chunk_bytes; a chunked body past it gets a 413 with no body",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "IMPORT_ARCHIVE_TOO_LARGE", "BODY_TOO_LARGE" ]
+                    }
+                  }
                 }
               }
             }
@@ -3007,6 +3014,23 @@
               }
             }
           },
+          "413" : {
+            "description" : "IMAGE_TOO_LARGE: the upload is past images.max_file_bytes. BODY_TOO_LARGE: the Content-Length is past quarkus.http.limits.max-body-size, which is above images.max_file_bytes; a chunked body past it gets a 413 with no body",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "IMAGE_TOO_LARGE", "BODY_TOO_LARGE" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
           "202" : {
             "description" : "Download accepted",
             "content" : {
@@ -3434,7 +3458,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "10.0.0"
+    "version" : "11.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",
