@@ -21,10 +21,13 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.UserDataImportTask
 import fr.geoffreyCoulaud.pinryReborn.api.worker.ImportsConfig
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
+import io.quarkus.runtime.configuration.MemorySize
+import io.restassured.RestAssured
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import io.restassured.response.Response
 import jakarta.inject.Inject
+import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -34,6 +37,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.net.Socket
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -74,6 +78,9 @@ class MeImportIntegrationTest : IntegrationTest() {
     @Inject lateinit var imagesConfig: ImagesConfig
 
     @Inject lateinit var objectMapper: ObjectMapper
+
+    @ConfigProperty(name = "quarkus.http.limits.max-body-size")
+    lateinit var maxBodySize: MemorySize
 
     // --- The wire path: open, upload, complete, poll ---
 
@@ -399,6 +406,29 @@ class MeImportIntegrationTest : IntegrationTest() {
             importRepository.findById(importId)?.uploadedBytes,
             "a refused chunk leaves the length as it was, so the client resumes rather than restarts",
         )
+    }
+
+    @Test
+    fun `Given a body declared past the server's limit, Then the 413 carries a problem`() {
+        // Given: a raw socket, since a client library refuses to declare a length it does not send
+        val declaredLength = maxBodySize.asLongValue() + 1
+        val path = "/api/v1/me/imports/${UUID.randomUUID()}/archive"
+        val head = "PUT $path HTTP/1.1\r\nHost: localhost\r\n" +
+            "Content-Type: application/octet-stream\r\nContent-Length: $declaredLength\r\n\r\n"
+
+        // When: the head alone, the refusal reading the declared length and never the body
+        val answer = Socket("localhost", RestAssured.port).use { socket ->
+            socket.getOutputStream().write(head.toByteArray())
+            socket.getInputStream().readAllBytes().decodeToString()
+        }
+
+        // Then
+        val (statusAndHeaders, body) = answer.split("\r\n\r\n", limit = 2)
+        assertTrue(statusAndHeaders.startsWith("HTTP/1.1 413"), statusAndHeaders)
+        assertTrue(statusAndHeaders.contains("content-type: application/problem+json", ignoreCase = true))
+        val problem = objectMapper.readTree(body)
+        assertEquals("BODY_TOO_LARGE", problem["code"].asText())
+        assertEquals(path, problem["instance"].asText())
     }
 
     // --- One archive, one of every anomaly ---
