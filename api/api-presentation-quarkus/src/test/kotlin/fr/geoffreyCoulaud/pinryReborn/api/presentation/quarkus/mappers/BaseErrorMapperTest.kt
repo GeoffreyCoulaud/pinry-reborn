@@ -28,16 +28,19 @@ class BaseErrorMapperTest {
     }
 
     @Test
-    fun `Given every ErrorCode, Then its problem carries the code of the same name`() {
-        // Given: the wire codes are ProblemCode's now, spelled as ErrorCode spelled them, and clients read them
-        val renamed = ErrorCode.entries.filter { code ->
-            // When
-            val body = mapper.toResponse(BaseError(message = "boom", code = code)).entity as ProblemDetail
-            body.code != code.name
-        }
+    fun `Given every ErrorCode, Then no two share a wire code but the ones merged on purpose`() {
+        // Given: names are free to differ (docs/adr/0042-the-presentation-owns-the-refusal-codes.md, decision 2)
+        val merged = mapOf(
+            ProblemCode.AUTHENTICATION_FAILED to listOf(ErrorCode.USER_DOES_NOT_EXIST, ErrorCode.INVALID_PASSWORD),
+        )
+
+        // When
+        val shared = ErrorCode.entries
+            .groupBy { mapper.problemFor(it).first }
+            .filterValues { it.size > 1 }
 
         // Then
-        assertEquals(emptyList<ErrorCode>(), renamed)
+        assertEquals(merged, shared)
     }
 
     @Test
@@ -78,11 +81,6 @@ class BaseErrorMapperTest {
     @Test
     fun `Given INVALID_PASSWORD, Then status is UNAUTHORIZED`() {
         assertEquals(Response.Status.UNAUTHORIZED, statusFor(ErrorCode.INVALID_PASSWORD))
-    }
-
-    @Test
-    fun `Given INVALID_HTTP_AUTHORIZATION_SCHEME, Then status is UNAUTHORIZED`() {
-        assertEquals(Response.Status.UNAUTHORIZED, statusFor(ErrorCode.INVALID_HTTP_AUTHORIZATION_SCHEME))
     }
 
     @Test

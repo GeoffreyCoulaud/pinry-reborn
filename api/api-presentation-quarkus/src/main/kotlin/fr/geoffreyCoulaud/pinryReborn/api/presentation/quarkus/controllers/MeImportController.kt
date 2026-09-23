@@ -118,8 +118,7 @@ class MeImportController(
         "quarkus.http.limits.max-body-size, which is above imports.max_chunk_bytes; a chunked body past it gets " +
         "a 413 with no body",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["IMPORT_ARCHIVE_TOO_LARGE", "BODY_TOO_LARGE"])]))])
+            properties = [SchemaProperty(name = "code", enumeration = ["IMPORT_ARCHIVE_TOO_LARGE"])]))])
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     @APIResponse(responseCode = "507", description = "Free space is under imports.minimum_free_bytes",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],

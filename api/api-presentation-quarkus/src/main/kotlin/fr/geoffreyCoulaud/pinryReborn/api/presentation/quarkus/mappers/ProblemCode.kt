@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
 /**
- * Every `code` a problem can carry on the wire: those the framework or the HTTP layer decide, then one per
- * `ErrorCode`, which [BaseErrorMapper] maps (`docs/adr/0042-the-presentation-owns-the-refusal-codes.md`).
+ * Every `code` a problem can carry on the wire: those the framework or the HTTP layer decide, then those
+ * [BaseErrorMapper] maps an `ErrorCode` to (`docs/adr/0042-the-presentation-owns-the-refusal-codes.md`).
  */
 enum class ProblemCode {
     VALIDATION_ERROR,
@@ -19,9 +19,6 @@ enum class ProblemCode {
     RANGE_NOT_SATISFIABLE,
     BODY_TOO_LARGE,
     USERNAME_ALREADY_EXISTS,
-    USER_DOES_NOT_EXIST,
-    INVALID_PASSWORD,
-    INVALID_HTTP_AUTHORIZATION_SCHEME,
     PIN_DOES_NOT_EXIST,
     PIN_INSUFFICIENT_PERMISSIONS,
     PIN_NOT_SOFT_DELETED,

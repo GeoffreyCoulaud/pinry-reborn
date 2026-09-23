@@ -51,7 +51,7 @@ class BaseErrorMapper : ExceptionMapper<BaseError> {
     // Flat one-arm-per-ErrorCode dispatch table, not nested branching; the exhaustive `when` (no
     // `else`) is intentional so a future or renamed ErrorCode fails to compile here.
     @Suppress("CyclomaticComplexMethod")
-    private fun problemFor(code: ErrorCode): Pair<ProblemCode, Int> =
+    fun problemFor(code: ErrorCode): Pair<ProblemCode, Int> =
         when (code) {
             ErrorCode.USERNAME_ALREADY_EXISTS -> ProblemCode.USERNAME_ALREADY_EXISTS to CONFLICT.statusCode
             ErrorCode.PIN_DOES_NOT_EXIST -> ProblemCode.PIN_DOES_NOT_EXIST to NOT_FOUND.statusCode
@@ -59,10 +59,9 @@ class BaseErrorMapper : ExceptionMapper<BaseError> {
             ErrorCode.PIN_NOT_SOFT_DELETED -> ProblemCode.PIN_NOT_SOFT_DELETED to CONFLICT.statusCode
             ErrorCode.PIN_ALREADY_SOFT_DELETED -> ProblemCode.PIN_ALREADY_SOFT_DELETED to CONFLICT.statusCode
             ErrorCode.SEARCH_EMPTY_QUERY -> ProblemCode.SEARCH_EMPTY_QUERY to BAD_REQUEST.statusCode
-            ErrorCode.USER_DOES_NOT_EXIST -> ProblemCode.USER_DOES_NOT_EXIST to UNAUTHORIZED.statusCode
-            ErrorCode.INVALID_PASSWORD -> ProblemCode.INVALID_PASSWORD to UNAUTHORIZED.statusCode
-            ErrorCode.INVALID_HTTP_AUTHORIZATION_SCHEME ->
-                ProblemCode.INVALID_HTTP_AUTHORIZATION_SCHEME to UNAUTHORIZED.statusCode
+            // SessionController answers both as AUTHENTICATION_FAILED, never telling a username that exists apart.
+            ErrorCode.USER_DOES_NOT_EXIST -> ProblemCode.AUTHENTICATION_FAILED to UNAUTHORIZED.statusCode
+            ErrorCode.INVALID_PASSWORD -> ProblemCode.AUTHENTICATION_FAILED to UNAUTHORIZED.statusCode
             ErrorCode.IMAGE_DOES_NOT_EXIST -> ProblemCode.IMAGE_DOES_NOT_EXIST to NOT_FOUND.statusCode
             ErrorCode.IMAGE_INSUFFICIENT_PERMISSIONS ->
                 ProblemCode.IMAGE_INSUFFICIENT_PERMISSIONS to FORBIDDEN.statusCode

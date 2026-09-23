@@ -98,7 +98,7 @@ class ImageController(
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMAGE_NOT_FOUND)
     @APIResponse(responseCode = "413", description = TOO_LARGE,
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_TOO_LARGE", "BODY_TOO_LARGE"])]))])
+            properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_TOO_LARGE"])]))])
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     @APIResponse(responseCode = "422",
         description = "The upload is not an image the server reads, or it is past images.max_pixels",
@@ -220,7 +220,7 @@ class ImageController(
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMAGE_NOT_FOUND)
     @APIResponse(responseCode = "413", description = TOO_LARGE,
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_TOO_LARGE", "BODY_TOO_LARGE"])]))])
+            properties = [SchemaProperty(name = "code", enumeration = ["IMAGE_TOO_LARGE"])]))])
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun requestImageDownload(
         pinId: UUID,

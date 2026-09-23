@@ -40,7 +40,9 @@ class MeController(
     @Authenticated
     @APIResponse(responseCode = "204", description = "Password changed, and every session of the account revoked")
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
-    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.REAUTHENTICATION_FAILED)
+    @APIResponse(responseCode = "403", description = "The current password is wrong",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["REAUTHENTICATION_FAILED"])]))])
     @APIResponse(responseCode = "409", description = "Another change of this password landed first",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code", enumeration = ["PASSWORD_CHANGE_COLLISION"])]))])
