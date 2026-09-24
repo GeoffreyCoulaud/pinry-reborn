@@ -1,8 +1,8 @@
 # The gate is deterministic
 
 Date: 2026-09-24
-Status: Draft; one adversarial review closed, its findings recorded in this document. Frozen when
-the last block merges.
+Status: Approved by the operator on 2026-09-24; one adversarial review closed, its findings
+recorded in this document. Frozen when the last block merges.
 ADRs: none. `maxWorkers`, `org.gradle.parallel` and `maxHeapSize` are settings whose reason fits in
 a one-line comment, as `isolate: false` and `MAX_WORKERS` already do. The guard's base (block 60)
 changes what ADR 0030 records the hook reading; the block amends that ADR's status line.
