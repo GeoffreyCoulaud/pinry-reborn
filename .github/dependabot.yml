@@ -39,7 +39,7 @@ updates:
         patterns:
           - "*"
 
-  # Base image of the Dockerfile: one grouped weekly PR.
+  # Base images, pinned by tag and digest: one grouped weekly PR per file that names them.
   - package-ecosystem: "docker"
     directory: "/api"
     schedule:
@@ -48,5 +48,27 @@ updates:
       prefix: "chore(docker)"
     groups:
       docker:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directory: "/clients/apps/webapp"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(docker)"
+    groups:
+      webapp-docker:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(docker)"
+    groups:
+      docker-compose:
         patterns:
           - "*"
