@@ -11,7 +11,8 @@ COPY contract/ contract/
 COPY clients/ clients/
 
 WORKDIR /src/clients
-RUN pnpm install --frozen-lockfile
+# Named to pnpm: on a mount of its own the store would otherwise fall back to node_modules/.pnpm-store.
+RUN --mount=type=cache,target=/pnpm-store pnpm install --frozen-lockfile --store-dir /pnpm-store
 RUN pnpm --filter @pinry-reborn/webapp run build
 
 FROM nginx:1-alpine-slim
