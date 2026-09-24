@@ -38,7 +38,9 @@ To run the whole product the way it is released, the containers `compose.yml` de
 
 The Gradle task is not optional: the API's image copies a fast jar Gradle produced before
 `docker build` ran, so a stale one builds a stale API in silence and a missing one fails the build
-with `COPY failed`. Reach the proxy at `localhost` and not at an address on the network: the session
+with `COPY failed`. Docker Engine 25 or later is required, here and wherever the API's image is
+deployed: its `HEALTHCHECK` sets `--start-interval`, which `compose.yml`'s `service_healthy` waits on.
+Reach the proxy at `localhost` and not at an address on the network: the session
 cookie is `Secure` unconditionally, and browsers except `localhost` alone.
 
 ## Git hooks

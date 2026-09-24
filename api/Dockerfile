@@ -68,7 +68,8 @@ USER 1001
 
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+# --start-interval (Docker 25+) is what lets a service start stop waiting a full --interval.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --start-interval=1s --retries=3 \
     CMD curl -fsS http://localhost:8080/q/health || exit 1
 
 # --enable-native-access: sqlite-jdbc loads its native library via the restricted
