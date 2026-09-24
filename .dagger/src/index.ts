@@ -87,15 +87,10 @@ const MAIN_REF = "origin/main"
 /** Where the previous contract lands, outside `/src` so it is not itself a candidate for comparison. */
 const PREVIOUS_CONTRACT = "/previous-contract.json"
 
-/** The web application's build stage, whose image the clients gate runs in. */
-const NODE_LINE = /^FROM\s+(?:--platform=\S+\s+)?(\S+)\s+AS\s+build\s*$/im
-
-/** The Dockerfiles of the Gradle and the repository-wide environments. */
+/** The Dockerfiles of the Gradle, JavaScript and repository-wide environments. */
 const GRADLE_DOCKERFILE = ".dagger/gradle.Dockerfile"
+const NODE_DOCKERFILE = ".dagger/node.Dockerfile"
 const REPOSITORY_DOCKERFILE = ".dagger/repository.Dockerfile"
-
-/** The pnpm `clients/package.json` names under `packageManager`. The two move together. */
-const PNPM = "pnpm@12.3.4"
 
 /** pnpm's store, mounted and named: pnpm's default is one per filesystem, `/src/.pnpm-store` here. */
 const PNPM_STORE = "/root/.local/share/pnpm/store"
@@ -269,10 +264,10 @@ export class PinryReborn {
    * not a build, and a Vite plugin wired wrong passes every step above it.
    */
   @func()
-  async clientsGate(
+  clientsGate(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
-  ): Promise<Container> {
-    return (await this.node(source))
+  ): Container {
+    return this.node(source)
       .withExec(["pnpm", "install", "--frozen-lockfile"])
       .withExec(["pnpm", "run", "messages"])
       .withExec(["pnpm", "run", "typecheck"])
@@ -414,7 +409,7 @@ export class PinryReborn {
     // requests for one container, and the second waits on a cache volume the first holds.
     const [api, clients, prose, guard] = await Promise.all([
       built.stdout(),
-      this.clientsGate(source).then((gate) => gate.stdout()),
+      this.clientsGate(source).stdout(),
       this.prose(source),
       this.contractGuard(source),
     ])
@@ -667,16 +662,9 @@ export class PinryReborn {
       .withWorkdir("/src/api")
   }
 
-  /**
-   * The JavaScript environment. pnpm comes from npm rather than from corepack, which Node
-   * ships deprecated, and its version is the one `clients/package.json` pins, so nothing
-   * self-manages mid-run.
-   */
-  private async node(source: Directory): Promise<Container> {
-    return dag
-      .container()
-      .from(await this.imageIn(source, WEBAPP_DOCKERFILE, NODE_LINE))
-      .withExec(["npm", "install", "--global", PNPM])
+  /** The JavaScript environment, `NODE_DOCKERFILE` says what it holds. */
+  private node(source: Directory): Container {
+    return this.environment(source, NODE_DOCKERFILE)
       // Locked like the Gradle home, and free here: one call never runs two clients gates,
       // so serializing costs nothing and a concurrent one cannot half write the store.
       .withMountedCache(PNPM_STORE, dag.cacheVolume("pnpm-store"), {
