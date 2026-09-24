@@ -87,8 +87,12 @@ const MAIN_REF = "origin/main"
 /** Where the previous contract lands, outside `/src` so it is not itself a candidate for comparison. */
 const PREVIOUS_CONTRACT = "/previous-contract.json"
 
-/** Node's current long term support line, which is what every version in `clients/` is pinned for. */
-const NODE = "node:24-slim"
+/** The web application's build stage, whose image the clients gate runs in. */
+const NODE_LINE = /^FROM\s+(?:--platform=\S+\s+)?(\S+)\s+AS\s+build\s*$/im
+
+/** The Dockerfiles of the Gradle and the repository-wide environments. */
+const GRADLE_DOCKERFILE = ".dagger/gradle.Dockerfile"
+const REPOSITORY_DOCKERFILE = ".dagger/repository.Dockerfile"
 
 /** The pnpm `clients/package.json` names under `packageManager`. The two move together. */
 const PNPM = "pnpm@12.3.4"
@@ -111,8 +115,9 @@ const WEBAPP_MARKER = '<div id="root">'
 /** A route that exists in the browser alone, which the image answers from its `index.html` fallback. */
 const BROWSER_ROUTE = "/boards/does-not-exist"
 
-/** The frontal proxy `compose.yml` runs, and the port both it and `proxy.conf` name. */
-const PROXY_IMAGE = "nginx:1-alpine-slim"
+/** The frontal proxy's image, read from `compose.yml`, and the port both it and `proxy.conf` name. */
+const COMPOSE = "compose.yml"
+const PROXY_IMAGE_LINE = /^\s+proxy:\s*\n\s+image:\s*(\S+)\s*$/m
 const PROXY_PORT = 6258
 
 /** The routing, and where the nginx image reads it from. Both as `compose.yml` mounts them. */
@@ -264,10 +269,10 @@ export class PinryReborn {
    * not a build, and a Vite plugin wired wrong passes every step above it.
    */
   @func()
-  clientsGate(
+  async clientsGate(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
-  ): Container {
-    return this.node(source)
+  ): Promise<Container> {
+    return (await this.node(source))
       .withExec(["pnpm", "install", "--frozen-lockfile"])
       .withExec(["pnpm", "run", "messages"])
       .withExec(["pnpm", "run", "typecheck"])
@@ -409,7 +414,7 @@ export class PinryReborn {
     // requests for one container, and the second waits on a cache volume the first holds.
     const [api, clients, prose, guard] = await Promise.all([
       built.stdout(),
-      this.clientsGate(source).stdout(),
+      this.clientsGate(source).then((gate) => gate.stdout()),
       this.prose(source),
       this.contractGuard(source),
     ])
@@ -458,7 +463,7 @@ export class PinryReborn {
     // The two names are the ones `proxy.conf` passes to, and nginx resolves them once, at startup.
     const proxy = dag
       .container()
-      .from(PROXY_IMAGE)
+      .from(await this.imageIn(source, COMPOSE, PROXY_IMAGE_LINE))
       .withFile(PROXY_CONF_PATH, source.file(PROXY_CONF))
       .withServiceBinding("api", this.served(api, HTTP_PORT))
       .withServiceBinding("webapp", this.served(webapp, WEBAPP_PORT))
@@ -649,17 +654,9 @@ export class PinryReborn {
     return this.gradle(source).withExec(["./gradlew", ...tasks, "--no-daemon", MAX_WORKERS])
   }
 
-  /**
-   * The Gradle environment. The JDK is the toolchain the build asks for, so Gradle adopts it
-   * instead of provisioning one; libvips is what vips-ffm loads, under the t64 name Ubuntu
-   * gives it after the 64-bit time_t transition.
-   */
+  /** The Gradle environment, `GRADLE_DOCKERFILE` says what it holds. */
   private gradle(source: Directory): Container {
-    return dag
-      .container()
-      .from("eclipse-temurin:25-jdk")
-      .withExec(["apt-get", "update"])
-      .withExec(["apt-get", "install", "-y", "--no-install-recommends", "libvips42t64"])
+    return this.environment(source, GRADLE_DOCKERFILE)
       // One volume, locked. Gradle takes exclusive file locks inside its home, so two
       // invocations sharing it make one fail on the journal lock; locked serializes them
       // instead. One volume and not two, because two locks taken in either order deadlock.
@@ -675,10 +672,10 @@ export class PinryReborn {
    * ships deprecated, and its version is the one `clients/package.json` pins, so nothing
    * self-manages mid-run.
    */
-  private node(source: Directory): Container {
+  private async node(source: Directory): Promise<Container> {
     return dag
       .container()
-      .from(NODE)
+      .from(await this.imageIn(source, WEBAPP_DOCKERFILE, NODE_LINE))
       .withExec(["npm", "install", "--global", PNPM])
       // Locked like the Gradle home, and free here: one call never runs two clients gates,
       // so serializing costs nothing and a concurrent one cannot half write the store.
@@ -690,14 +687,24 @@ export class PinryReborn {
       .withWorkdir("/src/clients")
   }
 
-  /** The repository-wide environment: git for the tracked file list, python3 for the guard's tests. */
+  /** The repository-wide environment, `REPOSITORY_DOCKERFILE` says what it holds. */
   private repository(source: Directory): Container {
-    return dag
-      .container()
-      .from("debian:trixie-slim")
-      .withExec(["apt-get", "update"])
-      .withExec(["apt-get", "install", "-y", "--no-install-recommends", "git", "python3"])
+    return this.environment(source, REPOSITORY_DOCKERFILE)
       .withMountedDirectory("/src", source)
       .withWorkdir("/src")
+  }
+
+  /** An environment built from its Dockerfile alone, so no other change in `source` invalidates it. */
+  private environment(source: Directory, dockerfile: string): Container {
+    return dag.directory().withFile("Dockerfile", source.file(dockerfile)).dockerBuild()
+  }
+
+  /** The image a file names on the line `line` captures, so the gate runs what ships. */
+  private async imageIn(source: Directory, path: string, line: RegExp): Promise<string> {
+    const image = (await source.file(path).contents()).match(line)?.[1]
+    if (!image) {
+      throw new Error(`No image found in ${path}: no line matches ${line}.`)
+    }
+    return image
   }
 }
