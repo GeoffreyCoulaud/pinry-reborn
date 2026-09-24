@@ -92,7 +92,7 @@ const NODE = "node:24-slim"
 /** The pnpm `clients/package.json` names under `packageManager`. The two move together. */
 const PNPM = "pnpm@12.3.4"
 
-/** pnpm's own store for root, mounted so an install is not a fresh download every run. */
+/** pnpm's store, mounted and named: pnpm's default is one per filesystem, `/src/.pnpm-store` here. */
 const PNPM_STORE = "/root/.local/share/pnpm/store"
 
 /** The port the runtime image serves on. */
@@ -684,6 +684,7 @@ export class PinryReborn {
       .withMountedCache(PNPM_STORE, dag.cacheVolume("pnpm-store"), {
         sharing: CacheSharingMode.Locked,
       })
+      .withEnvVariable("pnpm_config_store_dir", PNPM_STORE)
       .withMountedDirectory("/src", source)
       .withWorkdir("/src/clients")
   }
