@@ -48,4 +48,6 @@ allOpen {
 tasks.withType<Test> {
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+    // The live heap reached 421 MB of the default 512 MB, rising with each Quarkus restart.
+    maxHeapSize = "1g"
 }
