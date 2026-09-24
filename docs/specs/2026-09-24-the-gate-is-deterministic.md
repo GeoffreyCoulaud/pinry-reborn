@@ -22,6 +22,10 @@ re-measures what it recorded. The second is summarised here from its report.
 - **The journeys time out for lack of memory** (first probe). Vitest starts one worker per CPU less
   one, eleven here. The full gate went red in 3 of 5 runs, each with full swap and about 72% of
   process time stalled on memory; at `maxWorkers: 4`, 3 of 3 green, the clients gate alone no slower.
+  (Corrected: block 10 did not reproduce the reds. On native Docker under the same cap, 10 of 10
+  full gates were green, with and without the change; the reds came only under Docker Desktop's
+  7.4 GiB VM. Vitest alone on the host, each run in its own cgroup, peaked at 3.3-3.6 GB with 11
+  workers and 1.6 GB with 4, both in 7.8-8.7 s, three runs each: the PR of block 10.)
 - **The pnpm store is never reused.** CI run 35916269302 logs "Content-addressable store is at:
   /src/.pnpm-store/v11" and "reused 0, downloaded 407": the store sits outside the volume mounted at
   `PNPM_STORE` (`.dagger/src/index.ts:96`).
@@ -60,7 +64,7 @@ re-measures what it recorded. The second is summarised here from its report.
 
 | Block | Branch | Content |
 |---|---|---|
-| 10 | `fix/vitest-workers-fit-memory` | Five full gates on the capped engine without the change, the reds recorded; then `maxWorkers: 4` in `clients/apps/webapp/vite.config.ts` with a one-line comment naming the measurement, and five full gates green. The CI clients gate's test step before and after (4 workers on the 4-CPU runner, where Vitest ran 3). The backlog item deleted. This spec rides here |
+| 10 | `fix/vitest-workers-fit-memory` | Five full gates on the capped engine without the change, the reds recorded; then `maxWorkers: 4` in `clients/apps/webapp/vite.config.ts` with a one-line comment naming the measurement, and five full gates green. The CI clients gate's test step before and after (4 workers on the 4-CPU runner, where Vitest ran 3). The backlog item deleted. This spec rides here. (Corrected: the reds did not reproduce on native Docker, so the evidence is the memory: Vitest's peak with 11 workers and with 4, three runs each, and the engine's memory pressure over five gates each side, all ten green) |
 | 20 | `fix/the-pnpm-store-is-reused` | pnpm's store in the mounted `PNPM_STORE`. Evidence: two clients gates with a file under `clients/` changed between them, the second logging "downloaded 0" |
 | 30 | `fix/the-health-check-answers-at-start` | First a scratch run with `--interval=1s` to confirm the wait follows the interval; then `--start-interval` on the API's `HEALTHCHECK`, once Dagger's handling of it at the pinned engine is read (Context7). Docker 25 is the floor it sets for `compose.yml`'s `service_healthy` and deployments, which `README.md` states. Evidence: the two probes' durations in CI before and after |
 | 40 | `perf/gradle-runs-in-parallel` | `org.gradle.parallel=true` and an explicit `maxHeapSize` on the test JVM, sized from the heap measured; the pull request states the memory arithmetic. The API gate timed before and after; five full gates green on the capped engine. If they go red, the teammate stops with a tier-2 question (bound `org.gradle.workers.max`, or ship the heap without parallel) |
