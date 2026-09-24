@@ -71,8 +71,8 @@ sits beside it, so `./api/gradlew` from the repository root finds no build at al
 - **Partial or expression index**: `definition` alone, no `columnNames`, no `unique = true`.
 - **A changed detekt rule is not picked up by a live Gradle daemon** (cached classpath: false green). Run
   `./gradlew --stop` before trusting a local gate after a rule change.
-- **detekt baselines are per module** (`api/config/detekt/baseline-<module>.xml`): the `detektBaseline`
-  task rewrites rather than merges.
+- **detekt baselines are per module and source set** (`api/config/detekt/baseline-<module>-<sourceSet>.xml`):
+  the gate runs `detekt<SourceSet>` alone, and `detektBaseline<SourceSet>` rewrites rather than merges.
 - **The daemon's metaspace is bound in `api/gradle.properties`, and the bound is load-bearing.** The
   gate runs the whole build in one JVM; at the default, a run with nothing cached dies with
   `OutOfMemoryError: Metaspace` on whichever task is unlucky, and Gradle then hangs instead of
