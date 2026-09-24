@@ -62,6 +62,18 @@ updates:
         patterns:
           - "*"
 
+  # The pipeline's environments: Dependabot reads any file whose name holds "dockerfile".
+  - package-ecosystem: "docker"
+    directory: "/.dagger"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(docker)"
+    groups:
+      pipeline-docker:
+        patterns:
+          - "*"
+
   - package-ecosystem: "docker-compose"
     directory: "/"
     schedule:
