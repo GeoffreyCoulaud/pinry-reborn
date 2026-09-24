@@ -22,22 +22,20 @@ class JsonBindingIntegrationTest : IntegrationTest() {
 
     @Test
     fun `Given the CDI mapper, Then it carries the Kotlin module and nothing beyond what Quarkus adds`() {
-        // Given: an unnamed SimpleModule takes a JVM-global counter for a name, so it is matched by
-        // prefix and counted; every other id is stable.
+        // Given
         val ids = mapper.registeredModuleIds.map { it.toString() }
 
         // When / Then
         assertEquals(
-            setOf(
+            listOf(
                 "VertxTypes",
                 "com.fasterxml.jackson.module.kotlin.KotlinModule",
                 "jackson-datatype-jsr310",
                 "com.fasterxml.jackson.datatype.jdk8.Jdk8Module",
                 "jackson-module-parameter-names",
-            ),
-            ids.filterNot { it.startsWith("SimpleModule") }.toSet(),
+            ).sorted(),
+            ids.sorted(),
         )
-        assertEquals(1, ids.count { it.startsWith("SimpleModule") })
     }
 
     @Test
