@@ -78,8 +78,9 @@ const VERSION_RULES = ["api-version-not-bumped", "api-major-version-not-bumped",
 const FAIL_ON = "WARN"
 
 /**
- * Where the contract's previous state is read from. The remote ref and not a local `main`, which a
- * workstation may have left behind the branch it is comparing against.
+ * Where the contract's previous state is read from, at the branch's merge base with it. The remote
+ * ref and not a local `main`, which a workstation may have left behind; the merge base and not the
+ * tip, whose changes since the fork the branch would otherwise read as its own.
  */
 const MAIN_REF = "origin/main"
 
@@ -180,15 +181,15 @@ check ${BROWSER_ROUTE} text/html
 `
 
 /**
- * The contract as `main` has it. The document goes to a file and not to standard output, so the one
- * thing on the error stream is the sentence a reader needs when the ref does not resolve.
+ * The contract where `HEAD` left `main`. The document goes to a file and not to standard output, so
+ * the one thing on the error stream is the sentence a reader needs when the ref does not resolve.
  */
 const SHOW_PREVIOUS_CONTRACT = `
-if git cat-file -e "${MAIN_REF}:${CONTRACT}" 2>/dev/null; then
-  git show "${MAIN_REF}:${CONTRACT}" > ${PREVIOUS_CONTRACT}
+if base=$(git merge-base ${MAIN_REF} HEAD 2>/dev/null) && git cat-file -e "$base:${CONTRACT}" 2>/dev/null; then
+  git show "$base:${CONTRACT}" > ${PREVIOUS_CONTRACT}
   exit 0
 fi
-echo "No ${CONTRACT} on ${MAIN_REF}. The guard compares against main, so a shallow clone needs fetch-depth: 0." >&2
+echo "No ${CONTRACT} where HEAD left ${MAIN_REF}. The guard compares against main, so a shallow clone needs fetch-depth: 0." >&2
 exit 1
 `
 
@@ -576,7 +577,7 @@ export class PinryReborn {
    * those rules never see and which therefore needs the majors compared here.
    */
   private async versionAdmitsTheDiff(source: Directory): Promise<string> {
-    const previous = await this.contractOnMain(source)
+    const previous = await this.contractAtBase(source)
     const oasdiff = this.oasdiff(source).withFile(PREVIOUS_CONTRACT, previous)
     const changelogRun = oasdiff.withExec(
       ["changelog", PREVIOUS_CONTRACT, CONTRACT, "--format", "json"],
@@ -606,8 +607,8 @@ export class PinryReborn {
     const raised = this.major(declaredVersion) > this.major(previousVersion)
     if (breakingStatus !== 0 && !raised) {
       throw new Error(
-        `${CONTRACT} breaks against main and announces ${declaredVersion}, where main announces ` +
-          `${previousVersion}. Raise quarkus.smallrye-openapi.info-version by a major, then ` +
+        `${CONTRACT} breaks against main and announces ${declaredVersion}, where its base on ` +
+          `main announces ${previousVersion}. Raise quarkus.smallrye-openapi.info-version by a major, then ` +
           "regenerate the contract:\n" +
           breaks,
       )
@@ -626,8 +627,8 @@ export class PinryReborn {
     return Number.parseInt(version, 10)
   }
 
-  /** The committed contract on `main`, which is what a merge would replace. */
-  private async contractOnMain(source: Directory): Promise<File> {
+  /** The committed contract where the branch left `main`, which is what the branch changed. */
+  private async contractAtBase(source: Directory): Promise<File> {
     const run = this.repository(source).withExec(["sh", "-c", SHOW_PREVIOUS_CONTRACT], {
       expect: ReturnType.Any,
     })

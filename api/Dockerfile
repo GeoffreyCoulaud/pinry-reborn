@@ -7,7 +7,7 @@
 # Base is glibc (eclipse-temurin:25-jre), NOT alpine/musl: sqlite-jdbc ships
 # native libraries and glibc is the safe choice to load them, which the smoke
 # test confirms by running the SQLite migrations at startup.
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:25-jre@sha256:bb036ed6cfdc57e3da7c22634d15f1b840d2caf76183861c80e81ca4b5104abb
 
 # curl is used only by the HEALTHCHECK below. libvips42t64 is the native
 # library vips-ffm loads for api-imaging-vips (eclipse-temurin:25-jre is

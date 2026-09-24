@@ -146,8 +146,9 @@ otherwise reclaims the Gradle home and pnpm store volumes, which are the thing b
   and CI still runs the gate on whatever opens a pull request.
 - **Nothing regenerates `contract/openapi.json` for you.** The gate refuses a stale document and names the command
   that refreshes it; the `pre-commit` hook rejects em/en-dashes in staged additions and does nothing else.
-- **The gate reads git history**, the contract on `origin/main` being what a merge would replace. A shallow clone
-  has no such ref and the guard says so: `validate.yml` carries `fetch-depth: 0` for it.
+- **The gate reads git history**, the contract at `git merge-base origin/main HEAD` being what the branch changed,
+  as `.githooks/pre-push` reads paths. A shallow clone has no such ref and the guard says so: `validate.yml`
+  carries `fetch-depth: 0` for it.
 - **A break is allowed and a version that hides one is not.** Raise
   `quarkus.smallrye-openapi.info-version` by a major, regenerate, and the gate accepts the break.
   `contract/frozen/` is the other half: nothing there may break at all, whatever the version says.

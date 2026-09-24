@@ -1,6 +1,8 @@
 # 0030. The gate is paid where it can fail
 
-Status: Accepted
+Status: Accepted; the contract guard reads its previous contract at `git merge-base origin/main HEAD`,
+the base `.githooks/pre-push` diffs a branch's paths against, and no longer at the tip of
+`origin/main` (`docs/specs/2026-09-24-the-gate-is-deterministic.md`, block 60).
 Date: 2026-09-13
 Specification: this document (`agents/workflow.md`, phase 2: a lot whose subject is this process
 writes its ADR and no separate spec). Tier Spec. One adversarial review closed, its nine findings
