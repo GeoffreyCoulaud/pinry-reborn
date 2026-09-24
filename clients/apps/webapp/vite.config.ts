@@ -26,6 +26,9 @@ export default defineConfig({
     // here, 120 s to 65 s of processor time, measured on 2026-09-22. No pool helps: `vitest
     // doctor` measures `threads` at ±0% and both VM pools fail on MSW.
     isolate: false,
+    // Eleven workers peak at 3.6 GB and four at 1.6 GB, both in 8 s on 12 processors, measured on
+    // 2026-09-24 (specification 2026-09-24, block 10).
+    maxWorkers: 4,
     coverage: {
       provider: "v8",
       // The bound covers the pure functions and not the view, which jsdom renders
