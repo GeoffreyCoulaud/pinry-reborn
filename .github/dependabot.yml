@@ -51,28 +51,19 @@ updates:
         patterns:
           - "*"
 
+  # The web application and the pipeline's environments (any file whose name holds "dockerfile"):
+  # grouped by name across both, so one pull request moves the two Node digests together.
   - package-ecosystem: "docker"
-    directory: "/clients/apps/webapp"
+    directories:
+      - "/.dagger"
+      - "/clients/apps/webapp"
     schedule:
       interval: "weekly"
     commit-message:
       prefix: "chore(docker)"
     groups:
-      webapp-docker:
-        patterns:
-          - "*"
-
-  # The pipeline's environments: Dependabot reads any file whose name holds "dockerfile".
-  - package-ecosystem: "docker"
-    directory: "/.dagger"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore(docker)"
-    groups:
-      pipeline-docker:
-        patterns:
-          - "*"
+      webapp-and-pipeline-docker:
+        group-by: dependency-name
 
   - package-ecosystem: "docker-compose"
     directory: "/"
