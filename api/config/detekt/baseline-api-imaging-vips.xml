@@ -1,8 +1,0 @@
-<?xml version="1.0" ?>
-<SmellBaseline>
-  <ManuallySuppressedIssues/>
-  <CurrentIssues>
-    <ID>CommentCarriesDocumentation:VipsImageProbe.kt:VipsImageProbe : ImageProbe</ID>
-    <ID>CommentCarriesDocumentation:VipsImageTransformer.kt:VipsImageTransformer : ImageTransformer</ID>
-  </CurrentIssues>
-</SmellBaseline>

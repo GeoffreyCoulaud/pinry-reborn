@@ -2,6 +2,7 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>AbstractClassCanBeConcreteClass:BaseTest.kt:BaseTest$BaseTest</ID>
     <ID>CommentCarriesDocumentation:TestTime.kt:TestTime</ID>
   </CurrentIssues>
 </SmellBaseline>

@@ -1,7 +1,0 @@
-<?xml version="1.0" ?>
-<SmellBaseline>
-  <ManuallySuppressedIssues/>
-  <CurrentIssues>
-    <ID>CommentCarriesDocumentation:SystemClock.kt:SystemClock$override fun now: Instant</ID>
-  </CurrentIssues>
-</SmellBaseline>

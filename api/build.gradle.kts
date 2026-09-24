@@ -94,13 +94,8 @@ subprojects {
     extensions.configure<dev.detekt.gradle.extensions.DetektExtension> {
         buildUponDefaultConfig = true
         config.setFrom("$rootDir/config/detekt/detekt.yml")
-        // Baselines are per-module: a single shared file cannot work because each
-        // module's detektBaseline task rewrites (does not merge) the target file.
-        // The path degrades gracefully when the file is absent (no baseline applied).
+        // Only a stem: each detekt<SourceSet> task reads baseline-<module>-<sourceSet>.xml when it exists.
         baseline = file("$rootDir/config/detekt/baseline-${project.name}.xml")
-        // Also analyse the java-test-fixtures source set (used by api-utilities)
-        // in addition to detekt's default main/test source directories.
-        source.from("src/testFixtures/kotlin")
     }
 
     // The project's own rules (`detekt-rules`), loaded through detekt's service loader. Every
@@ -115,9 +110,11 @@ subprojects {
         jvmTarget = "25"
     }
 
-    // Type resolution in the gate: the plain `detekt` task (added to `check` by the
-    // detekt plugin) is AST-only, so also run detektMain/detektTest for the type-res rules.
-    tasks.named("check").configure { dependsOn("detektMain", "detektTest") }
+    // The gate runs one type-resolved task per source set; the plugin's plain `detekt` would re-read them AST-only.
+    tasks.named("check").configure {
+        setDependsOn(dependsOn.filterNot { (it as? TaskProvider<*>)?.name == "detekt" })
+        dependsOn(tasks.matching { it.name in setOf("detektMain", "detektTest", "detektTestFixtures") })
+    }
 
     // Branch-coverage gate (Kover). Applied to every module EXCEPT api-application,
     // which is the composition root + end-to-end tests and has no unit tests by design.
