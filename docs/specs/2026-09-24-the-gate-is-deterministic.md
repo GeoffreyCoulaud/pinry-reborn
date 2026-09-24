@@ -54,7 +54,8 @@ re-measures what it recorded. The second is summarised here from its report.
 
 - **The capped engine**: a Dagger engine at the version `dagger.json` pins, started on native Docker
   with `--memory 7.4g --memory-swap 8.4g` as `validate.yml:98-102` starts its own, and reached
-  through `_EXPERIMENTAL_DAGGER_RUNNER_HOST`. A pull request that measures on it shows the cap with
+  through `_EXPERIMENTAL_DAGGER_RUNNER_HOST`. (Corrected: CI's engine carries no `--memory` cap; the
+  cap models a small workstation, the operator's Docker Desktop at 7.4 GiB, not CI.) A pull request that measures on it shows the cap with
   `docker inspect -f '{{.HostConfig.Memory}} {{.HostConfig.MemorySwap}}' <engine>`.
 - **A timing claim carries its runs**, at least three, with the command, the engine and its state
   (warm or cold).
