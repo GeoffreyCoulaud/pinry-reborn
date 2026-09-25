@@ -124,11 +124,14 @@ decisions 2 to 6). A container named `dagger-engine` is started on a state direc
 `_EXPERIMENTAL_DAGGER_RUNNER_HOST`. **A pull request restores and never saves; a push to `main` stops the engine,
 archives the state, and hands the archive to `engine-state` as a run artefact, which deletes every entry under the
 `dagger-state-` prefix and only then saves the new one** under a key carrying the engine version and the commit.
-**The order is the point.** The archive is 4.89 GiB of the repository's ten-gigabyte quota (read on
-2026-09-25 by `gh cache list`, up from the three gigabytes
-`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md` measured, the web application's build stage being most
-of the difference). Saving before deleting put two of them there at once and GitHub evicted the release path's buildx cache,
-least recently used, which is how those entries fell from 5.46 to 1.87 gigabytes. **A restore that does not unpack, and
+**The order is the point.** Saving before deleting put two archives there at once and GitHub evicted the release
+path's buildx cache, least recently used, which is how those entries fell from 5.46 GB to 1.87 GB. **One archive no
+longer leaves that cache room either**: on 2026-09-25 (`gh api repos/GeoffreyCoulaud/pinry-reborn/actions/cache/usage`
+and `gh cache list`) the archive is 5.03 GB of the 10 GB quota and the buildx entries 2.72 GB, up from the 3 GB archive
+`docs/adr/0031-the-gate-builds-once-and-keeps-its-cache.md` measured. So a release builds partly cold after an eviction,
+and a pull request, which reads the archive alone, is not affected. The pnpm store is in the archive twice, as the
+gate's volume and as the web application image's cache mount. Accepted during the alpha, releases being rare.
+**A restore that does not unpack, and
 an engine that will not come up on it, both empty the state and carry on cold**, the cache being an optimisation and
 never a condition of a green run; for the same reason nothing is deleted until the replacement has landed on the
 `engine-state` runner.
