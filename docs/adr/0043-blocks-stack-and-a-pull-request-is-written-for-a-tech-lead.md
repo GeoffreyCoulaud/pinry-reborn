@@ -141,7 +141,8 @@ experiment on the same bench.
   which only `b420` (V2, round 2) said. That gap is left to a later round, on this bench.
 - **Whether `gh stack submit` runs the `pre-push` hook** was not settled in lot 0.38.0, its output
   showing no gate. This lot's block settles it with `GIT_TRACE=1 gh stack push 2>&1 | grep -i hook`
-  and records the answer in its handoff.
+  and records the answer in its handoff. *(Corrected: that command prints nothing either way, gh-stack keeping
+  git's standard error; the handoff settles it from the process tree during the push: the hook runs.)*
 - The scripts under `scripts/`, as they stood for round 2, ran in the session's scratchpad, whose
   layout (`out/`, `answers/`, `eval/`) differs from this folder's; round 1's `stats.json` came from
   an earlier version of `prepare.py`. They document the method rather than run here as they are.
