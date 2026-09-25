@@ -40,7 +40,6 @@ const IMPORT_REFUSALS = {
   IMPORT_ALREADY_IN_PROGRESS: m.import_in_progress,
   IMPORT_ARCHIVE_TOO_LARGE: m.import_too_large,
   IMPORT_INSUFFICIENT_STORAGE: m.import_no_space,
-  IMPORT_NOT_AWAITING_ARCHIVE: m.import_not_awaiting,
   IMPORT_ARCHIVE_EMPTY: m.import_empty,
   CHUNK_TOO_LARGE: m.import_chunk_too_large,
   ARCHIVE_LONGER_THAN_FILE: m.import_other_file,

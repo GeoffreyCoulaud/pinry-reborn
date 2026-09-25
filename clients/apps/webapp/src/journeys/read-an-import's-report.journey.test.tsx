@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest"
 import { m } from "../paraglide/messages.js"
 import {
   downloadsRoute,
-  exportsRoute,
   handshakeRoute,
   importRow,
   importsRoute,
@@ -51,7 +50,6 @@ function openTheAccount(row: unknown) {
     sessionRoute(() => true),
     http.get("/api/v1/me", () => HttpResponse.json(ACCOUNT)),
     downloadsRoute(),
-    exportsRoute(),
     pinsRoute([]),
     handshakeRoute(),
     importsRoute(() => [row]),

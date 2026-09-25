@@ -8,7 +8,7 @@ import { m } from "../paraglide/messages.js"
 import { downloadHref, exportReadiness } from "./ExportSection"
 import { ImportCounters, UploadProgress, importProgress } from "./ImportSection"
 
-// Per browser: another one shows a dismissed notice once more, which is harmless (decision G3).
+// Per browser: another one shows a dismissed notice once more, which is harmless.
 const DISMISSED = "pinry-dismissed-notices"
 
 function readDismissed(): string[] {

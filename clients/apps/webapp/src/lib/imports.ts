@@ -1,6 +1,6 @@
 import { refusalCode } from "./refusals"
 
-/** What a chunk's `PUT` came back with: the upload's new length, a refusal, or `null` for none. */
+/** What a chunk's `PUT` or the close came back with: the upload's length, a refusal, or `null`. */
 export type ChunkAnswer =
   | { uploadedBytes: number }
   | { status: number; code: string | null; currentLength: number | null }
@@ -9,9 +9,13 @@ export type ChunkAnswer =
 /** What the upload does next (specification 2026-09-25, decision F4, steps 2 to 5). */
 export type UploadStep =
   | { next: "SEND"; offset: number; failures: number }
-  | { next: "COMPLETE" }
+  | { next: "COMPLETE"; failures: number }
   | { next: "PAUSE" }
   | { next: "STOP"; code: string | null }
+  | { next: "DONE" }
+
+/** A request the upload sends again until it is answered: a chunk, or the close. */
+export type Attempt = Extract<UploadStep, { failures: number }>
 
 /** What an upload records of its file, so a reload can ask for the same one again. */
 export interface FileIdentity {
@@ -20,7 +24,7 @@ export interface FileIdentity {
   lastModified: number
 }
 
-/** No hash: it would read the whole file, and the check guards against a mistake (decision D'2). */
+/** No hash: it would read the whole file, and the check guards against a mistake. */
 export function sameFile(record: FileIdentity, file: FileIdentity): boolean {
   return (
     record.name === file.name &&
@@ -42,26 +46,25 @@ export function refusedChunk(status: number, body: unknown): ChunkAnswer {
 
 /** Where the server's length leaves a file of `size` bytes. */
 function resumedAt(length: number, size: number): UploadStep {
-  if (length === size) return { next: "COMPLETE" }
+  if (length === size) return { next: "COMPLETE", failures: 0 }
   // The server holds bytes this file does not have, so it is not the file the upload started with.
   if (length > size) return { next: "STOP", code: "ARCHIVE_LONGER_THAN_FILE" }
   return { next: "SEND", offset: length, failures: 0 }
 }
 
-export function nextStep(
-  answer: ChunkAnswer,
-  offset: number,
-  size: number,
-  failures: number,
-): UploadStep {
-  if (answer !== null && "uploadedBytes" in answer) return resumedAt(answer.uploadedBytes, size)
+export function nextStep(answer: ChunkAnswer, attempt: Attempt, size: number): UploadStep {
+  if (answer !== null && "uploadedBytes" in answer) {
+    return attempt.next === "COMPLETE" ? { next: "DONE" } : resumedAt(answer.uploadedBytes, size)
+  }
   // How a cut chunk resumes: the file on the server is the truth, and the row's figure can lag it.
   if (answer?.code === "IMPORT_CHUNK_OFFSET_MISMATCH" && answer.currentLength !== null) {
     return resumedAt(answer.currentLength, size)
   }
+  // Another tab, or a close whose answer was lost, got there first: the server's row says the rest.
+  if (answer?.code === "IMPORT_NOT_AWAITING_ARCHIVE") return { next: "DONE" }
   if (answer === null || (answer.status >= 500 && answer.status !== 507)) {
-    if (failures + 1 >= ATTEMPTS) return { next: "PAUSE" }
-    return { next: "SEND", offset, failures: failures + 1 }
+    if (attempt.failures + 1 >= ATTEMPTS) return { next: "PAUSE" }
+    return { ...attempt, failures: attempt.failures + 1 }
   }
   // A bodyless 413 is a proxy's lower limit, and `BODY_TOO_LARGE` the API's: the chunk is refused.
   if (answer.status === 413 && answer.code !== "IMPORT_ARCHIVE_TOO_LARGE") {
