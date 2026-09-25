@@ -7,7 +7,8 @@ Amends: `docs/adr/0018-a-block-is-a-pull-request.md`, decision 2 (in series, no 
 previous merge, stopped at its own merge), decision 5 (the report is the pull request's body) and
 decision 6 (the teammate marks ready); `docs/adr/0019-review-before-the-pull-request.md`, decision 3
 (back to draft on a red run or a requested change); `docs/adr/0028-the-budget-follows-the-ecosystem.md`,
-decision 6 (the holistic review on `main`, after the last merge).
+decision 6 (the holistic review on `main`, after the last merge). *(Corrected: ADR 0019's decision 2
+too, which opens a pull request as a draft; decision 6 below amends it.)*
 Evidence: the folder `docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead/`.
 Review: `.reviews/pull-requests-read-by-a-tech-lead-spec.md`, 0 CRITICAL, 5 MAJOR and 11 MINOR,
 closed in this document.

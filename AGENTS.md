@@ -140,8 +140,8 @@ otherwise reclaims the Gradle home and pnpm store volumes, which are the thing b
 
 ## Gotchas
 
-- **A local merge to `main` bypasses CI** (`enforce_admins` is false). Always push and open a PR; merge is rebase-only
-  (`gh pr merge --rebase`).
+- **A local merge to `main` bypasses CI** (`enforce_admins` is false). Always push and open a PR; merge is rebase-only,
+  a lot's stack whole and at once (`gh stack merge --rebase`).
 - **A throwaway push skips the gate with `git push --no-verify`**, a spike branch or a branch opened only to
   establish a journey. The hook exempts no branch itself: it would have to read a name or a fate, and a hook that
   trusts a naming convention is a hole in the gate rather than a shortcut through it
