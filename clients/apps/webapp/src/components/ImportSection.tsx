@@ -209,22 +209,29 @@ function Running({ row }: { row: Import }) {
   )
 }
 
-/** What the walk counted, and its issues behind a button (decision H). Nothing before it started. */
-function Report({ row }: { row: Import }) {
+/** What the walk counted, which the task centre's notice repeats. */
+export function ImportCounters({ row }: { row: Import }) {
   const count = new Intl.NumberFormat(getLocale())
   const counted = (created: number, skipped: number) => ({
     created: count.format(created),
     skipped: count.format(skipped),
   })
 
+  return (
+    <ul>
+      <li>{m.import_counted_pins(counted(row.createdPins, row.skippedPins))}</li>
+      <li>{m.import_counted_boards(counted(row.createdBoards, row.skippedBoards))}</li>
+      <li>{m.import_counted_tags(counted(row.createdTags, row.skippedTags))}</li>
+    </ul>
+  )
+}
+
+/** The counters, and the issues behind a button (decision H). Nothing before the walk started. */
+function Report({ row }: { row: Import }) {
   if (row.startedAt === null) return null
   return (
     <>
-      <ul>
-        <li>{m.import_counted_pins(counted(row.createdPins, row.skippedPins))}</li>
-        <li>{m.import_counted_boards(counted(row.createdBoards, row.skippedBoards))}</li>
-        <li>{m.import_counted_tags(counted(row.createdTags, row.skippedTags))}</li>
-      </ul>
+      <ImportCounters row={row} />
       {row.issueCount > 0 && <ImportIssuesDialog row={row} />}
     </>
   )

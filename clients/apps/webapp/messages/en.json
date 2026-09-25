@@ -81,6 +81,7 @@
   "image_refused": "That image could not be added.",
   "image_replace": "Replace it with a file",
   "image_replacing": "Downloading the new image.",
+  "import_abandoned": "The upload stopped for too long, and the import was given up.",
   "import_awaiting":"The upload of {name} stopped before the end. Choose that file again to send the rest.",
   "import_cancel": "Cancel the import",
   "import_cancel_confirm": "Stop the import",

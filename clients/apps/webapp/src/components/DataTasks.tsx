@@ -1,8 +1,23 @@
-import type { ReactNode } from "react"
+import { Button, buttonVariants } from "@heroui/react"
+import { useEffect, useState, type ReactNode } from "react"
+import { dataFailure } from "../dataFailures"
 import { useLatestExport } from "../exports"
 import { useLatestImport, useUpload } from "../imports"
+import { dataNotices } from "../lib/notices"
 import { m } from "../paraglide/messages.js"
-import { UploadProgress, importProgress } from "./ImportSection"
+import { downloadHref, exportReadiness } from "./ExportSection"
+import { ImportCounters, UploadProgress, importProgress } from "./ImportSection"
+
+// Per browser: another one shows a dismissed notice once more, which is harmless (decision G3).
+const DISMISSED = "pinry-dismissed-notices"
+
+function readDismissed(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(DISMISSED) ?? "[]") as string[]
+  } catch {
+    return []
+  }
+}
 
 function Item({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -14,13 +29,35 @@ function Item({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /**
- * The upload, the import and the export while they run (specification 2026-09-25, decisions F4
- * and G3). One item per task.
+ * The upload, the import and the export while they run, then what the latest of each ended with
+ * until it is dismissed (specification 2026-09-25, decisions F4 and G3). One item per task.
  */
 export function useDataTasks(): ReactNode[] {
   const upload = useUpload()
-  const exported = useLatestExport().data ?? null
-  const imported = useLatestImport().data ?? null
+  const latestExport = useLatestExport()
+  const latestImport = useLatestImport()
+  const [dismissed, setDismissed] = useState(readDismissed)
+  const exported = latestExport.data ?? null
+  const imported = latestImport.data ?? null
+  const notices = dataNotices(exported, imported, dismissed, Date.now())
+  const read = latestExport.isSuccess && latestImport.isSuccess
+  const kept = JSON.stringify(notices.dismissed)
+
+  // Only once both rows are read: an unread row would drop the dismissal of its notice.
+  useEffect(() => {
+    try {
+      if (read && kept === "[]") localStorage.removeItem(DISMISSED)
+      else if (read) localStorage.setItem(DISMISSED, kept)
+    } catch {
+      // A private window forgets the dismissals with the tab.
+    }
+  }, [read, kept])
+
+  const dismiss = (id: string) => (
+    <Button size="sm" variant="secondary" onPress={() => setDismissed((ids) => [...ids, id])}>
+      {m.dismiss()}
+    </Button>
+  )
   const tasks: ReactNode[] = []
 
   if (upload !== null) {
@@ -42,6 +79,43 @@ export function useDataTasks(): ReactNode[] {
     tasks.push(
       <Item key="export" title={m.task_export()}>
         <p className="text-sm">{m.export_pending()}</p>
+      </Item>,
+    )
+  }
+  if (notices.export !== null) {
+    const row = notices.export
+    const ready = row.state === "READY"
+    tasks.push(
+      <Item key={row.id} title={m.task_export()}>
+        <p className="text-sm">{ready ? exportReadiness(row) : dataFailure(row.failureCode)}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          {ready && (
+            <a className={buttonVariants({ size: "sm" })} href={downloadHref(row)}>
+              {m.export_download()}
+            </a>
+          )}
+          {dismiss(row.id)}
+        </div>
+      </Item>,
+    )
+  }
+  if (notices.import !== null) {
+    const row = notices.import
+    tasks.push(
+      <Item key={row.id} title={m.task_import()}>
+        {row.state === "COMPLETED" ? (
+          <>
+            <p className="text-sm">{m.import_completed()}</p>
+            <div className="text-sm">
+              <ImportCounters row={row} />
+            </div>
+          </>
+        ) : (
+          <p className="text-sm">
+            {row.state === "ABANDONED" ? m.import_abandoned() : dataFailure(row.failureCode)}
+          </p>
+        )}
+        {dismiss(row.id)}
       </Item>,
     )
   }
