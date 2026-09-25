@@ -8,6 +8,10 @@ const FAILURES = {
   DISK_FULL: m.failure_disk_full,
   BUILD_FAILED: m.failure_build_failed,
   EXPORT_INTERRUPTED: m.failure_interrupted,
+  ARCHIVE_UNREADABLE: m.failure_archive_unreadable,
+  MANIFEST_MISSING: m.failure_manifest_missing,
+  UNSUPPORTED_FORMAT_VERSION: m.failure_unsupported_format_version,
+  IMPORT_INTERRUPTED: m.failure_interrupted,
 }
 
 // `hasOwn` and not `in`: the code is the server's string, and `constructor` would answer otherwise.
@@ -15,7 +19,7 @@ function hasSentence(code: string): code is keyof typeof FAILURES {
   return Object.hasOwn(FAILURES, code)
 }
 
-/** Why an export stopped, or the general sentence for a code this bundle does not know. */
+/** Why an export or an import stopped, or the general sentence for a code this bundle does not know. */
 export function dataFailure(code: string | null): string {
   return code !== null && hasSentence(code) ? FAILURES[code]() : m.failure_unknown()
 }

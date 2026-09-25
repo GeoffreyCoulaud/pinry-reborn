@@ -3,6 +3,7 @@ import type { Schemas } from "@pinry-reborn/auth"
 import { useState, type ReactNode } from "react"
 import { dataFailure } from "../dataFailures"
 import { importRefusal } from "../dataRefusals"
+import { ImportIssuesDialog } from "./ImportIssuesDialog"
 import { useHandshake } from "../images"
 import {
   importRecord,
@@ -196,6 +197,27 @@ function Running({ row }: { row: Import }) {
   )
 }
 
+/** What the walk counted, and its issues behind a button (decision H). Nothing before it started. */
+function Report({ row }: { row: Import }) {
+  const count = new Intl.NumberFormat(getLocale())
+  const counted = (created: number, skipped: number) => ({
+    created: count.format(created),
+    skipped: count.format(skipped),
+  })
+
+  if (row.startedAt === null) return null
+  return (
+    <>
+      <ul>
+        <li>{m.import_counted_pins(counted(row.createdPins, row.skippedPins))}</li>
+        <li>{m.import_counted_boards(counted(row.createdBoards, row.skippedBoards))}</li>
+        <li>{m.import_counted_tags(counted(row.createdTags, row.skippedTags))}</li>
+      </ul>
+      {row.issueCount > 0 && <ImportIssuesDialog row={row} />}
+    </>
+  )
+}
+
 // Keyed by the contract's closed union, so a state added there fails the typecheck here.
 const VIEWS: Record<Import["state"], (row: Import) => ReactNode> = {
   AWAITING_ARCHIVE: (row) => <Awaiting row={row} />,
@@ -206,19 +228,27 @@ const VIEWS: Record<Import["state"], (row: Import) => ReactNode> = {
     </>
   ),
   RUNNING: (row) => <Running row={row} />,
-  COMPLETED: () => (
+  COMPLETED: (row) => (
     <>
       <p>{m.import_completed()}</p>
+      <Report row={row} />
       <ChooseArchive />
     </>
   ),
   FAILED: (row) => (
     <>
       <p>{dataFailure(row.failureCode)}</p>
+      <Report row={row} />
       <ChooseArchive />
     </>
   ),
-  CANCELLED: () => <ChooseArchive />,
+  // What a cancelled walk created stays, so its counters say what.
+  CANCELLED: (row) => (
+    <>
+      <Report row={row} />
+      <ChooseArchive />
+    </>
+  ),
   ABANDONED: () => <ChooseArchive />,
 }
 
