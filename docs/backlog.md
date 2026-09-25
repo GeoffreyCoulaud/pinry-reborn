@@ -84,6 +84,8 @@ Recorded where the decision lives. None is a copy: follow the pointer.
   on restart, correct only while the deployment is one instance), decision 3 (the measured cost of
   keeping a named account out, and the `forget_after` / last-step interaction behind it), decision 4
   (eviction is a bypass, and nothing purges outside a recorded failure).
+- **Two tabs can upload one import's archive at once**, no guard keeping the second out.
+  `docs/handoffs/2026-09-25 - handoff - the-data-travels.md`, What is not validated.
 
 ## Before beta
 
