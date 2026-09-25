@@ -9,6 +9,7 @@ import {
   downloadsRoute,
   exportsRoute,
   handshakeRoute,
+  importsRoute,
   pinsRoute,
   renderApp,
   sessionRoute,
@@ -45,6 +46,7 @@ describe("open the account and sign out everywhere", () => {
       pinsRoute([]),
       downloadsRoute(),
       exportsRoute(),
+      importsRoute(),
       handshakeRoute(),
     )
     renderApp("/")
@@ -80,6 +82,8 @@ describe("open the account and sign out everywhere", () => {
       http.delete("/api/v1/sessions", () => new HttpResponse(null, { status: 500 })),
       downloadsRoute(),
       exportsRoute(),
+      importsRoute(),
+      handshakeRoute(),
     )
     renderApp("/account")
     const user = userEvent.setup()
@@ -96,6 +100,8 @@ describe("open the account and sign out everywhere", () => {
       http.get("/api/v1/me", () => new HttpResponse(null, { status: 500 })),
       downloadsRoute(),
       exportsRoute(),
+      importsRoute(),
+      handshakeRoute(),
     )
     renderApp("/account")
 

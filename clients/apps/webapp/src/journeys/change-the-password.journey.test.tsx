@@ -9,6 +9,7 @@ import {
   downloadsRoute,
   exportsRoute,
   handshakeRoute,
+  importsRoute,
   pinsRoute,
   renderApp,
   sessionRoute,
@@ -53,6 +54,7 @@ describe("change the password", () => {
       pinsRoute([]),
       downloadsRoute(),
       exportsRoute(),
+      importsRoute(),
       handshakeRoute(),
     )
     renderApp("/account")
@@ -84,6 +86,8 @@ describe("change the password", () => {
       http.put("/api/v1/me/password", () => refused(429, "PASSWORD_CHANGED_TOO_SOON")),
       downloadsRoute(),
       exportsRoute(),
+      importsRoute(),
+      handshakeRoute(),
     )
     renderApp("/account")
     const user = userEvent.setup()
