@@ -42,7 +42,7 @@ const LONG_DASHES = [String.fromCodePoint(0x2014), String.fromCodePoint(0x2013)]
 /** Dated documents are frozen once delivered, so the dashes they carry stay where they are. */
 const FROZEN = [":!docs/specs", ":!docs/plans", ":!docs/adr", ":!docs/handoffs"]
 
-/** A runner's four cores: under `org.gradle.parallel` it bounds concurrent tasks, so test JVMs and memory. */
+/** Gradle would size its workers from the engine host's cores, not the runner's: pinned to a runner's four. */
 const MAX_WORKERS = "--max-workers=4"
 
 /** The build that emits `contract/openapi.json` and the fast jar the image ships. It always runs
