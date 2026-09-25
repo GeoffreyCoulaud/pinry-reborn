@@ -1,0 +1,26 @@
+{
+  "b223": {
+    "context": 2,
+    "why": 1,
+    "how": 1,
+    "reason": "Context: store and read side exist, nothing starts an upload. Why: import impossible without it, but no mention of large archives needing to survive cuts and screen changes. How: picker, pre-request size bound, store above router and beforeunload, but no chunk resume, retry or pause, and no single-request alternative."
+  },
+  "b420": {
+    "context": 2,
+    "why": 2,
+    "how": 1,
+    "reason": "Context: store, cancel and read side exist, no file picker. Why: makes import usable and survive network cuts and screen changes. How: above router, size bound, beforeunload, but the rejected alternative given is component-local state rather than the single request that restarts from zero."
+  },
+  "b470": {
+    "context": 2,
+    "why": 1,
+    "how": 1,
+    "reason": "Context: latest import and cancel shown, chunk store unused, no picker. Why: enables end-to-end import but lacks the survive-cuts-and-navigation reasoning. How: two sources, above router, pause after five losses, size bound, chunk size, but says no alternative was discussed (single request missing)."
+  },
+  "b797": {
+    "context": 2,
+    "why": 1,
+    "how": 1,
+    "reason": "Context: store and read side built, nothing lets a user pick a file. Why: makes import usable and gives the 892-line split, but not why the upload must survive cuts and screen changes. How: size bound, chunk size, above router, beforeunload, but names the single-request alternative only as unargued, with retries and resume after a pause barely covered."
+  }
+}

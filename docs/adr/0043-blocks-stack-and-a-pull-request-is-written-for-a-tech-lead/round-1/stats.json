@@ -1,0 +1,128 @@
+{
+ "control-219-a": {
+  "visible_text_lines": 36,
+  "total_lines": 55,
+  "tables": true,
+  "mermaid": false,
+  "details": false
+ },
+ "control-219-b": {
+  "visible_text_lines": 31,
+  "total_lines": 49,
+  "tables": true,
+  "mermaid": false,
+  "details": false
+ },
+ "control-224-a": {
+  "visible_text_lines": 39,
+  "total_lines": 59,
+  "tables": true,
+  "mermaid": false,
+  "details": false
+ },
+ "control-224-b": {
+  "visible_text_lines": 30,
+  "total_lines": 49,
+  "tables": true,
+  "mermaid": false,
+  "details": false
+ },
+ "control-229-a": {
+  "visible_text_lines": 46,
+  "total_lines": 63,
+  "tables": true,
+  "mermaid": false,
+  "details": false
+ },
+ "control-229-b": {
+  "visible_text_lines": 54,
+  "total_lines": 75,
+  "tables": true,
+  "mermaid": false,
+  "details": false
+ },
+ "v1-219-a": {
+  "visible_text_lines": 16,
+  "total_lines": 72,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v1-219-b": {
+  "visible_text_lines": 22,
+  "total_lines": 81,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v1-224-a": {
+  "visible_text_lines": 32,
+  "total_lines": 92,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v1-224-b": {
+  "visible_text_lines": 19,
+  "total_lines": 70,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v1-229-a": {
+  "visible_text_lines": 16,
+  "total_lines": 80,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v1-229-b": {
+  "visible_text_lines": 21,
+  "total_lines": 105,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v2-219-a": {
+  "visible_text_lines": 36,
+  "total_lines": 103,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v2-219-b": {
+  "visible_text_lines": 18,
+  "total_lines": 78,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v2-224-a": {
+  "visible_text_lines": 19,
+  "total_lines": 69,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v2-224-b": {
+  "visible_text_lines": 18,
+  "total_lines": 63,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v2-229-a": {
+  "visible_text_lines": 22,
+  "total_lines": 86,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ },
+ "v2-229-b": {
+  "visible_text_lines": 15,
+  "total_lines": 69,
+  "tables": true,
+  "mermaid": true,
+  "details": true
+ }
+}

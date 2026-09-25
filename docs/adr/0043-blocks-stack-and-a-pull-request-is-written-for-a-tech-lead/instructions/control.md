@@ -1,0 +1,1 @@
+The pull request's body is the block's report: evidence (gate, continuous integration, the diff against the budget), tier-1 fixes, tier-2 questions with their answers, pitfalls, departures from the block table. It says which pull request it is stacked on, and ends with the line: 🤖 Generated with [Claude Code](https://claude.com/claude-code)
