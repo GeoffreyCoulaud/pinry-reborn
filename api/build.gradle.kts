@@ -113,7 +113,7 @@ subprojects {
     // detekt's documented way out of check (detekt.dev/docs/gettingstarted/gradle): one type-resolved task per source set runs instead.
     tasks.named("check").configure {
         setDependsOn(dependsOn.filterNot { it is TaskProvider<*> && it.name == "detekt" })
-        dependsOn(tasks.matching { it.name in setOf("detektMain", "detektTest", "detektTestFixtures") })
+        dependsOn("detektMain", "detektTest", tasks.matching { it.name == "detektTestFixtures" })
     }
 
     // Branch-coverage gate (Kover). Applied to every module EXCEPT api-application,

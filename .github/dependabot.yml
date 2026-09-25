@@ -39,7 +39,7 @@ updates:
         patterns:
           - "*"
 
-  # Base images, pinned by tag and digest: one grouped weekly PR per file that names them.
+  # Base image of `api/Dockerfile`, pinned by tag and digest: one grouped weekly PR.
   - package-ecosystem: "docker"
     directory: "/api"
     schedule:

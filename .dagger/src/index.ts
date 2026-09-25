@@ -42,11 +42,7 @@ const LONG_DASHES = [String.fromCodePoint(0x2014), String.fromCodePoint(0x2013)]
 /** Dated documents are frozen once delivered, so the dashes they carry stay where they are. */
 const FROZEN = [":!docs/specs", ":!docs/plans", ":!docs/adr", ":!docs/handoffs"]
 
-/**
- * Gradle otherwise sizes its worker pool from the container's core count, which is the engine
- * host's and not the runner's. Pinned to a runner's four so the build has one shape everywhere;
- * lifting it on a twelve-core workstation measured 2m 49s against 2m 47s, so the pin costs nothing.
- */
+/** A runner's four cores: under `org.gradle.parallel` it bounds concurrent tasks, so test JVMs and memory. */
 const MAX_WORKERS = "--max-workers=4"
 
 /** The build that emits `contract/openapi.json` and the fast jar the image ships. It always runs
@@ -458,7 +454,7 @@ export class PinryReborn {
     // The two names are the ones `proxy.conf` passes to, and nginx resolves them once, at startup.
     const proxy = dag
       .container()
-      .from(await this.imageIn(source, COMPOSE, PROXY_IMAGE_LINE))
+      .from(await this.proxyImage(source))
       .withFile(PROXY_CONF_PATH, source.file(PROXY_CONF))
       .withServiceBinding("api", this.served(api, HTTP_PORT))
       .withServiceBinding("webapp", this.served(webapp, WEBAPP_PORT))
@@ -687,11 +683,11 @@ export class PinryReborn {
     return dag.directory().withFile("Dockerfile", source.file(dockerfile)).dockerBuild()
   }
 
-  /** The image a file names on the line `line` captures, so the gate runs what ships. */
-  private async imageIn(source: Directory, path: string, line: RegExp): Promise<string> {
-    const image = (await source.file(path).contents()).match(line)?.[1]
+  /** The proxy image `compose.yml` names, so the gate runs what ships. */
+  private async proxyImage(source: Directory): Promise<string> {
+    const image = (await source.file(COMPOSE).contents()).match(PROXY_IMAGE_LINE)?.[1]
     if (!image) {
-      throw new Error(`No image found in ${path}: no line matches ${line}.`)
+      throw new Error(`No image found in ${COMPOSE}: no line matches ${PROXY_IMAGE_LINE}.`)
     }
     return image
   }
