@@ -5,7 +5,8 @@ Date: 2026-09-25
 Amends: `docs/adr/0018-a-block-is-a-pull-request.md`, decision 2 (in series, no stacking);
 `docs/adr/0023-act-in-a-teammate-per-block.md`, decision 1 (a teammate spawned from `main` after the
 previous merge, stopped at its own merge), decision 5 (the report is the pull request's body) and
-decision 6 (the teammate marks ready); `docs/adr/0028-the-budget-follows-the-ecosystem.md`,
+decision 6 (the teammate marks ready); `docs/adr/0019-review-before-the-pull-request.md`, decision 3
+(back to draft on a red run or a requested change); `docs/adr/0028-the-budget-follows-the-ecosystem.md`,
 decision 6 (the holistic review on `main`, after the last merge).
 Evidence: the folder `docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead/`.
 Review: `.reviews/pull-requests-read-by-a-tech-lead-spec.md`, 0 CRITICAL, 5 MAJOR and 11 MINOR,
@@ -94,7 +95,10 @@ smallest change is a block of 163 lines. The quiz does not separate the two arms
    `<parent>...HEAD` in place of `main...HEAD`.
 5. **A block that changes what the web application shows is read headless before its push**, in its
    own Verify.
-6. **The lead marks a pull request ready** when its run is green; the teammate has moved on.
+6. **No draft stage.** A pull request is opened ready for review (`gh stack submit --auto --open`),
+   and a red run goes back to Verify without a return to draft. What is ready to review is the
+   stack, not one pull request: the lead tells the operator when the whole stack, closing block
+   included, has its runs green. `gh stack merge` refuses a draft anyway.
 7. **The holistic review reads the top of the stack before the operator's review**, and the closing
    block stacks on top. The operator merges the whole stack at once (`gh stack merge --rebase`), and
    the lead tags the lot.
@@ -115,7 +119,7 @@ experiment on the same bench.
 
 - `agents/workflow.md` is rewritten in "Phases" (a block's branch), Act, Verify, Integrate and Wrap
   (d), `agents/reviews/holistic.md` reads the top of the stack, and `AGENTS.md`'s merge gotcha names
-  `gh stack merge --rebase`. The status lines of ADR 0018, 0023 and 0028 name this ADR.
+  `gh stack merge --rebase`. The status lines of ADR 0018, 0019, 0023 and 0028 name this ADR.
 - **A body no longer carries its evidence where the reader sees it.** Continuous integration and the
   stack are shown by GitHub; the gate, the budget and the rest are in the collapsed report.
 - **The fix-back path is unmeasured**: decision 3 is a protocol no lot has run yet.
@@ -145,7 +149,7 @@ experiment on the same bench.
 
 | Block | Branch | What its checks have to fail on |
 |---|---|---|
-| 10 | `docs/pull-requests-read-by-a-tech-lead` | Phase 5 of `agents/workflow.md` carries the bullets of `instructions/v2plus.md` verbatim (a `diff` of the extracted section against the file is empty). `grep -n 'in series\|off \`main\`\|from \`main\` once' agents/workflow.md` prints nothing. The budget command reads `<parent>...HEAD`. Decisions 1 to 7 and 9 each have their bullet in the phase they govern. `agents/reviews/holistic.md` no longer says "every code block merged". The `Status:` lines of ADR 0018, 0023 and 0028 name 0043, and `AGENTS.md` names `gh stack merge --rebase`. Whether `gh stack submit` runs the `pre-push` hook is answered in the handoff with the command that settled it. `dagger call gate` green. This block carries this ADR |
+| 10 | `docs/pull-requests-read-by-a-tech-lead` | Phase 5 of `agents/workflow.md` carries the bullets of `instructions/v2plus.md` verbatim (a `diff` of the extracted section against the file is empty). `grep -n 'in series\|off \`main\`\|from \`main\` once' agents/workflow.md` prints nothing. The budget command reads `<parent>...HEAD`. Decisions 1 to 7 and 9 each have their bullet in the phase they govern. `agents/reviews/holistic.md` no longer says "every code block merged". `grep -n -i 'draft\|mark.*ready' agents/workflow.md` finds no draft stage. The `Status:` lines of ADR 0018, 0019, 0023 and 0028 name 0043, and `AGENTS.md` names `gh stack merge --rebase`. Whether `gh stack submit` runs the `pre-push` hook is answered in the handoff with the command that settled it. `dagger call gate` green. This block carries this ADR |
 
 **Adjacent backlog items**: none (`grep -n -i 'stack\|pull request\|pre-push' docs/backlog.md` finds no
 item). A lot of one block: the holistic review is offered to the operator rather than dispatched.
