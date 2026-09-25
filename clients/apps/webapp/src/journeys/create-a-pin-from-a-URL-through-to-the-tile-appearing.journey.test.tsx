@@ -70,7 +70,7 @@ describe("create a pin from a URL through to the tile appearing", () => {
 
     // The form is read by name out of `FormData`, and a name that no longer matches sends the
     // string "null" without failing anything downstream.
-    expect(await screen.findByRole("button", { name: "Downloads (1)" })).toBeVisible()
+    expect(await screen.findByRole("button", { name: "Tasks (1)" })).toBeVisible()
     expect(sent).toEqual({
       sourceContextUrl: "https://example.test/page",
       description: bare.description,
@@ -86,7 +86,7 @@ describe("create a pin from a URL through to the tile appearing", () => {
     const tile = await screen.findByRole("img", { name: bare.description }, { timeout: 4000 })
     expect(tile).toBeVisible()
     expect(pageRequests).toBe(paged)
-    expect(await screen.findByRole("button", { name: "Downloads (0)" })).toBeVisible()
+    expect(await screen.findByRole("button", { name: "Tasks (0)" })).toBeVisible()
 
     // The list emptied, so nothing asks for it again.
     const asked = polls
