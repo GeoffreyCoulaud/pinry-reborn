@@ -1,6 +1,8 @@
 # 0025. The pipeline is written in TypeScript
 
-Status: Accepted
+Status: Accepted; the pipeline's base images are no longer unwatched: they are pinned by digest in
+`.dagger/*.Dockerfile` and `compose.yml`, which Dependabot bumps, and `.dagger/package.json` alone stays outside it
+(`docs/specs/2026-09-24-the-gate-is-deterministic.md`, block 60).
 Date: 2026-09-08
 Specification: `docs/specs/2026-09-08-monorepo.md`, question T and section 4.4
 Related: `docs/adr/0024-three-projects-share-one-repository.md`, decision 5, which gives Dagger the

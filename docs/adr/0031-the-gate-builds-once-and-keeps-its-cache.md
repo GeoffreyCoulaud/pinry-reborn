@@ -1,6 +1,10 @@
 # 0031. The gate builds once and keeps its cache
 
-Status: Accepted
+Status: Accepted; decision 7 re-tested cold on 2026-09-25 and held, with its cause now established.
+`org.gradle.parallel`, shipped by #211, failed one of three cold `dagger call gate` runs on a fresh engine capped at
+`--memory 7.4g --memory-swap 8.4g`: the kernel killed two JVMs of about 2.4 GB in the engine's memory cgroup
+(`oom_kill 2`), the Gradle daemon among them. The two green runs peaked at the cap. The closing block of
+`docs/specs/2026-09-24-the-gate-is-deterministic.md` withdrew the property; its handoff carries the runs.
 Date: 2026-09-13
 Specification: this document, as `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md` did for the
 same subject. Tier Spec. One adversarial review closed, its findings recorded here.
