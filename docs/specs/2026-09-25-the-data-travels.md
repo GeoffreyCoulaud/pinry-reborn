@@ -7,7 +7,10 @@ first CRITICAL. Frozen when the lot's closing block merges.
 Branches: one stack, each block on the branch below it: 10 `feat/the-data-states-are-declared`,
 20 `feat/the-export-is-reachable`, 30 `feat/the-import-uploads`, 40
 `feat/the-upload-resumes-after-reload`, 50 `feat/the-import-reports`, 60
-`feat/the-task-centre-carries-data-tasks`.
+`feat/the-task-centre-carries-data-tasks`. *(Corrected: the two splits of section 5 added 34
+`feat/the-import-is-followed` and 37 `feat/the-archive-uploads` after 30, and 65
+`feat/the-task-centre-keeps-data-notices` after 60; the closing block is
+`fix/the-data-travels-closes`, on 65.)*
 ADRs: none. The contract gains declarations on existing conventions: the handshake already
 publishes what a client checks before sending (`LimitsDto`), and a state published as an enum
 already has a presentation twin (`DownloadStatusDto`). The import bounds reach the presentation
@@ -236,7 +239,8 @@ Under `clients/apps/webapp/src`:
 | 60 | `feat/the-task-centre-carries-data-tasks` | Journey **an upload and an export surfacing in the task centre**: the upload's progress shows on `/` while it runs; a `READY` export shows a notice with its link, dismissing it hides it and it stays hidden after a remount. `lib/notices.ts`, at 100 %, fed rows shaped as the API emits them (`completedAt` null on every failure): a `COMPLETED` import shows before `completedAt` + 24 hours and not after; a `READY` export shows before `expiresAt` and not after; a `FAILED` export shows at any time until dismissed. A `CANCELLED` import shows nothing *(Corrected: the whole block measured 579 lines over 17 files against `feat/the-import-reports`, and the operator answered "a" on 2026-09-25: two blocks. 60 keeps the centre, named "Tasks", with the running upload, import and export and the journey's upload case; 65, `feat/the-task-centre-keeps-data-notices`, takes `lib/notices.ts`, the notices and their dismissals, the journey's notice cases and the backlog deletion.)* |
 
 Each block is green and coherent alone: 20 needs nothing above it; 30 reads the bounds 10 publishes;
-40, 50 and 60 read what 30 built. Block 60 deletes the backlog item this lot closes.
+40, 50 and 60 read what 30 built. Block 60 deletes the backlog item this lot closes. *(Corrected:
+block 65 deletes it, `bc8d049a` in #228, as the correction on row 60 says.)*
 
 **Block 30 is the one most likely to pass 500 lines.** Its seam, declared now: the store and
 `lib/imports.ts` with their unit tests on one side, whose consumer is the section on the other side
@@ -251,7 +255,7 @@ its budget once committed, against its parent branch (section 8).
 
 | Item | Exit |
 |---|---|
-| **What the API serves and the web application does not reach yet** (Features) | Deleted in block 60's pull request: import and export are what it had left |
+| **What the API serves and the web application does not reach yet** (Features) | Deleted in block 60's pull request: import and export are what it had left *(Corrected: in block 65's, #228)* |
 | **Import follow-ons** (`P1`) | Left open (decision K): selective import and partial export, merging onto an existing pin, and a pin with no medium travelling each change what the API does and need their own design; this lot reaches what the API does today |
 | **Browser-extension CORS origin** (`P1`) | Not adjacent: nothing here touches the origin list |
 | **A table rebuild's row-carrying path is exercised by nothing**, **`foreign_keys` is off** (`P2`) | Not adjacent: block 10 touches the presentation layer, no migration |
