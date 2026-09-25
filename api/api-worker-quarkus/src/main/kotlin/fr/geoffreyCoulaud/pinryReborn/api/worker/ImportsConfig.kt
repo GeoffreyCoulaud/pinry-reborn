@@ -18,8 +18,8 @@ interface ImportsConfig {
     fun maxArchiveBytes(): Long
 
     // Read by no use case, deliberately: the framework's body limit is the enforcer and refuses an
-    // oversize chunk before any import code runs. This key is the size the handshake tells a client to
-    // send, and its invariant against that limit is BodyLimitCheck's.
+    // oversize chunk before any import code runs. This key records the size a client is told to send,
+    // and its invariant against that limit, which ImportsConfigIntegrationTest holds.
     @WithDefault("16777216") // 16 MiB
     fun maxChunkBytes(): Long
 
