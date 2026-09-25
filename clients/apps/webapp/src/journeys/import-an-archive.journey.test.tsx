@@ -8,7 +8,6 @@ import { RETRY_MS } from "../lib/imports"
 import { m } from "../paraglide/messages.js"
 import {
   downloadsRoute,
-  exportsRoute,
   handshakeRoute,
   IMPORT_ID,
   importRow,
@@ -53,11 +52,13 @@ function mismatch(currentLength: number) {
 /**
  * The account screen over one import, and a 10-byte archive cut at 4 bytes: `answer` decides
  * each chunk's fate, read from the request MSW received since `Blob.slice` reads nothing itself.
+ * The first `lostCloses` closes arrive and their answers are lost on the way back.
  */
 async function openTheAccount({
-  rows = [] as unknown[],
+  rows = [] as ReturnType<typeof importRow>[],
   answer = appended as (put: Put) => Response | Promise<Response>,
   maxImportArchiveBytes = 100,
+  lostCloses = 0,
 } = {}) {
   const sent: Sent = { opened: 0, puts: [], completed: 0, cancelled: [] }
   let latest = rows
@@ -65,7 +66,6 @@ async function openTheAccount({
     sessionRoute(() => true),
     http.get("/api/v1/me", () => HttpResponse.json(ACCOUNT)),
     downloadsRoute(),
-    exportsRoute(),
     pinsRoute([]),
     handshakeRoute({ maxImportChunkBytes: 4, maxImportArchiveBytes }),
     importsRoute(() => latest),
@@ -83,8 +83,13 @@ async function openTheAccount({
     }),
     http.post("/api/v1/me/imports/:id/archive/complete", () => {
       sent.completed += 1
+      // As the API does: an upload closes once, and a second close finds it no longer awaiting.
+      if (latest[0]?.state !== "AWAITING_ARCHIVE") {
+        return HttpResponse.json({ status: 409, code: "IMPORT_NOT_AWAITING_ARCHIVE" }, { status: 409 })
+      }
       const pending = importRow("PENDING", { uploadedBytes: ARCHIVE.length })
       latest = [pending]
+      if (sent.completed <= lostCloses) return HttpResponse.error()
       return HttpResponse.json(pending, { status: 202 })
     }),
     http.delete("/api/v1/me/imports/:id", ({ params }) => {
@@ -117,10 +122,10 @@ async function chooseTheArchive(user: ReturnType<typeof userEvent.setup>) {
 }
 
 /** Past the wait before each retry, whenever the loop gets round to scheduling it. */
-async function untilSent(sent: Sent, count: number) {
+async function afterRetries(check: () => void) {
   await vi.waitFor(async () => {
     await vi.advanceTimersByTimeAsync(RETRY_MS)
-    expect(sent.puts.length).toBeGreaterThanOrEqual(count)
+    check()
   })
 }
 
@@ -131,8 +136,21 @@ function pageHeldOnUnload() {
   return event.defaultPrevented
 }
 
+/** Whether `text` showed at any moment, which a `findBy` on the last screen cannot tell. */
+function watchFor(text: string) {
+  let shown = false
+  const observer = new MutationObserver(() => {
+    shown ||= document.body.textContent?.includes(text) ?? false
+  })
+  observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+  return () => {
+    observer.disconnect()
+    return shown
+  }
+}
+
 afterEach(() => {
-  // The store is module state, and module state outlives a journey (specification, section 9).
+  // The store is module state, and module state outlives a journey.
   dropUpload()
   vi.useRealTimers()
 })
@@ -140,6 +158,7 @@ afterEach(() => {
 describe("import an archive", () => {
   it("Given a 4-byte chunk, Then the archive leaves in three slices and the upload closes", async () => {
     const { user, sent } = await openTheAccount()
+    const shownStopped = watchFor(m.import_awaiting({ name: "pinry.zip" }))
 
     await chooseTheArchive(user)
 
@@ -150,6 +169,21 @@ describe("import an archive", () => {
       { offset: 8, type: "application/octet-stream", body: "89" },
     ])
     expect(sent.completed).toBe(1)
+    // The upload gives way to the server's row once it is read, not to the stale one before it.
+    expect(shownStopped()).toBe(false)
+  })
+
+  it("Given a close whose answer is lost, Then it is sent again and the server's import shows", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const { user, sent } = await openTheAccount({ lostCloses: 1 })
+
+    await chooseTheArchive(user)
+    await afterRetries(() => expect(sent.completed).toBe(2))
+
+    expect(await screen.findByText(m.import_pending())).toBeVisible()
+    expect(screen.queryByRole("progressbar", { name: m.import_sending() })).toBeNull()
+    expect(screen.queryByText(m.account_refused())).toBeNull()
+    expect(sent.puts).toHaveLength(3)
   })
 
   it("Given a lost request and a cut chunk, Then the upload resumes where the server stands", async () => {
@@ -159,7 +193,7 @@ describe("import an archive", () => {
     const { user, sent } = await openTheAccount({ answer })
 
     await chooseTheArchive(user)
-    await untilSent(sent, 2)
+    await afterRetries(() => expect(sent.puts.length).toBeGreaterThanOrEqual(2))
 
     expect(await screen.findByText(m.import_pending())).toBeVisible()
     expect(sent.puts.map((put) => put.offset)).toEqual([0, 0, 4, 6])
@@ -186,7 +220,7 @@ describe("import an archive", () => {
     })
 
     await chooseTheArchive(user)
-    await untilSent(sent, 5)
+    await afterRetries(() => expect(sent.puts.length).toBeGreaterThanOrEqual(5))
 
     const resume = await screen.findByRole("button", { name: m.import_resume() })
     expect(screen.getByText(m.import_paused())).toBeVisible()
@@ -205,6 +239,17 @@ describe("import an archive", () => {
 
     expect(await screen.findByText(m.import_too_large())).toBeVisible()
     expect(sent).toEqual({ opened: 0, puts: [], completed: 0, cancelled: [] })
+  })
+
+  it("Given an import already running, Then opening another is refused and nothing is sent", async () => {
+    const { user, sent } = await openTheAccount()
+    const running = { status: 409, code: "IMPORT_ALREADY_IN_PROGRESS" }
+    server.use(http.post("/api/v1/me/imports", () => HttpResponse.json(running, { status: 409 })))
+
+    await chooseTheArchive(user)
+
+    expect(await screen.findByText(m.import_in_progress())).toBeVisible()
+    expect(sent.puts).toEqual([])
   })
 
   it("Given an upload, Then it outlives the screen and holds the page until it ends", async () => {
@@ -252,5 +297,27 @@ describe("import an archive", () => {
 
     await waitFor(() => expect(screen.queryByText("Importing: 3 of 10 pins.")).toBeNull())
     expect(sent.cancelled).toEqual([IMPORT_ID])
+  })
+
+  it("Given a cancel refused during an upload, Then it says so and the upload goes on", async () => {
+    const gates = new Map<number, () => void>()
+    const { user, sent } = await openTheAccount({
+      answer: async (put) => {
+        if (put.offset > 0) await new Promise<void>((open) => gates.set(put.offset, open))
+        return appended(put)
+      },
+    })
+    server.use(http.delete("/api/v1/me/imports/:id", () => new HttpResponse(null, { status: 500 })))
+    await chooseTheArchive(user)
+    await waitFor(() => expect(gates.has(4)).toBe(true))
+
+    await user.click(screen.getByRole("button", { name: m.import_cancel() }))
+    await user.click(await screen.findByRole("button", { name: m.import_cancel_confirm() }))
+
+    expect(await screen.findByText(m.account_refused())).toBeVisible()
+    gates.get(4)?.()
+    await waitFor(() => expect(gates.has(8)).toBe(true))
+    expect(screen.getByRole("progressbar", { name: m.import_sending() })).toBeVisible()
+    expect(sent.cancelled).toEqual([])
   })
 })

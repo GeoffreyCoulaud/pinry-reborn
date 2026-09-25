@@ -178,8 +178,11 @@ export function downloadsPage(downloads: unknown[], nextCursor?: unknown) {
 
 export const EXPORT_ID = "7c1e2a4b-5d6f-4a8b-9c0d-1e2f3a4b5c6d"
 
+type Export = Schemas["UserDataExportOutputDto"]
+type Import = Schemas["UserDataImportOutputDto"]
+
 /** An export row as the API answers one, in the state the journey names. */
-export function exportRow(state: string, fields: Record<string, unknown> = {}) {
+export function exportRow(state: Export["state"], fields: Partial<Export> = {}): Export {
   return {
     id: EXPORT_ID,
     state,
@@ -205,7 +208,7 @@ export function exportsRoute(rows: () => unknown[] = () => []) {
 export const IMPORT_ID = "3b9d2c1e-4f5a-4b6c-8d7e-9f0a1b2c3d4e"
 
 /** An import row as the API answers one, in the state the journey names. */
-export function importRow(state: string, fields: Record<string, unknown> = {}) {
+export function importRow(state: Import["state"], fields: Partial<Import> = {}): Import {
   return {
     id: IMPORT_ID,
     state,

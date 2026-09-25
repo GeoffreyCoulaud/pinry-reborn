@@ -7,9 +7,7 @@ import {
   DUE_SESSION,
   SESSION,
   downloadsRoute,
-  exportsRoute,
   handshakeRoute,
-  importsRoute,
   pinsRoute,
   renderApp,
   sessionRoute,
@@ -53,8 +51,6 @@ describe("change the password", () => {
       }),
       pinsRoute([]),
       downloadsRoute(),
-      exportsRoute(),
-      importsRoute(),
       handshakeRoute(),
     )
     renderApp("/account")
@@ -85,8 +81,6 @@ describe("change the password", () => {
       http.get("/api/v1/me", () => HttpResponse.json(ACCOUNT)),
       http.put("/api/v1/me/password", () => refused(429, "PASSWORD_CHANGED_TOO_SOON")),
       downloadsRoute(),
-      exportsRoute(),
-      importsRoute(),
       handshakeRoute(),
     )
     renderApp("/account")

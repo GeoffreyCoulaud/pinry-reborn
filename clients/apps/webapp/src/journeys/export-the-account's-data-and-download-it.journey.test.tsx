@@ -9,7 +9,6 @@ import {
   exportRow,
   exportsRoute,
   handshakeRoute,
-  importsRoute,
   renderApp,
   sessionRoute,
 } from "../test/app"
@@ -29,7 +28,6 @@ async function openTheAccount(rows: () => unknown[], ...routes: Parameters<typeo
     http.get("/api/v1/me", () => HttpResponse.json(ACCOUNT)),
     downloadsRoute(),
     exportsRoute(rows),
-    importsRoute(),
     handshakeRoute(),
     ...routes,
   )

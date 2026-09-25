@@ -7,7 +7,6 @@ import { dropUpload } from "../imports"
 import { m } from "../paraglide/messages.js"
 import {
   downloadsRoute,
-  exportsRoute,
   handshakeRoute,
   importRow,
   importsRoute,
@@ -47,7 +46,6 @@ function openTheAccount(rows: unknown[] = []) {
     sessionRoute(() => true),
     http.get("/api/v1/me", () => HttpResponse.json(ACCOUNT)),
     downloadsRoute(),
-    exportsRoute(),
     pinsRoute([]),
     handshakeRoute({ maxImportChunkBytes: 4 }),
     importsRoute(() => latest),
@@ -98,7 +96,7 @@ async function enabled(label: string) {
 beforeEach(() => localStorage.clear())
 
 afterEach(() => {
-  // The store is module state, and module state outlives a journey (specification, section 9).
+  // The store is module state, and module state outlives a journey.
   dropUpload()
 })
 

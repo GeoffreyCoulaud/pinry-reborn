@@ -149,7 +149,7 @@ function Uploading({ upload }: { upload: Upload }) {
   )
 }
 
-/** After a reload: the file recorded when the import opened, asked for again (decision D1). */
+/** After a reload: the file recorded when the import opened, asked for again. */
 function Awaiting({ row }: { row: Import }) {
   const record = importRecord(row.id)
   const resume = useResumeImport()
@@ -226,7 +226,7 @@ export function ImportCounters({ row }: { row: Import }) {
   )
 }
 
-/** The counters, and the issues behind a button (decision H). Nothing before the walk started. */
+/** The counters, and the issues behind a button. Nothing before the walk started. */
 function Report({ row }: { row: Import }) {
   if (row.startedAt === null) return null
   return (

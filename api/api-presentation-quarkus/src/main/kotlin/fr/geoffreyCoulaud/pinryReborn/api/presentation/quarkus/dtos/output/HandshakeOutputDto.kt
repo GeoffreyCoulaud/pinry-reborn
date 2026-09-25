@@ -17,6 +17,7 @@ data class HandshakeOutputDto(
         val mediaTypes: List<String>,
         /** The size an import's archive is sent in, one `PUT` per chunk. */
         val maxImportChunkBytes: Long,
+        /** The largest archive an import accepts; a client refuses a larger file before opening one. */
         val maxImportArchiveBytes: Long,
     )
 
