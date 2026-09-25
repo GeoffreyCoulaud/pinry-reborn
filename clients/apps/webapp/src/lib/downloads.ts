@@ -10,7 +10,7 @@ export interface DownloadProgress {
   status: Schemas["ImageDownloadOutputDto"]["status"]
 }
 
-const POLL_MS = 1000
+export const POLL_MS = 1000
 
 /**
  * The list is asked again while the server still has work. A failed row also sits in the list and

@@ -7,6 +7,7 @@ import {
   DUE_SESSION,
   SESSION,
   downloadsRoute,
+  exportsRoute,
   handshakeRoute,
   pinsRoute,
   renderApp,
@@ -55,6 +56,7 @@ describe("delete the account", () => {
       }),
       pinsRoute([]),
       downloadsRoute(),
+      exportsRoute(),
       handshakeRoute(),
     )
     const user = await openTheDialog()
@@ -87,6 +89,7 @@ describe("delete the account", () => {
         return new HttpResponse(null, { status: 202 })
       }),
       downloadsRoute(),
+      exportsRoute(),
     )
     const user = await openTheDialog()
 
@@ -108,6 +111,7 @@ describe("delete the account", () => {
           : refused(429, "TOO_MANY_AUTHENTICATION_ATTEMPTS")
       }),
       downloadsRoute(),
+      exportsRoute(),
     )
     const user = await openTheDialog()
 
