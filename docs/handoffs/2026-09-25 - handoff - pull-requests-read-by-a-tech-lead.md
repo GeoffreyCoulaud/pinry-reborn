@@ -113,7 +113,8 @@ same silence is why lot `0.38.0` saw no gate through `gh stack submit`.
 - **The experiment's limits**, which the ADR's Consequences list: one operator, three pull requests of one lot, two
   samples per arm and pull request, one model, readers of the same model as the writers.
 - **The "why" of #224** scored 1 of 2 in 11 of 12 descriptions, a gap left to a later round on the same bench.
-- **The holistic review**: offered to the operator on this one-block lot rather than dispatched.
+- **The holistic review**: waived by the operator for this one-block lot ("O1", 2026-09-25), so nothing read the lot
+  as a whole beyond the specification review and the gate.
 
 ## Next step
 
