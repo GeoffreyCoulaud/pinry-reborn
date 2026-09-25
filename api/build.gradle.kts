@@ -110,9 +110,9 @@ subprojects {
         jvmTarget = "25"
     }
 
-    // The gate runs one type-resolved task per source set; the plugin's plain `detekt` would re-read them AST-only.
+    // detekt's documented way out of check (detekt.dev/docs/gettingstarted/gradle): one type-resolved task per source set runs instead.
     tasks.named("check").configure {
-        setDependsOn(dependsOn.filterNot { (it as? TaskProvider<*>)?.name == "detekt" })
+        setDependsOn(dependsOn.filterNot { it is TaskProvider<*> && it.name == "detekt" })
         dependsOn(tasks.matching { it.name in setOf("detektMain", "detektTest", "detektTestFixtures") })
     }
 
