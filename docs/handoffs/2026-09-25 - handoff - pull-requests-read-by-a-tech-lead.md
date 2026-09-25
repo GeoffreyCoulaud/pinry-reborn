@@ -80,6 +80,18 @@ the operator's first two places on all three pull requests. The quiz does not se
 - **Cascaded rebases, and the runs they re-triggered**: none; a stack of one has nothing above to cascade.
 - **The operator's reading of the bodies**: to be filled once the operator has read this pull request.
 
+## The pre-push hook through `gh stack`
+
+**`gh stack push` runs the `pre-push` hook**, and the gate with it. Settled on 2026-09-25 while
+`GIT_TRACE=1 gh stack push 2>&1` pushed `29931334`, by `ps -ef` during the push: `gh-stack push` (pid 811713) ran
+`/usr/bin/git push origin --force-with-lease=refs/heads/docs/pull-requests-read-by-a-tech-lead: ...`, with no
+`--no-verify`, and that `git push` (pid 811777) was the parent of `dagger call gate` (pid 811783), which the hook
+`exec`s. The push took the gate's time and then printed `✓ Pushed 1 branches`.
+
+**The ADR's command cannot settle it**: `GIT_TRACE=1 gh stack push 2>&1 | grep -i hook` prints nothing whether or not
+the hook runs, gh-stack keeping git's standard error to itself (the full output above was three lines, no trace). The
+same silence is why lot `0.38.0` saw no gate through `gh stack submit`.
+
 ## Pitfalls
 
 - **The evidence guard refuses shell redirection into files** (`.claude/hooks/evidence-guard.py`): a file is written
