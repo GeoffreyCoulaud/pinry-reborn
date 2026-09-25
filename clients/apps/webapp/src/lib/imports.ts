@@ -13,6 +13,22 @@ export type UploadStep =
   | { next: "PAUSE" }
   | { next: "STOP"; code: string | null }
 
+/** What an upload records of its file, so a reload can ask for the same one again. */
+export interface FileIdentity {
+  name: string
+  size: number
+  lastModified: number
+}
+
+/** No hash: it would read the whole file, and the check guards against a mistake (decision D'2). */
+export function sameFile(record: FileIdentity, file: FileIdentity): boolean {
+  return (
+    record.name === file.name &&
+    record.size === file.size &&
+    record.lastModified === file.lastModified
+  )
+}
+
 /** Attempts at one offset before the upload waits for the user, `RETRY_MS` apart. */
 export const ATTEMPTS = 5
 export const RETRY_MS = 5_000

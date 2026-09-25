@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest"
-import { ATTEMPTS, nextStep, refusedChunk } from "./imports"
+import { ATTEMPTS, nextStep, refusedChunk, sameFile } from "./imports"
 
 const SIZE = 10
+
+describe("the file chosen again after a reload", () => {
+  const record = { name: "pinry.zip", size: SIZE, lastModified: 1 }
+
+  it("Given the three recorded fields, Then it is the same file", () => {
+    expect(sameFile(record, { ...record })).toBe(true)
+  })
+
+  it.each([{ name: "other.zip" }, { size: SIZE + 1 }, { lastModified: 2 }])(
+    "Given one field that differs (%o), Then it is another file",
+    (field) => {
+      expect(sameFile(record, { ...record, ...field })).toBe(false)
+    },
+  )
+})
 
 const send = (offset: number, failures: number) => ({ next: "SEND", offset, failures })
 const stop = (code: string) => ({ next: "STOP", code })
