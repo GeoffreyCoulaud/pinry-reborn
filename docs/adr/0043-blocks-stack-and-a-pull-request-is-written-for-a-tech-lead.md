@@ -72,39 +72,35 @@ smallest change is a block of 163 lines. The quiz does not separate the two arms
 
 ## Decision
 
-1. **A lot's blocks stack, each in its own worktree.** Each block's branch starts from the previous
-   block's, and its pull request targets that branch. The lead creates the branch with
-   `gh stack add` and a worktree for it under `.claude/worktrees/<branch>`, its own tree staying on
-   `main`; a teammate works in its block's worktree alone, and may add the branches and worktrees of
-   its own split. Only the lead rewrites the stack. The worktrees are removed after the merge.
-2. **The next block starts once the previous one's gate is green locally and its pull request is
-   open as a draft**, not once it has merged. A block's teammate stays idle rather than stopped until
-   its pull request merges, so a comment reaches the agent that wrote the code.
-3. **A fix-back runs in the lower block's worktree while the upper teammate keeps working.** The
-   lower teammate commits the fix and runs the gate; the lead then rebases each branch above it in
-   its own worktree (`git -C <worktree> rebase <parent branch>`), each when its teammate is at a
-   stop with a clean tree, and pushes. Git refuses to rewrite a branch checked out in another
-   worktree, so the single-command cascade of `gh stack rebase --upstack` is not assumed to work;
-   the block settles what `gh stack` does with worktrees.
-4. **One gate runs at a time.** Every gate, the `pre-push` hook's included, takes the same lock:
-   `flock "$(git rev-parse --git-common-dir)/gate.lock" dagger call gate`, the directory `.git` being
-   shared by all the worktrees of a clone. The kernel releases it when the process ends, so no lock
-   outlives a crash. The engine is capped at 7.4 GB, and lot 0.37.0 measured a gate killed for
-   memory with parallel Gradle alone (`docs/handoffs/2026-09-25 - handoff - the-gate-is-deterministic.md`);
-   two gates at once would court the same failure. A teammate runs the gate in the background and
-   polls it, the wait plus the gate possibly passing the Bash tool's ten-minute ceiling. The hook
-   falls back to no lock where `flock` is missing.
-5. **The budget is measured against the parent branch**, the command of `agents/workflow.md` with
+1. **A lot's blocks stack, in the one working tree.** Each block's branch starts from the previous
+   block's, and its pull request targets that branch; the lead creates it with `gh stack add`, and a
+   teammate may add the branches of its own split. One teammate works at a time. Only the lead
+   rewrites the stack.
+2. **The stack is built, then reviewed.** The next block starts once the previous one's gate is
+   green locally and its pull request is open as a draft, not once it has merged. The operator's
+   review begins when the whole stack is written, the holistic review having read its top; a comment
+   that arrives earlier waits for the last block to be pushed. A block's teammate stays idle rather
+   than stopped until its pull request merges, so a comment reaches the agent that wrote the code.
+3. **A fix-back is made in the layer it concerns, one at a time.** The block's teammate checks its
+   branch out (`gh stack checkout <branch>`), commits the fix and runs the gate; the lead cascades
+   with `gh stack rebase --upstack` and pushes with `gh stack push`, which re-runs continuous
+   integration above. On a conflict, the lead aborts (`gh stack rebase --abort`), and the teammate of
+   the branch in conflict rebases it onto its new parent, resolves, runs the gate and stops; the
+   cascade then resumes from that branch. Every teammate whose branch moved is told, and reads its
+   diff against its new parent again before any further work. This is the path GitHub documents
+   ("Reviewing stacked pull requests") and the one its own agent example follows
+   ("Turn one giant AI-generated pull request to a reviewable stack", GitHub Blog, 2026).
+4. **The budget is measured against the parent branch**, the command of `agents/workflow.md` with
    `<parent>...HEAD` in place of `main...HEAD`.
-6. **A block that changes what the web application shows is read headless before its push**, in its
+5. **A block that changes what the web application shows is read headless before its push**, in its
    own Verify.
-7. **The lead marks a pull request ready** when its run is green; the teammate has moved on.
-8. **The holistic review reads the top of the stack before the operator's review**, and the closing
+6. **The lead marks a pull request ready** when its run is green; the teammate has moved on.
+7. **The holistic review reads the top of the stack before the operator's review**, and the closing
    block stacks on top. The operator merges the whole stack at once (`gh stack merge --rebase`), and
    the lead tags the lot.
-9. **The pull request's body is written for a tech lead, by the rules of V2+**, which
+8. **The pull request's body is written for a tech lead, by the rules of V2+**, which
    `agents/workflow.md` carries as they stand in `instructions/v2plus.md`.
-10. **The block's report goes last in the body, collapsed**, under
+9. **The block's report goes last in the body, collapsed**, under
    `<details><summary>Block report, for the handoff</summary>`: evidence, departures, tier-1 fixes,
    tier-2 questions with their answers, pitfalls, what was not verified. The handoff is written from
    these reports, and counts per lot the fix-backs, the cascaded rebases, the runs they re-triggered,
@@ -122,13 +118,15 @@ experiment on the same bench.
   `gh stack merge --rebase`. The status lines of ADR 0018, 0023 and 0028 name this ADR.
 - **A body no longer carries its evidence where the reader sees it.** Continuous integration and the
   stack are shown by GitHub; the gate, the budget and the rest are in the collapsed report.
-- **The fix-back path is unmeasured**: decision 3 is a protocol no lot has run yet, operator's
-  choice of worktrees included (2026-09-25, replacing a pause of the working teammate that had no
-  mechanism).
-- **Each worktree pays its own install and first build**: `node_modules` and the Gradle project
-  directories are per tree, the pnpm store and the Dagger engine's cache are shared.
-- The lead's standing rule that worktrees serve the operator's own parallel work alone is lifted for
-  a stack's blocks.
+- **The fix-back path is unmeasured**: decision 3 is a protocol no lot has run yet.
+- **No worktrees, and so no concurrent gates.** A worktree per block was considered and dropped on
+  2026-09-25: `gh stack` 0.1.1 refuses to rebase a branch checked out in another worktree ("est déjà
+  utilisé par l'arbre-de-travail") and does not see its stack from inside one ("is not part of a
+  stack"), measured on two throwaway local branches; the sources that pair agents with worktrees use
+  one worktree per independent task, never one per layer of a stack. Building before reviewing
+  removes the case worktrees were for, a fix-back while a block above is still being written.
+- **`gh stack init` checks the top branch out**, so a commit meant for a lower branch lands on the
+  top one unless the lead switches back first (the same measurement).
 - **The experiment's limits**: one operator, three pull requests of one lot, two samples per arm and
   pull request, one model, readers of the same model as the writers, and a quiz reference written by
   the lead who also wrote the instructions. The reading page showed each description's blind id, and
@@ -147,7 +145,7 @@ experiment on the same bench.
 
 | Block | Branch | What its checks have to fail on |
 |---|---|---|
-| 10 | `docs/pull-requests-read-by-a-tech-lead` | Phase 5 of `agents/workflow.md` carries the bullets of `instructions/v2plus.md` verbatim (a `diff` of the extracted section against the file is empty). `grep -n 'in series\|off \`main\`\|from \`main\` once' agents/workflow.md` prints nothing. The budget command reads `<parent>...HEAD`. Decisions 1 to 8 and 10 each have their bullet in the phase they govern. `agents/reviews/holistic.md` no longer says "every code block merged". The `Status:` lines of ADR 0018, 0023 and 0028 name 0043, and `AGENTS.md` names `gh stack merge --rebase` and the gate's lock. `.githooks/pre-push` takes the lock: with a `flock` held on `$(git rev-parse --git-common-dir)/gate.lock` by another shell, the hook waits instead of starting its gate (observed with `flock -n` failing and the hook's output), and without `flock` on the `PATH` it still runs the gate. Two questions are answered in the handoff, each with the command that settled it: whether `gh stack submit` runs the `pre-push` hook, and what `gh stack add` and `gh stack rebase` do with branches checked out in worktrees. `dagger call gate` green. This block carries this ADR |
+| 10 | `docs/pull-requests-read-by-a-tech-lead` | Phase 5 of `agents/workflow.md` carries the bullets of `instructions/v2plus.md` verbatim (a `diff` of the extracted section against the file is empty). `grep -n 'in series\|off \`main\`\|from \`main\` once' agents/workflow.md` prints nothing. The budget command reads `<parent>...HEAD`. Decisions 1 to 7 and 9 each have their bullet in the phase they govern. `agents/reviews/holistic.md` no longer says "every code block merged". The `Status:` lines of ADR 0018, 0023 and 0028 name 0043, and `AGENTS.md` names `gh stack merge --rebase`. Whether `gh stack submit` runs the `pre-push` hook is answered in the handoff with the command that settled it. `dagger call gate` green. This block carries this ADR |
 
 **Adjacent backlog items**: none (`grep -n -i 'stack\|pull request\|pre-push' docs/backlog.md` finds no
 item). A lot of one block: the holistic review is offered to the operator rather than dispatched.
