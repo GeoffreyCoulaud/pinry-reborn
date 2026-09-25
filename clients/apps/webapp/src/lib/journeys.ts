@@ -32,6 +32,7 @@ export const REQUIRED_JOURNEYS = [
   "delete the account",
   "export the account's data and download it",
   "import an archive",
+  "resume an import after reloading",
 ]
 
 /** The file under `src/journeys/` that holds a journey's test. */

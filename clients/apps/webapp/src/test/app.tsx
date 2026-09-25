@@ -183,6 +183,35 @@ export function exportsRoute(rows: () => unknown[] = () => []) {
   )
 }
 
+export const IMPORT_ID = "3b9d2c1e-4f5a-4b6c-8d7e-9f0a1b2c3d4e"
+
+/** An import row as the API answers one, in the state the journey names. */
+export function importRow(state: string, fields: Record<string, unknown> = {}) {
+  return {
+    id: IMPORT_ID,
+    state,
+    requestedAt: "2026-09-23T12:00:00Z",
+    uploadedBytes: 0,
+    byteSize: null,
+    archiveCompletedAt: null,
+    startedAt: null,
+    completedAt: null,
+    formatVersion: null,
+    announcedPins: null,
+    processedPins: 0,
+    createdPins: 0,
+    skippedPins: 0,
+    createdBoards: 0,
+    skippedBoards: 0,
+    createdTags: 0,
+    skippedTags: 0,
+    issueCount: 0,
+    issueDetailTruncated: false,
+    failureCode: null,
+    ...fields,
+  }
+}
+
 /** The account's imports, newest first, answered from what the journey decided last. */
 export function importsRoute(rows: () => unknown[] = () => []) {
   return http.get("/api/v1/me/imports", () =>

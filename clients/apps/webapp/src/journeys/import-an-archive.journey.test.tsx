@@ -10,6 +10,8 @@ import {
   downloadsRoute,
   exportsRoute,
   handshakeRoute,
+  IMPORT_ID,
+  importRow,
   importsRoute,
   pinsRoute,
   renderApp,
@@ -18,35 +20,7 @@ import {
 import { server } from "../test/server"
 
 const ACCOUNT = { id: "0f5c6e58-2d6c-4a3a-9c1f-2a1f6b6d4f11", name: "ada" }
-const IMPORT_ID = "3b9d2c1e-4f5a-4b6c-8d7e-9f0a1b2c3d4e"
 const ARCHIVE = "0123456789"
-
-/** An import row as the API answers one, in the state the journey names. */
-function importRow(state: string, fields: Record<string, unknown> = {}) {
-  return {
-    id: IMPORT_ID,
-    state,
-    requestedAt: "2026-09-23T12:00:00Z",
-    uploadedBytes: 0,
-    byteSize: null,
-    archiveCompletedAt: null,
-    startedAt: null,
-    completedAt: null,
-    formatVersion: null,
-    announcedPins: null,
-    processedPins: 0,
-    createdPins: 0,
-    skippedPins: 0,
-    createdBoards: 0,
-    skippedBoards: 0,
-    createdTags: 0,
-    skippedTags: 0,
-    issueCount: 0,
-    issueDetailTruncated: false,
-    failureCode: null,
-    ...fields,
-  }
-}
 
 interface Put {
   offset: number

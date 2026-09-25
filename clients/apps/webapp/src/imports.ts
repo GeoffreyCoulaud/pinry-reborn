@@ -3,7 +3,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useSyncExternalStore } from "react"
 import { auth, bodyOf } from "./api"
 import { POLL_MS } from "./lib/downloads"
-import { RETRY_MS, nextStep, refusedChunk, type ChunkAnswer, type UploadStep } from "./lib/imports"
+import {
+  RETRY_MS,
+  nextStep,
+  refusedChunk,
+  type ChunkAnswer,
+  type FileIdentity,
+  type UploadStep,
+} from "./lib/imports"
 import { refusalCode } from "./lib/refusals"
 import { AccountRefusal } from "./me"
 
@@ -21,6 +28,38 @@ export interface Upload {
 // The latest import, which the upload changes at each end it reaches.
 const LATEST = ["imports", "latest"]
 
+// One record per import, under its id, so a reload can ask for the same file (decision D1).
+const RECORD = "pinry-import-"
+
+/** A private window, or site data the browser blocks, throws: the import then has no record. */
+function writeRecord(id: string, { name, size, lastModified }: File) {
+  try {
+    localStorage.setItem(RECORD + id, JSON.stringify({ name, size, lastModified }))
+  } catch {
+    // A reload then offers the cancel button only, as another browser would.
+  }
+}
+
+export function importRecord(id: string): FileIdentity | null {
+  try {
+    return JSON.parse(localStorage.getItem(RECORD + id) ?? "null") as FileIdentity | null
+  } catch {
+    return null
+  }
+}
+
+/** Only the latest import's, while it waits on its archive: no record outlives what it serves. */
+function pruneRecords(latest: Import | null) {
+  const kept = latest?.state === "AWAITING_ARCHIVE" ? RECORD + latest.id : null
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith(RECORD) && key !== kept) localStorage.removeItem(key)
+    }
+  } catch {
+    // Nothing could be written there either.
+  }
+}
+
 /** The newest import or none, as the export's section reads its own (decision J). */
 export function useLatestImport() {
   return useQuery({
@@ -28,7 +67,9 @@ export function useLatestImport() {
     queryFn: async () => {
       const query = { pageSize: 1 }
       const answer = await auth.client.GET("/api/v1/me/imports", { params: { query } })
-      return bodyOf(answer, "the imports").imports[0] ?? null
+      const latest = bodyOf(answer, "the imports").imports[0] ?? null
+      pruneRecords(latest)
+      return latest
     },
     refetchInterval: (query) => {
       const state = query.state.data?.state
@@ -151,11 +192,22 @@ export function useStartImport() {
     mutationFn: async ({ file, chunkBytes }: { file: File; chunkBytes: number }) => {
       const { data, error, response } = await auth.client.POST("/api/v1/me/imports")
       if (data === undefined) throw new AccountRefusal(error, response.status)
+      writeRecord(data.id, file)
       dropUpload()
       void send(data.id, file, chunkBytes, 0, settle)
     },
     onSuccess: settle,
   })
+}
+
+/** The same file chosen after a reload: the upload goes on at the row's length (decision D'2). */
+export function useResumeImport() {
+  const queryClient = useQueryClient()
+  const settle = () => void queryClient.invalidateQueries({ queryKey: LATEST })
+  return (row: Import, file: File, chunkBytes: number) => {
+    dropUpload()
+    void send(row.id, file, chunkBytes, row.uploadedBytes, settle)
+  }
 }
 
 /** What the import already created stays: `DELETE` cancels what is left (section 2). */

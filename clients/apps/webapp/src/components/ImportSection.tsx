@@ -1,17 +1,21 @@
 import { AlertDialog, Button, Label, ProgressBar, buttonVariants } from "@heroui/react"
+import type { Schemas } from "@pinry-reborn/auth"
 import { useState, type ReactNode } from "react"
 import { dataFailure } from "../dataFailures"
 import { importRefusal } from "../dataRefusals"
 import { useHandshake } from "../images"
 import {
+  importRecord,
   resumeUpload,
   useCancelImport,
   useLatestImport,
+  useResumeImport,
   useStartImport,
   useUpload,
   type Import,
   type Upload,
 } from "../imports"
+import { sameFile } from "../lib/imports"
 import { AccountRefusal } from "../me"
 import { m } from "../paraglide/messages.js"
 import { getLocale } from "../paraglide/runtime.js"
@@ -54,32 +58,55 @@ function CancelImport({ id }: { id: string }) {
   )
 }
 
+type Limits = Schemas["LimitsDto"]
+
+/** Disabled until the handshake says how large a chunk is. */
+function ArchivePicker({
+  label,
+  isPending = false,
+  onChoose,
+}: {
+  label: string
+  isPending?: boolean
+  onChoose: (file: File, limits: Limits) => void
+}) {
+  const limits = useHandshake().data?.limits
+
+  return (
+    // A file picker is no HeroUI control, so the label borrows the variant instead.
+    <label className={buttonVariants()}>
+      {label}
+      <input
+        type="file"
+        accept=".zip,application/zip"
+        className="sr-only"
+        disabled={limits === undefined || isPending}
+        onChange={(event) => {
+          const file = event.currentTarget.files?.[0]
+          if (file !== undefined && limits !== undefined) onChoose(file, limits)
+        }}
+      />
+    </label>
+  )
+}
+
 /** A file past the deployment's bound is refused here, before an import is even opened. */
 function ChooseArchive() {
-  const limits = useHandshake().data?.limits
   const start = useStartImport()
   const [tooLarge, setTooLarge] = useState(false)
 
   return (
     <>
-      {/* A file picker is no HeroUI control, so the label borrows the variant instead. */}
-      <label className={buttonVariants()}>
-        {m.import_choose()}
-        <input
-          type="file"
-          accept=".zip,application/zip"
-          className="sr-only"
-          disabled={limits === undefined || start.isPending}
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0]
-            if (file === undefined || limits === undefined) return
-            setTooLarge(file.size > limits.maxImportArchiveBytes)
-            if (file.size <= limits.maxImportArchiveBytes) {
-              start.mutate({ file, chunkBytes: limits.maxImportChunkBytes })
-            }
-          }}
-        />
-      </label>
+      <ArchivePicker
+        label={m.import_choose()}
+        isPending={start.isPending}
+        onChoose={(file, limits) => {
+          setTooLarge(file.size > limits.maxImportArchiveBytes)
+          if (file.size <= limits.maxImportArchiveBytes) {
+            start.mutate({ file, chunkBytes: limits.maxImportChunkBytes })
+          }
+        }}
+      />
       {tooLarge && <p role="alert">{m.import_too_large()}</p>}
       {start.error !== null && (
         <p role="alert">
@@ -112,6 +139,46 @@ function Uploading({ upload }: { upload: Upload }) {
   )
 }
 
+/** After a reload: the file recorded when the import opened, asked for again (decision D1). */
+function Awaiting({ row }: { row: Import }) {
+  const record = importRecord(row.id)
+  const resume = useResumeImport()
+  const [other, setOther] = useState(false)
+
+  if (record === null) {
+    return (
+      <>
+        <p>{m.import_elsewhere()}</p>
+        <CancelImport id={row.id} />
+      </>
+    )
+  }
+  return (
+    <>
+      <p>{m.import_awaiting({ name: record.name })}</p>
+      <ProgressBar className="w-full max-w-sm" value={row.uploadedBytes} maxValue={record.size}>
+        <Label>{m.import_sent()}</Label>
+        <ProgressBar.Output />
+        <ProgressBar.Track>
+          <ProgressBar.Fill />
+        </ProgressBar.Track>
+      </ProgressBar>
+      <div className="flex flex-wrap gap-2">
+        <ArchivePicker
+          label={m.import_choose_again()}
+          onChoose={(file, limits) => {
+            const same = sameFile(record, file)
+            setOther(!same)
+            if (same) resume(row, file, limits.maxImportChunkBytes)
+          }}
+        />
+        <CancelImport id={row.id} />
+      </div>
+      {other && <p role="alert">{m.import_not_the_file({ name: record.name })}</p>}
+    </>
+  )
+}
+
 function Running({ row }: { row: Import }) {
   const count = new Intl.NumberFormat(getLocale())
   return (
@@ -131,12 +198,7 @@ function Running({ row }: { row: Import }) {
 
 // Keyed by the contract's closed union, so a state added there fails the typecheck here.
 const VIEWS: Record<Import["state"], (row: Import) => ReactNode> = {
-  AWAITING_ARCHIVE: (row) => (
-    <>
-      <p>{m.import_awaiting()}</p>
-      <CancelImport id={row.id} />
-    </>
-  ),
+  AWAITING_ARCHIVE: (row) => <Awaiting row={row} />,
   PENDING: (row) => (
     <>
       <p>{m.import_pending()}</p>
