@@ -1,7 +1,18 @@
-import { AlertDialog, Button } from "@heroui/react"
-import type { ReactNode } from "react"
+import { AlertDialog, Button, Label, ProgressBar, buttonVariants } from "@heroui/react"
+import { useState, type ReactNode } from "react"
 import { dataFailure } from "../dataFailures"
-import { useCancelImport, useLatestImport, type Import } from "../imports"
+import { importRefusal } from "../dataRefusals"
+import { useHandshake } from "../images"
+import {
+  resumeUpload,
+  useCancelImport,
+  useLatestImport,
+  useStartImport,
+  useUpload,
+  type Import,
+  type Upload,
+} from "../imports"
+import { AccountRefusal } from "../me"
 import { m } from "../paraglide/messages.js"
 import { getLocale } from "../paraglide/runtime.js"
 
@@ -43,6 +54,64 @@ function CancelImport({ id }: { id: string }) {
   )
 }
 
+/** A file past the deployment's bound is refused here, before an import is even opened. */
+function ChooseArchive() {
+  const limits = useHandshake().data?.limits
+  const start = useStartImport()
+  const [tooLarge, setTooLarge] = useState(false)
+
+  return (
+    <>
+      {/* A file picker is no HeroUI control, so the label borrows the variant instead. */}
+      <label className={buttonVariants()}>
+        {m.import_choose()}
+        <input
+          type="file"
+          accept=".zip,application/zip"
+          className="sr-only"
+          disabled={limits === undefined || start.isPending}
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0]
+            if (file === undefined || limits === undefined) return
+            setTooLarge(file.size > limits.maxImportArchiveBytes)
+            if (file.size <= limits.maxImportArchiveBytes) {
+              start.mutate({ file, chunkBytes: limits.maxImportChunkBytes })
+            }
+          }}
+        />
+      </label>
+      {tooLarge && <p role="alert">{m.import_too_large()}</p>}
+      {start.error !== null && (
+        <p role="alert">
+          {importRefusal(start.error instanceof AccountRefusal ? start.error.code : null)}
+        </p>
+      )}
+    </>
+  )
+}
+
+function Uploading({ upload }: { upload: Upload }) {
+  return (
+    <>
+      <ProgressBar className="w-full max-w-sm" value={upload.sent} maxValue={upload.file.size}>
+        <Label>{m.import_sending()}</Label>
+        <ProgressBar.Output />
+        <ProgressBar.Track>
+          <ProgressBar.Fill />
+        </ProgressBar.Track>
+      </ProgressBar>
+      {upload.state === "PAUSED" && (
+        <>
+          <p>{m.import_paused()}</p>
+          <Button onPress={resumeUpload}>{m.import_resume()}</Button>
+        </>
+      )}
+      {upload.state === "STOPPED" && <p role="alert">{importRefusal(upload.code)}</p>}
+      <CancelImport id={upload.importId} />
+    </>
+  )
+}
+
 function Running({ row }: { row: Import }) {
   const count = new Intl.NumberFormat(getLocale())
   return (
@@ -75,22 +144,38 @@ const VIEWS: Record<Import["state"], (row: Import) => ReactNode> = {
     </>
   ),
   RUNNING: (row) => <Running row={row} />,
-  COMPLETED: () => <p>{m.import_completed()}</p>,
-  FAILED: (row) => <p>{dataFailure(row.failureCode)}</p>,
-  CANCELLED: () => null,
-  ABANDONED: () => null,
+  COMPLETED: () => (
+    <>
+      <p>{m.import_completed()}</p>
+      <ChooseArchive />
+    </>
+  ),
+  FAILED: (row) => (
+    <>
+      <p>{dataFailure(row.failureCode)}</p>
+      <ChooseArchive />
+    </>
+  ),
+  CANCELLED: () => <ChooseArchive />,
+  ABANDONED: () => <ChooseArchive />,
 }
 
-/** The latest import only (specification 2026-09-25, decision J). */
+/** The latest import only, and the upload this tab holds, which outlives the screen. */
 export function ImportSection() {
   const latest = useLatestImport()
+  const upload = useUpload()
 
   return (
     <section className="flex flex-col items-start gap-2">
       <h3 className="text-lg font-semibold">{m.import_heading()}</h3>
       <p className="text-muted">{m.import_note()}</p>
       {latest.isError && <p role="alert">{m.import_unreadable()}</p>}
-      {latest.isSuccess && latest.data !== null && VIEWS[latest.data.state](latest.data)}
+      {upload !== null ? (
+        <Uploading upload={upload} />
+      ) : (
+        latest.isSuccess &&
+        (latest.data === null ? <ChooseArchive /> : VIEWS[latest.data.state](latest.data))
+      )}
     </section>
   )
 }

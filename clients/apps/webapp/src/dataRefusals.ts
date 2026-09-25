@@ -16,11 +16,37 @@ const EXPORT_REFUSALS = {
 } satisfies Partial<Record<ExportRefusalCode, () => string>>
 
 // `hasOwn` and not `in`: the code is the server's string, and `constructor` would answer otherwise.
-function hasSentence(code: string): code is keyof typeof EXPORT_REFUSALS {
-  return Object.hasOwn(EXPORT_REFUSALS, code)
+function hasSentence<Table extends object>(
+  table: Table,
+  code: string | null,
+): code is Extract<keyof Table, string> {
+  return code !== null && Object.hasOwn(table, code)
 }
 
 /** Why the export was refused. `UNSUPPORTED_REAUTHENTICATION_FACTOR` is the encoder's defect. */
 export function exportRefusal(code: string | null): string {
-  return code !== null && hasSentence(code) ? EXPORT_REFUSALS[code]() : m.account_refused()
+  return hasSentence(EXPORT_REFUSALS, code) ? EXPORT_REFUSALS[code]() : m.account_refused()
+}
+
+type ImportRefusalCode =
+  | RefusalCode<"/api/v1/me/imports", "post">
+  | RefusalCode<"/api/v1/me/imports/{id}/archive", "put">
+  | RefusalCode<"/api/v1/me/imports/{id}/archive/complete", "post">
+
+/** The upload's refusals, the two `lib/imports.ts` names itself included. */
+type UploadStopCode = ImportRefusalCode | "CHUNK_TOO_LARGE" | "ARCHIVE_LONGER_THAN_FILE"
+
+const IMPORT_REFUSALS = {
+  IMPORT_ALREADY_IN_PROGRESS: m.import_in_progress,
+  IMPORT_ARCHIVE_TOO_LARGE: m.import_too_large,
+  IMPORT_INSUFFICIENT_STORAGE: m.import_no_space,
+  IMPORT_NOT_AWAITING_ARCHIVE: m.import_not_awaiting,
+  IMPORT_ARCHIVE_EMPTY: m.import_empty,
+  CHUNK_TOO_LARGE: m.import_chunk_too_large,
+  ARCHIVE_LONGER_THAN_FILE: m.import_other_file,
+} satisfies Partial<Record<UploadStopCode, () => string>>
+
+/** Why the import or its upload stopped, or the general sentence for a code this bundle lacks. */
+export function importRefusal(code: string | null): string {
+  return hasSentence(IMPORT_REFUSALS, code) ? IMPORT_REFUSALS[code]() : m.account_refused()
 }
