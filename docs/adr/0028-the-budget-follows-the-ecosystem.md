@@ -10,7 +10,10 @@ Bash tool's own description states and which every background command of lot `0.
 lead arms a watch on a run the moment a start is reported rather than waiting for a report. The
 observation recorded here was of a teammate, on block 11, and that half is neither refuted nor
 established. Decision 3's two waiting rules stand. Decision 1 is superseded by
-`docs/adr/0041-a-block-is-bounded-by-hunks-and-files.md`: no production bound remains.
+`docs/adr/0041-a-block-is-bounded-by-hunks-and-files.md`: no production bound remains. Decision 6 is
+amended again by `docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`,
+decision 7: the holistic review reads the top of the stack before the operator's review, and the
+closing block stacks on top; its single destination is unchanged.
 Date: 2026-09-13
 Specification: this document. A lot whose subject is this process writes its ADR and no separate spec
 (`agents/workflow.md`, phase 2). Tier Spec, one block: the specification review ran on this document

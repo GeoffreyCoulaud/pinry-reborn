@@ -7,7 +7,9 @@ on the branch but on `main` at the head of Wrap, so decision 1 keeps the gate al
 is retired whole**: the one surviving mandate reads `git diff <previous lot tag>..origin/main`, so it
 reads neither a branch nor a pull request, and the commit-range pinning it required has nothing left
 to pin, the lot's blocks being all merged when the review reads them. Decision 5's second half goes
-with that pinning. Decisions 2 and 3 stand as written.
+with that pinning. Then by `docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`:
+decisions 2 and 3 lose the draft, a pull request opening ready for review and a red run or a
+requested change going back to Verify without a return to draft.
 Date: 2026-09-04
 Amends: `docs/adr/0018-a-block-is-a-pull-request.md`, decision 8, on where the block and holistic
 reviews run and on two of its cuts to the block mandate. Everything else in that ADR stands,

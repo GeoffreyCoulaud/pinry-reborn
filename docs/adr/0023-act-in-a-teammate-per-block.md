@@ -7,7 +7,12 @@ range to freeze; and two consequences go, the context criterion retired by that 
 the foreground wait, which moves into `agents/workflow.md` phase 5 and splits in two, the gate
 staying in the foreground and the wait for continuous integration stopping the teammate. That last
 one gives decision 5 a fourth stop, "the run has started", and turns decision 6's wait for
-continuous integration into a stop the lead ends. Decisions 1, 3 and 4 stand as written.
+continuous integration into a stop the lead ends. Then by
+`docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`: decision 1's teammate
+starts on the previous block's branch once that block's pull request is open, and stays idle until
+the stack merges; decision 5's report goes last in the pull request's body, collapsed, and its stop at
+"ready" goes with the draft; decision 6's teammate opens its pull request ready for review. Decisions
+3 and 4 stand as written.
 Date: 2026-09-07
 Specification: this document. A lot whose subject is this process writes its ADR and no separate
 spec (`agents/workflow.md`, phase 2). Tier Spec, one block: the specification review ran on this

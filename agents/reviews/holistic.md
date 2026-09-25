@@ -1,7 +1,8 @@
 # Review mandate: holistic
 
-**Artefact: a whole lot on `main`**, `git diff <previous lot tag>..origin/main`, every code block merged and nothing
-in flight. Run once per lot in tier Spec, at the head of Wrap, in an agent the lead dispatches by name.
+**Artefact: a whole lot on the top of its stack**, `git diff <previous lot tag>..origin/<top branch>`, every code
+block's pull request open and no block being written. Run once per lot in tier Spec, at the head of Wrap, before the
+operator reviews the stack, in an agent the lead dispatches by name.
 
 **This document states its mandate before its argument**
 (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). The bullets bind. The
@@ -10,7 +11,7 @@ in flight. Run once per lot in tier Spec, at the head of Wrap, in an agent the l
 ## What you deliver
 
 - **Determine your own range**: `git tag -l 'lot/*'` lists the annotated lot tags, the newest is the lot before this
-  one. `origin/main` and not `main`.
+  one. The top branch is the one your brief names, read as `origin/<top branch>` and never as a local ref.
 - **Read the specification, the handoff, then the full diff.**
 - **Write your report to `.reviews/<lot>-<mandate>.md`**, the lot the brief names and `holistic` as the mandate.
 - **Report findings there as `SEVERITY | file:line | issue | suggested fix`**, most severe first, SEVERITY one of
@@ -20,12 +21,12 @@ in flight. Run once per lot in tier Spec, at the head of Wrap, in an agent the l
 - **End every message you return with the line `END OF MESSAGE`**, whether or not it carries a report.
 - **Do not edit anything.** Stay inside the repository.
 
-**Detail.** The base is a tag and not a message, and a local `main` is whatever the shared working tree last left
+**Detail.** The base is a tag and not a message, and a local branch is whatever the shared working tree last left
 behind. The name is there so a report that does not arrive can be asked for again, which is the only second message you
-will ever get. Your findings become the lot's closing block, with its own pull request, and that is their one
-destination: every finding is against merged code by construction, so none of them is counted separately and none of
-them gates a merge that has already happened. Each pull request was read alone, by the human; your value is what that
-reading cannot see, which is what the blocks do to each other and what the lot does to the project as a whole. The
+will ever get. Your findings become the lot's closing block, stacked on top with its own pull request, and that is
+their one destination, so none of them is counted separately and the operator meets them there before reviewing the
+stack (`docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decision 7). Each pull request
+will be read alone, by the human; your value is what that reading cannot see, which is what the blocks do to each other and what the lot does to the project as a whole. The
 report goes to a file because the message channel truncates
 (`docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md`, decisions 1 and 2), and `.reviews/` is
 in `.gitignore`, so writing there stays inside the repository and no closing block's `git add` can carry a review onto
@@ -69,5 +70,6 @@ contract uniformity is read across the whole change. The gate enforces branch co
 each ecosystem draws its own: on the API side `api-application` and the Ebean model packages are outside it
 (`agents/engineering.md`), and on the clients' side the bound covers `clients/apps/webapp/src/lib/**` alone, the whole
 view being outside it (`clients/AGENTS.md`). Coverage anyway proves nothing about whether anyone asked for the branch.
-Renumbering a section silently breaks anchors pointing into it. The working tree is on `main` when you start and the
-closing block branches from it right after you, so a detached HEAD you leave behind is the next block's problem.
+Renumbering a section silently breaks anchors pointing into it. The working tree is on the top of the stack when you
+start and the closing block stacks on it right after you, so a detached HEAD you leave behind is the next block's
+problem.

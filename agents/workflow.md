@@ -63,7 +63,7 @@ workaround for a tool limitation nobody verified.
 
 ```mermaid
 flowchart LR
-    subgraph block [Once per block, in series]
+    subgraph block [Once per block, stacked on the one below]
         direction LR
         act[3. Act] --> verify[4. Verify] --> integrate[5. Integrate]
         integrate -- "red run, or a change the human asks for" --> verify
@@ -77,18 +77,27 @@ Wrap inline. The diagram carries order and nothing else.
 - **A work session produces a `lot`, composed of autonomous `blocks`.**
 - **The lead and one teammate per block share it**: the **lead**, the main loop the operator talks to, which keeps
   the lot's thread and writes no block of a tier Spec lot; and the **teammate**, a named background agent that
-  implements its block and is stopped when its pull request merges.
+  implements its block, stays idle once its pull request is open, and is stopped when the stack merges.
 - **Every agent the lead dispatches is named, reviews included.**
 - **A review is still not a correspondent**: one brief out, one report back, and the lead never sends a review agent a
   second message except to ask again for a report that did not arrive.
-- **Each block is its own branch off `main`**, cut before the first file is written. Committing is cheap: commit
-  autonomously.
-- **Discuss and Spec run once for the lot. Act, Verify and Integrate run once per block, in series**, a block's pull
-  request merged before the next block starts. Wrap closes the lot.
+- **A lot's blocks stack, in the one working tree.** Each block's branch starts from the previous block's, cut before
+  the first file is written, and its pull request targets that branch. Committing is cheap: commit autonomously.
+- **The lead creates a block's branch with `gh stack add`**; a teammate may add the branches of its own split. **Only
+  the lead rewrites the stack.**
+- **Discuss and Spec run once for the lot. Act, Verify and Integrate run once per block, one teammate working at a
+  time.** Wrap closes the lot.
+- **The stack is built, then reviewed**: the next block starts once the previous one's gate is green locally and its
+  pull request is open, not once it has merged.
 
 **Detail.** The roles are `docs/adr/0023-act-in-a-teammate-per-block.md`; naming every dispatched agent is
 `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 4. A name buys recoverability: a report that does not
-arrive, or arrives truncated, can be asked for again instead of costing a second full review.
+arrive, or arrives truncated, can be asked for again instead of costing a second full review. The stack is
+`docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decisions 1 and 2: lot `0.38.0` ran
+it and no block waited on a review or a merge. A teammate stays idle rather than stopped so that a comment reaches
+the agent that wrote the code. There is no worktree per block: `gh stack` 0.1.1 refuses to rebase a branch checked out
+in another worktree, and `gh stack init` checks the top branch out, so the lead switches back before committing to a
+lower one.
 
 ### Tiers
 
@@ -117,11 +126,12 @@ arrive, or arrives truncated, can be asked for again instead of costing a second
   file counts one file and no line.
 - **Measured after committing**, from anywhere in the repository: the command reads commits, so a file not yet
   committed is missing from the count, however long.
+- **Measured against the block's parent branch**, `main` for the lot's first block, in place of `<parent>` below.
 
 ```bash
 X=(-- ':/' ':/!docs/specs' ':/!docs/adr' ':/!docs/handoffs' ':(top,exclude,attr:linguist-generated)')
-git diff -U0 main...HEAD "${X[@]}" | awk '/^@@/ { split($2, o, ","); split($3, n, ","); b = (2 in o) ? o[2] : 1; d = (2 in n) ? n[2] : 1; s += (b > d ? b : d) } END { print s + 0 }'
-git diff --name-only main...HEAD "${X[@]}" | wc -l
+git diff -U0 <parent>...HEAD "${X[@]}" | awk '/^@@/ { split($2, o, ","); split($3, n, ","); b = (2 in o) ? o[2] : 1; d = (2 in n) ? n[2] : 1; s += (b > d ? b : d) } END { print s + 0 }'
+git diff --name-only <parent>...HEAD "${X[@]}" | wc -l
 ```
 
 **Detail.** The bounds are `docs/adr/0041-a-block-is-bounded-by-hunks-and-files.md`, which supersedes the bounds of
@@ -129,7 +139,8 @@ git diff --name-only main...HEAD "${X[@]}" | wc -l
 each. The file bound is where Microsoft measured useful
 review feedback starting to fall; the line bound is the operator's. Counting per hunk rather than per file is what
 keeps an addition at the top of a file and an unrelated deletion at its foot from paying for each other. The budget
-measures what a human rereads.
+measures what a human rereads, which in a stack is one pull request's diff against its parent
+(`docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decision 4).
 
 ### 1. Discuss
 
@@ -156,8 +167,8 @@ carried three sections above, and no implementation of that block could have pas
 
 ### 3. Act
 
-- **One block, in a teammate the lead spawns from `main`** once the previous pull request has merged; one teammate
-  lives at a time.
+- **One block, in a teammate the lead spawns on the block's branch** once the previous block's gate is green locally
+  and its pull request open; one teammate works at a time.
 - **Its brief points at the block's row in the spec, the spec, `AGENTS.md`, the branch name and the report shape under
   Integrate, and restates nothing.**
 - **Strict TDD as `agents/engineering.md` states it.**
@@ -169,42 +180,56 @@ carried three sections above, and no implementation of that block could have pas
 - **The teammate speaks only when it stops, and its stops are these:**
     1. a tier-2 question;
     2. a blocker;
-    3. continuous integration has started;
-    4. the pull request is ready.
+    3. continuous integration has started.
 
 **Detail.** The list is `docs/adr/0023-act-in-a-teammate-per-block.md`, decision 5, as
-`docs/adr/0028-the-budget-follows-the-ecosystem.md` amends it by adding one. Phase 5 operates the stop for
-continuous integration and the one for the pull request.
+`docs/adr/0028-the-budget-follows-the-ecosystem.md` amends it by adding one and
+`docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decision 6, by removing "the pull
+request is ready": a pull request opens ready for review. Phase 5 operates the stop for continuous integration.
 
 ### 4. Verify
 
-- **Entirely on the local branch. No pull request exists yet.**
+- **Entirely on the local branch.** A new block has no pull request yet.
 - **The teammate runs the full gate.**
-- **On the last code block of the lot, it writes the handoff first**, from the bodies of the lot's merged pull requests
-  (`gh pr view`) and its own block, then reports.
+- **A block that changes what the web application shows is read headless before its push**, in its own Verify.
+- **On the last code block of the lot, it writes the handoff first**, from the block reports of the lot's pull
+  requests (`gh pr view`) and its own block, then reports.
 
-**Detail.** That block then merges like any other, so the handoff is on `main` for the holistic review to read: the
-review runs at the head of Wrap (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 6), not here.
+**Detail.** The headless reading is `docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`,
+decision 5: in lot `0.38.0` a reading made apart held the shared working tree, and with it the next block's start. The
+last code block's handoff is on the top of the stack for the holistic review to read: the review runs at the head of
+Wrap, not here.
 
 ### 5. Integrate
 
-- **The teammate pushes, opens the pull request as a draft, reports that continuous integration has started and ends
-  its turn.**
-- **When the lead tells it the run has settled, it marks the pull request ready and sends the link to `main`.**
-- **The pull request's body is the block's report**: evidence (gate, continuous integration, the diff
-  against the budget), tier-1 fixes, tier-2 questions with their answers, pitfalls, departures from the block table.
-- **It is merged only after the human has reviewed it** (rebase only, no local-merge exemption), approval never assumed.
-- **A red run, or a change the human asks for, returns the block to Verify**: the lead forwards it by name, the teammate
-  commits the fix, re-runs the gate, reports that the new run has started, and marks the pull request ready when the
-  lead says that run has settled.
-- **The stop for continuous integration applies to every run of the block, not to the first alone.**
-- **On the operator's "merged"**, the lead stops the teammate by name and never messages it again, brings the shared
-  working tree back to `main` (`git switch main && git pull --ff-only && git branch -d <branch>`), and the next block
-  starts from `main`.
+- **The teammate opens its pull request ready for review with `gh stack submit --auto --open`**, which pushes, then
+  sets the title and the body with `gh pr edit`, sends the link to `main` with the report that continuous integration
+  has started, and ends its turn.
+- **When the lead tells it the run has settled**, a green run leaves it idle until the stack merges, and a red run
+  returns the block to Verify.
+- **The body follows the rules under "The pull request's body" below.**
+- **The operator's review begins when the whole stack is written**, the holistic review having read its top. A comment
+  that arrives earlier waits for the last block to be pushed.
+- **The lead tells the operator the stack is ready to review once every run of the stack is green**, the closing
+  block's included.
+- **A red run, or a change the human asks for, is fixed in the layer it concerns, one at a time**: the lead forwards
+  it by name, and the block's teammate checks its branch out (`gh stack checkout <branch>`), commits the fix, runs the
+  gate and stops.
+- **The lead then cascades with `gh stack rebase --upstack` and pushes with `gh stack push`**, which re-runs
+  continuous integration on every branch above.
+- **On a conflict, the lead aborts the cascade (`gh stack rebase --abort`)**: the teammate of the branch in conflict
+  rebases it onto its new parent, resolves, runs the gate and stops, and the cascade resumes from that branch.
+- **Every teammate whose branch moved is told**, and reads its diff against its new parent again before any further
+  work.
+- **The stack is merged only after the human has reviewed it**, whole and at once, with `gh stack merge --rebase` (no
+  local-merge exemption), approval never assumed.
+- **On the operator's "merged"**, the lead stops every teammate of the lot by name and never messages them again,
+  brings the shared working tree back to `main` (`git switch main && git pull --ff-only`), and deletes the lot's local
+  branches.
 - **The gate runs as a foreground command**, under the tool's ten-minute ceiling, which a workstation's gate fits in.
 - **The wait for continuous integration stops the teammate, and a monitor is never the teammate's mechanism.**
-- **The lead arms a watch on the run the moment a start is reported, whether or not a pull request exists, and arms it
-  before answering the report.** `gh pr checks <number> --watch` where a pull request exists;
+- **The lead arms a watch on a run the moment a start is reported or it pushes itself, whether or not a pull request
+  exists, and arms it before answering the report.** `gh pr checks <number> --watch` where a pull request exists;
   `gh run watch <id> --exit-status` otherwise, the id from
   `gh run list --branch <branch> --limit 1 --json databaseId -q '.[0].databaseId'`. A run that has already concluded is
   read rather than watched.
@@ -212,9 +237,10 @@ review runs at the head of Wrap (`docs/adr/0028-the-budget-follows-the-ecosystem
   branches and `ListAgents`, never from the arrival of a notice. A teammate whose report draws no answer within a few
   minutes sends it again.
 
-**Detail.** The stops this phase operates are phase 3's, which carries the list. ADR 0019 decision 3 puts the pull
-request back to draft on a new run, so ready is marked again and the wait that precedes it is the same wait. The
-waiting rules are `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 3: no run of the measured lot finished
+**Detail.** The stops this phase operates are phase 3's, which carries the list. A pull request opens ready for review
+and stays so, a red run going back to Verify alone: what is ready to review is the stack, not one pull request
+(`docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decision 6). The fix-back is decision
+3, the path GitHub documents ("Reviewing stacked pull requests"), which no lot has run yet. The waiting rules are `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 3: no run of the measured lot finished
 under the ten-minute ceiling and the median was 14.2 minutes, so the foreground branch never applies to continuous
 integration. That decision's third claim, that a background command's completion does not re-invoke an idle agent, is
 amended by `docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md`, decision 6: the Bash tool
@@ -223,22 +249,40 @@ claim on a teammate, and nothing since has settled that half either way, which i
 teammate's rule. The watch itself is decision 5: lot `0.17.0` left a run green at 22:57:54 and read it the next
 morning, on a spike push that had no pull request, so nothing was armed at all.
 
+#### The pull request's body
+
+- Write for a tech lead who knows the project's architecture and language, has not read the specification, and will not read the code line by line. The operator reviews a whole stack of pull requests in one sitting, so each must stand alone: a body that needs the specification sends the reader away from the pull request.
+- Give the context, then why the change is needed, then how it is done at the level of the architecture. Never describe what changed, file by file or line by line. The diff already shows what changed; the reader's question is whether this is the right change. If understanding it needs code details, the change probably wants reorganising.
+- Fit the length to the change: a small change reads in a few lines, and 50 lines of text is a ceiling for the largest, not a target. A mermaid diagram's code does not count; a code block does. A body longer than the change it explains costs the reviewer more than the diff, and a long body gets skimmed.
+- Use whatever makes the review easier: a mermaid diagram, a table, or a short code example. A toy example can show a behaviour better than a description of it.
+- A diagram shows one thing, with few nodes, in the form that fits it: a sequence diagram for an exchange between components, a state diagram for a lifecycle, a flowchart for a decision. If it cannot be read at a glance, split it or leave it out. A diagram the reader has to decode costs more than the paragraph it replaces.
+- Do not comment on code quality, list risks, or list what was not verified. Code quality speaks for itself in the diff. A list of risks or of unverified points anchors the reviewer on what the author already knows, when the review is worth most on what the author does not know.
+- Put the block's report last, collapsed: `<details><summary>Block report, for the handoff</summary>`, then `</details>`. It holds the evidence (gate, continuous integration, budget), the departures from the plan, the tier-1 fixes, the tier-2 questions with their answers, the pitfalls and what was not verified. The handoff is written from these reports, so lose nothing it needs; collapsed, the report stays out of the reader's way. Continuous integration and the stack are already shown by GitHub, so the visible body repeats neither.
+
+**Detail.** These rules are `docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead/instructions/v2plus.md`
+as it stands, each carrying its reason, one line each so that `diff` compares them with that file
+(`docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decisions 8 and 9). They won the
+operator's blind ranking over the rule of lot `0.38.0`, whose bodies were the block's report and which the operator
+called unreadable.
+
 ### 6. Wrap
 
-- **Once per lot, and it starts after the last code block has merged.**
+- **Once per lot, and it starts once the last code block's pull request is open**, before the operator's review.
 - **(a) The holistic review**, in an agent the lead dispatches by name on `agents/reviews/holistic.md`, over
-  `git diff <previous lot tag>..origin/main`, with nothing in flight. **All of its findings go to the closing block**,
-  there being no other destination. Tier Direct skips it.
+  `git diff <previous lot tag>..origin/<top branch>`, the top of the stack, with no block being written. **All of its
+  findings go to the closing block**, there being no other destination. Tier Direct skips it.
 - **On a lot of one block the lead offers the waiver rather than dispatching by reflex, and the operator decides**; a
   lot of two blocks or more gets the review. The handoff records which happened: the waiver under what is not
   validated, the review by the findings it produced.
-- **Then the closing block, the lot's last, with its own pull request**: (b) the holistic findings fixed, each named in
-  the handoff with its exit; (c) the backlog reconciled, an item closed by a block having been deleted in that block's
-  own pull request; (d) the handoff in `docs/handoffs/<ISO date> - handoff - <context>.md`, written in the last code
-  block from the lot's pull requests and corrected here: current state, what was built, pitfalls, what is not
-  validated, next step.
-- **(e) After that pull request merges, tag the lot**, an annotated `lot/X.Y.Z-<slug>` on the closing merge, pushed.
-  This step is not optional.
+- **Then the closing block, the lot's last, stacked on top with its own pull request**: (b) the holistic findings
+  fixed, each named in the handoff with its exit; (c) the backlog reconciled, an item closed by a block having been
+  deleted in that block's own pull request; (d) the handoff in `docs/handoffs/<ISO date> - handoff - <context>.md`,
+  written in the last code block from the block reports of the lot's pull requests and corrected here: current state,
+  what was built, pitfalls, what is not validated, next step.
+- **(d) also counts, for the lot, the fix-backs, the cascaded rebases, the runs they re-triggered, and the operator's
+  reading of the bodies**, filled in before the stack merges.
+- **(e) After the operator merges the whole stack, the lead tags the lot**, an annotated `lot/X.Y.Z-<slug>` on the
+  closing merge, pushed. This step is not optional.
 - **(f) Report what was done and the friction points, and every tier-2 question asked with the answer it got.** That
   report is the input to Improve.
 - **The closing work splits like any other block when it passes a bound.** "What a block is" is strict here too, so
@@ -248,7 +292,10 @@ morning, on a spike push that had no pull request, so nothing was armed at all.
 
 **Detail.** The tag of step (e) is the base the next lot's holistic review reads, which is why it is not optional: a lot
 left untagged leaves the next review with no artefact. The single destination for holistic findings is
-`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 6, and the split leaves it unchanged. The waiver offered
+`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 6, and the split leaves it unchanged; the review reads
+the top of the stack so that its findings reach the operator in the closing block, above the blocks they review
+(`docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decision 7). The counts of (d) are
+that ADR's failure criteria: more runs re-triggered than the lot has blocks, or bodies called unreadable again. The waiver offered
 on a one-block lot is `docs/adr/0030-the-gate-is-paid-where-it-can-fail.md`, decision 6: a lot whose whole is one block
 leaves the review nothing the specification review and the gate did not already see. The web application
 lot's blocks 11 and 12 were that split, at 651 counted lines together against the strict 600 of the time. A lot tag is not a release
