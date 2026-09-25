@@ -3,7 +3,14 @@ import userEvent from "@testing-library/user-event"
 import { HttpResponse, http } from "msw"
 import { describe, expect, it } from "vitest"
 import { m } from "../paraglide/messages.js"
-import { downloadsRoute, exportsRoute, renderApp, sessionRoute } from "../test/app"
+import {
+  downloadsRoute,
+  exportsRoute,
+  handshakeRoute,
+  importsRoute,
+  renderApp,
+  sessionRoute,
+} from "../test/app"
 import { server } from "../test/server"
 
 const ACCOUNT = { id: "0f5c6e58-2d6c-4a3a-9c1f-2a1f6b6d4f11", name: "ada" }
@@ -38,6 +45,8 @@ async function openTheAccount(rows: () => unknown[], ...routes: Parameters<typeo
     http.get("/api/v1/me", () => HttpResponse.json(ACCOUNT)),
     downloadsRoute(),
     exportsRoute(rows),
+    importsRoute(),
+    handshakeRoute(),
     ...routes,
   )
   renderApp("/account")

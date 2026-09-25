@@ -9,6 +9,7 @@ import {
   downloadsRoute,
   exportsRoute,
   handshakeRoute,
+  importsRoute,
   pinsRoute,
   renderApp,
   sessionRoute,
@@ -57,6 +58,7 @@ describe("delete the account", () => {
       pinsRoute([]),
       downloadsRoute(),
       exportsRoute(),
+      importsRoute(),
       handshakeRoute(),
     )
     const user = await openTheDialog()
@@ -90,6 +92,8 @@ describe("delete the account", () => {
       }),
       downloadsRoute(),
       exportsRoute(),
+      importsRoute(),
+      handshakeRoute(),
     )
     const user = await openTheDialog()
 
@@ -112,6 +116,8 @@ describe("delete the account", () => {
       }),
       downloadsRoute(),
       exportsRoute(),
+      importsRoute(),
+      handshakeRoute(),
     )
     const user = await openTheDialog()
 

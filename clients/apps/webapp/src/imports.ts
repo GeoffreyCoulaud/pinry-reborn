@@ -1,9 +1,13 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import type { Schemas } from "@pinry-reborn/auth"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useSyncExternalStore } from "react"
-import { auth } from "./api"
+import { auth, bodyOf } from "./api"
+import { POLL_MS } from "./lib/downloads"
 import { RETRY_MS, nextStep, refusedChunk, type ChunkAnswer, type UploadStep } from "./lib/imports"
 import { refusalCode } from "./lib/refusals"
 import { AccountRefusal } from "./me"
+
+export type Import = Schemas["UserDataImportOutputDto"]
 
 /** The upload in this tab: bytes sent, and whether it sends, waits on the user, or was refused. */
 export interface Upload {
@@ -16,6 +20,22 @@ export interface Upload {
 
 // The latest import, which the upload changes at each end it reaches.
 const LATEST = ["imports", "latest"]
+
+/** The newest import or none, as the export's section reads its own (decision J). */
+export function useLatestImport() {
+  return useQuery({
+    queryKey: LATEST,
+    queryFn: async () => {
+      const query = { pageSize: 1 }
+      const answer = await auth.client.GET("/api/v1/me/imports", { params: { query } })
+      return bodyOf(answer, "the imports").imports[0] ?? null
+    },
+    refetchInterval: (query) => {
+      const state = query.state.data?.state
+      return state === "PENDING" || state === "RUNNING" ? POLL_MS : false
+    },
+  })
+}
 
 // The store lives above the router, so changing screen leaves the upload running (decision F4).
 let upload: Upload | null = null
@@ -135,5 +155,21 @@ export function useStartImport() {
       void send(data.id, file, chunkBytes, 0, settle)
     },
     onSuccess: settle,
+  })
+}
+
+/** What the import already created stays: `DELETE` cancels what is left (section 2). */
+export function useCancelImport() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      dropUpload()
+      // `response.ok` and never `data`: a 204 leaves it undefined.
+      const { response } = await auth.client.DELETE("/api/v1/me/imports/{id}", {
+        params: { path: { id } },
+      })
+      if (!response.ok) throw new Error(`The API kept the import: ${response.status}.`)
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: LATEST }),
   })
 }

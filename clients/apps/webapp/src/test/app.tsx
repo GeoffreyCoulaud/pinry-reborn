@@ -183,6 +183,13 @@ export function exportsRoute(rows: () => unknown[] = () => []) {
   )
 }
 
+/** The account's imports, newest first, answered from what the journey decided last. */
+export function importsRoute(rows: () => unknown[] = () => []) {
+  return http.get("/api/v1/me/imports", () =>
+    HttpResponse.json({ imports: rows(), pagination: { previousCursor: null, nextCursor: null } }),
+  )
+}
+
 /** What the API's `ImageFormat` holds, which is what a real handshake publishes. */
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"]
 

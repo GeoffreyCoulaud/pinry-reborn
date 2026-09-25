@@ -2,6 +2,7 @@ import { AlertDialog, Button, Input, Label, TextField, toast } from "@heroui/rea
 import { AppHeader } from "../components/AppHeader"
 import { AppNav } from "../components/AppNav"
 import { ExportSection } from "../components/ExportSection"
+import { ImportSection } from "../components/ImportSection"
 import { AccountRefusal, useChangePassword, useDeleteAccount, useMe } from "../me"
 import { m } from "../paraglide/messages.js"
 import { passwordRefusal } from "../passwordRefusals"
@@ -143,6 +144,7 @@ export function Account() {
       {me.isError && <p role="alert">{m.account_unreadable()}</p>}
       <PasswordForm />
       <ExportSection />
+      <ImportSection />
       <section className="flex flex-col items-start gap-2">
         <h3 className="text-lg font-semibold">{m.account_danger()}</h3>
         {/* One line for the section: both controls end the session, and one of them the account. */}

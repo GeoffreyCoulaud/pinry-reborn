@@ -31,6 +31,7 @@ export const REQUIRED_JOURNEYS = [
   "change the password",
   "delete the account",
   "export the account's data and download it",
+  "import an archive",
 ]
 
 /** The file under `src/journeys/` that holds a journey's test. */
