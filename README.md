@@ -17,7 +17,7 @@ To start the API locally in dev mode
 cd api && ./gradlew quarkusDev
 ```
 
-To start the web application against it, with Node 24 and any recent pnpm installed
+To start the web application against it, with Node 26 and any recent pnpm installed
 (`clients/package.json` names the exact pnpm and an installed one switches itself to it):
 
 ```sh
