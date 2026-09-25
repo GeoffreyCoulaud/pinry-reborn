@@ -1,5 +1,5 @@
 import type { Schemas } from "@pinry-reborn/auth"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useSyncExternalStore } from "react"
 import { auth, bodyOf } from "./api"
 import { POLL_MS } from "./lib/downloads"
@@ -75,6 +75,20 @@ export function useLatestImport() {
       const state = query.state.data?.state
       return state === "PENDING" || state === "RUNNING" ? POLL_MS : false
     },
+  })
+}
+
+/** One import's report, a page at a time on the cursor each page answers (decision H). */
+export function useImportIssues(id: string) {
+  return useInfiniteQuery({
+    queryKey: ["imports", id, "issues"],
+    queryFn: async ({ pageParam }) => {
+      const params = { path: { id }, query: { cursor: pageParam } }
+      const answer = await auth.client.GET("/api/v1/me/imports/{id}/issues", { params })
+      return bodyOf(answer, "the report")
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.pagination.nextCursor ?? undefined,
   })
 }
 
