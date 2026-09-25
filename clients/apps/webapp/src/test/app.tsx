@@ -197,13 +197,27 @@ export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"
 export function handshakeRoute({
   maxFileBytes = 30 * 1024 * 1024,
   small = 240,
+  maxImportChunkBytes = 16 * 1024 * 1024,
+  maxImportArchiveBytes = 20 * 1024 ** 3,
   onRequest = () => {},
-}: { maxFileBytes?: number; small?: number; onRequest?: () => void } = {}) {
+}: {
+  maxFileBytes?: number
+  small?: number
+  maxImportChunkBytes?: number
+  maxImportArchiveBytes?: number
+  onRequest?: () => void
+} = {}) {
   return http.get("/api/v1/handshake", () => {
     onRequest()
     return HttpResponse.json({
       contractVersion: "4.0.0",
-      limits: { maxFileBytes, maxPixels: 50_000_000, mediaTypes: MEDIA_TYPES },
+      limits: {
+        maxFileBytes,
+        maxPixels: 50_000_000,
+        mediaTypes: MEDIA_TYPES,
+        maxImportChunkBytes,
+        maxImportArchiveBytes,
+      },
       renditionSizes: { tiny: 80, small, medium: 640, large: 1600 },
     })
   })
