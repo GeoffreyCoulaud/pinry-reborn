@@ -5,6 +5,8 @@ const LIMITS = {
   maxFileBytes: 1000,
   maxPixels: 10_000,
   mediaTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+  maxImportChunkBytes: 100,
+  maxImportArchiveBytes: 10_000,
 }
 
 describe("the upload a deployment refuses", () => {
