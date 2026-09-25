@@ -34,6 +34,7 @@ export const REQUIRED_JOURNEYS = [
   "import an archive",
   "resume an import after reloading",
   "read an import's report",
+  "an upload and an export surfacing in the task centre",
 ]
 
 /** The file under `src/journeys/` that holds a journey's test. */

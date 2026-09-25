@@ -383,6 +383,6 @@ describe("create a pin by uploading a file", () => {
     expect(await screen.findByRole("img", { name: created.description })).toBeVisible()
     expect(uploaded).toBe("multipart/form-data")
     expect(sent).toEqual({ sourceContextUrl: null, sourceMediaUrl: FOUND_AT, description: "" })
-    expect(await screen.findByRole("button", { name: "Downloads (0)" })).toBeVisible()
+    expect(await screen.findByRole("button", { name: "Tasks (0)" })).toBeVisible()
   }, 15_000)
 })

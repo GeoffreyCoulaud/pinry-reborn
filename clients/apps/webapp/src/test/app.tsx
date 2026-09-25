@@ -176,6 +176,25 @@ export function downloadsPage(downloads: unknown[], nextCursor?: unknown) {
   return { downloads, pagination: { previousCursor: null, nextCursor: nextCursor ?? null } }
 }
 
+export const EXPORT_ID = "7c1e2a4b-5d6f-4a8b-9c0d-1e2f3a4b5c6d"
+
+/** An export row as the API answers one, in the state the journey names. */
+export function exportRow(state: string, fields: Record<string, unknown> = {}) {
+  return {
+    id: EXPORT_ID,
+    state,
+    requestedAt: "2026-09-23T12:00:00Z",
+    completedAt: null,
+    expiresAt: null,
+    byteSize: null,
+    mediaType: null,
+    sha256: null,
+    failureCode: null,
+    formatVersion: 1,
+    ...fields,
+  }
+}
+
 /** The account's exports, newest first, answered from what the journey decided last. */
 export function exportsRoute(rows: () => unknown[] = () => []) {
   return http.get("/api/v1/me/exports", () =>

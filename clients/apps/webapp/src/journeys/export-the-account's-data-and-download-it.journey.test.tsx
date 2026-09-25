@@ -4,7 +4,9 @@ import { HttpResponse, http } from "msw"
 import { describe, expect, it } from "vitest"
 import { m } from "../paraglide/messages.js"
 import {
+  EXPORT_ID,
   downloadsRoute,
+  exportRow,
   exportsRoute,
   handshakeRoute,
   importsRoute,
@@ -14,24 +16,6 @@ import {
 import { server } from "../test/server"
 
 const ACCOUNT = { id: "0f5c6e58-2d6c-4a3a-9c1f-2a1f6b6d4f11", name: "ada" }
-const EXPORT_ID = "7c1e2a4b-5d6f-4a8b-9c0d-1e2f3a4b5c6d"
-
-/** An export row as the API answers one, in the state the journey names. */
-function exportRow(state: string, fields: Record<string, unknown> = {}) {
-  return {
-    id: EXPORT_ID,
-    state,
-    requestedAt: "2026-09-23T12:00:00Z",
-    completedAt: null,
-    expiresAt: null,
-    byteSize: null,
-    mediaType: null,
-    sha256: null,
-    failureCode: null,
-    formatVersion: 1,
-    ...fields,
-  }
-}
 
 /** The refusal as the API sends one: a problem body whose `code` is what the dialog reads. */
 function refused(status: number, code: string) {

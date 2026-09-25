@@ -1,8 +1,9 @@
 import { Badge, Button, Popover, buttonVariants } from "@heroui/react"
-import { Download as DownloadIcon } from "lucide-react"
+import { ArrowDownUp } from "lucide-react"
 import { downloadReason } from "../downloadReasons"
 import { useDropDownload, useImageDownloads, useSetPinImage, type Download } from "../images"
 import { m } from "../paraglide/messages.js"
+import { useDataTasks } from "./DataTasks"
 import { IconButton } from "./IconButton"
 
 /** A failed download offers what question V exists for: the same address again, or a file. */
@@ -54,35 +55,34 @@ function Task({ download }: { download: Download }) {
 
 /**
  * The indicator the header carries, and the list behind it: what the server is downloading and
- * what it failed to. A success leaves nothing here, its result being the pin (specification
- * 2026-09-10, question J).
+ * what it failed to, then the data tasks. A download's success leaves nothing here, its result
+ * being the pin (specification 2026-09-10, question J).
  */
 export function TaskCentre() {
   const page = useImageDownloads().data
   const downloads = page?.downloads ?? []
   const partial = page?.hasMore === true
-  const label = partial
-    ? m.downloads_partial({ count: downloads.length })
-    : m.downloads({ count: downloads.length })
+  const data = useDataTasks()
+  const count = downloads.length + data.length
+  const label = partial ? m.tasks_partial({ count }) : m.tasks({ count })
 
   return (
     <Popover>
       <Badge.Anchor>
-        <IconButton icon={DownloadIcon} name={label} variant="ghost" />
+        <IconButton icon={ArrowDownUp} name={label} variant="ghost" />
         {/* The name above already carries the count; a badge read as well would say it twice. */}
-        {downloads.length > 0 && (
-          <Badge aria-hidden>{`${downloads.length}${partial ? "+" : ""}`}</Badge>
-        )}
+        {count > 0 && <Badge aria-hidden>{`${count}${partial ? "+" : ""}`}</Badge>}
       </Badge.Anchor>
       <Popover.Content className="max-w-sm">
         <Popover.Dialog aria-label={label}>
-          {downloads.length === 0 ? (
-            <p>{m.downloads_empty()}</p>
+          {count === 0 ? (
+            <p>{m.tasks_empty()}</p>
           ) : (
             <ul>
               {downloads.map((download) => (
                 <Task key={download.pinId} download={download} />
               ))}
+              {data}
             </ul>
           )}
         </Popover.Dialog>

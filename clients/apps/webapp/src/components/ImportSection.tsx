@@ -118,7 +118,8 @@ function ChooseArchive() {
   )
 }
 
-function Uploading({ upload }: { upload: Upload }) {
+/** The upload's bytes and what it waits on, which the task centre shows as well. */
+export function UploadProgress({ upload }: { upload: Upload }) {
   return (
     <>
       <ProgressBar className="w-full max-w-sm" value={upload.sent} maxValue={upload.file.size}>
@@ -135,6 +136,14 @@ function Uploading({ upload }: { upload: Upload }) {
         </>
       )}
       {upload.state === "STOPPED" && <p role="alert">{importRefusal(upload.code)}</p>}
+    </>
+  )
+}
+
+function Uploading({ upload }: { upload: Upload }) {
+  return (
+    <>
+      <UploadProgress upload={upload} />
       <CancelImport id={upload.importId} />
     </>
   )
@@ -180,18 +189,21 @@ function Awaiting({ row }: { row: Import }) {
   )
 }
 
-function Running({ row }: { row: Import }) {
+/** How far a running import is, which the task centre shows as well. */
+export function importProgress(row: Import): string {
   const count = new Intl.NumberFormat(getLocale())
+  return row.announcedPins === null
+    ? m.import_starting()
+    : m.import_running({
+        processed: count.format(row.processedPins),
+        announced: count.format(row.announcedPins),
+      })
+}
+
+function Running({ row }: { row: Import }) {
   return (
     <>
-      <p>
-        {row.announcedPins === null
-          ? m.import_starting()
-          : m.import_running({
-              processed: count.format(row.processedPins),
-              announced: count.format(row.announcedPins),
-            })}
-      </p>
+      <p>{importProgress(row)}</p>
       <CancelImport id={row.id} />
     </>
   )

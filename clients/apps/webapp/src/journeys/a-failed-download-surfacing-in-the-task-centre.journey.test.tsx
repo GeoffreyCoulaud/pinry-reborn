@@ -38,14 +38,14 @@ describe("a failed download surfacing in the task centre", () => {
     )
 
     renderApp("/")
-    const trigger = await screen.findByRole("button", { name: "Downloads (1)" })
+    const trigger = await screen.findByRole("button", { name: "Tasks (1)" })
     // An icon alone is not discoverable: the tooltip opens on focus and says what the name says.
     // Eight stops is the home header's own order, and where the centre sits in it is the
     // assertion: the name, the search field, add a pin, the sort selector, then the four
     // navigation icons, the account's being the one specification 2026-09-22 added.
     for (let tabs = 0; tabs < 8; tabs++) await user.tab()
     expect(trigger).toHaveFocus()
-    await waitFor(() => expect(screen.getByRole("tooltip")).toHaveTextContent("Downloads (1)"))
+    await waitFor(() => expect(screen.getByRole("tooltip")).toHaveTextContent("Tasks (1)"))
     await user.click(trigger)
 
     expect(await screen.findByText("Failed")).toBeVisible()
@@ -76,7 +76,7 @@ describe("a failed download surfacing in the task centre", () => {
     // creation screen carried a centre of its own and the dialog needs none.
     await user.click(await screen.findByRole("button", { name: "Add a pin" }))
     await user.keyboard("{Escape}")
-    await user.click(await screen.findByRole("button", { name: "Downloads (1)" }))
+    await user.click(await screen.findByRole("button", { name: "Tasks (1)" }))
 
     expect(await screen.findByText("Downloading")).toBeVisible()
   })
@@ -94,7 +94,7 @@ describe("a failed download surfacing in the task centre", () => {
     )
 
     renderApp("/")
-    await user.click(await screen.findByRole("button", { name: "Downloads (1)" }))
+    await user.click(await screen.findByRole("button", { name: "Tasks (1)" }))
 
     await user.click(await screen.findByRole("button", { name: "Try again" }))
     expect(await screen.findByRole("alert")).toHaveTextContent("That image could not be added.")
@@ -124,7 +124,7 @@ describe("a failed download surfacing in the task centre", () => {
     )
 
     renderApp("/")
-    await user.click(await screen.findByRole("button", { name: "Downloads (1)" }))
+    await user.click(await screen.findByRole("button", { name: "Tasks (1)" }))
     expect(badge()).toHaveTextContent("1")
     // The trigger's name already carries the count; read as well, the badge would say it twice.
     expect(badge()).toHaveAttribute("aria-hidden", "true")
@@ -137,7 +137,7 @@ describe("a failed download surfacing in the task centre", () => {
     // and closing it on a keystroke is a race the gate's container loses.
     expect(await screen.findByAltText(failed.description)).toBeInTheDocument()
     // The open popover names itself after its trigger, so the selector says which of the two.
-    expect(await screen.findByLabelText("Downloads (0)", { selector: "button" })).toBeInTheDocument()
+    expect(await screen.findByLabelText("Tasks (0)", { selector: "button" })).toBeInTheDocument()
     expect(badge()).toBeNull()
   }, 15_000)
 
@@ -157,6 +157,6 @@ describe("a failed download surfacing in the task centre", () => {
     renderApp("/")
 
     // The centre shows the page it was given; the count must not claim the rows it cannot show.
-    expect(await screen.findByRole("button", { name: "Downloads (1+)" })).toBeVisible()
+    expect(await screen.findByRole("button", { name: "Tasks (1+)" })).toBeVisible()
   })
 })
