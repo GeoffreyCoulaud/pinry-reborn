@@ -73,7 +73,8 @@ export function TaskCentre() {
         {/* The name above already carries the count; a badge read as well would say it twice. */}
         {count > 0 && <Badge aria-hidden>{`${count}${partial ? "+" : ""}`}</Badge>}
       </Badge.Anchor>
-      <Popover.Content className="max-w-sm">
+      {/* Narrower than a phone's width, or the popover sits flush against its right edge. */}
+      <Popover.Content className="max-w-[min(24rem,calc(100vw-1.5rem))]">
         <Popover.Dialog aria-label={label}>
           {count === 0 ? (
             <p>{m.tasks_empty()}</p>

@@ -63,9 +63,8 @@ function RequestExport() {
   )
 }
 
-/** A plain link: the cookie authenticates it, and the browser streams the archive to disk. */
-function ReadyExport({ row }: { row: Export }) {
-  const remove = useDeleteExport()
+/** The archive's size and expiry, which the task centre's notice repeats. */
+export function exportReadiness(row: Export): string {
   const size = new Intl.NumberFormat(getLocale(), {
     style: "unit",
     unit: "megabyte",
@@ -74,12 +73,20 @@ function ReadyExport({ row }: { row: Export }) {
   const date = new Intl.DateTimeFormat(getLocale(), { dateStyle: "long" }).format(
     new Date(row.expiresAt ?? row.requestedAt),
   )
+  return m.export_ready({ size, date })
+}
+
+/** A plain link: the cookie authenticates it, and the browser streams the archive to disk. */
+export const downloadHref = (row: Export) => `/api/v1/me/exports/${row.id}/download`
+
+function ReadyExport({ row }: { row: Export }) {
+  const remove = useDeleteExport()
 
   return (
     <>
-      <p>{m.export_ready({ size, date })}</p>
+      <p>{exportReadiness(row)}</p>
       <div className="flex flex-wrap gap-2">
-        <a className={buttonVariants()} href={`/api/v1/me/exports/${row.id}/download`}>
+        <a className={buttonVariants()} href={downloadHref(row)}>
           {m.export_download()}
         </a>
         <Button variant="ghost" isDisabled={remove.isPending} onPress={() => remove.mutate(row.id)}>

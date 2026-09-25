@@ -81,6 +81,7 @@
   "image_refused": "Cette image n’a pas pu être ajoutée.",
   "image_replace": "Remplacer par un fichier",
   "image_replacing": "Téléchargement de la nouvelle image.",
+  "import_abandoned": "L’envoi est resté arrêté trop longtemps, et l’import a été abandonné.",
   "import_awaiting":"L’envoi de {name} s’est arrêté avant la fin. Choisissez à nouveau ce fichier pour envoyer le reste.",
   "import_cancel": "Annuler l’import",
   "import_cancel_confirm": "Arrêter l’import",
