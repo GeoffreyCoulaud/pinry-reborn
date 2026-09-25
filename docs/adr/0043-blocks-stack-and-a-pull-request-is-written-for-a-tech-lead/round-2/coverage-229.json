@@ -1,0 +1,6 @@
+{
+  "b173": {"yes": 21, "partial": 2, "no": 0, "missing": ["5: window refocus as the race's trigger (partial)", "8: block 60's default handlers as the cause (partial)"]},
+  "b179": {"yes": 22, "partial": 1, "no": 0, "missing": ["8: block 60's default handlers as the cause (partial)"]},
+  "b209": {"yes": 22, "partial": 1, "no": 0, "missing": ["5: window refocus as the race's trigger (partial)"]},
+  "b418": {"yes": 20, "partial": 3, "no": 0, "missing": ["6: ImportsConfig finding named but not that it arrived in a web application block (partial)", "8: redundant routes without three journeys or block 60 cause (partial)", "12: three spec corrections named, not that the spec contradicted its own corrections (partial)"]}
+}

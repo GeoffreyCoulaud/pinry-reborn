@@ -1,0 +1,308 @@
+[
+ {
+  "stem": "control-219-b",
+  "arm": "control",
+  "pr": "219",
+  "blind": "b233",
+  "quiz": 3,
+  "q": [
+   1,
+   1,
+   1
+  ],
+  "facts_yes": 15,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 15,
+  "text_lines": 31
+ },
+ {
+  "stem": "control-219-a",
+  "arm": "control",
+  "pr": "219",
+  "blind": "b437",
+  "quiz": 3,
+  "q": [
+   1,
+   1,
+   1
+  ],
+  "facts_yes": 15,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 15,
+  "text_lines": 36
+ },
+ {
+  "stem": "v2-219-b",
+  "arm": "v2",
+  "pr": "219",
+  "blind": "b598",
+  "quiz": 6,
+  "q": [
+   2,
+   2,
+   2
+  ],
+  "facts_yes": 15,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 15,
+  "text_lines": 18
+ },
+ {
+  "stem": "v1-219-a",
+  "arm": "v1",
+  "pr": "219",
+  "blind": "b679",
+  "quiz": 6,
+  "q": [
+   2,
+   2,
+   2
+  ],
+  "facts_yes": 15,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 15,
+  "text_lines": 16
+ },
+ {
+  "stem": "v2-219-a",
+  "arm": "v2",
+  "pr": "219",
+  "blind": "b680",
+  "quiz": 6,
+  "q": [
+   2,
+   2,
+   2
+  ],
+  "facts_yes": 14,
+  "facts_partial": 1,
+  "facts_no": 0,
+  "facts": 15,
+  "text_lines": 36
+ },
+ {
+  "stem": "v1-219-b",
+  "arm": "v1",
+  "pr": "219",
+  "blind": "b858",
+  "quiz": 6,
+  "q": [
+   2,
+   2,
+   2
+  ],
+  "facts_yes": 15,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 15,
+  "text_lines": 22
+ },
+ {
+  "stem": "v2-224-b",
+  "arm": "v2",
+  "pr": "224",
+  "blind": "b185",
+  "quiz": 4,
+  "q": [
+   2,
+   1,
+   1
+  ],
+  "facts_yes": 13,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 13,
+  "text_lines": 18
+ },
+ {
+  "stem": "v2-224-a",
+  "arm": "v2",
+  "pr": "224",
+  "blind": "b502",
+  "quiz": 4,
+  "q": [
+   2,
+   1,
+   1
+  ],
+  "facts_yes": 13,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 13,
+  "text_lines": 19
+ },
+ {
+  "stem": "control-224-b",
+  "arm": "control",
+  "pr": "224",
+  "blind": "b622",
+  "quiz": 4,
+  "q": [
+   2,
+   1,
+   1
+  ],
+  "facts_yes": 13,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 13,
+  "text_lines": 30
+ },
+ {
+  "stem": "v1-224-b",
+  "arm": "v1",
+  "pr": "224",
+  "blind": "b779",
+  "quiz": 4,
+  "q": [
+   2,
+   1,
+   1
+  ],
+  "facts_yes": 13,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 13,
+  "text_lines": 19
+ },
+ {
+  "stem": "control-224-a",
+  "arm": "control",
+  "pr": "224",
+  "blind": "b886",
+  "quiz": 5,
+  "q": [
+   2,
+   1,
+   2
+  ],
+  "facts_yes": 13,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 13,
+  "text_lines": 39
+ },
+ {
+  "stem": "v1-224-a",
+  "arm": "v1",
+  "pr": "224",
+  "blind": "b915",
+  "quiz": 4,
+  "q": [
+   2,
+   1,
+   1
+  ],
+  "facts_yes": 13,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 13,
+  "text_lines": 32
+ },
+ {
+  "stem": "control-229-a",
+  "arm": "control",
+  "pr": "229",
+  "blind": "b220",
+  "quiz": 6,
+  "q": [
+   2,
+   2,
+   2
+  ],
+  "facts_yes": 23,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 23,
+  "text_lines": 46
+ },
+ {
+  "stem": "v1-229-b",
+  "arm": "v1",
+  "pr": "229",
+  "blind": "b340",
+  "quiz": 6,
+  "q": [
+   2,
+   2,
+   2
+  ],
+  "facts_yes": 23,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 23,
+  "text_lines": 21
+ },
+ {
+  "stem": "v2-229-b",
+  "arm": "v2",
+  "pr": "229",
+  "blind": "b370",
+  "quiz": 6,
+  "q": [
+   2,
+   2,
+   2
+  ],
+  "facts_yes": 23,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 23,
+  "text_lines": 15
+ },
+ {
+  "stem": "control-229-b",
+  "arm": "control",
+  "pr": "229",
+  "blind": "b542",
+  "quiz": 6,
+  "q": [
+   2,
+   2,
+   2
+  ],
+  "facts_yes": 23,
+  "facts_partial": 0,
+  "facts_no": 0,
+  "facts": 23,
+  "text_lines": 54
+ },
+ {
+  "stem": "v2-229-a",
+  "arm": "v2",
+  "pr": "229",
+  "blind": "b629",
+  "quiz": 6,
+  "q": [
+   2,
+   2,
+   2
+  ],
+  "facts_yes": 20,
+  "facts_partial": 3,
+  "facts_no": 0,
+  "facts": 23,
+  "text_lines": 22
+ },
+ {
+  "stem": "v1-229-a",
+  "arm": "v1",
+  "pr": "229",
+  "blind": "b728",
+  "quiz": 5,
+  "q": [
+   2,
+   2,
+   1
+  ],
+  "facts_yes": 22,
+  "facts_partial": 1,
+  "facts_no": 0,
+  "facts": 23,
+  "text_lines": 16
+ }
+]

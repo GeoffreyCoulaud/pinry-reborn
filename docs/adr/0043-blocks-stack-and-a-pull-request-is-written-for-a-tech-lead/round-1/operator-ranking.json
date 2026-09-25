@@ -1,0 +1,6 @@
+{
+ "source": "https://claude.ai/artifact/JhgyoJRW65sFJfVN5gv8Rn, collection rankings, read 2026-09-25",
+ "pr-219": {"ranks": {"b233": 5, "b437": 6, "b598": 1, "b679": 3, "b680": 2, "b858": 4}, "note": "Tout me semble assez verbeux, pour un changement de cette envergure."},
+ "pr-224": {"ranks": {"b185": 2, "b502": 1, "b622": 6, "b779": 4, "b886": 5, "b915": 3}, "note": ""},
+ "pr-229": {"ranks": {"b220": 5, "b340": 4, "b370": 3, "b542": 6, "b629": 2, "b728": 1}, "note": "Tous les diagrammes mermaid proposés sont très complexes, c'est attendu car le comportement d'upload l'est.\nIls sont difficiles à lire en l'état. Ce n'est possiblement pas la bonne forme de diagramme, ou bien leur code est écrit d'une façon qui produit des graph difiiciles à lire. "}
+}

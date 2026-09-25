@@ -1,0 +1,14 @@
+{
+  "b220": {"yes": 23, "partial": 0, "no": 0, "missing": []},
+  "b340": {"yes": 23, "partial": 0, "no": 0, "missing": []},
+  "b370": {"yes": 23, "partial": 0, "no": 0, "missing": []},
+  "b542": {"yes": 23, "partial": 0, "no": 0, "missing": []},
+  "b629": {"yes": 20, "partial": 3, "no": 0, "missing": [
+    "4: partial, silent cancel's cause (unmounted component) not named",
+    "5: partial, window refocus as the file dialog closes not named",
+    "8: partial, routes removed from seven journeys, cause (block 60 default handlers) not named"
+  ]},
+  "b728": {"yes": 22, "partial": 1, "no": 0, "missing": [
+    "5: partial, window refocus as the file dialog closes not named"
+  ]}
+}
