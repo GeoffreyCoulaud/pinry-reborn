@@ -6,6 +6,8 @@ import com.lemonappdev.konsist.api.declaration.KoAnnotationDeclaration
 import com.lemonappdev.konsist.api.declaration.KoFunctionDeclaration
 import com.lemonappdev.konsist.api.ext.list.withAnnotationNamed
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BaseErrorMapper
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemCode
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE
@@ -100,6 +102,33 @@ class ContractSchemaDeclarationTest {
             enumeration(status),
             "PinImageStateMapper fills this field from DownloadStatus, the same field one level " +
                 "down. Regenerate after fixing the schema: $regenerate",
+        )
+    }
+
+    @Test
+    fun `Given the published contract, Then both data states declare the values the server emits`() {
+        // Given
+        val exportState = PublishedContract.schema("UserDataExportOutputDto").path("properties").path("state")
+        val importState = PublishedContract.schema("UserDataImportOutputDto").path("properties").path("state")
+
+        // Then
+        val why = "The mappers fill it from the domain's state, which a client's behaviour hangs on. Regenerate: "
+        assertEquals(UserDataExportState.entries.map { it.name }.toSet(), enumeration(exportState), why + regenerate)
+        assertEquals(UserDataImportState.entries.map { it.name }.toSet(), enumeration(importState), why + regenerate)
+    }
+
+    @Test
+    fun `Given the published contract, Then an import issue's kind stays an open string`() {
+        // Given
+        val kind = PublishedContract.schema("UserDataImportIssueOutputDto").path("properties").path("kind")
+
+        // Then
+        assertEquals(setOf("string"), effectiveTypes(kind))
+        assertEquals(
+            emptySet<String>(),
+            enumeration(kind),
+            "A closed kind would make every new anomaly a contract major (docs/specs/2026-09-25-the-data-travels.md, " +
+                "decision I). Regenerate: $regenerate",
         )
     }
 

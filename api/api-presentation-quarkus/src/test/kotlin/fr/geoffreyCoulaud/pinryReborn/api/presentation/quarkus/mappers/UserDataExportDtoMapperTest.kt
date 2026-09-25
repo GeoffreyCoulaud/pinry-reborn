@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDataExportDtoMapper.toDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -33,7 +34,7 @@ class UserDataExportDtoMapperTest {
     )
 
     @Test
-    fun `Given a pending export, Then toDto carries the state name and leaves READY fields null`() {
+    fun `Given a pending export, Then toDto carries the state and leaves READY fields null`() {
         // Given
         val export = pendingExport()
 
@@ -41,7 +42,7 @@ class UserDataExportDtoMapperTest {
         val dto = export.toDto()
 
         // Then
-        assertEquals("PENDING", dto.state)
+        assertEquals(UserDataExportStateDto.PENDING, dto.state)
         assertEquals(export.id, dto.id)
         assertEquals(export.formatVersion, dto.formatVersion)
         assertNull(dto.completedAt)
@@ -60,12 +61,26 @@ class UserDataExportDtoMapperTest {
         val dto = export.toDto()
 
         // Then
-        assertEquals("READY", dto.state)
+        assertEquals(UserDataExportStateDto.READY, dto.state)
         assertEquals(export.completedAt, dto.completedAt)
         assertEquals(export.expiresAt, dto.expiresAt)
         assertEquals(export.byteSize, dto.byteSize)
         assertEquals(export.mediaType, dto.mediaType)
         assertEquals(export.sha256, dto.sha256)
+    }
+
+    @Test
+    fun `Given every UserDataExportState, Then toDto carries the value of the same name`() {
+        for (state in UserDataExportState.entries) {
+            // Given
+            val export = pendingExport().copy(state = state)
+
+            // When
+            val dto = export.toDto()
+
+            // Then
+            assertEquals(state.name, dto.state.name)
+        }
     }
 
     @Test

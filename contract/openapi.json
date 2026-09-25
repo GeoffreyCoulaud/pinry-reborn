@@ -207,7 +207,7 @@
       },
       "LimitsDto" : {
         "type" : "object",
-        "required" : [ "maxFileBytes", "maxPixels", "mediaTypes" ],
+        "required" : [ "maxFileBytes", "maxPixels", "mediaTypes", "maxImportChunkBytes", "maxImportArchiveBytes" ],
         "properties" : {
           "maxFileBytes" : {
             "type" : "integer",
@@ -222,6 +222,14 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "maxImportChunkBytes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "maxImportArchiveBytes" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -621,7 +629,7 @@
             "$ref" : "#/components/schemas/UUID"
           },
           "state" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/UserDataExportStateDto"
           },
           "requestedAt" : {
             "$ref" : "#/components/schemas/Instant"
@@ -658,6 +666,10 @@
             "format" : "int32"
           }
         }
+      },
+      "UserDataExportStateDto" : {
+        "type" : "string",
+        "enum" : [ "PENDING", "READY", "FAILED", "EXPIRED", "DELETED", "SUPERSEDED" ]
       },
       "UserDataImportIssueListOutputDto" : {
         "type" : "object",
@@ -719,7 +731,7 @@
             "$ref" : "#/components/schemas/UUID"
           },
           "state" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/UserDataImportStateDto"
           },
           "requestedAt" : {
             "$ref" : "#/components/schemas/Instant"
@@ -800,6 +812,10 @@
             "type" : [ "string", "null" ]
           }
         }
+      },
+      "UserDataImportStateDto" : {
+        "type" : "string",
+        "enum" : [ "AWAITING_ARCHIVE", "PENDING", "RUNNING", "COMPLETED", "FAILED", "CANCELLED", "ABANDONED" ]
       },
       "UserInputDto" : {
         "type" : "object",
@@ -3945,7 +3961,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "17.0.0"
+    "version" : "18.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

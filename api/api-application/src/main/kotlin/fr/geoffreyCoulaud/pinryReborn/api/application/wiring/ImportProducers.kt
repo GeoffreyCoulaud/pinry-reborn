@@ -16,6 +16,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ImagesConfig
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemZipImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ImportUploadBounds
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ReapUserDataImports
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportChunkReceiver
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportRunner
@@ -24,7 +25,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 
 /**
- * The three import beans ARC cannot build itself, their scalars coming from `imports.*` in the worker
+ * The import beans ARC cannot build itself, their scalars coming from `imports.*` in the worker
  * module and the runner's two image bounds from `images.*`, as [TaskHandlerProducers] takes them.
  */
 @ApplicationScoped
@@ -33,6 +34,12 @@ class ImportProducers {
     @ApplicationScoped
     fun importArchiveStore(config: ImportsConfig): ImportArchiveStore =
         FilesystemZipImportArchiveStore(config.dataDir(), config.maxLineBytes())
+
+    // The handshake's copy of the two bounds, so the presentation module reads no `imports.*` mapping.
+    @Produces
+    @ApplicationScoped
+    fun importUploadBounds(config: ImportsConfig): ImportUploadBounds =
+        ImportUploadBounds(maxChunkBytes = config.maxChunkBytes(), maxArchiveBytes = config.maxArchiveBytes())
 
     // LongParameterList: four ports, the clock, and the two Durations ARC cannot resolve on its own.
     @Suppress("LongParameterList")

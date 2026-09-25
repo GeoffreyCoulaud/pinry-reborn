@@ -15,6 +15,9 @@ data class HandshakeOutputDto(
         val maxPixels: Long,
         /** The media types the storage accepts; anything else the probe refuses. */
         val mediaTypes: List<String>,
+        /** The size an import's archive is sent in, one `PUT` per chunk. */
+        val maxImportChunkBytes: Long,
+        val maxImportArchiveBytes: Long,
     )
 
     /** Shortest side, in pixels, each `size` of `GET /api/v1/pins/{pinId}/image` answers. */
