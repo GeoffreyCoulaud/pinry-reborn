@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDataImportDtoMapper.toDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -45,7 +46,7 @@ class UserDataImportDtoMapperTest {
     )
 
     @Test
-    fun `Given an import awaiting its archive, Then toDto carries the state name and leaves the run fields null`() {
+    fun `Given an import awaiting its archive, Then toDto carries the state and leaves the run fields null`() {
         // Given
         val userDataImport = awaitingImport()
 
@@ -54,7 +55,7 @@ class UserDataImportDtoMapperTest {
 
         // Then
         assertEquals(userDataImport.id, dto.id)
-        assertEquals("AWAITING_ARCHIVE", dto.state)
+        assertEquals(UserDataImportStateDto.AWAITING_ARCHIVE, dto.state)
         assertEquals(userDataImport.requestedAt, dto.requestedAt)
         assertEquals(0L, dto.uploadedBytes)
         assertNull(dto.byteSize)
@@ -76,7 +77,7 @@ class UserDataImportDtoMapperTest {
         val dto = userDataImport.toDto()
 
         // Then: the two counters ship raw, with no server-side ratio (spec section 7).
-        assertEquals("COMPLETED", dto.state)
+        assertEquals(UserDataImportStateDto.COMPLETED, dto.state)
         assertEquals(4096L, dto.uploadedBytes)
         assertEquals(4096L, dto.byteSize)
         assertEquals(userDataImport.archiveCompletedAt, dto.archiveCompletedAt)
@@ -118,8 +119,22 @@ class UserDataImportDtoMapperTest {
         val dto = userDataImport.toDto()
 
         // Then
-        assertEquals("FAILED", dto.state)
+        assertEquals(UserDataImportStateDto.FAILED, dto.state)
         assertEquals("MANIFEST_MISSING", dto.failureCode)
+    }
+
+    @Test
+    fun `Given every UserDataImportState, Then toDto carries the value of the same name`() {
+        for (state in UserDataImportState.entries) {
+            // Given
+            val userDataImport = awaitingImport().copy(state = state)
+
+            // When
+            val dto = userDataImport.toDto()
+
+            // Then
+            assertEquals(state.name, dto.state.name)
+        }
     }
 
     @Test

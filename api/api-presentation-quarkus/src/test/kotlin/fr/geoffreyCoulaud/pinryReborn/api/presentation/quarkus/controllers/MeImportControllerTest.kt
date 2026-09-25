@@ -13,6 +13,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.Curso
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportIssueListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportOutputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportArchiveCompleter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportCanceller
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportChunkReceiver
@@ -73,7 +74,7 @@ class MeImportControllerTest {
         // Then
         assertEquals(202, response.status)
         assertEquals(userDataImport.id, (response.entity as UserDataImportOutputDto).id)
-        assertEquals("AWAITING_ARCHIVE", (response.entity as UserDataImportOutputDto).state)
+        assertEquals(UserDataImportStateDto.AWAITING_ARCHIVE, (response.entity as UserDataImportOutputDto).state)
     }
 
     @Test
@@ -93,7 +94,7 @@ class MeImportControllerTest {
         assertEquals(200, response.status)
         val entity = response.entity as UserDataImportListOutputDto
         assertEquals(userDataImport.id, entity.imports.single().id)
-        assertEquals("AWAITING_ARCHIVE", entity.imports.single().state)
+        assertEquals(UserDataImportStateDto.AWAITING_ARCHIVE, entity.imports.single().state)
     }
 
     @Test
@@ -115,7 +116,7 @@ class MeImportControllerTest {
         assertEquals(200, response.status)
         val entity = response.entity as UserDataImportListOutputDto
         assertEquals(userDataImport.id, entity.imports.single().id)
-        assertEquals("COMPLETED", entity.imports.single().state)
+        assertEquals(UserDataImportStateDto.COMPLETED, entity.imports.single().state)
         assertEquals(userDataImport.id, entity.pagination.nextCursor?.pivotId)
     }
 
@@ -169,7 +170,7 @@ class MeImportControllerTest {
 
         // Then
         assertEquals(202, response.status)
-        assertEquals("PENDING", (response.entity as UserDataImportOutputDto).state)
+        assertEquals(UserDataImportStateDto.PENDING, (response.entity as UserDataImportOutputDto).state)
     }
 
     @Test

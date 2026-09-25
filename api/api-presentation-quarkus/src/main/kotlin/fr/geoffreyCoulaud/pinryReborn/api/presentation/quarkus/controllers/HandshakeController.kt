@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ContractCo
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ImagesConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.RenditionsConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.HandshakeOutputDto
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ImportUploadBounds
 import jakarta.annotation.security.PermitAll
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
@@ -14,6 +15,7 @@ class HandshakeController(
     private val imagesConfig: ImagesConfig,
     private val renditionsConfig: RenditionsConfig,
     private val contractConfig: ContractConfig,
+    private val importBounds: ImportUploadBounds,
 ) {
     @GET
     @PermitAll
@@ -23,6 +25,8 @@ class HandshakeController(
             maxFileBytes = imagesConfig.maxFileBytes(),
             maxPixels = imagesConfig.maxPixels(),
             mediaTypes = ImageFormat.entries.map { it.mimeType },
+            maxImportChunkBytes = importBounds.maxChunkBytes,
+            maxImportArchiveBytes = importBounds.maxArchiveBytes,
         ),
         renditionSizes = HandshakeOutputDto.RenditionSizesDto(
             tiny = renditionsConfig.tiny(),

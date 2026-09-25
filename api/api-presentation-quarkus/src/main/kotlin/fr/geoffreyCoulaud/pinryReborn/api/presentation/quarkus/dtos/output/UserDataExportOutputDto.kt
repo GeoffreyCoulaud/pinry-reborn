@@ -10,7 +10,7 @@ import java.util.UUID
  */
 data class UserDataExportOutputDto(
     val id: UUID,
-    val state: String,
+    val state: UserDataExportStateDto,
     val requestedAt: Instant,
     val completedAt: Instant?,
     val expiresAt: Instant?,

@@ -9,7 +9,7 @@ import java.util.UUID
  */
 data class UserDataImportOutputDto(
     val id: UUID,
-    val state: String,
+    val state: UserDataImportStateDto,
     val requestedAt: Instant,
     val uploadedBytes: Long,
     val byteSize: Long?,

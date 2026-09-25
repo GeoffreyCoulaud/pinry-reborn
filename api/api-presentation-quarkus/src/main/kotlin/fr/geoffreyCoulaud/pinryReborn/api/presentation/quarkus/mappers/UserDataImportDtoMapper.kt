@@ -2,16 +2,18 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PaginationOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportOutputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDto
 
 // The issues have their own mapper object: both pages erase to one `toDto(Page)` JVM signature.
 object UserDataImportDtoMapper {
     fun UserDataImport.toDto() = UserDataImportOutputDto(
         id = id,
-        state = state.name,
+        state = state.toDto(),
         requestedAt = requestedAt,
         uploadedBytes = uploadedBytes,
         byteSize = byteSize,
@@ -39,4 +41,15 @@ object UserDataImportDtoMapper {
             nextCursor = nextCursor?.toDto(),
         ),
     )
+
+    private fun UserDataImportState.toDto(): UserDataImportStateDto =
+        when (this) {
+            UserDataImportState.AWAITING_ARCHIVE -> UserDataImportStateDto.AWAITING_ARCHIVE
+            UserDataImportState.PENDING -> UserDataImportStateDto.PENDING
+            UserDataImportState.RUNNING -> UserDataImportStateDto.RUNNING
+            UserDataImportState.COMPLETED -> UserDataImportStateDto.COMPLETED
+            UserDataImportState.FAILED -> UserDataImportStateDto.FAILED
+            UserDataImportState.CANCELLED -> UserDataImportStateDto.CANCELLED
+            UserDataImportState.ABANDONED -> UserDataImportStateDto.ABANDONED
+        }
 }

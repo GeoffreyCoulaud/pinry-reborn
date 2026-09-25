@@ -20,11 +20,15 @@ class HandshakeTestProfile : QuarkusTestProfile {
         "images.renditions.small" to "$SMALL",
         "images.renditions.medium" to "$MEDIUM",
         "images.renditions.large" to "$LARGE",
+        "imports.max_chunk_bytes" to "$MAX_IMPORT_CHUNK_BYTES",
+        "imports.max_archive_bytes" to "$MAX_IMPORT_ARCHIVE_BYTES",
     )
 
     companion object {
         const val MAX_FILE_BYTES = 1_234_567L
         const val MAX_PIXELS = 7_654_321L
+        const val MAX_IMPORT_CHUNK_BYTES = 2_345_678L
+        const val MAX_IMPORT_ARCHIVE_BYTES = 98_765_432_109L
         const val TINY = 11
         const val SMALL = 22
         const val MEDIUM = 33
@@ -59,6 +63,8 @@ class HandshakeIntegrationTest {
         // Then
         assertEquals(HandshakeTestProfile.MAX_FILE_BYTES, body.getLong("limits.maxFileBytes"))
         assertEquals(HandshakeTestProfile.MAX_PIXELS, body.getLong("limits.maxPixels"))
+        assertEquals(HandshakeTestProfile.MAX_IMPORT_CHUNK_BYTES, body.getLong("limits.maxImportChunkBytes"))
+        assertEquals(HandshakeTestProfile.MAX_IMPORT_ARCHIVE_BYTES, body.getLong("limits.maxImportArchiveBytes"))
         assertEquals(HandshakeTestProfile.TINY, body.getInt("renditionSizes.tiny"))
         assertEquals(HandshakeTestProfile.SMALL, body.getInt("renditionSizes.small"))
         assertEquals(HandshakeTestProfile.MEDIUM, body.getInt("renditionSizes.medium"))
