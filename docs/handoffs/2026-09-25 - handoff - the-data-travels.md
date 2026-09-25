@@ -128,7 +128,9 @@ request open as a draft. The lead's running log is the source of what follows.
   merged, and the operator's review had not started, so no fix-back ran and nothing was rewritten.
   *(Corrected: still none when the closing block was written. All nine pull requests were green
   and ready around 15:40Z, #227 on run 36154177058 and #228 on run 36154883317, none reviewed, and
-  the closing block went on #228 with no rewrite.)*
+  the closing block went on #228 with no rewrite.)* *(Corrected: zero at the end as well. The
+  operator reviewed the ten pull requests without asking for a change, so no fix-back ran, no
+  cascaded rebase was needed and no run was re-triggered by one.)*
 - **Wrap ran before the merges** *(added in the closing block)*: the operator had the holistic
   review run on the top of the stack before their reading, so its findings reach them in the
   closing block's pull request, above the nine they review, rather than after the last merge.
@@ -136,12 +138,46 @@ request open as a draft. The lead's running log is the source of what follows.
 - **Wall-clock time from block 10's first commit to the last merge**: to be filled in the closing
   block. Block 10's first commit is `741cdce7` at 2026-09-25T13:44:48Z, its run started 13:50:20Z;
   the comparison is with lot `0.36.0-the-refusals-are-declared`. *(Corrected: to fill after the
-  last merge, which follows the operator's review.)*
+  last merge, which follows the operator's review.)* *(Corrected: the stack merges right after
+  this commit, at about 18:12Z. From the specification's first commit, `45236961` at 11:47:31Z,
+  that is about 6 h 25 min, and about 4 h 27 min from block 10's first commit. Lot
+  `0.36.0-the-refusals-are-declared` took 7 h 51 min from its specification's first commit,
+  `883c3581` at 2026-09-23T13:02:25Z, to its closing merge, `05d546a3` at 20:52:59Z.)*
 - **Review latency per pull request and the runs each cascaded rebase re-triggered**: to be filled
   in the closing block, from `gh pr view` and `gh run list` timestamps. *(Corrected: to fill after
-  the last merge.)*
+  the last merge.)* *(Corrected: the operator reviewed all ten in one sitting after the last was
+  ready, and their approval reached the lead at about 18:10Z. From each pull request's
+  `ready_for_review` event (`gh api .../issues/<n>/timeline`) to that approval: #219 4 h 11 min,
+  #220 4 h 02 min, #222 3 h 27 min, #223 3 h 24 min, #224 3 h 19 min, #225 3 h 06 min, #226
+  2 h 56 min, #227 2 h 34 min, #228 2 h 29 min, #229 1 h 35 min. Runs re-triggered by cascaded
+  rebases: zero, there being none.)*
 - **The operator's own reading**, which decides whether an ADR adopts stacks: to be filled in the
-  closing block. *(Corrected: to fill after the operator's review.)*
+  closing block. *(Corrected: to fill after the operator's review.)* *(Corrected: the operator's
+  reading, verbatim: "Mon expérience des PR empilées est bonne, j'ai trouvé que l'autonomie de
+  l'agent interromp moins l'opérateur, pour au final une relecture tout de même assez simple
+  puisque chaque PR est limitée en scope sémantique et taille objective. Cependant, un souci est
+  exacerbé : la forme du corps des PR est illisible. Il faut que chaque PR soit lisible par
+  quelqu'un qui n'a pas le contexte de la spec sur laquelle on agit, et que le texte se concentre
+  sur le strict essentiel, le contexte, le "pourquoi", puis le "comment" mais pas le "quoi". Il
+  faut viser que la PR soit lisible par un membre d'équipe qui connait l'architecture du projet et
+  le langage de programmation, mais pas les détails de code. Si on a besoin de connaitre les
+  détails d'un scope pour le relire, c'est un signe fort qu'il faudrait le refactoriser et/ou le
+  réorganiser. Il faut viser une relecture par un rôle "architecte" ou "tech lead" mais pas
+  contributeur individuel. La qualité de code compte, mais elle parle pour elle même et ce n'est
+  pas une considération du titre ou corps de PR. Le corps de la PR doit être concis et formatté
+  simplement. Un corps de PR de 50 lignes ou plus, et/ou avec des tableaux est un bad smell. Un
+  diagramme de séquence/flowchart/classe/état/ER/autre avec mermaid est souvent plus explicite que
+  3 paragraphes. Je n'ai jamais vu les agents en produire, alors qu'ils ont le pouvoir de réduire
+  la prose quand bien utilisés."
+  In English: the experiment is good. The agents' autonomy interrupts the operator less, and review
+  stays simple because each pull request is bounded in meaning and in size. One problem got worse:
+  the pull request bodies are unreadable. A body should read without the specification's context,
+  for an architect or tech lead who knows the architecture and the language but not the code: the
+  context, the why, then the how, never the what. Needing a scope's code details to review it is a
+  strong sign it should be refactored or reorganised. Code quality speaks for itself and is not the
+  title's or the body's concern. A body is concise and simply formatted: 50 lines or more, or
+  tables, is a smell. A mermaid diagram (sequence, flowchart, class, state, ER) is often clearer than
+  three paragraphs, and the agents have never produced one.)*
 
 ## Pitfalls
 
@@ -194,4 +230,7 @@ findings, this handoff corrected and the experiment's figures filled in; then th
 *(Corrected: the holistic review and the closing block, #229, came first, on the top of the
 stack. What is left: the operator reviews and merges the ten pull requests, rebase only; the
 experiment's figures and the operator's reading, which exist only then, filled in before the
-closing block merges and the handoff freezes; then the lot's tag.)*
+closing block merges and the handoff freezes; then the lot's tag.)* *(Corrected: the operator
+approved the whole stack and the figures above are filled. Next, a process lot rewrites the pull
+request body's shape in `agents/workflow.md` (phase 5, Integrate) along the operator's reading
+above, and adopts stacked pull requests, the operator having found the experiment good.)*
