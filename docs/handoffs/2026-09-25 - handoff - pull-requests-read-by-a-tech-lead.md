@@ -46,8 +46,12 @@ decision 6 also amends ADR 0019's decision 2, which opened a pull request as a d
 |---|---|---|
 | Discuss | Where the block report goes | A3: last in the body, collapsed |
 | Discuss | How the bodies are measured | B1: a quiz scored against a reference, plus the operator's blind reading, which decides |
-| Discuss | The arms and the second round | C'1, then J1 for round 2 (V2 against V2+) |
-| Discuss | The rest of the experiment's and the stack's settings | D1, E1, F1, G3, K1 (recorded in the ADR's Context and decisions) |
+| Discuss | The arms and the second round | C'1: round 1 tested V1 (the operator's criteria as terse rules) and V2 (the same rules each with its reason), no template; then J1 for round 2 (V2 against V2+) |
+| Discuss | The quiz reference | D1: written by the lead before any writer ran, and validated by the operator |
+| Discuss | The stacking rules | E1: those practised in lot `0.38.0`, with two adjustments: the headless reading inside each block's Verify, and the ready state handled by the lead, since dropped by the no-draft decision |
+| Discuss | Where the experiment's material lives | F1: committed beside the ADR |
+| Discuss | The decision rule | G3: none fixed in advance; the operator and the lead decide together from the ranking and the quiz |
+| Discuss | What round 2 decides | K1: V2+ adopted as it stands, the "why" gap of #224 left to a later round |
 | Discuss | Whether what was not verified shows in the visible body | H''2: no such line visible; it stays in the collapsed report |
 | Discuss | The model of the writers and readers | I1: Opus 5.5 everywhere |
 | Discuss | A worktree per block | M, then N: tried, measured and dropped for N4, the stack being built then reviewed |
