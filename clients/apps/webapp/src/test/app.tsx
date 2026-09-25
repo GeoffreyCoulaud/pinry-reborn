@@ -176,6 +176,13 @@ export function downloadsPage(downloads: unknown[], nextCursor?: unknown) {
   return { downloads, pagination: { previousCursor: null, nextCursor: nextCursor ?? null } }
 }
 
+/** The account's exports, newest first, answered from what the journey decided last. */
+export function exportsRoute(rows: () => unknown[] = () => []) {
+  return http.get("/api/v1/me/exports", () =>
+    HttpResponse.json({ exports: rows(), pagination: { previousCursor: null, nextCursor: null } }),
+  )
+}
+
 /** What the API's `ImageFormat` holds, which is what a real handshake publishes. */
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"]
 
