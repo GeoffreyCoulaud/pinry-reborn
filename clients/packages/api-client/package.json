@@ -5,7 +5,7 @@
   "main": "./src/index.ts",
   "exports": { ".": "./src/index.ts" },
   "scripts": {
-    "generate": "openapi-typescript ../../../contract/openapi.json --output ./src/schema.d.ts",
+    "generate": "node generate.mjs",
     "prepare": "pnpm run generate",
     "typecheck": "tsc --noEmit"
   },

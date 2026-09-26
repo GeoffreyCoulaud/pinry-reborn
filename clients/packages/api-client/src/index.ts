@@ -1,7 +1,13 @@
 import createOpenApiClient, { type Client } from "openapi-fetch"
-import type { paths } from "./schema"
+import type { extensibleEnums, paths } from "./schema"
 
 export type { components, paths } from "./schema"
+
+/**
+ * The values an `x-extensible-enum` component knows today, its field staying `string`: a table keyed
+ * by them fails to compile when it misses one.
+ */
+export type Known<Name extends keyof extensibleEnums> = extensibleEnums[Name]
 
 /** The typed client `openapi-fetch` builds over the contract's paths. */
 export type ApiClient = Client<paths>

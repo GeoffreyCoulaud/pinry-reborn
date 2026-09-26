@@ -139,6 +139,11 @@ how Ebean's migration generation was caught; the artefact is the only place that
   when several operations repeat it. The filter adds the shared `401` and the `413` with `BODY_TOO_LARGE`;
   `ContractSchemaDeclarationTest` holds each code to a `ProblemCode` and its status. An undeclared refusal is
   review's to catch.
+- **A response code is a closed `enum` when an unknown value has no correct default, an `x-extensible-enum` when
+  it has one** (`docs/adr/0044-a-response-code-declares-its-set.md`): a state is closed, a reason or a kind is
+  extensible and travels beside a closed status. Both are presentation enums mapped from the domain by an
+  exhaustive `when`, and `openapi/ExtensibleEnumsFilter.kt` lists the extensible ones. A refusal code stays
+  closed per response, a new one changing what the route does.
 - **Authentication**: opaque session tokens, issued by `POST /api/v1/sessions` and validated by
   `SessionTokenAuthenticator`. One token, two transports (`docs/adr/0026-one-session-two-transports.md`): the
   `Authorization: Bearer <token>` header, and the `pinry_session` cookie the browser sends for an `<img>`. The
