@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.entities
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import java.time.Instant
 import java.util.UUID
@@ -36,5 +37,5 @@ data class UserDataImport(
     val skippedTags: Int = 0,
     val issueCount: Int = 0,
     val issueDetailTruncated: Boolean = false,
-    val failureCode: String? = null,
+    val failureCode: UserDataImportFailure? = null,
 ) : Identifiable

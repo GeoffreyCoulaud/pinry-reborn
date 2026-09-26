@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveBoundExceededException
@@ -59,7 +60,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         // When / Then
         assertThrows(PermanentTaskException::class.java) { runner.run(importId, isLastAttempt = false, renewLease) }
         assertEquals(UserDataImportState.FAILED, stored.state)
-        assertEquals("USER_GONE", stored.failureCode)
+        assertEquals(UserDataImportFailure.USER_GONE, stored.failureCode)
         verify(exactly = 0) { archiveStore.open(any()) }
     }
 
@@ -71,7 +72,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         // When / Then
         assertThrows(PermanentTaskException::class.java) { runner.run(importId, isLastAttempt = false, renewLease) }
         assertEquals(UserDataImportState.FAILED, stored.state)
-        assertEquals("ARCHIVE_UNREADABLE", stored.failureCode)
+        assertEquals(UserDataImportFailure.ARCHIVE_UNREADABLE, stored.failureCode)
         assertNotNull(stored.runToken)
         assertEquals(now, stored.startedAt)
         verify(exactly = 0) { archiveStore.open(any()) }
@@ -86,7 +87,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         // When / Then
         assertThrows(PermanentTaskException::class.java) { runner.run(importId, isLastAttempt = false, renewLease) }
         assertEquals(UserDataImportState.FAILED, stored.state)
-        assertEquals("ARCHIVE_UNREADABLE", stored.failureCode)
+        assertEquals(UserDataImportFailure.ARCHIVE_UNREADABLE, stored.failureCode)
         assertEquals(0, stored.processedPins)
         assertCreatedNothing()
     }
@@ -100,7 +101,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
 
         // When / Then
         assertThrows(PermanentTaskException::class.java) { runner.run(importId, isLastAttempt = false, renewLease) }
-        assertEquals("ARCHIVE_UNREADABLE", stored.failureCode)
+        assertEquals(UserDataImportFailure.ARCHIVE_UNREADABLE, stored.failureCode)
         assertCreatedNothing()
     }
 
@@ -122,7 +123,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         // When / Then
         assertThrows(PermanentTaskException::class.java) { runner.run(importId, isLastAttempt = false, renewLease) }
         assertEquals(UserDataImportState.FAILED, stored.state)
-        assertEquals("ARCHIVE_UNREADABLE", stored.failureCode)
+        assertEquals(UserDataImportFailure.ARCHIVE_UNREADABLE, stored.failureCode)
         assertNull(stored.formatVersion)
         assertCreatedNothing()
     }
@@ -137,7 +138,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         // When / Then
         assertThrows(PermanentTaskException::class.java) { runner.run(importId, isLastAttempt = false, renewLease) }
         assertEquals(UserDataImportState.FAILED, stored.state)
-        assertEquals("MANIFEST_MISSING", stored.failureCode)
+        assertEquals(UserDataImportFailure.MANIFEST_MISSING, stored.failureCode)
         assertEquals(0, stored.processedPins)
         assertTrue(source.closed)
         assertCreatedNothing()
@@ -153,7 +154,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         // When / Then
         assertThrows(PermanentTaskException::class.java) { runner.run(importId, isLastAttempt = false, renewLease) }
         assertEquals(UserDataImportState.FAILED, stored.state)
-        assertEquals("UNSUPPORTED_FORMAT_VERSION", stored.failureCode)
+        assertEquals(UserDataImportFailure.UNSUPPORTED_FORMAT_VERSION, stored.failureCode)
         assertEquals(0, stored.processedPins)
         assertCreatedNothing()
     }

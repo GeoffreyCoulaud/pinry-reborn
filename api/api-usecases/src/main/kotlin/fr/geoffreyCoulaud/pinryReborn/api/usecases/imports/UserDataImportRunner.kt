@@ -6,6 +6,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Image
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure.ARCHIVE_UNREADABLE
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure.IMPORT_FAILED
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure.MANIFEST_MISSING
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure.UNSUPPORTED_FORMAT_VERSION
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure.USER_GONE
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageProbe
@@ -231,13 +237,13 @@ class UserDataImportRunner(
     }
 
     /** The same refusal, fenced on the run: every site holding the projection reads it from there. */
-    private fun markFailed(runnable: RunnableImport, failureCode: String, reason: String): Nothing =
+    private fun markFailed(runnable: RunnableImport, failureCode: UserDataImportFailure, reason: String): Nothing =
         markFailed(runnable.importId, failureCode, reason) { it.holds(runnable.runToken) }
 
     /** A refusal is a write like any other: on the row as it is now, and only while it is still ours. */
     private fun markFailed(
         importId: UUID,
-        failureCode: String,
+        failureCode: UserDataImportFailure,
         reason: String,
         held: (UserDataImport) -> Boolean,
     ): Nothing {
@@ -245,7 +251,7 @@ class UserDataImportRunner(
         throw PermanentTaskException(reason)
     }
 
-    private fun failed(current: UserDataImport, failureCode: String): UserDataImport =
+    private fun failed(current: UserDataImport, failureCode: UserDataImportFailure): UserDataImport =
         current.copy(state = UserDataImportState.FAILED, failureCode = failureCode)
 
     private fun <T : Any> walkLines(
@@ -713,10 +719,5 @@ class UserDataImportRunner(
         const val SOURCE_CONTEXT_URL = "sourceContextUrl"
         const val TAGS_FIELD = "tags"
         const val BOARDS_FIELD = "boards"
-        const val USER_GONE = "USER_GONE"
-        const val IMPORT_FAILED = "IMPORT_FAILED"
-        const val ARCHIVE_UNREADABLE = "ARCHIVE_UNREADABLE"
-        const val MANIFEST_MISSING = "MANIFEST_MISSING"
-        const val UNSUPPORTED_FORMAT_VERSION = "UNSUPPORTED_FORMAT_VERSION"
     }
 }

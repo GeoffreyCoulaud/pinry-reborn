@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportAlreadyInProgressException
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.exceptions.UserModelDoesNotExistError
@@ -109,11 +110,56 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         userRepository.markPendingDeletion(user, storableNow())
 
         // When
-        val reSaved = repository.save(stored.copy(state = UserDataImportState.FAILED, failureCode = "IMPORT_FAILED"))
+        val reSaved =
+            repository.save(
+                stored.copy(state = UserDataImportState.FAILED, failureCode = UserDataImportFailure.IMPORT_FAILED),
+            )
 
         // Then
         assertEquals(UserDataImportState.FAILED, reSaved.state)
         assertEquals(user.id, reSaved.userId)
+    }
+
+    // --- failure code ---
+
+    private fun storedFailureCode(id: UUID): String? =
+        database
+            .sqlQuery("select failure_code from user_data_imports where id = ?")
+            .setParameter(1, id)
+            .findOne()
+            ?.getString("failure_code")
+
+    private fun failedImport(userId: UUID, failure: UserDataImportFailure) =
+        awaitingImport(userId).copy(state = UserDataImportState.FAILED, failureCode = failure)
+
+    @Test
+    fun `Given each failure, Then the row stores its name and reads it back`() {
+        // Given
+        val user = createAndSaveUser()
+
+        UserDataImportFailure.entries.forEach { failure ->
+            // When
+            val saved = repository.save(failedImport(user.id, failure))
+
+            // Then: the column holds the names the string constants wrote, so no row needs a migration
+            assertEquals(failure.name, storedFailureCode(saved.id))
+            assertEquals(failure, repository.findById(saved.id)?.failureCode)
+        }
+    }
+
+    @Test
+    fun `Given a stored failure code that names no failure, Then reading the row throws`() {
+        // Given
+        val user = createAndSaveUser()
+        val saved = repository.save(failedImport(user.id, UserDataImportFailure.IMPORT_FAILED))
+        database
+            .sqlUpdate("update user_data_imports set failure_code = ? where id = ?")
+            .setParameter(1, "NOT_A_FAILURE")
+            .setParameter(2, saved.id)
+            .execute()
+
+        // When / Then: as an unknown state does
+        assertThrows(IllegalArgumentException::class.java) { repository.findById(saved.id) }
     }
 
     // --- one active import per user ---

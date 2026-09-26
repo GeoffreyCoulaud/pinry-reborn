@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
@@ -241,7 +242,7 @@ class ReapUserDataImportsTest : BaseTest() {
         // Then
         assertEquals(1, reaped)
         assertEquals(UserDataImportState.FAILED, stored(running.id).state)
-        assertEquals("IMPORT_INTERRUPTED", stored(running.id).failureCode)
+        assertEquals(UserDataImportFailure.IMPORT_INTERRUPTED, stored(running.id).failureCode)
     }
 
     @Test

@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
@@ -75,7 +76,7 @@ class ReapUserDataImports(
 
     private fun failInterrupted(importId: UUID): Boolean =
         repository.saveFenced(transactionRunner, importId, { it.state == UserDataImportState.RUNNING }) {
-            it.copy(state = UserDataImportState.FAILED, failureCode = IMPORT_INTERRUPTED)
+            it.copy(state = UserDataImportState.FAILED, failureCode = UserDataImportFailure.IMPORT_INTERRUPTED)
         } != null
 
     private fun reclaimTerminalArchives(): Int =
@@ -108,8 +109,5 @@ class ReapUserDataImports(
 
     private companion object {
         private val logger = KotlinLogging.logger {}
-
-        /** Spec section 10's failure code for a walk whose attempt is not coming back. */
-        const val IMPORT_INTERRUPTED = "IMPORT_INTERRUPTED"
     }
 }
