@@ -192,7 +192,7 @@ export function exportRow(state: Export["state"], fields: Partial<Export> = {}):
     byteSize: null,
     mediaType: null,
     sha256: null,
-    failureCode: null,
+    reasonCode: null,
     formatVersion: 1,
     ...fields,
   }

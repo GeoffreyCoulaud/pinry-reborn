@@ -1,11 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output
 
-/** Closed on the wire: a client's behaviour hangs on it (`docs/specs/2026-09-25-the-data-travels.md`, decision I). */
+/** Closed on the wire, and only what changes a client's behaviour: the cause of `GONE` is its `reasonCode`. */
 enum class UserDataExportStateDto {
     PENDING,
     READY,
     FAILED,
-    EXPIRED,
-    DELETED,
-    SUPERSEDED,
+    GONE,
 }

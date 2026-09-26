@@ -6,9 +6,9 @@ import com.lemonappdev.konsist.api.declaration.KoAnnotationDeclaration
 import com.lemonappdev.konsist.api.declaration.KoFunctionDeclaration
 import com.lemonappdev.konsist.api.ext.list.withAnnotationNamed
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
-import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportIssueKindDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BaseErrorMapper
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemCode
@@ -43,6 +43,7 @@ class ContractSchemaDeclarationTest {
         mapOf(
             "DownloadReasonDto" to DownloadReasonDto.entries.map { it.name },
             "UserDataImportIssueKindDto" to UserDataImportIssueKindDto.entries.map { it.name },
+            "UserDataExportReasonDto" to UserDataExportReasonDto.entries.map { it.name },
         )
 
     private val openCodePositions =
@@ -54,6 +55,11 @@ class ContractSchemaDeclarationTest {
                 schema = "UserDataImportIssueOutputDto",
                 field = "kind",
                 component = "UserDataImportIssueKindDto",
+            ),
+            OpenCodePosition(
+                schema = "UserDataExportOutputDto",
+                field = "reasonCode",
+                component = "UserDataExportReasonDto",
             ),
         )
 
@@ -134,7 +140,7 @@ class ContractSchemaDeclarationTest {
 
         // Then
         val why = "The mappers fill it from the domain's state, which a client's behaviour hangs on. Regenerate: "
-        assertEquals(UserDataExportState.entries.map { it.name }.toSet(), enumeration(exportState), why + regenerate)
+        assertEquals(setOf("PENDING", "READY", "FAILED", "GONE"), enumeration(exportState), why + regenerate)
         assertEquals(UserDataImportState.entries.map { it.name }.toSet(), enumeration(importState), why + regenerate)
     }
 
@@ -162,6 +168,18 @@ class ContractSchemaDeclarationTest {
             wrong,
             "These fields no longer reference their open code's component. Regenerate: $regenerate",
         )
+    }
+
+    @Test
+    fun `Given the published contract, Then a data row says why in reasonCode alone`() {
+        // Given
+        val rows = listOf("UserDataExportOutputDto")
+
+        // When
+        val wrong = rows.filter { PublishedContract.schema(it).path("properties").has("failureCode") }
+
+        // Then
+        assertEquals(emptyList<String>(), wrong, "reasonCode replaced failureCode (ADR 0044). Regenerate: $regenerate")
     }
 
     @Test

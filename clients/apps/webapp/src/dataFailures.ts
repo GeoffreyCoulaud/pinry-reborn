@@ -1,13 +1,24 @@
+import type { Known } from "@pinry-reborn/auth"
 import { m } from "./paraglide/messages.js"
 
+type Sentences<Code extends string> = Record<Code, (() => string) | null>
+
 /**
- * One sentence per `failureCode` the user can act on. The contract leaves it an open string, an
- * unknown code having a correct fallback (specification 2026-09-25, decision I).
+ * One entry per reason the contract knows, `null` for a gone cause the section does not show:
+ * `reasonCode` is an `x-extensible-enum`, so a reason the server adds fails `tsc` here (ADR 0044).
  */
-const FAILURES = {
+const EXPORT_REASONS: Sentences<Known<"UserDataExportReasonDto">> = {
+  USER_GONE: m.failure_unknown,
   DISK_FULL: m.failure_disk_full,
   BUILD_FAILED: m.failure_build_failed,
   EXPORT_INTERRUPTED: m.failure_interrupted,
+  EXPIRED: null,
+  DELETED: null,
+  SUPERSEDED: null,
+}
+
+/** One sentence per `failureCode` the user can act on, an unknown code having a correct fallback. */
+const IMPORT_FAILURES: Sentences<string> = {
   ARCHIVE_UNREADABLE: m.failure_archive_unreadable,
   MANIFEST_MISSING: m.failure_manifest_missing,
   UNSUPPORTED_FORMAT_VERSION: m.failure_unsupported_format_version,
@@ -15,11 +26,13 @@ const FAILURES = {
 }
 
 // `hasOwn` and not `in`: the code is the server's string, and `constructor` would answer otherwise.
-function hasSentence(code: string): code is keyof typeof FAILURES {
-  return Object.hasOwn(FAILURES, code)
+function sentence<Code extends string>(table: Sentences<Code>, code: string | null): string {
+  const found = code !== null && Object.hasOwn(table, code) ? table[code as Code] : null
+  return found?.() ?? m.failure_unknown()
 }
 
-/** Why an export or an import stopped, or the general sentence for a code this bundle does not know. */
-export function dataFailure(code: string | null): string {
-  return code !== null && hasSentence(code) ? FAILURES[code]() : m.failure_unknown()
-}
+/** Why an export failed, or the general sentence for a reason a newer server sends. */
+export const exportFailure = (code: string | null) => sentence(EXPORT_REASONS, code)
+
+/** Why an import failed, or the general sentence for a code this bundle does not know. */
+export const importFailure = (code: string | null) => sentence(IMPORT_FAILURES, code)

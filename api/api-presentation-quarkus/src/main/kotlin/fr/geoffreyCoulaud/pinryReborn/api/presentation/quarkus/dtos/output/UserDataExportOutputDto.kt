@@ -17,6 +17,6 @@ data class UserDataExportOutputDto(
     val byteSize: Long?,
     val mediaType: String?,
     val sha256: String?,
-    val failureCode: String?,
+    val reasonCode: UserDataExportReasonDto?,
     val formatVersion: Int,
 )
