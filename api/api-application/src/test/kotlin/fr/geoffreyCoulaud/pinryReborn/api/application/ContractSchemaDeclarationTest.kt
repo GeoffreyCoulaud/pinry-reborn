@@ -8,6 +8,8 @@ import com.lemonappdev.konsist.api.ext.list.withAnnotationNamed
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportIssueKindDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BaseErrorMapper
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemCode
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE
@@ -118,18 +120,48 @@ class ContractSchemaDeclarationTest {
     }
 
     @Test
-    fun `Given the published contract, Then an import issue's kind stays an open string`() {
+    fun `Given the published contract, Then every open code lists its values as x-extensible-enum and no enum`() {
         // Given
-        val kind = PublishedContract.schema("UserDataImportIssueOutputDto").path("properties").path("kind")
+        val twins = mapOf(
+            "DownloadReasonDto" to DownloadReasonDto.entries.map { it.name },
+            "UserDataImportIssueKindDto" to UserDataImportIssueKindDto.entries.map { it.name },
+        )
+
+        // When
+        val wrong = twins.filter { (name, values) ->
+            val component = PublishedContract.schema(name)
+            component.path("x-extensible-enum").map { it.asText() } != values || component.has("enum")
+        }.keys
 
         // Then
-        assertEquals(setOf("string"), effectiveTypes(kind))
         assertEquals(
             emptySet<String>(),
-            enumeration(kind),
-            "A closed kind would make every new anomaly a contract major (docs/specs/2026-09-25-the-data-travels.md, " +
-                "decision I). Regenerate: $regenerate",
+            wrong,
+            "A closed enum makes every new value a contract major, and ExtensibleEnumsFilter opens these " +
+                "(docs/adr/0044-a-response-code-declares-its-set.md). Regenerate: $regenerate",
         )
+    }
+
+    @Test
+    fun `Given the published contract, Then every position of an open code references its component`() {
+        // Given
+        val positions = mapOf(
+            "PinImageStateDto.reasonCode" to "DownloadReasonDto",
+            "ReplacementDto.reasonCode" to "DownloadReasonDto",
+            "ImageDownloadOutputDto.reasonCode" to "DownloadReasonDto",
+            "UserDataImportIssueOutputDto.kind" to "UserDataImportIssueKindDto",
+        )
+
+        // When
+        val wrong = positions.filter { (position, component) ->
+            val property = PublishedContract.schema(position.substringBefore('.'))
+                .path("properties").path(position.substringAfter('.'))
+            component !in (listOf(property) + property.path("anyOf")).mapNotNull { it.path("\$ref").textValue() }
+                .map { it.substringAfterLast('/') }
+        }.keys
+
+        // Then
+        assertEquals(emptySet<String>(), wrong, "These fields no longer carry their twin. Regenerate: $regenerate")
     }
 
     @Test

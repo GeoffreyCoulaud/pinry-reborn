@@ -196,7 +196,7 @@ class MeImportControllerTest {
         // Then
         assertEquals(200, response.status)
         val entity = response.entity as UserDataImportIssueListOutputDto
-        assertEquals("PIN_HAS_NO_MEDIA", entity.issues.single().kind)
+        assertEquals("PIN_HAS_NO_MEDIA", entity.issues.single().kind.name)
     }
 
     @Test
@@ -227,7 +227,7 @@ class MeImportControllerTest {
         assertEquals(200, response.status)
         val entity = response.entity as UserDataImportIssueListOutputDto
         assertEquals(issue.id, entity.issues.single().id)
-        assertEquals("MEDIA_DIGEST_MISMATCH", entity.issues.single().kind)
+        assertEquals("MEDIA_DIGEST_MISMATCH", entity.issues.single().kind.name)
         assertEquals(issue.id, entity.pagination.previousCursor?.pivotId)
     }
 

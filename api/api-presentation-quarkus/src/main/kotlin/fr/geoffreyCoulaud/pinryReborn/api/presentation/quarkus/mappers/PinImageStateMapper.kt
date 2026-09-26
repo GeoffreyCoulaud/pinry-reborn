@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadStatusDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinImageStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinImageStateDto.ReplacementDto
@@ -21,7 +22,7 @@ object PinImageStateMapper {
             width = img?.width,
             height = img?.height,
             byteSize = img?.byteSize,
-            reasonCode = reasonCode?.name,
+            reasonCode = reasonCode?.toDto(),
             message = reasonCode?.let { messageFor(it) },
             replacement = replacement?.toDto(),
         )
@@ -30,7 +31,7 @@ object PinImageStateMapper {
     private fun PinImageReplacement.toDto() =
         ReplacementDto(
             status = status.toDto(),
-            reasonCode = reasonCode?.name,
+            reasonCode = reasonCode?.toDto(),
             message = reasonCode?.let { messageFor(it) },
         )
 
@@ -46,6 +47,19 @@ object PinImageStateMapper {
         when (this) {
             DownloadStatus.PENDING -> DownloadStatusDto.PENDING
             DownloadStatus.FAILED -> DownloadStatusDto.FAILED
+        }
+
+    internal fun DownloadReason.toDto(): DownloadReasonDto =
+        when (this) {
+            DownloadReason.URL_NOT_ALLOWED -> DownloadReasonDto.URL_NOT_ALLOWED
+            DownloadReason.UNREACHABLE -> DownloadReasonDto.UNREACHABLE
+            DownloadReason.ACCESS_DENIED -> DownloadReasonDto.ACCESS_DENIED
+            DownloadReason.NOT_FOUND -> DownloadReasonDto.NOT_FOUND
+            DownloadReason.TOO_LARGE -> DownloadReasonDto.TOO_LARGE
+            DownloadReason.INVALID_IMAGE -> DownloadReasonDto.INVALID_IMAGE
+            DownloadReason.TOO_MANY_PIXELS -> DownloadReasonDto.TOO_MANY_PIXELS
+            DownloadReason.INTERNAL_ERROR -> DownloadReasonDto.INTERNAL_ERROR
+            DownloadReason.FETCH_FAILED -> DownloadReasonDto.FETCH_FAILED
         }
 
     // Shared with ImageDownloadDtoMapper: one reason, one sentence, declared once.

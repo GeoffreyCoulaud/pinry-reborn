@@ -94,6 +94,10 @@
         "description" : "Opaque pagination cursor. Read it from a response and send it back unchanged.",
         "type" : "string"
       },
+      "DownloadReasonDto" : {
+        "type" : "string",
+        "x-extensible-enum" : [ "URL_NOT_ALLOWED", "UNREACHABLE", "ACCESS_DENIED", "NOT_FOUND", "TOO_LARGE", "INVALID_IMAGE", "TOO_MANY_PIXELS", "INTERNAL_ERROR", "FETCH_FAILED" ]
+      },
       "DownloadStatusDto" : {
         "type" : "string",
         "enum" : [ "PENDING", "FAILED" ]
@@ -163,7 +167,11 @@
             "$ref" : "#/components/schemas/Instant"
           },
           "reasonCode" : {
-            "type" : [ "string", "null" ]
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/DownloadReasonDto"
+            }, {
+              "type" : "null"
+            } ]
           },
           "message" : {
             "type" : [ "string", "null" ]
@@ -336,7 +344,11 @@
             "format" : "int64"
           },
           "reasonCode" : {
-            "type" : [ "string", "null" ]
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/DownloadReasonDto"
+            }, {
+              "type" : "null"
+            } ]
           },
           "message" : {
             "type" : [ "string", "null" ]
@@ -540,7 +552,11 @@
             "$ref" : "#/components/schemas/DownloadStatusDto"
           },
           "reasonCode" : {
-            "type" : [ "string", "null" ]
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/DownloadReasonDto"
+            }, {
+              "type" : "null"
+            } ]
           },
           "message" : {
             "type" : [ "string", "null" ]
@@ -671,6 +687,10 @@
         "type" : "string",
         "enum" : [ "PENDING", "READY", "FAILED", "EXPIRED", "DELETED", "SUPERSEDED" ]
       },
+      "UserDataImportIssueKindDto" : {
+        "type" : "string",
+        "x-extensible-enum" : [ "PIN_HAS_NO_MEDIA", "MEDIA_ENTRY_MISSING", "MEDIA_UNREADABLE", "MEDIA_TOO_LARGE", "MEDIA_TOO_MANY_PIXELS", "MEDIA_AMBIGUOUS", "MEDIA_DIGEST_MISMATCH", "LINE_MALFORMED", "FIELD_INVALID", "ENTRY_PATH_INVALID", "NAME_TAKEN_BY_RECYCLED", "LINE_REJECTED" ]
+      },
       "UserDataImportIssueListOutputDto" : {
         "type" : "object",
         "required" : [ "issues", "pagination" ],
@@ -694,7 +714,7 @@
             "$ref" : "#/components/schemas/UUID"
           },
           "kind" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/UserDataImportIssueKindDto"
           },
           "line" : {
             "type" : [ "integer", "null" ],
@@ -3961,7 +3981,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "18.0.0"
+    "version" : "19.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

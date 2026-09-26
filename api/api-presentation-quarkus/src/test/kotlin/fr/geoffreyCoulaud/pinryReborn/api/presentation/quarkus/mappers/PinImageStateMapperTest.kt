@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Image
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadStatusDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinImageStatusDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinImageStateMapper.toDto
@@ -31,7 +32,7 @@ class PinImageStateMapperTest {
     @Test fun `Given FAILED, Then the dto carries the reason code and a message`() {
         val dto = PinImageState(PinImageStatus.FAILED, null, DownloadReason.ACCESS_DENIED, null).toDto(pinId)
         assertEquals(PinImageStatusDto.FAILED, dto.status)
-        assertEquals("ACCESS_DENIED", dto.reasonCode)
+        assertEquals(DownloadReasonDto.ACCESS_DENIED, dto.reasonCode)
         assertTrue(dto.message!!.isNotBlank())
     }
 
@@ -47,7 +48,7 @@ class PinImageStateMapperTest {
             )
         val dto = state.toDto(pinId)
         assertEquals(DownloadStatusDto.FAILED, dto.replacement?.status)
-        assertEquals("NOT_FOUND", dto.replacement?.reasonCode)
+        assertEquals(DownloadReasonDto.NOT_FOUND, dto.replacement?.reasonCode)
     }
 
     @Test fun `Given NONE, Then the dto has no url, mimeType, dimensions, reason or replacement`() {
@@ -93,10 +94,10 @@ class PinImageStateMapperTest {
         }
     }
 
-    @Test fun `Given every DownloadReason, Then messageFor returns a non-blank message`() {
+    @Test fun `Given every DownloadReason, Then the dto carries the reason of the same name and a message`() {
         for (reason in DownloadReason.entries) {
             val dto = PinImageState(PinImageStatus.FAILED, null, reason, null).toDto(pinId)
-            assertEquals(reason.name, dto.reasonCode)
+            assertEquals(reason.name, dto.reasonCode?.name)
             assertTrue(dto.message!!.isNotBlank()) { "expected a message for $reason" }
         }
     }

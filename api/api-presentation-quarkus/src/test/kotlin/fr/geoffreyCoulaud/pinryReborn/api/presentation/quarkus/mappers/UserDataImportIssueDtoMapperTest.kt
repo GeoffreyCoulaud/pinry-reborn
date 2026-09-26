@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImportIssue
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportIssueKindDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDataImportIssueDtoMapper.toDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -32,10 +33,21 @@ class UserDataImportIssueDtoMapperTest {
 
         // Then
         assertEquals(issue.id, dto.id)
-        assertEquals("MEDIA_DIGEST_MISMATCH", dto.kind)
+        assertEquals(UserDataImportIssueKindDto.MEDIA_DIGEST_MISMATCH, dto.kind)
         assertEquals(42, dto.line)
         assertEquals("images/a1b2.jpg", dto.subject)
         assertEquals("declared sha256 does not match the bytes", dto.detail)
+    }
+
+    @Test
+    fun `Given every UserDataImportIssueKind, Then the dto carries the kind of the same name`() {
+        for (kind in UserDataImportIssueKind.entries) {
+            // Given / When
+            val dto = anIssue().copy(kind = kind).toDto()
+
+            // Then
+            assertEquals(kind.name, dto.kind.name)
+        }
     }
 
     @Test

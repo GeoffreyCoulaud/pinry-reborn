@@ -13,6 +13,6 @@ data class ImageDownloadOutputDto(
     val status: DownloadStatusDto,
     val requestedAt: Instant,
     val updatedAt: Instant,
-    val reasonCode: String?,
+    val reasonCode: DownloadReasonDto?,
     val message: String?,
 )
