@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi
 
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportReasonDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportIssueKindDto
 import io.quarkus.smallrye.openapi.OpenApiFilter
 import org.eclipse.microprofile.openapi.OASFilter
@@ -27,6 +28,7 @@ class ExtensibleEnumsFilter : OASFilter {
             DownloadReasonDto::class,
             UserDataImportIssueKindDto::class,
             UserDataExportReasonDto::class,
+            UserDataImportReasonDto::class,
         ).map { it.java.simpleName }
     }
 }

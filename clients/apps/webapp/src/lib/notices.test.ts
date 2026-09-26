@@ -46,7 +46,7 @@ function importRow(state: Import["state"], fields: Partial<Import> = {}): Import
     skippedTags: 0,
     issueCount: 0,
     issueDetailTruncated: false,
-    failureCode: null,
+    reasonCode: null,
     ...fields,
   }
 }

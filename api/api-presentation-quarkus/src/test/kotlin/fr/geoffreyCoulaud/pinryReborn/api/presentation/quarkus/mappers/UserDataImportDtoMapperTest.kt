@@ -65,7 +65,7 @@ class UserDataImportDtoMapperTest {
         assertNull(dto.completedAt)
         assertNull(dto.formatVersion)
         assertNull(dto.announcedPins)
-        assertNull(dto.failureCode)
+        assertNull(dto.reasonCode)
         assertFalse(dto.issueDetailTruncated)
     }
 
@@ -109,19 +109,18 @@ class UserDataImportDtoMapperTest {
     }
 
     @Test
-    fun `Given a failed import, Then toDto carries the failure code`() {
-        // Given
-        val userDataImport = awaitingImport().copy(
-            state = UserDataImportState.FAILED,
-            failureCode = UserDataImportFailure.MANIFEST_MISSING,
-        )
+    fun `Given each failure, Then toDto says FAILED and carries the failure's name as its reason`() {
+        for (failure in UserDataImportFailure.entries) {
+            // Given
+            val userDataImport = awaitingImport().copy(state = UserDataImportState.FAILED, failureCode = failure)
 
-        // When
-        val dto = userDataImport.toDto()
+            // When
+            val dto = userDataImport.toDto()
 
-        // Then
-        assertEquals(UserDataImportStateDto.FAILED, dto.state)
-        assertEquals("MANIFEST_MISSING", dto.failureCode)
+            // Then
+            assertEquals(UserDataImportStateDto.FAILED, dto.state)
+            assertEquals(failure.name, dto.reasonCode?.name)
+        }
     }
 
     @Test

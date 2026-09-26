@@ -4,8 +4,8 @@ import { m } from "./paraglide/messages.js"
 type Sentences<Code extends string> = Record<Code, (() => string) | null>
 
 /**
- * One entry per reason the contract knows, `null` for a gone cause the section does not show:
- * `reasonCode` is an `x-extensible-enum`, so a reason the server adds fails `tsc` here (ADR 0044).
+ * One entry per reason the contract knows, `null` for a gone cause the section does not show: both
+ * `reasonCode`s are `x-extensible-enum`s, so a reason the server adds fails `tsc` here (ADR 0044).
  */
 const EXPORT_REASONS: Sentences<Known<"UserDataExportReasonDto">> = {
   USER_GONE: m.failure_unknown,
@@ -17,8 +17,9 @@ const EXPORT_REASONS: Sentences<Known<"UserDataExportReasonDto">> = {
   SUPERSEDED: null,
 }
 
-/** One sentence per `failureCode` the user can act on, an unknown code having a correct fallback. */
-const IMPORT_FAILURES: Sentences<string> = {
+const IMPORT_REASONS: Sentences<Known<"UserDataImportReasonDto">> = {
+  USER_GONE: m.failure_unknown,
+  IMPORT_FAILED: m.failure_unknown,
   ARCHIVE_UNREADABLE: m.failure_archive_unreadable,
   MANIFEST_MISSING: m.failure_manifest_missing,
   UNSUPPORTED_FORMAT_VERSION: m.failure_unsupported_format_version,
@@ -34,5 +35,5 @@ function sentence<Code extends string>(table: Sentences<Code>, code: string | nu
 /** Why an export failed, or the general sentence for a reason a newer server sends. */
 export const exportFailure = (code: string | null) => sentence(EXPORT_REASONS, code)
 
-/** Why an import failed, or the general sentence for a code this bundle does not know. */
-export const importFailure = (code: string | null) => sentence(IMPORT_FAILURES, code)
+/** Why an import failed, or the general sentence for a reason a newer server sends. */
+export const importFailure = (code: string | null) => sentence(IMPORT_REASONS, code)
