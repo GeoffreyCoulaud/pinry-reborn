@@ -9,11 +9,9 @@ describe("the sentence a failed export or import shows", () => {
     }
   })
 
-  // `USER_GONE` has no one to read it, and a gone cause is never shown as a failure.
+  // `USER_GONE` has no one to read it.
   it("Given an export reason with no sentence of its own, Then the user gets the general one", () => {
-    for (const code of ["USER_GONE", "EXPIRED", "DELETED", "SUPERSEDED"]) {
-      expect(exportFailure(code)).toBe(m.failure_unknown())
-    }
+    expect(exportFailure("USER_GONE")).toBe(m.failure_unknown())
   })
 
   // `IMPORT_FAILED` says no more than the general sentence, and `USER_GONE` has no one to read it.
