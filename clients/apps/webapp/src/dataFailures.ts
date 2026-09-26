@@ -1,20 +1,19 @@
 import type { Known } from "@pinry-reborn/auth"
 import { m } from "./paraglide/messages.js"
 
-type Sentences<Code extends string> = Record<Code, (() => string) | null>
+type Sentences<Code extends string> = Record<Code, () => string>
 
 /**
- * One entry per reason the contract knows, `null` for a gone cause the section does not show: both
- * `reasonCode`s are `x-extensible-enum`s, so a reason the server adds fails `tsc` here (ADR 0044).
+ * One entry per failure the contract knows, and none for a gone cause, a `GONE` row rendering no sentence:
+ * both `reasonCode`s are `x-extensible-enum`s, so a reason the server adds fails `tsc` here (ADR 0044).
  */
-const EXPORT_REASONS: Sentences<Known<"UserDataExportReasonDto">> = {
+type ExportFailure = Exclude<Known<"UserDataExportReasonDto">, "EXPIRED" | "DELETED" | "SUPERSEDED">
+
+const EXPORT_REASONS: Sentences<ExportFailure> = {
   USER_GONE: m.failure_unknown,
   DISK_FULL: m.failure_disk_full,
   BUILD_FAILED: m.failure_build_failed,
   EXPORT_INTERRUPTED: m.failure_interrupted,
-  EXPIRED: null,
-  DELETED: null,
-  SUPERSEDED: null,
 }
 
 const IMPORT_REASONS: Sentences<Known<"UserDataImportReasonDto">> = {
@@ -28,8 +27,7 @@ const IMPORT_REASONS: Sentences<Known<"UserDataImportReasonDto">> = {
 
 // `hasOwn` and not `in`: the code is the server's string, and `constructor` would answer otherwise.
 function sentence<Code extends string>(table: Sentences<Code>, code: string | null): string {
-  const found = code !== null && Object.hasOwn(table, code) ? table[code as Code] : null
-  return found?.() ?? m.failure_unknown()
+  return (code !== null && Object.hasOwn(table, code) ? table[code as Code] : m.failure_unknown)()
 }
 
 /** Why an export failed, or the general sentence for a reason a newer server sends. */
