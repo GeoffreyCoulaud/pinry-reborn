@@ -6,11 +6,14 @@ ADR: `docs/adr/0044-a-response-code-declares-its-set.md`
 Blocks, one stack, each on the one below: 10 `refactor/the-failures-are-declared` (#233),
 15 `refactor/the-import-failures-are-declared` (#234), 20 `feat/the-open-codes-are-published` (#236),
 25 `feat/the-client-reads-the-open-codes` (#237), 30 `feat/the-export-says-gone` and
-35 `feat/the-import-says-why` (this block's pull request and the one below it).
+35 `feat/the-import-says-why` (this block's pull request and the one below it). (Corrected: 30 is #238
+and 35 is #239; the closing block is `fix/the-codes-declare-their-sets-closes`, on 35.)
 Written in block 35, the lot's last code block, from the pull requests' block reports while all were
 still open; to be corrected in the closing block, `fix/the-codes-declare-their-sets-closes`, on 35.
 Tier: Spec. One specification review ran, `.reviews/the-codes-declare-their-sets-spec.md`, its 2 MAJOR
-and 5 MINOR closed in the specification. The holistic review runs at the head of Wrap.
+and 5 MINOR closed in the specification. The holistic review runs at the head of Wrap. (Corrected: it
+ran, `.reviews/the-codes-declare-their-sets-holistic.md`, 0 CRITICAL, 0 MAJOR, 4 MINOR, each fixed in
+the closing block; see "The holistic review".)
 
 ## Current state
 
@@ -37,12 +40,19 @@ and 5 MINOR closed in the specification. The holistic review runs at the head of
 | 15 | #234 | The same for the import, `UserDataImportFailure` | 98, 11 |
 | 20 | #236 | The twins of the two existing open codes, `ExtensibleEnumsFilter`, the contract at `19.0.0` | 193, 16 |
 | 25 | #237 | `generate.mjs` and `Known<K>`; `downloadReasons.ts` and `importIssues.ts` keyed by it; the rule in `agents/engineering.md` and `clients/AGENTS.md` | 44, 8 |
-| 30 | this block's parent | The export's `GONE` and `UserDataExportReasonDto`; `dataFailures.ts` one table per side, the export's keyed by `Known` | 163, 17 |
-| 35 | this block | The import's `reasonCode` and `UserDataImportReasonDto`, its table keyed by `Known`; the backlog item deleted | 66, 14 |
+| 30 | #238 | The export's `GONE` and `UserDataExportReasonDto`; `dataFailures.ts` one table per side, the export's keyed by `Known` | 163, 17 |
+| 35 | #239 | The import's `reasonCode` and `UserDataImportReasonDto`, its table keyed by `Known`; the backlog item deleted | 66, 14 |
+| Closing | this block | The holistic review's four findings: the export's table keyed by its failures alone, every response enum classified, ADR 0044 and this handoff corrected | 55, 4 |
 
 Budgets are the `agents/workflow.md` command against each block's parent. Each block ran
 `dagger call gate` green locally before its push: block 30 at `fc89d36d`, block 35 at `fec168f8`, each
-`BUILD SUCCESSFUL` and the contract guard green at `19.0.0` against `main`.
+`BUILD SUCCESSFUL` and the contract guard green at `19.0.0` against `main`. (Corrected: the cascade
+after the two fix-backs rewrote both, block 30 now ending at `ee983427` and block 35 at `aafca2eb`; the
+fix-backs are `6d1e280e` on block 20 and `ecc0ef92` on block 25.)
+
+Continuous integration ran once per branch, `verify` passing on each (`gh run list --branch`): #233 run
+36230198577, #234 run 36230230598, #236 run 36231416913, #237 run 36231452177, #238 run 36232322417,
+#239 run 36232351287.
 
 Blocks 10 and 20 split at the file bound as their rows note; block 30 came to 23 files and split too,
 by side rather than by ecosystem (see the pitfalls).
@@ -62,6 +72,32 @@ by side rather than by ecosystem (see the pitfalls).
   type assertion fails `tsc`" is stale for the same reason: a lost step fails `index.ts` with TS2305.
 - **The counts of Wrap (d)**: no fix-back, cascaded rebase or re-triggered run by the time block 35
   was written; the operator's reading of the bodies has not happened yet.
+
+(Corrected: both items are done in the closing block, the ADR as its `(Corrected: ...)` notes and the
+counts under "The lot's counts".)
+
+## The holistic review
+
+`.reviews/the-codes-declare-their-sets-holistic.md`, over
+`git diff lot/0.39.0-pull-requests-read-by-a-tech-lead..origin/feat/the-import-says-why`: 0 CRITICAL,
+0 MAJOR, 4 MINOR. Every finding was fixed in the closing block.
+
+| Finding | Exit |
+|---|---|
+| A `null` entry of the export's sentence table produced the general failure sentence, and the test pinned the gone causes to it | Fixed: the table is keyed by `Exclude<Known<"UserDataExportReasonDto">, "EXPIRED" \| "DELETED" \| "SUPERSEDED">`, with no `null` entry |
+| Nothing tied the next open code to `ExtensibleEnumsFilter` | Fixed: `ContractSchemaDeclarationTest` refuses an enum under `dtos/output` listed neither in `EXTENSIBLE` nor in its `closedCodes`, mutation in the commit |
+| ADR 0044's Consequences described the generation step as a documented option guarded by a type assertion | Fixed: `(Corrected: ...)` on decision 4 and on the bullet |
+| This handoff did not name #238 and #239 or their runs | Fixed: header, table and runs above |
+
+## The lot's counts
+
+- **Fix-backs: 2**, the operator's two readability comments: "Test illisible" on #236's open-code
+  tests, answered by `6d1e280e`, and "Illisible." on #237's `generate.mjs`, answered by `ecc0ef92`.
+- **Cascaded rebases: 1**, over blocks 25, 30, 35 and the closing block, with conflicts on blocks 30
+  and 35 resolved in `ContractSchemaDeclarationTest.kt`. The closing block rebased cleanly, then moved
+  its classification test into the file's new shape.
+- **Runs re-triggered**: to fill after the push.
+- **The operator's reading of the bodies**: to fill before the stack merges.
 
 ## Pitfalls
 
@@ -85,11 +121,14 @@ by side rather than by ecosystem (see the pitfalls).
   sentence, and the task centre's badge counted one task, the failed import's.
 - **No sentence names a gone cause**, by the specification's section 6: `reasonCode` makes one
   possible and nothing asks for it.
-- **The holistic review has not run.**
+- **The holistic review has not run.** (Corrected: it ran; see "The holistic review".)
+- **The closing block was not read headless**: only a `FAILED` export row reaches `exportFailure`, so
+  dropping the gone causes from its table changes nothing on screen.
 
 ## Next step
 
 Wrap: the holistic review over
 `git diff lot/0.39.0-pull-requests-read-by-a-tech-lead..origin/feat/the-import-says-why`, then the
 closing block on 35 with its findings, ADR 0044 decision 4 corrected and this handoff corrected; then
-the operator's review, the merge of the whole stack, and the lot's tag.
+the operator's review, the merge of the whole stack, and the lot's tag. (Corrected: the review and the
+closing block are done; the operator's review, the merge and the tag remain.)
