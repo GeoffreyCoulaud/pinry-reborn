@@ -5,15 +5,24 @@ import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.declaration.KoAnnotationDeclaration
 import com.lemonappdev.konsist.api.declaration.KoFunctionDeclaration
 import com.lemonappdev.konsist.api.ext.list.withAnnotationNamed
+import com.lemonappdev.konsist.api.ext.list.modifierprovider.withEnumModifier
+import com.lemonappdev.konsist.api.ext.list.withPackage
+import com.lemonappdev.konsist.api.ext.list.withoutName
+import com.lemonappdev.konsist.api.verify.assertEmpty
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadStatusDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinImageStatusDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportReasonDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportIssueKindDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BaseErrorMapper
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemCode
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.ExtensibleEnumsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinImageStatus
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ErrorCode
@@ -47,6 +56,15 @@ class ContractSchemaDeclarationTest {
             "UserDataExportReasonDto" to UserDataExportReasonDto.entries.map { it.name },
             "UserDataImportReasonDto" to UserDataImportReasonDto.entries.map { it.name },
         )
+
+    /** The enums a response carries whose unknown value has no correct default, so they stay closed. */
+    private val closedCodes =
+        listOf(
+            DownloadStatusDto::class,
+            PinImageStatusDto::class,
+            UserDataExportStateDto::class,
+            UserDataImportStateDto::class,
+        ).map { it.java.simpleName }
 
     private val openCodePositions =
         listOf(
@@ -174,6 +192,26 @@ class ContractSchemaDeclarationTest {
             emptyList<OpenCodePosition>(),
             wrong,
             "These fields no longer reference their open code's component. Regenerate: $regenerate",
+        )
+    }
+
+    @Test
+    fun `Given production sources, Then every enum a response carries is declared closed or extensible`() {
+        // Given
+        val declared = ExtensibleEnumsFilter.EXTENSIBLE + closedCodes
+
+        // When
+        val undeclared = Konsist
+            .scopeFromProduction(moduleName = "api-presentation-quarkus")
+            .classes()
+            .withEnumModifier()
+            .withPackage("..dtos.output..")
+            .withoutName(declared)
+
+        // Then
+        undeclared.assertEmpty(
+            additionalMessage = "List it in ExtensibleEnumsFilter.EXTENSIBLE if an unknown value has a correct " +
+                "default, in closedCodes otherwise (docs/adr/0044-a-response-code-declares-its-set.md).",
         )
     }
 
