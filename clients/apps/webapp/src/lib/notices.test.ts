@@ -19,7 +19,7 @@ function exportRow(state: Export["state"], fields: Partial<Export> = {}): Export
     byteSize: null,
     mediaType: null,
     sha256: null,
-    failureCode: null,
+    reasonCode: null,
     formatVersion: 1,
     ...fields,
   }
@@ -81,7 +81,7 @@ describe("which data notices the task centre shows", () => {
     expect(dataNotices(null, importRow("ABANDONED"), [], later).import?.state).toBe("ABANDONED")
   })
 
-  it.each(["PENDING", "EXPIRED", "DELETED", "SUPERSEDED"] as const)(
+  it.each(["PENDING", "GONE"] as const)(
     "Given an export %s, Then it leaves no notice",
     (state) => {
       expect(dataNotices(exportRow(state, { expiresAt: at(60_000) }), null, [], NOW).export).toBeNull()

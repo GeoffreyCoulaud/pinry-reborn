@@ -1,6 +1,6 @@
 import { AlertDialog, Button, Input, Label, TextField, buttonVariants } from "@heroui/react"
 import type { ReactNode } from "react"
-import { dataFailure } from "../dataFailures"
+import { exportFailure } from "../dataFailures"
 import { exportRefusal } from "../dataRefusals"
 import { useDeleteExport, useLatestExport, useRequestExport, type Export } from "../exports"
 import { AccountRefusal } from "../me"
@@ -104,13 +104,11 @@ const VIEWS: Record<Export["state"], (row: Export) => ReactNode> = {
   READY: (row) => <ReadyExport row={row} />,
   FAILED: (row) => (
     <>
-      <p>{dataFailure(row.failureCode)}</p>
+      <p>{exportFailure(row.reasonCode)}</p>
       <RequestExport />
     </>
   ),
-  EXPIRED: () => <RequestExport />,
-  DELETED: () => <RequestExport />,
-  SUPERSEDED: () => <RequestExport />,
+  GONE: () => <RequestExport />,
 }
 
 /** The latest export only, with no history (specification 2026-09-25, decision J). */

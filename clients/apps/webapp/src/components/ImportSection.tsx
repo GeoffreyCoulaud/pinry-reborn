@@ -1,7 +1,7 @@
 import { AlertDialog, Button, Label, ProgressBar, buttonVariants } from "@heroui/react"
 import type { Schemas } from "@pinry-reborn/auth"
 import { useState, type ReactNode } from "react"
-import { dataFailure } from "../dataFailures"
+import { importFailure } from "../dataFailures"
 import { importRefusal } from "../dataRefusals"
 import { ImportIssuesDialog } from "./ImportIssuesDialog"
 import { useHandshake } from "../images"
@@ -256,7 +256,7 @@ const VIEWS: Record<Import["state"], (row: Import) => ReactNode> = {
   ),
   FAILED: (row) => (
     <>
-      <p>{dataFailure(row.failureCode)}</p>
+      <p>{importFailure(row.failureCode)}</p>
       <Report row={row} />
       <ChooseArchive />
     </>

@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi
 
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportIssueKindDto
 import io.quarkus.smallrye.openapi.OpenApiFilter
 import org.eclipse.microprofile.openapi.OASFilter
@@ -22,6 +23,10 @@ class ExtensibleEnumsFilter : OASFilter {
 
     companion object {
         const val EXTENSION = "x-extensible-enum"
-        val EXTENSIBLE = listOf(DownloadReasonDto::class, UserDataImportIssueKindDto::class).map { it.java.simpleName }
+        val EXTENSIBLE = listOf(
+            DownloadReasonDto::class,
+            UserDataImportIssueKindDto::class,
+            UserDataExportReasonDto::class,
+        ).map { it.java.simpleName }
     }
 }

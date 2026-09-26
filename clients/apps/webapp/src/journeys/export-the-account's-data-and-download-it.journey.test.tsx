@@ -70,7 +70,7 @@ describe("export the account's data and download it", () => {
       }),
       http.delete("/api/v1/me/exports/:id", ({ params }) => {
         deleted = String(params.id)
-        rows = [exportRow("DELETED")]
+        rows = [exportRow("GONE", { reasonCode: "DELETED" })]
         return new HttpResponse(null, { status: 204 })
       }),
     )
@@ -112,22 +112,23 @@ describe("export the account's data and download it", () => {
     expect(codes).toHaveLength(0)
   })
 
-  it("Given an expired archive as the latest, Then the request comes back and no link", async () => {
-    await openTheAccount(() => [exportRow("EXPIRED")])
+  it("Given an expired archive as the latest, Then the request comes back, no link and no sentence", async () => {
+    await openTheAccount(() => [exportRow("GONE", { reasonCode: "EXPIRED" })])
 
     expect(await screen.findByRole("button", { name: m.export_request() })).toBeVisible()
     expect(screen.queryByRole("link", { name: m.export_download() })).toBeNull()
+    expect(screen.queryByText(m.failure_unknown())).toBeNull()
   })
 
   it("Given a failed export, Then its code's sentence shows beside the request", async () => {
-    await openTheAccount(() => [exportRow("FAILED", { failureCode: "DISK_FULL" })])
+    await openTheAccount(() => [exportRow("FAILED", { reasonCode: "DISK_FULL" })])
 
     expect(await screen.findByText(m.failure_disk_full())).toBeVisible()
     expect(screen.getByRole("button", { name: m.export_request() })).toBeVisible()
   })
 
   it("Given a failure code this bundle does not know, Then the general sentence shows", async () => {
-    await openTheAccount(() => [exportRow("FAILED", { failureCode: "SOMETHING_NEW" })])
+    await openTheAccount(() => [exportRow("FAILED", { reasonCode: "SOMETHING_NEW" })])
 
     expect(await screen.findByText(m.failure_unknown())).toBeVisible()
     expect(document.body).not.toHaveTextContent("undefined")

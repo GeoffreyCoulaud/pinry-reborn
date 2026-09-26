@@ -126,7 +126,7 @@ describe("an upload and an export surfacing in the task centre", () => {
   })
 
   it("Given an abandoned import and a failed export, Then each says so until dismissed", async () => {
-    const failed = exportRow("FAILED", { failureCode: "DISK_FULL" })
+    const failed = exportRow("FAILED", { reasonCode: "DISK_FULL" })
     serve(() => [failed], () => [importRow("ABANDONED")])
     renderApp("/")
     const user = userEvent.setup()

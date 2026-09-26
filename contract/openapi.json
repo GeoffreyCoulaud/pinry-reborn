@@ -639,7 +639,7 @@
       },
       "UserDataExportOutputDto" : {
         "type" : "object",
-        "required" : [ "id", "state", "requestedAt", "completedAt", "expiresAt", "byteSize", "mediaType", "sha256", "failureCode", "formatVersion" ],
+        "required" : [ "id", "state", "requestedAt", "completedAt", "expiresAt", "byteSize", "mediaType", "sha256", "reasonCode", "formatVersion" ],
         "properties" : {
           "id" : {
             "$ref" : "#/components/schemas/UUID"
@@ -674,8 +674,12 @@
           "sha256" : {
             "type" : [ "string", "null" ]
           },
-          "failureCode" : {
-            "type" : [ "string", "null" ]
+          "reasonCode" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/UserDataExportReasonDto"
+            }, {
+              "type" : "null"
+            } ]
           },
           "formatVersion" : {
             "type" : "integer",
@@ -683,9 +687,13 @@
           }
         }
       },
+      "UserDataExportReasonDto" : {
+        "type" : "string",
+        "x-extensible-enum" : [ "USER_GONE", "DISK_FULL", "BUILD_FAILED", "EXPORT_INTERRUPTED", "EXPIRED", "DELETED", "SUPERSEDED" ]
+      },
       "UserDataExportStateDto" : {
         "type" : "string",
-        "enum" : [ "PENDING", "READY", "FAILED", "EXPIRED", "DELETED", "SUPERSEDED" ]
+        "enum" : [ "PENDING", "READY", "FAILED", "GONE" ]
       },
       "UserDataImportIssueKindDto" : {
         "type" : "string",

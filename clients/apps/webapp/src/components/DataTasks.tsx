@@ -1,6 +1,6 @@
 import { Button, buttonVariants } from "@heroui/react"
 import { useEffect, useState, type ReactNode } from "react"
-import { dataFailure } from "../dataFailures"
+import { exportFailure, importFailure } from "../dataFailures"
 import { useLatestExport } from "../exports"
 import { useLatestImport, useUpload } from "../imports"
 import { dataNotices } from "../lib/notices"
@@ -87,7 +87,7 @@ export function useDataTasks(): ReactNode[] {
     const ready = row.state === "READY"
     tasks.push(
       <Item key={row.id} title={m.task_export()}>
-        <p className="text-sm">{ready ? exportReadiness(row) : dataFailure(row.failureCode)}</p>
+        <p className="text-sm">{ready ? exportReadiness(row) : exportFailure(row.reasonCode)}</p>
         <div className="flex flex-wrap items-center gap-2">
           {ready && (
             <a className={buttonVariants({ size: "sm" })} href={downloadHref(row)}>
@@ -112,7 +112,7 @@ export function useDataTasks(): ReactNode[] {
           </>
         ) : (
           <p className="text-sm">
-            {row.state === "ABANDONED" ? m.import_abandoned() : dataFailure(row.failureCode)}
+            {row.state === "ABANDONED" ? m.import_abandoned() : importFailure(row.failureCode)}
           </p>
         )}
         {dismiss(row.id)}

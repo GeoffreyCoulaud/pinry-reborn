@@ -50,7 +50,7 @@ class UserDataExportDtoMapperTest {
         assertNull(dto.byteSize)
         assertNull(dto.mediaType)
         assertNull(dto.sha256)
-        assertNull(dto.failureCode)
+        assertNull(dto.reasonCode)
     }
 
     @Test
@@ -71,8 +71,8 @@ class UserDataExportDtoMapperTest {
     }
 
     @Test
-    fun `Given every UserDataExportState, Then toDto carries the value of the same name`() {
-        for (state in UserDataExportState.entries) {
+    fun `Given each live state, Then toDto carries the value of the same name and no reason`() {
+        for (state in listOf(UserDataExportState.PENDING, UserDataExportState.READY)) {
             // Given
             val export = pendingExport().copy(state = state)
 
@@ -81,22 +81,50 @@ class UserDataExportDtoMapperTest {
 
             // Then
             assertEquals(state.name, dto.state.name)
+            assertNull(dto.reasonCode)
         }
     }
 
     @Test
-    fun `Given a failed export, Then toDto carries the failure code`() {
+    fun `Given each gone state, Then toDto says GONE and carries the state's name as its reason`() {
+        for (state in UserDataExportState.entries.filter { it.isGone }) {
+            // Given
+            val export = pendingExport().copy(state = state)
+
+            // When
+            val dto = export.toDto()
+
+            // Then
+            assertEquals(UserDataExportStateDto.GONE, dto.state)
+            assertEquals(state.name, dto.reasonCode?.name)
+        }
+    }
+
+    @Test
+    fun `Given each failure, Then toDto says FAILED and carries the failure's name as its reason`() {
+        for (failure in UserDataExportFailure.entries) {
+            // Given
+            val export = pendingExport().copy(state = UserDataExportState.FAILED, failureCode = failure)
+
+            // When
+            val dto = export.toDto()
+
+            // Then
+            assertEquals(UserDataExportStateDto.FAILED, dto.state)
+            assertEquals(failure.name, dto.reasonCode?.name)
+        }
+    }
+
+    @Test
+    fun `Given a failed export that recorded no failure, Then toDto carries no reason`() {
         // Given
-        val export = pendingExport().copy(
-            state = UserDataExportState.FAILED,
-            failureCode = UserDataExportFailure.DISK_FULL,
-        )
+        val export = pendingExport().copy(state = UserDataExportState.FAILED)
 
         // When
         val dto = export.toDto()
 
         // Then
-        assertEquals("DISK_FULL", dto.failureCode)
+        assertNull(dto.reasonCode)
     }
 
     @Test

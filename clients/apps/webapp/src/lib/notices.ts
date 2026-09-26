@@ -15,9 +15,7 @@ const EXPORT_NOTICES: Record<Export["state"], (row: Export, now: number) => bool
   PENDING: () => false,
   READY: (row, now) => before(row.expiresAt, now),
   FAILED: () => true,
-  EXPIRED: () => false,
-  DELETED: () => false,
-  SUPERSEDED: () => false,
+  GONE: () => false,
 }
 
 const IMPORT_NOTICES: Record<Import["state"], (row: Import, now: number) => boolean> = {
