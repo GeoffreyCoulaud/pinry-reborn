@@ -11,6 +11,8 @@ export type Credentials = components["schemas"]["UserInputDto"]
  */
 export type Schemas = components["schemas"]
 
+export type { Known } from "@pinry-reborn/api-client"
+
 /** Every `code` the contract declares one operation's refusals can carry, shared entries included. */
 export type RefusalCode<Path extends keyof paths, Method extends keyof paths[Path]> =
   paths[Path][Method] extends { responses: infer Responses }

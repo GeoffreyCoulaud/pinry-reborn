@@ -1,10 +1,11 @@
+import type { Known } from "@pinry-reborn/auth"
 import { m } from "./paraglide/messages.js"
 
 /**
- * One sentence per `UserDataImportIssueKind`. The contract leaves `kind` an open string, an
- * unknown kind having a correct fallback (specification 2026-09-25, decision I).
+ * One sentence per kind the contract knows: `kind` is an `x-extensible-enum`, so a kind the server
+ * adds fails `tsc` here until it has one (docs/adr/0044-a-response-code-declares-its-set.md).
  */
-const KINDS = {
+const KINDS: Record<Known<"UserDataImportIssueKindDto">, () => string> = {
   PIN_HAS_NO_MEDIA: m.issue_pin_has_no_media,
   MEDIA_ENTRY_MISSING: m.issue_media_entry_missing,
   MEDIA_UNREADABLE: m.issue_media_unreadable,
@@ -24,7 +25,7 @@ function hasSentence(kind: string): kind is keyof typeof KINDS {
   return Object.hasOwn(KINDS, kind)
 }
 
-/** What the import reported, or the general sentence for a kind this bundle does not know. */
+/** What the import reported, or the general sentence for a kind a newer server sends. */
 export function importIssue(kind: string): string {
   return hasSentence(kind) ? KINDS[kind]() : m.issue_unknown()
 }

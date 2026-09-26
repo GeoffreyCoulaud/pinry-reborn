@@ -1,11 +1,11 @@
+import type { Known } from "@pinry-reborn/auth"
 import { m } from "./paraglide/messages.js"
 
 /**
- * One sentence per `DownloadReason`. The contract leaves `reasonCode` a plain string on purpose,
- * a response enum gaining a value being a break (specification 2026-09-10, 4.10), so a code this
- * bundle does not know is a miss here rather than a compile error.
+ * One sentence per reason the contract knows: `reasonCode` is an `x-extensible-enum`, so a reason
+ * the server adds fails `tsc` here until it has one (docs/adr/0044-a-response-code-declares-its-set.md).
  */
-const REASONS: Record<string, () => string> = {
+const REASONS: Record<Known<"DownloadReasonDto">, () => string> = {
   URL_NOT_ALLOWED: m.reason_url_not_allowed,
   UNREACHABLE: m.reason_unreachable,
   ACCESS_DENIED: m.reason_access_denied,
@@ -20,7 +20,7 @@ const REASONS: Record<string, () => string> = {
 /**
  * Why a download failed, in the reader's own language. `reasonCode` is the machine value
  * specification 4.8 asks the task to offer; `message` is the server's English sentence, kept as
- * the fallback for a reason this bundle has no key for.
+ * the fallback for a reason a newer server sends and this bundle has no key for.
  */
 export function downloadReason(
   reasonCode: string | null | undefined,
@@ -29,5 +29,5 @@ export function downloadReason(
   const key = reasonCode ?? ""
   // `hasOwn` and not the lookup alone: the code is the server's string, and `Object.prototype`
   // would otherwise answer for a dozen names this table never wrote.
-  return (Object.hasOwn(REASONS, key) ? REASONS[key]?.() : undefined) ?? message ?? null
+  return (Object.hasOwn(REASONS, key) ? REASONS[key as keyof typeof REASONS]() : undefined) ?? message ?? null
 }
