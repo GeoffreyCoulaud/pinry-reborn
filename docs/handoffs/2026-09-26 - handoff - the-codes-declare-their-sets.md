@@ -96,8 +96,13 @@ counts under "The lot's counts".)
 - **Cascaded rebases: 1**, over blocks 25, 30, 35 and the closing block, with conflicts on blocks 30
   and 35 resolved in `ContractSchemaDeclarationTest.kt`. The closing block rebased cleanly, then moved
   its classification test into the file's new shape.
-- **Runs re-triggered**: to fill after the push.
-- **The operator's reading of the bodies**: to fill before the stack merges.
+- **Runs re-triggered: 5**, one per branch that moved, #236 to #240, all green: runs 36244137521,
+  36244138306, 36244137774, 36244137848 and 36244138374. GitHub also cancelled 4 duplicates on the base
+  change (36244137538, 36244137660, 36244137393, 36244137555), which are noise. Under ADR 0043's failure
+  criterion: fewer runs re-triggered than the lot has blocks.
+- **The operator's reading of the bodies**, their words of 2026-09-26: "Les descriptions de PR me
+  conviennent, je n'ai pas de retour à faire dessus, c'est assez clair." (The bodies suit them, no
+  feedback, clear enough.)
 
 ## Pitfalls
 
