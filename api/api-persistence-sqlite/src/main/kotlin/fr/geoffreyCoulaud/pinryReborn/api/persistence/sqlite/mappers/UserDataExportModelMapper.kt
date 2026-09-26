@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataExportModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
@@ -25,7 +26,7 @@ object UserDataExportModelMapper {
             sha256 = sha256,
             mediaType = mediaType,
             fileExtension = fileExtension,
-            failureCode = failureCode,
+            failureCode = failureCode?.name,
         )
 
     // Reads ONLY `user.id`. An export row outlives its owner's soft-delete tombstone (the account
@@ -46,7 +47,7 @@ object UserDataExportModelMapper {
             sha256 = sha256,
             mediaType = mediaType,
             fileExtension = fileExtension,
-            failureCode = failureCode,
+            failureCode = failureCode?.let(UserDataExportFailure::valueOf),
         )
 
     fun ModelCursor<UserDataExportModel>.toDomain(): Cursor =

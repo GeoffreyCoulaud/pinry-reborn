@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDataExportDtoMapper.toDto
@@ -81,6 +82,21 @@ class UserDataExportDtoMapperTest {
             // Then
             assertEquals(state.name, dto.state.name)
         }
+    }
+
+    @Test
+    fun `Given a failed export, Then toDto carries the failure code`() {
+        // Given
+        val export = pendingExport().copy(
+            state = UserDataExportState.FAILED,
+            failureCode = UserDataExportFailure.DISK_FULL,
+        )
+
+        // When
+        val dto = export.toDto()
+
+        // Then
+        assertEquals("DISK_FULL", dto.failureCode)
     }
 
     @Test

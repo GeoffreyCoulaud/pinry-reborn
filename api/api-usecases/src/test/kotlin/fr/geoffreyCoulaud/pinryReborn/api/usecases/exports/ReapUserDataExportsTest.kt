@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
@@ -160,7 +161,7 @@ class ReapUserDataExportsTest : BaseTest() {
         // Then
         assertEquals(ExportSweepCounts(failed = 1, expired = 0, reclaimed = 0), counts)
         assertEquals(UserDataExportState.FAILED, stored(stuck.id).state)
-        assertEquals("EXPORT_INTERRUPTED", stored(stuck.id).failureCode)
+        assertEquals(UserDataExportFailure.EXPORT_INTERRUPTED, stored(stuck.id).failureCode)
     }
 
     @Test

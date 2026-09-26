@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -116,7 +117,7 @@ internal class UserDataExportCompletionTest : UserDataExportFakeStoreFixtures() 
             fakeStoreBuilder.build(exportId, isLastAttempt = true, renewLease = {})
         }
         assertEquals(UserDataExportState.FAILED, stored()?.state)
-        assertEquals("BUILD_FAILED", stored()?.failureCode)
+        assertEquals(UserDataExportFailure.BUILD_FAILED, stored()?.failureCode)
         assertTrue(fakeArchiveStore.promoted.isEmpty(), "a promote that threw left no archive")
         assertEquals(listOf(stagedFile), fakeArchiveStore.discarded)
     }
@@ -135,7 +136,7 @@ internal class UserDataExportCompletionTest : UserDataExportFakeStoreFixtures() 
         }
         assertEquals("the archive could not be promoted", thrown.message)
         assertEquals(UserDataExportState.FAILED, stored()?.state)
-        assertEquals("BUILD_FAILED", stored()?.failureCode)
+        assertEquals(UserDataExportFailure.BUILD_FAILED, stored()?.failureCode)
     }
 
     @Test
@@ -185,7 +186,7 @@ internal class UserDataExportCompletionTest : UserDataExportFakeStoreFixtures() 
             fakeStoreBuilder.build(exportId, isLastAttempt = true, renewLease = {})
         }
         assertEquals(UserDataExportState.FAILED, stored()?.state)
-        assertEquals("BUILD_FAILED", stored()?.failureCode)
+        assertEquals(UserDataExportFailure.BUILD_FAILED, stored()?.failureCode)
         assertEquals(listOf(stagedFile), fakeArchiveStore.discarded)
     }
 }

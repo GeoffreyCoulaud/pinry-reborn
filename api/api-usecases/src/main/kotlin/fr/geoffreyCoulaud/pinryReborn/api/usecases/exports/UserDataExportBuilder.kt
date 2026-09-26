@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveEntryDigest
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveSink
@@ -86,13 +87,13 @@ class UserDataExportBuilder(
 
     private fun requireUser(export: UserDataExport): User =
         userRepository.findUserById(export.userId) ?: run {
-            markFailed(export.id, "USER_GONE")
+            markFailed(export.id, UserDataExportFailure.USER_GONE)
             throw PermanentTaskException("user no longer exists")
         }
 
     private fun requireFreeSpace(export: UserDataExport) {
         if (archiveStore.hasFreeSpace(minimumFreeBytes)) return
-        markFailed(export.id, "DISK_FULL")
+        markFailed(export.id, UserDataExportFailure.DISK_FULL)
         throw PermanentTaskException("not enough free space")
     }
 
@@ -105,7 +106,7 @@ class UserDataExportBuilder(
         } catch (error: TaskLeaseLostException) {
             throw error
         } catch (error: Throwable) {
-            if (isLastAttempt) markFailed(export.id, "BUILD_FAILED")
+            if (isLastAttempt) markFailed(export.id, UserDataExportFailure.BUILD_FAILED)
             throw error
         }
 
@@ -121,7 +122,7 @@ class UserDataExportBuilder(
             // Quietly: a discard that throws here would skip the marking and mask the original
             // failure, leaving the row PENDING for good, which is the defect this net closes.
             archiveStore.discardQuietly(staged)
-            if (isLastAttempt) markFailed(exportId, "BUILD_FAILED")
+            if (isLastAttempt) markFailed(exportId, UserDataExportFailure.BUILD_FAILED)
             throw error
         }
     }
@@ -133,7 +134,7 @@ class UserDataExportBuilder(
         }
 
     /** Refused when the row moved on: the caller rethrows its own failure and this writes nothing. */
-    private fun markFailed(exportId: UUID, failureCode: String) {
+    private fun markFailed(exportId: UUID, failureCode: UserDataExportFailure) {
         exportRepository.saveFenced(transactionRunner, exportId, ::stillPending) {
             it.copy(state = UserDataExportState.FAILED, failureCode = failureCode)
         }
