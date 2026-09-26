@@ -753,7 +753,7 @@
       },
       "UserDataImportOutputDto" : {
         "type" : "object",
-        "required" : [ "id", "state", "requestedAt", "uploadedBytes", "byteSize", "archiveCompletedAt", "startedAt", "completedAt", "formatVersion", "announcedPins", "processedPins", "createdPins", "skippedPins", "createdBoards", "skippedBoards", "createdTags", "skippedTags", "issueCount", "issueDetailTruncated", "failureCode" ],
+        "required" : [ "id", "state", "requestedAt", "uploadedBytes", "byteSize", "archiveCompletedAt", "startedAt", "completedAt", "formatVersion", "announcedPins", "processedPins", "createdPins", "skippedPins", "createdBoards", "skippedBoards", "createdTags", "skippedTags", "issueCount", "issueDetailTruncated", "reasonCode" ],
         "properties" : {
           "id" : {
             "$ref" : "#/components/schemas/UUID"
@@ -836,10 +836,18 @@
           "issueDetailTruncated" : {
             "type" : "boolean"
           },
-          "failureCode" : {
-            "type" : [ "string", "null" ]
+          "reasonCode" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/UserDataImportReasonDto"
+            }, {
+              "type" : "null"
+            } ]
           }
         }
+      },
+      "UserDataImportReasonDto" : {
+        "type" : "string",
+        "x-extensible-enum" : [ "USER_GONE", "IMPORT_FAILED", "ARCHIVE_UNREADABLE", "MANIFEST_MISSING", "UNSUPPORTED_FORMAT_VERSION", "IMPORT_INTERRUPTED" ]
       },
       "UserDataImportStateDto" : {
         "type" : "string",

@@ -256,7 +256,7 @@ const VIEWS: Record<Import["state"], (row: Import) => ReactNode> = {
   ),
   FAILED: (row) => (
     <>
-      <p>{importFailure(row.failureCode)}</p>
+      <p>{importFailure(row.reasonCode)}</p>
       <Report row={row} />
       <ChooseArchive />
     </>

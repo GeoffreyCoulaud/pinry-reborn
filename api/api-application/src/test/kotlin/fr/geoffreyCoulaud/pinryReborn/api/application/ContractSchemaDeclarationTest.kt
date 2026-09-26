@@ -9,6 +9,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportReasonDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportIssueKindDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BaseErrorMapper
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemCode
@@ -44,6 +45,7 @@ class ContractSchemaDeclarationTest {
             "DownloadReasonDto" to DownloadReasonDto.entries.map { it.name },
             "UserDataImportIssueKindDto" to UserDataImportIssueKindDto.entries.map { it.name },
             "UserDataExportReasonDto" to UserDataExportReasonDto.entries.map { it.name },
+            "UserDataImportReasonDto" to UserDataImportReasonDto.entries.map { it.name },
         )
 
     private val openCodePositions =
@@ -60,6 +62,11 @@ class ContractSchemaDeclarationTest {
                 schema = "UserDataExportOutputDto",
                 field = "reasonCode",
                 component = "UserDataExportReasonDto",
+            ),
+            OpenCodePosition(
+                schema = "UserDataImportOutputDto",
+                field = "reasonCode",
+                component = "UserDataImportReasonDto",
             ),
         )
 
@@ -173,7 +180,7 @@ class ContractSchemaDeclarationTest {
     @Test
     fun `Given the published contract, Then a data row says why in reasonCode alone`() {
         // Given
-        val rows = listOf("UserDataExportOutputDto")
+        val rows = listOf("UserDataExportOutputDto", "UserDataImportOutputDto")
 
         // When
         val wrong = rows.filter { PublishedContract.schema(it).path("properties").has("failureCode") }

@@ -27,5 +27,5 @@ data class UserDataImportOutputDto(
     val skippedTags: Int,
     val issueCount: Int,
     val issueDetailTruncated: Boolean,
-    val failureCode: String?,
+    val reasonCode: UserDataImportReasonDto?,
 )

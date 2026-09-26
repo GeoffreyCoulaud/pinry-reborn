@@ -112,7 +112,7 @@ export function useDataTasks(): ReactNode[] {
           </>
         ) : (
           <p className="text-sm">
-            {row.state === "ABANDONED" ? m.import_abandoned() : importFailure(row.failureCode)}
+            {row.state === "ABANDONED" ? m.import_abandoned() : importFailure(row.reasonCode)}
           </p>
         )}
         {dismiss(row.id)}

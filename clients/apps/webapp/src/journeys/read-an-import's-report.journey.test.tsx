@@ -110,12 +110,12 @@ describe("read an import's report", () => {
   })
 
   it("Given a failed import, Then the section says why, or the general sentence", async () => {
-    openTheAccount(importRow("FAILED", { failureCode: "ARCHIVE_UNREADABLE" }))
+    openTheAccount(importRow("FAILED", { reasonCode: "ARCHIVE_UNREADABLE" }))
     expect(await screen.findByText(m.failure_archive_unreadable())).toBeVisible()
   })
 
-  it("Given a failure code this bundle does not know, Then the section gives the general sentence", async () => {
-    openTheAccount(importRow("FAILED", { failureCode: "A_CODE_FROM_A_LATER_SERVER" }))
+  it("Given a reason this bundle does not know, Then the section gives the general sentence", async () => {
+    openTheAccount(importRow("FAILED", { reasonCode: "A_CODE_FROM_A_LATER_SERVER" }))
     expect(await screen.findByText(m.failure_unknown())).toBeVisible()
   })
 })

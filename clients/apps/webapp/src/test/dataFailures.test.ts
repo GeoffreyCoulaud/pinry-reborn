@@ -17,6 +17,12 @@ describe("the sentence a failed export or import shows", () => {
   })
 
   // `IMPORT_FAILED` says no more than the general sentence, and `USER_GONE` has no one to read it.
+  it("Given an import reason with no sentence of its own, Then the user gets the general one", () => {
+    for (const code of ["USER_GONE", "IMPORT_FAILED"]) {
+      expect(importFailure(code)).toBe(m.failure_unknown())
+    }
+  })
+
   it("Given each code the import writes that says why, Then none falls to the general sentence", () => {
     const codes = [
       "ARCHIVE_UNREADABLE",
