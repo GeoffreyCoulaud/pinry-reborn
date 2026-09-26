@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadStatusDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ImageDownloadDtoMapper.toDto
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -36,7 +37,7 @@ class ImageDownloadDtoMapperTest {
 
         // Then
         assertEquals(DownloadStatusDto.FAILED, dto.status)
-        assertEquals("ACCESS_DENIED", dto.reasonCode)
+        assertEquals(DownloadReasonDto.ACCESS_DENIED, dto.reasonCode)
         assertTrue(dto.message!!.isNotBlank())
     }
 

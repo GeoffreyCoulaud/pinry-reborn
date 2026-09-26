@@ -16,7 +16,7 @@ object ImageDownloadDtoMapper {
         status = status.toDto(),
         requestedAt = requestedAt,
         updatedAt = updatedAt,
-        reasonCode = reasonCode?.name,
+        reasonCode = reasonCode?.toDto(),
         message = reasonCode?.let { messageFor(it) },
     )
 
