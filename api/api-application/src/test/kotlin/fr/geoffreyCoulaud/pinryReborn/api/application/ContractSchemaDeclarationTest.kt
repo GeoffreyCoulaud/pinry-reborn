@@ -38,6 +38,25 @@ class ContractSchemaDeclarationTest {
             "GET /api/v1/me/imports/{id}/issues",
         )
 
+    /** Each open code's component, and the values its presentation twin declares. */
+    private val openCodes =
+        mapOf(
+            "DownloadReasonDto" to DownloadReasonDto.entries.map { it.name },
+            "UserDataImportIssueKindDto" to UserDataImportIssueKindDto.entries.map { it.name },
+        )
+
+    private val openCodePositions =
+        listOf(
+            OpenCodePosition(schema = "PinImageStateDto", field = "reasonCode", component = "DownloadReasonDto"),
+            OpenCodePosition(schema = "ReplacementDto", field = "reasonCode", component = "DownloadReasonDto"),
+            OpenCodePosition(schema = "ImageDownloadOutputDto", field = "reasonCode", component = "DownloadReasonDto"),
+            OpenCodePosition(
+                schema = "UserDataImportIssueOutputDto",
+                field = "kind",
+                component = "UserDataImportIssueKindDto",
+            ),
+        )
+
     @Test
     fun `Given the published contract, Then every cursor query parameter is declared a nullable string`() {
         // Given
@@ -121,47 +140,28 @@ class ContractSchemaDeclarationTest {
 
     @Test
     fun `Given the published contract, Then every open code lists its values as x-extensible-enum and no enum`() {
-        // Given
-        val twins = mapOf(
-            "DownloadReasonDto" to DownloadReasonDto.entries.map { it.name },
-            "UserDataImportIssueKindDto" to UserDataImportIssueKindDto.entries.map { it.name },
-        )
-
         // When
-        val wrong = twins.filter { (name, values) ->
-            val component = PublishedContract.schema(name)
-            component.path("x-extensible-enum").map { it.asText() } != values || component.has("enum")
-        }.keys
+        val published = openCodes.keys.associateWith { extensibleValues(it) }
+        val closed = openCodes.keys.filter { PublishedContract.schema(it).has("enum") }
 
         // Then
-        assertEquals(
-            emptySet<String>(),
-            wrong,
-            "A closed enum makes every new value a contract major, and ExtensibleEnumsFilter opens these " +
-                "(docs/adr/0044-a-response-code-declares-its-set.md). Regenerate: $regenerate",
-        )
+        val why = "A closed enum makes every new value a contract major, and ExtensibleEnumsFilter opens these " +
+            "(docs/adr/0044-a-response-code-declares-its-set.md). Regenerate: $regenerate"
+        assertEquals(openCodes, published, why)
+        assertEquals(emptyList<String>(), closed, why)
     }
 
     @Test
     fun `Given the published contract, Then every position of an open code references its component`() {
-        // Given
-        val positions = mapOf(
-            "PinImageStateDto.reasonCode" to "DownloadReasonDto",
-            "ReplacementDto.reasonCode" to "DownloadReasonDto",
-            "ImageDownloadOutputDto.reasonCode" to "DownloadReasonDto",
-            "UserDataImportIssueOutputDto.kind" to "UserDataImportIssueKindDto",
-        )
-
         // When
-        val wrong = positions.filter { (position, component) ->
-            val property = PublishedContract.schema(position.substringBefore('.'))
-                .path("properties").path(position.substringAfter('.'))
-            component !in (listOf(property) + property.path("anyOf")).mapNotNull { it.path("\$ref").textValue() }
-                .map { it.substringAfterLast('/') }
-        }.keys
+        val wrong = openCodePositions.filter { it.component !in referencedComponents(it.schema, it.field) }
 
         // Then
-        assertEquals(emptySet<String>(), wrong, "These fields no longer carry their twin. Regenerate: $regenerate")
+        assertEquals(
+            emptyList<OpenCodePosition>(),
+            wrong,
+            "These fields no longer reference their open code's component. Regenerate: $regenerate",
+        )
     }
 
     @Test
@@ -351,6 +351,19 @@ class ContractSchemaDeclarationTest {
 
     private fun KoAnnotationDeclaration.pathValue(): String =
         arguments.first().value?.trim('"').orEmpty()
+
+    /** A field of a published schema, and the open code's component it must reference. */
+    private data class OpenCodePosition(val schema: String, val field: String, val component: String)
+
+    private fun extensibleValues(component: String): List<String> =
+        PublishedContract.schema(component).path("x-extensible-enum").map { it.asText() }
+
+    /** The components a field references, directly or through the `anyOf` SmallRye writes for a nullable one. */
+    private fun referencedComponents(schema: String, field: String): Set<String> {
+        val property = PublishedContract.schema(schema).path("properties").path(field)
+        val alternatives = listOf(property) + property.path("anyOf")
+        return alternatives.mapNotNull { it.path("\$ref").textValue()?.substringAfterLast('/') }.toSet()
+    }
 
     private class Endpoint(
         val name: String,
