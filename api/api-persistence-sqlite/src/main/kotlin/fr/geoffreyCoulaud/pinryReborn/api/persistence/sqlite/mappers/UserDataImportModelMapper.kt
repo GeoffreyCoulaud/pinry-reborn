@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataImportModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
@@ -36,7 +37,7 @@ object UserDataImportModelMapper {
             skippedTags = skippedTags,
             issueCount = issueCount,
             issueDetailTruncated = issueDetailTruncated,
-            failureCode = failureCode,
+            failureCode = failureCode?.name,
         )
 
     // Reads ONLY `user.id`, as the export mapper does: an import row outlives its owner's tombstone,
@@ -67,7 +68,7 @@ object UserDataImportModelMapper {
             skippedTags = skippedTags,
             issueCount = issueCount,
             issueDetailTruncated = issueDetailTruncated,
-            failureCode = failureCode,
+            failureCode = failureCode?.let(UserDataImportFailure::valueOf),
         )
 
     fun ModelCursor<UserDataImportModel>.toDomain(): Cursor =

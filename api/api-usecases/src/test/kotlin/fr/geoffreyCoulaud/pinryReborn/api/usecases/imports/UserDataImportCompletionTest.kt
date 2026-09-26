@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.PermanentTaskException
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.TaskLeaseLostException
@@ -96,7 +97,7 @@ internal class UserDataImportCompletionTest : UserDataImportRunnerFixtures() {
         // When / Then: rethrown, so the queue still counts the attempt and dead-letters the task
         assertThrows(IOException::class.java) { runner.run(importId, isLastAttempt = true, renewLease) }
         assertEquals(UserDataImportState.FAILED, stored.state)
-        assertEquals("IMPORT_FAILED", stored.failureCode)
+        assertEquals(UserDataImportFailure.IMPORT_FAILED, stored.failureCode)
         assertEquals(0, stored.processedPins)
         assertEquals(listOf(storageKey), deletedArchives)
     }
@@ -144,7 +145,7 @@ internal class UserDataImportCompletionTest : UserDataImportRunnerFixtures() {
         // When / Then
         assertThrows(PermanentTaskException::class.java) { runner.run(importId, isLastAttempt = true, renewLease) }
         assertEquals(UserDataImportState.FAILED, stored.state)
-        assertEquals("MANIFEST_MISSING", stored.failureCode)
+        assertEquals(UserDataImportFailure.MANIFEST_MISSING, stored.failureCode)
         assertEquals(listOf(storageKey), deletedArchives)
     }
 }

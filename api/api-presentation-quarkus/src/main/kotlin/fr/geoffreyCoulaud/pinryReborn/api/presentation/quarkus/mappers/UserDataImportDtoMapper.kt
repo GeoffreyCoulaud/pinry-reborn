@@ -31,7 +31,7 @@ object UserDataImportDtoMapper {
         skippedTags = skippedTags,
         issueCount = issueCount,
         issueDetailTruncated = issueDetailTruncated,
-        failureCode = failureCode,
+        failureCode = failureCode?.name,
     )
 
     fun Page<UserDataImport>.toDto() = UserDataImportListOutputDto(
