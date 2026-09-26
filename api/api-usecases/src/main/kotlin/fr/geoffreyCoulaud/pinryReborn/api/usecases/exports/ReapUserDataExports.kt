@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
@@ -86,7 +87,7 @@ class ReapUserDataExports(
 
     private fun failInterrupted(exportId: UUID): Boolean =
         repository.saveFenced(transactionRunner, exportId, { it.state == UserDataExportState.PENDING }) {
-            it.copy(state = UserDataExportState.FAILED, failureCode = EXPORT_INTERRUPTED)
+            it.copy(state = UserDataExportState.FAILED, failureCode = UserDataExportFailure.EXPORT_INTERRUPTED)
         } != null
 
     private fun expireReadyExports(now: Instant): Int =
@@ -140,8 +141,5 @@ class ReapUserDataExports(
 
     private companion object {
         private val logger = KotlinLogging.logger {}
-
-        /** The failure code for a build no attempt is coming back to, which the user reads on the row. */
-        const val EXPORT_INTERRUPTED = "EXPORT_INTERRUPTED"
     }
 }

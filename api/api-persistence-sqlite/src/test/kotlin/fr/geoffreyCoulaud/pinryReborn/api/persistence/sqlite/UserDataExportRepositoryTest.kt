@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportAlreadyInProgressException
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.exceptions.UserModelDoesNotExistError
@@ -131,6 +132,51 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         assertEquals(UserDataExportState.EXPIRED, reSaved.state)
         assertEquals(export.id, reSaved.id)
         assertEquals(user.id, reSaved.userId)
+    }
+
+    // --- failure code ---
+
+    private fun storedFailureCode(id: UUID): String? =
+        database
+            .sqlQuery("select failure_code from user_data_exports where id = ?")
+            .setParameter(1, id)
+            .findOne()
+            ?.getString("failure_code")
+
+    @Test
+    fun `Given each failure, Then the row stores its name and reads it back`() {
+        // Given
+        val user = createAndSaveUser()
+
+        UserDataExportFailure.entries.forEach { failure ->
+            // When
+            val saved =
+                repository.save(pendingExport(user.id).copy(state = UserDataExportState.FAILED, failureCode = failure))
+
+            // Then: the column holds the names the string constants wrote, so no row needs a migration
+            assertEquals(failure.name, storedFailureCode(saved.id))
+            assertEquals(failure, repository.findById(saved.id)?.failureCode)
+        }
+    }
+
+    @Test
+    fun `Given a stored failure code that names no failure, Then reading the row throws`() {
+        // Given
+        val user = createAndSaveUser()
+        val saved = repository.save(
+            pendingExport(user.id).copy(
+                state = UserDataExportState.FAILED,
+                failureCode = UserDataExportFailure.BUILD_FAILED,
+            ),
+        )
+        database
+            .sqlUpdate("update user_data_exports set failure_code = ? where id = ?")
+            .setParameter(1, "NOT_A_FAILURE")
+            .setParameter(2, saved.id)
+            .execute()
+
+        // When / Then: as an unknown state does
+        assertThrows(IllegalArgumentException::class.java) { repository.findById(saved.id) }
     }
 
     // --- pending / ready ---

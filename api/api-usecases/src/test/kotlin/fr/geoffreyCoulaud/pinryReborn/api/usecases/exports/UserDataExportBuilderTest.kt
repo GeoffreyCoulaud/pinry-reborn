@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.PermanentTaskException
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.TaskLeaseLostException
@@ -278,7 +279,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         }
         assertEquals("user no longer exists", error.reason)
         assertEquals(UserDataExportState.FAILED, stored()?.state)
-        assertEquals("USER_GONE", stored()?.failureCode)
+        assertEquals(UserDataExportFailure.USER_GONE, stored()?.failureCode)
         verify(exactly = 0) { archiveStore.hasFreeSpace(any()) }
     }
 
@@ -296,7 +297,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         }
         assertEquals("not enough free space", error.reason)
         assertEquals(UserDataExportState.FAILED, stored()?.state)
-        assertEquals("DISK_FULL", stored()?.failureCode)
+        assertEquals(UserDataExportFailure.DISK_FULL, stored()?.failureCode)
         verify(exactly = 0) { archiveStore.stage(any()) }
     }
 
@@ -410,7 +411,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
             builder.build(exportId, isLastAttempt = true, renewLease = {})
         }
         assertEquals(UserDataExportState.FAILED, stored()?.state)
-        assertEquals("BUILD_FAILED", stored()?.failureCode)
+        assertEquals(UserDataExportFailure.BUILD_FAILED, stored()?.failureCode)
     }
 
     @Test

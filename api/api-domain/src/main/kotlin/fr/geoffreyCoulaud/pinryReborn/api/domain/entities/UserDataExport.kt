@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.entities
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import java.time.Instant
 import java.util.UUID
@@ -18,5 +19,5 @@ data class UserDataExport(
     val sha256: String? = null,
     val mediaType: String? = null,
     val fileExtension: String? = null,
-    val failureCode: String? = null,
+    val failureCode: UserDataExportFailure? = null,
 ) : Identifiable

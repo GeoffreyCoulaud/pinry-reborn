@@ -19,7 +19,7 @@ object UserDataExportDtoMapper {
         byteSize = byteSize,
         mediaType = mediaType,
         sha256 = sha256,
-        failureCode = failureCode,
+        failureCode = failureCode?.name,
         formatVersion = formatVersion,
     )
 

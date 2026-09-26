@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
@@ -458,7 +459,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         // Then
         val swept = requireNotNull(userDataExportRepository.findById(exportId))
         assertEquals(UserDataExportState.FAILED, swept.state)
-        assertEquals("EXPORT_INTERRUPTED", swept.failureCode)
+        assertEquals(UserDataExportFailure.EXPORT_INTERRUPTED, swept.failureCode)
         val untouched = requireNotNull(userDataExportRepository.findById(buildingId))
         assertEquals(UserDataExportState.PENDING, untouched.state, "a row whose task is live is left alone")
         assertNull(untouched.failureCode, "a row the sweep left alone carries no failure code")
