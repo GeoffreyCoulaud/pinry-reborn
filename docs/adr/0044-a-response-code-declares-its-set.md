@@ -25,7 +25,10 @@ three values no client tells apart.
    `x-extensible-enum`.
 4. **The client generates through `openapi-typescript`'s Node API with a `transform`**, the command
    line having none: an `x-extensible-enum` becomes its literals or any other string, and
-   `Known<T>` keeps the literals, so a table keyed by it fails `tsc` when it misses one.
+   `Known<T>` keeps the literals, so a table keyed by it fails `tsc` when it misses one. (Corrected:
+   block 25 uses the Node API with no `transform`. The field stays `string`, openapi-fetch's `Readable`
+   mapping `string & {}` as an object; `generate.mjs` appends an `extensibleEnums` interface of each
+   component's known values, which `Known<"Component">` reads. The rest of the decision holds.)
 5. **A closed set holds only values that change the client's behaviour.** The export's `EXPIRED`,
    `DELETED` and `SUPERSEDED` become `GONE`, their cause in an extensible `reasonCode`, the field's
    name on every row.
@@ -38,4 +41,6 @@ hides a state, and the state is split out and closed.
 - **A new reason or kind breaks no client**, and the contract guard does not ask for a major; a new
   state still does.
 - **The generation step is code of ours**, about twenty lines against a documented option, and a
-  committed type assertion fails `tsc` if it stops producing the literals.
+  committed type assertion fails `tsc` if it stops producing the literals. (Corrected: `generate.mjs` is
+  11 lines calling `openapiTS` with no option and appending its interface to the output; no type
+  assertion is committed, a lost step failing `index.ts` with TS2305 on the missing interface.)
