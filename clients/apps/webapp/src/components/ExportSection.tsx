@@ -34,6 +34,7 @@ function RequestExport() {
                     type="password"
                     isRequired
                     autoComplete="current-password"
+                    variant="secondary"
                   >
                     <Label>{m.password()}</Label>
                     <Input />

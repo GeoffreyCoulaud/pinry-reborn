@@ -34,6 +34,7 @@ function Field({
       value={value}
       onChange={onChange}
       className="relative"
+      variant="secondary"
     >
       <Input placeholder=" " className="pt-6 pb-2 peer" />
       {/* The label rests centred and floats on focus as well as on content, so the caret never
