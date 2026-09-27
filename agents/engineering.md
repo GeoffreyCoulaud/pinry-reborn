@@ -145,6 +145,10 @@ how Ebean's migration generation was caught; the artefact is the only place that
   exhaustive `when`, and `openapi/ExtensibleEnumsFilter.kt` lists the extensible ones;
   `ContractSchemaDeclarationTest` refuses an enum under `dtos/output` classified neither way. A refusal code stays
   closed per response, a new one changing what the route does.
+- **A contract break is acceptable; a departure from REST is the price of avoiding one**, and the operator accepts
+  it case by case (`…/restore`, `/tags/search`, `DELETE` with a body), never by default: a variant of a body stays
+  in the body rather than moving to a path to keep a major
+  (`docs/specs/2026-09-27-the-selection-starts-a-board.md`, decision G).
 - **Authentication**: opaque session tokens, issued by `POST /api/v1/sessions` and validated by
   `SessionTokenAuthenticator`. One token, two transports (`docs/adr/0026-one-session-two-transports.md`): the
   `Authorization: Bearer <token>` header, and the `pinry_session` cookie the browser sends for an `<img>`. The
