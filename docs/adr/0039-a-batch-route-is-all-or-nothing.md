@@ -30,6 +30,9 @@ collection, and the operator asked for one.
    **Fails if** a caller wants to replace a selection's whole board set, which no gesture in the
    application asks for.
 
+   (Corrected by `docs/specs/2026-09-27-the-selection-starts-a-board.md`, decision A: a second path
+   files pins in bulk, the route creating a board, whose `pinIds` are filed under it all or nothing.)
+
 2. **A batch route is all or nothing.** Every identifier is resolved before the first write; one
    that fails refuses the whole call and nothing is written. An identifier that resolves to nothing
    earns 404 and one that is another user's earns 403, whether it was named in the path or in the
@@ -48,7 +51,9 @@ collection, and the operator asked for one.
    read as "delete every pin I own"; the guard answers 400 and keeps that reading from ever being
    written. A list inside a write of one pin is not covered: `PinUpdateInputDto`'s `tags` and
    `boardIds` take the empty list, which is how a user clears their tags or files a pin under no
-   board (`docs/adr/0038-one-route-writes-a-pin.md`, last consequence).
+   board (`docs/adr/0038-one-route-writes-a-pin.md`, last consequence). (Corrected by
+   `docs/specs/2026-09-27-the-selection-starts-a-board.md`, decision B: nor a list inside a write of
+   one resource, `BoardCreationInputDto.pinIds` taking the empty list for an empty board.)
 
 4. **The recycle bin reads the same on both collections.** Recycling and restoring act in bulk
    (`DELETE /api/v1/pins`, `POST /api/v1/pins/recycled/restore`,
