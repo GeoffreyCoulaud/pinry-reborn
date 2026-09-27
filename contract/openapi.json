@@ -21,7 +21,8 @@
               "type" : "string",
               "format" : "uuid",
               "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
-            }
+            },
+            "maxItems" : 10000
           }
         }
       },
@@ -36,6 +37,7 @@
               "format" : "uuid",
               "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
             },
+            "maxItems" : 10000,
             "minItems" : 1
           }
         }
@@ -327,6 +329,7 @@
               "format" : "uuid",
               "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
             },
+            "maxItems" : 10000,
             "minItems" : 1
           }
         }
@@ -1042,7 +1045,7 @@
         }
       },
       "InvalidBatchBody" : {
-        "description" : "The body is missing, or its list of identifiers is empty",
+        "description" : "The body is missing, or its list of identifiers is empty or longer than 10000",
         "content" : {
           "application/problem+json" : {
             "schema" : {

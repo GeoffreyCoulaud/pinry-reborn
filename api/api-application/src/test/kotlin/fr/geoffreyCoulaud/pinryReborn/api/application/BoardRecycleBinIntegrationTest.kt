@@ -490,6 +490,16 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given more than ten thousand boardIds, Then the bulk restore returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pastTheCap = List(10_001) { UUID.randomUUID() }
+
+        // When / Then
+        bulkRestore(auth, pastTheCap).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
+    }
+
+    @Test
     fun `Given another user's board last, Then the bulk restore refuses and restores nothing`() {
         // Given
         val auth = createAuthenticatedUser()
