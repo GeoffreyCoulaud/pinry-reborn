@@ -41,6 +41,7 @@
   "dismiss": "Oublier",
   "dismissal_refused": "Cette tâche n’a pas pu être oubliée.",
   "drop_image": "Déposez une image ici, ou choisissez-en une",
+  "drop_reading": "Lecture des images déposées : {count}",
   "drop_to_add": "Déposez une image ici pour ajouter une épingle",
   "drop_unsupported": "Rien dans ce dépôt ne pouvait devenir une épingle.",
   "edit_pin": "Modifier",

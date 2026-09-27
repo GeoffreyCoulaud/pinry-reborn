@@ -36,7 +36,8 @@ export function SelectionTick({ shown, className }: { shown: boolean; className?
       className={`${shown ? "" : "opacity-0"} transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 ${className ?? ""}`}
     >
       <Checkbox.Content>
-        <Checkbox.Control>
+        {/* Sized and shadowed to be found at a glance, over a photograph as over a row. */}
+        <Checkbox.Control className="size-6 shadow-md">
           <Checkbox.Indicator />
         </Checkbox.Control>
       </Checkbox.Content>

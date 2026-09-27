@@ -254,9 +254,13 @@ export function PinGrid({
               would not hear that the grid now holds a selection. */}
           <Collection items={tiles} dependencies={[selecting]}>
             {/* `group` is what the tick's reveal on hover and on focus hangs off. It replaces
-                react-aria's own class name, which nothing in this application styles. */}
+                react-aria's own class name, which nothing in this application styles. A selected
+                tile is ringed and tinted so the selection reads at a glance. */}
             {(pin) => (
-              <GridListItem textValue={pin.description} className="group">
+              <GridListItem
+                textValue={pin.description}
+                className="group rounded data-selected:ring-4 data-selected:ring-accent data-selected:after:pointer-events-none data-selected:after:absolute data-selected:after:inset-0 data-selected:after:rounded data-selected:after:bg-accent/25"
+              >
                 <SelectionTick shown={selecting} className="absolute start-2 top-2 z-10" />
                 <Tile pin={pin} smallRenditionPx={renditionSizes?.small} />
               </GridListItem>

@@ -134,7 +134,7 @@ export function Account() {
   const signOutEverywhere = useSignOutEverywhere()
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4">
+    <main className="flex w-full flex-col gap-6 p-4">
       {/* The name is the heading and no section of its own: `UserOutputDto` holds nothing else. */}
       <AppHeader heading={me.data?.name ?? m.account()}>
         <AppNav />

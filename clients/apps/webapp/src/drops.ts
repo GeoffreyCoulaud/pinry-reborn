@@ -12,6 +12,8 @@ const REFUSALS: Record<DropRefusal, () => string> = {
   UNSUPPORTED_DROP: m.drop_unsupported,
 }
 
+const READING_DELAY_MS = 300
+
 /** An element refused speaks where the gesture happened, and the gesture owns no form. */
 export function refuse(refusal: DropRefusal) {
   toast.danger(REFUSALS[refusal]())
@@ -51,6 +53,17 @@ export async function judgeDrop(
   limits: UploadLimits | undefined,
 ): Promise<DropPartition> {
   const verdicts: FileVerdict[] = []
-  for (const file of files) verdicts.push(await judge(file, limits))
+  // A wallpaper takes seconds to decode, and a drop that says nothing meanwhile reads as lost.
+  // Delayed so that a drop read at once flashes nothing.
+  let reading: string | undefined
+  const announce = setTimeout(() => {
+    reading = toast(m.drop_reading({ count: files.length }), { isLoading: true, timeout: 0 })
+  }, READING_DELAY_MS)
+  try {
+    for (const file of files) verdicts.push(await judge(file, limits))
+  } finally {
+    clearTimeout(announce)
+    if (reading !== undefined) toast.close(reading)
+  }
   return partitionDrop(verdicts, urisFromDrop(uriList))
 }
