@@ -25,7 +25,7 @@ class PinBoardSetter(
     /** All or nothing: the board and every pin are resolved before the first write (ADR 0039, decision 2). */
     fun addPinsToBoard(boardId: UUID, pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
         val board = resolveBoard(boardId, user)
-        val pins = pinIds.map { resolvePin(pinId = it, user = user) }
+        val pins = resolvePins(pinIds = pinIds, user = user)
         val at = clock.now()
         pins.forEach { pinRepository.savePin(it.copy(boards = it.boardsWithout(board) + board, updatedAt = at)) }
     }
@@ -33,7 +33,7 @@ class PinBoardSetter(
     /** All or nothing, as [addPinsToBoard] is. */
     fun removePinsFromBoard(boardId: UUID, pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
         val board = resolveBoard(boardId, user)
-        val pins = pinIds.map { resolvePin(pinId = it, user = user) }
+        val pins = resolvePins(pinIds = pinIds, user = user)
         val at = clock.now()
         pins.forEach { pinRepository.savePin(it.copy(boards = it.boardsWithout(board), updatedAt = at)) }
     }
@@ -51,6 +51,9 @@ class PinBoardSetter(
 
     /** The resolution half, split from the write, so [PinUpdater] runs it inside its own transaction. */
     fun resolveBoards(boardIds: List<UUID>, user: User): List<Board> = boardIds.map { resolveBoard(it, user) }
+
+    /** The same split for pins, which [BoardCreator] resolves before it saves the board they join. */
+    fun resolvePins(pinIds: List<UUID>, user: User): List<Pin> = pinIds.map { resolvePin(pinId = it, user = user) }
 
     // A board named in a body earns what a board named in a path earns (ADR 0038, decision 2).
     private fun resolveBoard(boardId: UUID, user: User): Board {

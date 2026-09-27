@@ -2,6 +2,29 @@
   "openapi" : "3.1.0",
   "components" : {
     "schemas" : {
+      "BoardCreationInputDto" : {
+        "type" : "object",
+        "required" : [ "name", "description" ],
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "pattern" : "\\S",
+            "maxLength" : 200
+          },
+          "description" : {
+            "type" : "string",
+            "maxLength" : 2000
+          },
+          "pinIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid",
+              "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+            }
+          }
+        }
+      },
       "BoardIdsInputDto" : {
         "type" : "object",
         "required" : [ "boardIds" ],
@@ -453,7 +476,8 @@
           "tags" : {
             "type" : "array",
             "items" : {
-              "type" : "string"
+              "type" : "string",
+              "pattern" : "\\S"
             }
           },
           "boardIds" : {
@@ -1407,7 +1431,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BoardInputDto"
+                "$ref" : "#/components/schemas/BoardCreationInputDto"
               }
             }
           },
@@ -1415,7 +1439,7 @@
         },
         "responses" : {
           "201" : {
-            "description" : "Board created",
+            "description" : "Board created, with the pins the body names filed under it",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -1427,8 +1451,28 @@
           "400" : {
             "$ref" : "#/components/responses/InvalidBody"
           },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/PinInBodyNotFound"
+          },
           "409" : {
-            "$ref" : "#/components/responses/BoardNameTaken"
+            "description" : "The name is taken, a recycled board holding its name until the bin is emptied, or a pin the body names is in the recycle bin",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "BOARD_NAME_ALREADY_EXISTS", "PIN_ALREADY_SOFT_DELETED" ]
+                    }
+                  }
+                }
+              }
+            }
           },
           "415" : {
             "$ref" : "#/components/responses/UnsupportedMediaType"
@@ -3997,7 +4041,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "19.0.0"
+    "version" : "20.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",
