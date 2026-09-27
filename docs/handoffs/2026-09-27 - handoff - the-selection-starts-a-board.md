@@ -5,8 +5,10 @@ Tier: Spec. Specification `docs/specs/2026-09-27-the-selection-starts-a-board.md
 `feat/a-board-is-created-with-its-pins` (PR #242), block 20 `feat/the-selection-starts-a-board`. Written in block 20;
 the closing block corrects it after the holistic review. (Corrected: block 20 is PR #243; the closing block is
 `fix/the-selection-starts-a-board-closes`, on block 20. The holistic review ran; see "The holistic review".
-After the operator's review of #242, blocks 13 `refactor/board-membership-in-bulk` and 16
-`refactor/recycle-bin-in-bulk` were inserted between 10 and 20, the specification's decision H; 20 now stacks on 16.)
+After the operator's review of #242, blocks 13 `refactor/board-membership-in-bulk` (PR #246) and 16
+`refactor/recycle-bin-in-bulk` (PR #247) were inserted between 10 and 20, the specification's decision H; 20 now
+stacks on 16. The closing block is PR #245. A second holistic review read 13 and 16; see "The second holistic
+review".)
 
 ## Current state
 
@@ -25,6 +27,12 @@ After the operator's review of #242, blocks 13 `refactor/board-membership-in-bul
 - **A batch write costs a constant number of reads and writes only what changes** (decision H, blocks 13 and 16):
   `BoardCreator`, `PinBoardSetter`'s add and remove, and `PinRecycleBin`'s `softDeleteAll` and `restoreAll` go
   through `PinRepositoryInterface`'s bulk methods rather than one save per pin.
+- **A batch body names at most 10 000 identifiers** (`PinIdsInputDto.MAX_IDENTIFIERS`, on `PinIdsInputDto`,
+  `BoardIdsInputDto` and `BoardCreationInputDto`), answering 400 `VALIDATION_ERROR` past it, the contract carrying
+  `maxItems`. A bulk read binds one parameter per identifier, and the embedded SQLite refuses a statement past 250 000
+  (sqlite-jdbc 3.53.2.0: `pragma compile_options` lists `MAX_VARIABLE_NUMBER=250000`, and a 250 001-parameter
+  statement fails with "too many SQL variables", probed in the closing block). `PinUpdateInputDto.boardIds` is not
+  bounded: each board is resolved by its own read, so no statement binds the list.
 - **Accepted alpha limit: a pin that already holds a blank tag answers 400 on every save from the web client**, which
   sends `pin.tags` back as it holds them. Only a direct API call could store one before `20.0.0`. The operator
   accepted blank tags being refused ("A."); no migration.
@@ -44,6 +52,8 @@ After the operator's review of #242, blocks 13 `refactor/board-membership-in-bul
   v1.31.0 `main` to HEAD: the four changes of decision E on `POST /api/v1/boards`, plus
   `request-property-pattern-added` on the tags of `PUT /api/v1/pins/{pinId}`, none on `PUT /api/v1/boards/{boardId}`
   (PR #242's report).
+- Block 13: `dagger call gate` green at `0973b5a9`; budget 303 lines, 10 files against block 10 (PR #246).
+- Block 16: `dagger call gate` green at `dc4da046`; budget 166 lines, 5 files against block 13 (PR #247).
 - Block 20: `dagger call gate` green at `18c907bf`; budget 347 lines, 17 files against block 10.
 - The journey "add selected pins to a new board" failed on the missing menu item before the implementation, then
   passed.
@@ -51,9 +61,10 @@ After the operator's review of #242, blocks 13 `refactor/board-membership-in-bul
   "New board…" first, the dialog, both 409 sentences with the selection kept, the grid with no bar after a success,
   and "Pins: 2" on the boards screen. Then every dialog holding a field (board, new pin, pin edit, export, account
   deletion), where each field's computed background now differs from its dialog's in both themes.
-- Closing block: `dagger call gate` green at `899f104f`, and again after the rebase onto the new block 20. The
-  regenerated contract drops `BoardNameTaken` and inlines `PUT /api/v1/boards/{boardId}`'s 409, with no change to its
-  codes.
+- Closing block: `dagger call gate` green at `899f104f`, again at `f162842f` after the rebase onto the new block 20,
+  and at `0052f67e` with the second holistic review's findings. The regenerated contract drops `BoardNameTaken`,
+  inlines `PUT /api/v1/boards/{boardId}`'s 409 with no change to its codes, and gives the three identifier
+  lists `maxItems` 10000.
 
 ## Pitfalls
 
@@ -103,6 +114,22 @@ After the operator's review of #242, blocks 13 `refactor/board-membership-in-bul
 | Nothing failed if the name's holder were read inside the transaction | Fixed: the name-taken test records `transactions.current` at the read and asserts it null |
 | A pin already holding a blank tag answers 400 on every save from the web client | Accepted limit, recorded under "Current state"; the operator accepted blank tags refused ("A."), no migration |
 
+## The second holistic review
+
+`.reviews/the-selection-starts-a-board-holistic-2.md`, over blocks 13 and 16 and block 10's fix-back: 0 CRITICAL,
+0 MAJOR, 8 MINOR, each fixed in the closing block.
+
+| Finding | Exit |
+|---|---|
+| No test named two pins refused for different reasons, so the batch's refusal order rested on the code alone | Fixed: `[another user's pin, unknown id]` expects the permission error in `PinBoardSetterTest` and `PinRecycleBinTest` |
+| The SQL capture counted neither the join rows' inserts nor their deletes | Fixed: one batched `insert into pin_board_model` for ten pins, one `delete from` statement |
+| The identifier lists had no bound, and past SQLite's parameter cap the batch routes answered 500 | Fixed as the operator answered, "a": `@field:Size(max = 10_000)`, a 400, `maxItems` in the contract; see "Current state" |
+| `findPinsByIds`'s test filed no pin under a recycled board | Fixed: the active pin also sits in a recycled board, and the expected boards are unchanged |
+| Decision C and block 10's row still described one `savePin` per pin | Fixed: `(Corrected by decision H: ...)` at each |
+| `BoardCreatorTest`'s comment spoke of a first read that no longer exists | Fixed: "the first pin checked" |
+| `PinRepository`'s `TooManyFunctions` comment counted methods, and the count had gone stale | Fixed: the counts dropped |
+| This handoff gave no evidence for blocks 13 and 16 | Fixed: one line each under "Evidence" |
+
 ## The backlog
 
 Reconciled: the specification names no adjacent item, no block closed one, and the lot files none. The pin viewer's
@@ -114,8 +141,11 @@ redesign is the next lot, not an item.
   inserted blocks, not fix-backs.
 - **Cascaded rebases: 1**, block 20 onto 16 and the closing block onto 20, with one conflict, in the specification's
   block table.
-- **Runs re-triggered**: to be counted once the cascade is pushed. Before it, one run per branch: 36315388379 on
-  block 10, 36318153418 on block 20 and 36318958845 on the closing block (`gh run list --branch <branch>`).
+- **Runs re-triggered: 4**, three by the cascade's push and one by the closing block's own push. The cascade's push
+  ran one per branch, 36322705750, 36322739345, 36322769686, 36322804725 and 36322837300, two of them the first
+  runs of blocks 13 and 16. The closing block's push after the second holistic review is its own run on #245. Before
+  the cascade: 36315388379 on block 10, 36318153418 on block 20 and 36318958845 on the closing block
+  (`gh run list --branch <branch>`).
 - **The operator's reading of the bodies**: to be filled in before the stack merges.
 
 ## Next step
