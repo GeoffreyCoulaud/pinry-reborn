@@ -28,9 +28,15 @@ export function uploadRefusal(
   limits: UploadLimits | undefined,
 ): UploadRefusal | null {
   if (limits === undefined) return null
-  if (upload.size > limits.maxFileBytes) return "TOO_MANY_BYTES"
-  if (upload.width * upload.height > limits.maxPixels) return "TOO_MANY_PIXELS"
-  return null
+  return (
+    byteRefusal(upload.size, limits) ??
+    (upload.width * upload.height > limits.maxPixels ? "TOO_MANY_PIXELS" : null)
+  )
+}
+
+/** The one limit a file's size alone answers, read before a decode that can take seconds. */
+export function byteRefusal(size: number, limits: UploadLimits | undefined): "TOO_MANY_BYTES" | null {
+  return limits !== undefined && size > limits.maxFileBytes ? "TOO_MANY_BYTES" : null
 }
 
 /**

@@ -48,6 +48,8 @@ describe("create a pin by uploading a file", () => {
       }),
     )
 
+    const decode = vi.spyOn(globalThis, "createImageBitmap")
+
     renderApp("/")
     const dialog = await openTheDialog(user)
     await user.upload(
@@ -62,6 +64,8 @@ describe("create a pin by uploading a file", () => {
       "This file is heavier than this server accepts.",
     )
     expect(dialog.queryByRole("alert")).toBeNull()
+    // Its size alone refuses it, so seconds of decoding a wallpaper are not spent on it.
+    expect(decode).not.toHaveBeenCalled()
     const submit = dialog.getByRole("button", { name: "Add a pin" })
     await waitFor(() => expect(submit).toBeEnabled())
     await user.click(submit)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isStorableFile, uploadRefusal } from "./uploads"
+import { byteRefusal, isStorableFile, uploadRefusal } from "./uploads"
 
 const LIMITS = {
   maxFileBytes: 1000,
@@ -24,6 +24,12 @@ describe("the upload a deployment refuses", () => {
 
   it("Given a handshake that has not answered yet, Then the server is what refuses", () => {
     expect(uploadRefusal({ size: 10_000, width: 10_000, height: 10_000 }, undefined)).toBeNull()
+    expect(byteRefusal(10_000, undefined)).toBeNull()
+  })
+
+  it("Given only the file's size, Then its weight is judged before any decode", () => {
+    expect(byteRefusal(1001, LIMITS)).toBe("TOO_MANY_BYTES")
+    expect(byteRefusal(1000, LIMITS)).toBeNull()
   })
 })
 
