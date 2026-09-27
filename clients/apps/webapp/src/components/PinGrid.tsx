@@ -1,7 +1,8 @@
 import { Button, Chip, Dropdown, EmptyState, Modal, Spinner, toast } from "@heroui/react"
 import { Link } from "@tanstack/react-router"
-import { Pencil, Trash2, X } from "lucide-react"
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
+import { ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react"
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type RefObject } from "react"
+import { useMove } from "react-aria"
 import {
   Collection,
   GridList,
@@ -16,6 +17,7 @@ import { downloadReason, retriable } from "../downloadReasons"
 import { useHandshake, useSetPinImage } from "../images"
 import type { PinSort } from "../lib/sorts"
 import {
+  neighbours,
   placeableTiles,
   renditionForColumn,
   tileAspectRatio,
@@ -250,12 +252,65 @@ function PinDetails({ pin, close, edit }: { pin: Pin; close: () => void; edit: (
   )
 }
 
+/** How far a touch travels sideways to step. No measurement set it: it is the knob to tune on a phone. */
+const SWIPE_PX = 48
+
+/** A horizontal touch swipe steps, summed over the move since a cancelled pan ends it too (decision F). */
+function useSwipe(previous?: () => void, next?: () => void) {
+  const travel = useRef({ x: 0, y: 0 })
+  const { moveProps } = useMove({
+    onMoveStart: () => {
+      travel.current = { x: 0, y: 0 }
+    },
+    onMove: ({ deltaX, deltaY }) => {
+      travel.current.x += deltaX
+      travel.current.y += deltaY
+    },
+    onMoveEnd: () => {
+      const { x, y } = travel.current
+      if (Math.abs(x) >= SWIPE_PX && Math.abs(x) > Math.abs(y)) (x < 0 ? next : previous)?.()
+    },
+  })
+  // Its pointer down alone, for touch alone: it prevents a mouse from dragging the image out, and
+  // its key handler would swallow the arrows the dialog steps on.
+  return (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType === "touch") moveProps.onPointerDown?.(event)
+  }
+}
+
+/** `←` and `→` on the document: the dialog holds the focus once open, and passes on no key handler. */
+function useArrowKeys(previous?: () => void, next?: () => void) {
+  useEffect(() => {
+    const step = (event: KeyboardEvent) => {
+      if (event.key === "ArrowLeft") previous?.()
+      if (event.key === "ArrowRight") next?.()
+    }
+    document.addEventListener("keydown", step)
+    return () => document.removeEventListener("keydown", step)
+  }, [previous, next])
+}
+
 /**
  * The image beside its details from `lg`, stacked below it (specification 2026-09-27, decision A).
- * Edit still swaps the whole dialog for the form (specification 2026-09-20, decision K).
+ * Edit still swaps the whole dialog for the form (specification 2026-09-20, decision K), and
+ * nothing steps while it is open.
  */
-function PinDialog({ pin, close, placeholder }: { pin: Pin; close: () => void; placeholder: Rendition }) {
+function PinDialog({
+  pin,
+  close,
+  placeholder,
+  previous,
+  next,
+}: {
+  pin: Pin
+  close: () => void
+  placeholder: Rendition
+  previous?: () => void
+  next?: () => void
+}) {
   const [editing, setEditing] = useState(false)
+  const swipe = useSwipe(previous, next)
+  useArrowKeys(editing ? undefined : previous, editing ? undefined : next)
 
   if (editing)
     return (
@@ -268,9 +323,29 @@ function PinDialog({ pin, close, placeholder }: { pin: Pin; close: () => void; p
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto lg:flex-row lg:overflow-hidden">
-      {/* The height the image fits in: its own side from `lg`, a share of the screen once stacked. */}
-      <div className="flex items-center justify-center [--fit-height:70dvh] lg:min-w-0 lg:flex-1 lg:[--fit-height:100cqh] lg:[container-type:size]">
+      {/* The height the image fits in: its own side from `lg`, a share of the screen once stacked.
+          `pan-y` leaves the vertical scroll to the browser, which then cancels the swipe. */}
+      <div
+        className="relative flex touch-pan-y items-center justify-center [--fit-height:70dvh] lg:min-w-0 lg:flex-1 lg:[--fit-height:100cqh] lg:[container-type:size]"
+        onPointerDown={swipe}
+      >
         <PinImage pin={pin} placeholder={placeholder} />
+        <IconButton
+          icon={ChevronLeft}
+          name={m.pin_previous()}
+          variant="secondary"
+          isDisabled={previous === undefined}
+          onPress={previous}
+          className="absolute start-2 top-1/2 -translate-y-1/2"
+        />
+        <IconButton
+          icon={ChevronRight}
+          name={m.pin_next()}
+          variant="secondary"
+          isDisabled={next === undefined}
+          onPress={next}
+          className="absolute end-2 top-1/2 -translate-y-1/2"
+        />
       </div>
       <PinDetails pin={pin} close={close} edit={() => setEditing(true)} />
     </div>
@@ -389,8 +464,25 @@ export function PinGrid({
   const tiles = placeableTiles(loaded)
   // Among every loaded pin, so a retried download that turns it `PENDING` keeps it open (decision E).
   const opened = loaded.find((pin) => pin.id === openedId)
+  const { previous, next } = neighbours(loaded, openedId)
   const selection = useSelection(tiles)
   const selecting = selection.ids.length > 0
+
+  // Past the last loaded pin the viewer asks for the page itself, the grid's sentinel not being in view.
+  const fetchThenStep = async () => {
+    const from = openedId
+    const { data } = await pins.fetchNextPage()
+    const arrived = neighbours(data?.pages.flatMap((page) => page.pins) ?? [], from).next
+    // Only from the pin it left, so a viewer closed meanwhile stays closed.
+    if (arrived) setOpenedId((current) => (current === from ? arrived.id : current))
+  }
+  const stepToPrevious = previous ? () => setOpenedId(previous.id) : undefined
+  const canFetch = pins.hasNextPage && !pins.isFetchingNextPage
+  const stepToNext = next
+    ? () => setOpenedId(next.id)
+    : canFetch
+      ? () => void fetchThenStep()
+      : undefined
 
   // Neither a first load nor an account with nothing in it draws a tile, and both said so with
   // a blank rectangle until now.
@@ -469,7 +561,13 @@ export function PinGrid({
         <Modal.Container size="cover" scroll="inside" className="max-sm:p-0">
           <Modal.Dialog aria-label={opened?.description} className="max-sm:rounded-none">
             {opened && (
-              <PinDialog pin={opened} close={() => setOpenedId(null)} placeholder={rendition} />
+              <PinDialog
+                pin={opened}
+                close={() => setOpenedId(null)}
+                placeholder={rendition}
+                previous={stepToPrevious}
+                next={stepToNext}
+              />
             )}
           </Modal.Dialog>
         </Modal.Container>

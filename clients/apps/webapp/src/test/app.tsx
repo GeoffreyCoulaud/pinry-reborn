@@ -85,10 +85,10 @@ function pageAt(pages: Pin[][], request: Request) {
   })
 }
 
-/** The catalogue the grid pages through. */
-export function pinsRoute(pages: Pin[][], onRequest: () => void = () => {}) {
-  return http.get("/api/v1/pins", ({ request }) => {
-    onRequest()
+/** The catalogue the grid pages through, each page answered once `onRequest` settles. */
+export function pinsRoute(pages: Pin[][], onRequest: (request: Request) => unknown = () => {}) {
+  return http.get("/api/v1/pins", async ({ request }) => {
+    await onRequest(request)
     return pageAt(pages, request)
   })
 }

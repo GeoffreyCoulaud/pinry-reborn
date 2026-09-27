@@ -37,6 +37,7 @@ export const REQUIRED_JOURNEYS = [
   "read an import's report",
   "an upload and an export surfacing in the task centre",
   "retry a failed download from the pin",
+  "step through the grid from a pin",
 ]
 
 /** The file under `src/journeys/` that holds a journey's test. */

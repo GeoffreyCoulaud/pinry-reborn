@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  neighbours,
   placeableTiles,
   removePins,
   renditionForColumn,
@@ -69,6 +70,33 @@ describe("the tiles a page places", () => {
     ]
 
     expect(placeableTiles(pins).map((pin) => pin.id)).toEqual(["bare", "failed", "none"])
+  })
+})
+
+describe("the pins either side of the opened one", () => {
+  const withStatus = (id: string, status: "READY" | "PENDING") => ({ id, image: { status } })
+  const ids = ({ previous, next }: { previous?: { id: string }; next?: { id: string } }) => [
+    previous?.id,
+    next?.id,
+  ]
+
+  it("Given a pin inside the grid, Then its neighbours are the tiles either side of it", () => {
+    const pins = [withStatus("a", "READY"), withStatus("b", "READY"), withStatus("c", "READY")]
+
+    expect(ids(neighbours(pins, "b"))).toEqual(["a", "c"])
+    expect(ids(neighbours(pins, "a"))).toEqual([undefined, "b"])
+    expect(ids(neighbours(pins, "c"))).toEqual(["b", undefined])
+  })
+
+  it("Given a download still running, Then that pin is stepped over unless it is the opened one", () => {
+    const pins = [withStatus("a", "READY"), withStatus("b", "PENDING"), withStatus("c", "READY")]
+
+    expect(ids(neighbours(pins, "a"))).toEqual([undefined, "c"])
+    expect(ids(neighbours(pins, "b"))).toEqual(["a", "c"])
+  })
+
+  it("Given a pin no page holds, Then it has no neighbour", () => {
+    expect(ids(neighbours([withStatus("a", "READY")], "z"))).toEqual([undefined, undefined])
   })
 })
 

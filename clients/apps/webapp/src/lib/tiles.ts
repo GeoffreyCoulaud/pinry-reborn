@@ -48,6 +48,18 @@ export function placeableTiles<
   return pins.filter((pin) => pin.image?.status !== "PENDING")
 }
 
+/**
+ * The pins the viewer steps to from the opened one, in the grid's order: the placeable tiles, the
+ * opened pin kept in though its download is running (specification 2026-09-27, decision F).
+ */
+export function neighbours<
+  T extends { id: string; image?: { status: Schemas["PinImageStateDto"]["status"] } | null },
+>(pins: readonly T[], openedId: string | null): { previous: T | undefined; next: T | undefined } {
+  const order = pins.filter((pin) => pin.id === openedId || pin.image?.status !== "PENDING")
+  const at = order.findIndex((pin) => pin.id === openedId)
+  return at < 0 ? { previous: undefined, next: undefined } : { previous: order[at - 1], next: order[at + 1] }
+}
+
 /** A page's pins with the freshly read ones swapped in, the rest left as they were. */
 export function replacePins<T extends { id: string }>(pins: readonly T[], fresh: readonly T[]): T[] {
   const byId = new Map(fresh.map((pin) => [pin.id, pin]))
