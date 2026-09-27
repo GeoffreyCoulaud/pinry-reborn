@@ -67,7 +67,6 @@ class SharedRefusalsFilter : OASFilter {
         const val BOARD_FORBIDDEN = "BoardForbidden"
         const val BOARD_NOT_FOUND = "BoardNotFound"
         const val BOARD_NOT_RECYCLED = "BoardNotRecycled"
-        const val BOARD_NAME_TAKEN = "BoardNameTaken"
         const val BOARD_OR_PIN_FORBIDDEN = "BoardOrPinForbidden"
         const val BOARD_OR_PIN_NOT_FOUND = "BoardOrPinNotFound"
         const val IMAGE_FORBIDDEN = "ImageForbidden"
@@ -155,11 +154,6 @@ class SharedRefusalsFilter : OASFilter {
             BOARD_NOT_RECYCLED to refusal(
                 "The board is not in the recycle bin",
                 ProblemCode.BOARD_NOT_SOFT_DELETED,
-            ),
-            BOARD_NAME_TAKEN to refusal(
-                "This account already holds a board of that name, ASCII case folded, and a recycled " +
-                    "board holds its name until the bin is emptied",
-                ProblemCode.BOARD_NAME_ALREADY_EXISTS,
             ),
             BOARD_OR_PIN_FORBIDDEN to refusal(
                 "The board, or a pin the body names, belongs to another account",
