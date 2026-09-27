@@ -241,7 +241,7 @@ export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
           )
         }}
       >
-        {/* `secondary` on every control: this form lives in a dialog (see `BoardForm`). */}
+        {/* `secondary` on every control: the default variant takes the dialog's own colour in the dark theme. */}
         <TextField type="url" value={address} onChange={changeAddress} variant="secondary">
           <Label>{m.image_address()}</Label>
           <Input />

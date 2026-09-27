@@ -78,6 +78,8 @@ Inside `apps/webapp/src`:
 - **A HeroUI control is a compound component**: `Checkbox` is `Checkbox.Content` around `Checkbox.Control` around
   `Checkbox.Indicator`, `Select` is a trigger plus a popover plus a `ListBox`. Given the old single-element shape it
   compiles, renders no usable DOM at all, and no test goes red. **Read the rendered DOM, not the source.**
+- **A field, select or radio inside a dialog takes `variant="secondary"`**; one on a page keeps the default. The
+  default takes the dialog's own background in the dark theme, with no border, and no test sees it: read it headless.
 - **`styles.css`'s import order is load bearing**: the house `@custom-variant dark` comes *after*
   `@import "@heroui/styles"`, whose own declaration fires every `dark:` utility against the user's chosen theme on
   a machine that prefers dark (`docs/adr/0035-a-styled-layer-over-react-aria-components.md`, decision 4).
