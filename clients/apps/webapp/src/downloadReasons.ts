@@ -18,6 +18,28 @@ const REASONS: Record<Known<"DownloadReasonDto">, () => string> = {
 }
 
 /**
+ * Whether the same request can pass next time: the two reasons `DownloadPinImage` retries itself.
+ * The others would earn the same answer, `FETCH_FAILED` included (specification 2026-09-27, decision D).
+ */
+const RETRIABLE: Record<Known<"DownloadReasonDto">, boolean> = {
+  URL_NOT_ALLOWED: false,
+  UNREACHABLE: true,
+  ACCESS_DENIED: false,
+  NOT_FOUND: false,
+  TOO_LARGE: false,
+  INVALID_IMAGE: false,
+  TOO_MANY_PIXELS: false,
+  INTERNAL_ERROR: true,
+  FETCH_FAILED: false,
+}
+
+/** A reason this bundle does not know is not offered again. */
+export function retriable(reasonCode: string | null | undefined): boolean {
+  const key = reasonCode ?? ""
+  return Object.hasOwn(RETRIABLE, key) && RETRIABLE[key as keyof typeof RETRIABLE]
+}
+
+/**
  * Why a download failed, in the reader's own language. `reasonCode` is the machine value
  * specification 4.8 asks the task to offer; `message` is the server's English sentence, kept as
  * the fallback for a reason a newer server sends and this bundle has no key for.

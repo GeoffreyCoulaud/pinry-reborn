@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react"
+import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { HttpResponse, http } from "msw"
 import { describe, expect, it } from "vitest"
@@ -22,14 +22,16 @@ describe("a failed download surfacing in the task centre", () => {
     const user = userEvent.setup()
     const failed = pin("a cat asleep", {
       status: "FAILED",
-      reasonCode: "NOT_FOUND",
+      reasonCode: "UNREACHABLE",
       message: "No image at this URL.",
     })
     let retried: string | null = null
     server.use(
       sessionRoute(() => true),
       onePinPage(() => [failed]),
-      downloadsRoute(() => [download(failed.id, "FAILED", "The server could not fetch it.")]),
+      downloadsRoute(() => [
+        download(failed.id, "FAILED", "The server could not fetch it.", "UNREACHABLE"),
+      ]),
       handshakeRoute(),
       http.put("/api/v1/pins/:pinId/image", ({ params }) => {
         retried = String(params.pinId)
@@ -51,7 +53,8 @@ describe("a failed download surfacing in the task centre", () => {
     expect(await screen.findByText("Failed")).toBeVisible()
     // The reason is read from `reasonCode` through the catalogue, not from the server's own
     // English sentence, which a French reader would otherwise get (specification 2026-09-10, 4.8).
-    expect(screen.getByText("That download failed.")).toBeVisible()
+    const centre = screen.getByRole("dialog", { name: "Tasks (1)" })
+    expect(within(centre).getByText("The server could not reach that address.")).toBeVisible()
     expect(screen.queryByText("The server could not fetch it.")).toBeNull()
     // The recourse question V exists for: the address again, a file from disk, or neither.
     expect(screen.getByLabelText("Image file")).toBeInTheDocument()
@@ -83,11 +86,11 @@ describe("a failed download surfacing in the task centre", () => {
 
   it("Given actions the API refuses, Then the centre says so rather than staying silent", async () => {
     const user = userEvent.setup()
-    const failed = pin("a cat asleep", { status: "FAILED", reasonCode: "FETCH_FAILED" })
+    const failed = pin("a cat asleep", { status: "FAILED", reasonCode: "UNREACHABLE" })
     server.use(
       sessionRoute(() => true),
       onePinPage(() => [failed]),
-      downloadsRoute(() => [download(failed.id, "FAILED")]),
+      downloadsRoute(() => [download(failed.id, "FAILED", null, "UNREACHABLE")]),
       handshakeRoute(),
       http.put("/api/v1/pins/:pinId/image", () => new HttpResponse(null, { status: 503 })),
       http.delete("/api/v1/me/image-downloads/:pinId", () => new HttpResponse(null, { status: 503 })),
@@ -128,6 +131,8 @@ describe("a failed download surfacing in the task centre", () => {
     expect(badge()).toHaveTextContent("1")
     // The trigger's name already carries the count; read as well, the badge would say it twice.
     expect(badge()).toHaveAttribute("aria-hidden", "true")
+    // The same request would earn the same answer, so the centre offers a file and no retry.
+    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull()
     await user.upload(
       screen.getByLabelText("Image file"),
       new File(["ok"], "cat.png", { type: "image/png" }),

@@ -142,6 +142,7 @@
   "password_previously_used": "This account has used that password before. Choose another one.",
   "password_wrong": "That is not the current password.",
   "pin_deletion_refused": "That pin could not be deleted.",
+  "pin_no_image": "This pin has no image.",
   "pin_progress": "Pin {current} of {total}",
   "pin_refused": "That pin could not be saved.",
   "pins": "Pins",

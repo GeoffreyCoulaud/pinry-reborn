@@ -1,12 +1,12 @@
 import { Badge, Button, Popover, buttonVariants } from "@heroui/react"
 import { ArrowDownUp } from "lucide-react"
-import { downloadReason } from "../downloadReasons"
+import { downloadReason, retriable } from "../downloadReasons"
 import { useDropDownload, useImageDownloads, useSetPinImage, type Download } from "../images"
 import { m } from "../paraglide/messages.js"
 import { useDataTasks } from "./DataTasks"
 import { IconButton } from "./IconButton"
 
-/** A failed download offers what question V exists for: the same address again, or a file. */
+/** A failed download offers what question V exists for: the same address again if it can pass, or a file. */
 function Task({ download }: { download: Download }) {
   const setImage = useSetPinImage()
   const drop = useDropDownload()
@@ -20,14 +20,16 @@ function Task({ download }: { download: Download }) {
       {reason !== null && <span className="text-sm">{reason}</span>}
       {failed && (
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            size="sm"
-            onPress={() =>
-              setImage.mutate({ pinId: download.pinId, source: { url: download.sourceUrl } })
-            }
-          >
-            {m.retry()}
-          </Button>
+          {retriable(download.reasonCode) && (
+            <Button
+              size="sm"
+              onPress={() =>
+                setImage.mutate({ pinId: download.pinId, source: { url: download.sourceUrl } })
+              }
+            >
+              {m.retry()}
+            </Button>
+          )}
           {/* A file picker is no HeroUI control, so the label borrows the variant instead. */}
           <label className={buttonVariants({ variant: "secondary", size: "sm" })}>
             {m.image_file()}
