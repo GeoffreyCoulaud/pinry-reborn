@@ -210,7 +210,7 @@ class BoardCreatorTest {
     }
 
     private inline fun <reified T : Throwable> assertRefusedBeforeWriting(author: User, refused: Pin) {
-        // Given: an acceptable pin first, so the refusal is not merely the first read
+        // Given: an acceptable pin first, so the refusal is not merely the first pin checked
         val pinIds = givenPins(pin(author), refused)
 
         // When, Then

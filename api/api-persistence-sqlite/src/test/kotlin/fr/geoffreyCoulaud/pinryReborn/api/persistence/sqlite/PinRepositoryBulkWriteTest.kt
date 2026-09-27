@@ -21,18 +21,21 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
     // --- findPinsByIds ---
 
     @Test
-    fun `Given pins in either state, Then findPinsByIds answers each with its tags and boards`() {
+    fun `Given pins in either state, Then findPinsByIds answers each with its tags and active boards`() {
         // Given
         val user = createAndSaveUser()
         val tag = createAndSaveTag(name = "tag", user = user)
         val board = createAndSaveBoard(user)
+        val recycledBoard = createAndSaveBoard(user)
         val active = repository.savePin(createAndSavePin(user).copy(tags = listOf(tag), boards = listOf(board)))
+        repository.savePin(active.copy(boards = listOf(board, recycledBoard)))
+        softDeleteBoardModel(recycledBoard)
         val recycled = repository.softDeletePin(createAndSavePin(user), storableNow())
 
         // When
         val found = repository.findPinsByIds(listOf(active.id, recycled.id, randomUUID()))
 
-        // Then: an unknown id is simply absent
+        // Then: an unknown id is simply absent, and so is the recycled board
         assertEquals(setOf(active, recycled), found.toSet())
     }
 
@@ -73,10 +76,14 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
     }
 
     @Test
-    fun `Given one pin or ten, Then addPinsToBoard reads as often and batches its updates`() {
-        assertConstantReadsAndOneUpdateBatch(given = { user, _ -> createAndSavePin(user) }) { ids, board ->
+    fun `Given one pin or ten, Then addPinsToBoard reads as often and batches its updates and inserts`() {
+        val ten = assertConstantReadsAndOneUpdateBatch(given = { user, _ -> createAndSavePin(user) }) { ids, board ->
             repository.addPinsToBoard(ids, board, later)
         }
+
+        // Then: the join rows too, one INSERT sent once with ten rows bound
+        val inserts = ten.sql().filter { "insert into pin_board_model" in it }
+        assertEquals(listOf(JOIN_INSERT, "-- executeBatch() size:10 sql:$JOIN_INSERT"), inserts, "ten ran $ten")
     }
 
     // --- removePinsFromBoard ---
@@ -100,10 +107,13 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
     }
 
     @Test
-    fun `Given one pin or ten, Then removePinsFromBoard reads as often and batches its updates`() {
-        assertConstantReadsAndOneUpdateBatch(given = { user, board -> filedPin(user, board) }) { ids, board ->
+    fun `Given one pin or ten, Then removePinsFromBoard reads as often and deletes in one statement`() {
+        val ten = assertConstantReadsAndOneUpdateBatch(given = { user, board -> filedPin(user, board) }) { ids, board ->
             repository.removePinsFromBoard(ids, board, later)
         }
+
+        // Then
+        assertEquals(1, ten.sql().count { it.startsWith("delete from") }, "ten ran $ten")
     }
 
     // --- softDeletePins and restorePins ---
@@ -147,12 +157,15 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
     private fun filedPin(user: User, board: Board): Pin =
         repository.savePin(createAndSavePin(user).copy(boards = listOf(board)))
 
-    /** [given] saves one pin in the state [write] expects; [update] is the one UPDATE statement expected. */
+    /**
+     * [given] saves one pin in the state [write] expects; [update] is the one UPDATE statement expected.
+     * Answers the statements of ten pins, for the caller's own assertions.
+     */
     private fun assertConstantReadsAndOneUpdateBatch(
         update: String = PIN_UPDATE,
         given: (User, Board) -> Pin,
         write: (List<UUID>, Board) -> Unit,
-    ) {
+    ): List<String> {
         // When
         val one = statementsWriting(pinCount = 1, given = given, write = write)
         val ten = statementsWriting(pinCount = 10, given = given, write = write)
@@ -161,6 +174,7 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
         assertTrue(one.reads() > 0, "no read captured in $one")
         assertEquals(one.reads(), ten.reads(), "one pin ran $one, ten ran $ten")
         assertEquals(listOf(update, "-- executeBatch() size:10 sql:$update"), ten.pinUpdates(), "ten ran $ten")
+        return ten
     }
 
     /** What a use case runs: the pins resolved in bulk, then [write], in one transaction. */
@@ -194,5 +208,7 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
         const val PIN_UPDATE = "update pins set when_modified=? where id=?"
 
         const val RECYCLE_UPDATE = "update pins set when_modified=?, soft_deleted_at=? where id=?"
+
+        const val JOIN_INSERT = "insert into pin_board_model (pin_id, board_id) values (?,?)"
     }
 }
