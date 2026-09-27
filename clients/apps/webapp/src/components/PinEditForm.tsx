@@ -3,24 +3,24 @@ import {
   Input,
   Label,
   ListBox,
-  Radio,
-  RadioGroup,
   Select,
   Tag,
   TagGroup,
   TextArea,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@heroui/react"
-import { useEffect, useState } from "react"
+import { useEffect, useId, useState, type ReactNode } from "react"
 import { useBoards } from "../boards"
 import { useDebounced } from "../debounce"
 import { downloadReason } from "../downloadReasons"
 import { useHandshake, useSetPinImage, type ImageSource } from "../images"
 import type { KeptFile } from "../lib/drops"
-import { tileImageSource } from "../lib/tiles"
 import { m } from "../paraglide/messages.js"
 import { useTagSearch, useUpdatePin, type Pin } from "../pins"
 import { ImageDropBox } from "./ImageDropBox"
+import { PinSides } from "./PinSides"
 
 /**
  * Free text over the author's own names. The server decides which names are one tag, folding to
@@ -130,65 +130,44 @@ function BoardField({
 /** What the save does to the image, one of three and applied after the pin is written. */
 type ImageIntent = "keep" | "replace" | "fetch"
 
-function ImageOption({ value, label }: { value: ImageIntent; label: string }) {
-  return (
-    <Radio value={value}>
-      <Radio.Content>
-        <Radio.Control>
-          <Radio.Indicator />
-        </Radio.Control>
-        {label}
-      </Radio.Content>
-    </Radio>
-  )
-}
-
-/** What the form is editing: the picture the pin carries, or the file about to replace it. */
-function ImagePreview({ pin, chosen }: { pin: Pin; chosen: KeptFile | null }) {
+/** The file about to replace the image, drawn in its place. */
+function FilePreview({ file }: { file: File }) {
   const [preview, setPreview] = useState<string | null>(null)
 
-  // The form is mounted only while the dialog is editing, so this revokes the URL on Cancel and
-  // on the pin saved as much as on another file chosen.
+  // Mounted only while a file is chosen, so this revokes the URL on Cancel, on save and on Remove.
   useEffect(() => {
-    if (chosen === null) {
-      setPreview(null)
-      return
-    }
-    const drawn = URL.createObjectURL(chosen.file)
+    const drawn = URL.createObjectURL(file)
     setPreview(drawn)
     return () => URL.revokeObjectURL(drawn)
-  }, [chosen])
+  }, [file])
 
-  const held = pin.image?.url
-  const source = preview ?? (held != null ? tileImageSource(held, "MEDIUM") : null)
-  if (source === null) return null
-  return (
-    <img
-      src={source}
-      // The pin's own picture is what its description names; a file not sent yet is not the pin.
-      alt={preview === null ? pin.description : ""}
-      className="max-h-48 w-full rounded object-contain"
-    />
-  )
+  // A file not sent yet is not the pin, so it takes no name of the pin's.
+  return preview && <img src={preview} alt="" className="min-h-0 w-full flex-1 object-contain" />
 }
 
 /**
- * What edits a pin is a set of fields, where what shows one is an image and its words (decision K).
- * Every field is sent on every save: the route replaces the pin, and an empty list clears.
+ * What edits a pin is a set of fields in the column, and one choice made on the image
+ * (specification 2026-09-27, decisions G and H). Every field is sent on every save: the route
+ * replaces the pin, and an empty list clears.
  */
-export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
+export function PinEditForm({ pin, image, close }: { pin: Pin; image: ReactNode; close: () => void }) {
   const save = useUpdatePin()
   const setImage = useSetPinImage()
   const limits = useHandshake().data?.limits
+  const heading = useId()
   const [tags, setTags] = useState<readonly string[]>(pin.tags.map((tag) => tag.name))
   const [boardIds, setBoardIds] = useState<readonly string[]>(pin.boards.map((board) => board.id))
-  // The address is the form's, not the pin's: the fetch is offered on what the field holds now,
-  // so an address added during this edit needs no save and no second edit to be fetched from.
+  // One value in one field at a time: the column's, or the selector's once the image is fetched from it.
   const [address, setAddress] = useState(pin.sourceMediaUrl ?? "")
   const [intent, setIntent] = useState<ImageIntent>("keep")
   const [chosen, setChosen] = useState<KeptFile | null>(null)
   const replacement = pin.image?.replacement
-  const fetchable = address.trim() !== ""
+  const addressField = (
+    <TextField type="url" value={address} onChange={setAddress} variant="secondary">
+      <Label>{m.image_address()}</Label>
+      <Input />
+    </TextField>
+  )
 
   /** What the save applies to the image once the pin itself is written, or nothing. */
   function source(): ImageSource | null {
@@ -197,119 +176,135 @@ export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
     return null
   }
 
-  function changeAddress(typed: string) {
-    setAddress(typed)
-    // The fetch reads that field, so an address taken away takes the option with it.
-    if (typed.trim() === "" && intent === "fetch") setIntent("keep")
-  }
+  // Either choice with nothing to apply would save as though the image were being kept.
+  const incomplete = (intent === "replace" && chosen === null) || (intent === "fetch" && address.trim() === "")
 
   return (
-    <div className="flex flex-col gap-3">
-      <ImagePreview pin={pin} chosen={intent === "replace" ? chosen : null} />
-      {/* The sub-state the contract has carried since before any client read it: the pin keeps the
-          image it has while the server downloads the one asked for. */}
-      {replacement?.status === "PENDING" && <p role="status">{m.image_replacing()}</p>}
-      {replacement?.status === "FAILED" && (
-        <p role="alert">{downloadReason(replacement.reasonCode, replacement.message)}</p>
-      )}
-      <form
-        className="flex flex-col gap-3"
-        onSubmit={(event) => {
-          event.preventDefault()
-          const fields = new FormData(event.currentTarget)
-          save.mutate(
-            {
-              pinId: pin.id,
-              body: {
-                description: String(fields.get("description")),
-                // An address emptied is an address cleared, the replacement being total.
-                sourceContextUrl: String(fields.get("sourceContextUrl")) || null,
-                sourceMediaUrl: address || null,
-                tags: [...tags],
-                boardIds: [...boardIds],
-              },
-            },
-            {
-              // The pin first, then the option chosen: a fetch then reads the address the pin
-              // holds rather than one the server has never seen. A refused pin touches no image.
-              onSuccess: () => {
-                const chosenSource = source()
-                if (chosenSource === null) close()
-                else setImage.mutate({ pinId: pin.id, source: chosenSource }, { onSuccess: close })
-              },
-            },
-          )
-        }}
-      >
-        {/* `secondary` on every control: the default variant takes the dialog's own colour in the dark theme. */}
-        <TextField type="url" value={address} onChange={changeAddress} variant="secondary">
-          <Label>{m.image_address()}</Label>
-          <Input />
-        </TextField>
-        <RadioGroup
-          value={intent}
-          onChange={(value) => setIntent(value as ImageIntent)}
-          variant="secondary"
-        >
-          <Label>{m.image()}</Label>
-          <ImageOption value="keep" label={m.image_keep()} />
-          <ImageOption value="replace" label={m.image_replace()} />
-          {/* On the field's value and not on the pin's: an address just typed is one to fetch from. */}
-          {fetchable && <ImageOption value="fetch" label={m.fetch_image_from_url()} />}
-        </RadioGroup>
-        {/* The file replacing the image is chosen the way the creation screen has one chosen, and
-            an address the same drop carried is taken as well. */}
-        {intent === "replace" && (
-          <ImageDropBox
-            limits={limits}
-            onDrop={(drop) => {
-              if (drop.files[0] !== undefined) setChosen(drop.files[0])
-              if (drop.urls[0] !== undefined) changeAddress(drop.urls[0])
-            }}
+    <PinSides
+      image={
+        <div className="flex h-full w-full flex-col items-center gap-3">
+          <ToggleButtonGroup
+            aria-label={m.image()}
+            selectionMode="single"
+            disallowEmptySelection
+            selectedKeys={[intent]}
+            onSelectionChange={(keys) => setIntent([...keys][0] as ImageIntent)}
           >
-            {chosen !== null && (
-              <>
-                <span className="text-sm text-muted">{chosen.file.name}</span>
-                {/* Above the label's stretched hit area, which would otherwise open the picker. */}
-                <Button variant="ghost" className="relative" onPress={() => setChosen(null)}>
-                  {m.remove()}
-                </Button>
-              </>
-            )}
-          </ImageDropBox>
-        )}
-        <TextField name="description" defaultValue={pin.description} variant="secondary">
-          <Label>{m.description()}</Label>
-          <TextArea rows={3} />
-        </TextField>
-        <TextField
-          name="sourceContextUrl"
-          type="url"
-          defaultValue={pin.sourceContextUrl ?? ""}
-          variant="secondary"
-        >
-          <Label>{m.source_page()}</Label>
-          <Input />
-        </TextField>
-        <TagField names={tags} onChange={setTags} />
-        <BoardField ids={boardIds} onChange={setBoardIds} />
-        {/* Two halves, two sentences: the pin is written before its image, so a refused image
-            leaves the fields saved and only the image to try again. */}
-        {save.isError && <p role="alert">{m.pin_refused()}</p>}
-        {setImage.isError && <p role="alert">{m.image_refused()}</p>}
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onPress={close}>
-            {m.cancel()}
-          </Button>
-          <Button
-            type="submit"
-            // Replace with nothing chosen would save as though the image were being kept.
-            isDisabled={save.isPending || setImage.isPending || (intent === "replace" && chosen === null)}
-          >
-            {m.save()}
-          </Button>
+            <ToggleButton id="keep">{m.image_keep()}</ToggleButton>
+            <ToggleButton id="replace">
+              <ToggleButtonGroup.Separator />
+              {m.image_from_file()}
+            </ToggleButton>
+            <ToggleButton id="fetch">
+              <ToggleButtonGroup.Separator />
+              {m.image_from_address()}
+            </ToggleButton>
+          </ToggleButtonGroup>
+          {intent === "fetch" && <div className="w-full max-w-md">{addressField}</div>}
+          {intent === "replace" ? (
+            <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-2 text-center">
+              {chosen === null ? (
+                // A drop that also carries an address fills the address, as the creation screen does.
+                <ImageDropBox
+                  limits={limits}
+                  className="min-h-48 w-full flex-1 justify-center"
+                  onDrop={(drop) => {
+                    if (drop.files[0] !== undefined) setChosen(drop.files[0])
+                    if (drop.urls[0] !== undefined) setAddress(drop.urls[0])
+                  }}
+                />
+              ) : (
+                <>
+                  <FilePreview file={chosen.file} />
+                  <p>{chosen.file.name}</p>
+                  <p className="text-sm text-muted">{m.image_unsaved()}</p>
+                  <Button variant="secondary" onPress={() => setChosen(null)}>
+                    {m.remove()}
+                  </Button>
+                </>
+              )}
+            </div>
+          ) : (
+            // Its own size container, so the image fits in what the selector leaves of the side.
+            <div className="flex min-h-0 w-full flex-1 items-center justify-center lg:[container-type:size]">
+              {image}
+            </div>
+          )}
+          {intent === "fetch" && <p className="text-sm text-muted">{m.image_fetched_on_save()}</p>}
         </div>
-      </form>
-    </div>
+      }
+      column={
+        <form
+          aria-labelledby={heading}
+          className="flex flex-1 flex-col gap-3"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const fields = new FormData(event.currentTarget)
+            save.mutate(
+              {
+                pinId: pin.id,
+                body: {
+                  description: String(fields.get("description")),
+                  // An address emptied is an address cleared, the replacement being total.
+                  sourceContextUrl: String(fields.get("sourceContextUrl")) || null,
+                  sourceMediaUrl: address || null,
+                  tags: [...tags],
+                  boardIds: [...boardIds],
+                },
+              },
+              {
+                // The pin first, then the option chosen: a fetch then reads the address the pin
+                // holds rather than one the server has never seen. A refused pin touches no image.
+                onSuccess: () => {
+                  const chosenSource = source()
+                  if (chosenSource === null) close()
+                  else setImage.mutate({ pinId: pin.id, source: chosenSource }, { onSuccess: close })
+                },
+              },
+            )
+          }}
+        >
+          <h2 id={heading} className="text-lg font-medium">
+            {m.pin_editing()}
+          </h2>
+          {/* The sub-state the contract has carried since before any client read it: the pin keeps
+              the image it has while the server downloads the one asked for. */}
+          {replacement?.status === "PENDING" && <p role="status">{m.image_replacing()}</p>}
+          {replacement?.status === "FAILED" && (
+            <p role="alert">{downloadReason(replacement.reasonCode, replacement.message)}</p>
+          )}
+          {/* `secondary` on every control: the default variant takes the dialog's own colour in the dark theme. */}
+          <TextField name="description" defaultValue={pin.description} variant="secondary">
+            <Label>{m.description()}</Label>
+            <TextArea rows={3} />
+          </TextField>
+          <TextField
+            name="sourceContextUrl"
+            type="url"
+            defaultValue={pin.sourceContextUrl ?? ""}
+            variant="secondary"
+          >
+            <Label>{m.source_page()}</Label>
+            <Input />
+          </TextField>
+          {intent !== "fetch" && addressField}
+          <TagField names={tags} onChange={setTags} />
+          <BoardField ids={boardIds} onChange={setBoardIds} />
+          {/* Two halves, two sentences: the pin is written before its image, so a refused image
+              leaves the fields saved and only the image to try again. */}
+          {save.isError && <p role="alert">{m.pin_refused()}</p>}
+          {setImage.isError && <p role="alert">{m.image_refused()}</p>}
+          {/* At the column's foot while the fields scroll above it. */}
+          <div className="sticky bottom-0 mt-auto flex justify-end gap-2 bg-overlay py-2">
+            <Button variant="ghost" onPress={close}>
+              {m.cancel()}
+            </Button>
+            <Button type="submit" isDisabled={save.isPending || setImage.isPending || incomplete}>
+              {m.save()}
+            </Button>
+          </div>
+        </form>
+      }
+    />
   )
 }

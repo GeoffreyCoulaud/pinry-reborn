@@ -15,11 +15,13 @@ export function ImageDropBox({
   multiple = false,
   onDrop,
   children,
+  className = "",
 }: {
   limits: UploadLimits | undefined
   multiple?: boolean
   onDrop: (drop: DropPartition) => void
   children?: ReactNode
+  className?: string
 }) {
   const [depth, setDepth] = useState(0)
 
@@ -33,7 +35,7 @@ export function ImageDropBox({
     // `data-dragging` carries the counter rather than a class, jsdom computing no style: it is
     // what the active style hangs on and the only thing a test can read.
     <div
-      className="relative flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-focus data-dragging:border-accent data-dragging:bg-accent-soft"
+      className={`relative flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-focus data-dragging:border-accent data-dragging:bg-accent-soft ${className}`}
       data-dragging={depth > 0 ? "" : undefined}
       onDragEnter={() => setDepth((current) => dragDepth(current, "enter"))}
       onDragLeave={() => setDepth((current) => dragDepth(current, "leave"))}

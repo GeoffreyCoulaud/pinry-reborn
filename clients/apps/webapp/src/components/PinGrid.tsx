@@ -30,6 +30,7 @@ import { useRecyclePins, usePins, type Pin } from "../pins"
 import { BoardForm } from "./BoardForm"
 import { IconButton } from "./IconButton"
 import { PinEditForm } from "./PinEditForm"
+import { PinSides } from "./PinSides"
 import { SelectionBar, SelectionTick, useSelection } from "./SelectionBar"
 
 /**
@@ -182,13 +183,13 @@ function PinImage({ pin, placeholder }: { pin: Pin; placeholder: Rendition }) {
   return <p>{m.pin_no_image()}</p>
 }
 
-/** The column beside the image, fixed so that what a wider window adds goes to the image. */
+/** The column beside the image. */
 function PinDetails({ pin, close, edit }: { pin: Pin; close: () => void; edit: () => void }) {
   const recycle = useRecyclePins()
   const source = pin.sourceContextUrl
 
   return (
-    <div className="flex flex-col gap-4 lg:w-[22.5rem] lg:shrink-0 lg:overflow-y-auto">
+    <>
       <div className="flex items-center gap-1">
         <Button variant="ghost" onPress={edit}>
           <Pencil aria-hidden />
@@ -249,7 +250,7 @@ function PinDetails({ pin, close, edit }: { pin: Pin; close: () => void; edit: (
           </div>
         )}
       </dl>
-    </div>
+    </>
   )
 }
 
@@ -291,11 +292,7 @@ function useArrowKeys(previous?: () => void, next?: () => void) {
   }, [previous, next])
 }
 
-/**
- * The image beside its details from `lg`, stacked below it (specification 2026-09-27, decision A).
- * Edit still swaps the whole dialog for the form (specification 2026-09-20, decision K), and
- * nothing steps while it is open.
- */
+/** The pin read or edited beside its image; nothing steps while the form is open. */
 function PinDialog({
   pin,
   close,
@@ -315,41 +312,39 @@ function PinDialog({
 
   if (editing)
     return (
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-lg">
-          <PinEditForm pin={pin} close={() => setEditing(false)} />
-        </div>
-      </div>
+      <PinEditForm
+        pin={pin}
+        image={<PinImage pin={pin} placeholder={placeholder} />}
+        close={() => setEditing(false)}
+      />
     )
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto lg:flex-row lg:overflow-hidden">
-      {/* The height the image fits in: its own side from `lg`, a share of the screen once stacked.
-          `pan-y` leaves the vertical scroll to the browser, which then cancels the swipe. */}
-      <div
-        className="relative flex touch-pan-y items-center justify-center [--fit-height:70dvh] lg:min-w-0 lg:flex-1 lg:[--fit-height:100cqh] lg:[container-type:size]"
-        onPointerDown={swipe}
-      >
-        <PinImage pin={pin} placeholder={placeholder} />
-        <IconButton
-          icon={ChevronLeft}
-          name={m.pin_previous()}
-          variant="secondary"
-          isDisabled={previous === undefined}
-          onPress={previous}
-          className="absolute start-2 top-1/2 -translate-y-1/2"
-        />
-        <IconButton
-          icon={ChevronRight}
-          name={m.pin_next()}
-          variant="secondary"
-          isDisabled={next === undefined}
-          onPress={next}
-          className="absolute end-2 top-1/2 -translate-y-1/2"
-        />
-      </div>
-      <PinDetails pin={pin} close={close} edit={() => setEditing(true)} />
-    </div>
+    <PinSides
+      onPointerDown={swipe}
+      image={
+        <>
+          <PinImage pin={pin} placeholder={placeholder} />
+          <IconButton
+            icon={ChevronLeft}
+            name={m.pin_previous()}
+            variant="secondary"
+            isDisabled={previous === undefined}
+            onPress={previous}
+            className="absolute start-2 top-1/2 -translate-y-1/2"
+          />
+          <IconButton
+            icon={ChevronRight}
+            name={m.pin_next()}
+            variant="secondary"
+            isDisabled={next === undefined}
+            onPress={next}
+            className="absolute end-2 top-1/2 -translate-y-1/2"
+          />
+        </>
+      }
+      column={<PinDetails pin={pin} close={close} edit={() => setEditing(true)} />}
+    />
   )
 }
 
