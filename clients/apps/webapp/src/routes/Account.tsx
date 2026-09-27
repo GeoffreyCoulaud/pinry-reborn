@@ -12,13 +12,22 @@ function PasswordField({
   name,
   label,
   autoComplete,
+  inDialog = false,
 }: {
   name: string
   label: string
   autoComplete: "current-password" | "new-password"
+  inDialog?: boolean
 }) {
   return (
-    <TextField name={name} type="password" isRequired autoComplete={autoComplete}>
+    <TextField
+      name={name}
+      type="password"
+      isRequired
+      autoComplete={autoComplete}
+      // HeroUI's field on a surface: the default one takes a dialog's own colour in dark.
+      variant={inDialog ? "secondary" : "primary"}
+    >
       <Label>{label}</Label>
       <Input />
     </TextField>
@@ -104,6 +113,7 @@ function DeleteAccount() {
                     name="password"
                     label={m.password()}
                     autoComplete="current-password"
+                    inDialog
                   />
                   {remove.error !== null && <Refusal error={remove.error} />}
                 </AlertDialog.Body>

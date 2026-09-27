@@ -13,8 +13,9 @@ function Field({
   defaultValue: string
   isRequired?: boolean
 }) {
+  // `secondary` is HeroUI's field on a surface: the default one takes the dialog's own colour in dark.
   return (
-    <TextField name={name} defaultValue={defaultValue} isRequired={isRequired}>
+    <TextField name={name} defaultValue={defaultValue} isRequired={isRequired} variant="secondary">
       <Label>{label}</Label>
       <Input />
     </TextField>

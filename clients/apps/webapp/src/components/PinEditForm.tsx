@@ -47,7 +47,7 @@ function TagField({
 
   return (
     <div className="flex flex-col gap-2">
-      <TextField value={typed} onChange={setTyped}>
+      <TextField value={typed} onChange={setTyped} variant="secondary">
         <Label>{m.tags()}</Label>
         <Input
           onKeyDown={(event) => {
@@ -103,6 +103,7 @@ function BoardField({
   return (
     <Select
       selectionMode="multiple"
+      variant="secondary"
       placeholder={m.boards_none()}
       value={ids}
       onChange={(chosen) => onChange(chosen.map(String))}
@@ -240,11 +241,16 @@ export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
           )
         }}
       >
-        <TextField type="url" value={address} onChange={changeAddress}>
+        {/* `secondary` on every control: this form lives in a dialog (see `BoardForm`). */}
+        <TextField type="url" value={address} onChange={changeAddress} variant="secondary">
           <Label>{m.image_address()}</Label>
           <Input />
         </TextField>
-        <RadioGroup value={intent} onChange={(value) => setIntent(value as ImageIntent)}>
+        <RadioGroup
+          value={intent}
+          onChange={(value) => setIntent(value as ImageIntent)}
+          variant="secondary"
+        >
           <Label>{m.image()}</Label>
           <ImageOption value="keep" label={m.image_keep()} />
           <ImageOption value="replace" label={m.image_replace()} />
@@ -272,11 +278,16 @@ export function PinEditForm({ pin, close }: { pin: Pin; close: () => void }) {
             )}
           </ImageDropBox>
         )}
-        <TextField name="description" defaultValue={pin.description}>
+        <TextField name="description" defaultValue={pin.description} variant="secondary">
           <Label>{m.description()}</Label>
           <TextArea rows={3} />
         </TextField>
-        <TextField name="sourceContextUrl" type="url" defaultValue={pin.sourceContextUrl ?? ""}>
+        <TextField
+          name="sourceContextUrl"
+          type="url"
+          defaultValue={pin.sourceContextUrl ?? ""}
+          variant="secondary"
+        >
           <Label>{m.source_page()}</Label>
           <Input />
         </TextField>
