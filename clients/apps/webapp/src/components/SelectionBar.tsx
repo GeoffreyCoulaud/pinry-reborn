@@ -36,8 +36,8 @@ export function SelectionTick({ shown, className }: { shown: boolean; className?
       className={`${shown ? "" : "opacity-0"} transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 ${className ?? ""}`}
     >
       <Checkbox.Content>
-        {/* Outlined dark then light, so it stands out on any photograph in either theme. */}
-        <Checkbox.Control className="size-6 border border-neutral-800 ring-1 ring-white">
+        {/* Bordered against its own fill, so box or border stands out on any photograph. */}
+        <Checkbox.Control className="size-6 border border-neutral-800 dark:border-neutral-200">
           <Checkbox.Indicator />
         </Checkbox.Control>
       </Checkbox.Content>
