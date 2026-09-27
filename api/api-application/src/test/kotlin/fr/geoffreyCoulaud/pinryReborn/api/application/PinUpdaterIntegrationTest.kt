@@ -177,6 +177,26 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
             .statusCode(400)
     }
 
+    @Test
+    fun `Given a blank tag, Then the write returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+
+        // When / Then
+        update(auth, pin, tags = listOf(" ")).statusCode(400)
+    }
+
+    @Test
+    fun `Given a null among the board ids, Then the write returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+
+        // When / Then
+        update(auth, pin, boardIds = listOf(null)).statusCode(400)
+    }
+
     @Suppress("LongParameterList") // The whole pin, which is what the route under test writes.
     private fun update(
         auth: AuthenticatedUser,
@@ -185,7 +205,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         sourceContextUrl: String? = "https://example.com/page",
         sourceMediaUrl: String? = "https://example.com/img.jpg",
         tags: List<String> = emptyList(),
-        boardIds: List<UUID> = emptyList(),
+        boardIds: List<UUID?> = emptyList(),
     ): ValidatableResponse =
         given()
             .authenticatedAs(auth)
@@ -196,7 +216,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
                     "sourceContextUrl" to sourceContextUrl,
                     "sourceMediaUrl" to sourceMediaUrl,
                     "tags" to tags,
-                    "boardIds" to boardIds.map { it.toString() },
+                    "boardIds" to boardIds.map { it?.toString() },
                 ),
             )
             .`when`()
