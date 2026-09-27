@@ -282,7 +282,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
 
         // When / Then
-        bulkMembership(auth, "POST", board.id, listOf(null)).statusCode(400)
+        bulkMembership(auth, "POST", board.id, listOf(null)).statusCode(400).body("code", equalTo("MALFORMED_BODY"))
     }
 
     @Test
@@ -385,7 +385,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
 
         // When / Then
-        createBoard(auth, "Trip", listOf(null)).statusCode(400)
+        createBoard(auth, "Trip", listOf(null)).statusCode(400).body("code", equalTo("MALFORMED_BODY"))
     }
 
     // --- Searching inside a board ---
