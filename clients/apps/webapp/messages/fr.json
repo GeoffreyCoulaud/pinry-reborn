@@ -134,6 +134,7 @@
   "issue_unknown": "Un élément de cette ligne n’a pas été importé.",
   "membership_refused": "Ce tableau n’a pas pu être modifié.",
   "name": "Nom",
+  "new_board": "Nouveau tableau…",
   "new_password": "Nouveau mot de passe",
   "password": "Mot de passe",
   "password_change_collision": "Un autre changement est arrivé avant celui-ci. Réessayez.",

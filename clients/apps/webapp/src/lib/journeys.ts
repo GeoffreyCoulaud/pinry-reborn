@@ -25,6 +25,7 @@ export const REQUIRED_JOURNEYS = [
   "replace a pin's image with a file",
   "delete a pin and restore it from the recycle bin",
   "add several selected pins to a board",
+  "add selected pins to a new board",
   "search from the header",
   "search inside a board and widen it",
   "open the account and sign out everywhere",

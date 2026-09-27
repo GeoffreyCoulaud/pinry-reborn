@@ -9,6 +9,7 @@ import {
   downloadsRoute,
   handshakeRoute,
   pinsRoute,
+  refused,
   renderApp,
   sessionRoute,
 } from "../test/app"
@@ -16,11 +17,6 @@ import { server } from "../test/server"
 
 const ACCOUNT = { id: "0f5c6e58-2d6c-4a3a-9c1f-2a1f6b6d4f11", name: "ada" }
 const PASSWORD = "correct horse"
-
-/** The refusal as the API sends one: a problem body whose `code` is what the dialog reads. */
-function refused(status: number, code: string) {
-  return HttpResponse.json({ status, code }, { status })
-}
 
 /** The account screen, opened on a session the API still honours. */
 async function openTheDialog() {
