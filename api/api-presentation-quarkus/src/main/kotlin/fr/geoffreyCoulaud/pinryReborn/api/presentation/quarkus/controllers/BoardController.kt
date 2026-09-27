@@ -60,15 +60,14 @@ class BoardController(
     @POST
     @Authenticated
     // SmallRye reads the status off the return type, and a runtime ResponseBuilder carries none, so
-    // the 201 is declared with the 409 the name constraint answers (spec 2026-08-14 section 12).
+    // the 201 is declared with the refusals the route answers (spec 2026-08-14 section 12).
     @APIResponse(responseCode = "201", description = "Board created, with the pins the body names filed under it",
         content = [Content(mediaType = JSON, schema = Schema(implementation = BoardOutputDto::class))])
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_IN_BODY_NOT_FOUND)
     @APIResponse(responseCode = "409",
-        description = "The name is taken, a recycled board holding its name until the bin is emptied, " +
-            "or a pin the body names is in the recycle bin",
+        description = "$NAME_TAKEN, or a pin the body names is in the recycle bin",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code",
                 enumeration = ["BOARD_NAME_ALREADY_EXISTS", "PIN_ALREADY_SOFT_DELETED"])]))])
@@ -119,7 +118,9 @@ class BoardController(
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.BOARD_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.BOARD_NOT_FOUND)
-    @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.BOARD_NAME_TAKEN)
+    @APIResponse(responseCode = "409", description = NAME_TAKEN,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["BOARD_NAME_ALREADY_EXISTS"])]))])
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun updateBoard(boardId: UUID, @Valid @NotNull dto: BoardInputDto): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
@@ -210,5 +211,7 @@ class BoardController(
 
     companion object {
         const val DEFAULT_PAGE_SIZE = 20
+        private const val NAME_TAKEN = "This account already holds a board of that name, ASCII case folded, " +
+            "and a recycled board holds its name until the bin is emptied"
     }
 }
