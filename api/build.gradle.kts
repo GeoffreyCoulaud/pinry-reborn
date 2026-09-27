@@ -44,6 +44,8 @@ subprojects {
             // Bytecode target matches the JDK 25 toolchain (see the Java note above).
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
             javaParameters.set(true)
+            // Without it a constraint on a type argument, `List<@NotNull UUID>`, never reaches the bytecode.
+            freeCompilerArgs.add("-Xemit-jvm-type-annotations")
         }
     }
 

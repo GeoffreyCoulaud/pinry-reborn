@@ -440,11 +440,11 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
 
     // --- Bulk restore ---
 
-    private fun bulkRestore(auth: AuthenticatedUser, boardIds: List<UUID>) =
+    private fun bulkRestore(auth: AuthenticatedUser, boardIds: List<UUID?>) =
         given()
             .authenticatedAs(auth)
             .contentType(ContentType.JSON)
-            .body(mapOf("boardIds" to boardIds.map { it.toString() }))
+            .body(mapOf("boardIds" to boardIds.map { it?.toString() }))
             .`when`()
             .post("/api/v1/boards/recycled/restore")
             .then()
@@ -478,6 +478,15 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
 
         // When / Then
         bulkRestore(auth, emptyList()).statusCode(400)
+    }
+
+    @Test
+    fun `Given a null among the boardIds, Then the bulk restore returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+
+        // When / Then
+        bulkRestore(auth, listOf(null)).statusCode(400)
     }
 
     @Test
