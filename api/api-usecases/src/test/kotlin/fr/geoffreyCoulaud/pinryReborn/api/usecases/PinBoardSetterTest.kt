@@ -133,6 +133,23 @@ class PinBoardSetterTest {
     }
 
     @Test
+    fun `Given another user's pin before an unknown one, Then addPinsToBoard refuses the first as the batch orders`() {
+        // Given: ADR 0039 answers the error the first refused identifier earns, not the unknown ids first
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val stranger = User(id = randomUUID(), name = "Jane Roe", createdAt = TestTime.now)
+        val target = board(user, "Target")
+        val theirs = pin(stranger)
+        val pinIds = listOf(theirs.id, randomUUID())
+        every { boardRepository.findActiveBoardById(target.id) } returns target
+        every { pinRepository.findPinsByIds(pinIds) } returns listOf(theirs)
+
+        // When, Then
+        assertThrows<PinBoardSettingPermissionError> {
+            useCase.addPinsToBoard(boardId = target.id, pinIds = pinIds, user = user)
+        }
+    }
+
+    @Test
     fun `Given a missing pin, Then addPinsToBoard throws PinBoardSettingPinDoesNotExistError`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)

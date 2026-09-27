@@ -264,6 +264,18 @@ class PinRecycleBinTest {
         verify(exactly = 0) { pinRepository.restorePins(any(), any()) }
     }
 
+    @Test
+    fun `Given another user's pin before an unknown one, Then softDeleteAll refuses the first as the batch orders`() {
+        // Given: ADR 0039 answers the error the first refused identifier earns, not the unknown ids first
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val theirs = createPin(author = User(id = randomUUID(), name = "Jane Roe", createdAt = TestTime.now))
+        val pinIds = listOf(theirs.id, randomUUID())
+        every { pinRepository.findPinsByIds(pinIds) } returns listOf(theirs)
+
+        // When, Then
+        assertThrows<PinDeletionPermissionError> { useCase.softDeleteAll(pinIds = pinIds, user = user) }
+    }
+
     /** The pins the repository answers in one read; returns their ids, in order. */
     private fun givenPins(vararg pins: Pin): List<UUID> {
         val ids = pins.map { it.id }
