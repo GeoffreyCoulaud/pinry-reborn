@@ -72,8 +72,10 @@ class PinRepositoryBulkMembershipTest : PinRepositoryFixtures() {
     }
 
     @Test
-    fun `Given one pin or ten, Then addPinsToBoard reads as often and batches updates of the modification instant`() {
-        assertConstantReadsAndOneUpdateBatch(filed = false) { ids, board -> repository.addPinsToBoard(ids, board, later) }
+    fun `Given one pin or ten, Then addPinsToBoard reads as often and batches its updates`() {
+        assertConstantReadsAndOneUpdateBatch(filed = false) { ids, board ->
+            repository.addPinsToBoard(ids, board, later)
+        }
     }
 
     // --- removePinsFromBoard ---
@@ -97,8 +99,10 @@ class PinRepositoryBulkMembershipTest : PinRepositoryFixtures() {
     }
 
     @Test
-    fun `Given one pin or ten, Then removePinsFromBoard reads as often and batches updates of the modification instant`() {
-        assertConstantReadsAndOneUpdateBatch(filed = true) { ids, board -> repository.removePinsFromBoard(ids, board, later) }
+    fun `Given one pin or ten, Then removePinsFromBoard reads as often and batches its updates`() {
+        assertConstantReadsAndOneUpdateBatch(filed = true) { ids, board ->
+            repository.removePinsFromBoard(ids, board, later)
+        }
     }
 
     private fun boardIdsOf(pinId: UUID): Set<UUID>? = repository.findPinById(pinId)?.boards?.map { it.id }?.toSet()
