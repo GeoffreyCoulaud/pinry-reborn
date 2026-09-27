@@ -66,8 +66,9 @@ class BoardController(
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_IN_BODY_NOT_FOUND)
-    @APIResponse(responseCode = "409", description = "The name is taken, a recycled board holding its name until the bin is emptied, " +
-        "or a pin the body names is in the recycle bin",
+    @APIResponse(responseCode = "409",
+        description = "The name is taken, a recycled board holding its name until the bin is emptied, " +
+            "or a pin the body names is in the recycle bin",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code",
                 enumeration = ["BOARD_NAME_ALREADY_EXISTS", "PIN_ALREADY_SOFT_DELETED"])]))])
