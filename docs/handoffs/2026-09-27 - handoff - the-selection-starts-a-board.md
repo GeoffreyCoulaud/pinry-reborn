@@ -69,9 +69,9 @@ review".)
   and "Pins: 2" on the boards screen. Then every dialog holding a field (board, new pin, pin edit, export, account
   deletion), where each field's computed background now differs from its dialog's in both themes.
 - Closing block: `dagger call gate` green at `899f104f`, again at `f162842f` after the rebase onto the new block 20,
-  at `0052f67e` with the second holistic review's findings, and at `150a1f46` after the second cascade. The regenerated contract drops `BoardNameTaken`,
-  inlines `PUT /api/v1/boards/{boardId}`'s 409 with no change to its codes, and gives the three identifier
-  lists `maxItems` 10000.
+  at `0052f67e` with the second holistic review's findings, and at `150a1f46` after the second cascade. The
+  regenerated contract drops `BoardNameTaken`, inlines `PUT /api/v1/boards/{boardId}`'s 409 with no change to its
+  codes, and gives the three identifier lists `maxItems` 10000.
 
 ## Pitfalls
 
