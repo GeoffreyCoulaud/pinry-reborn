@@ -194,7 +194,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         val pin = createPin(auth)
 
         // When / Then
-        update(auth, pin, boardIds = listOf(null)).statusCode(400)
+        update(auth, pin, boardIds = listOf(null)).statusCode(400).body("code", equalTo("MALFORMED_BODY"))
     }
 
     @Suppress("LongParameterList") // The whole pin, which is what the route under test writes.

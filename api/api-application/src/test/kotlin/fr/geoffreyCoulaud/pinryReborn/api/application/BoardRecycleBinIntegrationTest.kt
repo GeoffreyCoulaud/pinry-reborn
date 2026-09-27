@@ -486,7 +486,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
 
         // When / Then
-        bulkRestore(auth, listOf(null)).statusCode(400)
+        bulkRestore(auth, listOf(null)).statusCode(400).body("code", equalTo("MALFORMED_BODY"))
     }
 
     @Test

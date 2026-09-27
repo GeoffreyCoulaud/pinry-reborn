@@ -26,6 +26,7 @@ dependencies {
     implementation(libs.quarkus.hibernate.validator)
     implementation(libs.quarkus.micrometer.registry.prometheus)
     implementation(libs.kotlin.stdlib)
+    implementation(libs.jackson.module.kotlin)
 
     // Logging
     implementation(libs.kotlin.logging)
