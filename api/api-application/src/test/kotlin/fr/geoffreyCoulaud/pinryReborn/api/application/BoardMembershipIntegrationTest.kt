@@ -370,6 +370,44 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
             .body("code", equalTo("PIN_DOES_NOT_EXIST"))
 
         // Then
+        assertNoBoard(auth)
+    }
+
+    @Test
+    fun `Given a recycled pin, Then creating a board with it returns 409 and leaves no board`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val own = createPin(auth.user)
+        val recycled = createPin(auth.user)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/pins/${recycled.id}").then().statusCode(204)
+
+        // When
+        createBoard(auth, "Trip", listOf(own.id, recycled.id))
+            .statusCode(409)
+            .body("code", equalTo("PIN_ALREADY_SOFT_DELETED"))
+
+        // Then
+        assertNoBoard(auth)
+    }
+
+    @Test
+    fun `Given another user's pin, Then creating a board with it returns 403 and leaves no board`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val stranger = createAuthenticatedUser()
+        val own = createPin(auth.user)
+        val theirs = createPin(stranger.user)
+
+        // When
+        createBoard(auth, "Trip", listOf(own.id, theirs.id))
+            .statusCode(403)
+            .body("code", equalTo("PIN_INSUFFICIENT_PERMISSIONS"))
+
+        // Then
+        assertNoBoard(auth)
+    }
+
+    private fun assertNoBoard(auth: AuthenticatedUser) {
         given()
             .authenticatedAs(auth)
             .`when`()

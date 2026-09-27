@@ -75,17 +75,22 @@ class BoardCreatorTest {
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         val name = createRandomString()
         val holder = board(author = author, name = name)
+        val readIn = mutableListOf<Int?>()
         every { boardRepository.saveBoard(any()) } throws BoardNameAlreadyTakenException(cause = Exception("boom"))
-        every { boardRepository.findBoardForUserByName(user = author, name = name) } returns holder
+        every { boardRepository.findBoardForUserByName(user = author, name = name) } answers {
+            readIn += transactions.current
+            holder
+        }
 
         // When
         val error = assertThrows<BoardNameAlreadyExistsError> {
             useCase.create(author = author, name = name, description = createRandomString())
         }
 
-        // Then
+        // Then: the holder is read after the rollback, outside the transaction
         assertEquals(ErrorCode.BOARD_NAME_ALREADY_EXISTS, error.code)
         assertFalse(error.message.orEmpty().contains(RECYCLE_BIN_WORDING))
+        assertEquals(listOf(null), readIn)
     }
 
     @Test
