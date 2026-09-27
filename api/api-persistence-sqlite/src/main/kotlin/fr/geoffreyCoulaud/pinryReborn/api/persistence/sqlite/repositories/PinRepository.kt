@@ -225,10 +225,22 @@ class PinRepository(
         memberships(board, pinIds).delete()
     }
 
+    override fun softDeletePins(pinIds: List<UUID>, at: Instant) {
+        val pins = PinQueries.any().id.isIn(pinIds).findList()
+        pins.forEach { it.softDeletedAt = at }
+        markModified(pins, at)
+    }
+
+    override fun restorePins(pinIds: List<UUID>, at: Instant) {
+        val pins = PinQueries.any().id.isIn(pinIds).findList()
+        pins.forEach { it.softDeletedAt = null }
+        markModified(pins, at)
+    }
+
     private fun memberships(board: Board, pinIds: List<UUID>): QPinBoardModel =
         QPinBoardModel().board.id.equalTo(board.id).pin.id.isIn(pinIds)
 
-    // Dirty checking keeps each UPDATE to the one column set here, and saveAll sends them as one JDBC batch.
+    // Dirty checking keeps each UPDATE to the columns changed, and saveAll sends them as one JDBC batch.
     private fun markModified(pins: List<PinModel>, at: Instant) {
         pins.forEach { it.updatedAt = at }
         persistor.saveAll(pins)

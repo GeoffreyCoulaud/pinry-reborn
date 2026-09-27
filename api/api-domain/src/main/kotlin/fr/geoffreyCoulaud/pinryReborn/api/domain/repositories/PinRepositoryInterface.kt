@@ -65,6 +65,12 @@ interface PinRepositoryInterface {
      */
     fun restorePin(pin: Pin, at: Instant): Pin
 
+    /** Soft-deletes each pin as [softDeletePin] does, in a constant number of reads. */
+    fun softDeletePins(pinIds: List<UUID>, at: Instant)
+
+    /** Restores each pin as [restorePin] does, in a constant number of reads. */
+    fun restorePins(pinIds: List<UUID>, at: Instant)
+
     /**
      * Permanently delete a pin and its tag associations
      */

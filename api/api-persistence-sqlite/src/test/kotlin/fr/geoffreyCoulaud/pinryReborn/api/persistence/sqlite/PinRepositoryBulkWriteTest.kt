@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import io.ebean.test.LoggedSql
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,10 +12,10 @@ import java.util.UUID
 import java.util.UUID.randomUUID
 
 /**
- * The bulk membership writes and the bulk read that resolves their pins (spec 2026-09-27, decision H).
- * Split from `PinRepositoryTest` to keep it under detekt's `LargeClass` threshold.
+ * The bulk membership and recycle bin writes, and the bulk read that resolves their pins (spec 2026-09-27,
+ * decision H). Split from `PinRepositoryTest` to keep it under detekt's `LargeClass` threshold.
  */
-class PinRepositoryBulkMembershipTest : PinRepositoryFixtures() {
+class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
     private val later: Instant = storableNow().plusSeconds(60)
 
     // --- findPinsByIds ---
@@ -73,7 +74,7 @@ class PinRepositoryBulkMembershipTest : PinRepositoryFixtures() {
 
     @Test
     fun `Given one pin or ten, Then addPinsToBoard reads as often and batches its updates`() {
-        assertConstantReadsAndOneUpdateBatch(filed = false) { ids, board ->
+        assertConstantReadsAndOneUpdateBatch(given = { user, _ -> createAndSavePin(user) }) { ids, board ->
             repository.addPinsToBoard(ids, board, later)
         }
     }
@@ -100,30 +101,77 @@ class PinRepositoryBulkMembershipTest : PinRepositoryFixtures() {
 
     @Test
     fun `Given one pin or ten, Then removePinsFromBoard reads as often and batches its updates`() {
-        assertConstantReadsAndOneUpdateBatch(filed = true) { ids, board ->
+        assertConstantReadsAndOneUpdateBatch(given = { user, board -> filedPin(user, board) }) { ids, board ->
             repository.removePinsFromBoard(ids, board, later)
+        }
+    }
+
+    // --- softDeletePins and restorePins ---
+
+    @Test
+    fun `Given active pins, Then softDeletePins recycles each and restorePins brings each back`() {
+        // Given
+        val user = createAndSaveUser()
+        val ids = List(2) { createAndSavePin(user).id }
+
+        // When
+        repository.softDeletePins(ids, later)
+        val recycled = ids.map { repository.findPinById(it) }
+        repository.restorePins(ids, later.plusSeconds(1))
+        val restored = ids.map { repository.findPinById(it) }
+
+        // Then
+        assertEquals(listOf(later, later), recycled.map { it?.softDeletedAt })
+        assertEquals(listOf(later, later), recycled.map { it?.updatedAt })
+        assertEquals(listOf(null, null), restored.map { it?.softDeletedAt })
+        assertEquals(List(2) { later.plusSeconds(1) }, restored.map { it?.updatedAt })
+    }
+
+    @Test
+    fun `Given one pin or ten, Then softDeletePins reads as often and batches its updates`() {
+        assertConstantReadsAndOneUpdateBatch(RECYCLE_UPDATE, given = { user, _ -> createAndSavePin(user) }) { ids, _ ->
+            repository.softDeletePins(ids, later)
+        }
+    }
+
+    @Test
+    fun `Given one pin or ten, Then restorePins reads as often and batches its updates`() {
+        val recycledPin = { user: User, _: Board -> repository.softDeletePin(createAndSavePin(user), storableNow()) }
+        assertConstantReadsAndOneUpdateBatch(RECYCLE_UPDATE, given = recycledPin) { ids, _ ->
+            repository.restorePins(ids, later)
         }
     }
 
     private fun boardIdsOf(pinId: UUID): Set<UUID>? = repository.findPinById(pinId)?.boards?.map { it.id }?.toSet()
 
-    private fun assertConstantReadsAndOneUpdateBatch(filed: Boolean, write: (List<UUID>, Board) -> Unit) {
-        // When
-        val one = statementsWriting(pinCount = 1, filed = filed, write = write)
-        val ten = statementsWriting(pinCount = 10, filed = filed, write = write)
+    private fun filedPin(user: User, board: Board): Pin =
+        repository.savePin(createAndSavePin(user).copy(boards = listOf(board)))
 
-        // Then: one UPDATE statement setting when_modified alone, sent once with ten rows bound
+    /** [given] saves one pin in the state [write] expects; [update] is the one UPDATE statement expected. */
+    private fun assertConstantReadsAndOneUpdateBatch(
+        update: String = PIN_UPDATE,
+        given: (User, Board) -> Pin,
+        write: (List<UUID>, Board) -> Unit,
+    ) {
+        // When
+        val one = statementsWriting(pinCount = 1, given = given, write = write)
+        val ten = statementsWriting(pinCount = 10, given = given, write = write)
+
+        // Then: one UPDATE statement, sent once with ten rows bound
         assertTrue(one.reads() > 0, "no read captured in $one")
         assertEquals(one.reads(), ten.reads(), "one pin ran $one, ten ran $ten")
-        assertEquals(listOf(PIN_UPDATE, "-- executeBatch() size:10 sql:$PIN_UPDATE"), ten.pinUpdates(), "ten ran $ten")
+        assertEquals(listOf(update, "-- executeBatch() size:10 sql:$update"), ten.pinUpdates(), "ten ran $ten")
     }
 
     /** What a use case runs: the pins resolved in bulk, then [write], in one transaction. */
-    private fun statementsWriting(pinCount: Int, filed: Boolean, write: (List<UUID>, Board) -> Unit): List<String> {
+    private fun statementsWriting(
+        pinCount: Int,
+        given: (User, Board) -> Pin,
+        write: (List<UUID>, Board) -> Unit,
+    ): List<String> {
         val user: User = createAndSaveUser()
         val board = createAndSaveBoard(user)
-        val boards = if (filed) listOf(board) else emptyList()
-        val ids = List(pinCount) { repository.savePin(createAndSavePin(user).copy(boards = boards)).id }
+        val ids = List(pinCount) { given(user, board).id }
         LoggedSql.start()
         transactionRunner.inTransaction {
             repository.findPinsByIds(ids)
@@ -144,5 +192,7 @@ class PinRepositoryBulkMembershipTest : PinRepositoryFixtures() {
 
         /** `updatedAt` maps to the legacy `when_modified` column. */
         const val PIN_UPDATE = "update pins set when_modified=? where id=?"
+
+        const val RECYCLE_UPDATE = "update pins set when_modified=?, soft_deleted_at=? where id=?"
     }
 }

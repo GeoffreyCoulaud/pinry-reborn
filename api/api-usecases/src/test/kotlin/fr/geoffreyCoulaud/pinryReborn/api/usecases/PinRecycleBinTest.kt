@@ -207,6 +207,70 @@ class PinRecycleBinTest {
         }
     }
 
+    // --- In bulk ---
+
+    @Test
+    fun `Given owned active pins, Then softDeleteAll recycles them at the clock's instant`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val pinIds = givenPins(createPin(author = user), createPin(author = user))
+        justRun { pinRepository.softDeletePins(any(), any()) }
+
+        // When
+        useCase.softDeleteAll(pinIds = pinIds, user = user)
+
+        // Then
+        verify(exactly = 1) { pinRepository.softDeletePins(pinIds, transitionInstant) }
+    }
+
+    @Test
+    fun `Given a recycled pin after an active one, Then softDeleteAll refuses it before writing`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val pinIds = givenPins(createPin(author = user), createPin(author = user, softDeletedAt = TestTime.now))
+
+        // When, Then
+        assertThrows<PinDeletionPinAlreadySoftDeletedError> { useCase.softDeleteAll(pinIds = pinIds, user = user) }
+        verify(exactly = 0) { pinRepository.softDeletePins(any(), any()) }
+    }
+
+    @Test
+    fun `Given owned recycled pins, Then restoreAll restores them at the clock's instant`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val pinIds = givenPins(
+            createPin(author = user, softDeletedAt = TestTime.now),
+            createPin(author = user, softDeletedAt = TestTime.now),
+        )
+        justRun { pinRepository.restorePins(any(), any()) }
+
+        // When
+        useCase.restoreAll(pinIds = pinIds, user = user)
+
+        // Then
+        verify(exactly = 1) { pinRepository.restorePins(pinIds, transitionInstant) }
+    }
+
+    @Test
+    fun `Given an unknown pin after a recycled one, Then restoreAll refuses it before writing`() {
+        // Given
+        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val recycled = createPin(author = user, softDeletedAt = TestTime.now)
+        val pinIds = listOf(recycled.id, randomUUID())
+        every { pinRepository.findPinsByIds(pinIds) } returns listOf(recycled)
+
+        // When, Then
+        assertThrows<PinDeletionPinDoesNotExistError> { useCase.restoreAll(pinIds = pinIds, user = user) }
+        verify(exactly = 0) { pinRepository.restorePins(any(), any()) }
+    }
+
+    /** The pins the repository answers in one read; returns their ids, in order. */
+    private fun givenPins(vararg pins: Pin): List<UUID> {
+        val ids = pins.map { it.id }
+        every { pinRepository.findPinsByIds(ids) } returns pins.toList()
+        return ids
+    }
+
     // --- Permanent delete ---
 
     @Test
