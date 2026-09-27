@@ -25,25 +25,20 @@ class PinBoardSetter(
     /** All or nothing: the board and every pin are resolved before the first write (ADR 0039, decision 2). */
     fun addPinsToBoard(boardId: UUID, pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
         val board = resolveBoard(boardId, user)
-        val pins = resolvePins(pinIds = pinIds, user = user)
-        val at = clock.now()
-        pins.forEach { pinRepository.savePin(it.copy(boards = it.boardsWithout(board) + board, updatedAt = at)) }
+        resolvePins(pinIds = pinIds, user = user)
+        pinRepository.addPinsToBoard(pinIds = pinIds, board = board, at = clock.now())
     }
 
     /** All or nothing, as [addPinsToBoard] is. */
     fun removePinsFromBoard(boardId: UUID, pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
         val board = resolveBoard(boardId, user)
-        val pins = resolvePins(pinIds = pinIds, user = user)
-        val at = clock.now()
-        pins.forEach { pinRepository.savePin(it.copy(boards = it.boardsWithout(board), updatedAt = at)) }
+        resolvePins(pinIds = pinIds, user = user)
+        pinRepository.removePinsFromBoard(pinIds = pinIds, board = board, at = clock.now())
     }
 
-    // savePin diffs only the active memberships, so rewriting this list leaves a recycled board's join row alone.
-    private fun Pin.boardsWithout(board: Board): List<Board> = boards.filterNot { it.id == board.id }
-
     @Suppress("ThrowsCount") // The three refusals a pin earns, wherever it was named.
-    private fun resolvePin(pinId: UUID, user: User): Pin {
-        val pin = pinRepository.findPinById(id = pinId) ?: throw PinBoardSettingPinDoesNotExistError()
+    private fun accepted(pin: Pin?, user: User): Pin {
+        if (pin == null) throw PinBoardSettingPinDoesNotExistError()
         if (pin.author != user) throw PinBoardSettingPermissionError()
         if (pin.softDeletedAt != null) throw PinBoardSettingSoftDeletedPinError()
         return pin
@@ -53,7 +48,10 @@ class PinBoardSetter(
     fun resolveBoards(boardIds: List<UUID>, user: User): List<Board> = boardIds.map { resolveBoard(it, user) }
 
     /** The same split for pins, which [BoardCreator] resolves before it saves the board they join. */
-    fun resolvePins(pinIds: List<UUID>, user: User): List<Pin> = pinIds.map { resolvePin(pinId = it, user = user) }
+    fun resolvePins(pinIds: List<UUID>, user: User): List<Pin> {
+        val found = pinRepository.findPinsByIds(pinIds).associateBy { it.id }
+        return pinIds.map { accepted(pin = found[it], user = user) }
+    }
 
     // A board named in a body earns what a board named in a path earns (ADR 0038, decision 2).
     private fun resolveBoard(boardId: UUID, user: User): Board {

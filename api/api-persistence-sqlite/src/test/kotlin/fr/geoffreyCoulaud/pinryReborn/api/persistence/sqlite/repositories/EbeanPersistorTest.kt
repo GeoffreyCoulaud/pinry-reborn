@@ -28,6 +28,18 @@ class EbeanPersistorTest : RepositoryTest() {
     }
 
     @Test
+    fun `Given models, Then saveAll persists each`() {
+        // Given
+        val models = listOf(newUser(), newUser())
+
+        // When
+        persistor.saveAll(models)
+
+        // Then
+        assertEquals(2, QUserModel().id.isIn(models.map { it.id }).findCount())
+    }
+
+    @Test
     fun `Given a persisted model, Then delete removes it`() {
         // Given
         val model = newUser()

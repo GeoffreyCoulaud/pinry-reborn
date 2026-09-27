@@ -16,9 +16,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactio
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
+import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import java.time.Instant
+import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -42,6 +44,12 @@ class BoardCreatorTest {
             clock = clock,
             transactionRunner = transactions,
         )
+
+    init {
+        // A board created without pins still goes through both bulk calls, which the repository answers empty.
+        every { pinRepository.findPinsByIds(emptyList()) } returns emptyList()
+        justRun { pinRepository.addPinsToBoard(emptyList(), any(), any()) }
+    }
 
     @Test
     fun `Given valid input, Then create saves a new active board with the given fields`() {
@@ -119,58 +127,49 @@ class BoardCreatorTest {
     // --- Created with its pins ---
 
     @Test
-    fun `Given owned pins, Then create files each under the new board`() {
+    fun `Given owned pins, Then create files them under the new board`() {
         // Given
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val other = board(author = author, name = createRandomString())
-        val first = pin(author).copy(boards = listOf(other))
-        val second = pin(author)
-        givenPins(first, second)
+        val pinIds = givenPins(pin(author), pin(author))
         every { boardRepository.saveBoard(any()) } answers { firstArg() }
-        every { pinRepository.savePin(any()) } answers { firstArg() }
+        justRun { pinRepository.addPinsToBoard(any(), any(), any()) }
 
         // When
-        val board = useCase.create(author, createRandomString(), createRandomString(), listOf(first.id, second.id))
+        val board = useCase.create(author, createRandomString(), createRandomString(), pinIds)
 
         // Then
-        val saved = mutableListOf<Pin>()
-        verify { pinRepository.savePin(capture(saved)) }
-        assertEquals(listOf(listOf(other, board), listOf(board)), saved.map { it.boards })
-        assertEquals(listOf(clockInstant, clockInstant), saved.map { it.updatedAt })
+        verify(exactly = 1) { pinRepository.addPinsToBoard(pinIds, board, clockInstant) }
     }
 
     @Test
     fun `Given a pin named twice, Then create files it once`() {
         // Given
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val subject = pin(author)
-        givenPins(subject)
+        val pinIds = givenPins(pin(author))
         every { boardRepository.saveBoard(any()) } answers { firstArg() }
-        every { pinRepository.savePin(any()) } answers { firstArg() }
+        justRun { pinRepository.addPinsToBoard(any(), any(), any()) }
 
         // When
-        useCase.create(author, createRandomString(), createRandomString(), listOf(subject.id, subject.id))
+        useCase.create(author, createRandomString(), createRandomString(), pinIds + pinIds)
 
         // Then
-        verify(exactly = 1) { pinRepository.savePin(any()) }
+        verify(exactly = 1) { pinRepository.addPinsToBoard(pinIds, any(), any()) }
     }
 
     @Test
     fun `Given pins, Then the board and every pin are saved inside one transaction`() {
         // Given
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val first = pin(author)
-        val second = pin(author)
-        givenPins(first, second)
+        val pinIds = givenPins(pin(author), pin(author))
         val seen = mutableListOf<Int?>()
         every { boardRepository.saveBoard(any()) } answers { seen += transactions.current; firstArg() }
-        every { pinRepository.savePin(any()) } answers { seen += transactions.current; firstArg() }
+        every { pinRepository.addPinsToBoard(any(), any(), any()) } answers { seen += transactions.current }
 
         // When
-        useCase.create(author, createRandomString(), createRandomString(), listOf(first.id, second.id))
+        useCase.create(author, createRandomString(), createRandomString(), pinIds)
 
-        // Then: three writes, one transaction, none outside it
-        assertEquals(3, seen.size)
+        // Then: two writes, one transaction, none outside it
+        assertEquals(2, seen.size)
         assertNotNull(seen.first())
         assertEquals(1, seen.toSet().size)
     }
@@ -196,7 +195,7 @@ class BoardCreatorTest {
         // Given
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         val unknownPinId = randomUUID()
-        every { pinRepository.findPinById(unknownPinId) } returns null
+        every { pinRepository.findPinsByIds(listOf(unknownPinId)) } returns emptyList()
 
         // When, Then
         assertThrows<PinBoardSettingPinDoesNotExistError> {
@@ -207,18 +206,22 @@ class BoardCreatorTest {
 
     private inline fun <reified T : Throwable> assertRefusedBeforeWriting(author: User, refused: Pin) {
         // Given: an acceptable pin first, so the refusal is not merely the first read
-        val own = pin(author)
-        givenPins(own, refused)
+        val pinIds = givenPins(pin(author), refused)
 
         // When, Then
         assertThrows<T> {
-            useCase.create(author, createRandomString(), createRandomString(), listOf(own.id, refused.id))
+            useCase.create(author, createRandomString(), createRandomString(), pinIds)
         }
         verify(exactly = 0) { boardRepository.saveBoard(any()) }
-        verify(exactly = 0) { pinRepository.savePin(any()) }
+        verify(exactly = 0) { pinRepository.addPinsToBoard(any(), any(), any()) }
     }
 
-    private fun givenPins(vararg pins: Pin) = pins.forEach { every { pinRepository.findPinById(it.id) } returns it }
+    /** The pins the repository answers in one read; returns their ids, in order. */
+    private fun givenPins(vararg pins: Pin): List<UUID> {
+        val ids = pins.map { it.id }
+        every { pinRepository.findPinsByIds(ids) } returns pins.toList()
+        return ids
+    }
 
     private fun pin(author: User) =
         Pin(

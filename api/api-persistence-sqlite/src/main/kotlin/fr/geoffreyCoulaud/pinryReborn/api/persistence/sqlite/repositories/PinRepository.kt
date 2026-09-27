@@ -15,6 +15,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PinModelMap
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.TagModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.TagModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.BoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinBoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinTagModel
@@ -179,6 +180,35 @@ class PinRepository(
                 .findOne() ?: return null
         return pin.toDomain(getTagsForPin(pin.id), getBoardsForPin(pin.id))
     }
+
+    override fun findPinsByIds(ids: List<UUID>): List<Pin> {
+        if (ids.isEmpty()) return emptyList()
+        val tags = QPinTagModel().pin.id.isIn(ids).tag.fetch().findList()
+            .groupBy({ it.pin.id }, { it.tag.toDomain() })
+        val boards = QPinBoardModel().pin.id.isIn(ids).withActiveBoard().board.fetch().findList()
+            .groupBy({ it.pin.id }, { it.board.toDomain() })
+        return PinQueries.any().id.isIn(ids).author.fetch().findList()
+            .map { it.toDomain(tags[it.id].orEmpty(), boards[it.id].orEmpty()) }
+    }
+
+    override fun addPinsToBoard(pinIds: List<UUID>, board: Board, at: Instant) {
+        if (pinIds.isEmpty()) return
+        val pins = stamp(pinIds, at)
+        val filed = QPinBoardModel().board.id.equalTo(board.id).pin.id.isIn(pinIds).findList().map { it.pin.id }.toSet()
+        val boardModel = persistor.reference(BoardModel::class.java, board.id)
+        persistor.saveAll(pins.filterNot { it.id in filed }.map { PinBoardModel(pin = it, board = boardModel) })
+    }
+
+    override fun removePinsFromBoard(pinIds: List<UUID>, board: Board, at: Instant) {
+        stamp(pinIds, at)
+        QPinBoardModel().board.id.equalTo(board.id).pin.id.isIn(pinIds).delete()
+    }
+
+    // Dirty checking keeps each UPDATE to the one column changed, and saveAll sends them as one JDBC batch.
+    private fun stamp(pinIds: List<UUID>, at: Instant): List<PinModel> =
+        PinQueries.any().id.isIn(pinIds).findList()
+            .onEach { it.updatedAt = at }
+            .also { persistor.saveAll(it) }
 
     override fun findPinsForUser(
         reader: User,

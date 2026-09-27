@@ -12,6 +12,10 @@ class EbeanPersistor(
         database.save(bean)
     }
 
+    override fun saveAll(beans: Collection<Any>) {
+        database.saveAll(beans)
+    }
+
     override fun delete(bean: Any) {
         database.delete(bean)
     }
