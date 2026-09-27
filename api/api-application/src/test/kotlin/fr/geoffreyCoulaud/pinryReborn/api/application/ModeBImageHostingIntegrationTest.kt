@@ -207,6 +207,21 @@ class ModeBImageHostingIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given a FAILED mode-B download, Then a second request from an address that serves settles READY`() {
+        // Given: a download that has settled FAILED
+        val (auth, pinId) = createUserAndPin()
+        requestDownload(pinId, auth, originUrl("/private")).then().statusCode(202)
+        pollStatus(pinId, auth, "FAILED")
+
+        // When: the retry the pin viewer offers, from another address
+        requestDownload(pinId, auth, originUrl("/img.png")).then().statusCode(202)
+
+        // Then
+        val ready = pollStatus(pinId, auth, "READY")
+        assertNull(ready.getString("reasonCode"), "READY status should carry no failure reason")
+    }
+
+    @Test
     fun `Given a READY image, Then a mode-B replacement serves old bytes until it swaps atomically`() {
         // Given: a READY JPEG uploaded directly
         val (auth, pinId) = createUserAndPin()
