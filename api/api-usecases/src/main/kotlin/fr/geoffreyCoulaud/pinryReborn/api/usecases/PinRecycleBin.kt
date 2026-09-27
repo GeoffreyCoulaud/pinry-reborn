@@ -26,44 +26,48 @@ class PinRecycleBin(
     private val clock: Clock,
     private val transactionRunner: TransactionRunner,
 ) {
-    private fun findPinAndValidateOwnership(pinId: UUID, user: User): Pin {
-        val pin = pinRepository.findPinById(id = pinId) ?: throw PinDeletionPinDoesNotExistError()
+    private fun validateOwnership(pin: Pin?, user: User): Pin {
+        if (pin == null) throw PinDeletionPinDoesNotExistError()
         if (pin.author != user) throw PinDeletionPermissionError()
         return pin
     }
 
-    private fun activeOrRefused(pinId: UUID, user: User): Pin =
-        findPinAndValidateOwnership(pinId, user).also {
+    private fun activeOrRefused(pin: Pin?, user: User): Pin =
+        validateOwnership(pin, user).also {
             if (it.softDeletedAt != null) throw PinDeletionPinAlreadySoftDeletedError()
         }
 
-    private fun recycledOrRefused(pinId: UUID, user: User): Pin =
-        findPinAndValidateOwnership(pinId, user).also {
+    private fun recycledOrRefused(pin: Pin?, user: User): Pin =
+        validateOwnership(pin, user).also {
             if (it.softDeletedAt == null) throw PinDeletionPinNotSoftDeletedError()
         }
 
+    // One read for the whole list, each pin then refused in the list's order as the single route refuses it.
+    private fun resolveAll(pinIds: List<UUID>, validate: (Pin?) -> Pin) {
+        val found = pinRepository.findPinsByIds(pinIds).associateBy { it.id }
+        pinIds.forEach { validate(found[it]) }
+    }
+
     fun softDelete(pinId: UUID, user: User): Pin =
-        pinRepository.softDeletePin(pin = activeOrRefused(pinId, user), at = clock.now())
+        pinRepository.softDeletePin(pin = activeOrRefused(pinRepository.findPinById(pinId), user), at = clock.now())
 
     /** All or nothing: every pin is resolved before the first write (ADR 0039, decision 2). */
     fun softDeleteAll(pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
-        val pins = pinIds.map { activeOrRefused(it, user) }
-        val at = clock.now()
-        pins.forEach { pinRepository.softDeletePin(pin = it, at = at) }
+        resolveAll(pinIds) { activeOrRefused(it, user) }
+        pinRepository.softDeletePins(pinIds = pinIds, at = clock.now())
     }
 
     fun restore(pinId: UUID, user: User): Pin =
-        pinRepository.restorePin(pin = recycledOrRefused(pinId, user), at = clock.now())
+        pinRepository.restorePin(pin = recycledOrRefused(pinRepository.findPinById(pinId), user), at = clock.now())
 
     /** All or nothing, as [softDeleteAll] is. */
     fun restoreAll(pinIds: List<UUID>, user: User) = transactionRunner.inTransaction {
-        val pins = pinIds.map { recycledOrRefused(it, user) }
-        val at = clock.now()
-        pins.forEach { pinRepository.restorePin(pin = it, at = at) }
+        resolveAll(pinIds) { recycledOrRefused(it, user) }
+        pinRepository.restorePins(pinIds = pinIds, at = clock.now())
     }
 
     fun permanentlyDelete(pinId: UUID, user: User) {
-        val pin = recycledOrRefused(pinId, user)
+        val pin = recycledOrRefused(pinRepository.findPinById(pinId), user)
         clearPinDownload.clear(pin.id)
         val image = imageRepository.findByPinId(pin.id)
         imageRepository.deleteByPinId(pin.id)
