@@ -7,8 +7,9 @@ Tier: Direct, one block, `fix/selection-and-drop-feedback`. No specification, no
 
 - **The boards and account screens take the whole width**, as the grids already did. The credentials screen keeps
   its narrow centred form.
-- **The selection tick is `size-6` with a thin dark border**, on the grid and in the bin's rows alike. It first had
-  a shadow, which the operator found too faint on a light photograph.
+- **The selection tick is `size-6`, bordered dark inside a thin white ring**, on the grid and in the bin's rows
+  alike. A shadow was too faint on a light photograph, and a dark border alone vanished on a dark one in the dark
+  theme, both seen by the operator.
 - **A selected tile is ringed and tinted in the accent colour**, off react-aria's `data-selected`.
 - **A drop whose images take over 300 ms to read raises a loading toast** ("Reading dropped images: N") until
   `judgeDrop` has judged them, on the grid's drop and in the dialogs' drop box alike.
@@ -37,7 +38,7 @@ Tier: Direct, one block, `fix/selection-and-drop-feedback`. No specification, no
 
 ## What is not validated
 
-- The toast and the tint in the dark theme.
+- The toast and the tint in the dark theme; the tick was read headless in it.
 
 ## Next step
 
