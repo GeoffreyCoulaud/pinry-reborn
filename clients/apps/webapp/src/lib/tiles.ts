@@ -37,6 +37,11 @@ export function tileImageSource(url: string, rendition: Rendition): string {
   return `${url}?size=${rendition}`
 }
 
+/** The one test of what the grid places, which the viewer's order shares (decision F). */
+function isPlaceable(pin: { image?: { status: Schemas["PinImageStateDto"]["status"] } | null }): boolean {
+  return pin.image?.status !== "PENDING"
+}
+
 /**
  * The pins a page places. A download the server is still running has no dimensions, so its tile
  * would reflow the column when it finished: it stays out until the pin carries its image
@@ -45,7 +50,7 @@ export function tileImageSource(url: string, rendition: Rendition): string {
 export function placeableTiles<
   T extends { image?: { status: Schemas["PinImageStateDto"]["status"] } | null },
 >(pins: readonly T[]): T[] {
-  return pins.filter((pin) => pin.image?.status !== "PENDING")
+  return pins.filter(isPlaceable)
 }
 
 /**
@@ -55,7 +60,7 @@ export function placeableTiles<
 export function neighbours<
   T extends { id: string; image?: { status: Schemas["PinImageStateDto"]["status"] } | null },
 >(pins: readonly T[], openedId: string | null): { previous: T | undefined; next: T | undefined } {
-  const order = pins.filter((pin) => pin.id === openedId || pin.image?.status !== "PENDING")
+  const order = pins.filter((pin) => pin.id === openedId || isPlaceable(pin))
   const at = order.findIndex((pin) => pin.id === openedId)
   return at < 0 ? { previous: undefined, next: undefined } : { previous: order[at - 1], next: order[at + 1] }
 }

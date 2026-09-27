@@ -9,6 +9,7 @@ import {
   downloadsRoute,
   handshakeRoute,
   onePinPage,
+  pin,
   readyPin,
   renderApp,
   sessionRoute,
@@ -148,9 +149,9 @@ describe("replace a pin's image with a file", () => {
     // Emptied, it no longer falls back to keeping the image: there is nothing to save.
     await user.clear(field)
     expect(within(dialog).getByRole("button", { name: m.save() })).toBeDisabled()
-    await user.type(field, FOUND_AT)
     held = fetching
-    await user.click(within(dialog).getByRole("button", { name: m.save() }))
+    // Enter saves from the image side as from the column: the field is still the form's.
+    await user.type(field, `${FOUND_AT}{Enter}`)
 
     // The pin is written first, so the address the fetch reads is the one the pin now holds.
     await waitFor(() => expect(record.written).toHaveLength(2))
@@ -182,6 +183,26 @@ describe("replace a pin's image with a file", () => {
     // Correcting the address fetches nothing: the form closes on the pin written alone.
     expect(await within(dialog).findByRole("button", { name: m.edit_pin() })).toBeVisible()
     expect(record.written).toEqual([{ pin: expect.objectContaining({ sourceMediaUrl: corrected }) }])
+  })
+
+  it("Given a failed download, Then the form shows why and leaves the fetch to the choice", async () => {
+    const held = {
+      ...pin("a harbour in the dark", { status: "FAILED", reasonCode: "UNREACHABLE" }),
+      sourceMediaUrl: FOUND_AT,
+    }
+    account(() => held, recorder())
+    renderApp("/")
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByText(m.reason_unreachable()))
+    await user.click(await screen.findByRole("button", { name: m.edit_pin() }))
+    const dialog = screen.getByRole("dialog")
+
+    // One fetch control, on one address: the choice's, and never a Retry of the saved one.
+    expect(within(dialog).getByText(m.reason_unreachable())).toBeVisible()
+    expect(within(dialog).queryByRole("button", { name: m.retry() })).toBeNull()
+    await user.click(imageChoice(dialog, m.image_from_address()))
+    expect(within(dialog).queryByRole("button", { name: m.retry() })).toBeNull()
   })
 
   it("Given the image refused after the pin was written, Then the form says which half failed", async () => {

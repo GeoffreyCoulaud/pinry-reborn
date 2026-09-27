@@ -155,6 +155,7 @@ export function PinEditForm({ pin, image, close }: { pin: Pin; image: ReactNode;
   const setImage = useSetPinImage()
   const limits = useHandshake().data?.limits
   const heading = useId()
+  const form = useId()
   const [tags, setTags] = useState<readonly string[]>(pin.tags.map((tag) => tag.name))
   const [boardIds, setBoardIds] = useState<readonly string[]>(pin.boards.map((board) => board.id))
   // One value in one field at a time: the column's, or the selector's once the image is fetched from it.
@@ -165,7 +166,8 @@ export function PinEditForm({ pin, image, close }: { pin: Pin; image: ReactNode;
   const addressField = (
     <TextField type="url" value={address} onChange={setAddress} variant="secondary">
       <Label>{m.image_address()}</Label>
-      <Input />
+      {/* The form's wherever it sits, so Enter saves from the image side too. */}
+      <Input form={form} />
     </TextField>
   )
 
@@ -235,6 +237,7 @@ export function PinEditForm({ pin, image, close }: { pin: Pin; image: ReactNode;
       }
       column={
         <form
+          id={form}
           aria-labelledby={heading}
           className="flex flex-1 flex-col gap-3"
           onSubmit={(event) => {

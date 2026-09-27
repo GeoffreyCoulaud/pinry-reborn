@@ -80,6 +80,8 @@ Inside `apps/webapp/src`:
   compiles, renders no usable DOM at all, and no test goes red. **Read the rendered DOM, not the source.**
 - **A field, select or radio inside a dialog takes `variant="secondary"`**; one on a page keeps the default. The
   default takes the dialog's own background in the dark theme, with no border, and no test sees it: read it headless.
+  A `ToggleButton` is the exception: it has no `secondary` variant, and its default already stands out from the
+  dialog in both themes (measured in `docs/handoffs/2026-09-27 - handoff - the-pin-opens-beside-its-details.md`).
 - **`styles.css`'s import order is load bearing**: the house `@custom-variant dark` comes *after*
   `@import "@heroui/styles"`, whose own declaration fires every `dark:` utility against the user's chosen theme on
   a machine that prefers dark (`docs/adr/0035-a-styled-layer-over-react-aria-components.md`, decision 4).

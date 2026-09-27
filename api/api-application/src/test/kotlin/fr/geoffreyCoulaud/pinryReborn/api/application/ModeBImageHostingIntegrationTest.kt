@@ -213,7 +213,7 @@ class ModeBImageHostingIntegrationTest : IntegrationTest() {
         requestDownload(pinId, auth, originUrl("/private")).then().statusCode(202)
         pollStatus(pinId, auth, "FAILED")
 
-        // When: the retry the pin viewer offers, from another address
+        // When: a new download from another address, as the edit form's Address sends it
         requestDownload(pinId, auth, originUrl("/img.png")).then().statusCode(202)
 
         // Then

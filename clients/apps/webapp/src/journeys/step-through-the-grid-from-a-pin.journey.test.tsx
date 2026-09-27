@@ -66,6 +66,18 @@ describe("step through the grid from a pin", () => {
     expect(preloaded()).not.toContain(third)
   })
 
+  it("Given an arrow with a modifier, or one already handled, Then the pin stays", async () => {
+    const pins = [readyPin("a harbour at dusk"), readyPin("a cat asleep")]
+    const { user, dialog } = await openTheFirst(pins)
+
+    // Alt+→ is the browser's forward: it is not also a step.
+    await user.keyboard("{Alt>}{ArrowRight}{/Alt}")
+    expect(dialog).toHaveAccessibleName("a harbour at dusk")
+    dialog.addEventListener("keydown", (event) => event.preventDefault())
+    await user.keyboard("{ArrowRight}")
+    expect(dialog).toHaveAccessibleName("a harbour at dusk")
+  })
+
   it("Given the form, Then nothing steps and the arrows move the caret", async () => {
     const pins = [readyPin("a harbour at dusk"), readyPin("a cat asleep")]
     const { user, dialog } = await openTheFirst(pins)
