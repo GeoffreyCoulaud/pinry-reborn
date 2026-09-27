@@ -8,6 +8,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
  */
 interface Persistor {
     fun save(bean: Any)
+    fun saveAll(beans: Collection<Any>)
     fun delete(bean: Any)
     fun merge(bean: Any)
     fun <T : Any> reference(type: Class<T>, id: Any): T

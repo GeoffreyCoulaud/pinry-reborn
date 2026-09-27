@@ -36,7 +36,7 @@ class BoardCreator(
                         updatedAt = now,
                     ),
                 )
-                pins.forEach { pinRepository.savePin(it.copy(boards = it.boards + board, updatedAt = now)) }
+                pinRepository.addPinsToBoard(pinIds = pins.map { it.id }, board = board, at = now)
                 board
             }
         } catch (error: BoardNameAlreadyTakenException) {

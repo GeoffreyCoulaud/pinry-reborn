@@ -14,13 +14,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinBoardSettingSof
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
+import io.mockk.justRun
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Instant
+import java.util.UUID
 import java.util.UUID.randomUUID
 
 class PinBoardSetterTest {
@@ -84,44 +85,35 @@ class PinBoardSetterTest {
     // --- Bulk membership ---
 
     @Test
-    fun `Given a pin already in another board, Then addPinsToBoard keeps that one and adds the target`() {
+    fun `Given owned pins, Then addPinsToBoard files them under the board at the clock's instant`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val other = board(user, "Other")
         val target = board(user, "Target")
-        val subject = pin(user).copy(boards = listOf(other))
+        val pinIds = givenPins(pin(user), pin(user))
         every { boardRepository.findActiveBoardById(target.id) } returns target
-        every { pinRepository.findPinById(subject.id) } returns subject
-        every { pinRepository.savePin(any()) } answers { firstArg() }
+        justRun { pinRepository.addPinsToBoard(any(), any(), any()) }
 
         // When
-        useCase.addPinsToBoard(boardId = target.id, pinIds = listOf(subject.id), user = user)
+        useCase.addPinsToBoard(boardId = target.id, pinIds = pinIds, user = user)
 
         // Then
-        val saved = slot<Pin>()
-        verify { pinRepository.savePin(capture(saved)) }
-        assertEquals(listOf(other, target), saved.captured.boards)
-        assertEquals(clockInstant, saved.captured.updatedAt)
+        verify(exactly = 1) { pinRepository.addPinsToBoard(pinIds, target, clockInstant) }
     }
 
     @Test
-    fun `Given a pin in the target board, Then removePinsFromBoard drops it and keeps the other`() {
+    fun `Given owned pins, Then removePinsFromBoard removes them from the board at the clock's instant`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val other = board(user, "Other")
         val target = board(user, "Target")
-        val subject = pin(user).copy(boards = listOf(other, target))
+        val pinIds = givenPins(pin(user), pin(user))
         every { boardRepository.findActiveBoardById(target.id) } returns target
-        every { pinRepository.findPinById(subject.id) } returns subject
-        every { pinRepository.savePin(any()) } answers { firstArg() }
+        justRun { pinRepository.removePinsFromBoard(any(), any(), any()) }
 
         // When
-        useCase.removePinsFromBoard(boardId = target.id, pinIds = listOf(subject.id), user = user)
+        useCase.removePinsFromBoard(boardId = target.id, pinIds = pinIds, user = user)
 
         // Then
-        val saved = slot<Pin>()
-        verify { pinRepository.savePin(capture(saved)) }
-        assertEquals(listOf(other), saved.captured.boards)
+        verify(exactly = 1) { pinRepository.removePinsFromBoard(pinIds, target, clockInstant) }
     }
 
     @Test
@@ -130,17 +122,14 @@ class PinBoardSetterTest {
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
         val stranger = User(id = randomUUID(), name = "Jane Roe", createdAt = TestTime.now)
         val target = board(user, "Target")
-        val own = pin(user)
-        val theirs = pin(stranger)
+        val pinIds = givenPins(pin(user), pin(stranger))
         every { boardRepository.findActiveBoardById(target.id) } returns target
-        every { pinRepository.findPinById(own.id) } returns own
-        every { pinRepository.findPinById(theirs.id) } returns theirs
 
         // When, Then
         assertThrows<PinBoardSettingPermissionError> {
-            useCase.addPinsToBoard(boardId = target.id, pinIds = listOf(own.id, theirs.id), user = user)
+            useCase.addPinsToBoard(boardId = target.id, pinIds = pinIds, user = user)
         }
-        verify(exactly = 0) { pinRepository.savePin(any()) }
+        verify(exactly = 0) { pinRepository.addPinsToBoard(any(), any(), any()) }
     }
 
     @Test
@@ -150,13 +139,13 @@ class PinBoardSetterTest {
         val target = board(user, "Target")
         val missingPinId = randomUUID()
         every { boardRepository.findActiveBoardById(target.id) } returns target
-        every { pinRepository.findPinById(missingPinId) } returns null
+        every { pinRepository.findPinsByIds(listOf(missingPinId)) } returns emptyList()
 
         // When, Then
         assertThrows<PinBoardSettingPinDoesNotExistError> {
             useCase.addPinsToBoard(boardId = target.id, pinIds = listOf(missingPinId), user = user)
         }
-        verify(exactly = 0) { pinRepository.savePin(any()) }
+        verify(exactly = 0) { pinRepository.addPinsToBoard(any(), any(), any()) }
     }
 
     @Test
@@ -164,15 +153,14 @@ class PinBoardSetterTest {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
         val target = board(user, "Target")
-        val recycled = pin(user).copy(softDeletedAt = TestTime.now)
+        val pinIds = givenPins(pin(user).copy(softDeletedAt = TestTime.now))
         every { boardRepository.findActiveBoardById(target.id) } returns target
-        every { pinRepository.findPinById(recycled.id) } returns recycled
 
         // When, Then
         assertThrows<PinBoardSettingSoftDeletedPinError> {
-            useCase.addPinsToBoard(boardId = target.id, pinIds = listOf(recycled.id), user = user)
+            useCase.addPinsToBoard(boardId = target.id, pinIds = pinIds, user = user)
         }
-        verify(exactly = 0) { pinRepository.savePin(any()) }
+        verify(exactly = 0) { pinRepository.addPinsToBoard(any(), any(), any()) }
     }
 
     @Test
@@ -186,6 +174,13 @@ class PinBoardSetterTest {
         assertThrows<BoardRetrievalBoardDoesNotExistError> {
             useCase.removePinsFromBoard(boardId = unknownBoardId, pinIds = listOf(randomUUID()), user = user)
         }
+    }
+
+    /** The pins the repository answers in one read; returns their ids, in order. */
+    private fun givenPins(vararg pins: Pin): List<UUID> {
+        val ids = pins.map { it.id }
+        every { pinRepository.findPinsByIds(ids) } returns pins.toList()
+        return ids
     }
 
     private fun board(author: User, name: String) =

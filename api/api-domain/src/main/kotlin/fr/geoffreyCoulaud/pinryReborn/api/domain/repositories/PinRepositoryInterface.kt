@@ -23,6 +23,15 @@ interface PinRepositoryInterface {
      */
     fun findPinById(id: UUID): Pin?
 
+    /** The pins among [ids], in any state, read in a constant number of queries; an unknown id is absent. */
+    fun findPinsByIds(ids: List<UUID>): List<Pin>
+
+    /** Files each pin under [board] once, recording [at] as its updatedAt, in a constant number of reads. */
+    fun addPinsToBoard(pinIds: List<UUID>, board: Board, at: Instant)
+
+    /** Removes each pin from [board], recording [at] as its updatedAt, in a constant number of reads. */
+    fun removePinsFromBoard(pinIds: List<UUID>, board: Board, at: Instant)
+
     /**
      * Find pins with pagination support
      * @param cursor The cursor to find pins relative to
