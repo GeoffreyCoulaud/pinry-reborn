@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonMappingException
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.UriInfo
@@ -14,7 +15,8 @@ object ProblemResponses {
      * What every batch route publishes for its refused body, the five reading as one grammar
      * (`docs/adr/0039-a-batch-route-is-all-or-nothing.md`, decision 3).
      */
-    const val BATCH_BODY_REFUSED = "The body is missing, or its list of identifiers is empty"
+    const val BATCH_BODY_REFUSED =
+        "The body is missing, or its list of identifiers is empty or longer than ${PinIdsInputDto.MAX_IDENTIFIERS}"
 
     /** What every route taking a `q` publishes for a term that is present and blank, the three reading as one. */
     const val BLANK_QUERY_REFUSED = "The q parameter is present and blank"

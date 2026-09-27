@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input
 
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto.Companion.MAX_IDENTIFIERS
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import java.util.UUID
@@ -11,5 +12,6 @@ data class BoardCreationInputDto(
     val name: String,
     @field:Size(max = 2000)
     val description: String,
+    @field:Size(max = MAX_IDENTIFIERS)
     val pinIds: List<UUID> = emptyList(),
 )

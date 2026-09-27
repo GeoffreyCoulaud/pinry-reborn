@@ -426,6 +426,18 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         createBoard(auth, "Trip", listOf(null)).statusCode(400).body("code", equalTo("MALFORMED_BODY"))
     }
 
+    @Test
+    fun `Given more than ten thousand pinIds, Then creating a board or adding to one returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val pastTheCap = List(10_001) { UUID.randomUUID() }
+
+        // When / Then
+        createBoard(auth, "Other", pastTheCap).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
+        bulkMembership(auth, "POST", board.id, pastTheCap).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
+    }
+
     // --- Searching inside a board ---
 
     @Test
