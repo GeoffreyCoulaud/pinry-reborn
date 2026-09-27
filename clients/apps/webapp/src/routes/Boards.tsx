@@ -1,76 +1,17 @@
-import { Button, EmptyState, Input, Label, Modal, Spinner, TextField, toast } from "@heroui/react"
+import { EmptyState, Modal, Spinner, toast } from "@heroui/react"
 import { Link } from "@tanstack/react-router"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { GridList, GridListItem } from "react-aria-components"
-import { BoardRefusal, useBoards, useCreateBoard, useDeleteBoard, useSaveBoard, type Board } from "../boards"
+import { useBoards, useDeleteBoard, type Board } from "../boards"
 import { AppHeader } from "../components/AppHeader"
 import { AppNav } from "../components/AppNav"
+import { BoardForm } from "../components/BoardForm"
 import { IconButton } from "../components/IconButton"
 import { m } from "../paraglide/messages.js"
 
 /** What the dialog is open on: a board being renamed, or a board that does not exist yet. */
 type Edited = Board | "new" | null
-
-function Field({
-  name,
-  label,
-  defaultValue,
-  isRequired,
-}: {
-  name: string
-  label: string
-  defaultValue: string
-  isRequired?: boolean
-}) {
-  return (
-    <TextField name={name} defaultValue={defaultValue} isRequired={isRequired}>
-      <Label>{label}</Label>
-      <Input />
-    </TextField>
-  )
-}
-
-/** One form for both writes: the route that renames a board replaces it, description included. */
-function BoardForm({ edited, close }: { edited: Board | "new"; close: () => void }) {
-  const create = useCreateBoard()
-  const save = useSaveBoard()
-  const board = edited === "new" ? null : edited
-  const refusal = create.error ?? save.error
-
-  return (
-    <form
-      className="flex flex-col gap-3"
-      onSubmit={(event) => {
-        event.preventDefault()
-        const fields = new FormData(event.currentTarget)
-        const body = {
-          name: String(fields.get("name")),
-          description: String(fields.get("description")),
-        }
-        if (board === null) create.mutate(body, { onSuccess: close })
-        else save.mutate({ boardId: board.id, body }, { onSuccess: close })
-      }}
-    >
-      <Field name="name" label={m.name()} defaultValue={board?.name ?? ""} isRequired />
-      <Field name="description" label={m.description()} defaultValue={board?.description ?? ""} />
-      {refusal !== null && (
-        <p role="alert">
-          {refusal instanceof BoardRefusal && refusal.nameTaken
-            ? m.board_name_taken()
-            : m.board_refused()}
-        </p>
-      )}
-      <Button
-        type="submit"
-        className="self-end"
-        isDisabled={create.isPending || save.isPending}
-      >
-        {board === null ? m.create_board() : m.save()}
-      </Button>
-    </form>
-  )
-}
 
 function BoardRow({ board, rename }: { board: Board; rename: () => void }) {
   // A refusal has no form to speak in: the row is where the gesture happened and it stays put.

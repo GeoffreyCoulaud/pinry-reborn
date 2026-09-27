@@ -134,6 +134,7 @@
   "issue_unknown": "Something on this line was not imported.",
   "membership_refused": "That board could not be changed.",
   "name": "Name",
+  "new_board": "New board…",
   "new_password": "New password",
   "password": "Password",
   "password_change_collision": "Another change landed first. Try again.",

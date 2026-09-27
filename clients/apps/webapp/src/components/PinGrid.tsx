@@ -16,6 +16,7 @@ import type { PinSort } from "../lib/sorts"
 import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } from "../lib/tiles"
 import { m } from "../paraglide/messages.js"
 import { useRecyclePins, usePins, type Pin } from "../pins"
+import { BoardForm } from "./BoardForm"
 import { PinEditForm } from "./PinEditForm"
 import { SelectionBar, SelectionTick, useSelection } from "./SelectionBar"
 
@@ -127,6 +128,9 @@ function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
   )
 }
 
+/** The menu's key for "New board…", which no board's identifier, a UUID, can take. */
+const NEW_BOARD = "new"
+
 /**
  * What the selection bar offers over tiles. Two gestures on the catalogue and three on a board's
  * grid: taking pins out of a board is only a gesture where there is a board to take them out of,
@@ -145,6 +149,7 @@ function PinGestures({
   const add = useAddPinsToBoard()
   const remove = useRemovePinsFromBoard()
   const recycle = useRecyclePins()
+  const [creating, setCreating] = useState(false)
   const spend = (message: string) => ({ onSuccess: clear, onError: () => toast.danger(message) })
 
   return (
@@ -158,17 +163,38 @@ function PinGestures({
         <Dropdown.Popover>
           <Dropdown.Menu
             aria-label={m.boards()}
-            items={boards.data ?? []}
-            // An account with no board yet would otherwise open an empty box and say nothing.
-            renderEmptyState={() => <p className="px-3 py-2 text-muted">{m.boards_empty()}</p>}
             onAction={(key) =>
-              add.mutate({ boardId: String(key), pinIds }, spend(m.membership_refused()))
+              key === NEW_BOARD
+                ? setCreating(true)
+                : add.mutate({ boardId: String(key), pinIds }, spend(m.membership_refused()))
             }
           >
-            {(held) => <Dropdown.Item id={held.id}>{held.name}</Dropdown.Item>}
+            <Dropdown.Item id={NEW_BOARD}>{m.new_board()}</Dropdown.Item>
+            <Collection items={boards.data ?? []}>
+              {(held) => <Dropdown.Item id={held.id}>{held.name}</Dropdown.Item>}
+            </Collection>
           </Dropdown.Menu>
         </Dropdown.Popover>
       </Dropdown>
+      {/* A refusal keeps the dialog and the selection, so the gesture can be tried again. */}
+      <Modal.Backdrop isOpen={creating} onOpenChange={setCreating} isDismissable>
+        <Modal.Container size="sm">
+          <Modal.Dialog>
+            <Modal.CloseTrigger aria-label={m.close()} />
+            <Modal.Heading level={2} className="mb-3 pe-8">
+              {m.create_board()}
+            </Modal.Heading>
+            <BoardForm
+              edited="new"
+              pinIds={pinIds}
+              close={() => {
+                setCreating(false)
+                clear()
+              }}
+            />
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
       {boardId !== undefined && (
         <Button
           variant="outline"

@@ -11,6 +11,12 @@ import { createAppRouter } from "../router"
 type Pin = Schemas["PinOutputDto"]
 type Board = Schemas["BoardOutputDto"]
 type BoardInput = Schemas["BoardInputDto"]
+type BoardCreationInput = Schemas["BoardCreationInputDto"]
+
+/** The refusal as the API sends one: a problem body whose `code` is what the screen reads. */
+export function refused(status: number, code: string) {
+  return HttpResponse.json({ status, code }, { status })
+}
 
 const iso = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString()
 
@@ -145,7 +151,8 @@ export function boardRoutes(boards: Board[]) {
   return [
     http.get("/api/v1/boards", () => HttpResponse.json({ boards })),
     http.post("/api/v1/boards", async ({ request }) => {
-      const created = { ...board(""), ...((await request.json()) as BoardInput) }
+      const { pinIds = [], ...input } = (await request.json()) as BoardCreationInput
+      const created = { ...board(""), ...input, pinCount: pinIds.length }
       boards.push(created)
       return HttpResponse.json(created, { status: 201 })
     }),

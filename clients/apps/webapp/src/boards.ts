@@ -1,11 +1,13 @@
-import type { Schemas } from "@pinry-reborn/auth"
+import type { RefusalCode, Schemas } from "@pinry-reborn/auth"
 import { useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query"
 import { auth, bodyOf } from "./api"
+import { refusalCode } from "./lib/refusals"
 import { removePins } from "./lib/tiles"
 import type { PinPage } from "./pins"
 
 export type Board = Schemas["BoardOutputDto"]
 export type BoardInput = Schemas["BoardInputDto"]
+type BoardCreation = Schemas["BoardCreationInputDto"]
 
 /** The pins a gesture files under one board, or takes out of it, in one call (ADR 0039). */
 type Membership = { boardId: string; pinIds: readonly string[] }
@@ -15,21 +17,24 @@ const BOARDS = ["boards"]
 /** The board's own catalogue, as `usePins` keys it: `["pins", boardId, sort]`. */
 const catalogueOf = (boardId: string) => ["pins", boardId]
 
+/** The refusal the user fixes by renaming, which both writes declare; the typecheck holds it to them. */
+const NAME_TAKEN = "BOARD_NAME_ALREADY_EXISTS" satisfies RefusalCode<"/api/v1/boards", "post"> &
+  RefusalCode<"/api/v1/boards/{boardId}", "put">
+
 /**
- * A board the create and the rename refused. 409 is a name this account already holds, which is the
- * user's to fix; on any other write of this file 409 means a recycled pin, so they throw a plain
- * `Error` rather than a flag that would read as a name taken.
+ * A board the create and the rename refused. Read by the code: the create's 409 is also a recycled
+ * pin in the selection, which no rename fixes (specification 2026-09-27, decision F).
  */
 export class BoardRefusal extends Error {
   readonly nameTaken: boolean
-  constructor(status: number) {
+  constructor(error: unknown, status: number) {
     super(`The API refused the board: ${status}.`)
-    this.nameTaken = status === 409
+    this.nameTaken = refusalCode(error) === NAME_TAKEN
   }
 }
 
-function saved(answer: { data?: Board; response: Response }): Board {
-  if (answer.data === undefined) throw new BoardRefusal(answer.response.status)
+function saved(answer: { data?: Board; error?: unknown; response: Response }): Board {
+  if (answer.data === undefined) throw new BoardRefusal(answer.error, answer.response.status)
   return answer.data
 }
 
@@ -57,8 +62,9 @@ function useBoardWrite<Written>(write: (written: Written) => Promise<unknown>) {
   })
 }
 
+/** An empty board, or one created with the pins it files, all or nothing (specification 2026-09-27). */
 export function useCreateBoard() {
-  return useBoardWrite(async (body: BoardInput) =>
+  return useBoardWrite(async (body: BoardCreation) =>
     saved(await auth.client.POST("/api/v1/boards", { body })),
   )
 }

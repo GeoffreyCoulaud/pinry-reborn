@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { HttpResponse, http } from "msw"
+import { http } from "msw"
 import { describe, expect, it } from "vitest"
 import {
   board,
@@ -8,6 +8,7 @@ import {
   downloadsRoute,
   handshakeRoute,
   onePinPage,
+  refused,
   renderApp,
   sessionRoute,
 } from "../test/app"
@@ -95,7 +96,7 @@ describe("create a board and rename it", () => {
 
   it("Given a name the account already holds, Then the dialog says so", async () => {
     account([board("Harbours")])
-    server.use(http.post("/api/v1/boards", () => new HttpResponse(null, { status: 409 })))
+    server.use(http.post("/api/v1/boards", () => refused(409, "BOARD_NAME_ALREADY_EXISTS")))
 
     renderApp("/boards")
     await userEvent.click(await screen.findByRole("button", { name: "Add a board" }))
