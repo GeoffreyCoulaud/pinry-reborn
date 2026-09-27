@@ -7,6 +7,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDirectionDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.BoardCreationInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.BoardInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardListOutputDto
@@ -64,11 +65,12 @@ class BoardControllerTest {
     fun `Given valid input, Then createBoard returns 201 with Location and a zero pin count`() {
         // Given
         val user = aUser()
-        val dto = BoardInputDto(name = createRandomString(), description = createRandomString())
+        val dto = BoardCreationInputDto(name = createRandomString(), description = createRandomString())
         val board = Board(id = randomUUID(), author = user, name = dto.name, description = dto.description,
             createdAt = TestTime.now, updatedAt = TestTime.now)
         every { securityIdentity.getAttribute<User>("user") } returns user
-        every { boardCreator.create(author = user, name = dto.name, description = dto.description) } returns board
+        every { boardCreator.create(user, dto.name, dto.description, emptyList()) } returns board
+        every { boardGetter.countActivePinsForUserBoard(board.id, user) } returns 0
 
         // When
         val response = controller.createBoard(dto)
@@ -81,6 +83,24 @@ class BoardControllerTest {
         assertEquals(board.name, body.name)
         assertEquals(board.description, body.description)
         assertEquals(0, body.pinCount)
+    }
+
+    @Test
+    fun `Given pinIds, Then createBoard hands them to the creator and answers the board's pin count`() {
+        // Given
+        val user = aUser()
+        val board = aBoard(user)
+        val pinIds = listOf(randomUUID(), randomUUID())
+        val dto = BoardCreationInputDto(name = board.name, description = board.description, pinIds = pinIds)
+        every { securityIdentity.getAttribute<User>("user") } returns user
+        every { boardCreator.create(user, board.name, board.description, pinIds) } returns board
+        every { boardGetter.countActivePinsForUserBoard(board.id, user) } returns 2
+
+        // When
+        val response = controller.createBoard(dto)
+
+        // Then
+        assertEquals(2, (response.entity as BoardOutputDto).pinCount)
     }
 
     @Test

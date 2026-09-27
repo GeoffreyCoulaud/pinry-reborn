@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.BoardCreationInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.BoardInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSortStrategyInputEnum
@@ -60,17 +61,23 @@ class BoardController(
     @Authenticated
     // SmallRye reads the status off the return type, and a runtime ResponseBuilder carries none, so
     // the 201 is declared with the 409 the name constraint answers (spec 2026-08-14 section 12).
-    @APIResponse(responseCode = "201", description = "Board created",
+    @APIResponse(responseCode = "201", description = "Board created, with the pins the body names filed under it",
         content = [Content(mediaType = JSON, schema = Schema(implementation = BoardOutputDto::class))])
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
-    @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.BOARD_NAME_TAKEN)
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
+    @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_IN_BODY_NOT_FOUND)
+    @APIResponse(responseCode = "409", description = "The name is taken, a recycled board holding its name until the bin is emptied, " +
+        "or a pin the body names is in the recycle bin",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["BOARD_NAME_ALREADY_EXISTS", "PIN_ALREADY_SOFT_DELETED"])]))])
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
-    fun createBoard(@Valid @NotNull dto: BoardInputDto): RestResponse<BoardOutputDto> {
+    fun createBoard(@Valid @NotNull dto: BoardCreationInputDto): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
-        val board = boardCreator.create(author = user, name = dto.name, description = dto.description)
+        val board = boardCreator.create(user, dto.name, dto.description, dto.pinIds)
         return ResponseBuilder
             .created<BoardOutputDto>(URI("/api/v1/boards/${board.id}"))
-            .entity(board.toDto(pinCount = 0))
+            .entity(board.toDto(pinCount = boardGetter.countActivePinsForUserBoard(board.id, user)))
             .build()
     }
 

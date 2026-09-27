@@ -165,11 +165,11 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
             tags = emptyList(),
         )
 
-    private fun bulkMembership(auth: AuthenticatedUser, method: String, boardId: UUID, pinIds: List<UUID>) =
+    private fun bulkMembership(auth: AuthenticatedUser, method: String, boardId: UUID, pinIds: List<UUID?>) =
         given()
             .authenticatedAs(auth)
             .contentType(ContentType.JSON)
-            .body(mapOf("pinIds" to pinIds.map { it.toString() }))
+            .body(mapOf("pinIds" to pinIds.map { it?.toString() }))
             .`when`()
             .request(method, "/api/v1/boards/$boardId/pins")
             .then()
@@ -276,6 +276,16 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given a null among the pinIds, Then adding to a board returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+
+        // When / Then
+        bulkMembership(auth, "POST", board.id, listOf(null)).statusCode(400)
+    }
+
+    @Test
     fun `Given a recycled pin, Then adding it to a board returns 409`() {
         // Given
         val auth = createAuthenticatedUser()
@@ -302,6 +312,80 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
 
         // Then
         boardsOf(auth, own).body("boards.id", containsInAnyOrder(board.id.toString()))
+    }
+
+    // --- Created with its pins ---
+
+    private fun createBoard(auth: AuthenticatedUser, name: String, pinIds: List<UUID?>) =
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .body(mapOf("name" to name, "description" to "", "pinIds" to pinIds.map { it?.toString() }))
+            .`when`()
+            .post("/api/v1/boards")
+            .then()
+
+    @Test
+    fun `Given two owned pins, Then creating a board with them files both under it`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val first = createPin(auth.user, "First")
+        val second = createPin(auth.user, "Second")
+
+        // When
+        val boardId = createBoard(auth, "Trip", listOf(first.id, second.id))
+            .statusCode(201)
+            .body("pinCount", equalTo(2))
+            .extract().path<String>("id")
+
+        // Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/boards/$boardId/pins")
+            .then()
+            .statusCode(200)
+            .body("pins.id", containsInAnyOrder(first.id.toString(), second.id.toString()))
+    }
+
+    @Test
+    fun `Given a pin named twice, Then the new board counts it once`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth.user)
+
+        // When / Then
+        createBoard(auth, "Trip", listOf(pin.id, pin.id)).statusCode(201).body("pinCount", equalTo(1))
+    }
+
+    @Test
+    fun `Given an unknown pin, Then creating a board with it returns 404 and leaves no board`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val own = createPin(auth.user)
+
+        // When
+        createBoard(auth, "Trip", listOf(own.id, UUID.randomUUID()))
+            .statusCode(404)
+            .body("code", equalTo("PIN_DOES_NOT_EXIST"))
+
+        // Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/boards")
+            .then()
+            .statusCode(200)
+            .body("boards", emptyIterable<Any>())
+    }
+
+    @Test
+    fun `Given a null among the pinIds, Then creating a board returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+
+        // When / Then
+        createBoard(auth, "Trip", listOf(null)).statusCode(400)
     }
 
     // --- Searching inside a board ---
