@@ -282,14 +282,19 @@ export function handshakeRoute({
 }
 
 /** A row of the task centre, as `GET /api/v1/me/image-downloads` answers it. */
-export function download(pinId: string, status: "PENDING" | "FAILED", message: string | null = null) {
+export function download(
+  pinId: string,
+  status: "PENDING" | "FAILED",
+  message: string | null = null,
+  reasonCode = "FETCH_FAILED",
+) {
   return {
     pinId,
     sourceUrl: `https://example.test/${pinId}.png`,
     status,
     requestedAt: "2026-09-11T10:00:00Z",
     updatedAt: "2026-09-11T10:00:01Z",
-    reasonCode: status === "FAILED" ? "FETCH_FAILED" : null,
+    reasonCode: status === "FAILED" ? reasonCode : null,
     message,
   }
 }

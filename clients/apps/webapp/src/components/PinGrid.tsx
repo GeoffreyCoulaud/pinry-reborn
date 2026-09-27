@@ -1,4 +1,6 @@
-import { Button, Dropdown, EmptyState, Modal, Spinner, toast } from "@heroui/react"
+import { Button, Chip, Dropdown, EmptyState, Modal, Spinner, toast } from "@heroui/react"
+import { Link } from "@tanstack/react-router"
+import { Pencil, Trash2, X } from "lucide-react"
 import { useLayoutEffect, useRef, useState, type RefObject } from "react"
 import {
   Collection,
@@ -10,13 +12,14 @@ import {
   WaterfallLayout,
 } from "react-aria-components"
 import { useAddPinsToBoard, useBoards, useRemovePinsFromBoard } from "../boards"
-import { downloadReason } from "../downloadReasons"
-import { useHandshake } from "../images"
+import { downloadReason, retriable } from "../downloadReasons"
+import { useHandshake, useSetPinImage } from "../images"
 import type { PinSort } from "../lib/sorts"
 import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } from "../lib/tiles"
 import { m } from "../paraglide/messages.js"
 import { useRecyclePins, usePins, type Pin } from "../pins"
 import { BoardForm } from "./BoardForm"
+import { IconButton } from "./IconButton"
 import { PinEditForm } from "./PinEditForm"
 import { SelectionBar, SelectionTick, useSelection } from "./SelectionBar"
 
@@ -76,39 +79,63 @@ function Tile({ pin, smallRenditionPx }: { pin: Pin; smallRenditionPx?: number }
   )
 }
 
-/** The pin as it reads, until Edit swaps it for the form (specification 2026-09-20, decision K). */
-function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
-  const [editing, setEditing] = useState(false)
-  const recycle = useRecyclePins()
+/** The image side: the picture, or what stands in its place (specification 2026-09-27, decision C). */
+function PinImage({ pin }: { pin: Pin }) {
+  const retry = useSetPinImage()
+  const image = pin.image
+  const address = pin.sourceMediaUrl
 
-  if (editing) return <PinEditForm pin={pin} close={() => setEditing(false)} />
+  if (image?.status === "READY" && image.url != null)
+    return (
+      <img
+        src={tileImageSource(image.url, "LARGE")}
+        alt={pin.description}
+        className="h-full w-full object-contain max-lg:max-h-[70dvh]"
+      />
+    )
+  if (image?.status === "PENDING")
+    return (
+      <p role="status" className="flex items-center gap-2">
+        <Spinner aria-hidden />
+        {m.task_running()}
+      </p>
+    )
+  if (image?.status === "FAILED")
+    return (
+      <div className="flex flex-col items-center gap-3 text-center">
+        <p>{downloadReason(image.reasonCode, image.message)}</p>
+        {/* From the pin's own address, which the user may have corrected since the download failed. */}
+        {retriable(image.reasonCode) && address != null && (
+          <Button
+            isDisabled={retry.isPending}
+            onPress={() => retry.mutate({ pinId: pin.id, source: { url: address } })}
+          >
+            {m.retry()}
+          </Button>
+        )}
+        {retry.isError && <p role="alert">{m.image_refused()}</p>}
+      </div>
+    )
+  return <p>{m.pin_no_image()}</p>
+}
+
+/** The column beside the image, fixed so that what a wider window adds goes to the image. */
+function PinDetails({ pin, close, edit }: { pin: Pin; close: () => void; edit: () => void }) {
+  const recycle = useRecyclePins()
+  const source = pin.sourceContextUrl
 
   return (
-    <div className="flex flex-col gap-3">
-      {pin.image?.url && (
-        <img
-          src={tileImageSource(pin.image.url, "MEDIUM")}
-          alt={pin.description}
-          className="max-h-[60vh] w-full object-contain"
-        />
-      )}
-      <p>{pin.description}</p>
-      <ul className="flex flex-wrap gap-2">
-        {pin.tags.map((tag) => (
-          <li key={tag.name}>{tag.name}</li>
-        ))}
-      </ul>
-      <ul className="flex flex-wrap gap-2">
-        {pin.boards.map((board) => (
-          <li key={board.id}>{board.name}</li>
-        ))}
-      </ul>
-      <div className="flex justify-end gap-2">
-        {/* Kept away from Close at the other end: it is the one button here that changes the
-            account, and no confirmation guards it, the bin being how the pin comes back. */}
-        <Button
+    <div className="flex flex-col gap-4 lg:w-[22.5rem] lg:shrink-0 lg:overflow-y-auto">
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" onPress={edit}>
+          <Pencil aria-hidden />
+          {m.edit_pin()}
+        </Button>
+        {/* Kept away from Close: no confirmation guards it, the bin being how the pin comes back. */}
+        <IconButton
+          icon={Trash2}
+          name={m.delete_pin()}
           variant="ghost"
-          className="me-auto"
           isDisabled={recycle.isPending}
           onPress={() =>
             recycle.mutate([pin.id], {
@@ -116,14 +143,75 @@ function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
               onError: () => toast.danger(m.pin_deletion_refused()),
             })
           }
-        >
-          {m.delete_pin()}
-        </Button>
-        <Button variant="ghost" onPress={() => setEditing(true)}>
-          {m.edit_pin()}
-        </Button>
-        <Button onPress={close}>{m.close()}</Button>
+        />
+        <IconButton icon={X} name={m.close()} variant="ghost" className="ms-auto" onPress={close} />
       </div>
+      <p>{pin.description}</p>
+      <dl className="flex flex-col gap-4 [&_dt]:mb-1 [&_dt]:text-sm [&_dt]:text-muted">
+        {source && (
+          <div>
+            <dt>{m.source_page()}</dt>
+            <dd>
+              <a href={source} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                {URL.parse(source)?.hostname ?? source}
+              </a>
+            </dd>
+          </div>
+        )}
+        {pin.tags.length > 0 && (
+          <div>
+            <dt>{m.tags()}</dt>
+            <dd className="flex flex-wrap gap-2">
+              {pin.tags.map((tag) => (
+                <Chip key={tag.name}>{tag.name}</Chip>
+              ))}
+            </dd>
+          </div>
+        )}
+        {pin.boards.length > 0 && (
+          <div>
+            <dt>{m.boards()}</dt>
+            <dd className="flex flex-col items-start gap-1">
+              {pin.boards.map((board) => (
+                <Link
+                  key={board.id}
+                  to="/boards/$boardId"
+                  params={{ boardId: board.id }}
+                  className="text-accent hover:underline"
+                >
+                  {board.name}
+                </Link>
+              ))}
+            </dd>
+          </div>
+        )}
+      </dl>
+    </div>
+  )
+}
+
+/**
+ * The image beside its details from `lg`, stacked below it (specification 2026-09-27, decision A).
+ * Edit still swaps the whole dialog for the form (specification 2026-09-20, decision K).
+ */
+function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
+  const [editing, setEditing] = useState(false)
+
+  if (editing)
+    return (
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-lg">
+          <PinEditForm pin={pin} close={() => setEditing(false)} />
+        </div>
+      </div>
+    )
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto lg:flex-row lg:overflow-hidden">
+      <div className="flex items-center justify-center lg:min-w-0 lg:flex-1">
+        <PinImage pin={pin} />
+      </div>
+      <PinDetails pin={pin} close={close} edit={() => setEditing(true)} />
     </div>
   )
 }
@@ -235,8 +323,10 @@ export function PinGrid({
   // lowered in the configuration would otherwise upscale every tile (specification 4.3).
   const renditionSizes = useHandshake().data?.renditionSizes
   const [openedId, setOpenedId] = useState<string | null>(null)
-  const tiles = placeableTiles(pins.data?.pages.flatMap((page) => page.pins) ?? [])
-  const opened = tiles.find((pin) => pin.id === openedId)
+  const loaded = pins.data?.pages.flatMap((page) => page.pins) ?? []
+  const tiles = placeableTiles(loaded)
+  // Among every loaded pin, so a retried download that turns it `PENDING` keeps it open (decision E).
+  const opened = loaded.find((pin) => pin.id === openedId)
   const selection = useSelection(tiles)
   const selecting = selection.ids.length > 0
 
@@ -255,7 +345,8 @@ export function PinGrid({
   if (pins.isError) return <p role="alert">{m.pins_unreadable()}</p>
   // A search that matched nothing is not an empty account, and the recourse differs: add a pin,
   // or search for something else (specification 2026-09-21, decision N).
-  if (tiles.length === 0)
+  // An open pin gone `PENDING` may leave no tile, and the empty state would take its dialog with it.
+  if (tiles.length === 0 && opened === undefined)
     return (
       <EmptyState role="status" className="grid h-full place-content-center text-center">
         {term === undefined ? m.pins_empty() : m.search_empty({ term })}
@@ -311,10 +402,10 @@ export function PinGrid({
         onOpenChange={() => setOpenedId(null)}
         isDismissable
       >
-        {/* `inside`, the default, clips whatever the dialog cannot hold and scrolls nothing of its
-            own: at phone width the edit form's last fields and its buttons were unreachable. */}
-        <Modal.Container size="lg" scroll="outside">
-          <Modal.Dialog aria-label={opened?.description}>
+        {/* The window less HeroUI's margin, and the whole screen below `sm`, where `cover` keeps
+            both the margin and the corners (specification 2026-09-27, decision A). */}
+        <Modal.Container size="cover" scroll="inside" className="max-sm:p-0">
+          <Modal.Dialog aria-label={opened?.description} className="max-sm:rounded-none">
             {opened && <PinDialog pin={opened} close={() => setOpenedId(null)} />}
           </Modal.Dialog>
         </Modal.Container>

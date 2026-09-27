@@ -142,6 +142,7 @@
   "password_previously_used": "Ce compte a déjà utilisé ce mot de passe. Choisissez-en un autre.",
   "password_wrong": "Ce n’est pas le mot de passe actuel.",
   "pin_deletion_refused": "Cette épingle n’a pas pu être supprimée.",
+  "pin_no_image": "Cette épingle n’a pas d’image.",
   "pin_progress": "Épingle {current} sur {total}",
   "pin_refused": "Cette épingle n’a pas pu être enregistrée.",
   "pins": "Épingles",
