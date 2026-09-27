@@ -76,6 +76,16 @@ async function openTheForm(user: ReturnType<typeof userEvent.setup>, description
   return screen.getByRole("dialog")
 }
 
+/** One of the image's three options, in the selector on the image side. */
+function imageChoice(dialog: HTMLElement, name: string) {
+  return within(within(dialog).getByRole("radiogroup", { name: m.image() })).getByRole("radio", { name })
+}
+
+/** The column's form, which holds the address unless the image is fetched from it. */
+function theColumn(dialog: HTMLElement) {
+  return within(dialog).getByRole("form", { name: m.pin_editing() })
+}
+
 describe("replace a pin's image with a file", () => {
   it("Given the file option and a file, Then the save applies it and the tile follows", async () => {
     const original = readyPin("a harbour at dusk", 800, 600)
@@ -89,12 +99,14 @@ describe("replace a pin's image with a file", () => {
     const user = userEvent.setup()
 
     const dialog = await openTheForm(user, original.description)
-    // The image the form is editing, above the choice of what to do with it.
+    // The image stays in view beside the form, and the choice is made on it (decision H).
     expect(within(dialog).getByRole("img", { name: original.description })).toBeVisible()
-    await user.click(within(dialog).getByRole("radio", { name: m.image_replace() }))
+    await user.click(imageChoice(dialog, m.image_from_file()))
     await user.upload(within(dialog).getByLabelText(m.drop_image()), A_PICTURE())
     // Chosen and not sent: nothing reaches the server until the pin is saved.
     expect(await within(dialog).findByText("harbour.png")).toBeVisible()
+    expect(within(dialog).getByText(m.image_unsaved())).toBeVisible()
+    expect(within(dialog).queryByRole("img", { name: original.description })).toBeNull()
     expect(record.written).toEqual([])
 
     held = replaced
@@ -111,7 +123,7 @@ describe("replace a pin's image with a file", () => {
     expect(tile).toHaveStyle({ aspectRatio: "400 / 1000" })
   })
 
-  it("Given an address typed where the pin had none, Then the fetch is offered and applied", async () => {
+  it("Given the address chosen, Then its field moves to the image and an empty one saves nothing", async () => {
     const found = readyPin("a harbour at dawn")
     // What the pin reads as while the server runs the download: the image it still has, and the
     // replacement beside it (property 8).
@@ -123,14 +135,20 @@ describe("replace a pin's image with a file", () => {
     const user = userEvent.setup()
 
     const dialog = await openTheForm(user, found.description)
-
-    // No address, nothing to fetch: the option is absent rather than refusing when chosen.
     expect(found.sourceMediaUrl).toBeNull()
-    expect(within(dialog).queryByRole("radio", { name: m.fetch_image_from_url() })).toBeNull()
+    const address = { name: m.image_address() }
+    await user.type(within(theColumn(dialog)).getByRole("textbox", address), FOUND_AT)
+    await user.click(imageChoice(dialog, m.image_from_address()))
 
-    await user.type(within(dialog).getByRole("textbox", { name: m.image_address() }), FOUND_AT)
-    // The option follows the field, not the pin as it was read, so no save and no second edit.
-    await user.click(await within(dialog).findByRole("radio", { name: m.fetch_image_from_url() }))
+    // One field, in one place at a time: the selector's now, carrying what the column held.
+    expect(within(theColumn(dialog)).queryByRole("textbox", address)).toBeNull()
+    const field = within(dialog).getByRole("textbox", address)
+    expect(field).toHaveValue(FOUND_AT)
+    expect(within(dialog).getByText(m.image_fetched_on_save())).toBeVisible()
+    // Emptied, it no longer falls back to keeping the image: there is nothing to save.
+    await user.clear(field)
+    expect(within(dialog).getByRole("button", { name: m.save() })).toBeDisabled()
+    await user.type(field, FOUND_AT)
     held = fetching
     await user.click(within(dialog).getByRole("button", { name: m.save() }))
 
@@ -145,21 +163,25 @@ describe("replace a pin's image with a file", () => {
     expect(await within(dialog).findByText(m.image_replacing())).toBeVisible()
   })
 
-  it("Given the image kept, Then the save writes the pin and touches no image", async () => {
+  it("Given the image kept and its address corrected, Then the save writes the pin and touches no image", async () => {
     const held = { ...readyPin("a harbour at noon"), sourceMediaUrl: FOUND_AT }
+    const corrected = "https://example.test/harbour-at-noon.png"
     const record = recorder()
     account(() => held, record)
     renderApp("/")
     const user = userEvent.setup()
 
     const dialog = await openTheForm(user, held.description)
-    // Keeping is the default, and the address the pin already carries offers the fetch beside it.
-    expect(within(dialog).getByRole("radio", { name: m.image_keep() })).toBeChecked()
-    expect(within(dialog).getByRole("radio", { name: m.fetch_image_from_url() })).toBeVisible()
+    // Keeping is the default, and the address is then an ordinary field of the column.
+    expect(imageChoice(dialog, m.image_keep())).toBeChecked()
+    const address = within(theColumn(dialog)).getByRole("textbox", { name: m.image_address() })
+    await user.clear(address)
+    await user.type(address, corrected)
     await user.click(within(dialog).getByRole("button", { name: m.save() }))
 
-    await waitFor(() => expect(record.written).toHaveLength(1))
-    expect(record.written[0]).toEqual({ pin: expect.objectContaining({ sourceMediaUrl: FOUND_AT }) })
+    // Correcting the address fetches nothing: the form closes on the pin written alone.
+    expect(await within(dialog).findByRole("button", { name: m.edit_pin() })).toBeVisible()
+    expect(record.written).toEqual([{ pin: expect.objectContaining({ sourceMediaUrl: corrected }) }])
   })
 
   it("Given the image refused after the pin was written, Then the form says which half failed", async () => {
@@ -170,7 +192,7 @@ describe("replace a pin's image with a file", () => {
     const user = userEvent.setup()
 
     const dialog = await openTheForm(user, held.description)
-    await user.click(within(dialog).getByRole("radio", { name: m.fetch_image_from_url() }))
+    await user.click(imageChoice(dialog, m.image_from_address()))
     await user.click(within(dialog).getByRole("button", { name: m.save() }))
 
     // The fields are saved and the image is not, so the form says that and not that the save
@@ -189,7 +211,7 @@ describe("replace a pin's image with a file", () => {
     const user = userEvent.setup()
 
     const dialog = await openTheForm(user, held.description)
-    await user.click(within(dialog).getByRole("radio", { name: m.image_replace() }))
+    await user.click(imageChoice(dialog, m.image_from_file()))
     await user.upload(
       within(dialog).getByLabelText(m.drop_image()),
       new File(["more than four bytes"], "big.png", { type: "image/png" }),
