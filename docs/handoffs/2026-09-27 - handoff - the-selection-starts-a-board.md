@@ -149,12 +149,18 @@ redesign is the next lot, not an item.
   are inserted blocks, not fix-backs.
 - **Cascaded rebases: 2**. The first put block 20 onto 16 and the closing block onto 20, with one conflict, in the
   specification's block table; the second followed the fix-backs of 13 and 16, with none.
-- **Runs re-triggered**: to be counted once the second cascade is pushed. Up to it, 4: three by the first cascade's
-  push and one by the closing block's own push. The first cascade's push ran one per branch, 36322705750,
-  36322739345, 36322769686, 36322804725 and 36322837300, two of them the first runs of blocks 13 and 16; the
-  closing block's push after the second holistic review ran 36323491697. Before the cascade: 36315388379 on block
-  10, 36318153418 on block 20 and 36318958845 on the closing block (`gh run list --branch <branch>`).
-- **The operator's reading of the bodies**: to be filled in before the stack merges.
+- **Runs re-triggered: 8**, a branch's first run not counted. That is more than the lot's five blocks, ADR 0043's
+  failure criterion; the operator's reviews of #242 and #246, with the two blocks they inserted, drove every one.
+    - The first cascade's push ran one per branch, 36322705750, 36322739345, 36322769686, 36322804725 and
+      36322837300: three re-triggered, the other two the first runs of blocks 13 and 16.
+    - The closing block's push after the second holistic review: 36323491697.
+    - The second cascade's push: 36329391224 (#246), 36329294781 (#247), 36329293397 (#243) and 36329293819 (#245);
+      #242 did not move. Cancelled by the base change, and not counted: 36329293169 (#243), 36329293458 (#245) and
+      36329294003 (#247).
+    - Before any cascade, one first run per branch: 36315388379 on block 10, 36318153418 on block 20 and
+      36318958845 on the closing block (`gh run list --branch <branch>`).
+- **The operator's reading of the bodies**, their words: "LGTM. Les descriptions de PRs étaient bonnes, rien à
+  redire." (Looks good; the pull request bodies were good, nothing to add.)
 
 ## Next step
 
