@@ -184,6 +184,23 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         assertEquals(setOf(board2.id, board3.id), actual!!.boards.map { it.id }.toSet())
     }
 
+    @Test
+    fun `Given a board and a tag each named twice, Then savePin writes each join row once`() {
+        // Given: a request may repeat an identifier or a tag name, and the join rows are unique
+        val user = createAndSaveUser()
+        val board = createAndSaveBoard(user = user)
+        val tag = createAndSaveTag(name = "twice", user = user)
+        val pin = createPin().copy(author = user, boards = listOf(board, board), tags = listOf(tag, tag))
+
+        // When
+        repository.savePin(pin)
+
+        // Then
+        val saved = repository.findPinById(pin.id)
+        assertEquals(listOf(board.id), saved?.boards?.map { it.id })
+        assertEquals(listOf(tag.id), saved?.tags?.map { it.id })
+    }
+
     // --- findActivePinsForBoard ---
 
     @Test
