@@ -26,7 +26,12 @@ review".)
   `List<@NotBlank String>`.)
 - **A batch write costs a constant number of reads and writes only what changes** (decision H, blocks 13 and 16):
   `BoardCreator`, `PinBoardSetter`'s add and remove, and `PinRecycleBin`'s `softDeleteAll` and `restoreAll` go
-  through `PinRepositoryInterface`'s bulk methods rather than one save per pin.
+  through `PinRepositoryInterface`'s bulk methods rather than one save per pin. `PinRepository` loads the pins,
+  marks them modified in one batch (`markModified(pins, at)`), then inserts or deletes their memberships.
+- **A pin's join rows are unique and indexed** (block 13's fix-back `d7c29376`, the operator's "a" on #246): migration
+  1.27 adds unique `(pin_id, board_id)` and `(pin_id, tag_id)` indexes and one on `board_id` and on `tag_id`, after
+  keeping the first copy of each pair already repeated. `savePin` writes each join row once, so a request naming a
+  board or a tag twice no longer collides.
 - **A batch body names at most 10 000 identifiers** (`PinIdsInputDto.MAX_IDENTIFIERS`, on `PinIdsInputDto`,
   `BoardIdsInputDto` and `BoardCreationInputDto`), answering 400 `VALIDATION_ERROR` past it, the contract carrying
   `maxItems`. A bulk read binds one parameter per identifier, and the embedded SQLite refuses a statement past 250 000
@@ -52,8 +57,10 @@ review".)
   v1.31.0 `main` to HEAD: the four changes of decision E on `POST /api/v1/boards`, plus
   `request-property-pattern-added` on the tags of `PUT /api/v1/pins/{pinId}`, none on `PUT /api/v1/boards/{boardId}`
   (PR #242's report).
-- Block 13: `dagger call gate` green at `0973b5a9`; budget 303 lines, 10 files against block 10 (PR #246).
-- Block 16: `dagger call gate` green at `dc4da046`; budget 166 lines, 5 files against block 13 (PR #247).
+- Block 13: `dagger call gate` green at `0973b5a9`; budget 303 lines, 10 files against block 10 (PR #246). After its
+  fix-back, green at `d7c29376`; budget 448 lines, 17 files against block 10.
+- Block 16: `dagger call gate` green at `dc4da046`; budget 166 lines, 5 files against block 13 (PR #247). After its
+  fix-back, green at `f82694b3`; budget 168 lines, 5 files against block 13.
 - Block 20: `dagger call gate` green at `18c907bf`; budget 347 lines, 17 files against block 10.
 - The journey "add selected pins to a new board" failed on the missing menu item before the implementation, then
   passed.
@@ -62,7 +69,7 @@ review".)
   and "Pins: 2" on the boards screen. Then every dialog holding a field (board, new pin, pin edit, export, account
   deletion), where each field's computed background now differs from its dialog's in both themes.
 - Closing block: `dagger call gate` green at `899f104f`, again at `f162842f` after the rebase onto the new block 20,
-  and at `0052f67e` with the second holistic review's findings. The regenerated contract drops `BoardNameTaken`,
+  at `0052f67e` with the second holistic review's findings, and at `150a1f46` after the second cascade. The regenerated contract drops `BoardNameTaken`,
   inlines `PUT /api/v1/boards/{boardId}`'s 409 with no change to its codes, and gives the three identifier
   lists `maxItems` 10000.
 
@@ -137,15 +144,16 @@ redesign is the next lot, not an item.
 
 ## The lot's counts
 
-- **Fix-backs: 1**, block 10's `9d34980b` after the operator's review of #242 ("H -> a"). Blocks 13 and 16 are
-  inserted blocks, not fix-backs.
-- **Cascaded rebases: 1**, block 20 onto 16 and the closing block onto 20, with one conflict, in the specification's
-  block table.
-- **Runs re-triggered: 4**, three by the cascade's push and one by the closing block's own push. The cascade's push
-  ran one per branch, 36322705750, 36322739345, 36322769686, 36322804725 and 36322837300, two of them the first
-  runs of blocks 13 and 16. The closing block's push after the second holistic review is its own run on #245. Before
-  the cascade: 36315388379 on block 10, 36318153418 on block 20 and 36318958845 on the closing block
-  (`gh run list --branch <branch>`).
+- **Fix-backs: 3**: block 10's `9d34980b` after the operator's review of #242 ("H -> a"), block 13's `d7c29376`
+  after their review of #246 ("a"), and block 16's `f82694b3`, its naming aligned on block 13's. Blocks 13 and 16
+  are inserted blocks, not fix-backs.
+- **Cascaded rebases: 2**. The first put block 20 onto 16 and the closing block onto 20, with one conflict, in the
+  specification's block table; the second followed the fix-backs of 13 and 16, with none.
+- **Runs re-triggered**: to be counted once the second cascade is pushed. Up to it, 4: three by the first cascade's
+  push and one by the closing block's own push. The first cascade's push ran one per branch, 36322705750,
+  36322739345, 36322769686, 36322804725 and 36322837300, two of them the first runs of blocks 13 and 16; the
+  closing block's push after the second holistic review ran 36323491697. Before the cascade: 36315388379 on block
+  10, 36318153418 on block 20 and 36318958845 on the closing block (`gh run list --branch <branch>`).
 - **The operator's reading of the bodies**: to be filled in before the stack merges.
 
 ## Next step
