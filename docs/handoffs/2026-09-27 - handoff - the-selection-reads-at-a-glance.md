@@ -11,10 +11,15 @@ Tier: Direct, one block, `fix/selection-and-drop-feedback`. No specification, no
 - **A selected tile is ringed and tinted in the accent colour**, off react-aria's `data-selected`.
 - **A drop whose images take over 300 ms to read raises a loading toast** ("Reading dropped images: N") until
   `judgeDrop` has judged them, on the grid's drop and in the dialogs' drop box alike.
+- **A file heavier than `maxFileBytes` is refused before it is decoded** (`byteRefusal`), where it used to be decoded
+  and then refused. Found while reading the drop; the operator chose to fix it in this block.
 
 ## Evidence
 
-- `dagger call gate` green at `68dfb311`. Budget 49 lines, 8 files against `main`.
+- `dagger call gate` green at `68dfb311`, then at `2b758ac6` with the weight read first. Budget 72 lines, 11 files
+  against `main`.
+- The heavy-file journey case asserts `createImageBitmap` is never called, and failed before `drops.ts` read the
+  size first.
 - The new journey case, "Given images still being read, Then the screen says so until the form opens", failed
   before `drops.ts` changed.
 - Read headless in Firefox 156.0.1 against a stubbed API and the built bundle, at 1280 and 380 px: both screens full
