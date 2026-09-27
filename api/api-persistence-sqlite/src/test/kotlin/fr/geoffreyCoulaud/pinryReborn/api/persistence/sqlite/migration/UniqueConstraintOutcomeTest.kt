@@ -59,6 +59,14 @@ class UniqueConstraintOutcomeTest {
                 "ones through findOrCreate and the user data import through resolve, which differ only in " +
                 "the createdAt they stamp; so the violation is unreachable and a concurrent tagging " +
                 "converges on one row rather than a 500.",
+            "ux_pin_board_model_pin_board" to
+                "No translation, deliberately: every write in PinRepository reads the memberships already " +
+                "there and inserts the missing ones, each once, so the index fires only when two writes of " +
+                "one pin interleave outside a transaction, and 500 is the answer then.",
+            "ux_pin_tag_model_pin_tag" to
+                "No translation, deliberately: PinRepository.savePin reads the pin's tags and inserts the " +
+                "missing ones, each once, so the index fires only when two writes of one pin interleave " +
+                "outside a transaction, and 500 is the answer then.",
         )
 
     // Uniqueness has two spellings: a standalone `create unique index`, and an inline constraint at table creation.

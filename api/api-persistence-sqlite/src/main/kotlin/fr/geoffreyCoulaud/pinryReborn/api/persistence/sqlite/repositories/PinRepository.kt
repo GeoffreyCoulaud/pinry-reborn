@@ -34,9 +34,8 @@ import java.time.Instant
 import java.util.UUID
 
 @ApplicationScoped
-// PinRepositoryInterface's surface (11 methods) plus this adapter's four private query helpers
-// (getTagsForPin, savePinTags, getBoardsForPin, savePinBoards) trips detekt's default per-class
-// threshold. Suppressed rather than split, since splitting would fragment one cohesive adapter
+// PinRepositoryInterface's surface plus this adapter's private query helpers trips detekt's default
+// per-class threshold. Suppressed rather than split, since splitting would fragment one cohesive adapter
 // across artificial classes for no readability gain (mirrors EbeanTaskQueue's precedent for the
 // same rule).
 @Suppress("TooManyFunctions")
@@ -108,6 +107,7 @@ class PinRepository(
         // Persist the new tags
         val newTagIds = updatedTagIds.minus(existingTagIds)
         tags
+            .distinctBy { it.id }
             .filter { newTagIds.contains(it.id) }
             .map { tag -> PinTagModel(pin = pinModel, tag = tag.toModel()) }
             .forEach { persistor.save(it) }
@@ -142,6 +142,7 @@ class PinRepository(
         // Persist the new boards
         val newBoardIds = updatedBoardIds.minus(existingBoardIds)
         boards
+            .distinctBy { it.id }
             .filter { newBoardIds.contains(it.id) }
             .map { board -> PinBoardModel(pin = pinModel, board = board.toModel()) }
             .forEach { persistor.save(it) }
@@ -183,32 +184,55 @@ class PinRepository(
 
     override fun findPinsByIds(ids: List<UUID>): List<Pin> {
         if (ids.isEmpty()) return emptyList()
-        val tags = QPinTagModel().pin.id.isIn(ids).tag.fetch().findList()
-            .groupBy({ it.pin.id }, { it.tag.toDomain() })
-        val boards = QPinBoardModel().pin.id.isIn(ids).withActiveBoard().board.fetch().findList()
-            .groupBy({ it.pin.id }, { it.board.toDomain() })
-        return PinQueries.any().id.isIn(ids).author.fetch().findList()
-            .map { it.toDomain(tags[it.id].orEmpty(), boards[it.id].orEmpty()) }
+        val tagsByPin = tagsByPin(ids)
+        val boardsByPin = activeBoardsByPin(ids)
+        val pins = PinQueries.any().id.isIn(ids).author.fetch().findList()
+        return pins.map { it.toDomain(tags = tagsByPin[it.id].orEmpty(), boards = boardsByPin[it.id].orEmpty()) }
     }
+
+    private fun tagsByPin(pinIds: List<UUID>): Map<UUID, List<Tag>> =
+        QPinTagModel()
+            .pin.id.isIn(pinIds)
+            .tag.fetch()
+            .findList()
+            .groupBy(keySelector = { it.pin.id }, valueTransform = { it.tag.toDomain() })
+
+    private fun activeBoardsByPin(pinIds: List<UUID>): Map<UUID, List<Board>> =
+        QPinBoardModel()
+            .pin.id.isIn(pinIds)
+            .withActiveBoard()
+            .board.fetch()
+            .findList()
+            .groupBy(keySelector = { it.pin.id }, valueTransform = { it.board.toDomain() })
 
     override fun addPinsToBoard(pinIds: List<UUID>, board: Board, at: Instant) {
         if (pinIds.isEmpty()) return
-        val pins = stamp(pinIds, at)
-        val filed = QPinBoardModel().board.id.equalTo(board.id).pin.id.isIn(pinIds).findList().map { it.pin.id }.toSet()
+        val pins = PinQueries.any().id.isIn(pinIds).findList()
+        markModified(pins, at)
+
+        val alreadyFiledPinIds = memberships(board, pinIds).findList().map { it.pin.id }.toSet()
         val boardModel = persistor.reference(BoardModel::class.java, board.id)
-        persistor.saveAll(pins.filterNot { it.id in filed }.map { PinBoardModel(pin = it, board = boardModel) })
+        val newMemberships = pins
+            .filterNot { it.id in alreadyFiledPinIds }
+            .map { PinBoardModel(pin = it, board = boardModel) }
+        persistor.saveAll(newMemberships)
     }
 
     override fun removePinsFromBoard(pinIds: List<UUID>, board: Board, at: Instant) {
-        stamp(pinIds, at)
-        QPinBoardModel().board.id.equalTo(board.id).pin.id.isIn(pinIds).delete()
+        val pins = PinQueries.any().id.isIn(pinIds).findList()
+        markModified(pins, at)
+
+        memberships(board, pinIds).delete()
     }
 
-    // Dirty checking keeps each UPDATE to the one column changed, and saveAll sends them as one JDBC batch.
-    private fun stamp(pinIds: List<UUID>, at: Instant): List<PinModel> =
-        PinQueries.any().id.isIn(pinIds).findList()
-            .onEach { it.updatedAt = at }
-            .also { persistor.saveAll(it) }
+    private fun memberships(board: Board, pinIds: List<UUID>): QPinBoardModel =
+        QPinBoardModel().board.id.equalTo(board.id).pin.id.isIn(pinIds)
+
+    // Dirty checking keeps each UPDATE to the one column set here, and saveAll sends them as one JDBC batch.
+    private fun markModified(pins: List<PinModel>, at: Instant) {
+        pins.forEach { it.updatedAt = at }
+        persistor.saveAll(pins)
+    }
 
     override fun findPinsForUser(
         reader: User,
