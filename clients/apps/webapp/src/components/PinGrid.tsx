@@ -138,8 +138,19 @@ function OriginalImage({
   )
 }
 
-/** The image side: the picture, or what stands in its place (specification 2026-09-27, decision C). */
-function PinImage({ pin, placeholder }: { pin: Pin; placeholder: Rendition }) {
+/**
+ * The image side: the picture, or what stands in its place (specification 2026-09-27, decision C).
+ * The form leaves Retry out, its own choice being where the image is fetched from.
+ */
+function PinImage({
+  pin,
+  placeholder,
+  retries = true,
+}: {
+  pin: Pin
+  placeholder: Rendition
+  retries?: boolean
+}) {
   const retry = useSetPinImage()
   const image = pin.image
   const address = pin.sourceMediaUrl
@@ -169,7 +180,7 @@ function PinImage({ pin, placeholder }: { pin: Pin; placeholder: Rendition }) {
       <div className="flex flex-col items-center gap-3 text-center">
         <p>{downloadReason(image.reasonCode, image.message)}</p>
         {/* From the pin's own address, which the user may have corrected since the download failed. */}
-        {retriable(image.reasonCode) && address != null && (
+        {retries && retriable(image.reasonCode) && address != null && (
           <Button
             isDisabled={retry.isPending}
             onPress={() => retry.mutate({ pinId: pin.id, source: { url: address } })}
@@ -284,6 +295,7 @@ function useSwipe(previous?: () => void, next?: () => void) {
 function useArrowKeys(previous?: () => void, next?: () => void) {
   useEffect(() => {
     const step = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.defaultPrevented) return
       if (event.key === "ArrowLeft") previous?.()
       if (event.key === "ArrowRight") next?.()
     }
@@ -314,7 +326,7 @@ function PinDialog({
     return (
       <PinEditForm
         pin={pin}
-        image={<PinImage pin={pin} placeholder={placeholder} />}
+        image={<PinImage pin={pin} placeholder={placeholder} retries={false} />}
         close={() => setEditing(false)}
       />
     )
@@ -324,7 +336,8 @@ function PinDialog({
       onPointerDown={swipe}
       image={
         <>
-          <PinImage pin={pin} placeholder={placeholder} />
+          {/* Keyed, like the column: stepping would otherwise carry one pin's mutation onto the next. */}
+          <PinImage key={pin.id} pin={pin} placeholder={placeholder} />
           <IconButton
             icon={ChevronLeft}
             name={m.pin_previous()}
@@ -343,7 +356,7 @@ function PinDialog({
           />
         </>
       }
-      column={<PinDetails pin={pin} close={close} edit={() => setEditing(true)} />}
+      column={<PinDetails key={pin.id} pin={pin} close={close} edit={() => setEditing(true)} />}
     />
   )
 }

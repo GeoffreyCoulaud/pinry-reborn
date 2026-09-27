@@ -53,4 +53,45 @@ describe("retry a failed download from the pin", () => {
     expect(within(dialog).getByText(m.reason_fetch_failed())).toBeVisible()
     expect(within(dialog).queryByRole("button", { name: m.retry() })).toBeNull()
   })
+
+  it("Given a pin with no image address, Then a failure that can pass offers no Retry", async () => {
+    const user = userEvent.setup()
+    const failed = pin("a cat asleep", { status: "FAILED", reasonCode: "UNREACHABLE" })
+    server.use(sessionRoute(() => true), onePinPage(() => [failed]), downloadsRoute(), handshakeRoute())
+
+    renderApp("/")
+    await user.click(await screen.findByText(m.reason_unreachable()))
+    const dialog = await screen.findByRole("dialog")
+
+    expect(failed.sourceMediaUrl).toBeNull()
+    expect(within(dialog).queryByRole("button", { name: m.retry() })).toBeNull()
+  })
+
+  it("Given a Retry refused, Then the pin says so and the next pin does not", async () => {
+    const user = userEvent.setup()
+    const failed = (description: string, reasonCode: "UNREACHABLE" | "INTERNAL_ERROR") => ({
+      ...pin(description, { status: "FAILED", reasonCode }),
+      sourceMediaUrl: "https://example.test/cat.png",
+    })
+    server.use(
+      sessionRoute(() => true),
+      onePinPage(() => [failed("a cat asleep", "UNREACHABLE"), failed("a harbour at dusk", "INTERNAL_ERROR")]),
+      downloadsRoute(),
+      handshakeRoute(),
+      http.put("/api/v1/pins/:pinId/image", () => new HttpResponse(null, { status: 503 })),
+    )
+
+    renderApp("/")
+    await user.click(await screen.findByText(m.reason_unreachable()))
+    const dialog = await screen.findByRole("dialog")
+    await user.click(within(dialog).getByRole("button", { name: m.retry() }))
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(m.image_refused())
+
+    await user.click(within(dialog).getByRole("button", { name: m.pin_next() }))
+
+    // Each pin has its own Retry: the refusal stayed with the pin that was refused.
+    expect(dialog).toHaveAccessibleName("a harbour at dusk")
+    expect(within(dialog).queryByRole("alert")).toBeNull()
+    expect(within(dialog).getByRole("button", { name: m.retry() })).toBeEnabled()
+  })
 })
