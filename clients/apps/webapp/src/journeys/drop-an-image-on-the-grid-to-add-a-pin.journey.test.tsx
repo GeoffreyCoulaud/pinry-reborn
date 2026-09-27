@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { HttpResponse, http } from "msw"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, onTestFinished, vi } from "vitest"
 import {
   downloadsRoute,
   dropOf,
@@ -85,6 +85,28 @@ describe("drop an image on the grid to add a pin", () => {
     expect(await screen.findByRole("img", { name: created.description })).toBeVisible()
     expect(sent).toEqual({ sourceContextUrl: null, sourceMediaUrl: FOUND_AT, description: "" })
   }, 15_000)
+
+  it("Given images still being read, Then the screen says so until the form opens", async () => {
+    server.use(sessionRoute(() => true), handshakeRoute(), downloadsRoute(), onePinPage(() => []))
+    let decoded = () => {}
+    const bitmap = { width: 100, height: 100, close: () => {} } as ImageBitmap
+    // Wallpapers take seconds to decode, which the drop would otherwise spend saying nothing.
+    const decode = vi.spyOn(globalThis, "createImageBitmap").mockImplementation(
+      () => new Promise((resolve) => (decoded = () => resolve(bitmap))),
+    )
+    onTestFinished(() => decode.mockRestore())
+
+    renderApp("/")
+    fireEvent.drop(
+      await theScreen(),
+      dropOf([new File(["ok"], "cat.png", { type: "image/png" })], ""),
+    )
+
+    expect(await screen.findByText("Reading dropped images: 1")).toBeVisible()
+    decoded()
+    expect(await screen.findByRole("dialog", { name: "Add a pin" })).toBeVisible()
+    await waitFor(() => expect(screen.queryByText("Reading dropped images: 1")).toBeNull())
+  })
 
   it("Given a drop nothing in it could become a pin, Then no form opens and the screen says so", async () => {
     server.use(sessionRoute(() => true), handshakeRoute(), downloadsRoute(), onePinPage(() => []))

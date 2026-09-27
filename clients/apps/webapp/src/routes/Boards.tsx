@@ -152,7 +152,7 @@ export function Boards() {
   const [edited, setEdited] = useState<Edited>(null)
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
+    <main className="flex w-full flex-col gap-4 p-4">
       <AppHeader>
         <IconButton
           icon={Plus}

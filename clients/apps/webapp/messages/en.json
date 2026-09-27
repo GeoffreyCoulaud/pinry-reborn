@@ -41,6 +41,7 @@
   "dismiss": "Forget it",
   "dismissal_refused": "That task could not be forgotten.",
   "drop_image": "Drop an image here, or pick one",
+  "drop_reading": "Reading dropped images: {count}",
   "drop_to_add": "Drop an image here to add a pin",
   "drop_unsupported": "Nothing in that drop could become a pin.",
   "edit_pin": "Edit",
