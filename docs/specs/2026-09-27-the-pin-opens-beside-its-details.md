@@ -92,7 +92,11 @@ in when it is not placeable (decision E). Three gestures, none of them while edi
 - `←` and `→` on the dialog;
 - a horizontal swipe on the image side.
 Past the last loaded pin, when the grid has another page, next calls `fetchNextPage` itself, since the grid's sentinel
-need not be in view, and moves once the page arrives, disabled while it loads.
+need not be in view, and moves once the page arrives, disabled while it loads. (Corrected: after the operator's
+test of block 20, "En navigant d'un pin à l'autre, il y a un flash blanc le temps que l'image charge", the viewer
+preloads the previous and next pins' placeholder, the rendition the grid chose (decision C's correction), and never
+their original, so a step shows that rendition at once and the original over it when it arrives. The operator's
+answer of 2026-09-28. `←` and `→` listen on the document, `Modal.Dialog` passing no key handler to the DOM.)
 
 The swipe uses `useMove` from `react-aria`, a new direct dependency at 3.52.1, published 2026-09-04: the version
 `react-aria-components` 1.21.1 pins exactly, so the tree gains no package. Block 20's ADR 0045 records it, with its
