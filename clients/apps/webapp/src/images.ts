@@ -14,7 +14,7 @@ import { replacePins } from "./lib/tiles"
 export type Download = Schemas["ImageDownloadOutputDto"]
 
 // Named here rather than imported from `./pins`, which now imports the reread below: the two would
-// otherwise form a cycle, and dependency-cruiser counts a type-only import as one.
+// otherwise form a cycle, and `noImportCycles` counts a type-only import as one.
 type PinPage = Schemas["PinListOutputDto"]
 
 /** Where a pin's image comes from: an address the server fetches, or bytes from disk. */

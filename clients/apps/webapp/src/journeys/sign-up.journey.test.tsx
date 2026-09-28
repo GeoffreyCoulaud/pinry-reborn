@@ -20,7 +20,7 @@ describe("sign up", () => {
     server.use(
       http.post("/api/v1/users", async ({ request }) => {
         created = (await request.json()) as Record<string, unknown>
-        return HttpResponse.json({ id: crypto.randomUUID(), name: created["name"] })
+        return HttpResponse.json({ id: crypto.randomUUID(), name: created.name })
       }),
       http.post("/api/v1/sessions", () => {
         opened = true

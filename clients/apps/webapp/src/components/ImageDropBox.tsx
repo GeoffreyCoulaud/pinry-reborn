@@ -34,6 +34,7 @@ export function ImageDropBox({
   return (
     // `data-dragging` carries the counter rather than a class, jsdom computing no style: it is
     // what the active style hangs on and the only thing a test can read.
+    // biome-ignore lint/a11y/noStaticElementInteractions: the drop is the pointer's shortcut to the file input inside, which the keyboard reaches
     <div
       className={`relative flex flex-col items-center gap-2 rounded-lg border border-dashed border-separator p-4 text-center has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-focus data-dragging:border-accent data-dragging:bg-accent-soft ${className}`}
       data-dragging={depth > 0 ? "" : undefined}
