@@ -14,8 +14,10 @@ holistic review.
   `components/PinSides.tsx`, shared by reading and editing.
 - **The column** holds Edit, Delete and Close, the description, the source page's host name as a link, the tags as
   chips and the boards as links to `/boards/$boardId`.
-- **The image side shows one of four states**: the `LARGE` rendition, "Downloading" with a spinner, the failure's
-  reason, or a sentence saying the pin has no image.
+- **The image side shows one of four states**: the image, "Downloading" with a spinner, the failure's reason, or a
+  sentence saying the pin has no image. The image is the original, at its own size or shrunk to fit and never
+  upscaled, in a box sized to what it is drawn at; the rendition the grid chose for its tiles fills that box until the
+  original loads (block 10's fix-back `cbda2bf0`, after the operator's test).
 - **Retry is offered where a failure can pass**: `retriable` in `downloadReasons.ts`, a
   `Record<Known<"DownloadReasonDto">, boolean>`, classes `UNREACHABLE` and `INTERNAL_ERROR` as retriable and the
   seven reasons the server fails permanently as not. The viewer and the task centre both read it; the task centre no
@@ -24,7 +26,8 @@ holistic review.
 - **The opened pin is looked up in every loaded pin**, so a pin that turns `PENDING` after Retry stays in the dialog.
 - **The viewer steps through the grid**: previous and next on the image's edges, `←` and `→` on the document, and a
   horizontal touch swipe through `useMove` from `react-aria`, a direct dependency since ADR 0045. Past the last loaded
-  pin, next fetches the grid's next page itself. Nothing steps while editing.
+  pin, next fetches the grid's next page itself. The previous and next pins' placeholder is preloaded, never their
+  original, so a step shows an image at once (block 20's fix-back `04383d54`). Nothing steps while editing.
 - **Editing keeps the image in view**: Edit puts the form in the column, under the heading "Edit the pin", with
   Cancel and Save sticky at its foot. What happens to the image is one choice on the image side, a HeroUI
   `ToggleButtonGroup` of Keep, File and Address. Under Keep and File the image address is a field of the column, and
@@ -45,7 +48,9 @@ holistic review.
 - Block 30: `dagger call gate` green at `14094003`; budget 357 lines, 7 files against block 20. The journey "edit a
   pin's description, tags and boards" passes unchanged. Mutations each failing a case of "replace a pin's image with
   a file": the address field kept in the column under Address; the empty address no longer disabling Save; a
-  corrected address under Keep sending a fetch.
+  corrected address under Keep sending a fetch. Rebased onto blocks 10 and 20's fix-backs by hand, the cascade having
+  conflicted on `PinGrid.tsx`: `dagger call gate` green with the code at `02531d47`; budget 361 lines, 7 files
+  against block 20.
 - Headless readings, Firefox 156.0.1 over WebDriver BiDi against a Node stub of the API and the built bundle, both
   themes, the same geometry in each:
 
@@ -59,6 +64,9 @@ holistic review.
   address field sat in the column under Keep and File and on the image side under Address; Save was disabled under
   an empty File. The toggle buttons' background differs from the dialog's in both themes: light
   `oklch(0.94 0.001 286.375)` on `oklch(1 0 0)`, dark `oklch(0.274 0.006 286.033)` on `oklch(0.2103 0.0059 285.89)`.
+  Read again after the rebase, same sizes and themes: at 1280×800 a 1920×1080 original drew at 768×432 in the
+  768×624 area under the selector, and an 800×1200 one at 416×624 under Keep and 347×520 in the 520 px left under
+  Address, the address field above it.
 
 ## Pitfalls
 
@@ -72,6 +80,8 @@ holistic review.
   dialog's in both themes (measured above), so the dialog rule of `clients/AGENTS.md` has nothing to apply to it.
 - **React Aria's `ToggleButtonGroup` in single selection is a `radiogroup` of `radio`s**
   (`useToggleButtonGroup.mjs`, react-aria 3.52.1), so the journeys still find the options by the `radio` role.
+- **The edit mode's image area is its own size container** (`lg:[container-type:size]`): the original's box fits
+  `100cqh`, which would otherwise measure the whole side, the selector and the address field included.
 - **`PinEditForm` takes the viewer's image as a prop** rather than importing `PinImage`: `PinGrid` imports the form,
   and the import graph is acyclic.
 
