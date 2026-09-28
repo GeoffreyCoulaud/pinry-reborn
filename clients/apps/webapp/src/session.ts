@@ -4,7 +4,7 @@ import { auth } from "./api"
 
 const SESSION_KEY = ["session"]
 
-export interface OpenSession { credentials: Credentials; rememberMe: boolean }
+interface OpenSession { credentials: Credentials; rememberMe: boolean }
 
 /** The session the browser's cookie carries, or null once the API stops honouring it. */
 export function useSession() {

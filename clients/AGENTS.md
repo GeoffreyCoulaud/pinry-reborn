@@ -48,8 +48,13 @@ Inside `apps/webapp/src`:
   runs on its own too.
 - `pnpm run messages` : compiles `messages/{en,fr}.json` into typed functions under `src/paraglide/`.
   **Run it before anything that typechecks**, a fresh clone having no generated output at all.
-- `pnpm run typecheck`, `pnpm run lint`, `pnpm run boundaries` (dependency-cruiser), `pnpm run test` (Vitest with
-  coverage), `pnpm run build` (the static bundle, which is the only step that runs the Vite plugin chain).
+- `pnpm run typecheck`, `pnpm run lint`, `pnpm run boundaries` (dependency-cruiser), `pnpm run knip`,
+  `pnpm run test` (Vitest with coverage), `pnpm run build` (the static bundle, which is the only step that runs the
+  Vite plugin chain).
+- **`pnpm run knip` runs Knip twice**: unused files, exports and dependencies with the tests counted as users, then
+  production code alone, where a runtime import declared as a `devDependency` is refused
+  (`docs/adr/0046-knip-and-biome-check-the-clients.md`, decision 1). A file only tests read leaves the production
+  report through `knip.json`'s `project` patterns, an export only tests read through an `@internal` tag.
 - `pnpm --filter @pinry-reborn/webapp run dev` : the development server, with `/api` proxied to
   `http://localhost:8080` so the application is same origin against a locally running API.
 

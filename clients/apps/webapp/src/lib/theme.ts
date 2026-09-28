@@ -5,7 +5,7 @@ export type ThemePreference = "system" | "light" | "dark"
 export type Theme = "light" | "dark"
 
 /** A tuple rather than an array, so the cycle below reads its first entry without a null check. */
-export const THEME_PREFERENCES = ["system", "light", "dark"] as const satisfies readonly ThemePreference[]
+const THEME_PREFERENCES = ["system", "light", "dark"] as const satisfies readonly ThemePreference[]
 
 /** The preference after `current`, wrapping past the last. */
 export function nextPreference(current: ThemePreference): ThemePreference {

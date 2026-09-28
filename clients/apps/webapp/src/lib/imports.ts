@@ -33,7 +33,7 @@ export function sameFile(record: FileIdentity, file: FileIdentity): boolean {
   )
 }
 
-/** Attempts at one offset before the upload waits for the user, `RETRY_MS` apart. */
+/** Attempts at one offset before the upload waits for the user, `RETRY_MS` apart. @internal */
 export const ATTEMPTS = 5
 export const RETRY_MS = 5_000
 

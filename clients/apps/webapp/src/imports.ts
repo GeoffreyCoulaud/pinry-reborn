@@ -207,7 +207,7 @@ export function resumeUpload() {
   resume()
 }
 
-/** Stops the upload in this tab and leaves the server's import alone. Tests reset with it. */
+/** Stops the upload in this tab and leaves the server's import alone. Tests reset with it. @internal */
 export function dropUpload() {
   controller.abort()
   controller = new AbortController()

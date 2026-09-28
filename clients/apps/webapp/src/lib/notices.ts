@@ -3,7 +3,7 @@ import type { Schemas } from "@pinry-reborn/auth"
 type Export = Pick<Schemas["UserDataExportOutputDto"], "id" | "state" | "expiresAt">
 type Import = Pick<Schemas["UserDataImportOutputDto"], "id" | "state" | "completedAt">
 
-/** How long a completed import's notice waits to be read (specification 2026-09-25, decision G3). */
+/** How long a completed import's notice waits to be read (specification 2026-09-25, decision G3). @internal */
 export const NOTICE_MS = 24 * 60 * 60 * 1000
 
 const before = (instant: string | null, now: number, marginMs = 0) =>
