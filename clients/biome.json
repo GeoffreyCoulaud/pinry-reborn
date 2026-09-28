@@ -1,0 +1,64 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+	"css": { "parser": { "tailwindDirectives": true } },
+	"linter": {
+		"rules": {
+			"preset": "recommended",
+			"suspicious": {
+				"noUnusedExpressions": "error",
+				"noImportCycles": {
+					"level": "error",
+					"options": { "ignoreTypes": false }
+				}
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["apps/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": ["openapi-fetch", "openapi-fetch/**"],
+										"message": "An application talks to the API through packages/auth, which is where the transport of ADR 0026 is hidden from it. A view holding the HTTP client would fork that choice per screen."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["packages/api-client/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": [
+											"@pinry-reborn/auth",
+											"@pinry-reborn/auth/**",
+											"**/auth/src",
+											"**/auth/src/**"
+										],
+										"message": "What a generator rewrites at every install cannot sit downstream of code written by hand, so the dependency runs from packages/auth to packages/api-client and never back."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		}
+	]
+}

@@ -4,24 +4,19 @@
   "type": "module",
   "packageManager": "pnpm@12.3.4",
   "engines": {
-    "node": "^22.13.0 || ^24 || >=26"
+    "node": "^22.22.2 || ^24.15.0 || >=26"
   },
   "scripts": {
     "messages": "pnpm --recursive --sequential run messages",
     "typecheck": "pnpm --recursive run typecheck",
-    "lint": "eslint .",
-    "boundaries": "depcruise apps packages",
+    "lint": "biome lint",
     "knip": "knip && knip --strict",
     "test": "pnpm --recursive run test",
     "build": "pnpm --recursive run build"
   },
   "devDependencies": {
-    "@eslint/js": "10.0.1",
-    "dependency-cruiser": "18.2.0",
-    "eslint": "10.10.0",
-    "globals": "17.12.0",
+    "@biomejs/biome": "2.5.14",
     "knip": "6.38.0",
-    "typescript": "6.0.3",
-    "typescript-eslint": "8.70.0"
+    "typescript": "6.0.3"
   }
 }

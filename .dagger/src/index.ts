@@ -268,7 +268,6 @@ export class PinryReborn {
       .withExec(["pnpm", "run", "messages"])
       .withExec(["pnpm", "run", "typecheck"])
       .withExec(["pnpm", "run", "lint"])
-      .withExec(["pnpm", "run", "boundaries"])
       .withExec(["pnpm", "run", "knip"])
       .withExec(["pnpm", "run", "test"])
       .withExec(["pnpm", "run", "build"])
