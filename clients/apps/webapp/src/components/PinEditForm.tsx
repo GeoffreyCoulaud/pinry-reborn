@@ -43,7 +43,9 @@ function TagField({
 
 	function add(name: string) {
 		const held = name.trim();
-		if (held !== "" && !names.includes(held)) onChange([...names, held]);
+		if (held !== "" && !names.includes(held)) {
+			onChange([...names, held]);
+		}
 		setTyped("");
 	}
 
@@ -54,7 +56,9 @@ function TagField({
 				<Input
 					onKeyDown={(event) => {
 						// The field sits inside the pin's form, where Enter would save it: here it names a tag.
-						if (event.key !== "Enter") return;
+						if (event.key !== "Enter") {
+							return;
+						}
 						event.preventDefault();
 						add(typed);
 					}}
@@ -200,8 +204,12 @@ export function PinEditForm({
 
 	/** What the save applies to the image once the pin itself is written, or nothing. */
 	function source(): ImageSource | null {
-		if (intent === "replace" && chosen !== null) return { file: chosen.file };
-		if (intent === "fetch") return { url: address };
+		if (intent === "replace" && chosen !== null) {
+			return { file: chosen.file };
+		}
+		if (intent === "fetch") {
+			return { url: address };
+		}
 		return null;
 	}
 
@@ -242,8 +250,12 @@ export function PinEditForm({
 									limits={limits}
 									className="min-h-48 w-full flex-1 justify-center"
 									onDrop={(drop) => {
-										if (drop.files[0] !== undefined) setChosen(drop.files[0]);
-										if (drop.urls[0] !== undefined) setAddress(drop.urls[0]);
+										if (drop.files[0] !== undefined) {
+											setChosen(drop.files[0]);
+										}
+										if (drop.urls[0] !== undefined) {
+											setAddress(drop.urls[0]);
+										}
 									}}
 								/>
 							) : (
@@ -294,12 +306,14 @@ export function PinEditForm({
 								// holds rather than one the server has never seen. A refused pin touches no image.
 								onSuccess: () => {
 									const chosenSource = source();
-									if (chosenSource === null) close();
-									else
+									if (chosenSource === null) {
+										close();
+									} else {
 										setImage.mutate(
 											{ pinId: pin.id, source: chosenSource },
 											{ onSuccess: close },
 										);
+									}
 								},
 							},
 						);

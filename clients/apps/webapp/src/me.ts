@@ -44,7 +44,9 @@ export function useChangePassword() {
 			const { error, response } = await auth.client.PUT("/api/v1/me/password", {
 				body,
 			});
-			if (!response.ok) throw new AccountRefusal(error, response.status);
+			if (!response.ok) {
+				throw new AccountRefusal(error, response.status);
+			}
 		},
 		onSuccess: endSession,
 	});
@@ -58,7 +60,9 @@ export function useDeleteAccount() {
 			const { error, response } = await auth.client.DELETE("/api/v1/me", {
 				params: { header: { "X-Reauthentication": passwordFactor(password) } },
 			});
-			if (!response.ok) throw new AccountRefusal(error, response.status);
+			if (!response.ok) {
+				throw new AccountRefusal(error, response.status);
+			}
 		},
 		onSuccess: endSession,
 	});

@@ -36,7 +36,9 @@ export function useRequestExport() {
 			const { error, response } = await auth.client.POST("/api/v1/me/exports", {
 				params: { header: { "X-Reauthentication": passwordFactor(password) } },
 			});
-			if (!response.ok) throw new AccountRefusal(error, response.status);
+			if (!response.ok) {
+				throw new AccountRefusal(error, response.status);
+			}
 		},
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: LATEST }),
 	});
@@ -50,8 +52,9 @@ export function useDeleteExport() {
 			const { response } = await auth.client.DELETE("/api/v1/me/exports/{id}", {
 				params: { path: { id } },
 			});
-			if (!response.ok)
+			if (!response.ok) {
 				throw new Error(`The API kept the export: ${response.status}.`);
+			}
 		},
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: LATEST }),
 	});

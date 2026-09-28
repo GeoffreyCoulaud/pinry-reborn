@@ -50,7 +50,7 @@ function placeholder(
 	query: { isPending: boolean; isError: boolean },
 	rows: number,
 ): ReactNode {
-	if (query.isPending)
+	if (query.isPending) {
 		return (
 			<div role="status" className={CENTRED}>
 				{/* Hidden from the reader: the spinner carries a `status` role of its own. */}
@@ -58,13 +58,17 @@ function placeholder(
 				{m.bin_loading()}
 			</div>
 		);
-	if (query.isError) return <p role="alert">{m.bin_unreadable()}</p>;
-	if (rows === 0)
+	}
+	if (query.isError) {
+		return <p role="alert">{m.bin_unreadable()}</p>;
+	}
+	if (rows === 0) {
 		return (
 			<EmptyState role="status" className={CENTRED}>
 				{m.bin_empty()}
 			</EmptyState>
 		);
+	}
 	return null;
 }
 
@@ -217,8 +221,9 @@ function RecycledPins({ sort }: { sort: RecycledPinSort }) {
               collection change, its own loading flag included. */}
 					<GridListLoadMoreItem
 						onLoadMore={() => {
-							if (pins.hasNextPage && !pins.isFetchingNextPage)
+							if (pins.hasNextPage && !pins.isFetchingNextPage) {
 								void pins.fetchNextPage();
+							}
 						}}
 						isLoading={pins.isFetchingNextPage}
 					/>

@@ -51,9 +51,13 @@ async function judge(
 ): Promise<FileVerdict> {
 	// A drop bypasses `accept`, which only the file picker honours, so a format refused costs no
 	// decode at all.
-	if (!isStorableFile(file, limits)) return "UNSUPPORTED_FORMAT";
+	if (!isStorableFile(file, limits)) {
+		return "UNSUPPORTED_FORMAT";
+	}
 	const tooHeavy = byteRefusal(file.size, limits);
-	if (tooHeavy !== null) return tooHeavy;
+	if (tooHeavy !== null) {
+		return tooHeavy;
+	}
 	let measurement: MeasuredUpload;
 	try {
 		measurement = await measured(file);
@@ -83,10 +87,14 @@ export async function judgeDrop(
 		});
 	}, READING_DELAY_MS);
 	try {
-		for (const file of files) verdicts.push(await judge(file, limits));
+		for (const file of files) {
+			verdicts.push(await judge(file, limits));
+		}
 	} finally {
 		clearTimeout(announce);
-		if (reading !== undefined) toast.close(reading);
+		if (reading !== undefined) {
+			toast.close(reading);
+		}
 	}
 	return partitionDrop(verdicts, urisFromDrop(uriList));
 }

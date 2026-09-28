@@ -48,7 +48,9 @@ export function Home() {
 	 * the gesture, and nothing here counts or judges at all.
 	 */
 	useEffect(() => {
-		if (creating) return;
+		if (creating) {
+			return;
+		}
 		const dragged = (step: DragStep) =>
 			setDepth((current) => dragDepth(current, step));
 		const enter = () => dragged("enter");
@@ -56,7 +58,9 @@ export function Home() {
 		const drop = (event: DragEvent) => {
 			dragged("drop");
 			const transfer = event.dataTransfer;
-			if (transfer === null) return;
+			if (transfer === null) {
+				return;
+			}
 			// The drop is judged in full where it landed, and the form opens on what survived. A drop
 			// that kept nothing has said so in a toast and opens no form to empty.
 			const judged = judgeDrop(
@@ -66,7 +70,9 @@ export function Home() {
 			);
 			void judged.then((kept) => {
 				kept.refusals.forEach(refuse);
-				if (kept.files.length === 0 && kept.urls.length === 0) return;
+				if (kept.files.length === 0 && kept.urls.length === 0) {
+					return;
+				}
 				setDropped(kept);
 				setCreating(true);
 			});

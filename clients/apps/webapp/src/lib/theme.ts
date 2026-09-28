@@ -29,6 +29,8 @@ export function resolveTheme(
 	preference: ThemePreference,
 	systemPrefersDark: boolean,
 ): Theme {
-	if (preference !== "system") return preference;
+	if (preference !== "system") {
+		return preference;
+	}
 	return systemPrefersDark ? "dark" : "light";
 }

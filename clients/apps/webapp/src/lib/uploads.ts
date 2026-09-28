@@ -27,7 +27,9 @@ export function uploadRefusal(
 	upload: MeasuredUpload,
 	limits: UploadLimits | undefined,
 ): UploadRefusal | null {
-	if (limits === undefined) return null;
+	if (limits === undefined) {
+		return null;
+	}
 	return (
 		byteRefusal(upload.size, limits) ??
 		(upload.width * upload.height > limits.maxPixels ? "TOO_MANY_PIXELS" : null)
@@ -54,6 +56,8 @@ export function isStorableFile(
 	file: { type: string },
 	limits: UploadLimits | undefined,
 ): boolean {
-	if (limits === undefined) return file.type.startsWith("image/");
+	if (limits === undefined) {
+		return file.type.startsWith("image/");
+	}
 	return limits.mediaTypes.includes(file.type);
 }

@@ -69,7 +69,9 @@ export function SelectionBar({
 	clear: () => void;
 	children: ReactNode;
 }) {
-	if (count === 0) return null;
+	if (count === 0) {
+		return null;
+	}
 
 	return (
 		<div

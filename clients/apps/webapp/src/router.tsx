@@ -29,13 +29,19 @@ function guarded(Screen: ComponentType) {
 	return function Guarded() {
 		const session = useSession();
 
-		if (session.isPending) return null;
+		if (session.isPending) {
+			return null;
+		}
 		// A session the API could not answer for is not an expired one, and only the second sends the
 		// user back to the credentials screen.
-		if (session.isError) return <p role="alert">{m.session_unreadable()}</p>;
+		if (session.isError) {
+			return <p role="alert">{m.session_unreadable()}</p>;
+		}
 		// `replace`: pushed, Back returns to the guarded address, the guard fires again, and the
 		// browser's own control never leaves the credentials screen.
-		if (!session.data) return <Navigate to="/sign-in" replace />;
+		if (!session.data) {
+			return <Navigate to="/sign-in" replace />;
+		}
 		return <Screen />;
 	};
 }

@@ -46,9 +46,13 @@ export function refusedChunk(status: number, body: unknown): ChunkAnswer {
 
 /** Where the server's length leaves a file of `size` bytes. */
 function resumedAt(length: number, size: number): UploadStep {
-	if (length === size) return { next: "COMPLETE", failures: 0 };
+	if (length === size) {
+		return { next: "COMPLETE", failures: 0 };
+	}
 	// The server holds bytes this file does not have, so it is not the file the upload started with.
-	if (length > size) return { next: "STOP", code: "ARCHIVE_LONGER_THAN_FILE" };
+	if (length > size) {
+		return { next: "STOP", code: "ARCHIVE_LONGER_THAN_FILE" };
+	}
 	return { next: "SEND", offset: length, failures: 0 };
 }
 
@@ -70,9 +74,13 @@ export function nextStep(
 		return resumedAt(answer.currentLength, size);
 	}
 	// Another tab, or a close whose answer was lost, got there first: the server's row says the rest.
-	if (answer?.code === "IMPORT_NOT_AWAITING_ARCHIVE") return { next: "DONE" };
+	if (answer?.code === "IMPORT_NOT_AWAITING_ARCHIVE") {
+		return { next: "DONE" };
+	}
 	if (answer === null || (answer.status >= 500 && answer.status !== 507)) {
-		if (attempt.failures + 1 >= ATTEMPTS) return { next: "PAUSE" };
+		if (attempt.failures + 1 >= ATTEMPTS) {
+			return { next: "PAUSE" };
+		}
 		return { ...attempt, failures: attempt.failures + 1 };
 	}
 	// A bodyless 413 is a proxy's lower limit, and `BODY_TOO_LARGE` the API's: the chunk is refused.

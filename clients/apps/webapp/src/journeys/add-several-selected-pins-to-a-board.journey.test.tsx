@@ -27,8 +27,9 @@ function account(filed: unknown[], refusal?: number) {
 		sessionRoute(() => true),
 		onePinPage(() => [FIRST, SECOND, THIRD]),
 		http.post("/api/v1/boards/:boardId/pins", async ({ request, params }) => {
-			if (refusal !== undefined)
+			if (refusal !== undefined) {
 				return new HttpResponse(null, { status: refusal });
+			}
 			filed.push({
 				boardId: String(params.boardId),
 				...((await request.json()) as object),

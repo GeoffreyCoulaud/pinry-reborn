@@ -61,7 +61,9 @@ describe("export the account's data and download it", () => {
 		const user = await openTheAccount(
 			() => {
 				// Pending on the first read after the request and ready on the next: only a poll gets there.
-				if (rows[0] === pending && reads++ > 0) rows = [ready];
+				if (rows[0] === pending && reads++ > 0) {
+					rows = [ready];
+				}
 				return rows;
 			},
 			http.post("/api/v1/me/exports", ({ request }) => {

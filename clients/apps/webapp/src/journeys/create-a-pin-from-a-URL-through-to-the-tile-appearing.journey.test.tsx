@@ -60,7 +60,9 @@ describe("create a pin from a URL through to the tile appearing", () => {
 				return HttpResponse.json({ status: "PENDING" }, { status: 202 });
 			}),
 			http.get("/api/v1/me/image-downloads", () => {
-				if (requested) polls += 1;
+				if (requested) {
+					polls += 1;
+				}
 				const running = requested && !settled();
 				return HttpResponse.json(
 					downloadsPage(running ? [download(bare.id, "PENDING")] : []),

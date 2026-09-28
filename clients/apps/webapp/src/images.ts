@@ -70,8 +70,9 @@ async function dropDownload(pinId: string): Promise<void> {
 			params: { path: { pinId } },
 		},
 	);
-	if (!response.ok)
+	if (!response.ok) {
 		throw new Error(`The API kept the download: ${response.status}.`);
+	}
 }
 
 /** The deployment's own limits, asked once: they are its configuration, not a user's state. */
@@ -159,7 +160,9 @@ export function useImageDownloads() {
 			void queryClient.invalidateQueries({ queryKey: PINS });
 			return;
 		}
-		if (settled.length === 0) return;
+		if (settled.length === 0) {
+			return;
+		}
 		// A pin that could not be read leaves the grid stale, so the catalogue answers for it instead.
 		void rereadSettledPins(queryClient, settled).catch(() =>
 			queryClient.invalidateQueries({ queryKey: PINS }),

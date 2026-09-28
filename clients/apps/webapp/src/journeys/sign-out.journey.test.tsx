@@ -51,7 +51,9 @@ describe("sign out", () => {
 		server.use(
 			sessionRoute(() => open),
 			http.get("/api/v1/pins", async () => {
-				if (holding) await held;
+				if (holding) {
+					await held;
+				}
 				return HttpResponse.json({
 					pins: [theirs],
 					pagination: { previousCursor: null, nextCursor: null },

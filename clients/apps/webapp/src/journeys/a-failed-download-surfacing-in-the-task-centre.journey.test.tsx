@@ -51,7 +51,9 @@ describe("a failed download surfacing in the task centre", () => {
 		// Eight stops is the home header's own order, and where the centre sits in it is the
 		// assertion: the name, the search field, add a pin, the sort selector, then the four
 		// navigation icons, the account's being the one specification 2026-09-22 added.
-		for (let tabs = 0; tabs < 8; tabs++) await user.tab();
+		for (let tabs = 0; tabs < 8; tabs++) {
+			await user.tab();
+		}
 		expect(trigger).toHaveFocus();
 		await waitFor(() =>
 			expect(screen.getByRole("tooltip")).toHaveTextContent("Tasks (1)"),

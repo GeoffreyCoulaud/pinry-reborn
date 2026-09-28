@@ -109,8 +109,9 @@ export function useRecyclePins() {
 			const { response } = await auth.client.DELETE("/api/v1/pins", {
 				body: { pinIds: [...pinIds] },
 			});
-			if (!response.ok)
+			if (!response.ok) {
 				throw new Error(`The API kept the pins: ${response.status}.`);
+			}
 			queryClient.setQueriesData<InfiniteData<PinPage>>(
 				{ queryKey: PINS },
 				(catalogue) =>

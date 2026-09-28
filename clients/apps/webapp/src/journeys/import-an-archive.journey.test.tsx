@@ -98,7 +98,9 @@ async function openTheAccount({
 			}
 			const pending = importRow("PENDING", { uploadedBytes: ARCHIVE.length });
 			latest = [pending];
-			if (sent.completed <= lostCloses) return HttpResponse.error();
+			if (sent.completed <= lostCloses) {
+				return HttpResponse.error();
+			}
 			return HttpResponse.json(pending, { status: 202 });
 		}),
 		http.delete("/api/v1/me/imports/:id", ({ params }) => {
@@ -292,8 +294,9 @@ describe("import an archive", () => {
 		const gates = new Map<number, () => void>();
 		const { user, sent, router } = await openTheAccount({
 			answer: async (put) => {
-				if (put.offset > 0)
+				if (put.offset > 0) {
 					await new Promise<void>((open) => gates.set(put.offset, open));
+				}
 				return appended(put);
 			},
 		});
@@ -351,8 +354,9 @@ describe("import an archive", () => {
 		const gates = new Map<number, () => void>();
 		const { user, sent } = await openTheAccount({
 			answer: async (put) => {
-				if (put.offset > 0)
+				if (put.offset > 0) {
 					await new Promise<void>((open) => gates.set(put.offset, open));
+				}
 				return appended(put);
 			},
 		});

@@ -70,7 +70,9 @@ function useColumnWidth(ref: RefObject<HTMLElement | null>): number {
 	const [width, setWidth] = useState(0);
 	useLayoutEffect(() => {
 		const measured = ref.current?.clientWidth ?? 0;
-		if (measured !== width) setWidth(measured);
+		if (measured !== width) {
+			setWidth(measured);
+		}
 	});
 	return width;
 }
@@ -208,7 +210,7 @@ function PinImage({
 	const image = pin.image;
 	const address = pin.sourceMediaUrl;
 
-	if (image?.status === "READY" && image.url != null)
+	if (image?.status === "READY" && image.url != null) {
 		return image.width != null && image.height != null ? (
 			<OriginalImage
 				key={image.url}
@@ -225,14 +227,16 @@ function PinImage({
 				className="max-h-full max-w-full max-lg:max-h-[70dvh]"
 			/>
 		);
-	if (image?.status === "PENDING")
+	}
+	if (image?.status === "PENDING") {
 		return (
 			<p role="status" className="flex items-center gap-2">
 				<Spinner aria-hidden />
 				{m.task_running()}
 			</p>
 		);
-	if (image?.status === "FAILED")
+	}
+	if (image?.status === "FAILED") {
 		return (
 			<div className="flex flex-col items-center gap-3 text-center">
 				<p>{downloadReason(image.reasonCode, image.message)}</p>
@@ -250,6 +254,7 @@ function PinImage({
 				{retry.isError && <p role="alert">{m.image_refused()}</p>}
 			</div>
 		);
+	}
 	return <p>{m.pin_no_image()}</p>;
 }
 
@@ -359,14 +364,17 @@ function useSwipe(previous?: () => void, next?: () => void) {
 		},
 		onMoveEnd: () => {
 			const { x, y } = travel.current;
-			if (Math.abs(x) >= SWIPE_PX && Math.abs(x) > Math.abs(y))
+			if (Math.abs(x) >= SWIPE_PX && Math.abs(x) > Math.abs(y)) {
 				(x < 0 ? next : previous)?.();
+			}
 		},
 	});
 	// Its pointer down alone, for touch alone: it prevents a mouse from dragging the image out, and
 	// its key handler would swallow the arrows the dialog steps on.
 	return (event: PointerEvent<HTMLElement>) => {
-		if (event.pointerType === "touch") moveProps.onPointerDown?.(event);
+		if (event.pointerType === "touch") {
+			moveProps.onPointerDown?.(event);
+		}
 	};
 }
 
@@ -380,10 +388,15 @@ function useArrowKeys(previous?: () => void, next?: () => void) {
 				event.metaKey ||
 				event.shiftKey ||
 				event.defaultPrevented
-			)
+			) {
 				return;
-			if (event.key === "ArrowLeft") previous?.();
-			if (event.key === "ArrowRight") next?.();
+			}
+			if (event.key === "ArrowLeft") {
+				previous?.();
+			}
+			if (event.key === "ArrowRight") {
+				next?.();
+			}
 		};
 		document.addEventListener("keydown", step);
 		return () => document.removeEventListener("keydown", step);
@@ -408,7 +421,7 @@ function PinDialog({
 	const swipe = useSwipe(previous, next);
 	useArrowKeys(editing ? undefined : previous, editing ? undefined : next);
 
-	if (editing)
+	if (editing) {
 		return (
 			<PinEditForm
 				pin={pin}
@@ -416,6 +429,7 @@ function PinDialog({
 				close={() => setEditing(false)}
 			/>
 		);
+	}
 
 	return (
 		<PinSides
@@ -593,13 +607,16 @@ export function PinGrid({
 			from,
 		).next;
 		// Only from the pin it left, so a viewer closed meanwhile stays closed.
-		if (arrived)
+		if (arrived) {
 			setOpenedId((current) => (current === from ? arrived.id : current));
+		}
 	};
 	// The neighbours' placeholder and never their original, so a step shows an image at once (decision F).
-	for (const neighbour of opened ? [previous, next] : [])
-		if (neighbour?.image?.url)
+	for (const neighbour of opened ? [previous, next] : []) {
+		if (neighbour?.image?.url) {
 			preload(tileImageSource(neighbour.image.url, rendition), { as: "image" });
+		}
+	}
 	const stepToPrevious = previous ? () => setOpenedId(previous.id) : undefined;
 	const canFetch = pins.hasNextPage && !pins.isFetchingNextPage;
 	const stepToNext = next
@@ -610,7 +627,7 @@ export function PinGrid({
 
 	// Neither a first load nor an account with nothing in it draws a tile, and both said so with
 	// a blank rectangle until now.
-	if (pins.isPending)
+	if (pins.isPending) {
 		return (
 			<div
 				role="status"
@@ -622,12 +639,15 @@ export function PinGrid({
 				{m.pins_loading()}
 			</div>
 		);
+	}
 	// A refusal is not an empty account, and the empty state below would state one.
-	if (pins.isError) return <p role="alert">{m.pins_unreadable()}</p>;
+	if (pins.isError) {
+		return <p role="alert">{m.pins_unreadable()}</p>;
+	}
 	// A search that matched nothing is not an empty account, and the recourse differs: add a pin,
 	// or search for something else (specification 2026-09-21, decision N).
 	// An open pin gone `PENDING` may leave no tile, and the empty state would take its dialog with it.
-	if (tiles.length === 0 && opened === undefined)
+	if (tiles.length === 0 && opened === undefined) {
 		return (
 			<EmptyState
 				role="status"
@@ -636,6 +656,7 @@ export function PinGrid({
 				{term === undefined ? m.pins_empty() : m.search_empty({ term })}
 			</EmptyState>
 		);
+	}
 
 	return (
 		<div className="flex h-full flex-col gap-2">
@@ -684,8 +705,9 @@ export function PinGrid({
           */}
 					<GridListLoadMoreItem
 						onLoadMore={() => {
-							if (pins.hasNextPage && !pins.isFetchingNextPage)
+							if (pins.hasNextPage && !pins.isFetchingNextPage) {
 								void pins.fetchNextPage();
+							}
 						}}
 						isLoading={pins.isFetchingNextPage}
 					/>

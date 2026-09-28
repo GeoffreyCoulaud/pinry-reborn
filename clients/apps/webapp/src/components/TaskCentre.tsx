@@ -51,8 +51,9 @@ function Task({ download }: { download: Download }) {
 							className="sr-only"
 							onChange={(event) => {
 								const file = event.currentTarget.files?.[0];
-								if (file)
+								if (file) {
 									setImage.mutate({ pinId: download.pinId, source: { file } });
+								}
 							}}
 						/>
 					</label>

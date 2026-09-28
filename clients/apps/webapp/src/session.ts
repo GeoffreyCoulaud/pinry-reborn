@@ -77,8 +77,9 @@ export function useSignOutEverywhere() {
 	return useMutation({
 		mutationFn: async () => {
 			const { response } = await auth.client.DELETE("/api/v1/sessions");
-			if (!response.ok)
+			if (!response.ok) {
 				throw new Error(`The API kept the sessions: ${response.status}.`);
+			}
 		},
 		onSuccess: endSession,
 	});
