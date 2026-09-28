@@ -180,10 +180,12 @@ the last loaded pin adds a page to the same query, as scrolling does. No block c
   closing block's `091cd0b1` (the swap once decoded, the spinner).
 - **Cascaded rebases: 3**, each conflicting and resolved by the teammate of its branch, block 30 and this closing
   block among them. Block 30's rebase carried a handoff update and no fix of its own, so it counts here, not above.
-- **Runs re-triggered: 5**: the push of the rebased stack, one per branch, and the closing block's fix-back. The
-  first runs, not counted, were 36350444532 on block 10, 36351317131 on block 20, 36352180952 on block 30 and 36352998151 on the closing block
-  (`gh pr checks`).
-- **The operator's reading of the bodies**: filled in before the stack merges.
+- **Runs re-triggered: 6**: the push of the rebased stack, one per branch, the closing block's fix-back, and the
+  push of these counts. That is more than the lot's four blocks, ADR 0043's failure criterion; the operator's test
+  of the application drove all but the last. The first runs, not counted, were 36350444532 on block 10,
+  36351317131 on block 20, 36352180952 on block 30 and 36352998151 on the closing block (`gh pr checks`).
+- **The operator's reading of the bodies**, their words: "RAS sur les descriptions de PR, encore une fois."
+  (Nothing to report on the pull request bodies, once again.)
 
 ## Next step
 
