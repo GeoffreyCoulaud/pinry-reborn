@@ -72,21 +72,91 @@ No block changes a user path, so none adds a journey; every existing journey pas
 shown able to fail: its report names the defect it planted, the output that refused it, and the planted defect's
 removal.
 
-| Block | Branch | What its tests have to fail on |
-|---|---|---|
-| 10 | `chore/knip-finds-dead-code` | Decision A. `pnpm run knip` as a new step of `clientsGate` after `boundaries`. Every finding of section 2 fixed: the three exports and types unexported, `dropUpload`, `ATTEMPTS` and `NOTICE_MS` each tested through what uses it or tagged `@internal`, the dependencies moved. The report says how each of the six files of section 2 leaves the production report:
-`lib/catalogues.ts` and `lib/journeys.ts` are read by their tests alone, so they fall outside the production
-`project` patterns. Planted: an unused export in `lib/`, refused by the default pass; a runtime import of `packages/auth` declared as a `devDependency`, refused by the strict pass. `clients/AGENTS.md` (commands) and the root `AGENTS.md` (the `clients-gate` row) name the step. Carries this specification and ADR 0046. |
-| 20 | `chore/biome-replaces-eslint` | Decision B, and C's configuration with the gate running `biome lint` alone, the code not formatted yet. `"preset": "recommended"` only (the `recommended` field is deprecated in 2.5.14), plus the counterparts of decision 2. The report confirms decision 2's list with `biome migrate eslint --include-inspired` run before `eslint.config.js` goes. Every Biome recommended finding fixed or excepted under decision 6. Whether Biome's ignore-file support reads the nested `.gitignore` files of `src/paraglide/` and `packages/api-client/` is measured, `files.includes` being the fallback. `clients/AGENTS.md` loses ESLint and dependency-cruiser: the Node range's reason, the `src/paraglide/` bullet, the `boundaries` command and the `main`-beside-`exports` gotcha, whose reason was dependency-cruiser's resolver, while the import graph norm stays and names Biome as what enforces it; the root `AGENTS.md`'s `clients-gate` row too. Planted, each refused by `pnpm run lint`: a `debugger` statement; a cycle of two files; `openapi-fetch` imported under `apps/`; `../../auth/src` imported under `packages/api-client/`. |
-| 30 | `chore/biome-formats-the-clients` | Decision C. One commit holding the output of `biome check --write` and nothing else (formatting and organised imports): the command run on the commit's parent reproduces it, `git diff` empty. A second switching `lint` to `biome ci`. `pnpm add` measured to keep a `package.json` in tabs, else `package.json` files are excluded from the formatter. Planted: a line indented with spaces, refused by `pnpm run lint`. Past the bounds under decision E. |
-| 40 | `chore/biome-rules-beyond-recommended` | Decision D, but for `noExcessiveLinesPerFile`. One commit holding `biome lint --write`'s safe fixes alone; the hand fixes after it. `noUnnecessaryConditions`' site in `sign-out.journey.test.tsx:52` is a false positive, excepted with its reason and not rewritten. `useFilenamingConvention` renames `components/DataTasks.tsx` and `routes/Credentials.tsx` to their export's name or its kebab form. `useArraySortCompare`'s one site, `lib/journeys.test.ts:15`, takes a comparator. `noLeakedRender`'s fixes change what renders when a count is `0`, so: read headless at 1280×800, both themes: screenshots of the grid and an opened pin, before and after, in the report. Planted: `{count && <span/>}`, refused. Past the bounds under decision E. |
-| 50 | `refactor/pin-grid-splits-by-concern` | `noExcessiveLinesPerFile` on, off for `**/*.test.*` and `src/test/**`. `PinGrid.tsx` split along section 2's four concerns, code moved and not changed: `git diff --color-moved=plain --color-moved-ws=allow-indentation-change` leaves no line uncoloured but imports and exports, and the report gives that count. Read headless: a pin opened, stepped to the next, both themes, screenshots before and after. Planted: a file under `src/` of 301 lines of code by the rule's count, refused. Past the bounds under decision E. |
+| Block | Branch | Subject | Bounds |
+|---|---|---|---|
+| 10 | `chore/knip-finds-dead-code` | Knip, and its findings fixed | Held |
+| 20 | `chore/biome-replaces-eslint` | Biome lints in place of ESLint and dependency-cruiser | Held |
+| 30 | `chore/biome-formats-the-clients` | The code formatted once | Passed, decision E |
+| 40 | `chore/biome-rules-beyond-recommended` | The rules past the preset, and their fixes | Passed, decision E |
+| 50 | `refactor/pin-grid-splits-by-concern` | `PinGrid.tsx` split, the file length rule on | Passed, decision E |
 
-**The closing block** carries the holistic findings, the handoff and the backlog item of decision F. After the
-operator merges the stack, the lead opens a pull request adding block 30's formatting commit, as merged, to
-`.git-blame-ignore-revs`: a rebase merge gives it a new identifier. The same pull request adds
-`git config blame.ignoreRevsFile .git-blame-ignore-revs` to the root `AGENTS.md`'s setup, git reading the file only
-when told to.
+### Block 10: Knip finds dead code
+
+- **Does**: decision A. `pnpm run knip` becomes a step of `clientsGate`, after `boundaries`.
+- **Fixes** every finding of section 2:
+  - `THEME_PREFERENCES`, `RecycledBoard` and `OpenSession` lose their `export`;
+  - `dropUpload`, `ATTEMPTS` and `NOTICE_MS` are each tested through what uses them, or tagged `@internal`;
+  - the three dependencies move.
+- **Reports** how each of section 2's six files leaves the production report. `lib/catalogues.ts` and
+  `lib/journeys.ts` are read by their tests alone, so they fall outside the production `project` patterns.
+- **Proven by**, each planted defect refused:
+  - an unused export in `lib/`, by the default pass;
+  - a runtime import of `packages/auth` declared as a `devDependency`, by the strict pass.
+- **Documents**: `clients/AGENTS.md` (commands) and the root `AGENTS.md` (the `clients-gate` row) name the step.
+- **Carries** this specification and ADR 0046.
+
+### Block 20: Biome replaces ESLint
+
+- **Does**: decision B, with decision C's configuration in place. The gate runs `biome lint` alone, the code not
+  being formatted yet.
+- **Configures** `"preset": "recommended"` (the `recommended` field is deprecated in 2.5.14), plus decision 2's
+  counterparts: `noUnusedExpressions`, `noImportCycles` and the two `noRestrictedImports` edges.
+- **Fixes** every recommended finding, or excepts it under decision 6.
+- **Measures** whether Biome's ignore-file support reads the nested `.gitignore` files of `src/paraglide/` and
+  `packages/api-client/`. `files.includes` is the fallback.
+- **Reports** decision 2's list confirmed by `biome migrate eslint --include-inspired`, run before
+  `eslint.config.js` goes.
+- **Proven by**, each planted defect refused by `pnpm run lint`:
+  - a `debugger` statement;
+  - a cycle of two files;
+  - `openapi-fetch` imported under `apps/`;
+  - `../../auth/src` imported under `packages/api-client/`.
+- **Documents**:
+  - `clients/AGENTS.md` loses ESLint and dependency-cruiser: the Node range's reason, the `src/paraglide/` bullet,
+    the `boundaries` command, and the `main`-beside-`exports` gotcha, whose reason was dependency-cruiser's resolver;
+  - the import graph norm stays, and names Biome as what enforces it;
+  - the root `AGENTS.md`'s `clients-gate` row follows.
+
+### Block 30: Biome formats the clients
+
+- **Does**: decision C, in two commits:
+  - the output of `biome check --write` and nothing else, formatting and organised imports. Run on the commit's
+    parent, the command reproduces it: `git diff` is empty;
+  - `lint` switched to `biome ci`.
+- **Measures** whether `pnpm add` keeps a `package.json` in tabs. If not, `package.json` files leave the formatter.
+- **Proven by**: a line indented with spaces, refused by `pnpm run lint`.
+
+### Block 40: the rules past the preset
+
+- **Does**: decision D, every rule but `noExcessiveLinesPerFile`, in two commits: `biome lint --write`'s safe fixes
+  alone, then the hand fixes.
+- **Fixes, at the sites known today**:
+  - `noUnnecessaryConditions`: `sign-out.journey.test.tsx:52` is a false positive, excepted with its reason and not
+    rewritten;
+  - `useFilenamingConvention`: `components/DataTasks.tsx` and `routes/Credentials.tsx` are renamed to their export's
+    name or its kebab form;
+  - `useArraySortCompare`: `lib/journeys.test.ts:15` takes a comparator.
+- **Reads headless** at 1280×800, both themes, `noLeakedRender`'s fixes changing what renders when a count is `0`:
+  screenshots of the grid and an opened pin, before and after, in the report.
+- **Proven by**: `{count && <span/>}`, refused.
+
+### Block 50: `PinGrid.tsx` splits by concern
+
+- **Does**: `noExcessiveLinesPerFile` on, off for `**/*.test.*` and `src/test/**`. `PinGrid.tsx` splits along
+  section 2's four concerns.
+- **Moves code without changing it**: `git diff --color-moved=plain --color-moved-ws=allow-indentation-change` leaves
+  no line uncoloured but imports and exports, and the report gives that count.
+- **Reads headless**, both themes: a pin opened, then stepped to the next, screenshots before and after.
+- **Proven by**: a file under `src/` of 301 lines of code by the rule's count, refused.
+
+### The closing block
+
+- **Carries** the holistic findings, the handoff, and the backlog item of decision F.
+- **After the operator merges the stack**, the lead opens one pull request that:
+  - adds block 30's formatting commit, as merged, to `.git-blame-ignore-revs`, a rebase merge giving it a new
+    identifier;
+  - adds `git config blame.ignoreRevsFile .git-blame-ignore-revs` to the root `AGENTS.md`'s setup, git reading the
+    file only when told to.
 
 ## 5. Adjacent backlog items
 
