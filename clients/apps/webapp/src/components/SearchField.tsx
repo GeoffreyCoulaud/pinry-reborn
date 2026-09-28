@@ -1,9 +1,14 @@
-import { SearchFieldGroup, SearchFieldInput, SearchFieldRoot, SearchFieldSearchIcon } from "@heroui/react"
-import { Link, useNavigate } from "@tanstack/react-router"
-import { useEffect, useRef, useState } from "react"
-import { useDebounced } from "../debounce"
-import { searchTermOr } from "../lib/searches"
-import { m } from "../paraglide/messages.js"
+import {
+	SearchFieldGroup,
+	SearchFieldInput,
+	SearchFieldRoot,
+	SearchFieldSearchIcon,
+} from "@heroui/react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { useDebounced } from "../debounce";
+import { searchTermOr } from "../lib/searches";
+import { m } from "../paraglide/messages.js";
 
 /**
  * The header's search. The term lives in the address of the screen the field is on, so a reload, a
@@ -11,46 +16,63 @@ import { m } from "../paraglide/messages.js"
  * board (specification 2026-09-21, decisions K and L). The pause keeps one request per search
  * rather than one per keystroke.
  */
-export function SearchField({ term, boardName }: { term?: string; boardName?: string }) {
-  const [typed, setTyped] = useState(term ?? "")
-  const asked = searchTermOr(useDebounced(typed))
-  const written = useRef(term)
-  const navigate = useNavigate()
+export function SearchField({
+	term,
+	boardName,
+}: {
+	term?: string;
+	boardName?: string;
+}) {
+	const [typed, setTyped] = useState(term ?? "");
+	const asked = searchTermOr(useDebounced(typed));
+	const written = useRef(term);
+	const navigate = useNavigate();
 
-  useEffect(() => {
-    // The address is the state, and the field reads it as well as writes it: an address the field
-    // did not write is adopted, which is what makes the application's name a way out of a search
-    // and the back button a way through one. A term already there is not written again, which is
-    // what stops the loop.
-    if (term !== written.current) {
-      written.current = term
-      setTyped(term ?? "")
-      return
-    }
-    if (asked === term) return
-    written.current = asked
-    void navigate({ to: ".", search: (previous) => ({ ...previous, q: asked }), replace: true })
-  }, [asked, term, navigate])
+	useEffect(() => {
+		// The address is the state, and the field reads it as well as writes it: an address the field
+		// did not write is adopted, which is what makes the application's name a way out of a search
+		// and the back button a way through one. A term already there is not written again, which is
+		// what stops the loop.
+		if (term !== written.current) {
+			written.current = term;
+			setTyped(term ?? "");
+			return;
+		}
+		if (asked === term) return;
+		written.current = asked;
+		void navigate({
+			to: ".",
+			search: (previous) => ({ ...previous, q: asked }),
+			replace: true,
+		});
+	}, [asked, term, navigate]);
 
-  const name = boardName === undefined ? m.search_placeholder() : m.search_in_board({ name: boardName })
+	const name =
+		boardName === undefined
+			? m.search_placeholder()
+			: m.search_in_board({ name: boardName });
 
-  return (
-    <div className="flex min-w-48 flex-1 flex-col gap-1 sm:max-w-sm">
-      {/* No visible label: the bar has no room for one, and the placeholder is the name a reader
+	return (
+		<div className="flex min-w-48 flex-1 flex-col gap-1 sm:max-w-sm">
+			{/* No visible label: the bar has no room for one, and the placeholder is the name a reader
           hears, which is what says whether the search reaches a board or the whole collection. */}
-      <SearchFieldRoot aria-label={name} value={typed} onChange={setTyped}>
-        <SearchFieldGroup>
-          <SearchFieldSearchIcon />
-          <SearchFieldInput placeholder={name} />
-        </SearchFieldGroup>
-      </SearchFieldRoot>
-      {/* Underlined at rest: nothing else says this one is a link, the bar's other ways out
+			<SearchFieldRoot aria-label={name} value={typed} onChange={setTyped}>
+				<SearchFieldGroup>
+					<SearchFieldSearchIcon />
+					<SearchFieldInput placeholder={name} />
+				</SearchFieldGroup>
+			</SearchFieldRoot>
+			{/* Underlined at rest: nothing else says this one is a link, the bar's other ways out
           being icons and this one carrying no colour of its own. */}
-      {boardName !== undefined && term !== undefined && (
-        <Link to="/" search={{ q: term }} className="text-sm text-muted underline">
-          {m.search_everywhere()}
-        </Link>
-      )}
-    </div>
-  )
+			{boardName !== undefined && term !== undefined && (
+				<Link
+					to="/"
+					search={{ q: term }}
+					className="text-sm text-muted underline"
+				>
+					{m.search_everywhere()}
+				</Link>
+			)}
+		</div>
+	);
 }

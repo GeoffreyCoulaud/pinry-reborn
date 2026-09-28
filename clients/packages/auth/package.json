@@ -1,12 +1,14 @@
 {
-  "name": "@pinry-reborn/auth",
-  "private": true,
-  "type": "module",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": {
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@pinry-reborn/api-client": "workspace:*"
-  }
+	"name": "@pinry-reborn/auth",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@pinry-reborn/api-client": "workspace:*"
+	}
 }

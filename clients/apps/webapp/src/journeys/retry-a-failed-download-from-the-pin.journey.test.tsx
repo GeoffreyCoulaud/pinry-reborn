@@ -1,97 +1,140 @@
-import { screen, waitFor, within } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
-import { HttpResponse, http } from "msw"
-import { describe, expect, it } from "vitest"
-import { m } from "../paraglide/messages.js"
-import { downloadsRoute, handshakeRoute, onePinPage, pin, renderApp, sessionRoute } from "../test/app"
-import { server } from "../test/server"
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
+import { describe, expect, it } from "vitest";
+import { m } from "../paraglide/messages.js";
+import {
+	downloadsRoute,
+	handshakeRoute,
+	onePinPage,
+	pin,
+	renderApp,
+	sessionRoute,
+} from "../test/app";
+import { server } from "../test/server";
 
 describe("retry a failed download from the pin", () => {
-  it("Given a download that failed on the way, Then Retry fetches the pin's address and the pin stays open", async () => {
-    const user = userEvent.setup()
-    const failed = {
-      ...pin("a cat asleep", { status: "FAILED", reasonCode: "UNREACHABLE" }),
-      sourceMediaUrl: "https://example.test/corrected.png",
-    }
-    let sent: unknown = null
-    server.use(
-      sessionRoute(() => true),
-      onePinPage(() => [sent === null ? failed : { ...failed, image: { status: "PENDING" } }]),
-      downloadsRoute(),
-      handshakeRoute(),
-      http.put("/api/v1/pins/:pinId/image", async ({ request }) => {
-        sent = await request.json()
-        return HttpResponse.json({ status: "PENDING" }, { status: 202 })
-      }),
-    )
+	it("Given a download that failed on the way, Then Retry fetches the pin's address and the pin stays open", async () => {
+		const user = userEvent.setup();
+		const failed = {
+			...pin("a cat asleep", { status: "FAILED", reasonCode: "UNREACHABLE" }),
+			sourceMediaUrl: "https://example.test/corrected.png",
+		};
+		let sent: unknown = null;
+		server.use(
+			sessionRoute(() => true),
+			onePinPage(() => [
+				sent === null ? failed : { ...failed, image: { status: "PENDING" } },
+			]),
+			downloadsRoute(),
+			handshakeRoute(),
+			http.put("/api/v1/pins/:pinId/image", async ({ request }) => {
+				sent = await request.json();
+				return HttpResponse.json({ status: "PENDING" }, { status: 202 });
+			}),
+		);
 
-    renderApp("/")
-    await user.click(await screen.findByText(m.reason_unreachable()))
-    const dialog = await screen.findByRole("dialog")
-    expect(within(dialog).getByText(m.reason_unreachable())).toBeVisible()
+		renderApp("/");
+		await user.click(await screen.findByText(m.reason_unreachable()));
+		const dialog = await screen.findByRole("dialog");
+		expect(within(dialog).getByText(m.reason_unreachable())).toBeVisible();
 
-    await user.click(within(dialog).getByRole("button", { name: m.retry() }))
+		await user.click(within(dialog).getByRole("button", { name: m.retry() }));
 
-    await waitFor(() => expect(sent).toEqual({ sourceUrl: failed.sourceMediaUrl }))
-    // A pending pin leaves the grid's tiles, and the dialog keeps it all the same.
-    expect(await within(dialog).findByText(m.task_running())).toBeVisible()
-    expect(screen.getByRole("dialog")).toBe(dialog)
-  })
+		await waitFor(() =>
+			expect(sent).toEqual({ sourceUrl: failed.sourceMediaUrl }),
+		);
+		// A pending pin leaves the grid's tiles, and the dialog keeps it all the same.
+		expect(await within(dialog).findByText(m.task_running())).toBeVisible();
+		expect(screen.getByRole("dialog")).toBe(dialog);
+	});
 
-  it("Given a download the address refused, Then the pin says why and offers no Retry", async () => {
-    const user = userEvent.setup()
-    const failed = {
-      ...pin("a cat asleep", { status: "FAILED", reasonCode: "FETCH_FAILED" }),
-      sourceMediaUrl: "https://example.test/cat.png",
-    }
-    server.use(sessionRoute(() => true), onePinPage(() => [failed]), downloadsRoute(), handshakeRoute())
+	it("Given a download the address refused, Then the pin says why and offers no Retry", async () => {
+		const user = userEvent.setup();
+		const failed = {
+			...pin("a cat asleep", { status: "FAILED", reasonCode: "FETCH_FAILED" }),
+			sourceMediaUrl: "https://example.test/cat.png",
+		};
+		server.use(
+			sessionRoute(() => true),
+			onePinPage(() => [failed]),
+			downloadsRoute(),
+			handshakeRoute(),
+		);
 
-    renderApp("/")
-    await user.click(await screen.findByText(m.reason_fetch_failed()))
-    const dialog = await screen.findByRole("dialog")
+		renderApp("/");
+		await user.click(await screen.findByText(m.reason_fetch_failed()));
+		const dialog = await screen.findByRole("dialog");
 
-    expect(within(dialog).getByText(m.reason_fetch_failed())).toBeVisible()
-    expect(within(dialog).queryByRole("button", { name: m.retry() })).toBeNull()
-  })
+		expect(within(dialog).getByText(m.reason_fetch_failed())).toBeVisible();
+		expect(
+			within(dialog).queryByRole("button", { name: m.retry() }),
+		).toBeNull();
+	});
 
-  it("Given a pin with no image address, Then a failure that can pass offers no Retry", async () => {
-    const user = userEvent.setup()
-    const failed = pin("a cat asleep", { status: "FAILED", reasonCode: "UNREACHABLE" })
-    server.use(sessionRoute(() => true), onePinPage(() => [failed]), downloadsRoute(), handshakeRoute())
+	it("Given a pin with no image address, Then a failure that can pass offers no Retry", async () => {
+		const user = userEvent.setup();
+		const failed = pin("a cat asleep", {
+			status: "FAILED",
+			reasonCode: "UNREACHABLE",
+		});
+		server.use(
+			sessionRoute(() => true),
+			onePinPage(() => [failed]),
+			downloadsRoute(),
+			handshakeRoute(),
+		);
 
-    renderApp("/")
-    await user.click(await screen.findByText(m.reason_unreachable()))
-    const dialog = await screen.findByRole("dialog")
+		renderApp("/");
+		await user.click(await screen.findByText(m.reason_unreachable()));
+		const dialog = await screen.findByRole("dialog");
 
-    expect(failed.sourceMediaUrl).toBeNull()
-    expect(within(dialog).queryByRole("button", { name: m.retry() })).toBeNull()
-  })
+		expect(failed.sourceMediaUrl).toBeNull();
+		expect(
+			within(dialog).queryByRole("button", { name: m.retry() }),
+		).toBeNull();
+	});
 
-  it("Given a Retry refused, Then the pin says so and the next pin does not", async () => {
-    const user = userEvent.setup()
-    const failed = (description: string, reasonCode: "UNREACHABLE" | "INTERNAL_ERROR") => ({
-      ...pin(description, { status: "FAILED", reasonCode }),
-      sourceMediaUrl: "https://example.test/cat.png",
-    })
-    server.use(
-      sessionRoute(() => true),
-      onePinPage(() => [failed("a cat asleep", "UNREACHABLE"), failed("a harbour at dusk", "INTERNAL_ERROR")]),
-      downloadsRoute(),
-      handshakeRoute(),
-      http.put("/api/v1/pins/:pinId/image", () => new HttpResponse(null, { status: 503 })),
-    )
+	it("Given a Retry refused, Then the pin says so and the next pin does not", async () => {
+		const user = userEvent.setup();
+		const failed = (
+			description: string,
+			reasonCode: "UNREACHABLE" | "INTERNAL_ERROR",
+		) => ({
+			...pin(description, { status: "FAILED", reasonCode }),
+			sourceMediaUrl: "https://example.test/cat.png",
+		});
+		server.use(
+			sessionRoute(() => true),
+			onePinPage(() => [
+				failed("a cat asleep", "UNREACHABLE"),
+				failed("a harbour at dusk", "INTERNAL_ERROR"),
+			]),
+			downloadsRoute(),
+			handshakeRoute(),
+			http.put(
+				"/api/v1/pins/:pinId/image",
+				() => new HttpResponse(null, { status: 503 }),
+			),
+		);
 
-    renderApp("/")
-    await user.click(await screen.findByText(m.reason_unreachable()))
-    const dialog = await screen.findByRole("dialog")
-    await user.click(within(dialog).getByRole("button", { name: m.retry() }))
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent(m.image_refused())
+		renderApp("/");
+		await user.click(await screen.findByText(m.reason_unreachable()));
+		const dialog = await screen.findByRole("dialog");
+		await user.click(within(dialog).getByRole("button", { name: m.retry() }));
+		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+			m.image_refused(),
+		);
 
-    await user.click(within(dialog).getByRole("button", { name: m.pin_next() }))
+		await user.click(
+			within(dialog).getByRole("button", { name: m.pin_next() }),
+		);
 
-    // Each pin has its own Retry: the refusal stayed with the pin that was refused.
-    expect(dialog).toHaveAccessibleName("a harbour at dusk")
-    expect(within(dialog).queryByRole("alert")).toBeNull()
-    expect(within(dialog).getByRole("button", { name: m.retry() })).toBeEnabled()
-  })
-})
+		// Each pin has its own Retry: the refusal stayed with the pin that was refused.
+		expect(dialog).toHaveAccessibleName("a harbour at dusk");
+		expect(within(dialog).queryByRole("alert")).toBeNull();
+		expect(
+			within(dialog).getByRole("button", { name: m.retry() }),
+		).toBeEnabled();
+	});
+});

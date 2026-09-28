@@ -1,8 +1,10 @@
-import type { RefusalCode } from "@pinry-reborn/auth"
-import { m } from "./paraglide/messages.js"
+import type { RefusalCode } from "@pinry-reborn/auth";
+import { m } from "./paraglide/messages.js";
 
 /** What the two password-backed writes can refuse with, read from the contract. */
-type PasswordRefusalCode = RefusalCode<"/api/v1/me/password", "put"> | RefusalCode<"/api/v1/me", "delete">
+type PasswordRefusalCode =
+	| RefusalCode<"/api/v1/me/password", "put">
+	| RefusalCode<"/api/v1/me", "delete">;
 
 /**
  * One sentence per refusal the two password-backed writes can answer with. Keyed by the code and
@@ -11,17 +13,17 @@ type PasswordRefusalCode = RefusalCode<"/api/v1/me/password", "put"> | RefusalCo
  * contract stops declaring fails the typecheck.
  */
 const REFUSALS = {
-  REAUTHENTICATION_FAILED: m.password_wrong,
-  PASSWORD_PREVIOUSLY_USED: m.password_previously_used,
-  PASSWORD_CHANGED_TOO_SOON: m.password_changed_too_soon,
-  PASSWORD_CHANGE_COLLISION: m.password_change_collision,
-  TOO_MANY_AUTHENTICATION_ATTEMPTS: m.too_many_attempts,
-} satisfies Partial<Record<PasswordRefusalCode, () => string>>
+	REAUTHENTICATION_FAILED: m.password_wrong,
+	PASSWORD_PREVIOUSLY_USED: m.password_previously_used,
+	PASSWORD_CHANGED_TOO_SOON: m.password_changed_too_soon,
+	PASSWORD_CHANGE_COLLISION: m.password_change_collision,
+	TOO_MANY_AUTHENTICATION_ATTEMPTS: m.too_many_attempts,
+} satisfies Partial<Record<PasswordRefusalCode, () => string>>;
 
 // `hasOwn` and not `in`: the code is the server's string, and `constructor` would otherwise answer
 // with an object, which React throws on as a child.
 function hasSentence(code: string): code is keyof typeof REFUSALS {
-  return Object.hasOwn(REFUSALS, code)
+	return Object.hasOwn(REFUSALS, code);
 }
 
 /**
@@ -30,5 +32,7 @@ function hasSentence(code: string): code is keyof typeof REFUSALS {
  * which is nothing to tell the user about.
  */
 export function passwordRefusal(code: string | null): string {
-  return code !== null && hasSentence(code) ? REFUSALS[code]() : m.account_refused()
+	return code !== null && hasSentence(code)
+		? REFUSALS[code]()
+		: m.account_refused();
 }

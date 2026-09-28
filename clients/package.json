@@ -1,22 +1,22 @@
 {
-  "name": "@pinry-reborn/clients",
-  "private": true,
-  "type": "module",
-  "packageManager": "pnpm@12.3.4",
-  "engines": {
-    "node": "^22.22.2 || ^24.15.0 || >=26"
-  },
-  "scripts": {
-    "messages": "pnpm --recursive --sequential run messages",
-    "typecheck": "pnpm --recursive run typecheck",
-    "lint": "biome lint",
-    "knip": "knip && knip --strict",
-    "test": "pnpm --recursive run test",
-    "build": "pnpm --recursive run build"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.5.14",
-    "knip": "6.38.0",
-    "typescript": "6.0.3"
-  }
+	"name": "@pinry-reborn/clients",
+	"private": true,
+	"type": "module",
+	"packageManager": "pnpm@12.3.4",
+	"engines": {
+		"node": "^22.22.2 || ^24.15.0 || >=26"
+	},
+	"scripts": {
+		"messages": "pnpm --recursive --sequential run messages",
+		"typecheck": "pnpm --recursive run typecheck",
+		"lint": "biome lint",
+		"knip": "knip && knip --strict",
+		"test": "pnpm --recursive run test",
+		"build": "pnpm --recursive run build"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.14",
+		"knip": "6.38.0",
+		"typescript": "6.0.3"
+	}
 }

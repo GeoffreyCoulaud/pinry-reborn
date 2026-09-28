@@ -1,392 +1,420 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
-import { HttpResponse, http } from "msw"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  downloadsRoute,
-  dropOf,
-  handshakeRoute,
-  MEDIA_TYPES,
-  onePinPage,
-  readyPin,
-  renderApp,
-  sessionRoute,
-} from "../test/app"
-import { server } from "../test/server"
+	downloadsRoute,
+	dropOf,
+	handshakeRoute,
+	MEDIA_TYPES,
+	onePinPage,
+	readyPin,
+	renderApp,
+	sessionRoute,
+} from "../test/app";
+import { server } from "../test/server";
 
 /** The drop area's accessible name is its visible invitation, and nothing else names it. */
-const DROP_AREA = "Drop an image here, or pick one"
+const DROP_AREA = "Drop an image here, or pick one";
 
 /** Where the picture was found, which the server stores beside a file it never fetched. */
-const FOUND_AT = "https://example.test/cat.png"
+const FOUND_AT = "https://example.test/cat.png";
 
 /** The dialog is opened from the grid, and everything the form holds is queried inside it. */
 async function openTheDialog(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByRole("button", { name: "Add a pin" }))
-  return within(await screen.findByRole("dialog", { name: "Add a pin" }))
+	await user.click(await screen.findByRole("button", { name: "Add a pin" }));
+	return within(await screen.findByRole("dialog", { name: "Add a pin" }));
 }
 
 /** The box around the `sr-only` input, which is what the drag counter and the styles hang on. */
 function dropArea(dialog: ReturnType<typeof within>) {
-  return dialog.getByLabelText(DROP_AREA).closest("div") as HTMLElement
+	return dialog.getByLabelText(DROP_AREA).closest("div") as HTMLElement;
 }
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => vi.restoreAllMocks());
 
 describe("create a pin by uploading a file", () => {
-  it("Given a file heavier than the deployment stores, Then no request leaves at all", async () => {
-    const user = userEvent.setup()
-    let requests = 0
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute({ maxFileBytes: 4 }),
-      downloadsRoute(),
-      onePinPage(() => []),
-      http.post("/api/v1/pins", () => {
-        requests += 1
-        return HttpResponse.json({}, { status: 201 })
-      }),
-    )
+	it("Given a file heavier than the deployment stores, Then no request leaves at all", async () => {
+		const user = userEvent.setup();
+		let requests = 0;
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute({ maxFileBytes: 4 }),
+			downloadsRoute(),
+			onePinPage(() => []),
+			http.post("/api/v1/pins", () => {
+				requests += 1;
+				return HttpResponse.json({}, { status: 201 });
+			}),
+		);
 
-    const decode = vi.spyOn(globalThis, "createImageBitmap")
+		const decode = vi.spyOn(globalThis, "createImageBitmap");
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    await user.upload(
-      dialog.getByLabelText(DROP_AREA),
-      new File(["more than four bytes"], "big.png", { type: "image/png" }),
-    )
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		await user.upload(
+			dialog.getByLabelText(DROP_AREA),
+			new File(["more than four bytes"], "big.png", { type: "image/png" }),
+		);
 
-    // The refusal is pronounced at the choice and belongs to the gesture rather than to the
-    // form, so it is read off the toast and nowhere inside the dialog (ADR 0037). The file is
-    // not kept either, which is what stops the submission below from sending anything.
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "This file is heavier than this server accepts.",
-    )
-    expect(dialog.queryByRole("alert")).toBeNull()
-    // Its size alone refuses it, so seconds of decoding a wallpaper are not spent on it.
-    expect(decode).not.toHaveBeenCalled()
-    const submit = dialog.getByRole("button", { name: "Add a pin" })
-    await waitFor(() => expect(submit).toBeEnabled())
-    await user.click(submit)
+		// The refusal is pronounced at the choice and belongs to the gesture rather than to the
+		// form, so it is read off the toast and nowhere inside the dialog (ADR 0037). The file is
+		// not kept either, which is what stops the submission below from sending anything.
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"This file is heavier than this server accepts.",
+		);
+		expect(dialog.queryByRole("alert")).toBeNull();
+		// Its size alone refuses it, so seconds of decoding a wallpaper are not spent on it.
+		expect(decode).not.toHaveBeenCalled();
+		const submit = dialog.getByRole("button", { name: "Add a pin" });
+		await waitFor(() => expect(submit).toBeEnabled());
+		await user.click(submit);
 
-    expect(requests).toBe(0)
-  })
+		expect(requests).toBe(0);
+	});
 
-  it("Given a file whose bytes decode to nothing, Then the toast says so and the choice stands", async () => {
-    const user = userEvent.setup()
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute(),
-      downloadsRoute(),
-      onePinPage(() => []),
-    )
+	it("Given a file whose bytes decode to nothing, Then the toast says so and the choice stands", async () => {
+		const user = userEvent.setup();
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute(),
+			downloadsRoute(),
+			onePinPage(() => []),
+		);
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    await user.upload(
-      dialog.getByLabelText(DROP_AREA),
-      new File(["ok"], "small.png", { type: "image/png" }),
-    )
-    expect(await dialog.findByText("small.png")).toBeVisible()
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		await user.upload(
+			dialog.getByLabelText(DROP_AREA),
+			new File(["ok"], "small.png", { type: "image/png" }),
+		);
+		expect(await dialog.findByText("small.png")).toBeVisible();
 
-    // The decoder is what refuses the second file, so it stops decoding once the first is in.
-    vi.spyOn(globalThis, "createImageBitmap").mockRejectedValue(new Error("damaged"))
-    await user.upload(
-      dialog.getByLabelText(DROP_AREA),
-      new File(["not a picture"], "damaged.png", { type: "image/png" }),
-    )
+		// The decoder is what refuses the second file, so it stops decoding once the first is in.
+		vi.spyOn(globalThis, "createImageBitmap").mockRejectedValue(
+			new Error("damaged"),
+		);
+		await user.upload(
+			dialog.getByLabelText(DROP_AREA),
+			new File(["not a picture"], "damaged.png", { type: "image/png" }),
+		);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "This image could not be read. Try another file.",
-    )
-    expect(dialog.queryByRole("alert")).toBeNull()
-    // A file refused takes nothing from the one already accepted.
-    expect(dialog.getByText("small.png")).toBeVisible()
-  })
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"This image could not be read. Try another file.",
+		);
+		expect(dialog.queryByRole("alert")).toBeNull();
+		// A file refused takes nothing from the one already accepted.
+		expect(dialog.getByText("small.png")).toBeVisible();
+	});
 
-  it("Given anything but an image dropped on the area, Then it is not taken", async () => {
-    const user = userEvent.setup()
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute(),
-      downloadsRoute(),
-      onePinPage(() => []),
-    )
+	it("Given anything but an image dropped on the area, Then it is not taken", async () => {
+		const user = userEvent.setup();
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute(),
+			downloadsRoute(),
+			onePinPage(() => []),
+		);
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    const area = dialog.getByLabelText(DROP_AREA)
-    // A drop bypasses `accept`, which only the file picker honours, so it is the only way in.
-    fireEvent.drop(area, dropOf([new File(["%PDF"], "notes.pdf", { type: "application/pdf" })]))
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		const area = dialog.getByLabelText(DROP_AREA);
+		// A drop bypasses `accept`, which only the file picker honours, so it is the only way in.
+		fireEvent.drop(
+			area,
+			dropOf([new File(["%PDF"], "notes.pdf", { type: "application/pdf" })]),
+		);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "This file is not in a format this server accepts.",
-    )
-    expect(dialog.queryByRole("alert")).toBeNull()
-    expect(dialog.queryByText("notes.pdf")).toBeNull()
-    // No file was kept, so the other way in is required again.
-    expect(dialog.getByLabelText("Image address")).toBeRequired()
-  })
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"This file is not in a format this server accepts.",
+		);
+		expect(dialog.queryByRole("alert")).toBeNull();
+		expect(dialog.queryByText("notes.pdf")).toBeNull();
+		// No file was kept, so the other way in is required again.
+		expect(dialog.getByLabelText("Image address")).toBeRequired();
+	});
 
-  it("Given a picture in a format the handshake does not publish, Then it never reaches the server", async () => {
-    const user = userEvent.setup()
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute(),
-      downloadsRoute(),
-      onePinPage(() => []),
-    )
+	it("Given a picture in a format the handshake does not publish, Then it never reaches the server", async () => {
+		const user = userEvent.setup();
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute(),
+			downloadsRoute(),
+			onePinPage(() => []),
+		);
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    const area = dialog.getByLabelText(DROP_AREA)
-    // An image the browser decodes and libvips does not: the media types the handshake publishes
-    // are what tells the two apart, `image/` alone taking it as far as the server's refusal.
-    fireEvent.drop(area, dropOf([new File(["<svg/>"], "logo.svg", { type: "image/svg+xml" })]))
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		const area = dialog.getByLabelText(DROP_AREA);
+		// An image the browser decodes and libvips does not: the media types the handshake publishes
+		// are what tells the two apart, `image/` alone taking it as far as the server's refusal.
+		fireEvent.drop(
+			area,
+			dropOf([new File(["<svg/>"], "logo.svg", { type: "image/svg+xml" })]),
+		);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "This file is not in a format this server accepts.",
-    )
-    expect(dialog.queryByText("logo.svg")).toBeNull()
-  })
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"This file is not in a format this server accepts.",
+		);
+		expect(dialog.queryByText("logo.svg")).toBeNull();
+	});
 
-  it("Given the keyboard on the drop area, Then the box shows the focus its input hides", async () => {
-    const user = userEvent.setup()
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute(),
-      downloadsRoute(),
-      onePinPage(() => []),
-    )
+	it("Given the keyboard on the drop area, Then the box shows the focus its input hides", async () => {
+		const user = userEvent.setup();
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute(),
+			downloadsRoute(),
+			onePinPage(() => []),
+		);
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    const area = dialog.getByLabelText(DROP_AREA)
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		const area = dialog.getByLabelText(DROP_AREA);
 
-    // The input is `sr-only`, so the ring the other fields draw on themselves is declared on the
-    // box around it. jsdom lays nothing out; that the variant compiles is `pnpm run build`'s word.
-    // Three stops rather than two: the close cross opens the dialog's tab order.
-    await user.tab()
-    await user.tab()
-    await user.tab()
-    expect(area).toHaveFocus()
-    expect(area.closest("div")).toHaveClass("has-[input:focus-visible]:ring-2")
-  })
+		// The input is `sr-only`, so the ring the other fields draw on themselves is declared on the
+		// box around it. jsdom lays nothing out; that the variant compiles is `pnpm run build`'s word.
+		// Three stops rather than two: the close cross opens the dialog's tab order.
+		await user.tab();
+		await user.tab();
+		await user.tab();
+		expect(area).toHaveFocus();
+		expect(area.closest("div")).toHaveClass("has-[input:focus-visible]:ring-2");
+	});
 
-  it("Given a child of the drop area crossed, Then the area answers the drag throughout", async () => {
-    const user = userEvent.setup()
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute(),
-      downloadsRoute(),
-      onePinPage(() => []),
-    )
+	it("Given a child of the drop area crossed, Then the area answers the drag throughout", async () => {
+		const user = userEvent.setup();
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute(),
+			downloadsRoute(),
+			onePinPage(() => []),
+		);
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    const area = dropArea(dialog)
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		const area = dropArea(dialog);
 
-    // Crossing from the box onto its own invitation fires `dragenter` at the invitation and
-    // `dragleave` at the box the pointer never left. jsdom computes no style, so the attribute
-    // the active style hangs on is what is read here.
-    fireEvent.dragEnter(area)
-    fireEvent.dragEnter(dialog.getByText(DROP_AREA))
-    fireEvent.dragLeave(area)
-    expect(area).toHaveAttribute("data-dragging")
+		// Crossing from the box onto its own invitation fires `dragenter` at the invitation and
+		// `dragleave` at the box the pointer never left. jsdom computes no style, so the attribute
+		// the active style hangs on is what is read here.
+		fireEvent.dragEnter(area);
+		fireEvent.dragEnter(dialog.getByText(DROP_AREA));
+		fireEvent.dragLeave(area);
+		expect(area).toHaveAttribute("data-dragging");
 
-    fireEvent.dragLeave(area)
-    expect(area).not.toHaveAttribute("data-dragging")
-  })
+		fireEvent.dragLeave(area);
+		expect(area).not.toHaveAttribute("data-dragging");
+	});
 
-  it("Given the close cross, Then the dialog goes without a key or a backdrop", async () => {
-    const user = userEvent.setup()
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute(),
-      downloadsRoute(),
-      onePinPage(() => []),
-    )
+	it("Given the close cross, Then the dialog goes without a key or a backdrop", async () => {
+		const user = userEvent.setup();
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute(),
+			downloadsRoute(),
+			onePinPage(() => []),
+		);
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    await user.click(dialog.getByRole("button", { name: "Close" }))
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		await user.click(dialog.getByRole("button", { name: "Close" }));
 
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
-  })
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	});
 
-  it("Given an address dropped on the area, Then it fills the field and the file stays", async () => {
-    const user = userEvent.setup()
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute(),
-      downloadsRoute(),
-      onePinPage(() => []),
-    )
+	it("Given an address dropped on the area, Then it fills the field and the file stays", async () => {
+		const user = userEvent.setup();
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute(),
+			downloadsRoute(),
+			onePinPage(() => []),
+		);
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    await user.upload(
-      dialog.getByLabelText(DROP_AREA),
-      new File(["ok"], "small.png", { type: "image/png" }),
-    )
-    expect(await dialog.findByText("small.png")).toBeVisible()
-    // Dragging an image out of another browser tab hands over an address and no file at all.
-    fireEvent.drop(dialog.getByLabelText(DROP_AREA), dropOf([], FOUND_AT))
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		await user.upload(
+			dialog.getByLabelText(DROP_AREA),
+			new File(["ok"], "small.png", { type: "image/png" }),
+		);
+		expect(await dialog.findByText("small.png")).toBeVisible();
+		// Dragging an image out of another browser tab hands over an address and no file at all.
+		fireEvent.drop(dialog.getByLabelText(DROP_AREA), dropOf([], FOUND_AT));
 
-    // An address touches provenance alone, so it has nothing to remove
-    // (specification 2026-09-19-the-drop-is-the-gesture, decision H).
-    await waitFor(() => expect(dialog.getByLabelText("Image address")).toHaveValue(FOUND_AT))
-    expect(dialog.getByText("small.png")).toBeVisible()
-    expect(screen.queryByRole("alert")).toBeNull()
-  })
+		// An address touches provenance alone, so it has nothing to remove
+		// (specification 2026-09-19-the-drop-is-the-gesture, decision H).
+		await waitFor(() =>
+			expect(dialog.getByLabelText("Image address")).toHaveValue(FOUND_AT),
+		);
+		expect(dialog.getByText("small.png")).toBeVisible();
+		expect(screen.queryByRole("alert")).toBeNull();
+	});
 
-  it("Given a drop carrying nothing a pin can be made of, Then it is refused and the choice stands", async () => {
-    const user = userEvent.setup()
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute(),
-      downloadsRoute(),
-      onePinPage(() => []),
-    )
+	it("Given a drop carrying nothing a pin can be made of, Then it is refused and the choice stands", async () => {
+		const user = userEvent.setup();
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute(),
+			downloadsRoute(),
+			onePinPage(() => []),
+		);
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    await user.upload(
-      dialog.getByLabelText(DROP_AREA),
-      new File(["ok"], "small.png", { type: "image/png" }),
-    )
-    expect(await dialog.findByText("small.png")).toBeVisible()
-    // A tab dragging an image it holds in memory hands over a `blob:`, which no file and no
-    // address a server could fetch survive.
-    fireEvent.drop(dialog.getByLabelText(DROP_AREA), dropOf([], "blob:https://example.test/0f5c"))
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		await user.upload(
+			dialog.getByLabelText(DROP_AREA),
+			new File(["ok"], "small.png", { type: "image/png" }),
+		);
+		expect(await dialog.findByText("small.png")).toBeVisible();
+		// A tab dragging an image it holds in memory hands over a `blob:`, which no file and no
+		// address a server could fetch survive.
+		fireEvent.drop(
+			dialog.getByLabelText(DROP_AREA),
+			dropOf([], "blob:https://example.test/0f5c"),
+		);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Nothing in that drop could become a pin.",
-    )
-    expect(dialog.queryByRole("alert")).toBeNull()
-    // The drop took nothing, so it takes nothing away either.
-    expect(dialog.getByText("small.png")).toBeVisible()
-    expect(dialog.getByLabelText("Image address")).not.toBeRequired()
-  })
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"Nothing in that drop could become a pin.",
+		);
+		expect(dialog.queryByRole("alert")).toBeNull();
+		// The drop took nothing, so it takes nothing away either.
+		expect(dialog.getByText("small.png")).toBeVisible();
+		expect(dialog.getByLabelText("Image address")).not.toBeRequired();
+	});
 
-  it("Given limits that arrive after the file, Then the refusal takes the file with it", async () => {
-    const user = userEvent.setup()
-    let publish = () => {}
-    const published = new Promise<void>((resolve) => (publish = resolve))
-    server.use(
-      sessionRoute(() => true),
-      downloadsRoute(),
-      onePinPage(() => []),
-      // The one case decision M leaves to the submission: the file was judged against limits
-      // nobody had yet, so it was taken, and the answer arrives after it.
-      http.get("/api/v1/handshake", async () => {
-        await published
-        return HttpResponse.json({
-          contractVersion: "4.0.0",
-          limits: { maxFileBytes: 4, maxPixels: 50_000_000, mediaTypes: MEDIA_TYPES },
-          renditionSizes: { tiny: 80, small: 240, medium: 640, large: 1600 },
-        })
-      }),
-    )
+	it("Given limits that arrive after the file, Then the refusal takes the file with it", async () => {
+		const user = userEvent.setup();
+		let publish = () => {};
+		const published = new Promise<void>((resolve) => (publish = resolve));
+		server.use(
+			sessionRoute(() => true),
+			downloadsRoute(),
+			onePinPage(() => []),
+			// The one case decision M leaves to the submission: the file was judged against limits
+			// nobody had yet, so it was taken, and the answer arrives after it.
+			http.get("/api/v1/handshake", async () => {
+				await published;
+				return HttpResponse.json({
+					contractVersion: "4.0.0",
+					limits: {
+						maxFileBytes: 4,
+						maxPixels: 50_000_000,
+						mediaTypes: MEDIA_TYPES,
+					},
+					renditionSizes: { tiny: 80, small: 240, medium: 640, large: 1600 },
+				});
+			}),
+		);
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    await user.upload(
-      dialog.getByLabelText(DROP_AREA),
-      new File(["more than four bytes"], "big.png", { type: "image/png" }),
-    )
-    expect(await dialog.findByText("big.png")).toBeVisible()
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		await user.upload(
+			dialog.getByLabelText(DROP_AREA),
+			new File(["more than four bytes"], "big.png", { type: "image/png" }),
+		);
+		expect(await dialog.findByText("big.png")).toBeVisible();
 
-    publish()
-    const submit = dialog.getByRole("button", { name: "Add a pin" })
-    await waitFor(() => expect(submit).toBeEnabled())
-    await user.click(submit)
+		publish();
+		const submit = dialog.getByRole("button", { name: "Add a pin" });
+		await waitFor(() => expect(submit).toBeEnabled());
+		await user.click(submit);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "This file is heavier than this server accepts.",
-    )
-    expect(dialog.queryByRole("alert")).toBeNull()
-    // The message names one recourse, choosing another file, so the screen states one thing too.
-    expect(dialog.queryByText("big.png")).toBeNull()
-    expect(dialog.getByLabelText("Image address")).toBeRequired()
-  })
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"This file is heavier than this server accepts.",
+		);
+		expect(dialog.queryByRole("alert")).toBeNull();
+		// The message names one recourse, choosing another file, so the screen states one thing too.
+		expect(dialog.queryByText("big.png")).toBeNull();
+		expect(dialog.getByLabelText("Image address")).toBeRequired();
+	});
 
-  it("Given the file removed from the thumbnail, Then the address is the way in again", async () => {
-    const user = userEvent.setup()
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute(),
-      downloadsRoute(),
-      onePinPage(() => []),
-    )
+	it("Given the file removed from the thumbnail, Then the address is the way in again", async () => {
+		const user = userEvent.setup();
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute(),
+			downloadsRoute(),
+			onePinPage(() => []),
+		);
 
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    await user.upload(
-      dialog.getByLabelText(DROP_AREA),
-      new File(["ok"], "small.png", { type: "image/png" }),
-    )
-    expect(await dialog.findByText("small.png")).toBeVisible()
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		await user.upload(
+			dialog.getByLabelText(DROP_AREA),
+			new File(["ok"], "small.png", { type: "image/png" }),
+		);
+		expect(await dialog.findByText("small.png")).toBeVisible();
 
-    await user.click(dialog.getByRole("button", { name: "Remove" }))
+		await user.click(dialog.getByRole("button", { name: "Remove" }));
 
-    // Nothing was refused, so nothing is said: the file is simply gone and the address is back.
-    expect(dialog.queryByText("small.png")).toBeNull()
-    expect(screen.queryByRole("alert")).toBeNull()
-    expect(dialog.getByLabelText("Image address")).toBeRequired()
-    // The picker fires no change event for a file it still holds, so the same one must go back in.
-    await user.upload(
-      dialog.getByLabelText(DROP_AREA),
-      new File(["ok"], "small.png", { type: "image/png" }),
-    )
-    expect(await dialog.findByText("small.png")).toBeVisible()
-  })
+		// Nothing was refused, so nothing is said: the file is simply gone and the address is back.
+		expect(dialog.queryByText("small.png")).toBeNull();
+		expect(screen.queryByRole("alert")).toBeNull();
+		expect(dialog.getByLabelText("Image address")).toBeRequired();
+		// The picker fires no change event for a file it still holds, so the same one must go back in.
+		await user.upload(
+			dialog.getByLabelText(DROP_AREA),
+			new File(["ok"], "small.png", { type: "image/png" }),
+		);
+		expect(await dialog.findByText("small.png")).toBeVisible();
+	});
 
-  it("Given a file the deployment stores, Then the tile is in the grid at once", async () => {
-    const user = userEvent.setup()
-    const created = readyPin("a cat asleep")
-    let uploaded: string | null = null
-    let sent: unknown = "not sent"
-    server.use(
-      sessionRoute(() => true),
-      handshakeRoute(),
-      downloadsRoute(),
-      onePinPage(() => [created]),
-      http.post("/api/v1/pins", async ({ request }) => {
-        sent = await request.json()
-        return HttpResponse.json(created, { status: 201 })
-      }),
-      http.put("/api/v1/pins/:pinId/image", ({ request }) => {
-        // The media type is what tells the two entries apart on one route, and it is all this
-        // reads: reading the parts back costs the body, which a jsdom upload does not survive
-        // the same way on every Node the gate and a workstation run.
-        uploaded = request.headers.get("content-type")?.split(";")[0] ?? null
-        return HttpResponse.json({ id: created.id, pinId: created.id }, { status: 201 })
-      }),
-    )
+	it("Given a file the deployment stores, Then the tile is in the grid at once", async () => {
+		const user = userEvent.setup();
+		const created = readyPin("a cat asleep");
+		let uploaded: string | null = null;
+		let sent: unknown = "not sent";
+		server.use(
+			sessionRoute(() => true),
+			handshakeRoute(),
+			downloadsRoute(),
+			onePinPage(() => [created]),
+			http.post("/api/v1/pins", async ({ request }) => {
+				sent = await request.json();
+				return HttpResponse.json(created, { status: 201 });
+			}),
+			http.put("/api/v1/pins/:pinId/image", ({ request }) => {
+				// The media type is what tells the two entries apart on one route, and it is all this
+				// reads: reading the parts back costs the body, which a jsdom upload does not survive
+				// the same way on every Node the gate and a workstation run.
+				uploaded = request.headers.get("content-type")?.split(";")[0] ?? null;
+				return HttpResponse.json(
+					{ id: created.id, pinId: created.id },
+					{ status: 201 },
+				);
+			}),
+		);
 
-    // The page it comes from is left empty: a file from disk was found on no page at all.
-    renderApp("/")
-    const dialog = await openTheDialog(user)
-    await user.upload(
-      dialog.getByLabelText(DROP_AREA),
-      new File(["ok"], "small.png", { type: "image/png" }),
-    )
-    // The thumbnail and the name are the only check that catches a wrong file before the upload.
-    expect(await dialog.findByText("small.png")).toBeVisible()
-    // Provenance and bytes are independent (decision G): the address names where the picture was
-    // found, the file carries it, and the server is told both.
-    await user.type(dialog.getByLabelText("Image address"), FOUND_AT)
-    const submit = dialog.getByRole("button", { name: "Add a pin" })
-    await waitFor(() => expect(submit).toBeEnabled())
-    await user.click(submit)
+		// The page it comes from is left empty: a file from disk was found on no page at all.
+		renderApp("/");
+		const dialog = await openTheDialog(user);
+		await user.upload(
+			dialog.getByLabelText(DROP_AREA),
+			new File(["ok"], "small.png", { type: "image/png" }),
+		);
+		// The thumbnail and the name are the only check that catches a wrong file before the upload.
+		expect(await dialog.findByText("small.png")).toBeVisible();
+		// Provenance and bytes are independent (decision G): the address names where the picture was
+		// found, the file carries it, and the server is told both.
+		await user.type(dialog.getByLabelText("Image address"), FOUND_AT);
+		const submit = dialog.getByRole("button", { name: "Add a pin" });
+		await waitFor(() => expect(submit).toBeEnabled());
+		await user.click(submit);
 
-    // The grid is hidden from the reader while the dialog is open, so the tile answering at all
-    // says the dialog closed on its own. No download and no wait: the bytes are the server's.
-    expect(await screen.findByRole("img", { name: created.description })).toBeVisible()
-    expect(uploaded).toBe("multipart/form-data")
-    expect(sent).toEqual({ sourceContextUrl: null, sourceMediaUrl: FOUND_AT, description: "" })
-    expect(await screen.findByRole("button", { name: "Tasks (0)" })).toBeVisible()
-  }, 15_000)
-})
+		// The grid is hidden from the reader while the dialog is open, so the tile answering at all
+		// says the dialog closed on its own. No download and no wait: the bytes are the server's.
+		expect(
+			await screen.findByRole("img", { name: created.description }),
+		).toBeVisible();
+		expect(uploaded).toBe("multipart/form-data");
+		expect(sent).toEqual({
+			sourceContextUrl: null,
+			sourceMediaUrl: FOUND_AT,
+			description: "",
+		});
+		expect(
+			await screen.findByRole("button", { name: "Tasks (0)" }),
+		).toBeVisible();
+	}, 15_000);
+});

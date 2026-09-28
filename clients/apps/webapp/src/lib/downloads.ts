@@ -1,4 +1,4 @@
-import type { Schemas } from "@pinry-reborn/auth"
+import type { Schemas } from "@pinry-reborn/auth";
 
 /**
  * What the task centre reads of a download: which pin it feeds, and whether it still runs. The
@@ -6,11 +6,11 @@ import type { Schemas } from "@pinry-reborn/auth"
  * never emits fails to compile here.
  */
 export interface DownloadProgress {
-  pinId: string
-  status: Schemas["ImageDownloadOutputDto"]["status"]
+	pinId: string;
+	status: Schemas["ImageDownloadOutputDto"]["status"];
 }
 
-export const POLL_MS = 1000
+export const POLL_MS = 1000;
 
 /**
  * The list is asked again while the server still has work. A failed row also sits in the list and
@@ -18,13 +18,15 @@ export const POLL_MS = 1000
  * (a departure from specification 4.8, which polls on the list being non-empty).
  */
 export function downloadPollInterval(
-  downloads: readonly DownloadProgress[] | undefined,
-  hasMore = false,
+	downloads: readonly DownloadProgress[] | undefined,
+	hasMore = false,
 ): number | false {
-  if (downloads === undefined) return false
-  // A page past this one may hold the running rows, and this page cannot say: `hasMore` keeps the
-  // polling on rather than stopping on a first page that happens to be all failures.
-  return hasMore || downloads.some((download) => download.status === "PENDING") ? POLL_MS : false
+	if (downloads === undefined) return false;
+	// A page past this one may hold the running rows, and this page cannot say: `hasMore` keeps the
+	// polling on rather than stopping on a first page that happens to be all failures.
+	return hasMore || downloads.some((download) => download.status === "PENDING")
+		? POLL_MS
+		: false;
 }
 
 /**
@@ -33,13 +35,18 @@ export function downloadPollInterval(
  * read again. Their ids and not a flag, so what is reread is those pins and not the catalogue.
  */
 export function settledPinIds(
-  previous: readonly DownloadProgress[],
-  current: readonly DownloadProgress[],
+	previous: readonly DownloadProgress[],
+	current: readonly DownloadProgress[],
 ): string[] {
-  const running = new Set(
-    current.filter((download) => download.status === "PENDING").map((download) => download.pinId),
-  )
-  return previous
-    .filter((download) => download.status === "PENDING" && !running.has(download.pinId))
-    .map((download) => download.pinId)
+	const running = new Set(
+		current
+			.filter((download) => download.status === "PENDING")
+			.map((download) => download.pinId),
+	);
+	return previous
+		.filter(
+			(download) =>
+				download.status === "PENDING" && !running.has(download.pinId),
+		)
+		.map((download) => download.pinId);
 }
