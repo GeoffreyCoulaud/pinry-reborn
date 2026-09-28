@@ -98,7 +98,8 @@ removal.
 ### Block 20: Biome replaces ESLint
 
 - **Does**: decision B, with decision C's configuration in place. The gate runs `biome lint` alone, the code not
-  being formatted yet.
+  being formatted yet; a recommended fix is applied with `biome lint --write`, never `biome check --write`, which
+  would format every file here rather than in block 30.
 - **Configures** `"preset": "recommended"` (the `recommended` field is deprecated in 2.5.14), plus decision 2's
   counterparts: `noUnusedExpressions`, `noImportCycles` and the two `noRestrictedImports` edges.
 - **Fixes** every recommended finding, or excepts it under decision 6.
@@ -128,9 +129,9 @@ removal.
 
 ### Block 40: the rules past the preset
 
-- **Does**: decision D, every rule but `noExcessiveLinesPerFile`, in two commits: `biome lint --write`'s safe fixes
-  alone, then the hand fixes.
-- **Fixes, at the sites known today**:
+- **Does**: decision D, every rule but `noExcessiveLinesPerFile`, in two commits: `biome check --write`'s safe fixes
+  alone, then the hand fixes. `check` and not `lint`, so that the fixes come out formatted and `biome ci` passes.
+- **Fixes, at the sites known today** (lines as on `main` at `bcd2a3a5`; block 30's formatting moves them):
   - `noUnnecessaryConditions`: `sign-out.journey.test.tsx:52` is a false positive, excepted with its reason and not
     rewritten;
   - `useFilenamingConvention`: `components/DataTasks.tsx` and `routes/Credentials.tsx` are renamed to their export's
