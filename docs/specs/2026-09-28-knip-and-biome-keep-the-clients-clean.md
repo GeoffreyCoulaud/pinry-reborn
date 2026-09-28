@@ -1,7 +1,7 @@
 # Knip and Biome keep the clients clean
 
 Date: 2026-09-28
-Status: Draft for the operator. One specification review ran,
+Status: Accepted by the operator on 2026-09-29. One specification review ran,
 `.reviews/knip-and-biome-keep-the-clients-clean-spec.md`, its 5 CRITICAL, 4 MAJOR and 9 MINOR closed in this document
 and ADR 0046, four of them by the operator's answers of 2026-09-29. Frozen when the lot's last block merges.
 Lot: `0.44.0`. Branches: one stack: 10 `chore/knip-finds-dead-code`, 20 `chore/biome-replaces-eslint` on 10,
