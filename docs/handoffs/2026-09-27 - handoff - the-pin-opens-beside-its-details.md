@@ -18,7 +18,10 @@ on block 30. The holistic review ran; see "The holistic review".)
 - **The image side shows one of four states**: the image, "Downloading" with a spinner, the failure's reason, or a
   sentence saying the pin has no image. The image is the original, at its own size or shrunk to fit and never
   upscaled, in a box sized to what it is drawn at; the rendition the grid chose for its tiles fills that box until the
-  original loads (block 10's fix-back `cbda2bf0`, after the operator's test).
+  original loads (block 10's fix-back `cbda2bf0`, after the operator's test). (Corrected: since the closing block's
+  fix-back, the placeholder goes once the original's `decode()` resolves rather than on its `load`, and stays if it
+  rejects; a small spinner, labelled "Loading the full-size image", sits in the box's corner while the original is
+  not decoded 300 ms after the pin is shown.)
 - **Retry is offered where a failure can pass**: `retriable` in `downloadReasons.ts`, a
   `Record<Known<"DownloadReasonDto">, boolean>`, classes `UNREACHABLE` and `INTERNAL_ERROR` as retriable and the
   seven reasons the server fails permanently as not. The viewer and the task centre both read it; the task centre no
@@ -64,7 +67,14 @@ on block 30. The holistic review ran; see "The holistic review".)
   Keep and Address, Alt+→ leaving the pin where → steps, and Enter in the address field on the image side sending
   the pin's `PUT` then the image's. Rebased by hand onto block 30's rebase `de209f98`, the cascade having conflicted
   on `PinGrid.tsx` and the step journey: `retries` and the key now sit on the `PinImage` that takes `placeholder`.
-  Budget 123 lines, 9 files against block 30 at `ef9e685f`. The same reading gave the same results on the rebased bundle, both themes.
+  Budget 123 lines, 9 files against block 30 at `ef9e685f`. The same reading gave the same results on the rebased
+  bundle, both themes.
+- Closing block's fix-back `091cd0b1`, the operator's flash and spinner: two of three new "open a pin" cases failed
+  before it (the spinner while decoding, none when decoded at once); the third, a rejected `decode()` keeping the
+  placeholder, passed before and after. Read headless at 1280×800, both themes, with the stub's pin 1 original held
+  2.5 s: stepping onto it, the placeholder and no spinner at 150 ms, the spinner (24×24, the box's bottom right) at
+  550 ms, the original alone at 3 s; the fast original of pin 0 was drawn alone at 150 ms, with no spinner. Budget
+  212 lines, 13 files against block 30 at `091cd0b1`.
 - Headless readings, Firefox 156.0.1 over WebDriver BiDi against a Node stub of the API and the built bundle, both
   themes, the same geometry in each:
 
@@ -98,6 +108,11 @@ on block 30. The holistic review ran; see "The holistic review".)
   (`useToggleButtonGroup.mjs`, react-aria 3.52.1), so the journeys still find the options by the `radio` role.
 - **The edit mode's image area is its own size container** (`lg:[container-type:size]`): the original's box fits
   `100cqh`, which would otherwise measure the whole side, the selector and the address field included.
+- **jsdom has no `HTMLImageElement.decode`**, and loads no image: `src/test/setup.ts` stubs one that never settles,
+  and a journey that wants the original decoded, or refused, says so with `vi.spyOn`.
+- **The flash was the swap, not the step**: the operator saw it disappear under a throttled connection, where the
+  step still inserts a fresh placeholder. So `decoding="sync"` was not added, and `OriginalImage` stays keyed by its
+  address, which remounts it on each step whatever `PinImage`'s key.
 - **`PinEditForm` takes the viewer's image as a prop** rather than importing `PinImage`: `PinGrid` imports the form,
   and the import graph is acyclic.
 
@@ -115,6 +130,9 @@ on block 30. The holistic review ran; see "The holistic review".)
   review's second MAJOR.)
 - Block 30: the options read "Keep", "File" and "Address"; `fetch_image_from_url` and `image_replace` are gone from
   both catalogues, and `image_keep` changed its text.
+- Closing block: the flash and the spinner the operator found while testing the stack are fixed in the closing
+  block rather than in block 10, the layer they concern, as the operator chose ("b."): one run re-triggered instead
+  of four.
 
 ## What is not validated
 
@@ -125,6 +143,8 @@ on block 30. The holistic review ran; see "The holistic review".)
 - A real drag of a file onto the edit mode's drop box: the reading chose the file through `input.setFiles`, and the
   journey through `user.upload`.
 - The closing block's reading covered 1280×800 alone; nothing it changed depends on the layout.
+- The flash itself: no headless reading shows a frame, so whether the decoded swap removes it is the operator's to
+  see, on a fast connection where it showed.
 - Stepping with a Retry in flight: the key that keeps it on its own pin is reasoned from React's reconciliation and
   shown by the refused Retry alone.
 
@@ -155,12 +175,13 @@ the last loaded pin adds a page to the same query, as scrolling does. No block c
 
 ## The lot's counts
 
-- **Fix-backs: 2**, after the operator's test of the application: block 10's `cbda2bf0` (the original, never
-  upscaled, under the grid's rendition) and block 20's `04383d54` (the neighbours' placeholder loaded ahead).
+- **Fix-backs: 3**, after the operator's test of the application: block 10's `cbda2bf0` (the original, never
+  upscaled, under the grid's rendition), block 20's `04383d54` (the neighbours' placeholder loaded ahead), and the
+  closing block's `091cd0b1` (the swap once decoded, the spinner).
 - **Cascaded rebases: 3**, each conflicting and resolved by the teammate of its branch, block 30 and this closing
   block among them. Block 30's rebase carried a handoff update and no fix of its own, so it counts here, not above.
-- **Runs re-triggered: 4**, the push of the rebased stack, one per branch; the first runs, not counted, were
-  36350444532 on block 10, 36351317131 on block 20, 36352180952 on block 30 and 36352998151 on the closing block
+- **Runs re-triggered: 5**: the push of the rebased stack, one per branch, and the closing block's fix-back. The
+  first runs, not counted, were 36350444532 on block 10, 36351317131 on block 20, 36352180952 on block 30 and 36352998151 on the closing block
   (`gh pr checks`).
 - **The operator's reading of the bodies**: filled in before the stack merges.
 
