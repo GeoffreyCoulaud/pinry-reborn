@@ -9,7 +9,7 @@
 	"scripts": {
 		"messages": "pnpm --recursive --sequential run messages",
 		"typecheck": "pnpm --recursive run typecheck",
-		"lint": "biome lint",
+		"lint": "biome ci",
 		"knip": "knip && knip --strict",
 		"test": "pnpm --recursive run test",
 		"build": "pnpm --recursive run build"

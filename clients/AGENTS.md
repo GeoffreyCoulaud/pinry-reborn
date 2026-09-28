@@ -48,7 +48,8 @@ Inside `apps/webapp/src`:
   runs on its own too.
 - `pnpm run messages` : compiles `messages/{en,fr}.json` into typed functions under `src/paraglide/`.
   **Run it before anything that typechecks**, a fresh clone having no generated output at all.
-- `pnpm run typecheck`, `pnpm run lint` (Biome's linter, `biome.json`), `pnpm run knip`,
+- `pnpm run typecheck`, `pnpm run lint` (`biome ci`: Biome's linter, formatter and import order, `biome.json`,
+  writing nothing; `pnpm exec biome check --write` applies the fixes), `pnpm run knip`,
   `pnpm run test` (Vitest with coverage), `pnpm run build` (the static bundle, which is the only step that runs the
   Vite plugin chain).
 - **`pnpm run knip` runs Knip twice**: unused files, exports and dependencies with the tests counted as users, then
