@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    "apps/webapp": {
+      "project": [
+        "*.ts",
+        "src/**/*.{ts,tsx,css}!",
+        "!src/test/**!",
+        "!src/lib/{catalogues,journeys}.ts!"
+      ]
+    },
+    "packages/api-client": {
+      "project": ["*.mjs", "src/**/*.ts!"]
+    }
+  }
+}

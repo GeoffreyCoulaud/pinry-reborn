@@ -1,9 +1,6 @@
-import type { Schemas } from "@pinry-reborn/auth"
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { auth, bodyOf } from "./api"
 import type { RecycledPinSort } from "./lib/sorts"
-
-export type RecycledBoard = Schemas["RecycledBoardDto"]
 
 const PAGE_SIZE = 40
 
