@@ -312,15 +312,15 @@ export function ImportSection() {
 			<h3 className="text-lg font-semibold">{m.import_heading()}</h3>
 			<p className="text-muted">{m.import_note()}</p>
 			{latest.isError && <p role="alert">{m.import_unreadable()}</p>}
-			{upload !== null ? (
-				<Uploading upload={upload} />
-			) : (
+			{upload === null ? (
 				latest.isSuccess &&
 				(latest.data === null ? (
 					<ChooseArchive />
 				) : (
 					VIEWS[latest.data.state](latest.data)
 				))
+			) : (
+				<Uploading upload={upload} />
 			)}
 		</section>
 	);

@@ -5,16 +5,74 @@
 	"linter": {
 		"rules": {
 			"preset": "recommended",
+			"a11y": {
+				"noNoninteractiveElementInteractions": "error"
+			},
+			"complexity": {
+				"noExcessiveCognitiveComplexity": "error",
+				"useMaxParams": "error"
+			},
+			"correctness": {
+				"useUniqueElementIds": "error"
+			},
+			"style": {
+				"useComponentExportOnlyModules": "error",
+				"useBlockStatements": "error",
+				"useConsistentMethodSignatures": "error",
+				"noParameterProperties": "error",
+				"noJsxLiterals": "error",
+				"noNestedTernary": "error",
+				"noNegationElse": "error",
+				"useConsistentTypeDefinitions": "error",
+				"noDefaultExport": "error",
+				"useFilenamingConvention": "error",
+				"useNamingConvention": {
+					"level": "error",
+					"options": {
+						"strictCase": false,
+						"conventions": [
+							{
+								"selector": { "kind": "objectLiteralProperty" },
+								"formats": ["camelCase", "CONSTANT_CASE"]
+							}
+						]
+					}
+				},
+				"useGlobalThis": "error",
+				"noExcessiveClassesPerFile": "error"
+			},
 			"suspicious": {
 				"noUnusedExpressions": "error",
 				"noImportCycles": {
 					"level": "error",
 					"options": { "ignoreTypes": false }
-				}
+				},
+				"noLeakedRender": "error",
+				"noShadow": "error",
+				"useArraySortCompare": "error",
+				"noReturnAssign": "error",
+				"noUnnecessaryConditions": "error",
+				"noEmptyBlockStatements": "error"
 			}
 		}
 	},
 	"overrides": [
+		{
+			"includes": ["**/vite.config.ts"],
+			"linter": { "rules": { "style": { "noDefaultExport": "off" } } }
+		},
+		{
+			"includes": ["apps/webapp/src/journeys/**"],
+			"linter": {
+				"rules": { "style": { "useFilenamingConvention": "off" } }
+			}
+		},
+		{
+			"includes": ["**/*.test.*", "**/src/test/**"],
+			"linter": {
+				"rules": { "suspicious": { "noEmptyBlockStatements": "off" } }
+			}
+		},
 		{
 			"includes": ["apps/**"],
 			"linter": {
