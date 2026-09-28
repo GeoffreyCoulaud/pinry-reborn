@@ -55,6 +55,9 @@ globalThis.ResizeObserver = class {
 globalThis.createImageBitmap = () =>
   Promise.resolve({ width: 100, height: 100, close: () => {} } as ImageBitmap)
 
+// jsdom implements no `decode`, and loads no image to decode: an original never arrives unless a test says so.
+HTMLImageElement.prototype.decode = () => new Promise(() => {})
+
 // jsdom implements no matchMedia, and the theme switch reads one to resolve `system`.
 globalThis.matchMedia = (media: string) =>
   ({
