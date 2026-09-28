@@ -1,37 +1,49 @@
-import { AlertDialog, Button, Input, Label, TextField, toast } from "@heroui/react"
-import { AppHeader } from "../components/AppHeader"
-import { AppNav } from "../components/AppNav"
-import { ExportSection } from "../components/ExportSection"
-import { ImportSection } from "../components/ImportSection"
-import { AccountRefusal, useChangePassword, useDeleteAccount, useMe } from "../me"
-import { m } from "../paraglide/messages.js"
-import { passwordRefusal } from "../passwordRefusals"
-import { useSignOutEverywhere } from "../session"
+import {
+	AlertDialog,
+	Button,
+	Input,
+	Label,
+	TextField,
+	toast,
+} from "@heroui/react";
+import { AppHeader } from "../components/AppHeader";
+import { AppNav } from "../components/AppNav";
+import { ExportSection } from "../components/ExportSection";
+import { ImportSection } from "../components/ImportSection";
+import {
+	AccountRefusal,
+	useChangePassword,
+	useDeleteAccount,
+	useMe,
+} from "../me";
+import { m } from "../paraglide/messages.js";
+import { passwordRefusal } from "../passwordRefusals";
+import { useSignOutEverywhere } from "../session";
 
 function PasswordField({
-  name,
-  label,
-  autoComplete,
-  inDialog = false,
+	name,
+	label,
+	autoComplete,
+	inDialog = false,
 }: {
-  name: string
-  label: string
-  autoComplete: "current-password" | "new-password"
-  inDialog?: boolean
+	name: string;
+	label: string;
+	autoComplete: "current-password" | "new-password";
+	inDialog?: boolean;
 }) {
-  return (
-    <TextField
-      name={name}
-      type="password"
-      isRequired
-      autoComplete={autoComplete}
-      // HeroUI's field on a surface: the default one takes a dialog's own colour in dark.
-      variant={inDialog ? "secondary" : "primary"}
-    >
-      <Label>{label}</Label>
-      <Input />
-    </TextField>
-  )
+	return (
+		<TextField
+			name={name}
+			type="password"
+			isRequired
+			autoComplete={autoComplete}
+			// HeroUI's field on a surface: the default one takes a dialog's own colour in dark.
+			variant={inDialog ? "secondary" : "primary"}
+		>
+			<Label>{label}</Label>
+			<Input />
+		</TextField>
+	);
 }
 
 /**
@@ -40,7 +52,11 @@ function PasswordField({
  * and the general sentence is the right one for it, as `Boards.tsx` narrows its own.
  */
 function Refusal({ error }: { error: Error }) {
-  return <p role="alert">{passwordRefusal(error instanceof AccountRefusal ? error.code : null)}</p>
+	return (
+		<p role="alert">
+			{passwordRefusal(error instanceof AccountRefusal ? error.code : null)}
+		</p>
+	);
 }
 
 /**
@@ -48,37 +64,45 @@ function Refusal({ error }: { error: Error }) {
  * C and H).
  */
 function PasswordForm() {
-  const change = useChangePassword()
+	const change = useChangePassword();
 
-  return (
-    <section className="flex flex-col gap-2">
-      <h3 className="text-lg font-semibold">{m.change_password()}</h3>
-      {/* The consequence before the gesture, not after it (specification 2026-09-22, decision C). */}
-      <p className="text-muted">{m.change_password_note()}</p>
-      <form
-        className="flex max-w-sm flex-col gap-3"
-        onSubmit={(event) => {
-          event.preventDefault()
-          const fields = new FormData(event.currentTarget)
-          change.mutate({
-            currentPassword: String(fields.get("currentPassword")),
-            newPassword: String(fields.get("newPassword")),
-          })
-        }}
-      >
-        <PasswordField
-          name="currentPassword"
-          label={m.current_password()}
-          autoComplete="current-password"
-        />
-        <PasswordField name="newPassword" label={m.new_password()} autoComplete="new-password" />
-        {change.error !== null && <Refusal error={change.error} />}
-        <Button type="submit" className="self-start" isDisabled={change.isPending}>
-          {m.change_password()}
-        </Button>
-      </form>
-    </section>
-  )
+	return (
+		<section className="flex flex-col gap-2">
+			<h3 className="text-lg font-semibold">{m.change_password()}</h3>
+			{/* The consequence before the gesture, not after it (specification 2026-09-22, decision C). */}
+			<p className="text-muted">{m.change_password_note()}</p>
+			<form
+				className="flex max-w-sm flex-col gap-3"
+				onSubmit={(event) => {
+					event.preventDefault();
+					const fields = new FormData(event.currentTarget);
+					change.mutate({
+						currentPassword: String(fields.get("currentPassword")),
+						newPassword: String(fields.get("newPassword")),
+					});
+				}}
+			>
+				<PasswordField
+					name="currentPassword"
+					label={m.current_password()}
+					autoComplete="current-password"
+				/>
+				<PasswordField
+					name="newPassword"
+					label={m.new_password()}
+					autoComplete="new-password"
+				/>
+				{change.error !== null && <Refusal error={change.error} />}
+				<Button
+					type="submit"
+					className="self-start"
+					isDisabled={change.isPending}
+				>
+					{m.change_password()}
+				</Button>
+			</form>
+		</section>
+	);
 }
 
 /**
@@ -89,49 +113,55 @@ function PasswordForm() {
  * retry is inside it.
  */
 function DeleteAccount() {
-  const remove = useDeleteAccount()
+	const remove = useDeleteAccount();
 
-  return (
-    <AlertDialog>
-      <Button variant="danger">{m.delete_account()}</Button>
-      <AlertDialog.Backdrop>
-        <AlertDialog.Container size="sm">
-          <AlertDialog.Dialog>
-            {({ close }) => (
-              <form
-                className="flex flex-col gap-3"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  const fields = new FormData(event.currentTarget)
-                  remove.mutate(String(fields.get("password")))
-                }}
-              >
-                <AlertDialog.Heading>{m.delete_account_question()}</AlertDialog.Heading>
-                <AlertDialog.Body className="flex flex-col gap-3">
-                  {m.delete_account_warning()}
-                  <PasswordField
-                    name="password"
-                    label={m.password()}
-                    autoComplete="current-password"
-                    inDialog
-                  />
-                  {remove.error !== null && <Refusal error={remove.error} />}
-                </AlertDialog.Body>
-                <AlertDialog.Footer>
-                  <Button variant="ghost" onPress={close}>
-                    {m.cancel()}
-                  </Button>
-                  <Button type="submit" variant="danger" isDisabled={remove.isPending}>
-                    {m.delete_account_confirm()}
-                  </Button>
-                </AlertDialog.Footer>
-              </form>
-            )}
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
-    </AlertDialog>
-  )
+	return (
+		<AlertDialog>
+			<Button variant="danger">{m.delete_account()}</Button>
+			<AlertDialog.Backdrop>
+				<AlertDialog.Container size="sm">
+					<AlertDialog.Dialog>
+						{({ close }) => (
+							<form
+								className="flex flex-col gap-3"
+								onSubmit={(event) => {
+									event.preventDefault();
+									const fields = new FormData(event.currentTarget);
+									remove.mutate(String(fields.get("password")));
+								}}
+							>
+								<AlertDialog.Heading>
+									{m.delete_account_question()}
+								</AlertDialog.Heading>
+								<AlertDialog.Body className="flex flex-col gap-3">
+									{m.delete_account_warning()}
+									<PasswordField
+										name="password"
+										label={m.password()}
+										autoComplete="current-password"
+										inDialog
+									/>
+									{remove.error !== null && <Refusal error={remove.error} />}
+								</AlertDialog.Body>
+								<AlertDialog.Footer>
+									<Button variant="ghost" onPress={close}>
+										{m.cancel()}
+									</Button>
+									<Button
+										type="submit"
+										variant="danger"
+										isDisabled={remove.isPending}
+									>
+										{m.delete_account_confirm()}
+									</Button>
+								</AlertDialog.Footer>
+							</form>
+						)}
+					</AlertDialog.Dialog>
+				</AlertDialog.Container>
+			</AlertDialog.Backdrop>
+		</AlertDialog>
+	);
 }
 
 /**
@@ -140,38 +170,38 @@ function DeleteAccount() {
  * navigates between (specification 2026-09-22, decisions A and H).
  */
 export function Account() {
-  const me = useMe()
-  const signOutEverywhere = useSignOutEverywhere()
+	const me = useMe();
+	const signOutEverywhere = useSignOutEverywhere();
 
-  return (
-    <main className="flex w-full flex-col gap-6 p-4">
-      {/* The name is the heading and no section of its own: `UserOutputDto` holds nothing else. */}
-      <AppHeader heading={me.data?.name ?? m.account()}>
-        <AppNav />
-      </AppHeader>
-      {/* A read that failed is named, as every other screen names its own: a plausible heading
+	return (
+		<main className="flex w-full flex-col gap-6 p-4">
+			{/* The name is the heading and no section of its own: `UserOutputDto` holds nothing else. */}
+			<AppHeader heading={me.data?.name ?? m.account()}>
+				<AppNav />
+			</AppHeader>
+			{/* A read that failed is named, as every other screen names its own: a plausible heading
           over a password form about to fail for the same reason says nothing. */}
-      {me.isError && <p role="alert">{m.account_unreadable()}</p>}
-      <PasswordForm />
-      <ExportSection />
-      <ImportSection />
-      <section className="flex flex-col items-start gap-2">
-        <h3 className="text-lg font-semibold">{m.account_danger()}</h3>
-        {/* One line for the section: both controls end the session, and one of them the account. */}
-        <p className="text-muted">{m.account_danger_note()}</p>
-        <Button
-          variant="danger"
-          isDisabled={signOutEverywhere.isPending}
-          onPress={() =>
-            signOutEverywhere.mutate(undefined, {
-              onError: () => toast.danger(m.sign_out_everywhere_refused()),
-            })
-          }
-        >
-          {m.sign_out_everywhere()}
-        </Button>
-        <DeleteAccount />
-      </section>
-    </main>
-  )
+			{me.isError && <p role="alert">{m.account_unreadable()}</p>}
+			<PasswordForm />
+			<ExportSection />
+			<ImportSection />
+			<section className="flex flex-col items-start gap-2">
+				<h3 className="text-lg font-semibold">{m.account_danger()}</h3>
+				{/* One line for the section: both controls end the session, and one of them the account. */}
+				<p className="text-muted">{m.account_danger_note()}</p>
+				<Button
+					variant="danger"
+					isDisabled={signOutEverywhere.isPending}
+					onPress={() =>
+						signOutEverywhere.mutate(undefined, {
+							onError: () => toast.danger(m.sign_out_everywhere_refused()),
+						})
+					}
+				>
+					{m.sign_out_everywhere()}
+				</Button>
+				<DeleteAccount />
+			</section>
+		</main>
+	);
 }

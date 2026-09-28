@@ -1,14 +1,14 @@
-import type { Schemas } from "@pinry-reborn/auth"
+import type { Schemas } from "@pinry-reborn/auth";
 
 /** The two renditions a tile ever asks for, of the four the API serves. */
-export type Rendition = "SMALL" | "MEDIUM"
+export type Rendition = "SMALL" | "MEDIUM";
 
 /**
  * The widest column, in device pixels, the small rendition covers without stretching. It is
  * `images.renditions.small`'s default, and it stands in only until the handshake answers with
  * the deployment's own: a deployment that narrowed `small` would upscale every tile visibly.
  */
-const SMALL_RENDITION_PX = 240
+const SMALL_RENDITION_PX = 240;
 
 /**
  * The CSS `aspect-ratio` the tile is placed with. `WaterfallLayout` takes no per-item size and
@@ -17,29 +17,31 @@ const SMALL_RENDITION_PX = 240
  * API gave no dimensions for is square, which is one measurement like any other.
  */
 export function tileAspectRatio(
-  width: number | null | undefined,
-  height: number | null | undefined,
+	width: number | null | undefined,
+	height: number | null | undefined,
 ): string {
-  return width != null && height != null ? `${width} / ${height}` : "1 / 1"
+	return width != null && height != null ? `${width} / ${height}` : "1 / 1";
 }
 
 /** The rendition a column this wide needs, on a display of this pixel ratio. */
 export function renditionForColumn(
-  columnWidth: number,
-  pixelRatio: number,
-  smallRenditionPx: number = SMALL_RENDITION_PX,
+	columnWidth: number,
+	pixelRatio: number,
+	smallRenditionPx: number = SMALL_RENDITION_PX,
 ): Rendition {
-  return columnWidth * pixelRatio > smallRenditionPx ? "MEDIUM" : "SMALL"
+	return columnWidth * pixelRatio > smallRenditionPx ? "MEDIUM" : "SMALL";
 }
 
 /** The bytes an `<img>` fetches: the relative URL the API gave, at one rendition. */
 export function tileImageSource(url: string, rendition: Rendition): string {
-  return `${url}?size=${rendition}`
+	return `${url}?size=${rendition}`;
 }
 
 /** The one test of what the grid places, which the viewer's order shares (decision F). */
-function isPlaceable(pin: { image?: { status: Schemas["PinImageStateDto"]["status"] } | null }): boolean {
-  return pin.image?.status !== "PENDING"
+function isPlaceable(pin: {
+	image?: { status: Schemas["PinImageStateDto"]["status"] } | null;
+}): boolean {
+	return pin.image?.status !== "PENDING";
 }
 
 /**
@@ -48,9 +50,11 @@ function isPlaceable(pin: { image?: { status: Schemas["PinImageStateDto"]["statu
  * (specification 4.2).
  */
 export function placeableTiles<
-  T extends { image?: { status: Schemas["PinImageStateDto"]["status"] } | null },
+	T extends {
+		image?: { status: Schemas["PinImageStateDto"]["status"] } | null;
+	},
 >(pins: readonly T[]): T[] {
-  return pins.filter(isPlaceable)
+	return pins.filter(isPlaceable);
 }
 
 /**
@@ -58,17 +62,28 @@ export function placeableTiles<
  * opened pin kept in though its download is running (specification 2026-09-27, decision F).
  */
 export function neighbours<
-  T extends { id: string; image?: { status: Schemas["PinImageStateDto"]["status"] } | null },
->(pins: readonly T[], openedId: string | null): { previous: T | undefined; next: T | undefined } {
-  const order = pins.filter((pin) => pin.id === openedId || isPlaceable(pin))
-  const at = order.findIndex((pin) => pin.id === openedId)
-  return at < 0 ? { previous: undefined, next: undefined } : { previous: order[at - 1], next: order[at + 1] }
+	T extends {
+		id: string;
+		image?: { status: Schemas["PinImageStateDto"]["status"] } | null;
+	},
+>(
+	pins: readonly T[],
+	openedId: string | null,
+): { previous: T | undefined; next: T | undefined } {
+	const order = pins.filter((pin) => pin.id === openedId || isPlaceable(pin));
+	const at = order.findIndex((pin) => pin.id === openedId);
+	return at < 0
+		? { previous: undefined, next: undefined }
+		: { previous: order[at - 1], next: order[at + 1] };
 }
 
 /** A page's pins with the freshly read ones swapped in, the rest left as they were. */
-export function replacePins<T extends { id: string }>(pins: readonly T[], fresh: readonly T[]): T[] {
-  const byId = new Map(fresh.map((pin) => [pin.id, pin]))
-  return pins.map((pin) => byId.get(pin.id) ?? pin)
+export function replacePins<T extends { id: string }>(
+	pins: readonly T[],
+	fresh: readonly T[],
+): T[] {
+	const byId = new Map(fresh.map((pin) => [pin.id, pin]));
+	return pins.map((pin) => byId.get(pin.id) ?? pin);
 }
 
 /**
@@ -77,9 +92,12 @@ export function replacePins<T extends { id: string }>(pins: readonly T[], fresh:
  * 2026-09-20, decision P).
  */
 export function removePins<Page extends { pins: { id: string }[] }>(
-  pages: readonly Page[],
-  deleted: readonly string[],
+	pages: readonly Page[],
+	deleted: readonly string[],
 ): Page[] {
-  const gone = new Set(deleted)
-  return pages.map((page) => ({ ...page, pins: page.pins.filter((pin) => !gone.has(pin.id)) }))
+	const gone = new Set(deleted);
+	return pages.map((page) => ({
+		...page,
+		pins: page.pins.filter((pin) => !gone.has(pin.id)),
+	}));
 }

@@ -5,7 +5,9 @@
  * (specification 2026-09-22, decision G).
  */
 export function passwordFactor(password: string): string {
-  const bytes = new TextEncoder().encode(password)
-  const latin1 = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("")
-  return `password ${btoa(latin1).replaceAll("+", "-").replaceAll("/", "_")}`
+	const bytes = new TextEncoder().encode(password);
+	const latin1 = Array.from(bytes, (byte) => String.fromCharCode(byte)).join(
+		"",
+	);
+	return `password ${btoa(latin1).replaceAll("+", "-").replaceAll("/", "_")}`;
 }

@@ -6,13 +6,13 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  color-scheme: light dark;
+	color-scheme: light dark;
 }
 
 [data-theme="light"] {
-  color-scheme: light;
+	color-scheme: light;
 }
 
 [data-theme="dark"] {
-  color-scheme: dark;
+	color-scheme: dark;
 }

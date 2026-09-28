@@ -4,6 +4,6 @@
  * (specification 2026-09-21, decision C).
  */
 export function searchTermOr(value: unknown): string | undefined {
-  const term = typeof value === "string" ? value.trim() : ""
-  return term === "" ? undefined : term
+	const term = typeof value === "string" ? value.trim() : "";
+	return term === "" ? undefined : term;
 }

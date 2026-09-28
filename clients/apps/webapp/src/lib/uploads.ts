@@ -1,20 +1,20 @@
-import type { Schemas } from "@pinry-reborn/auth"
+import type { Schemas } from "@pinry-reborn/auth";
 
 /** Why this deployment will not store this file, told before a byte of it is sent. */
 export type UploadRefusal =
-  | "TOO_MANY_BYTES"
-  | "TOO_MANY_PIXELS"
-  | "UNSUPPORTED_FORMAT"
-  | "UNREADABLE"
+	| "TOO_MANY_BYTES"
+	| "TOO_MANY_PIXELS"
+	| "UNSUPPORTED_FORMAT"
+	| "UNREADABLE";
 
 /** The limits the handshake publishes, read from the contract rather than retyped (4.3). */
-export type UploadLimits = Schemas["HandshakeOutputDto"]["limits"]
+export type UploadLimits = Schemas["HandshakeOutputDto"]["limits"];
 
 /** A file the browser has decoded far enough to know what it would cost the server. */
 export interface MeasuredUpload {
-  size: number
-  width: number
-  height: number
+	size: number;
+	width: number;
+	height: number;
 }
 
 /**
@@ -24,19 +24,24 @@ export interface MeasuredUpload {
  * answer.
  */
 export function uploadRefusal(
-  upload: MeasuredUpload,
-  limits: UploadLimits | undefined,
+	upload: MeasuredUpload,
+	limits: UploadLimits | undefined,
 ): UploadRefusal | null {
-  if (limits === undefined) return null
-  return (
-    byteRefusal(upload.size, limits) ??
-    (upload.width * upload.height > limits.maxPixels ? "TOO_MANY_PIXELS" : null)
-  )
+	if (limits === undefined) return null;
+	return (
+		byteRefusal(upload.size, limits) ??
+		(upload.width * upload.height > limits.maxPixels ? "TOO_MANY_PIXELS" : null)
+	);
 }
 
 /** The one limit a file's size alone answers, read before a decode that can take seconds. */
-export function byteRefusal(size: number, limits: UploadLimits | undefined): "TOO_MANY_BYTES" | null {
-  return limits !== undefined && size > limits.maxFileBytes ? "TOO_MANY_BYTES" : null
+export function byteRefusal(
+	size: number,
+	limits: UploadLimits | undefined,
+): "TOO_MANY_BYTES" | null {
+	return limits !== undefined && size > limits.maxFileBytes
+		? "TOO_MANY_BYTES"
+		: null;
 }
 
 /**
@@ -45,7 +50,10 @@ export function byteRefusal(size: number, limits: UploadLimits | undefined): "TO
  * storage refuses. Before the handshake answers, only what the browser calls a picture passes, and
  * the format then meets the server's own answer.
  */
-export function isStorableFile(file: { type: string }, limits: UploadLimits | undefined): boolean {
-  if (limits === undefined) return file.type.startsWith("image/")
-  return limits.mediaTypes.includes(file.type)
+export function isStorableFile(
+	file: { type: string },
+	limits: UploadLimits | undefined,
+): boolean {
+	if (limits === undefined) return file.type.startsWith("image/");
+	return limits.mediaTypes.includes(file.type);
 }
