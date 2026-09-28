@@ -99,6 +99,9 @@ function Tile({
   )
 }
 
+/** How long the original may take before a spinner says it is coming, as long as a drop's reading. */
+const SPINNER_DELAY_MS = 300
+
 /**
  * The original in a box of the size it is drawn at, its own or less to fit, never more. The grid's
  * rendition fills that box until the original arrives, from the cache when its tile was drawn.
@@ -116,24 +119,45 @@ function OriginalImage({
   alt: string
   placeholder: Rendition
 }) {
-  const [loaded, setLoaded] = useState(false)
+  const original = useRef<HTMLImageElement>(null)
+  const [state, setState] = useState<"loading" | "decoded" | "failed">("loading")
+  const [slow, setSlow] = useState(false)
   const size = {
     aspectRatio: `${width} / ${height}`,
     width: `min(${width}px, 100%, calc(var(--fit-height) * ${width / height}))`,
   }
 
+  useEffect(() => {
+    let shown = true
+    const late = setTimeout(() => setSlow(true), SPINNER_DELAY_MS)
+    // Decoded, not loaded: swapped on `load`, the placeholder went a frame before the original could paint.
+    original.current?.decode().then(
+      () => shown && setState("decoded"),
+      () => shown && setState("failed"),
+    )
+    return () => {
+      shown = false
+      clearTimeout(late)
+    }
+  }, [])
+
   return (
     <div className="relative" style={size}>
-      {!loaded && (
+      {state !== "decoded" && (
         <img src={tileImageSource(url, placeholder)} alt="" className="absolute inset-0 h-full w-full" />
       )}
-      {/* Transparent rather than hidden until it loads: Firefox draws the alt text over the placeholder. */}
+      {/* Transparent rather than hidden until decoded: Firefox draws the alt text over the placeholder. */}
       <img
+        ref={original}
         src={url}
         alt={alt}
-        onLoad={() => setLoaded(true)}
-        className={`absolute inset-0 h-full w-full ${loaded ? "" : "opacity-0"}`}
+        className={`absolute inset-0 h-full w-full ${state === "decoded" ? "" : "opacity-0"}`}
       />
+      {state === "loading" && slow && (
+        <span className="absolute end-2 bottom-2 flex rounded-full bg-overlay p-1 shadow-surface">
+          <Spinner size="sm" aria-label={m.image_original_loading()} />
+        </span>
+      )}
     </div>
   )
 }

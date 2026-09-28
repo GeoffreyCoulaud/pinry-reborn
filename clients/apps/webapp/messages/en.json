@@ -81,6 +81,7 @@
   "image_from_address": "Address",
   "image_from_file": "File",
   "image_keep": "Keep",
+  "image_original_loading": "Loading the full-size image",
   "image_refused": "That image could not be added.",
   "image_replacing": "Downloading the new image.",
   "image_unsaved": "New image, not saved yet",

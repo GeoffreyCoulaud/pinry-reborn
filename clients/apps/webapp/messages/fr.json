@@ -81,6 +81,7 @@
   "image_from_address": "Adresse",
   "image_from_file": "Fichier",
   "image_keep": "Conserver",
+  "image_original_loading": "Chargement de l’image en taille réelle",
   "image_refused": "Cette image n’a pas pu être ajoutée.",
   "image_replacing": "Téléchargement de la nouvelle image.",
   "image_unsaved": "Nouvelle image, pas encore enregistrée",

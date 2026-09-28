@@ -1,7 +1,8 @@
-import { screen, within } from "@testing-library/react"
+import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { m } from "../paraglide/messages.js"
+import type { Pin } from "../pins"
 import {
   downloadsRoute,
   handshakeRoute,
@@ -11,6 +12,18 @@ import {
   sessionRoute,
 } from "../test/app"
 import { server } from "../test/server"
+
+/** The spinner's delay in `PinGrid.tsx`, which a test outwaits to show it never came. */
+const SPINNER_DELAY_MS = 300
+
+async function openThe(pin: Pin) {
+  server.use(sessionRoute(() => true), pinsRoute([[pin]]), downloadsRoute(), handshakeRoute())
+  renderApp("/")
+  await userEvent.setup().click(await screen.findByRole("img", { name: pin.description }))
+  return screen.findByRole("dialog")
+}
+
+afterEach(() => vi.restoreAllMocks())
 
 describe("open a pin", () => {
   it("Given a tile, Then the pin opens with what the API knows of it", async () => {
@@ -65,6 +78,45 @@ describe("open a pin", () => {
       "src",
       `/api/v1/pins/${opened.id}/image?size=MEDIUM`,
     )
+  })
+
+  it("Given an original still decoding, Then the grid's rendition stays and a spinner says so", async () => {
+    let decoded = () => {}
+    vi.spyOn(HTMLImageElement.prototype, "decode").mockReturnValue(new Promise<void>((resolve) => (decoded = resolve)))
+    const dialog = await openThe(readyPin("a harbour at dusk"))
+
+    const loading = await within(dialog).findByRole("status", { name: m.image_original_loading() })
+    expect(dialog.querySelector('img[alt=""]')).not.toBeNull()
+    decoded()
+
+    // Swapped once decoded rather than loaded, so no frame shows neither.
+    await waitFor(() => expect(loading).not.toBeInTheDocument())
+    expect(dialog.querySelector('img[alt=""]')).toBeNull()
+  })
+
+  it("Given an original decoded at once, Then no spinner ever shows", async () => {
+    vi.spyOn(HTMLImageElement.prototype, "decode").mockResolvedValue()
+    let shown = false
+    const watch = new MutationObserver(() => {
+      shown ||= screen.queryByRole("status", { name: m.image_original_loading() }) !== null
+    })
+    watch.observe(document.body, { childList: true, subtree: true })
+
+    const dialog = await openThe(readyPin("a harbour at dusk"))
+    await new Promise((resolve) => setTimeout(resolve, 2 * SPINNER_DELAY_MS))
+    watch.disconnect()
+
+    expect(shown).toBe(false)
+    expect(dialog.querySelector('img[alt=""]')).toBeNull()
+  })
+
+  it("Given an original that fails to decode, Then the grid's rendition stays without a spinner", async () => {
+    vi.spyOn(HTMLImageElement.prototype, "decode").mockRejectedValue(new DOMException("", "EncodingError"))
+    const dialog = await openThe(readyPin("a harbour at dusk"))
+    await new Promise((resolve) => setTimeout(resolve, 2 * SPINNER_DELAY_MS))
+
+    expect(within(dialog).queryByRole("status", { name: m.image_original_loading() })).toBeNull()
+    expect(dialog.querySelector('img[alt=""]')).not.toBeNull()
   })
 
   it("Given an open pin, Then closing it returns to the grid", async () => {
