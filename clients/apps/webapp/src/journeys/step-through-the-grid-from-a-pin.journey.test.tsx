@@ -25,6 +25,13 @@ function drag(dialog: HTMLElement, x: number, y: number, pointerType = "touch") 
   fireEvent.pointerUp(target, at(1))
 }
 
+/** The images the document asks the browser to load ahead. */
+function preloaded() {
+  return [...document.head.querySelectorAll('link[rel="preload"][as="image"]')].map((link) =>
+    link.getAttribute("href"),
+  )
+}
+
 afterEach(() => vi.unstubAllGlobals())
 
 describe("step through the grid from a pin", () => {
@@ -43,6 +50,20 @@ describe("step through the grid from a pin", () => {
     expect(within(dialog).getByText("a lighthouse")).toBeVisible()
     await user.keyboard("{ArrowLeft}")
     expect(within(dialog).getByText("a cat asleep")).toBeVisible()
+  })
+
+  it("Given an open pin, Then its neighbours' placeholders are loaded ahead and never their originals", async () => {
+    const pins = [readyPin("a harbour at dusk"), readyPin("a cat asleep"), readyPin("a lighthouse")]
+    const [first, second, third] = pins.map((one) => String(one.image?.url))
+    const { user, dialog } = await openTheFirst(pins)
+
+    // The grid's own rendition, which jsdom's unmeasurable column makes the small one.
+    expect(preloaded()).toContain(`${second}?size=SMALL`)
+    expect(preloaded()).not.toContain(`${third}?size=SMALL`)
+    await user.click(within(dialog).getByRole("button", { name: m.pin_next() }))
+
+    expect(preloaded()).toEqual(expect.arrayContaining([`${first}?size=SMALL`, `${third}?size=SMALL`]))
+    expect(preloaded()).not.toContain(third)
   })
 
   it("Given the form, Then nothing steps and the arrows move the caret", async () => {

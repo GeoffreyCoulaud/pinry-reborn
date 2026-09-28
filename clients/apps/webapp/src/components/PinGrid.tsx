@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router"
 import { ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react"
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type RefObject } from "react"
 import { useMove } from "react-aria"
+import { preload } from "react-dom"
 import {
   Collection,
   GridList,
@@ -476,6 +477,9 @@ export function PinGrid({
     // Only from the pin it left, so a viewer closed meanwhile stays closed.
     if (arrived) setOpenedId((current) => (current === from ? arrived.id : current))
   }
+  // The neighbours' placeholder and never their original, so a step shows an image at once (decision F).
+  for (const neighbour of opened ? [previous, next] : [])
+    if (neighbour?.image?.url) preload(tileImageSource(neighbour.image.url, rendition), { as: "image" })
   const stepToPrevious = previous ? () => setOpenedId(previous.id) : undefined
   const canFetch = pins.hasNextPage && !pins.isFetchingNextPage
   const stepToNext = next
