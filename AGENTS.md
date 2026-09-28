@@ -59,7 +59,7 @@ norms, its commands and its gate; this file carries what holds for the repositor
 | Function                     | What it runs                                                                     |
 |------------------------------|-----------------------------------------------------------------------------------|
 | `dagger call api-gate`       | The API's Gradle gate (`api/AGENTS.md`), with the JDK, libvips and python3 pinned. |
-| `dagger call clients-gate`   | The clients' gate (`clients/AGENTS.md`), with Node and pnpm pinned: install, catalogue compile, typecheck, Biome's lint with the import boundaries, Knip, Vitest with its coverage bound, and the static bundle. |
+| `dagger call clients-gate`   | The clients' gate (`clients/AGENTS.md`), with Node and pnpm pinned: install, catalogue compile, typecheck, Biome's lint and format check with the import boundaries, Knip, Vitest with its coverage bound, and the static bundle. |
 | `dagger call prose`          | No long dash in a tracked text file, and the evidence guard's own tests.           |
 | `dagger call contract`       | Produces `contract/openapi.json`. `gate` refuses a committed document that differs. |
 | `dagger call contract-guard` | The contract breaks no still served major, and its `info.version` admits what it changed against `main` (`oasdiff`). |
