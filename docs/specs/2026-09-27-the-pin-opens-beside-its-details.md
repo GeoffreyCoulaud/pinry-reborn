@@ -64,7 +64,11 @@ Icons are `lucide-react`'s, already a dependency.
 
 **C. The image side shows one of four states.** `READY`: the image, whole (`object-contain`), in the `LARGE`
 rendition, `MEDIUM` (480 px by default, `RenditionsConfig`) being smaller than the side it now fills; `Rendition` in
-`lib/tiles.ts` widens to carry it. `PENDING`: a spinner and "Downloading". `FAILED`: the reason `downloadReason`
+`lib/tiles.ts` widens to carry it. (Corrected: after the operator's test of block 10, "on veut afficher l'original
+au final", the image is the original, shown at its own size or shrunk to fit and never upscaled, since a small one
+stretched to the side read badly. While it loads, the rendition the grid chose for its tiles, carried to the viewer
+and not assumed `MEDIUM`, fills the original's box, so the viewer shows what the HTTP cache holds rather than a blank.
+`Rendition` keeps its two values.) `PENDING`: a spinner and "Downloading". `FAILED`: the reason `downloadReason`
 gives, and Retry when decision D allows it and the pin has a `sourceMediaUrl`, which Retry fetches from. No image at
 all: a sentence saying so.
 
