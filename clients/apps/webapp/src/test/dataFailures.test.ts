@@ -28,8 +28,9 @@ describe("the sentence a failed export or import shows", () => {
 			"UNSUPPORTED_FORMAT_VERSION",
 			"IMPORT_INTERRUPTED",
 		];
-		for (const code of codes)
+		for (const code of codes) {
 			expect(importFailure(code)).not.toBe(m.failure_unknown());
+		}
 	});
 
 	it("Given a code `Object.prototype` answers for, Then the user gets the general sentence", () => {

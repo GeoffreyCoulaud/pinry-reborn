@@ -60,9 +60,11 @@ export function BoardForm({
 					name: String(fields.get("name")),
 					description: String(fields.get("description")),
 				};
-				if (board === null)
+				if (board === null) {
 					create.mutate({ ...body, pinIds: [...pinIds] }, { onSuccess: close });
-				else save.mutate({ boardId: board.id, body }, { onSuccess: close });
+				} else {
+					save.mutate({ boardId: board.id, body }, { onSuccess: close });
+				}
 			}}
 		>
 			<Field

@@ -94,8 +94,9 @@ function ArchivePicker({
 				disabled={limits === undefined || isPending}
 				onChange={(event) => {
 					const file = event.currentTarget.files?.[0];
-					if (file !== undefined && limits !== undefined)
+					if (file !== undefined && limits !== undefined) {
 						onChoose(file, limits);
+					}
 				}}
 			/>
 		</label>
@@ -202,7 +203,9 @@ function Awaiting({ row }: { row: Import }) {
 					onChoose={(file, limits) => {
 						const same = sameFile(record, file);
 						setOther(!same);
-						if (same) resume(row, file, limits.maxImportChunkBytes);
+						if (same) {
+							resume(row, file, limits.maxImportChunkBytes);
+						}
 					}}
 				/>
 				<CancelImport id={row.id} />
@@ -259,7 +262,9 @@ export function ImportCounters({ row }: { row: Import }) {
 
 /** The counters, and the issues behind a button. Nothing before the walk started. */
 function Report({ row }: { row: Import }) {
-	if (row.startedAt === null) return null;
+	if (row.startedAt === null) {
+		return null;
+	}
 	return (
 		<>
 			<ImportCounters row={row} />

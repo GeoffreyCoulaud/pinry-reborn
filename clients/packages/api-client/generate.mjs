@@ -18,7 +18,9 @@ const generatedTypes = astToString(await openapiTS(contract));
 const lines = [];
 for (const [name, schema] of Object.entries(contract.components.schemas)) {
 	const values = schema["x-extensible-enum"];
-	if (values) lines.push(knownValuesLine(name, values));
+	if (values) {
+		lines.push(knownValuesLine(name, values));
+	}
 }
 const extensibleEnums = [
 	"export interface extensibleEnums {",

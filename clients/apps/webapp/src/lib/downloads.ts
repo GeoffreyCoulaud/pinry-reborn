@@ -21,7 +21,9 @@ export function downloadPollInterval(
 	downloads: readonly DownloadProgress[] | undefined,
 	hasMore = false,
 ): number | false {
-	if (downloads === undefined) return false;
+	if (downloads === undefined) {
+		return false;
+	}
 	// A page past this one may hold the running rows, and this page cannot say: `hasMore` keeps the
 	// polling on rather than stopping on a first page that happens to be all failures.
 	return hasMore || downloads.some((download) => download.status === "PENDING")

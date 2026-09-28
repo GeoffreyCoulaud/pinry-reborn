@@ -55,8 +55,9 @@ function useBinWrite<Subject>(
 	return useMutation({
 		mutationFn: async (subject: Subject) => {
 			const { response } = await write(subject);
-			if (!response.ok)
+			if (!response.ok) {
 				throw new Error(`The API refused the bin: ${response.status}.`);
+			}
 			await Promise.all(
 				reread.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
 			);

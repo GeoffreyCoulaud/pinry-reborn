@@ -50,8 +50,11 @@ export function useDataTasks(): ReactNode[] {
 	// Only once both rows are read: an unread row would drop the dismissal of its notice.
 	useEffect(() => {
 		try {
-			if (read && kept === "[]") localStorage.removeItem(DISMISSED);
-			else if (read) localStorage.setItem(DISMISSED, kept);
+			if (read && kept === "[]") {
+				localStorage.removeItem(DISMISSED);
+			} else if (read) {
+				localStorage.setItem(DISMISSED, kept);
+			}
 		} catch {
 			// A private window forgets the dismissals with the tab.
 		}

@@ -105,9 +105,11 @@ function CreatePinForm({
 	function advance() {
 		// The refusal belonged to the entry that earned it, and the next one has sent nothing yet.
 		create.reset();
-		if (at + 1 < entries.length)
+		if (at + 1 < entries.length) {
 			setQueue((current) => ({ ...current, at: current.at + 1 }));
-		else close();
+		} else {
+			close();
+		}
 	}
 
 	function take(drop: DropPartition) {

@@ -6,7 +6,11 @@ export type DragStep = "enter" | "leave" | "drop";
  * both bubble, so only counting tells a crossing into a child from a real exit (MDN, `dragleave`).
  */
 export function dragDepth(depth: number, step: DragStep): number {
-	if (step === "drop") return 0;
-	if (step === "enter") return depth + 1;
+	if (step === "drop") {
+		return 0;
+	}
+	if (step === "enter") {
+		return depth + 1;
+	}
 	return Math.max(0, depth - 1);
 }

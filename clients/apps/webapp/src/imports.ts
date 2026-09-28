@@ -135,10 +135,14 @@ function keepPage(event: BeforeUnloadEvent) {
 
 function publish(next: Upload | null) {
 	upload = next;
-	if (next !== null && next.state !== "STOPPED")
+	if (next !== null && next.state !== "STOPPED") {
 		addEventListener("beforeunload", keepPage);
-	else removeEventListener("beforeunload", keepPage);
-	for (const listener of listeners) listener();
+	} else {
+		removeEventListener("beforeunload", keepPage);
+	}
+	for (const listener of listeners) {
+		listener();
+	}
 }
 
 export function useUpload() {
@@ -157,7 +161,9 @@ async function answerOf(
 ) {
 	try {
 		const { data, error, response } = await request;
-		if (data === undefined) return refusedChunk(response.status, error);
+		if (data === undefined) {
+			return refusedChunk(response.status, error);
+		}
 		return { uploadedBytes: data.uploadedBytes };
 	} catch {
 		return null;
@@ -193,9 +199,12 @@ async function send(
 		attempt = step;
 		sent = attempt.next === "SEND" ? attempt.offset : file.size;
 		publish({ importId, file, sent, state: "SENDING", code: null });
-		if (attempt.failures > 0)
+		if (attempt.failures > 0) {
 			await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
-		if (signal.aborted) return;
+		}
+		if (signal.aborted) {
+			return;
+		}
 		const answer: ChunkAnswer =
 			attempt.next === "SEND"
 				? await putChunk(importId, file, attempt.offset, chunkBytes)
@@ -204,7 +213,9 @@ async function send(
 							params: { path: { id: importId } },
 						}),
 					);
-		if (signal.aborted) return;
+		if (signal.aborted) {
+			return;
+		}
 		step = nextStep(answer, attempt, file.size);
 	}
 	if (step.next === "PAUSE") {
@@ -221,7 +232,9 @@ async function send(
 	// The server's row takes over once read, so the stale one never shows in between.
 	forgetRecord(importId);
 	await settle();
-	if (!signal.aborted) publish(null);
+	if (!signal.aborted) {
+		publish(null);
+	}
 }
 
 export function resumeUpload() {
@@ -249,7 +262,9 @@ export function useStartImport() {
 		}) => {
 			const { data, error, response } =
 				await auth.client.POST("/api/v1/me/imports");
-			if (data === undefined) throw new AccountRefusal(error, response.status);
+			if (data === undefined) {
+				throw new AccountRefusal(error, response.status);
+			}
 			writeRecord(data.id, file);
 			dropUpload();
 			void send(
@@ -288,13 +303,16 @@ export function useCancelImport() {
 			const { response } = await auth.client.DELETE("/api/v1/me/imports/{id}", {
 				params: { path: { id } },
 			});
-			if (!response.ok)
+			if (!response.ok) {
 				throw new Error(`The API kept the import: ${response.status}.`);
+			}
 		},
 		// The upload runs on until the row that replaces it is read, so a refused cancel leaves it be.
 		onSettled: async (_, error) => {
 			await queryClient.invalidateQueries({ queryKey: LATEST });
-			if (error === null) dropUpload();
+			if (error === null) {
+				dropUpload();
+			}
 		},
 	});
 }

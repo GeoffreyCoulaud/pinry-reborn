@@ -36,8 +36,9 @@ function account(
 		}),
 		http.delete("/api/v1/pins", async ({ request }) => {
 			const body = (await request.json()) as { pinIds: string[] };
-			if (refusal !== undefined)
+			if (refusal !== undefined) {
 				return new HttpResponse(null, { status: refusal });
+			}
 			record.deleted.push(body);
 			bin.push(...pins.filter((pin) => body.pinIds.includes(pin.id)));
 			return new HttpResponse(null, { status: 204 });

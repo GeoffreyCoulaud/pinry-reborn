@@ -38,7 +38,9 @@ export function SearchField({
 			setTyped(term ?? "");
 			return;
 		}
-		if (asked === term) return;
+		if (asked === term) {
+			return;
+		}
 		written.current = asked;
 		void navigate({
 			to: ".",

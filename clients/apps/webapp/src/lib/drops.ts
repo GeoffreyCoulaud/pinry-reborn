@@ -60,7 +60,9 @@ export function withDrop(
 	drop: DropPartition,
 ): PinEntry[] {
 	const arriving = entriesOf(drop);
-	if (arriving.length > 1) return [...entries, ...arriving];
+	if (arriving.length > 1) {
+		return [...entries, ...arriving];
+	}
 	return entries.map((entry, at) =>
 		at === current ? corrected(entry, arriving) : entry,
 	);
@@ -86,7 +88,8 @@ export function partitionDrop(
 	const kept = urls.filter((_, at) => typeof verdicts[at] !== "string");
 	// A drop that kept nothing and that nothing above speaks for is the `blob:` a browser tab hands
 	// over: no file to name, and no address a server could fetch.
-	if (files.length === 0 && kept.length === 0 && refusals.length === 0)
+	if (files.length === 0 && kept.length === 0 && refusals.length === 0) {
 		refusals.push("UNSUPPORTED_DROP");
+	}
 	return { files, urls: kept, refusals };
 }

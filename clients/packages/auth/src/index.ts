@@ -57,20 +57,20 @@ export interface Auth {
 	 */
 	readonly client: ApiClient;
 	/** Creates the account and opens its first session, so a fresh instance signs the user in once. */
-	signUp(credentials: Credentials, rememberMe?: boolean): Promise<Session>;
-	signIn(credentials: Credentials, rememberMe?: boolean): Promise<Session>;
-	signOut(): Promise<void>;
+	signUp: (credentials: Credentials, rememberMe?: boolean) => Promise<Session>;
+	signIn: (credentials: Credentials, rememberMe?: boolean) => Promise<Session>;
+	signOut: () => Promise<void>;
 	/**
 	 * Stops believing in the session, and calls nothing: the API has already revoked it. Left out
 	 * after such a write, the middleware below spends a renewal on the next request
 	 * (specification 2026-09-22, decision E).
 	 */
-	forget(): void;
+	forget: () => void;
 	/**
 	 * The session the request already carries, or null when the API answers `401`. Any other
 	 * refusal throws: a deployment that is briefly unreachable has not ended the session.
 	 */
-	currentSession(): Promise<Session | null>;
+	currentSession: () => Promise<Session | null>;
 }
 
 const UNAUTHORISED = 401;
@@ -84,10 +84,13 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
 
 	client.use({
 		async onRequest({ request, schemaPath }) {
-			if (schemaPath !== RENEWAL) await renewIfDue();
+			if (schemaPath !== RENEWAL) {
+				await renewIfDue();
+			}
 			// After the renewal, never before: a bearer renewal answers a new token.
-			if (token !== undefined)
+			if (token !== undefined) {
 				request.headers.set("Authorization", `Bearer ${token}`);
+			}
 			return request;
 		},
 	});
@@ -99,13 +102,17 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
 			| Schemas["CreatedSessionOutputDto"]
 			| Schemas["ExistingSessionOutputDto"],
 	): Session {
-		if ("token" in session) token = session.token;
+		if ("token" in session) {
+			token = session.token;
+		}
 		renewAfter = session.renewAfter;
 		return { expiresAt: session.expiresAt, renewAfter: session.renewAfter };
 	}
 
 	async function renewIfDue(): Promise<void> {
-		if (renewAfter === undefined || Date.parse(renewAfter) > Date.now()) return;
+		if (renewAfter === undefined || Date.parse(renewAfter) > Date.now()) {
+			return;
+		}
 		// Shared, a page load leaving with several calls at once; swallowed, only the API's 401 ending a session.
 		renewal ??= renew().finally(() => (renewal = undefined));
 		await renewal.catch(() => {});
@@ -113,8 +120,9 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
 
 	async function renew(): Promise<Session> {
 		const { data, response } = await client.POST(RENEWAL);
-		if (data === undefined)
+		if (data === undefined) {
 			throw new Error(`The API refused the renewal: ${response.status}.`);
+		}
 		return adopt(data);
 	}
 
@@ -125,8 +133,9 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
 		const { data, response } = await client.POST("/api/v1/sessions", {
 			body: { ...credentials, transport, rememberMe },
 		});
-		if (data === undefined)
+		if (data === undefined) {
 			throw new Error(`The API refused the session: ${response.status}.`);
+		}
 		return adopt(data);
 	}
 
@@ -142,8 +151,9 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
 			const { data, response } = await client.POST("/api/v1/users", {
 				body: credentials,
 			});
-			if (data === undefined)
+			if (data === undefined) {
 				throw new Error(`The API refused the account: ${response.status}.`);
+			}
 			return openSession(credentials, rememberMe);
 		},
 		signIn: (credentials, rememberMe = false) =>
@@ -160,9 +170,12 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
 			// Only a 401 is an answer about the session. openapi-fetch leaves `data` undefined for a
 			// 500 or a 503 just as readily, and reading those as no session signs the user out on a
 			// failure the next request would survive.
-			if (response.status === UNAUTHORISED) return null;
-			if (data === undefined)
+			if (response.status === UNAUTHORISED) {
+				return null;
+			}
+			if (data === undefined) {
 				throw new Error(`The API refused the session: ${response.status}.`);
+			}
 			return adopt(data);
 		},
 	};

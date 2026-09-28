@@ -15,7 +15,8 @@ export function bodyOf<T>(
 	answer: { data?: T; response: Response },
 	what: string,
 ): T {
-	if (answer.data === undefined)
+	if (answer.data === undefined) {
 		throw new Error(`The API refused ${what}: ${answer.response.status}.`);
+	}
 	return answer.data;
 }

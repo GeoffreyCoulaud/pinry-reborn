@@ -59,7 +59,9 @@ function openTheAccount(rows: unknown[] = []) {
 			const offset = Number(new URL(request.url).searchParams.get("offset"));
 			const put = { offset, body: await request.text() };
 			puts.push(put);
-			if (offset === 4 && !reloaded) return new Promise<Response>(() => {});
+			if (offset === 4 && !reloaded) {
+				return new Promise<Response>(() => {});
+			}
 			return holding(
 				importRow("AWAITING_ARCHIVE", {
 					uploadedBytes: offset + put.body.length,

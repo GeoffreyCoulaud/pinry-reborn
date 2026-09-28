@@ -15,7 +15,10 @@ export type BoardInput = Schemas["BoardInputDto"];
 type BoardCreation = Schemas["BoardCreationInputDto"];
 
 /** The pins a gesture files under one board, or takes out of it, in one call (ADR 0039). */
-type Membership = { boardId: string; pinIds: readonly string[] };
+interface Membership {
+	boardId: string;
+	pinIds: readonly string[];
+}
 
 const BOARDS = ["boards"];
 
@@ -46,8 +49,9 @@ function saved(answer: {
 	error?: unknown;
 	response: Response;
 }): Board {
-	if (answer.data === undefined)
+	if (answer.data === undefined) {
 		throw new BoardRefusal(answer.error, answer.response.status);
+	}
 	return answer.data;
 }
 
@@ -102,8 +106,9 @@ export function useDeleteBoard() {
 		const { response } = await auth.client.DELETE("/api/v1/boards/{boardId}", {
 			params: { path: { boardId } },
 		});
-		if (!response.ok)
+		if (!response.ok) {
 			throw new Error(`The API kept the board: ${response.status}.`);
+		}
 	});
 }
 
@@ -123,8 +128,9 @@ export function useAddPinsToBoard() {
 					body: { pinIds: [...pinIds] },
 				},
 			);
-			if (!response.ok)
+			if (!response.ok) {
 				throw new Error(`The API filed nothing: ${response.status}.`);
+			}
 			await queryClient.invalidateQueries({ queryKey: catalogueOf(boardId) });
 			await queryClient.invalidateQueries({ queryKey: BOARDS });
 		},
@@ -146,8 +152,9 @@ export function useRemovePinsFromBoard() {
 					body: { pinIds: [...pinIds] },
 				},
 			);
-			if (!response.ok)
+			if (!response.ok) {
 				throw new Error(`The API took nothing out: ${response.status}.`);
+			}
 			queryClient.setQueriesData<InfiniteData<PinPage>>(
 				{ queryKey: catalogueOf(boardId) },
 				(catalogue) =>

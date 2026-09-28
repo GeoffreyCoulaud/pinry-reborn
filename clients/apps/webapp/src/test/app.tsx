@@ -193,14 +193,18 @@ export function boardRoutes(boards: Board[]) {
 		http.put("/api/v1/boards/:boardId", async ({ request, params }) => {
 			const index = at(params.boardId);
 			const held = boards[index];
-			if (held === undefined) return new HttpResponse(null, { status: 404 });
+			if (held === undefined) {
+				return new HttpResponse(null, { status: 404 });
+			}
 			const saved = { ...held, ...((await request.json()) as BoardInput) };
 			boards[index] = saved;
 			return HttpResponse.json(saved);
 		}),
 		http.delete("/api/v1/boards/:boardId", ({ params }) => {
 			const index = at(params.boardId);
-			if (index < 0) return new HttpResponse(null, { status: 404 });
+			if (index < 0) {
+				return new HttpResponse(null, { status: 404 });
+			}
 			boards.splice(index, 1);
 			return new HttpResponse(null, { status: 204 });
 		}),

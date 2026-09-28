@@ -70,7 +70,7 @@ function BoardRow({ board, rename }: { board: Board; rename: () => void }) {
 function BoardList({ rename }: { rename: (board: Board) => void }) {
 	const boards = useBoards();
 
-	if (boards.isPending)
+	if (boards.isPending) {
 		return (
 			<div
 				role="status"
@@ -81,8 +81,11 @@ function BoardList({ rename }: { rename: (board: Board) => void }) {
 				{m.boards_loading()}
 			</div>
 		);
-	if (boards.isError) return <p role="alert">{m.boards_unreadable()}</p>;
-	if (boards.data.length === 0)
+	}
+	if (boards.isError) {
+		return <p role="alert">{m.boards_unreadable()}</p>;
+	}
+	if (boards.data.length === 0) {
 		return (
 			<EmptyState
 				role="status"
@@ -91,6 +94,7 @@ function BoardList({ rename }: { rename: (board: Board) => void }) {
 				{m.boards_empty()}
 			</EmptyState>
 		);
+	}
 
 	return (
 		<GridList
