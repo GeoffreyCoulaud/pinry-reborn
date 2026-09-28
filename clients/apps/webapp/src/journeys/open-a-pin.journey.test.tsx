@@ -28,9 +28,13 @@ describe("open a pin", () => {
     await user.click(await screen.findByRole("img", { name: opened.description }))
 
     const dialog = await screen.findByRole("dialog")
+    // The original, under the rendition the grid drew, which a column jsdom measures at 0 px makes the small one.
     const image = within(dialog).getByRole("img", { name: opened.description })
-    // The medium rendition is smaller than the side the image now fills.
-    expect(image).toHaveAttribute("src", `/api/v1/pins/${opened.id}/image?size=LARGE`)
+    expect(image).toHaveAttribute("src", `/api/v1/pins/${opened.id}/image`)
+    expect(dialog.querySelector('img[alt=""]')).toHaveAttribute(
+      "src",
+      `/api/v1/pins/${opened.id}/image?size=SMALL`,
+    )
     // The page the pin was found on, named by its host and opened beside the application.
     const source = within(dialog).getByRole("link", { name: "photos.example.test" })
     expect(source).toHaveAttribute("href", opened.sourceContextUrl)
@@ -39,6 +43,27 @@ describe("open a pin", () => {
     expect(within(dialog).getByRole("link", { name: "Evenings" })).toHaveAttribute(
       "href",
       `/boards/${boardId}`,
+    )
+  })
+
+  it("Given a grid drawn at the medium rendition, Then the pin loads under that one", async () => {
+    const opened = readyPin("a harbour at dusk")
+    // A small rendition under 0 px is what makes a column jsdom measures at 0 px ask for the medium one.
+    server.use(
+      sessionRoute(() => true),
+      pinsRoute([[opened]]),
+      downloadsRoute(),
+      handshakeRoute({ small: -1 }),
+    )
+    renderApp("/")
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole("img", { name: opened.description }))
+
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog.querySelector('img[alt=""]')).toHaveAttribute(
+      "src",
+      `/api/v1/pins/${opened.id}/image?size=MEDIUM`,
     )
   })
 

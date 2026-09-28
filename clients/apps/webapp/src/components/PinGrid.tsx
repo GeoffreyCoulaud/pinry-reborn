@@ -1,7 +1,7 @@
 import { Button, Chip, Dropdown, EmptyState, Modal, Spinner, toast } from "@heroui/react"
 import { Link } from "@tanstack/react-router"
 import { Pencil, Trash2, X } from "lucide-react"
-import { useLayoutEffect, useRef, useState, type RefObject } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
 import {
   Collection,
   GridList,
@@ -15,7 +15,13 @@ import { useAddPinsToBoard, useBoards, useRemovePinsFromBoard } from "../boards"
 import { downloadReason, retriable } from "../downloadReasons"
 import { useHandshake, useSetPinImage } from "../images"
 import type { PinSort } from "../lib/sorts"
-import { placeableTiles, renditionForColumn, tileAspectRatio, tileImageSource } from "../lib/tiles"
+import {
+  placeableTiles,
+  renditionForColumn,
+  tileAspectRatio,
+  tileImageSource,
+  type Rendition,
+} from "../lib/tiles"
 import { m } from "../paraglide/messages.js"
 import { useRecyclePins, usePins, type Pin } from "../pins"
 import { BoardForm } from "./BoardForm"
@@ -50,12 +56,22 @@ function useColumnWidth(ref: RefObject<HTMLElement | null>): number {
  * The tile carries its ratio so the layout measures it at its true height on the first pass and
  * its column settles once, before a byte of the image arrives (specification 2026-09-10, 4.7).
  */
-function Tile({ pin, smallRenditionPx }: { pin: Pin; smallRenditionPx?: number }) {
+function Tile({
+  pin,
+  smallRenditionPx,
+  onRendition,
+}: {
+  pin: Pin
+  smallRenditionPx?: number
+  onRendition: (rendition: Rendition) => void
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const columnWidth = useColumnWidth(ref)
   const image = pin.image
   const ratio = { aspectRatio: tileAspectRatio(image?.width, image?.height) }
   const rendition = renditionForColumn(columnWidth, window.devicePixelRatio, smallRenditionPx)
+  // Every column is as wide, so the viewer loads under the rendition any tile chose.
+  useEffect(() => onRendition(rendition), [onRendition, rendition])
 
   return (
     <div ref={ref} className="w-full">
@@ -79,19 +95,63 @@ function Tile({ pin, smallRenditionPx }: { pin: Pin; smallRenditionPx?: number }
   )
 }
 
+/**
+ * The original in a box of the size it is drawn at, its own or less to fit, never more. The grid's
+ * rendition fills that box until the original arrives, from the cache when its tile was drawn.
+ */
+function OriginalImage({
+  url,
+  width,
+  height,
+  alt,
+  placeholder,
+}: {
+  url: string
+  width: number
+  height: number
+  alt: string
+  placeholder: Rendition
+}) {
+  const [loaded, setLoaded] = useState(false)
+  const size = {
+    aspectRatio: `${width} / ${height}`,
+    width: `min(${width}px, 100%, calc(var(--fit-height) * ${width / height}))`,
+  }
+
+  return (
+    <div className="relative" style={size}>
+      {!loaded && (
+        <img src={tileImageSource(url, placeholder)} alt="" className="absolute inset-0 h-full w-full" />
+      )}
+      {/* Transparent rather than hidden until it loads: Firefox draws the alt text over the placeholder. */}
+      <img
+        src={url}
+        alt={alt}
+        onLoad={() => setLoaded(true)}
+        className={`absolute inset-0 h-full w-full ${loaded ? "" : "opacity-0"}`}
+      />
+    </div>
+  )
+}
+
 /** The image side: the picture, or what stands in its place (specification 2026-09-27, decision C). */
-function PinImage({ pin }: { pin: Pin }) {
+function PinImage({ pin, placeholder }: { pin: Pin; placeholder: Rendition }) {
   const retry = useSetPinImage()
   const image = pin.image
   const address = pin.sourceMediaUrl
 
   if (image?.status === "READY" && image.url != null)
-    return (
-      <img
-        src={tileImageSource(image.url, "LARGE")}
+    return image.width != null && image.height != null ? (
+      <OriginalImage
+        key={image.url}
+        url={image.url}
+        width={image.width}
+        height={image.height}
         alt={pin.description}
-        className="h-full w-full object-contain max-lg:max-h-[70dvh]"
+        placeholder={placeholder}
       />
+    ) : (
+      <img src={image.url} alt={pin.description} className="max-h-full max-w-full max-lg:max-h-[70dvh]" />
     )
   if (image?.status === "PENDING")
     return (
@@ -194,7 +254,7 @@ function PinDetails({ pin, close, edit }: { pin: Pin; close: () => void; edit: (
  * The image beside its details from `lg`, stacked below it (specification 2026-09-27, decision A).
  * Edit still swaps the whole dialog for the form (specification 2026-09-20, decision K).
  */
-function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
+function PinDialog({ pin, close, placeholder }: { pin: Pin; close: () => void; placeholder: Rendition }) {
   const [editing, setEditing] = useState(false)
 
   if (editing)
@@ -208,8 +268,9 @@ function PinDialog({ pin, close }: { pin: Pin; close: () => void }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto lg:flex-row lg:overflow-hidden">
-      <div className="flex items-center justify-center lg:min-w-0 lg:flex-1">
-        <PinImage pin={pin} />
+      {/* The height the image fits in: its own side from `lg`, a share of the screen once stacked. */}
+      <div className="flex items-center justify-center [--fit-height:70dvh] lg:min-w-0 lg:flex-1 lg:[--fit-height:100cqh] lg:[container-type:size]">
+        <PinImage pin={pin} placeholder={placeholder} />
       </div>
       <PinDetails pin={pin} close={close} edit={() => setEditing(true)} />
     </div>
@@ -323,6 +384,7 @@ export function PinGrid({
   // lowered in the configuration would otherwise upscale every tile (specification 4.3).
   const renditionSizes = useHandshake().data?.renditionSizes
   const [openedId, setOpenedId] = useState<string | null>(null)
+  const [rendition, setRendition] = useState<Rendition>("SMALL")
   const loaded = pins.data?.pages.flatMap((page) => page.pins) ?? []
   const tiles = placeableTiles(loaded)
   // Among every loaded pin, so a retried download that turns it `PENDING` keeps it open (decision E).
@@ -379,7 +441,7 @@ export function PinGrid({
                 className="group rounded data-selected:ring-4 data-selected:ring-accent data-selected:after:pointer-events-none data-selected:after:absolute data-selected:after:inset-0 data-selected:after:rounded data-selected:after:bg-accent/25"
               >
                 <SelectionTick shown={selecting} className="absolute start-2 top-2 z-10" />
-                <Tile pin={pin} smallRenditionPx={renditionSizes?.small} />
+                <Tile pin={pin} smallRenditionPx={renditionSizes?.small} onRendition={setRendition} />
               </GridListItem>
             )}
           </Collection>
@@ -406,7 +468,9 @@ export function PinGrid({
             both the margin and the corners (specification 2026-09-27, decision A). */}
         <Modal.Container size="cover" scroll="inside" className="max-sm:p-0">
           <Modal.Dialog aria-label={opened?.description} className="max-sm:rounded-none">
-            {opened && <PinDialog pin={opened} close={() => setOpenedId(null)} />}
+            {opened && (
+              <PinDialog pin={opened} close={() => setOpenedId(null)} placeholder={rendition} />
+            )}
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>
