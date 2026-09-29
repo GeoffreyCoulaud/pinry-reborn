@@ -181,7 +181,7 @@ export function Account() {
 			</AppHeader>
 			{/* A read that failed is named, as every other screen names its own: a plausible heading
           over a password form about to fail for the same reason says nothing. */}
-			{me.isError && <p role="alert">{m.account_unreadable()}</p>}
+			{me.isError ? <p role="alert">{m.account_unreadable()}</p> : null}
 			<PasswordForm />
 			<ExportSection />
 			<ImportSection />

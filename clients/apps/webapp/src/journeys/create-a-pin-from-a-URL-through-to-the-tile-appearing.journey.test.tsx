@@ -49,7 +49,9 @@ describe("create a pin from a URL through to the tile appearing", () => {
 		server.use(
 			sessionRoute(() => true),
 			handshakeRoute(),
-			pinsRoute([[bare]], () => (pageRequests += 1)),
+			pinsRoute([[bare]], () => {
+				pageRequests += 1;
+			}),
 			http.get("/api/v1/pins/:pinId", () => HttpResponse.json(ready)),
 			http.post("/api/v1/pins", async ({ request }) => {
 				sent = (await request.json()) as Record<string, unknown>;

@@ -62,7 +62,7 @@ function CredentialsForm({
 						{m.remember_me()}
 					</Checkbox.Content>
 				</Checkbox>
-				{session.isError && <p role="alert">{refusal}</p>}
+				{session.isError ? <p role="alert">{refusal}</p> : null}
 				<Button type="submit" isDisabled={session.isPending}>
 					{title}
 				</Button>

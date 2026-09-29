@@ -153,7 +153,9 @@ describe("step through the grid from a pin", () => {
 		const first = readyPin("a harbour at dusk");
 		const second = readyPin("a cat asleep");
 		let answer = () => {};
-		const held = new Promise<void>((resolve) => (answer = resolve));
+		const held = new Promise<void>((resolve) => {
+			answer = resolve;
+		});
 		const cursors: (string | null)[] = [];
 		server.use(
 			sessionRoute(() => true),

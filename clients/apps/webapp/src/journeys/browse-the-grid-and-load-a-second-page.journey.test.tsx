@@ -81,7 +81,12 @@ describe("browse the grid and load a second page", () => {
 			sessionRoute(() => true),
 			pinsRoute([[ready]]),
 			downloadsRoute(),
-			handshakeRoute({ small: 120, onRequest: () => (asked += 1) }),
+			handshakeRoute({
+				small: 120,
+				onRequest: () => {
+					asked += 1;
+				},
+			}),
 		);
 
 		renderApp("/");

@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { toast } from "@heroui/react";
 import { cleanup, configure } from "@testing-library/react";
 import { afterAll, afterEach } from "vitest";
+import { ReachedSentinelObserver } from "./ReachedSentinelObserver";
 import { server } from "./server";
 
 // Testing Library waits one second for a query by default, which the gate's loaded container
@@ -20,24 +21,6 @@ server.listen({ onUnhandledRequest: "error" });
 // jsdom implements no IntersectionObserver, and the grid's load-more sentinel is one. The stub
 // reports the sentinel as reached, which is what react-aria's own infinite viewport under test
 // already makes every tile: a journey therefore accumulates every page its catalogue serves.
-class ReachedSentinelObserver implements IntersectionObserver {
-	readonly root = null;
-	readonly rootMargin = "";
-	readonly scrollMargin = "";
-	readonly thresholds: readonly number[] = [];
-	constructor(private readonly reached: IntersectionObserverCallback) {}
-	observe(target: Element) {
-		this.reached(
-			[{ isIntersecting: true, target } as IntersectionObserverEntry],
-			this,
-		);
-	}
-	unobserve() {}
-	disconnect() {}
-	takeRecords(): IntersectionObserverEntry[] {
-		return [];
-	}
-}
 globalThis.IntersectionObserver = ReachedSentinelObserver;
 
 // jsdom implements no Web Animations API, and react-aria reads the animations of the element it

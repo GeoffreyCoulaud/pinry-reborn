@@ -58,7 +58,7 @@ below is the operator's of 2026-09-28, in Discuss.
    | Rule | Why | Scope or option |
    |---|---|---|
    | `noLeakedRender` | `{count && <X/>}` renders `0` | |
-   | `useUniqueElementIds` | A literal `id` repeats when the component does | |
+   | `useUniqueElementIds` | A literal `id` repeats when the component does | (Corrected: `excludedComponents: ["ToggleButton", "Tab", "Panel"]`, react-aria's `id` there being a collection key and not a DOM id; the operator's answer of 2026-09-29 in block 40.) |
    | `noShadow` | A name hiding another reads as the same value | |
    | `useArraySortCompare` | `.sort()` compares numbers as strings | |
    | `noReturnAssign` | An assignment hidden in a return | |
@@ -69,8 +69,8 @@ below is the operator's of 2026-09-28, in Discuss.
    | `noUnnecessaryConditions` | A condition always true or always false | Its one site today is a false positive, a variable a later statement sets before the handler reading it runs (`sign-out.journey.test.tsx:52`), excepted under decision 6. The operator keeps the rule and excepts its false positives |
    | `useConsistentMethodSignatures` | A method signature is checked bivariantly, a property signature strictly | |
    | `noParameterProperties` | Syntax a type stripper cannot erase | |
-   | `noJsxLiterals` | Text written in JSX escapes the catalogues | |
-   | `noNoninteractiveElementInteractions` | Accessibility | |
+   | `noJsxLiterals` | Text written in JSX escapes the catalogues | (Corrected: `allowedStrings: ["·", "/"]`, punctuation being no text to translate; the operator's answer of 2026-09-29 in block 40.) |
+   | `noNoninteractiveElementInteractions` | Accessibility | (Corrected: `ImageDropBox.tsx` is excepted, with the reason its existing `noStaticElementInteractions` exception gives; the operator's answer of 2026-09-29 in block 40.) |
    | `noNestedTernary` | Nested ternaries read badly | |
    | `noNegationElse` | A positive condition reads first | |
    | `useMaxParams` | Past four, a named object reads better | |

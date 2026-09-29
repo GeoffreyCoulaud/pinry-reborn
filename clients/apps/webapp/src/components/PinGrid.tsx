@@ -46,11 +46,12 @@ import {
 } from "../lib/tiles";
 import { m } from "../paraglide/messages.js";
 import { type Pin, usePins, useRecyclePins } from "../pins";
+import { useSelection } from "../selection";
 import { BoardForm } from "./BoardForm";
 import { IconButton } from "./IconButton";
 import { PinEditForm } from "./PinEditForm";
 import { PinSides } from "./PinSides";
-import { SelectionBar, SelectionTick, useSelection } from "./SelectionBar";
+import { SelectionBar, SelectionTick } from "./SelectionBar";
 
 /**
  * Every bound here is finite, and two of them have to be. `WaterfallLayout` reads the scroll
@@ -251,7 +252,7 @@ function PinImage({
 						{m.retry()}
 					</Button>
 				)}
-				{retry.isError && <p role="alert">{m.image_refused()}</p>}
+				{retry.isError ? <p role="alert">{m.image_refused()}</p> : null}
 			</div>
 		);
 	}
@@ -301,7 +302,7 @@ function PinDetails({
 			</div>
 			<p>{pin.description}</p>
 			<dl className="flex flex-col gap-4 [&_dt]:mb-1 [&_dt]:text-sm [&_dt]:text-muted">
-				{source && (
+				{source ? (
 					<div>
 						<dt>{m.source_page()}</dt>
 						<dd>
@@ -315,7 +316,7 @@ function PinDetails({
 							</a>
 						</dd>
 					</div>
-				)}
+				) : null}
 				{pin.tags.length > 0 && (
 					<div>
 						<dt>{m.tags()}</dt>
@@ -569,6 +570,15 @@ function PinGestures({
 	);
 }
 
+/** The neighbours' placeholder and never their original, so a step shows an image at once (decision F). */
+function preloadNeighbours(around: (Pin | undefined)[], rendition: Rendition) {
+	for (const neighbour of around) {
+		if (neighbour?.image?.url) {
+			preload(tileImageSource(neighbour.image.url, rendition), { as: "image" });
+		}
+	}
+}
+
 /**
  * The catalogue as tiles, or one board's share of it. The home screen and a board's screen render
  * the same grid; what surrounds it, the drop that creates a pin included, is the screen's own.
@@ -611,19 +621,11 @@ export function PinGrid({
 			setOpenedId((current) => (current === from ? arrived.id : current));
 		}
 	};
-	// The neighbours' placeholder and never their original, so a step shows an image at once (decision F).
-	for (const neighbour of opened ? [previous, next] : []) {
-		if (neighbour?.image?.url) {
-			preload(tileImageSource(neighbour.image.url, rendition), { as: "image" });
-		}
-	}
+	preloadNeighbours(opened ? [previous, next] : [], rendition);
 	const stepToPrevious = previous ? () => setOpenedId(previous.id) : undefined;
 	const canFetch = pins.hasNextPage && !pins.isFetchingNextPage;
-	const stepToNext = next
-		? () => setOpenedId(next.id)
-		: canFetch
-			? () => void fetchThenStep()
-			: undefined;
+	const fetchStep = canFetch ? () => void fetchThenStep() : undefined;
+	const stepToNext = next ? () => setOpenedId(next.id) : fetchStep;
 
 	// Neither a first load nor an account with nothing in it draws a tile, and both said so with
 	// a blank rectangle until now.

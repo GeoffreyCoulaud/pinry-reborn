@@ -206,7 +206,7 @@ function CreatePinForm({
 			<Field name="description" label={m.description()} />
 			{/* Never required: a file from disk and a direct image address both name no page. */}
 			<Field name="sourceContextUrl" type="url" label={m.source_page()} />
-			{create.isError && <p role="alert">{m.creation_refused()}</p>}
+			{create.isError ? <p role="alert">{m.creation_refused()}</p> : null}
 			<div className="flex justify-end gap-2">
 				{/* Two verbs, two effects on the counter: `Remove` empties this entry and leaves it where
             it is, `Ignore` abandons it and moves on. */}
@@ -249,12 +249,12 @@ export function CreatePinDialog({
 					<Modal.Heading level={2} className="mb-3 pe-8">
 						{m.create_pin()}
 					</Modal.Heading>
-					{isOpen && (
+					{isOpen ? (
 						<CreatePinForm
 							dropped={dropped}
 							close={() => onOpenChange(false)}
 						/>
-					)}
+					) : null}
 				</Modal.Dialog>
 			</Modal.Container>
 		</Modal.Backdrop>

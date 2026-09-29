@@ -18,8 +18,21 @@ import {
 	type UploadStep,
 } from "./lib/imports";
 import { AccountRefusal } from "./me";
+import { m } from "./paraglide/messages.js";
+import { getLocale } from "./paraglide/runtime.js";
 
 export type Import = Schemas["UserDataImportOutputDto"];
+
+/** How far a running import is, which the task centre shows as well. */
+export function importProgress(row: Import): string {
+	const count = new Intl.NumberFormat(getLocale());
+	return row.announcedPins === null
+		? m.import_starting()
+		: m.import_running({
+				processed: count.format(row.processedPins),
+				announced: count.format(row.announcedPins),
+			});
+}
 
 /** The upload in this tab: bytes sent, and whether it sends, waits on the user, or was refused. */
 export interface Upload {
@@ -125,7 +138,9 @@ export function useImportIssues(id: string) {
 // The store lives above the router, so changing screen leaves the upload running.
 let upload: Upload | null = null;
 let controller = new AbortController();
-let resume = () => {};
+let resume = () => {
+	// Nothing to resume until an upload pauses.
+};
 const listeners = new Set<() => void>();
 
 /** The browser shows its own sentence whatever the page sets (MDN, `beforeunload` event). */
@@ -184,13 +199,16 @@ function putChunk(id: string, file: File, offset: number, chunkBytes: number) {
 	);
 }
 
-async function send(
-	importId: string,
-	file: File,
-	chunkBytes: number,
-	from: Attempt,
-	settle: () => Promise<unknown>,
-) {
+/** What an upload holds from its first chunk to its last. */
+interface Transfer {
+	importId: string;
+	file: File;
+	chunkBytes: number;
+	settle: () => Promise<unknown>;
+}
+
+async function send(transfer: Transfer, from: Attempt) {
+	const { importId, file, chunkBytes, settle } = transfer;
 	const { signal } = controller;
 	let attempt = from;
 	let step: UploadStep = from;
@@ -220,7 +238,7 @@ async function send(
 	}
 	if (step.next === "PAUSE") {
 		const paused = { ...attempt, failures: 0 };
-		resume = () => void send(importId, file, chunkBytes, paused, settle);
+		resume = () => void send(transfer, paused);
 		publish({ importId, file, sent, state: "PAUSED", code: null });
 		return;
 	}
@@ -268,11 +286,8 @@ export function useStartImport() {
 			writeRecord(data.id, file);
 			dropUpload();
 			void send(
-				data.id,
-				file,
-				chunkBytes,
+				{ importId: data.id, file, chunkBytes, settle },
 				{ next: "SEND", offset: 0, failures: 0 },
-				settle,
 			);
 		},
 		onSuccess: settle,
@@ -290,7 +305,7 @@ export function useResumeImport() {
 			offset: row.uploadedBytes,
 			failures: 0,
 		} as const;
-		void send(row.id, file, chunkBytes, from, settle);
+		void send({ importId: row.id, file, chunkBytes, settle }, from);
 	};
 }
 

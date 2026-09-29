@@ -19,7 +19,9 @@ describe("session renewal", () => {
 		let renewals = 0;
 		server.use(
 			sessionRoute(() => true, DUE_SESSION),
-			renewRoute(() => (renewals += 1)),
+			renewRoute(() => {
+				renewals += 1;
+			}),
 			pinsRoute([[ready]]),
 			downloadsRoute(),
 			handshakeRoute(),

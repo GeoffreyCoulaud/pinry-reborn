@@ -34,7 +34,9 @@ export function Board() {
 				<AppNav />
 				{!unknown && <SortSelect value={sort} values={PIN_SORTS} />}
 			</AppHeader>
-			{board?.description && <p className="text-muted">{board.description}</p>}
+			{board?.description ? (
+				<p className="text-muted">{board.description}</p>
+			) : null}
 			{/* Full bleed: the scrollbar belongs to the viewport edge, not inside the shell's padding. */}
 			<div className="-mx-4 min-h-0 flex-1">
 				{unknown ? (

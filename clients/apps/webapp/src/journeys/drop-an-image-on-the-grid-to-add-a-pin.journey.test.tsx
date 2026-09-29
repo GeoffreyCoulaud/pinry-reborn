@@ -116,11 +116,12 @@ describe("drop an image on the grid to add a pin", () => {
 		let decoded = () => {};
 		const bitmap = { width: 100, height: 100, close: () => {} } as ImageBitmap;
 		// Wallpapers take seconds to decode, which the drop would otherwise spend saying nothing.
-		const decode = vi
-			.spyOn(globalThis, "createImageBitmap")
-			.mockImplementation(
-				() => new Promise((resolve) => (decoded = () => resolve(bitmap))),
-			);
+		const decode = vi.spyOn(globalThis, "createImageBitmap").mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					decoded = () => resolve(bitmap);
+				}),
+		);
 		onTestFinished(() => decode.mockRestore());
 
 		renderApp("/");

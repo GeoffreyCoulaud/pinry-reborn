@@ -146,7 +146,7 @@ async function afterRetries(check: () => void) {
 /** The page asks before closing when a listener cancels `beforeunload`. */
 function pageHeldOnUnload() {
 	const event = new Event("beforeunload", { cancelable: true });
-	window.dispatchEvent(event);
+	globalThis.dispatchEvent(event);
 	return event.defaultPrevented;
 }
 

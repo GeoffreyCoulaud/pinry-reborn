@@ -21,7 +21,7 @@ function stored(): ThemePreference {
 function paint(preference: ThemePreference): void {
 	document.documentElement.dataset.theme = resolveTheme(
 		preference,
-		window.matchMedia(DARK).matches,
+		globalThis.matchMedia(DARK).matches,
 	);
 }
 
@@ -36,7 +36,7 @@ export function useTheme() {
 	// The machine's own theme still moves under a `system` preference, and only a listener sees it.
 	useEffect(() => {
 		paint(preference);
-		const media = window.matchMedia(DARK);
+		const media = globalThis.matchMedia(DARK);
 		const follow = () => paint(preference);
 		media.addEventListener("change", follow);
 		return () => media.removeEventListener("change", follow);

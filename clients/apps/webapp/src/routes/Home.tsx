@@ -34,11 +34,11 @@ export function Home() {
 	 */
 	useEffect(() => {
 		const cancel = (event: DragEvent) => event.preventDefault();
-		window.addEventListener("dragover", cancel);
-		window.addEventListener("drop", cancel);
+		globalThis.addEventListener("dragover", cancel);
+		globalThis.addEventListener("drop", cancel);
 		return () => {
-			window.removeEventListener("dragover", cancel);
-			window.removeEventListener("drop", cancel);
+			globalThis.removeEventListener("dragover", cancel);
+			globalThis.removeEventListener("drop", cancel);
 		};
 	}, []);
 
@@ -77,13 +77,13 @@ export function Home() {
 				setCreating(true);
 			});
 		};
-		window.addEventListener("dragenter", enter);
-		window.addEventListener("dragleave", leave);
-		window.addEventListener("drop", drop);
+		globalThis.addEventListener("dragenter", enter);
+		globalThis.addEventListener("dragleave", leave);
+		globalThis.addEventListener("drop", drop);
 		return () => {
-			window.removeEventListener("dragenter", enter);
-			window.removeEventListener("dragleave", leave);
-			window.removeEventListener("drop", drop);
+			globalThis.removeEventListener("dragenter", enter);
+			globalThis.removeEventListener("dragleave", leave);
+			globalThis.removeEventListener("drop", drop);
 			setDepth(0);
 		};
 	}, [creating]);
