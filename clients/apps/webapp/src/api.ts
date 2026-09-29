@@ -7,7 +7,7 @@ import { createAuth } from "@pinry-reborn/auth";
  */
 export const auth = createAuth({
 	transport: "COOKIE",
-	baseUrl: window.location.origin,
+	baseUrl: globalThis.location.origin,
 });
 
 /** The body the API answered, or the refusal that says it answered something else. */

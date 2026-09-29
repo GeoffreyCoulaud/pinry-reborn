@@ -19,14 +19,14 @@ import { server } from "../test/server";
 /** Where the picture was found. The server stores it on an upload too, and never fetches it. */
 const FOUND_AT = "https://example.test/harbour.png";
 
-const A_PICTURE = () => new File(["ok"], "harbour.png", { type: "image/png" });
+const aPicture = () => new File(["ok"], "harbour.png", { type: "image/png" });
 
 /** The pin's image state, rebuilt rather than spread: the field is optional on the pin. */
 function imageOf(
-	pin: Pin,
+	shown: Pin,
 	change: Partial<NonNullable<Pin["image"]>>,
 ): Pin["image"] {
-	return { status: "READY", url: `/api/v1/pins/${pin.id}/image`, ...change };
+	return { status: "READY", url: `/api/v1/pins/${shown.id}/image`, ...change };
 }
 
 /** What each write carried, in the order the two arrived: the pin's body, then the image's. */
@@ -43,16 +43,16 @@ function recorder() {
  * one route every image option calls. A file answers `201`, an address `202`.
  */
 function account(
-	pin: () => Pin,
+	current: () => Pin,
 	record: ReturnType<typeof recorder>,
 	{
-		reread = pin,
+		reread = current,
 		imageStatus = 202,
 	}: { reread?: () => Pin; imageStatus?: number } = {},
 ) {
 	server.use(
 		sessionRoute(() => true),
-		onePinPage(() => [pin()]),
+		onePinPage(() => [current()]),
 		http.put("/api/v1/pins/:pinId", async ({ request }) => {
 			record.written.push({
 				pin: (await request.json()) as { sourceMediaUrl: string | null },
@@ -125,7 +125,7 @@ describe("replace a pin's image with a file", () => {
 		await user.click(imageChoice(dialog, m.image_from_file()));
 		await user.upload(
 			within(dialog).getByLabelText(m.drop_image()),
-			A_PICTURE(),
+			aPicture(),
 		);
 		// Chosen and not sent: nothing reaches the server until the pin is saved.
 		expect(await within(dialog).findByText("harbour.png")).toBeVisible();

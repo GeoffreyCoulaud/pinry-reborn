@@ -13,7 +13,7 @@ import { m } from "./paraglide/messages.js";
 import { Account } from "./routes/Account";
 import { Board } from "./routes/Board";
 import { Boards } from "./routes/Boards";
-import { SignIn, SignUp } from "./routes/Credentials";
+import { SignIn, SignUp } from "./routes/credentials";
 import { Home } from "./routes/Home";
 import { Recycled } from "./routes/Recycled";
 import { useSession } from "./session";

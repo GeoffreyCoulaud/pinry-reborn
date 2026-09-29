@@ -12,6 +12,7 @@ import { importRefusal } from "../dataRefusals";
 import { useHandshake } from "../images";
 import {
 	type Import,
+	importProgress,
 	importRecord,
 	resumeUpload,
 	type Upload,
@@ -64,7 +65,7 @@ function CancelImport({ id }: { id: string }) {
 					</AlertDialog.Container>
 				</AlertDialog.Backdrop>
 			</AlertDialog>
-			{cancel.isError && <p role="alert">{m.account_refused()}</p>}
+			{cancel.isError ? <p role="alert">{m.account_refused()}</p> : null}
 		</>
 	);
 }
@@ -120,7 +121,7 @@ function ChooseArchive() {
 					}
 				}}
 			/>
-			{tooLarge && <p role="alert">{m.import_too_large()}</p>}
+			{tooLarge ? <p role="alert">{m.import_too_large()}</p> : null}
 			{start.error !== null && (
 				<p role="alert">
 					{importRefusal(
@@ -210,22 +211,11 @@ function Awaiting({ row }: { row: Import }) {
 				/>
 				<CancelImport id={row.id} />
 			</div>
-			{other && (
+			{other ? (
 				<p role="alert">{m.import_not_the_file({ name: record.name })}</p>
-			)}
+			) : null}
 		</>
 	);
-}
-
-/** How far a running import is, which the task centre shows as well. */
-export function importProgress(row: Import): string {
-	const count = new Intl.NumberFormat(getLocale());
-	return row.announcedPins === null
-		? m.import_starting()
-		: m.import_running({
-				processed: count.format(row.processedPins),
-				announced: count.format(row.announcedPins),
-			});
 }
 
 function Running({ row }: { row: Import }) {
@@ -307,6 +297,16 @@ const VIEWS: Record<Import["state"], (row: Import) => ReactNode> = {
 	ABANDONED: () => <ChooseArchive />,
 };
 
+function latestView(latest: ReturnType<typeof useLatestImport>): ReactNode {
+	if (!latest.isSuccess) {
+		return null;
+	}
+	if (latest.data === null) {
+		return <ChooseArchive />;
+	}
+	return VIEWS[latest.data.state](latest.data);
+}
+
 /** The latest import only, and the upload this tab holds, which outlives the screen. */
 export function ImportSection() {
 	const latest = useLatestImport();
@@ -316,17 +316,8 @@ export function ImportSection() {
 		<section className="flex flex-col items-start gap-2">
 			<h3 className="text-lg font-semibold">{m.import_heading()}</h3>
 			<p className="text-muted">{m.import_note()}</p>
-			{latest.isError && <p role="alert">{m.import_unreadable()}</p>}
-			{upload === null ? (
-				latest.isSuccess &&
-				(latest.data === null ? (
-					<ChooseArchive />
-				) : (
-					VIEWS[latest.data.state](latest.data)
-				))
-			) : (
-				<Uploading upload={upload} />
-			)}
+			{latest.isError ? <p role="alert">{m.import_unreadable()}</p> : null}
+			{upload === null ? latestView(latest) : <Uploading upload={upload} />}
 		</section>
 	);
 }

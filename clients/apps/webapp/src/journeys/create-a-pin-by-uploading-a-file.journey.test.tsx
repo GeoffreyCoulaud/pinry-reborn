@@ -286,7 +286,9 @@ describe("create a pin by uploading a file", () => {
 	it("Given limits that arrive after the file, Then the refusal takes the file with it", async () => {
 		const user = userEvent.setup();
 		let publish = () => {};
-		const published = new Promise<void>((resolve) => (publish = resolve));
+		const published = new Promise<void>((resolve) => {
+			publish = resolve;
+		});
 		server.use(
 			sessionRoute(() => true),
 			downloadsRoute(),

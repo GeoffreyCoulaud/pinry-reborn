@@ -63,7 +63,9 @@ describe("an upload and an export surfacing in the task centre", () => {
 				const offset = Number(new URL(request.url).searchParams.get("offset"));
 				// The second chunk waits, so the upload is caught running.
 				if (offset > 0) {
-					await new Promise<void>((open) => (gate = open));
+					await new Promise<void>((open) => {
+						gate = open;
+					});
 				}
 				return HttpResponse.json(
 					importRow("AWAITING_ARCHIVE", { uploadedBytes: offset + 4 }),

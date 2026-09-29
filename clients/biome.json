@@ -13,14 +13,22 @@
 				"useMaxParams": "error"
 			},
 			"correctness": {
-				"useUniqueElementIds": "error"
+				"useUniqueElementIds": {
+					"level": "error",
+					"options": {
+						"excludedComponents": ["ToggleButton", "Tab", "Panel"]
+					}
+				}
 			},
 			"style": {
 				"useComponentExportOnlyModules": "error",
 				"useBlockStatements": "error",
 				"useConsistentMethodSignatures": "error",
 				"noParameterProperties": "error",
-				"noJsxLiterals": "error",
+				"noJsxLiterals": {
+					"level": "error",
+					"options": { "allowedStrings": ["·", "/"] }
+				},
 				"noNestedTernary": "error",
 				"noNegationElse": "error",
 				"useConsistentTypeDefinitions": "error",

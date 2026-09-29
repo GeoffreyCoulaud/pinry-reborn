@@ -24,11 +24,11 @@ const HARBOURS = board("Harbours");
  * browser's language, and it only lands once a component of react-aria's is mounted to hear it.
  */
 function theBrowserSwitchesTo(language: string) {
-	Object.defineProperty(window.navigator, "language", {
+	Object.defineProperty(globalThis.navigator, "language", {
 		value: language,
 		configurable: true,
 	});
-	window.dispatchEvent(new Event("languagechange"));
+	globalThis.dispatchEvent(new Event("languagechange"));
 }
 
 describe("the application's own locale", () => {

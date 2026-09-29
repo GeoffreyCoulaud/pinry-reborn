@@ -10,14 +10,15 @@ import type { ReactNode } from "react";
 import { exportFailure } from "../dataFailures";
 import { exportRefusal } from "../dataRefusals";
 import {
+	downloadHref,
 	type Export,
+	exportReadiness,
 	useDeleteExport,
 	useLatestExport,
 	useRequestExport,
 } from "../exports";
 import { AccountRefusal } from "../me";
 import { m } from "../paraglide/messages.js";
-import { getLocale } from "../paraglide/runtime.js";
 
 /** The password in a dialog, as deleting the account asks it: `X-Reauthentication` requires it. */
 function RequestExport() {
@@ -80,23 +81,6 @@ function RequestExport() {
 	);
 }
 
-/** The archive's size and expiry, which the task centre's notice repeats. */
-export function exportReadiness(row: Export): string {
-	const size = new Intl.NumberFormat(getLocale(), {
-		style: "unit",
-		unit: "megabyte",
-		maximumSignificantDigits: 3,
-	}).format((row.byteSize ?? 0) / 1_000_000);
-	const date = new Intl.DateTimeFormat(getLocale(), {
-		dateStyle: "long",
-	}).format(new Date(row.expiresAt ?? row.requestedAt));
-	return m.export_ready({ size, date });
-}
-
-/** A plain link: the cookie authenticates it, and the browser streams the archive to disk. */
-export const downloadHref = (row: Export) =>
-	`/api/v1/me/exports/${row.id}/download`;
-
 function ReadyExport({ row }: { row: Export }) {
 	const remove = useDeleteExport();
 
@@ -115,7 +99,7 @@ function ReadyExport({ row }: { row: Export }) {
 					{m.export_delete()}
 				</Button>
 			</div>
-			{remove.isError && <p role="alert">{m.account_refused()}</p>}
+			{remove.isError ? <p role="alert">{m.account_refused()}</p> : null}
 		</>
 	);
 }
@@ -133,6 +117,16 @@ const VIEWS: Record<Export["state"], (row: Export) => ReactNode> = {
 	GONE: () => <RequestExport />,
 };
 
+function latestView(latest: ReturnType<typeof useLatestExport>): ReactNode {
+	if (!latest.isSuccess) {
+		return null;
+	}
+	if (latest.data === null) {
+		return <RequestExport />;
+	}
+	return VIEWS[latest.data.state](latest.data);
+}
+
 /** The latest export only, with no history (specification 2026-09-25, decision J). */
 export function ExportSection() {
 	const latest = useLatestExport();
@@ -141,13 +135,8 @@ export function ExportSection() {
 		<section className="flex flex-col items-start gap-2">
 			<h3 className="text-lg font-semibold">{m.export_heading()}</h3>
 			<p className="text-muted">{m.export_note()}</p>
-			{latest.isError && <p role="alert">{m.export_unreadable()}</p>}
-			{latest.isSuccess &&
-				(latest.data === null ? (
-					<RequestExport />
-				) : (
-					VIEWS[latest.data.state](latest.data)
-				))}
+			{latest.isError ? <p role="alert">{m.export_unreadable()}</p> : null}
+			{latestView(latest)}
 		</section>
 	);
 }

@@ -8,8 +8,8 @@ import {
 	useSetPinImage,
 } from "../images";
 import { m } from "../paraglide/messages.js";
-import { useDataTasks } from "./DataTasks";
 import { IconButton } from "./IconButton";
+import { useDataTasks } from "./useDataTasks";
 
 /** A failed download offers what question V exists for: the same address again if it can pass, or a file. */
 function Task({ download }: { download: Download }) {
@@ -67,8 +67,8 @@ function Task({ download }: { download: Download }) {
 				</div>
 			)}
 			{/* A refused action is silent otherwise, which is what the creation screen already avoids. */}
-			{setImage.isError && <p role="alert">{m.image_refused()}</p>}
-			{drop.isError && <p role="alert">{m.dismissal_refused()}</p>}
+			{setImage.isError ? <p role="alert">{m.image_refused()}</p> : null}
+			{drop.isError ? <p role="alert">{m.dismissal_refused()}</p> : null}
 		</li>
 	);
 }

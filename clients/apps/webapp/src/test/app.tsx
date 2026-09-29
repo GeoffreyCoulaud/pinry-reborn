@@ -51,11 +51,11 @@ export function renewRoute(onRequest: () => void = () => {}) {
 }
 
 const AUTHOR_ID = "0f5c6e58-2d6c-4a3a-9c1f-2a1f6b6d4f11";
-let pinCount = 0;
+let pinsMade = 0;
 
 /** A pin the journey names by its description, which the tile reads as the image's text. */
 export function pin(description: string, image: Pin["image"] = null): Pin {
-	const id = `${AUTHOR_ID.slice(0, -2)}${(pinCount++).toString().padStart(2, "0")}`;
+	const id = `${AUTHOR_ID.slice(0, -2)}${(pinsMade++).toString().padStart(2, "0")}`;
 	return {
 		id,
 		authorId: AUTHOR_ID,

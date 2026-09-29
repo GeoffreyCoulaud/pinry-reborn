@@ -113,9 +113,13 @@ export function createAuth({ transport, baseUrl }: AuthOptions): Auth {
 		if (renewAfter === undefined || Date.parse(renewAfter) > Date.now()) {
 			return;
 		}
-		// Shared, a page load leaving with several calls at once; swallowed, only the API's 401 ending a session.
-		renewal ??= renew().finally(() => (renewal = undefined));
-		await renewal.catch(() => {});
+		// Shared, a page load leaving with several calls at once.
+		renewal ??= renew().finally(() => {
+			renewal = undefined;
+		});
+		await renewal.catch(() => {
+			// Swallowed: only the API's 401 ends a session.
+		});
 	}
 
 	async function renew(): Promise<Session> {

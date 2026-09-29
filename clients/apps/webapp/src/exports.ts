@@ -4,8 +4,27 @@ import { auth, bodyOf } from "./api";
 import { POLL_MS } from "./lib/downloads";
 import { passwordFactor } from "./lib/reauthentication";
 import { AccountRefusal } from "./me";
+import { m } from "./paraglide/messages.js";
+import { getLocale } from "./paraglide/runtime.js";
 
 export type Export = Schemas["UserDataExportOutputDto"];
+
+/** The archive's size and expiry, which the task centre's notice repeats. */
+export function exportReadiness(row: Export): string {
+	const size = new Intl.NumberFormat(getLocale(), {
+		style: "unit",
+		unit: "megabyte",
+		maximumSignificantDigits: 3,
+	}).format((row.byteSize ?? 0) / 1_000_000);
+	const date = new Intl.DateTimeFormat(getLocale(), {
+		dateStyle: "long",
+	}).format(new Date(row.expiresAt ?? row.requestedAt));
+	return m.export_ready({ size, date });
+}
+
+/** A plain link: the cookie authenticates it, and the browser streams the archive to disk. */
+export const downloadHref = (row: Export) =>
+	`/api/v1/me/exports/${row.id}/download`;
 
 const LATEST = ["exports", "latest"];
 

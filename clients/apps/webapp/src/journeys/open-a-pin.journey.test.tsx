@@ -100,7 +100,9 @@ describe("open a pin", () => {
 	it("Given an original still decoding, Then the grid's rendition stays and a spinner says so", async () => {
 		let decoded = () => {};
 		vi.spyOn(HTMLImageElement.prototype, "decode").mockReturnValue(
-			new Promise<void>((resolve) => (decoded = resolve)),
+			new Promise<void>((resolve) => {
+				decoded = resolve;
+			}),
 		);
 		const dialog = await openThe(readyPin("a harbour at dusk"));
 

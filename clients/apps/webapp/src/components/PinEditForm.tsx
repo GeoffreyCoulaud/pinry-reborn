@@ -159,6 +159,18 @@ function FilePreview({ file }: { file: File }) {
 	);
 }
 
+/** Either choice with nothing to apply would save as though the image were being kept. */
+function isIncomplete(
+	intent: ImageIntent,
+	chosen: KeptFile | null,
+	address: string,
+): boolean {
+	return (
+		(intent === "replace" && chosen === null) ||
+		(intent === "fetch" && address.trim() === "")
+	);
+}
+
 /**
  * What edits a pin is a set of fields in the column, and one choice made on the image
  * (specification 2026-09-27, decisions G and H). Every field is sent on every save: the route
@@ -213,10 +225,7 @@ export function PinEditForm({
 		return null;
 	}
 
-	// Either choice with nothing to apply would save as though the image were being kept.
-	const incomplete =
-		(intent === "replace" && chosen === null) ||
-		(intent === "fetch" && address.trim() === "");
+	const incomplete = isIncomplete(intent, chosen, address);
 
 	return (
 		<PinSides
@@ -355,8 +364,8 @@ export function PinEditForm({
 					<BoardField ids={boardIds} onChange={setBoardIds} />
 					{/* Two halves, two sentences: the pin is written before its image, so a refused image
               leaves the fields saved and only the image to try again. */}
-					{save.isError && <p role="alert">{m.pin_refused()}</p>}
-					{setImage.isError && <p role="alert">{m.image_refused()}</p>}
+					{save.isError ? <p role="alert">{m.pin_refused()}</p> : null}
+					{setImage.isError ? <p role="alert">{m.image_refused()}</p> : null}
 					{/* At the column's foot while the fields scroll above it. */}
 					<div className="sticky bottom-0 mt-auto flex justify-end gap-2 bg-overlay py-2">
 						<Button variant="ghost" onPress={close}>

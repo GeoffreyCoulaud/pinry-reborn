@@ -11,9 +11,9 @@ function Issues({ row }: { row: Import }) {
 
 	return (
 		<div className="flex flex-col items-start gap-3">
-			{row.issueDetailTruncated && (
+			{row.issueDetailTruncated ? (
 				<p className="text-muted">{m.import_issues_truncated({ count })}</p>
-			)}
+			) : null}
 			<ul className="flex w-full flex-col gap-3">
 				{issues.data?.pages
 					.flatMap((page) => page.issues)
@@ -33,9 +33,11 @@ function Issues({ row }: { row: Import }) {
 						</li>
 					))}
 			</ul>
-			{issues.isPending && <Spinner aria-label={m.import_issues_loading()} />}
-			{issues.isError && <p role="alert">{m.import_unreadable()}</p>}
-			{issues.hasNextPage && (
+			{issues.isPending ? (
+				<Spinner aria-label={m.import_issues_loading()} />
+			) : null}
+			{issues.isError ? <p role="alert">{m.import_unreadable()}</p> : null}
+			{issues.hasNextPage ? (
 				<Button
 					variant="secondary"
 					isDisabled={issues.isFetchingNextPage}
@@ -43,7 +45,7 @@ function Issues({ row }: { row: Import }) {
 				>
 					{m.import_issues_more()}
 				</Button>
-			)}
+			) : null}
 		</div>
 	);
 }

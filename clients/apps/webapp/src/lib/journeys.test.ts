@@ -14,8 +14,9 @@ describe("the journey list", () => {
 	});
 
 	it("Given the journey list, Then src/journeys holds one test per journey and no other", () => {
-		expect(present.toSorted()).toEqual(
-			REQUIRED_JOURNEYS.map(journeyTestFile).toSorted(),
+		const byName = (a: string, b: string) => a.localeCompare(b);
+		expect(present.toSorted(byName)).toEqual(
+			REQUIRED_JOURNEYS.map(journeyTestFile).toSorted(byName),
 		);
 	});
 });

@@ -51,6 +51,7 @@ describe("sign out", () => {
 		server.use(
 			sessionRoute(() => open),
 			http.get("/api/v1/pins", async () => {
+				// biome-ignore lint/suspicious/noUnnecessaryConditions: a later statement sets it before this handler runs
 				if (holding) {
 					await held;
 				}

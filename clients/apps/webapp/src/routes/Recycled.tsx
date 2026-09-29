@@ -18,11 +18,7 @@ import {
 import { AppHeader } from "../components/AppHeader";
 import { AppNav } from "../components/AppNav";
 import { IconButton } from "../components/IconButton";
-import {
-	SelectionBar,
-	SelectionTick,
-	useSelection,
-} from "../components/SelectionBar";
+import { SelectionBar, SelectionTick } from "../components/SelectionBar";
 import { SortSelect } from "../components/SortSelect";
 import { RECYCLED_PIN_SORTS, type RecycledPinSort } from "../lib/sorts";
 import { tileImageSource } from "../lib/tiles";
@@ -37,6 +33,7 @@ import {
 	useRestoreBoards,
 	useRestorePins,
 } from "../recycled";
+import { useSelection } from "../selection";
 
 /** `group` is what the row's own tick hangs its reveal on hover and on focus off. */
 const ROW =
@@ -199,13 +196,13 @@ function RecycledPins({ sort }: { sort: RecycledPinSort }) {
 							>
 								<SelectionTick shown={selection.ids.length > 0} />
 								{/* Decorative: the description beside it is the row's own name. */}
-								{pin.image?.url && (
+								{pin.image?.url ? (
 									<img
 										src={tileImageSource(pin.image.url, "SMALL")}
 										alt=""
 										className="size-12 shrink-0 rounded object-cover"
 									/>
-								)}
+								) : null}
 								<span className="min-w-0 flex-1 truncate">
 									{pin.description}
 								</span>
