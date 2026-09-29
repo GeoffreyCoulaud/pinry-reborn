@@ -5,7 +5,7 @@ Date: 2026-09-28
 Specification: `docs/specs/2026-09-28-knip-and-biome-keep-the-clients-clean.md`.
 Written in block 10.
 Supersedes: the linter of `docs/specs/2026-09-10-web-application.md`, its tooling table, ESLint with its
-recommended sets.
+recommended sets; and the tool of `docs/adr/0027-the-web-application-stack.md` decision 4, dependency-cruiser.
 
 ## Context
 
@@ -32,7 +32,9 @@ below is the operator's of 2026-09-28, in Discuss.
    counterpart sits outside Biome's recommended preset is turned on: `noUnusedExpressions` for
    `no-unused-expressions`. Of the eight rules `biome migrate eslint --include-inspired` reports as not implemented,
    five are covered otherwise: `no-delete-var` and `no-octal` are syntax errors in a module, `tsc` refuses
-   `no-new-symbol`'s case, the formatter exposes `no-unexpected-multiline`'s. Three are lost:
+   `no-new-symbol`'s case, the formatter exposes `no-unexpected-multiline`'s. (Corrected:
+   `@typescript-eslint/no-unused-expressions` by `noUnusedExpressions` above, and those four more otherwise; the
+   holistic review of 2026-09-29.) Three are lost:
    - `no-invalid-regexp`, which checks only a literal pattern given to `new RegExp`, and every one here is a variable;
    - `@typescript-eslint/triple-slash-reference`, with no triple-slash directive in the code;
    - `no-useless-assignment`, a value overwritten before it is read, which neither `tsc` nor Biome sees. The
