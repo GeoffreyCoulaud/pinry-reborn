@@ -1,0 +1,4 @@
+# Commits that only reformat, skipped by `git blame` (see AGENTS.md, Setup).
+
+# Biome formats the clients (lot 0.44.0, block 30)
+23d1567df090e9ba7af5c2141740dc38761d35f9
