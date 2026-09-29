@@ -144,7 +144,10 @@ removal.
 ### Block 50: `PinGrid.tsx` splits by concern
 
 - **Does**: `noExcessiveLinesPerFile` on, off for `**/*.test.*` and `src/test/**`. `PinGrid.tsx` splits along
-  section 2's four concerns.
+  section 2's four concerns. (Corrected: `useSwipe`, `useArrowKeys` and `SWIPE_PX` go with `PinDialog`, their one
+  reader, and `PinGestures`, the selection bar's, takes its own file. `imports.ts`, 261 lines on `main`, reached 330 by
+  the rule's count after blocks 30 and 40, so its five query hooks also move unchanged to `importQueries.ts`: the
+  operator's "reco ok" of 2026-09-29, twice.)
 - **Moves code without changing it**: `git diff --color-moved=plain --color-moved-ws=allow-indentation-change` leaves
   no line uncoloured but imports and exports, and the report gives that count.
 - **Reads headless**, both themes: a pin opened, then stepped to the next, screenshots before and after.
