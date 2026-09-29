@@ -89,7 +89,7 @@ export function PinGestures({
 					</Modal.Dialog>
 				</Modal.Container>
 			</Modal.Backdrop>
-			{boardId !== undefined && (
+			{boardId === undefined ? null : (
 				<Button
 					variant="outline"
 					isDisabled={remove.isPending}

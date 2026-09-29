@@ -78,7 +78,7 @@ export function BoardForm({
 				label={m.description()}
 				defaultValue={board?.description ?? ""}
 			/>
-			{refusal !== null && (
+			{refusal === null ? null : (
 				<p role="alert">
 					{refusal instanceof BoardRefusal && refusal.nameTaken
 						? m.board_name_taken()

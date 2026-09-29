@@ -29,10 +29,10 @@ export function Board() {
 		<main className="flex h-screen flex-col gap-4 px-4 pt-4">
 			<AppHeader
 				heading={heading}
-				search={!unknown && <SearchField term={q} boardName={heading} />}
+				search={unknown ? null : <SearchField term={q} boardName={heading} />}
 			>
 				<AppNav />
-				{!unknown && <SortSelect value={sort} values={PIN_SORTS} />}
+				{unknown ? null : <SortSelect value={sort} values={PIN_SORTS} />}
 			</AppHeader>
 			{board?.description ? (
 				<p className="text-muted">{board.description}</p>

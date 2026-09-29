@@ -22,12 +22,12 @@ function Issues({ row }: { row: Import }) {
 						<li key={issue.id} className="flex flex-col">
 							<span className="text-foreground">{importIssue(issue.kind)}</span>
 							<span className="flex flex-wrap gap-x-3 text-sm text-muted">
-								{issue.line !== null && (
+								{issue.line === null ? null : (
 									<span>
 										{m.import_issue_line({ line: String(issue.line) })}
 									</span>
 								)}
-								{issue.subject !== null && (
+								{issue.subject === null ? null : (
 									<span className="break-all">{issue.subject}</span>
 								)}
 							</span>

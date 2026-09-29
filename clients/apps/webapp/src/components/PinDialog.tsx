@@ -69,7 +69,7 @@ function PinDetails({
 						</dd>
 					</div>
 				) : null}
-				{pin.tags.length > 0 && (
+				{pin.tags.length > 0 ? (
 					<div>
 						<dt>{m.tags()}</dt>
 						<dd className="flex flex-wrap gap-2">
@@ -78,8 +78,8 @@ function PinDetails({
 							))}
 						</dd>
 					</div>
-				)}
-				{pin.boards.length > 0 && (
+				) : null}
+				{pin.boards.length > 0 ? (
 					<div>
 						<dt>{m.boards()}</dt>
 						<dd className="flex flex-col items-start gap-1">
@@ -95,7 +95,7 @@ function PinDetails({
 							))}
 						</dd>
 					</div>
-				)}
+				) : null}
 			</dl>
 		</>
 	);

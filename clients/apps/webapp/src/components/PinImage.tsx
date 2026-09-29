@@ -52,7 +52,7 @@ function OriginalImage({
 
 	return (
 		<div className="relative" style={size}>
-			{state !== "decoded" && (
+			{state === "decoded" ? null : (
 				<img
 					src={tileImageSource(url, placeholder)}
 					alt=""
@@ -66,11 +66,11 @@ function OriginalImage({
 				alt={alt}
 				className={`absolute inset-0 h-full w-full ${state === "decoded" ? "" : "opacity-0"}`}
 			/>
-			{state === "loading" && slow && (
+			{state === "loading" && slow ? (
 				<span className="absolute end-2 bottom-2 flex rounded-full bg-overlay p-1 shadow-surface">
 					<Spinner size="sm" aria-label={m.image_original_loading()} />
 				</span>
-			)}
+			) : null}
 		</div>
 	);
 }
@@ -123,7 +123,7 @@ export function PinImage({
 			<div className="flex flex-col items-center gap-3 text-center">
 				<p>{downloadReason(image.reasonCode, image.message)}</p>
 				{/* From the pin's own address, which the user may have corrected since the download failed. */}
-				{retries && retriable(image.reasonCode) && address != null && (
+				{retries && retriable(image.reasonCode) && address != null ? (
 					<Button
 						isDisabled={retry.isPending}
 						onPress={() =>
@@ -132,7 +132,7 @@ export function PinImage({
 					>
 						{m.retry()}
 					</Button>
-				)}
+				) : null}
 				{retry.isError ? <p role="alert">{m.image_refused()}</p> : null}
 			</div>
 		);

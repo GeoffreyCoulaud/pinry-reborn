@@ -64,7 +64,7 @@ function TagField({
 					}}
 				/>
 			</TextField>
-			{names.length > 0 && (
+			{names.length > 0 ? (
 				<TagGroup
 					aria-label={m.tags_chosen()}
 					onRemove={(keys) => onChange(names.filter((name) => !keys.has(name)))}
@@ -78,10 +78,10 @@ function TagField({
 						)}
 					</TagGroup.List>
 				</TagGroup>
-			)}
+			) : null}
 			{/* Last, and outlined: a suggestion appears and goes as the user types, so it moves nothing
           above it, and a chip that reads as flat text is one nobody presses. */}
-			{offered.length > 0 && (
+			{offered.length > 0 ? (
 				<ul className="flex flex-wrap gap-2">
 					{offered.map((name) => (
 						<li key={name}>
@@ -91,7 +91,7 @@ function TagField({
 						</li>
 					))}
 				</ul>
-			)}
+			) : null}
 		</div>
 	);
 }
@@ -148,15 +148,13 @@ function FilePreview({ file }: { file: File }) {
 	}, [file]);
 
 	// A file not sent yet is not the pin, so it takes no name of the pin's.
-	return (
-		preview && (
-			<img
-				src={preview}
-				alt=""
-				className="min-h-0 w-full flex-1 object-contain"
-			/>
-		)
-	);
+	return preview ? (
+		<img
+			src={preview}
+			alt=""
+			className="min-h-0 w-full flex-1 object-contain"
+		/>
+	) : null;
 }
 
 /** Either choice with nothing to apply would save as though the image were being kept. */
@@ -248,9 +246,9 @@ export function PinEditForm({
 							{m.image_from_address()}
 						</ToggleButton>
 					</ToggleButtonGroup>
-					{intent === "fetch" && (
+					{intent === "fetch" ? (
 						<div className="w-full max-w-md">{addressField}</div>
-					)}
+					) : null}
 					{intent === "replace" ? (
 						<div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-2 text-center">
 							{chosen === null ? (
@@ -284,9 +282,9 @@ export function PinEditForm({
 							{image}
 						</div>
 					)}
-					{intent === "fetch" && (
+					{intent === "fetch" ? (
 						<p className="text-sm text-muted">{m.image_fetched_on_save()}</p>
-					)}
+					) : null}
 				</div>
 			}
 			column={
@@ -333,14 +331,14 @@ export function PinEditForm({
 					</h2>
 					{/* The sub-state the contract has carried since before any client read it: the pin keeps
               the image it has while the server downloads the one asked for. */}
-					{replacement?.status === "PENDING" && (
+					{replacement?.status === "PENDING" ? (
 						<p role="status">{m.image_replacing()}</p>
-					)}
-					{replacement?.status === "FAILED" && (
+					) : null}
+					{replacement?.status === "FAILED" ? (
 						<p role="alert">
 							{downloadReason(replacement.reasonCode, replacement.message)}
 						</p>
-					)}
+					) : null}
 					{/* `secondary` on every control: the default variant takes the dialog's own colour in the dark theme. */}
 					<TextField
 						name="description"
@@ -359,6 +357,7 @@ export function PinEditForm({
 						<Label>{m.source_page()}</Label>
 						<Input />
 					</TextField>
+					{/* Not a ternary: `noNegationElse` inverts it, and `noLeakedRender` refuses a variable as the else. */}
 					{intent !== "fetch" && addressField}
 					<TagField names={tags} onChange={setTags} />
 					<BoardField ids={boardIds} onChange={setBoardIds} />

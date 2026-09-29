@@ -54,7 +54,7 @@ function RequestExport() {
 										<Label>{m.password()}</Label>
 										<Input />
 									</TextField>
-									{request.error !== null && (
+									{request.error === null ? null : (
 										<p role="alert">
 											{exportRefusal(
 												request.error instanceof AccountRefusal
