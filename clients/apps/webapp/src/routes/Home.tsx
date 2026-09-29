@@ -117,11 +117,11 @@ export function Home() {
 				</div>
 				{/* Fixed to the viewport, `<main>` scrolling away under the page, and `pointer-events-none`
             so an overlay appearing under the pointer fires no exit at the screen it never left. */}
-				{depth > 0 && (
+				{depth > 0 ? (
 					<div className="pointer-events-none fixed inset-0 grid place-content-center border-2 border-dashed border-accent bg-background/80 text-lg">
 						{m.drop_to_add()}
 					</div>
-				)}
+				) : null}
 			</main>
 			<CreatePinDialog
 				isOpen={creating}

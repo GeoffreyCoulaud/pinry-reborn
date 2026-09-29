@@ -106,7 +106,7 @@ function Tile({
 	);
 }
 
-/** The neighbours' placeholder and never their original, so a step shows an image at once (decision F). */
+/** The neighbours' placeholder and never their original, so a step shows an image at once. */
 function preloadNeighbours(around: (Pin | undefined)[], rendition: Rendition) {
 	for (const neighbour of around) {
 		if (neighbour?.image?.url) {
@@ -265,7 +265,7 @@ export function PinGrid({
 						aria-label={opened?.description}
 						className="max-sm:rounded-none"
 					>
-						{opened && (
+						{opened ? (
 							<PinDialog
 								pin={opened}
 								close={() => setOpenedId(null)}
@@ -273,7 +273,7 @@ export function PinGrid({
 								previous={stepToPrevious}
 								next={stepToNext}
 							/>
-						)}
+						) : null}
 					</Modal.Dialog>
 				</Modal.Container>
 			</Modal.Backdrop>

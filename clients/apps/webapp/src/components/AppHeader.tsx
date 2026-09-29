@@ -27,7 +27,7 @@ export function AppHeader({
 						{m.app_name()}
 					</Link>
 				</h1>
-				{heading !== undefined && (
+				{heading === undefined ? null : (
 					<>
 						<span aria-hidden className="text-2xl text-muted">
 							·

@@ -66,7 +66,7 @@ export function SearchField({
 			</SearchFieldRoot>
 			{/* Underlined at rest: nothing else says this one is a link, the bar's other ways out
           being icons and this one carrying no colour of its own. */}
-			{boardName !== undefined && term !== undefined && (
+			{boardName !== undefined && term !== undefined ? (
 				<Link
 					to="/"
 					search={{ q: term }}
@@ -74,7 +74,7 @@ export function SearchField({
 				>
 					{m.search_everywhere()}
 				</Link>
-			)}
+			) : null}
 		</div>
 	);
 }

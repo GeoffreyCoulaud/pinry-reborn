@@ -135,7 +135,7 @@ export function Boards() {
 								? m.create_board()
 								: m.rename_board({ name: edited.name })}
 						</Modal.Heading>
-						{edited !== null && (
+						{edited === null ? null : (
 							<BoardForm edited={edited} close={() => setEdited(null)} />
 						)}
 					</Modal.Dialog>

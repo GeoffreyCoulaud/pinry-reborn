@@ -92,7 +92,7 @@ function PasswordForm() {
 					label={m.new_password()}
 					autoComplete="new-password"
 				/>
-				{change.error !== null && <Refusal error={change.error} />}
+				{change.error === null ? null : <Refusal error={change.error} />}
 				<Button
 					type="submit"
 					className="self-start"
@@ -141,7 +141,9 @@ function DeleteAccount() {
 										autoComplete="current-password"
 										inDialog
 									/>
-									{remove.error !== null && <Refusal error={remove.error} />}
+									{remove.error === null ? null : (
+										<Refusal error={remove.error} />
+									)}
 								</AlertDialog.Body>
 								<AlertDialog.Footer>
 									<Button variant="ghost" onPress={close}>

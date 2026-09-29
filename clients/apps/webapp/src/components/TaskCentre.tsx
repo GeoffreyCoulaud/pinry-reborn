@@ -24,10 +24,10 @@ function Task({ download }: { download: Download }) {
 				{failed ? m.task_failed() : m.task_running()}
 			</span>
 			<span className="truncate text-sm opacity-70">{download.sourceUrl}</span>
-			{reason !== null && <span className="text-sm">{reason}</span>}
-			{failed && (
+			{reason === null ? null : <span className="text-sm">{reason}</span>}
+			{failed ? (
 				<div className="flex flex-wrap items-center gap-2">
-					{retriable(download.reasonCode) && (
+					{retriable(download.reasonCode) ? (
 						<Button
 							size="sm"
 							onPress={() =>
@@ -39,7 +39,7 @@ function Task({ download }: { download: Download }) {
 						>
 							{m.retry()}
 						</Button>
-					)}
+					) : null}
 					{/* A file picker is no HeroUI control, so the label borrows the variant instead. */}
 					<label
 						className={buttonVariants({ variant: "secondary", size: "sm" })}
@@ -65,7 +65,7 @@ function Task({ download }: { download: Download }) {
 						{m.dismiss()}
 					</Button>
 				</div>
-			)}
+			) : null}
 			{/* A refused action is silent otherwise, which is what the creation screen already avoids. */}
 			{setImage.isError ? <p role="alert">{m.image_refused()}</p> : null}
 			{drop.isError ? <p role="alert">{m.dismissal_refused()}</p> : null}
@@ -91,9 +91,9 @@ export function TaskCentre() {
 			<Badge.Anchor>
 				<IconButton icon={ArrowDownUp} name={label} variant="ghost" />
 				{/* The name above already carries the count; a badge read as well would say it twice. */}
-				{count > 0 && (
+				{count > 0 ? (
 					<Badge aria-hidden>{`${count}${partial ? "+" : ""}`}</Badge>
-				)}
+				) : null}
 			</Badge.Anchor>
 			{/* Narrower than a phone's width, or the popover sits flush against its right edge. */}
 			<Popover.Content className="max-w-[min(24rem,calc(100vw-1.5rem))]">

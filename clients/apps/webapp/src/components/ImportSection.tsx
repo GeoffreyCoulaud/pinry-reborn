@@ -124,7 +124,7 @@ function ChooseArchive() {
 				}}
 			/>
 			{tooLarge ? <p role="alert">{m.import_too_large()}</p> : null}
-			{start.error !== null && (
+			{start.error === null ? null : (
 				<p role="alert">
 					{importRefusal(
 						start.error instanceof AccountRefusal ? start.error.code : null,
@@ -150,15 +150,15 @@ export function UploadProgress({ upload }: { upload: Upload }) {
 					<ProgressBar.Fill />
 				</ProgressBar.Track>
 			</ProgressBar>
-			{upload.state === "PAUSED" && (
+			{upload.state === "PAUSED" ? (
 				<>
 					<p>{m.import_paused()}</p>
 					<Button onPress={resumeUpload}>{m.import_resume()}</Button>
 				</>
-			)}
-			{upload.state === "STOPPED" && (
+			) : null}
+			{upload.state === "STOPPED" ? (
 				<p role="alert">{importRefusal(upload.code)}</p>
-			)}
+			) : null}
 		</>
 	);
 }
@@ -260,7 +260,7 @@ function Report({ row }: { row: Import }) {
 	return (
 		<>
 			<ImportCounters row={row} />
-			{row.issueCount > 0 && <ImportIssuesDialog row={row} />}
+			{row.issueCount > 0 ? <ImportIssuesDialog row={row} /> : null}
 		</>
 	);
 }

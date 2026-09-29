@@ -160,7 +160,7 @@ function CreatePinForm({
 				submit(new FormData(event.currentTarget));
 			}}
 		>
-			{entries.length > 1 && (
+			{entries.length > 1 ? (
 				// `role="img"` is what carries a name on something read as one unit: the two numbers are
 				// for the eye and `pin_progress` is the sentence a screen reader gets.
 				<span
@@ -173,7 +173,7 @@ function CreatePinForm({
 				>
 					{at + 1}/{entries.length}
 				</span>
-			)}
+			) : null}
 			{/* The address stops being required once a file is chosen: an image comes from one or the other. */}
 			<Field
 				name="sourceMediaUrl"
@@ -184,10 +184,10 @@ function CreatePinForm({
 				onChange={(url) => change({ url })}
 			/>
 			<ImageDropBox limits={handshake.data?.limits} multiple onDrop={take}>
-				{entry.file !== null && (
+				{entry.file === null ? null : (
 					<>
 						{/* One render behind the file: the object URL is drawn by the effect above. */}
-						{preview !== null && (
+						{preview === null ? null : (
 							<img src={preview} alt="" className="max-h-32 rounded" />
 						)}
 						<span className="text-sm text-muted">{entry.file.file.name}</span>
@@ -210,11 +210,11 @@ function CreatePinForm({
 			<div className="flex justify-end gap-2">
 				{/* Two verbs, two effects on the counter: `Remove` empties this entry and leaves it where
             it is, `Ignore` abandons it and moves on. */}
-				{entries.length > 1 && (
+				{entries.length > 1 ? (
 					<Button variant="ghost" onPress={advance}>
 						{m.ignore()}
 					</Button>
-				)}
+				) : null}
 				{/* Submitting before the limits arrive would send a file this deployment refuses. */}
 				<Button
 					type="submit"

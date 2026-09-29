@@ -318,9 +318,9 @@ export function Recycled() {
 							</Tabs.Tab>
 						</Tabs.List>
 					</Tabs.ListContainer>
-					{tab === "pins" && (
+					{tab === "pins" ? (
 						<SortSelect value={sort} values={RECYCLED_PIN_SORTS} />
-					)}
+					) : null}
 					<EmptyBin empty={() => empty.mutate(undefined, refused)} />
 				</div>
 				{/* The panel is the scroll box: the toolbar above it stays put while the rows move. */}

@@ -105,14 +105,14 @@ function exportNotice(row: Export, dismissal: ReactNode): ReactNode {
 				{ready ? exportReadiness(row) : exportFailure(row.reasonCode)}
 			</p>
 			<div className="flex flex-wrap items-center gap-2">
-				{ready && (
+				{ready ? (
 					<a
 						className={buttonVariants({ size: "sm" })}
 						href={downloadHref(row)}
 					>
 						{m.export_download()}
 					</a>
-				)}
+				) : null}
 				{dismissal}
 			</div>
 		</TaskItem>
