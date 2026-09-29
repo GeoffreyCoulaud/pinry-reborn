@@ -45,6 +45,8 @@ norms, its commands and its gate; this file carries what holds for the repositor
 ## Setup (once per clone)
 
 - `git config core.hooksPath .githooks` (enables pre-commit and pre-push hooks).
+- `git config blame.ignoreRevsFile .git-blame-ignore-revs` (`git blame` skips the commits that only reformat; GitHub
+  reads the file on its own, git only when told to).
 - **Docker and the Dagger CLI**, which the gate and the `pre-push` hook both go through. `dagger.json` pins the
   engine version; install the CLI at that version.
 - `python3` on the PATH (`.claude/hooks/evidence-guard.py` runs on every Bash command; without python3 it enforces
