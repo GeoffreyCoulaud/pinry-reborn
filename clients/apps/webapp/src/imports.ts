@@ -1,13 +1,6 @@
 import type { Schemas } from "@pinry-reborn/auth";
-import {
-	useInfiniteQuery,
-	useMutation,
-	useQuery,
-	useQueryClient,
-} from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
-import { auth, bodyOf } from "./api";
-import { POLL_MS } from "./lib/downloads";
+import { auth } from "./api";
 import {
 	type Attempt,
 	type ChunkAnswer,
@@ -17,7 +10,6 @@ import {
 	refusedChunk,
 	type UploadStep,
 } from "./lib/imports";
-import { AccountRefusal } from "./me";
 import { m } from "./paraglide/messages.js";
 import { getLocale } from "./paraglide/runtime.js";
 
@@ -43,14 +35,11 @@ export interface Upload {
 	code: string | null;
 }
 
-// The latest import, which the upload changes at each end it reaches.
-const LATEST = ["imports", "latest"];
-
 // One record per import, under its id, so a reload can ask for the same file.
 const RECORD = "pinry-import-";
 
 /** A private window, or site data the browser blocks, throws: the import then has no record. */
-function writeRecord(id: string, { name, size, lastModified }: File) {
+export function writeRecord(id: string, { name, size, lastModified }: File) {
 	try {
 		localStorage.setItem(
 			RECORD + id,
@@ -83,7 +72,7 @@ function forgetRecord(id: string) {
  * The latest import's, while it waits on its archive, and this tab's upload's, which a read begun
  * before its import opened does not know of: no record outlives what it serves.
  */
-function pruneRecords(latest: Import | null) {
+export function pruneRecords(latest: Import | null) {
 	const kept = [
 		latest?.state === "AWAITING_ARCHIVE" ? latest.id : null,
 		upload?.importId,
@@ -97,42 +86,6 @@ function pruneRecords(latest: Import | null) {
 	} catch {
 		// Nothing could be written there either.
 	}
-}
-
-/** The newest import or none, as the export's section reads its own. */
-export function useLatestImport() {
-	return useQuery({
-		queryKey: LATEST,
-		queryFn: async () => {
-			const query = { pageSize: 1 };
-			const answer = await auth.client.GET("/api/v1/me/imports", {
-				params: { query },
-			});
-			const latest = bodyOf(answer, "the imports").imports[0] ?? null;
-			pruneRecords(latest);
-			return latest;
-		},
-		refetchInterval: (query) => {
-			const state = query.state.data?.state;
-			return state === "PENDING" || state === "RUNNING" ? POLL_MS : false;
-		},
-	});
-}
-
-/** One import's report, a page at a time on the cursor each page answers. */
-export function useImportIssues(id: string) {
-	return useInfiniteQuery({
-		queryKey: ["imports", id, "issues"],
-		queryFn: async ({ pageParam }) => {
-			const params = { path: { id }, query: { cursor: pageParam } };
-			const answer = await auth.client.GET("/api/v1/me/imports/{id}/issues", {
-				params,
-			});
-			return bodyOf(answer, "the report");
-		},
-		initialPageParam: undefined as string | undefined,
-		getNextPageParam: (page) => page.pagination.nextCursor ?? undefined,
-	});
 }
 
 // The store lives above the router, so changing screen leaves the upload running.
@@ -207,7 +160,7 @@ interface Transfer {
 	settle: () => Promise<unknown>;
 }
 
-async function send(transfer: Transfer, from: Attempt) {
+export async function send(transfer: Transfer, from: Attempt) {
 	const { importId, file, chunkBytes, settle } = transfer;
 	const { signal } = controller;
 	let attempt = from;
@@ -259,75 +212,9 @@ export function resumeUpload() {
 	resume();
 }
 
-/** Stops the upload in this tab and leaves the server's import alone. Tests reset with it. @internal */
+/** Stops the upload in this tab and leaves the server's import alone. Tests reset with it. */
 export function dropUpload() {
 	controller.abort();
 	controller = new AbortController();
 	publish(null);
-}
-
-/** A new import, and the upload of its archive one chunk at a time. */
-export function useStartImport() {
-	const queryClient = useQueryClient();
-	const settle = () => queryClient.invalidateQueries({ queryKey: LATEST });
-	return useMutation({
-		mutationFn: async ({
-			file,
-			chunkBytes,
-		}: {
-			file: File;
-			chunkBytes: number;
-		}) => {
-			const { data, error, response } =
-				await auth.client.POST("/api/v1/me/imports");
-			if (data === undefined) {
-				throw new AccountRefusal(error, response.status);
-			}
-			writeRecord(data.id, file);
-			dropUpload();
-			void send(
-				{ importId: data.id, file, chunkBytes, settle },
-				{ next: "SEND", offset: 0, failures: 0 },
-			);
-		},
-		onSuccess: settle,
-	});
-}
-
-/** The same file chosen after a reload: the upload goes on at the row's length. */
-export function useResumeImport() {
-	const queryClient = useQueryClient();
-	const settle = () => queryClient.invalidateQueries({ queryKey: LATEST });
-	return (row: Import, file: File, chunkBytes: number) => {
-		dropUpload();
-		const from = {
-			next: "SEND",
-			offset: row.uploadedBytes,
-			failures: 0,
-		} as const;
-		void send({ importId: row.id, file, chunkBytes, settle }, from);
-	};
-}
-
-/** What the import already created stays: `DELETE` cancels what is left. */
-export function useCancelImport() {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: async (id: string) => {
-			// `response.ok` and never `data`: a 204 leaves it undefined.
-			const { response } = await auth.client.DELETE("/api/v1/me/imports/{id}", {
-				params: { path: { id } },
-			});
-			if (!response.ok) {
-				throw new Error(`The API kept the import: ${response.status}.`);
-			}
-		},
-		// The upload runs on until the row that replaces it is read, so a refused cancel leaves it be.
-		onSettled: async (_, error) => {
-			await queryClient.invalidateQueries({ queryKey: LATEST });
-			if (error === null) {
-				dropUpload();
-			}
-		},
-	});
 }

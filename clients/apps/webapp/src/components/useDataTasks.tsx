@@ -7,12 +7,8 @@ import {
 	exportReadiness,
 	useLatestExport,
 } from "../exports";
-import {
-	type Import,
-	importProgress,
-	useLatestImport,
-	useUpload,
-} from "../imports";
+import { useLatestImport } from "../importQueries";
+import { type Import, importProgress, useUpload } from "../imports";
 import { dataNotices } from "../lib/notices";
 import { m } from "../paraglide/messages.js";
 import { ImportCounters, UploadProgress } from "./ImportSection";
