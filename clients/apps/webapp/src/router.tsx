@@ -13,9 +13,10 @@ import { m } from "./paraglide/messages.js";
 import { Account } from "./routes/Account";
 import { Board } from "./routes/Board";
 import { Boards } from "./routes/Boards";
-import { SignIn, SignUp } from "./routes/credentials";
 import { Home } from "./routes/Home";
 import { Recycled } from "./routes/Recycled";
+import { SignIn } from "./routes/SignIn";
+import { SignUp } from "./routes/SignUp";
 import { useSession } from "./session";
 
 const rootRoute = createRootRoute();

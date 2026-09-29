@@ -1,9 +1,9 @@
 import { Button, Checkbox, Input, Label, TextField } from "@heroui/react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { AppHeader } from "../components/AppHeader";
 import { m } from "../paraglide/messages.js";
-import { type OpenSessionMutation, useSignIn, useSignUp } from "../session";
+import type { OpenSessionMutation } from "../session";
+import { AppHeader } from "./AppHeader";
 
 interface CredentialsFormProps {
 	/** Names the screen and its button, which ask for the same thing. */
@@ -14,7 +14,7 @@ interface CredentialsFormProps {
 	footer: ReactNode;
 }
 
-function CredentialsForm({
+export function CredentialsForm({
 	title,
 	refusal,
 	newPassword,
@@ -69,31 +69,5 @@ function CredentialsForm({
 			</form>
 			{footer}
 		</main>
-	);
-}
-
-export function SignIn() {
-	const signIn = useSignIn();
-	return (
-		<CredentialsForm
-			title={m.sign_in()}
-			refusal={m.sign_in_refused()}
-			newPassword={false}
-			session={signIn}
-			footer={<Link to="/sign-up">{m.sign_up()}</Link>}
-		/>
-	);
-}
-
-export function SignUp() {
-	const signUp = useSignUp();
-	return (
-		<CredentialsForm
-			title={m.sign_up()}
-			refusal={m.sign_up_refused()}
-			newPassword={true}
-			session={signUp}
-			footer={<Link to="/sign-in">{m.sign_in()}</Link>}
-		/>
 	);
 }
