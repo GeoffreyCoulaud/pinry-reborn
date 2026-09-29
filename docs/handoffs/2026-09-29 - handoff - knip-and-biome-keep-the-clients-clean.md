@@ -114,6 +114,8 @@ review.
 - The closing block, two, answered "a" on 2026-09-29: O, `routes/credentials.tsx` splits into `SignIn.tsx` and
   `SignUp.tsx`, the form moving to `components/CredentialsForm.tsx`; P, every remaining `{cond && ...}` in JSX
   becomes a ternary.
+- After the closing block, one: Q, the pin form's address field keeps `&&`, answered "On laisse tel quel." on
+  2026-09-29.
 
 ## What is not validated
 
@@ -148,8 +150,7 @@ nor formatted.
 
 ## The lot's counts
 
-Fix-backs 0, cascaded rebases 0, runs re-triggered 0. The operator's reading of the bodies: no remark so far, the
-stack not yet reviewed.
+Fix-backs 0, cascaded rebases 0, runs re-triggered 0. The operator's reading of the bodies: no remark.
 
 ## Next step
 
