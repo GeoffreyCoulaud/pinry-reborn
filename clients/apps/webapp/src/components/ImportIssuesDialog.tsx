@@ -1,6 +1,7 @@
 import { Button, Modal, Spinner } from "@heroui/react";
 import { importIssue } from "../importIssues";
-import { type Import, useImportIssues } from "../imports";
+import { useImportIssues } from "../importQueries";
+import type { Import } from "../imports";
 import { m } from "../paraglide/messages.js";
 import { getLocale } from "../paraglide/runtime.js";
 
