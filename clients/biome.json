@@ -47,7 +47,8 @@
 					}
 				},
 				"useGlobalThis": "error",
-				"noExcessiveClassesPerFile": "error"
+				"noExcessiveClassesPerFile": "error",
+				"noExcessiveLinesPerFile": "error"
 			},
 			"suspicious": {
 				"noUnusedExpressions": "error",
@@ -78,7 +79,10 @@
 		{
 			"includes": ["**/*.test.*", "**/src/test/**"],
 			"linter": {
-				"rules": { "suspicious": { "noEmptyBlockStatements": "off" } }
+				"rules": {
+					"style": { "noExcessiveLinesPerFile": "off" },
+					"suspicious": { "noEmptyBlockStatements": "off" }
+				}
 			}
 		},
 		{
