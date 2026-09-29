@@ -55,6 +55,8 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   `1.22.sql` spent a table rebuild on a constraint nothing checks, and turning the pragma on would make
   `ON DELETE RESTRICT` refuse the hard delete of a pin whose download failed.
   See `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
+- **`.dagger/` is neither linted nor formatted**, the clients' Biome stopping at `clients/`.
+  See `docs/specs/2026-09-28-knip-and-biome-keep-the-clients-clean.md`, decision F. New 2026-09-29.
 
 ## Known limits
 

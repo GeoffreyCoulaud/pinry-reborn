@@ -1,6 +1,7 @@
 # 0027. The web application's stack, and a coverage bound that covers logic
 
-Status: Accepted
+Status: Partially superseded by `0046-knip-and-biome-check-the-clients.md` (decision 4's tool: Biome's
+`noImportCycles` and `noRestrictedImports` hold the boundary)
 Date: 2026-09-10
 Specification: `docs/specs/2026-09-10-web-application.md`, questions K to T and sections 4.5 and 4.6
 Related: `docs/adr/0024-three-projects-share-one-repository.md`, whose decision 1 gives `clients/` its own
