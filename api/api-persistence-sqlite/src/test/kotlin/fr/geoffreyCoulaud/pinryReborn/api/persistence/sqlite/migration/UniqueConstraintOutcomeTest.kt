@@ -32,6 +32,8 @@ class UniqueConstraintOutcomeTest {
             "uq_media_pin_id" to
                 "No translation, deliberately: EbeanMediaRepository.saveWithin deletes by pinId then inserts, " +
                 "in one transaction, so a second image for a pin replaces the first instead of colliding.",
+            "ux_image_download_pin" to "Gone with its table, dropped by 1.29: ux_media_download_pin answers for it.",
+            "uq_images_pin_id" to "Gone with its table, dropped by 1.29: uq_media_pin_id answers for it.",
             "uq_session_tokens_token_hash" to
                 "No translation, deliberately: a collision means the secure token generator repeated itself, " +
                 "which is a broken invariant rather than an applicative case, so 500 is the honest answer.",

@@ -242,7 +242,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
     // --- Archive-content assertions ---
 
     private fun assertManifestCounts(manifest: JsonNode) {
-        assertEquals(1, manifest.get("formatVersion").asInt())
+        assertEquals(2, manifest.get("formatVersion").asInt())
         val counts = manifest.get("counts")
         assertEquals(3, counts.get("pins").asInt(), "two active pins + one recycled pin")
         assertEquals(2, counts.get("boards").asInt(), "one active board + one recycled board")

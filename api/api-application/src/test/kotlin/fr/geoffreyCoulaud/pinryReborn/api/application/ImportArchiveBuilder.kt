@@ -9,7 +9,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * A `formatVersion` 1 archive built entry by entry, so a case can hand the real importer what the real
+ * A `formatVersion` 2 archive built entry by entry, so a case can hand the real importer what the real
  * exporter never writes: a lying manifest, a truncated line, a traversal path, a text file named `.jpg`.
  */
 internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
@@ -55,7 +55,7 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
     }
 
     companion object {
-        const val FORMAT_VERSION = 1
+        const val FORMAT_VERSION = 2
         val PAST: Instant = Instant.parse("2026-01-02T03:04:05Z")
 
         fun sha256(bytes: ByteArray): String =

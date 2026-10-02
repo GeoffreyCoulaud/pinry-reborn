@@ -146,8 +146,8 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
 
     @Test
     fun `Given an archive of another format version, Then it is refused without a retry`() {
-        // Given: version 1 is the only contract this importer has
-        val source = FakeArchiveSource(aManifest(formatVersion = 2))
+        // Given: version 2 is the only contract this importer has, version 1 holding its originals under `images/`
+        val source = FakeArchiveSource(aManifest(formatVersion = 1))
         stubRunUpToOpen()
         every { archiveStore.open(storageKey) } returns source
 
@@ -182,7 +182,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         assertEquals(pastInstant, savedTag("past").createdAt)
         assertEquals(now, savedTag("future").createdAt)
         assertEquals(now, stored.startedAt)
-        assertEquals(1, stored.formatVersion)
+        assertEquals(2, stored.formatVersion)
         assertEquals(ANNOUNCED_PINS, stored.announcedPins)
         assertEquals(2, stored.createdTags)
         assertEquals(0, stored.skippedTags)
