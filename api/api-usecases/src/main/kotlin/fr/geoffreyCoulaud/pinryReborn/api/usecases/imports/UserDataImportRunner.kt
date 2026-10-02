@@ -2,7 +2,6 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
@@ -14,12 +13,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure.UNS
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure.USER_GONE
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveBoundExceededException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveEntryUnreadableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveLine
@@ -33,11 +30,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportIssueRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.IngestedMedia
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.deleteQuietly
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.discardQuietly
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.UserDataExportRequester
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.PermanentTaskException
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.TaskLeaseLostException
@@ -62,7 +59,7 @@ class UserDataImportRunner(
     private val mediaRepository: MediaRepositoryInterface,
     private val archiveStore: ImportArchiveStore,
     private val mediaStore: MediaStore,
-    private val imageProbe: ImageProbe,
+    private val mediaIngestion: MediaIngestion,
     private val tagCreator: TagCreator,
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
@@ -471,17 +468,12 @@ class UserDataImportRunner(
     @Suppress("TooGenericExceptionCaught")
     private fun promoteAndWrite(walk: PinWalk, line: Int, outcome: PinOutcome, created: CreatedPin): Boolean =
         try {
-            mediaStore.promote(created.staged, created.media.storageKey)
-            write(walk, line, outcome).also { held -> if (!held) compensate(created) }
+            mediaIngestion.promote(created.ingested)
+            write(walk, line, outcome).also { held -> if (!held) mediaIngestion.discard(created.ingested) }
         } catch (error: Exception) {
-            compensate(created)
+            mediaIngestion.discard(created.ingested)
             throw error
         }
-
-    private fun compensate(created: CreatedPin) {
-        mediaStore.discardQuietly(created.staged)
-        mediaStore.deleteQuietly(created.media.storageKey)
-    }
 
     /** The same fence, settling one line: the issue rows and the cursor land in one transaction or none. */
     private fun write(walk: PinWalk, line: Int, outcome: PinOutcome): Boolean =
@@ -520,7 +512,7 @@ class UserDataImportRunner(
                 boards = created.boardNames.mapNotNull { boardRepository.findBoardForUserByName(walk.user, it) },
             ),
         )
-        mediaRepository.save(created.media)
+        mediaRepository.save(created.ingested.media)
     }
 
     private fun outcomeFor(walk: PinWalk, line: ArchiveLine<ImportedPin>): PinOutcome {
@@ -609,29 +601,26 @@ class UserDataImportRunner(
 
     /** Step 4: the entry is reopened, since the digest pass consumed the first stream. */
     private fun stagedOutcome(walk: PinWalk, pin: ImportedPin, media: ImportedMedia): PinOutcome {
-        val staged = entryOf(walk, media.path).use { mediaStore.stage(it, maxMediaBytes) }
+        val staged = entryOf(walk, media.path).use { mediaIngestion.stage(it, maxMediaBytes) }
+        val pinId = randomUUID()
         return try {
-            created(walk, pin, staged, imageProbe.probe(staged, maxPixels))
+            created(walk, pin, mediaIngestion.ingest(staged, walk.user.id, pinId, maxPixels, walk.importInstant))
         } catch (error: ImageTooManyPixelsException) {
-            mediaStore.discardQuietly(staged)
             reported(UserDataImportIssueKind.MEDIA_TOO_MANY_PIXELS, media.path, error.message)
         } catch (error: ImageProbeException) {
-            mediaStore.discardQuietly(staged)
             reported(UserDataImportIssueKind.MEDIA_UNREADABLE, media.path, error.message)
         }
     }
 
     /** The probe is the authority on the stored media type and dimensions, never the archive. */
-    private fun created(walk: PinWalk, pin: ImportedPin, staged: StagedFile, probe: ProbeResult): PinOutcome {
-        val pinId = randomUUID()
-        val mediaId = randomUUID()
+    private fun created(walk: PinWalk, pin: ImportedPin, ingested: IngestedMedia): PinOutcome {
         val createdAt = walk.clamp.clamp(pin.createdAt)
         return PinOutcome(
             created =
                 CreatedPin(
                     pin =
                         Pin(
-                            id = pinId,
+                            id = ingested.media.pinId,
                             author = walk.user,
                             sourceContextUrl = pin.sourceContextUrl,
                             sourceMediaUrl = pin.sourceMediaUrl,
@@ -642,20 +631,7 @@ class UserDataImportRunner(
                             updatedAt = walk.clamp.clampUpdate(pin.updatedAt, createdAt),
                             softDeletedAt = pin.deletedAt?.let { walk.clamp.clamp(it) },
                         ),
-                    media =
-                        Media(
-                            id = mediaId,
-                            pinId = pinId,
-                            mimeType = probe.format.mimeType,
-                            width = probe.width,
-                            height = probe.height,
-                            animated = probe.animated,
-                            byteSize = staged.byteSize,
-                            contentHash = staged.contentHash,
-                            storageKey = "originals/${walk.user.id}/$pinId/$mediaId.${probe.format.extension}",
-                            createdAt = walk.importInstant,
-                        ),
-                    staged = staged,
+                    ingested = ingested,
                     tagNames = pin.tags.map { it.name },
                     boardNames = pin.boards.map { it.name },
                 )
@@ -705,8 +681,7 @@ class UserDataImportRunner(
     /** A pin whose bytes are staged and whose rows are not written yet; both halves compensate together. */
     private class CreatedPin(
         val pin: Pin,
-        val media: Media,
-        val staged: StagedFile,
+        val ingested: IngestedMedia,
         val tagNames: List<String>,
         val boardNames: List<String>,
     )

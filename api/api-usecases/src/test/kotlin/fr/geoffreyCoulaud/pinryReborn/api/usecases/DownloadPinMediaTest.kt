@@ -59,7 +59,10 @@ class DownloadPinMediaTest {
     private val user = User(randomUUID(), "u", createdAt = TestTime.now)
 
     private val subject =
-        DownloadPinMedia(pins, mediaRepository, downloads, store, probe, fetcher, runner, clock, renditionCache)
+        DownloadPinMedia(
+            pins, mediaRepository, downloads, store, MediaIngestion(store, probe), fetcher, runner, clock,
+            renditionCache,
+        )
 
     init {
         every { clock.now() } returns now

@@ -306,7 +306,8 @@ merges whole.
   that only `repackage` needs move to 45. (Corrected: every fixture is `probe`'s, and the block measured 24 files
   and 523 lines; the operator chose on 2026-10-03 to keep the H.264 with AAC, the MPEG-TS and the playlist here,
   each other case asserted on ffprobe's JSON written by hand, and to move the other seven fixtures to block 42.
-  `media.video_timeout` and the processor's producer move to block 50.)
+  `media.video_timeout` and the processor's producer move to block 50.) (Corrected: to block 53, block 50's
+  ingestion calling no `VideoProcessor`; `VideoProcessor`'s consumer is block 53.)
 
 ### 42, the probe's fixtures
 
@@ -330,10 +331,14 @@ merges whole.
 ### 50, one ingestion path
 
 - The upload, the download and the import call `MediaIngestion`; the storage key is built once
-  (`command grep -rn 'originals/' api/*/src/main` finds one site).
+  (`command grep -rn 'originals/' api/*/src/main` finds one site). (Corrected: the key is built from
+  `StorageLayout.ORIGINALS_DIRECTORY`, as the sweep's prefix is, so the grep finds a comment of
+  `FilesystemMediaStore` alone; `command grep -rn 'ORIGINALS_DIRECTORY}/' api/*/src/main` finds the key in
+  `MediaIngestion` and the sweep's prefix in `ReapOrphanedStorage`.)
 - Every existing image test passes unchanged in what it asserts.
 - `media.video_timeout` (`PT60S`) joins `MediaConfig`, and a producer builds `FfmpegVideoProcessor` from it, moved
-  here from block 40 so that the key is read where `VideoProcessor` is first called.
+  here from block 40 so that the key is read where `VideoProcessor` is first called. (Corrected: moved to block 53,
+  this block's `MediaIngestion` handling images alone and calling no `VideoProcessor`.)
 
 ### 53, video ingestion
 
@@ -346,6 +351,8 @@ merges whole.
 - An export holding a video imports into an empty account with the same bytes and the same hash.
 - `LimitsDto` answers the three bounds from overridden keys, not the defaults. The client reads `maxImageBytes`;
   `TOO_LONG` and `UNSUPPORTED_CODEC` have their sentences, `downloadReasons.ts` compiling.
+- (Corrected: added from block 50.) `media.video_timeout` (`PT60S`) joins `MediaConfig`, and a producer builds
+  `FfmpegVideoProcessor` from it, read where `MediaIngestion` first calls `VideoProcessor`.
 
 ### 56, the lease
 
