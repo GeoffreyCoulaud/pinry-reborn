@@ -18,6 +18,10 @@ interface GarbageCollectionConfig {
     @WithDefault("500")
     fun orphanBatchSize(): Int
 
+    /** Shields a promoted original awaiting its row, and a staged file in use, from the orphan sweep. */
+    @WithDefault("PT1H")
+    fun orphanGrace(): Duration
+
     @WithDefault("P7D")
     fun failedDownloadGrace(): Duration
 }

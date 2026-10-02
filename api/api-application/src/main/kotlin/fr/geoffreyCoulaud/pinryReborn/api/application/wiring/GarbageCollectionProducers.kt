@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
@@ -21,7 +22,7 @@ import jakarta.enterprise.inject.Produces
 
 /**
  * CDI wiring for the four garbage collection sweeps whose constructor takes a primitive ARC cannot
- * resolve ([ReapOrphanedStorage] takes an `Int`, [ReapTombstonedAccounts] a `Duration`,
+ * resolve ([ReapOrphanedStorage] takes an `Int` and a `Duration`, [ReapTombstonedAccounts] a `Duration`,
  * [ReapTerminalTasks] and [ReapStaleMediaDownloads] a `Duration`).
  * Mirrors [ExportProducers.reapExpiredUserDataExports]:
  * `GarbageCollectionConfig` lives in `api-worker-quarkus`, so a use case in `api-usecases` cannot
@@ -38,19 +39,24 @@ class GarbageCollectionProducers {
         renditionCache: RenditionCache,
         exportArchiveStore: ExportArchiveStore,
         importArchiveStore: ImportArchiveStore,
+        mediaStore: MediaStore,
         mediaRepository: MediaRepositoryInterface,
         userDataExportRepository: UserDataExportRepositoryInterface,
         userDataImportRepository: UserDataImportRepositoryInterface,
+        clock: Clock,
         config: GarbageCollectionConfig,
     ): ReapOrphanedStorage =
         ReapOrphanedStorage(
             renditionCache,
             exportArchiveStore,
             importArchiveStore,
+            mediaStore,
             mediaRepository,
             userDataExportRepository,
             userDataImportRepository,
+            clock,
             batchSize = config.orphanBatchSize(),
+            orphanGrace = config.orphanGrace(),
         )
 
     @Produces

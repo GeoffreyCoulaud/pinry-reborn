@@ -8,6 +8,9 @@ object StorageLayout {
     /** Where a store stages a file before promoting it, under its own data directory. */
     const val STAGING_DIRECTORY = "tmp"
 
+    /** Where promoted media originals live, under `media.data_dir`. */
+    const val ORIGINALS_DIRECTORY = "originals"
+
     /** Where promoted export archives live, under `exports.data_dir`. */
     const val EXPORTS_DIRECTORY = "exports"
 

@@ -8,9 +8,12 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.security.MessageDigest
+import java.time.Instant
 import java.util.HexFormat
+import kotlin.streams.asSequence
 
 /**
  * [MediaStore] adapter backed by the local filesystem.
@@ -81,6 +84,37 @@ class FilesystemMediaStore(private val dataDir: String) : MediaStore {
     override fun discard(staged: StagedFile) {
         Files.deleteIfExists(Path.of(staged.path))
     }
+
+    override fun discardOrphanedStagedFiles(olderThan: Instant): Int {
+        if (!Files.isDirectory(tmpDir)) return 0
+        return Files.list(tmpDir).use { stream ->
+            stream.filter { Files.isRegularFile(it) && it.modifiedBefore(olderThan) }.toList()
+        }.count { Files.deleteIfExists(it) }
+    }
+
+    override fun forEachStorageKeyOnDisk(olderThan: Instant, block: (Sequence<String>) -> Unit) {
+        val originals = root.resolve(StorageLayout.ORIGINALS_DIRECTORY)
+        // A fresh install has no originals/ yet: the block still runs once, on nothing.
+        if (!Files.isDirectory(originals)) {
+            block(emptySequence())
+            return
+        }
+        Files.walk(originals).use { stream ->
+            block(
+                stream.asSequence()
+                    .filter { Files.isRegularFile(it) && it.modifiedBefore(olderThan) }
+                    .map { root.relativize(it).joinToString("/") },
+            )
+        }
+    }
+
+    // A file promoted or deleted between the listing and this read is no longer this sweep's.
+    private fun Path.modifiedBefore(instant: Instant): Boolean =
+        try {
+            Files.getLastModifiedTime(this).toInstant().isBefore(instant)
+        } catch (_: NoSuchFileException) {
+            false
+        }
 
     /**
      * Streams [source] into [tempPath] while updating a SHA-256 digest and counting bytes,

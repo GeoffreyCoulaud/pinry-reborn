@@ -1,11 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.ExportArchiveKey
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
@@ -14,7 +16,10 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
 
@@ -25,7 +30,12 @@ class ReapOrphanedStorageTest : BaseTest() {
     private val mediaRepository = mockk<MediaRepositoryInterface>()
     private val userDataExportRepository = mockk<UserDataExportRepositoryInterface>()
     private val userDataImportRepository = mockk<UserDataImportRepositoryInterface>()
+    private val mediaStore = mockk<MediaStore>()
+    private val clock = mockk<Clock>()
     private val batchSize = 2
+    private val orphanGrace = Duration.ofHours(1)
+    private val now = Instant.parse("2026-10-02T12:00:00Z")
+    private val cutoff = now.minus(orphanGrace)
 
     /** What the store's format answers in production, and what the derived key therefore carries. */
     private val archiveExtension = "zip"
@@ -34,13 +44,68 @@ class ReapOrphanedStorageTest : BaseTest() {
         renditionCache = renditionCache,
         exportArchiveStore = exportArchiveStore,
         importArchiveStore = importArchiveStore,
+        mediaStore = mediaStore,
         mediaRepository = mediaRepository,
         userDataExportRepository = userDataExportRepository,
         userDataImportRepository = userDataImportRepository,
+        clock = clock,
         batchSize = batchSize,
+        orphanGrace = orphanGrace,
     )
 
-    /** Every run reads all three disks, so a case names what its own half holds and empties the rest. */
+    /** What the media store holds past [cutoff]: it filters by age, so it is stubbed at that cutoff alone. */
+    private var originalsPastGrace = emptyList<String>()
+    private var stagedPastGrace = 0
+
+    @BeforeEach
+    fun stubTheMediaStore() {
+        every { clock.now() } returns now
+        every { mediaStore.forEachStorageKeyOnDisk(cutoff, any()) } answers {
+            secondArg<(Sequence<String>) -> Unit>().invoke(originalsPastGrace.asSequence())
+        }
+        every { mediaStore.discardOrphanedStagedFiles(cutoff) } answers { stagedPastGrace }
+    }
+
+    private fun originalsOnDisk(vararg keys: String) {
+        originalsPastGrace = keys.toList()
+    }
+
+    @Test
+    fun `Given an original past the grace whose media has no row, Then reap deletes it`() {
+        // Given: an original named as the upload names it, whose row was never committed
+        val mediaId = randomUUID()
+        val storageKey = "originals/${randomUUID()}/${randomUUID()}/$mediaId.png"
+        renditionsOnDisk()
+        exportsOnDisk()
+        importsOnDisk()
+        originalsOnDisk(storageKey)
+        every { mediaRepository.findMissingMediaIds(listOf(mediaId)) } returns setOf(mediaId)
+        every { mediaStore.delete(any()) } just runs
+
+        // When
+        val count = useCase.reap()
+
+        // Then
+        assertEquals(1, count)
+        verify { mediaStore.delete(storageKey) }
+    }
+
+    @Test
+    fun `Given staged files past the grace, Then reap discards them and counts them`() {
+        // Given
+        renditionsOnDisk()
+        exportsOnDisk()
+        importsOnDisk()
+        stagedPastGrace = 2
+
+        // When
+        val count = useCase.reap()
+
+        // Then
+        assertEquals(2, count)
+    }
+
+    /** Every run reads all five disks, so a case names what its own half holds and empties the rest. */
     private fun renditionsOnDisk(vararg ids: UUID) {
         every { renditionCache.forEachMediaIdOnDisk(any()) } answers {
             firstArg<(Sequence<UUID>) -> Unit>().invoke(ids.asSequence())
@@ -118,13 +183,14 @@ class ReapOrphanedStorageTest : BaseTest() {
 
     @Test
     fun `Given an id present in the DB, Then reap leaves it`() {
-        // Given: disk has one of each, all three present in the DB
+        // Given: disk has one of each, all present in the DB, the original whatever its age
         val liveMediaId = randomUUID()
         val liveExportId = randomUUID()
         val liveImportId = randomUUID()
         renditionsOnDisk(liveMediaId)
         exportsOnDisk(ExportArchiveKey.forExport(liveExportId, archiveExtension))
         importsOnDisk("imports/$liveImportId.zip")
+        originalsOnDisk("originals/${randomUUID()}/${randomUUID()}/$liveMediaId.png")
         every { mediaRepository.findMissingMediaIds(listOf(liveMediaId)) } returns emptySet()
         every { userDataExportRepository.findMissingExportIds(listOf(liveExportId)) } returns emptySet()
         every { userDataImportRepository.findMissingImportIds(listOf(liveImportId)) } returns emptySet()
@@ -137,6 +203,7 @@ class ReapOrphanedStorageTest : BaseTest() {
         verify(exactly = 0) { renditionCache.evictMedia(any()) }
         verify(exactly = 0) { exportArchiveStore.delete(any()) }
         verify(exactly = 0) { importArchiveStore.delete(any()) }
+        verify(exactly = 0) { mediaStore.delete(any()) }
     }
 
     @Test
