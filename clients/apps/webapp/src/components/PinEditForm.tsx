@@ -15,11 +15,11 @@ import { type ReactNode, useEffect, useId, useState } from "react";
 import { useBoards } from "../boards";
 import { useDebounced } from "../debounce";
 import { downloadReason } from "../downloadReasons";
-import { type ImageSource, useHandshake, useSetPinImage } from "../images";
 import type { KeptFile } from "../lib/drops";
+import { type MediaSource, useHandshake, useSetPinMedia } from "../media";
 import { m } from "../paraglide/messages.js";
 import { type Pin, useTagSearch, useUpdatePin } from "../pins";
-import { ImageDropBox } from "./ImageDropBox";
+import { MediaDropBox } from "./MediaDropBox";
 import { PinSides } from "./PinSides";
 
 /**
@@ -134,7 +134,7 @@ function BoardField({
 }
 
 /** What the save does to the image, one of three and applied after the pin is written. */
-type ImageIntent = "keep" | "replace" | "fetch";
+type MediaIntent = "keep" | "replace" | "fetch";
 
 /** The file about to replace the image, drawn in its place. */
 function FilePreview({ file }: { file: File }) {
@@ -159,7 +159,7 @@ function FilePreview({ file }: { file: File }) {
 
 /** Either choice with nothing to apply would save as though the image were being kept. */
 function isIncomplete(
-	intent: ImageIntent,
+	intent: MediaIntent,
 	chosen: KeptFile | null,
 	address: string,
 ): boolean {
@@ -176,15 +176,15 @@ function isIncomplete(
  */
 export function PinEditForm({
 	pin,
-	image,
+	media,
 	close,
 }: {
 	pin: Pin;
-	image: ReactNode;
+	media: ReactNode;
 	close: () => void;
 }) {
 	const save = useUpdatePin();
-	const setImage = useSetPinImage();
+	const setMedia = useSetPinMedia();
 	const limits = useHandshake().data?.limits;
 	const heading = useId();
 	const form = useId();
@@ -196,9 +196,9 @@ export function PinEditForm({
 	);
 	// One value in one field at a time: the column's, or the selector's once the image is fetched from it.
 	const [address, setAddress] = useState(pin.sourceMediaUrl ?? "");
-	const [intent, setIntent] = useState<ImageIntent>("keep");
+	const [intent, setIntent] = useState<MediaIntent>("keep");
 	const [chosen, setChosen] = useState<KeptFile | null>(null);
-	const replacement = pin.image?.replacement;
+	const replacement = pin.media?.replacement;
 	const addressField = (
 		<TextField
 			type="url"
@@ -213,7 +213,7 @@ export function PinEditForm({
 	);
 
 	/** What the save applies to the image once the pin itself is written, or nothing. */
-	function source(): ImageSource | null {
+	function source(): MediaSource | null {
 		if (intent === "replace" && chosen !== null) {
 			return { file: chosen.file };
 		}
@@ -227,14 +227,14 @@ export function PinEditForm({
 
 	return (
 		<PinSides
-			image={
+			media={
 				<div className="flex h-full w-full flex-col items-center gap-3">
 					<ToggleButtonGroup
 						aria-label={m.image()}
 						selectionMode="single"
 						disallowEmptySelection
 						selectedKeys={[intent]}
-						onSelectionChange={(keys) => setIntent([...keys][0] as ImageIntent)}
+						onSelectionChange={(keys) => setIntent([...keys][0] as MediaIntent)}
 					>
 						<ToggleButton id="keep">{m.image_keep()}</ToggleButton>
 						<ToggleButton id="replace">
@@ -253,7 +253,7 @@ export function PinEditForm({
 						<div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-2 text-center">
 							{chosen === null ? (
 								// A drop that also carries an address fills the address, as the creation screen does.
-								<ImageDropBox
+								<MediaDropBox
 									limits={limits}
 									className="min-h-48 w-full flex-1 justify-center"
 									onDrop={(drop) => {
@@ -279,7 +279,7 @@ export function PinEditForm({
 					) : (
 						// Its own size container, so the image fits in what the selector leaves of the side.
 						<div className="flex min-h-0 w-full flex-1 items-center justify-center lg:[container-type:size]">
-							{image}
+							{media}
 						</div>
 					)}
 					{intent === "fetch" ? (
@@ -316,7 +316,7 @@ export function PinEditForm({
 									if (chosenSource === null) {
 										close();
 									} else {
-										setImage.mutate(
+										setMedia.mutate(
 											{ pinId: pin.id, source: chosenSource },
 											{ onSuccess: close },
 										);
@@ -364,7 +364,7 @@ export function PinEditForm({
 					{/* Two halves, two sentences: the pin is written before its image, so a refused image
               leaves the fields saved and only the image to try again. */}
 					{save.isError ? <p role="alert">{m.pin_refused()}</p> : null}
-					{setImage.isError ? <p role="alert">{m.image_refused()}</p> : null}
+					{setMedia.isError ? <p role="alert">{m.image_refused()}</p> : null}
 					{/* At the column's foot while the fields scroll above it. */}
 					<div className="sticky bottom-0 mt-auto flex justify-end gap-2 bg-overlay py-2">
 						<Button variant="ghost" onPress={close}>
@@ -372,7 +372,7 @@ export function PinEditForm({
 						</Button>
 						<Button
 							type="submit"
-							isDisabled={save.isPending || setImage.isPending || incomplete}
+							isDisabled={save.isPending || setMedia.isPending || incomplete}
 						>
 							{m.save()}
 						</Button>

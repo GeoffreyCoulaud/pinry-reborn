@@ -9,8 +9,8 @@ object ImportFieldBounds {
     const val MAX_DESCRIPTION_LENGTH = 2000
     const val MAX_REFERENCES = 100
 
-    /** Spec section 4: anchored, so `elsewhere/images/x.png` is not a match, and never a `.` segment. */
-    private val ENTRY_PATH = Regex("^images/[A-Za-z0-9._-]+$")
+    /** Spec section 4: anchored, so `elsewhere/media/x.png` is not a match, and never a `.` segment. */
+    private val ENTRY_PATH = Regex("^media/[A-Za-z0-9._-]+$")
     private val TRAVERSAL_SEGMENTS = setOf(".", "..")
 
     fun nameFault(name: String): String? =
@@ -39,7 +39,7 @@ object ImportFieldBounds {
      */
     fun entryPathFault(path: String): String? =
         when {
-            !ENTRY_PATH.matches(path) -> "path is not an anchored images/<name>"
+            !ENTRY_PATH.matches(path) -> "path is not an anchored media/<name>"
             path.substringAfterLast('/') in TRAVERSAL_SEGMENTS -> "path ends in a traversal segment"
             else -> null
         }

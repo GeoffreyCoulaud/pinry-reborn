@@ -5,14 +5,14 @@ import app.photofox.vipsffm.Vips
 import app.photofox.vipsffm.VipsError
 import app.photofox.vipsffm.VipsOption
 import app.photofox.vipsffm.enums.VipsAccess
-import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.ImageFormat
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageProbe
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageProbeException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageTooManyPixelsException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ProbeResult
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.UndecodableImageException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.UnsupportedImageFormatException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
 import jakarta.enterprise.context.ApplicationScoped
 import java.lang.foreign.Arena
 
@@ -63,12 +63,12 @@ class VipsImageProbe : ImageProbe {
         }
     }
 
-    private fun formatOf(loader: String?): ImageFormat =
+    private fun formatOf(loader: String?): MediaFormat =
         when (loader) {
-            "pngload" -> ImageFormat.PNG
-            "jpegload" -> ImageFormat.JPEG
-            "webpload" -> ImageFormat.WEBP
-            "gifload" -> ImageFormat.GIF
+            "pngload" -> MediaFormat.PNG
+            "jpegload" -> MediaFormat.JPEG
+            "webpload" -> MediaFormat.WEBP
+            "gifload" -> MediaFormat.GIF
             else -> throw UnsupportedImageFormatException("Unsupported image loader: $loader")
         }
 }

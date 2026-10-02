@@ -56,11 +56,11 @@ describe("open a pin", () => {
 
 		const dialog = await screen.findByRole("dialog");
 		// The original, under the rendition the grid drew, which a column jsdom measures at 0 px makes the small one.
-		const image = within(dialog).getByRole("img", { name: opened.description });
-		expect(image).toHaveAttribute("src", `/api/v1/pins/${opened.id}/image`);
+		const media = within(dialog).getByRole("img", { name: opened.description });
+		expect(media).toHaveAttribute("src", `/api/v1/pins/${opened.id}/media`);
 		expect(dialog.querySelector('img[alt=""]')).toHaveAttribute(
 			"src",
-			`/api/v1/pins/${opened.id}/image?size=SMALL`,
+			`/api/v1/pins/${opened.id}/media?size=SMALL`,
 		);
 		// The page the pin was found on, named by its host and opened beside the application.
 		const source = within(dialog).getByRole("link", {
@@ -93,7 +93,7 @@ describe("open a pin", () => {
 		const dialog = await screen.findByRole("dialog");
 		expect(dialog.querySelector('img[alt=""]')).toHaveAttribute(
 			"src",
-			`/api/v1/pins/${opened.id}/image?size=MEDIUM`,
+			`/api/v1/pins/${opened.id}/media?size=MEDIUM`,
 		);
 	});
 

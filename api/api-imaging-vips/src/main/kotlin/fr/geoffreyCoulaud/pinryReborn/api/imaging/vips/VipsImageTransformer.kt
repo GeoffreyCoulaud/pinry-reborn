@@ -3,8 +3,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.imaging.vips
 import app.photofox.vipsffm.VImage
 import app.photofox.vipsffm.Vips
 import app.photofox.vipsffm.VipsOption
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageTransformer
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionSpec
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionSpec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import java.io.InputStream
 import java.lang.foreign.Arena
@@ -16,7 +16,7 @@ import java.util.HexFormat
  * [ImageTransformer] adapter backed by native libvips (vips-ffm). Output is always WebP.
  *
  * Not `@ApplicationScoped`: ARC cannot resolve the `Int quality` ctor param, so a producer in
- * the composition root builds it (mirrors `FilesystemImageStore`).
+ * the composition root builds it (mirrors `FilesystemMediaStore`).
  */
 class VipsImageTransformer(private val quality: Int) : ImageTransformer {
 

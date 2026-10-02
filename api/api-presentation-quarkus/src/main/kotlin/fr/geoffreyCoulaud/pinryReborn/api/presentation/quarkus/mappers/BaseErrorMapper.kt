@@ -62,14 +62,14 @@ class BaseErrorMapper : ExceptionMapper<BaseError> {
             // SessionController answers both as AUTHENTICATION_FAILED, never telling a username that exists apart.
             ErrorCode.USER_DOES_NOT_EXIST -> ProblemCode.AUTHENTICATION_FAILED to UNAUTHORIZED.statusCode
             ErrorCode.INVALID_PASSWORD -> ProblemCode.AUTHENTICATION_FAILED to UNAUTHORIZED.statusCode
-            ErrorCode.IMAGE_DOES_NOT_EXIST -> ProblemCode.IMAGE_DOES_NOT_EXIST to NOT_FOUND.statusCode
-            ErrorCode.IMAGE_INSUFFICIENT_PERMISSIONS ->
-                ProblemCode.IMAGE_INSUFFICIENT_PERMISSIONS to FORBIDDEN.statusCode
-            ErrorCode.IMAGE_TOO_LARGE -> ProblemCode.IMAGE_TOO_LARGE to REQUEST_ENTITY_TOO_LARGE.statusCode
-            ErrorCode.IMAGE_INVALID -> ProblemCode.IMAGE_INVALID to UNPROCESSABLE_ENTITY_STATUS_CODE
-            ErrorCode.IMAGE_SOURCE_URL_INVALID -> ProblemCode.IMAGE_SOURCE_URL_INVALID to BAD_REQUEST.statusCode
-            ErrorCode.IMAGE_DOWNLOAD_IN_PROGRESS -> ProblemCode.IMAGE_DOWNLOAD_IN_PROGRESS to CONFLICT.statusCode
-            ErrorCode.IMAGE_RENDITION_SIZE_INVALID -> ProblemCode.IMAGE_RENDITION_SIZE_INVALID to BAD_REQUEST.statusCode
+            ErrorCode.MEDIA_DOES_NOT_EXIST -> ProblemCode.MEDIA_DOES_NOT_EXIST to NOT_FOUND.statusCode
+            ErrorCode.MEDIA_INSUFFICIENT_PERMISSIONS ->
+                ProblemCode.MEDIA_INSUFFICIENT_PERMISSIONS to FORBIDDEN.statusCode
+            ErrorCode.MEDIA_TOO_LARGE -> ProblemCode.MEDIA_TOO_LARGE to REQUEST_ENTITY_TOO_LARGE.statusCode
+            ErrorCode.MEDIA_INVALID -> ProblemCode.MEDIA_INVALID to UNPROCESSABLE_ENTITY_STATUS_CODE
+            ErrorCode.MEDIA_SOURCE_URL_INVALID -> ProblemCode.MEDIA_SOURCE_URL_INVALID to BAD_REQUEST.statusCode
+            ErrorCode.MEDIA_DOWNLOAD_IN_PROGRESS -> ProblemCode.MEDIA_DOWNLOAD_IN_PROGRESS to CONFLICT.statusCode
+            ErrorCode.MEDIA_RENDITION_SIZE_INVALID -> ProblemCode.MEDIA_RENDITION_SIZE_INVALID to BAD_REQUEST.statusCode
             ErrorCode.BOARD_DOES_NOT_EXIST -> ProblemCode.BOARD_DOES_NOT_EXIST to NOT_FOUND.statusCode
             ErrorCode.BOARD_INSUFFICIENT_PERMISSIONS ->
                 ProblemCode.BOARD_INSUFFICIENT_PERMISSIONS to FORBIDDEN.statusCode

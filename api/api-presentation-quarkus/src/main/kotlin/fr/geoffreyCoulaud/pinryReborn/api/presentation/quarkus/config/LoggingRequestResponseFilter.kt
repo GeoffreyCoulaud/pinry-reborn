@@ -38,7 +38,7 @@ class LoggingRequestResponseFilter(
     private fun logRequestBody(ctx: ContainerRequestContext) {
         if (ctx.hasEntity()) {
             if (isMultipart(ctx)) {
-                // A canonical-image upload can be up to 32 MiB; buffering it into memory just to
+                // A canonical-media upload can be up to 32 MiB; buffering it into memory just to
                 // dump it as UTF-8 garbage would defeat the streaming design ("never hold a
                 // 30 MiB body in memory"). Leave entityStream completely untouched so the
                 // multipart parser downstream still sees the original stream.

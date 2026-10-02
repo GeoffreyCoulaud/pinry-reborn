@@ -1,11 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.ImageFormat
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ProbeResult
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.imaging.vips.VipsImageProbe
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ImagesConfig
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
@@ -25,14 +25,14 @@ import java.util.UUID
 
 /**
  * Below-the-fixtures rendition sizes so a real downscale happens against the 10x10 fixtures
- * (`sample.png`, `animated.gif`), and an isolated, writable `images.data_dir` per run so these
+ * (`sample.png`, `animated.gif`), and an isolated, writable `media.data_dir` per run so these
  * tests never touch the production default and successive local runs never collide.
  */
 class RenditionsTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> = mapOf(
-        "images.data_dir" to "build/test-image-data/${UUID.randomUUID()}",
-        "images.renditions.tiny" to "4",
-        "images.renditions.small" to "6",
+        "media.data_dir" to "build/test-media-data/${UUID.randomUUID()}",
+        "media.renditions.tiny" to "4",
+        "media.renditions.small" to "6",
     )
 }
 
@@ -53,10 +53,10 @@ class RenditionsIntegrationTest : IntegrationTest() {
     lateinit var pinCreator: PinCreator
 
     @Inject
-    lateinit var imageRepository: ImageRepositoryInterface
+    lateinit var mediaRepository: MediaRepositoryInterface
 
     @Inject
-    lateinit var imagesConfig: ImagesConfig
+    lateinit var mediaConfig: MediaConfig
 
     private fun fixture(name: String) = File("src/test/resources/fixtures/$name")
 
@@ -81,7 +81,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture(fixtureName), contentType)
-            .`when`().put("/api/v1/pins/$pinId/image")
+            .`when`().put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(expectedStatus)
     }
@@ -106,7 +106,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         // When
         val bytes = given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/image?size=tiny")
+            .`when`().get("/api/v1/pins/$pinId/media?size=tiny")
             .then()
             .statusCode(200)
             .contentType("image/webp")
@@ -115,7 +115,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
 
         // Then
         val probe = probeBytes(bytes)
-        assertEquals(ImageFormat.WEBP, probe.format)
+        assertEquals(MediaFormat.WEBP, probe.format)
         assertEquals(4, minOf(probe.width, probe.height))
     }
 
@@ -129,7 +129,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         // When
         val bytes = given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/image")
+            .`when`().get("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(200)
             .contentType("image/png")
@@ -150,7 +150,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         // When / Then: never upscaled, original format
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/image?size=large")
+            .`when`().get("/api/v1/pins/$pinId/media?size=large")
             .then()
             .statusCode(200)
             .contentType("image/png")
@@ -166,7 +166,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         // When / Then
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/image?size=huge")
+            .`when`().get("/api/v1/pins/$pinId/media?size=huge")
             .then()
             .statusCode(400)
     }
@@ -181,7 +181,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         // When
         val bytes = given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/image?size=tiny&animated=false")
+            .`when`().get("/api/v1/pins/$pinId/media?size=tiny&animated=false")
             .then()
             .statusCode(200)
             .contentType("image/webp")
@@ -202,7 +202,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         // When
         val bytes = given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/image?size=tiny")
+            .`when`().get("/api/v1/pins/$pinId/media?size=tiny")
             .then()
             .statusCode(200)
             .contentType("image/webp")
@@ -219,21 +219,21 @@ class RenditionsIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         val pinId = createPinFor(auth)
         upload(auth, pinId, "sample.png", "image/png")
-        val imageId = requireNotNull(imageRepository.findByPinId(pinId)).id
+        val mediaId = requireNotNull(mediaRepository.findByPinId(pinId)).id
 
         // When: generate + cache a rendition
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/image?size=tiny")
+            .`when`().get("/api/v1/pins/$pinId/media?size=tiny")
             .then()
             .statusCode(200)
-        val cacheDir: Path = Path.of(imagesConfig.dataDir()).resolve("cache/$imageId")
+        val cacheDir: Path = Path.of(mediaConfig.dataDir()).resolve("cache/$mediaId")
         assertTrue(Files.exists(cacheDir), "rendition cache subtree should exist after first GET")
 
         // When: delete the image
         given()
             .authenticatedAs(auth)
-            .`when`().delete("/api/v1/pins/$pinId/image")
+            .`when`().delete("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(204)
 
@@ -247,13 +247,13 @@ class RenditionsIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         val pinId = createPinFor(auth)
         upload(auth, pinId, "sample.png", "image/png")
-        val oldImageId = requireNotNull(imageRepository.findByPinId(pinId)).id
+        val oldMediaId = requireNotNull(mediaRepository.findByPinId(pinId)).id
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/image?size=tiny")
+            .`when`().get("/api/v1/pins/$pinId/media?size=tiny")
             .then()
             .statusCode(200)
-        val oldCacheDir: Path = Path.of(imagesConfig.dataDir()).resolve("cache/$oldImageId")
+        val oldCacheDir: Path = Path.of(mediaConfig.dataDir()).resolve("cache/$oldMediaId")
         assertTrue(Files.exists(oldCacheDir), "rendition cache subtree should exist after the first GET")
 
         // When: the canonical image is replaced (mode A)
@@ -263,16 +263,16 @@ class RenditionsIntegrationTest : IntegrationTest() {
         assertFalse(Files.exists(oldCacheDir), "rendition cache subtree should be evicted on replace")
 
         // Then: a second GET regenerates a rendition under the new image id
-        val newImageId = requireNotNull(imageRepository.findByPinId(pinId)).id
-        assertNotEquals(oldImageId, newImageId, "replacing should mint a new canonical image")
+        val newMediaId = requireNotNull(mediaRepository.findByPinId(pinId)).id
+        assertNotEquals(oldMediaId, newMediaId, "replacing should mint a new canonical image")
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/image?size=tiny")
+            .`when`().get("/api/v1/pins/$pinId/media?size=tiny")
             .then()
             .statusCode(200)
             .contentType("image/webp")
         assertTrue(
-            Files.exists(Path.of(imagesConfig.dataDir()).resolve("cache/$newImageId")),
+            Files.exists(Path.of(mediaConfig.dataDir()).resolve("cache/$newMediaId")),
             "the rendition should be regenerated under the new image id",
         )
     }

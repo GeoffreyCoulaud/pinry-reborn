@@ -9,10 +9,10 @@ import { PinGrid } from "../components/PinGrid";
 import { SearchField } from "../components/SearchField";
 import { SortSelect } from "../components/SortSelect";
 import { judgeDrop, refuse } from "../drops";
-import { useHandshake } from "../images";
 import { type DragStep, dragDepth } from "../lib/drags";
 import type { DropPartition } from "../lib/drops";
 import { PIN_SORTS } from "../lib/sorts";
+import { useHandshake } from "../media";
 import { m } from "../paraglide/messages.js";
 
 export function Home() {

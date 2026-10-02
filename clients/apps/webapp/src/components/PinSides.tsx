@@ -5,11 +5,11 @@ import type { PointerEventHandler, ReactNode } from "react";
  * Reading and editing share it, so an edit leaves the image where it is (decision G).
  */
 export function PinSides({
-	image,
+	media,
 	column,
 	onPointerDown,
 }: {
-	image: ReactNode;
+	media: ReactNode;
 	column: ReactNode;
 	onPointerDown?: PointerEventHandler<HTMLElement>;
 }) {
@@ -21,7 +21,7 @@ export function PinSides({
 				className="relative flex touch-pan-y items-center justify-center [--fit-height:70dvh] lg:min-w-0 lg:flex-1 lg:[--fit-height:100cqh] lg:[container-type:size]"
 				onPointerDown={onPointerDown}
 			>
-				{image}
+				{media}
 			</div>
 			{/* Fixed, so that what a wider window adds goes to the image. */}
 			<div className="flex flex-col gap-4 lg:w-[22.5rem] lg:shrink-0 lg:overflow-y-auto">

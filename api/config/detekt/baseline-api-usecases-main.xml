@@ -4,16 +4,16 @@
   <CurrentIssues>
     <ID>CommentCarriesDocumentation:AccountDeletionCleaner.kt:AccountDeletionCleaner</ID>
     <ID>CommentCarriesDocumentation:ClearPinDownload.kt:ClearPinDownload</ID>
-    <ID>CommentCarriesDocumentation:DownloadPinImage.kt:DownloadPinImage$@Suppress("TooGenericExceptionCaught") private fun promoteAndSwap</ID>
+    <ID>CommentCarriesDocumentation:DownloadPinMedia.kt:DownloadPinMedia$@Suppress("TooGenericExceptionCaught") private fun promoteAndSwap</ID>
     <ID>CommentCarriesDocumentation:ExportContent.kt:ExportManifest</ID>
     <ID>CommentCarriesDocumentation:ExportContent.kt:ExportedBoard</ID>
-    <ID>CommentCarriesDocumentation:ExportContent.kt:ExportedImage</ID>
+    <ID>CommentCarriesDocumentation:ExportContent.kt:ExportedMedia</ID>
     <ID>CommentCarriesDocumentation:ExportContent.kt:ExportedPin</ID>
     <ID>CommentCarriesDocumentation:ExportContent.kt:ExportedRef</ID>
     <ID>CommentCarriesDocumentation:ExportContent.kt:fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.ExportContent.kt</ID>
-    <ID>CommentCarriesDocumentation:ExportImageExtension.kt:ExportImageExtension</ID>
+    <ID>CommentCarriesDocumentation:ExportMediaExtension.kt:ExportMediaExtension</ID>
     <ID>CommentCarriesDocumentation:ExportReadme.kt:ExportReadme</ID>
-    <ID>CommentCarriesDocumentation:GetPinImageRendition.kt:GetPinImageRendition$Companion</ID>
+    <ID>CommentCarriesDocumentation:GetPinMediaRendition.kt:GetPinMediaRendition$Companion</ID>
     <ID>CommentCarriesDocumentation:OpenedExport.kt:OpenedExport</ID>
     <ID>CommentCarriesDocumentation:ReapUserDataExports.kt:ReapUserDataExports</ID>
     <ID>CommentCarriesDocumentation:ReapUserDataExports.kt:ReapUserDataExports$fun reap: Int</ID>
@@ -24,7 +24,7 @@
     <ID>CommentCarriesDocumentation:ReapTombstonedAccounts.kt:ReapTombstonedAccounts</ID>
     <ID>CommentCarriesDocumentation:ReapTombstonedAccounts.kt:ReapTombstonedAccounts$@Suppress("TooGenericExceptionCaught") fun reap: Int</ID>
     <ID>CommentCarriesDocumentation:SessionAuthenticationError.kt:SessionAuthenticationError : Exception</ID>
-    <ID>CommentCarriesDocumentation:SetPinImage.kt:SetPinImage$fun set: SetPinImageResult</ID>
+    <ID>CommentCarriesDocumentation:SetPinMedia.kt:SetPinMedia$fun set: SetPinMediaResult</ID>
     <ID>CommentCarriesDocumentation:StorageCleanup.kt:StorageCleanup</ID>
     <ID>CommentCarriesDocumentation:TaskContext.kt:TaskContext</ID>
     <ID>CommentCarriesDocumentation:TaskProcessor.kt:TaskProcessor</ID>
@@ -33,7 +33,7 @@
     <ID>CommentCarriesDocumentation:UserDataExportBuilder.kt:UserDataExportBuilder</ID>
     <ID>CommentCarriesDocumentation:UserDataExportBuilder.kt:UserDataExportBuilder$fun build</ID>
     <ID>CommentCarriesDocumentation:UserDataExportBuilder.kt:UserDataExportBuilder$internal fun stageArchive: StagedFile</ID>
-    <ID>CommentCarriesDocumentation:UserDataExportBuilder.kt:UserDataExportBuilder$private fun exportedImage: ExportedImage?</ID>
+    <ID>CommentCarriesDocumentation:UserDataExportBuilder.kt:UserDataExportBuilder$private fun exportedMedia: ExportedMedia?</ID>
     <ID>CommentCarriesDocumentation:UserDataExportBuilder.kt:UserDataExportBuilder$private fun pinSequence</ID>
     <ID>CommentCarriesDocumentation:UserDataExportBuilder.kt:UserDataExportBuilder$private fun publish</ID>
     <ID>CommentCarriesDocumentation:UserDataExportDeleter.kt:UserDataExportDeleter</ID>
@@ -42,8 +42,8 @@
     <ID>CommentCarriesDocumentation:UserDataExportGetter.kt:UserDataExportGetter</ID>
     <ID>CommentCarriesDocumentation:UserDataExportRequester.kt:UserDataExportRequester</ID>
     <ID>CommentCarriesDocumentation:UserDataExportRequester.kt:UserDataExportRequester$private fun savePending: UserDataExport</ID>
-    <ID>ThrowsCount:DeletePinImage.kt:DeletePinImage$fun delete</ID>
-    <ID>ThrowsCount:GetPinImage.kt:GetPinImage$fun get: Image</ID>
-    <ID>ThrowsCount:SetPinImage.kt:SetPinImage$fun set: SetPinImageResult</ID>
+    <ID>ThrowsCount:DeletePinMedia.kt:DeletePinMedia$fun delete</ID>
+    <ID>ThrowsCount:GetPinMedia.kt:GetPinMedia$fun get: Media</ID>
+    <ID>ThrowsCount:SetPinMedia.kt:SetPinMedia$fun set: SetPinMediaResult</ID>
   </CurrentIssues>
 </SmellBaseline>

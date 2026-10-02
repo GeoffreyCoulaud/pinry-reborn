@@ -31,11 +31,11 @@ RUN mkdir -p /data && chown 1001:1001 /data
 VOLUME /data
 
 # On-disk bytes live outside the database (no blobs in SQLite): original image
-# bytes under images.data_dir, user data export archives under exports.data_dir,
+# bytes under media.data_dir, user data export archives under exports.data_dir,
 # and uploaded import archives under imports.data_dir. All three default to
 # /var/lib/pinry/* (see application.properties) and MUST be redirected to
 # writable, persistent locations at deploy time, e.g.
-#   -e IMAGES_DATA_DIR=/data/images -e EXPORTS_DATA_DIR=/data/exports \
+#   -e MEDIA_DATA_DIR=/data/media -e EXPORTS_DATA_DIR=/data/exports \
 #   -e IMPORTS_DATA_DIR=/data/imports
 # so they share the /data volume above. exports.data_dir is a SEPARATE dataset
 # from images: export archives are large, short-lived (7-day retention) and
@@ -50,7 +50,7 @@ VOLUME /data
 # exports. /var/lib is root-owned and uid 1001 cannot create under it, hence the
 # line below. An operator who leaves IMPORTS_DATA_DIR or EXPORTS_DATA_DIR unset
 # therefore writes into the container's writable layer rather than onto a volume;
-# ImportDataDirectoryImageTest and ExportDataDirectoryImageTest hold the pairs.
+# ImportDataDirectoryMediaTest and ExportDataDirectoryMediaTest hold the pairs.
 # One chown per directory: the tests above read `chown uid:gid path` and stop at
 # the first path, so a shared call would leave the second one unpinned.
 RUN mkdir -p /var/lib/pinry/imports /var/lib/pinry/exports \

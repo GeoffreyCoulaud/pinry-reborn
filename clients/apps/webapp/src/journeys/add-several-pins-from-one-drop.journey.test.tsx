@@ -24,7 +24,7 @@ async function theScreen() {
 }
 
 /** An image the thumbnail names, which is how one entry is told from the next. */
-function image(name: string) {
+function media(name: string) {
 	return new File(["ok"], name, { type: "image/png" });
 }
 
@@ -47,7 +47,7 @@ describe("add several pins from one drop", () => {
 				sent.push(await request.json());
 				return HttpResponse.json(created, { status: 201 });
 			}),
-			http.put("/api/v1/pins/:pinId/image", () =>
+			http.put("/api/v1/pins/:pinId/media", () =>
 				HttpResponse.json(
 					{ id: created.id, pinId: created.id },
 					{ status: 201 },
@@ -60,7 +60,7 @@ describe("add several pins from one drop", () => {
 		// entry is shown (specification 2026-09-19-the-drop-is-the-gesture, decision N).
 		fireEvent.drop(
 			await theScreen(),
-			dropOf([image("one.png"), image("two.png")]),
+			dropOf([media("one.png"), media("two.png")]),
 		);
 
 		const dialog = await theForm();
@@ -104,7 +104,7 @@ describe("add several pins from one drop", () => {
 		renderApp("/");
 		fireEvent.drop(
 			await theScreen(),
-			dropOf([image("one.png"), image("two.png")]),
+			dropOf([media("one.png"), media("two.png")]),
 		);
 
 		const dialog = await theForm();
@@ -131,7 +131,7 @@ describe("add several pins from one drop", () => {
 		renderApp("/");
 		fireEvent.drop(
 			await theScreen(),
-			dropOf([image("one.png"), image("two.png")]),
+			dropOf([media("one.png"), media("two.png")]),
 		);
 
 		const dialog = await theForm();
@@ -158,7 +158,7 @@ describe("add several pins from one drop", () => {
 		);
 
 		renderApp("/");
-		fireEvent.drop(await theScreen(), dropOf([image("one.png")]));
+		fireEvent.drop(await theScreen(), dropOf([media("one.png")]));
 
 		const dialog = await theForm();
 		expect(await dialog.findByText("one.png")).toBeVisible();
@@ -169,8 +169,8 @@ describe("add several pins from one drop", () => {
 		// What is chosen with the mouse is judged where what is dropped is (decision L), and several
 		// arriving are "add these two" rather than a correction of the entry on screen (decision H).
 		await user.upload(dialog.getByLabelText(DROP_AREA), [
-			image("two.png"),
-			image("three.png"),
+			media("two.png"),
+			media("three.png"),
 		]);
 
 		expect(

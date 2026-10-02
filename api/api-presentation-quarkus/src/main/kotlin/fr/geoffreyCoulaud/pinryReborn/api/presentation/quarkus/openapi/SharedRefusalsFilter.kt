@@ -69,8 +69,8 @@ class SharedRefusalsFilter : OASFilter {
         const val BOARD_NOT_RECYCLED = "BoardNotRecycled"
         const val BOARD_OR_PIN_FORBIDDEN = "BoardOrPinForbidden"
         const val BOARD_OR_PIN_NOT_FOUND = "BoardOrPinNotFound"
-        const val IMAGE_FORBIDDEN = "ImageForbidden"
-        const val IMAGE_NOT_FOUND = "ImageNotFound"
+        const val MEDIA_FORBIDDEN = "MediaForbidden"
+        const val MEDIA_NOT_FOUND = "MediaNotFound"
         const val EXPORT_FORBIDDEN = "ExportForbidden"
         const val EXPORT_NOT_FOUND = "ExportNotFound"
         const val IMPORT_FORBIDDEN = "ImportForbidden"
@@ -166,13 +166,13 @@ class SharedRefusalsFilter : OASFilter {
                 ProblemCode.PIN_DOES_NOT_EXIST,
                 ProblemCode.UNKNOWN_ROUTE,
             ),
-            IMAGE_FORBIDDEN to refusal(
+            MEDIA_FORBIDDEN to refusal(
                 "The pin belongs to another account",
-                ProblemCode.IMAGE_INSUFFICIENT_PERMISSIONS,
+                ProblemCode.MEDIA_INSUFFICIENT_PERMISSIONS,
             ),
-            IMAGE_NOT_FOUND to refusal(
+            MEDIA_NOT_FOUND to refusal(
                 "The pin, its image or its download does not exist, or a path or query value could not be read",
-                ProblemCode.IMAGE_DOES_NOT_EXIST,
+                ProblemCode.MEDIA_DOES_NOT_EXIST,
                 ProblemCode.UNKNOWN_ROUTE,
             ),
             EXPORT_FORBIDDEN to refusal(

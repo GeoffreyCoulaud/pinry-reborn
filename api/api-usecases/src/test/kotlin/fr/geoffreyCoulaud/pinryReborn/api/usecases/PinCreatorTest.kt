@@ -29,7 +29,7 @@ class PinCreatorTest {
         // Given
         val user = User(randomUUID(), "John Doe", createdAt = TestTime.now)
         val sourceUrl = "https://example.com/article"
-        val mediaUrl = "https://example.com/image.jpeg"
+        val mediaUrl = "https://example.com/media.jpeg"
         val description = "some description"
         val tags = listOf("blue", "landscape", "water")
         every { tagCreator.findOrCreate(any(), any()) } answers {

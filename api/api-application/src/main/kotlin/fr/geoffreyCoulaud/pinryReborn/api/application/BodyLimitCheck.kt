@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ImagesConfig
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.worker.ImportsConfig
 import io.quarkus.runtime.StartupEvent
 import io.quarkus.runtime.configuration.MemorySize
@@ -14,17 +14,17 @@ import org.eclipse.microprofile.config.inject.ConfigProperty
  */
 @ApplicationScoped
 class BodyLimitCheck(
-    private val imagesConfig: ImagesConfig,
+    private val mediaConfig: MediaConfig,
     private val importsConfig: ImportsConfig,
     @param:ConfigProperty(name = "quarkus.http.limits.max-body-size") private val maxBodySize: MemorySize,
 ) {
     fun onStart(
         @Observes ignored: StartupEvent,
-    ) = verify(imagesConfig.maxFileBytes(), importsConfig.maxChunkBytes(), maxBodySize.asLongValue())
+    ) = verify(mediaConfig.maxFileBytes(), importsConfig.maxChunkBytes(), maxBodySize.asLongValue())
 
     companion object {
         fun verify(maxFileBytes: Long, maxChunkBytes: Long, maxBodyBytes: Long) {
-            requireUnder("images.max_file_bytes", maxFileBytes, maxBodyBytes)
+            requireUnder("media.max_file_bytes", maxFileBytes, maxBodyBytes)
             requireUnder("imports.max_chunk_bytes", maxChunkBytes, maxBodyBytes)
         }
 

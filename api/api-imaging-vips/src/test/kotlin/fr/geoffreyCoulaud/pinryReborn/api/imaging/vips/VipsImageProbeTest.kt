@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.imaging.vips
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.ImageFormat
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageTooManyPixelsException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.UndecodableImageException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.UnsupportedImageFormatException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -21,29 +21,29 @@ class VipsImageProbeTest {
     @Test
     fun `Given a PNG, Then probe returns PNG with its dimensions`() {
         val result = probe.probe(staged("sample.png"), maxPixels = 1_000_000)
-        assertEquals(ImageFormat.PNG, result.format)
+        assertEquals(MediaFormat.PNG, result.format)
         assertEquals(10, result.width)
         assertEquals(10, result.height)
     }
 
     @Test
     fun `Given a JPEG, Then probe returns JPEG`() {
-        assertEquals(ImageFormat.JPEG, probe.probe(staged("sample.jpg"), 1_000_000).format)
+        assertEquals(MediaFormat.JPEG, probe.probe(staged("sample.jpg"), 1_000_000).format)
     }
 
     @Test
     fun `Given a WebP, Then probe returns WEBP`() {
-        assertEquals(ImageFormat.WEBP, probe.probe(staged("sample.webp"), 1_000_000).format)
+        assertEquals(MediaFormat.WEBP, probe.probe(staged("sample.webp"), 1_000_000).format)
     }
 
     @Test
     fun `Given an animated WebP, Then probe accepts it as WEBP`() {
-        assertEquals(ImageFormat.WEBP, probe.probe(staged("animated.webp"), 1_000_000).format)
+        assertEquals(MediaFormat.WEBP, probe.probe(staged("animated.webp"), 1_000_000).format)
     }
 
     @Test
     fun `Given an animated GIF, Then probe accepts it as GIF`() {
-        assertEquals(ImageFormat.GIF, probe.probe(staged("animated.gif"), 1_000_000).format)
+        assertEquals(MediaFormat.GIF, probe.probe(staged("animated.gif"), 1_000_000).format)
     }
 
     @Test

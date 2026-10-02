@@ -7,7 +7,7 @@ enum class DownloadReasonDto {
     ACCESS_DENIED,
     NOT_FOUND,
     TOO_LARGE,
-    INVALID_IMAGE,
+    INVALID_MEDIA,
     TOO_MANY_PIXELS,
     INTERNAL_ERROR,
     FETCH_FAILED,

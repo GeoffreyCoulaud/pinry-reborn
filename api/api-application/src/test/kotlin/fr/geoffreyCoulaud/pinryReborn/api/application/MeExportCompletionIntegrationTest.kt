@@ -6,9 +6,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
@@ -59,7 +59,7 @@ import java.util.zip.ZipFile
 /**
  * End-to-end coverage of the async export completion path (spec `docs/specs/2026-07-22-user-data-export.md`
  * §3, §4, §8, §9, §10), with a REAL async worker building a REAL archive on disk -- this is what
- * would have caught `Pin.image` being always null under mocked repositories, per the spec's own
+ * would have caught `Pin.media` being always null under mocked repositories, per the spec's own
  * testing-strategy rationale (§13.1).
  *
  * The archive-content test, "Given a seeded account with recycled content and a real image, Then
@@ -199,7 +199,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
 
     private data class SeededContent(
         val taggedPinId: UUID,
-        val imagePinId: UUID,
+        val mediaPinId: UUID,
         val recycledPinId: UUID,
         val activeBoardId: UUID,
         val recycledBoardId: UUID,
@@ -216,12 +216,12 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
 
     private fun seedArchiveContent(auth: IntegrationTest.AuthenticatedUser): SeededContent {
         val taggedPin = createPin(auth, "tagged", tags = listOf("nature"))
-        val imagePin = createPin(auth, "image")
+        val mediaPin = createPin(auth, "media")
         val recycledPin = createPin(auth, "recycled")
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/${imagePin.id}/image")
+            .`when`().put("/api/v1/pins/${mediaPin.id}/media")
             .then().statusCode(201)
         given().authenticatedAs(auth).`when`().delete("/api/v1/pins/${recycledPin.id}").then().statusCode(204)
 
@@ -232,7 +232,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
 
         return SeededContent(
             taggedPinId = taggedPin.id,
-            imagePinId = imagePin.id,
+            mediaPinId = mediaPin.id,
             recycledPinId = recycledPin.id,
             activeBoardId = activeBoard.id,
             recycledBoardId = recycledBoard.id,
@@ -247,7 +247,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         assertEquals(3, counts.get("pins").asInt(), "two active pins + one recycled pin")
         assertEquals(2, counts.get("boards").asInt(), "one active board + one recycled board")
         assertEquals(1, counts.get("tags").asInt())
-        assertEquals(1, counts.get("images").asInt())
+        assertEquals(1, counts.get("media").asInt())
     }
 
     private fun assertRecycledPinCarriesDeletedAt(pinLines: List<JsonNode>, recycledPinId: UUID) {
@@ -277,11 +277,11 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
     }
 
     /** Downloads REAL bytes and compares them byte-for-byte to the uploaded fixture. */
-    private fun assertImageEntryIsByteIdentical(zip: ZipFile, pinLines: List<JsonNode>, imagePinId: UUID) {
-        val line = pinLines.first { it.get("id").asText() == imagePinId.toString() }
-        val imageNode = line.get("image")
-        assertFalse(imageNode.isNull, "the pin with an uploaded image should carry a non-null image")
-        val path = imageNode.get("path").asText()
+    private fun assertMediaEntryIsByteIdentical(zip: ZipFile, pinLines: List<JsonNode>, mediaPinId: UUID) {
+        val line = pinLines.first { it.get("id").asText() == mediaPinId.toString() }
+        val mediaNode = line.get("media")
+        assertFalse(mediaNode.isNull, "the pin with an uploaded image should carry a non-null image")
+        val path = mediaNode.get("path").asText()
         val actualBytes = readEntryBytes(zip, path)
         val expectedBytes = fixture("sample.png").readBytes()
         val message = "the image entry should be byte-identical to the uploaded fixture"
@@ -318,7 +318,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
             assertRecycledPinCarriesDeletedAt(pinLines, seeded.recycledPinId)
             assertRecycledBoardMembershipSurvives(pinLines, seeded)
             assertBoardsJsonl(zip, seeded)
-            assertImageEntryIsByteIdentical(zip, pinLines, seeded.imagePinId)
+            assertMediaEntryIsByteIdentical(zip, pinLines, seeded.mediaPinId)
             assertEveryEntryDigestMatches(zip, manifest)
         } finally {
             zip.close()
@@ -500,10 +500,10 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
             exportRepository = RefusingThePublish(userDataExportRepository),
             userRepository = arc.instance(UserRepositoryInterface::class.java).get(),
             pinRepository = arc.instance(PinRepositoryInterface::class.java).get(),
-            imageRepository = arc.instance(ImageRepositoryInterface::class.java).get(),
+            mediaRepository = arc.instance(MediaRepositoryInterface::class.java).get(),
             boardRepository = arc.instance(BoardRepositoryInterface::class.java).get(),
             tagRepository = arc.instance(TagRepositoryInterface::class.java).get(),
-            imageStore = arc.instance(ImageStore::class.java).get(),
+            mediaStore = arc.instance(MediaStore::class.java).get(),
             archiveStore = arc.instance(ExportArchiveStore::class.java).get(),
             transactionRunner = arc.instance(TransactionRunner::class.java).get(),
             clock = arc.instance(Clock::class.java).get(),

@@ -212,7 +212,7 @@ class MeImportControllerTest {
             importId = importId,
             kind = UserDataImportIssueKind.MEDIA_DIGEST_MISMATCH,
             line = 7,
-            subject = "images/one.png",
+            subject = "media/one.png",
             detail = "digest mismatch",
         )
         val previousCursor = Cursor(pivotId = issue.id, direction = CursorDirection.BACKWARD)

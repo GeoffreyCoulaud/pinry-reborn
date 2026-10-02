@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.ExportArchiveKey
@@ -22,7 +22,7 @@ class ReapOrphanedStorageTest : BaseTest() {
     private val renditionCache = mockk<RenditionCache>()
     private val exportArchiveStore = mockk<ExportArchiveStore>()
     private val importArchiveStore = mockk<ImportArchiveStore>()
-    private val imageRepository = mockk<ImageRepositoryInterface>()
+    private val mediaRepository = mockk<MediaRepositoryInterface>()
     private val userDataExportRepository = mockk<UserDataExportRepositoryInterface>()
     private val userDataImportRepository = mockk<UserDataImportRepositoryInterface>()
     private val batchSize = 2
@@ -34,7 +34,7 @@ class ReapOrphanedStorageTest : BaseTest() {
         renditionCache = renditionCache,
         exportArchiveStore = exportArchiveStore,
         importArchiveStore = importArchiveStore,
-        imageRepository = imageRepository,
+        mediaRepository = mediaRepository,
         userDataExportRepository = userDataExportRepository,
         userDataImportRepository = userDataImportRepository,
         batchSize = batchSize,
@@ -42,7 +42,7 @@ class ReapOrphanedStorageTest : BaseTest() {
 
     /** Every run reads all three disks, so a case names what its own half holds and empties the rest. */
     private fun renditionsOnDisk(vararg ids: UUID) {
-        every { renditionCache.forEachImageIdOnDisk(any()) } answers {
+        every { renditionCache.forEachMediaIdOnDisk(any()) } answers {
             firstArg<(Sequence<UUID>) -> Unit>().invoke(ids.asSequence())
         }
     }
@@ -66,15 +66,15 @@ class ReapOrphanedStorageTest : BaseTest() {
         renditionsOnDisk(orphanId)
         exportsOnDisk()
         importsOnDisk()
-        every { imageRepository.findMissingImageIds(listOf(orphanId)) } returns setOf(orphanId)
-        every { renditionCache.evictImage(any()) } just runs
+        every { mediaRepository.findMissingMediaIds(listOf(orphanId)) } returns setOf(orphanId)
+        every { renditionCache.evictMedia(any()) } just runs
 
         // When
         val count = useCase.reap()
 
         // Then
         assertEquals(1, count)
-        verify { renditionCache.evictImage(orphanId) }
+        verify { renditionCache.evictMedia(orphanId) }
     }
 
     @Test
@@ -119,13 +119,13 @@ class ReapOrphanedStorageTest : BaseTest() {
     @Test
     fun `Given an id present in the DB, Then reap leaves it`() {
         // Given: disk has one of each, all three present in the DB
-        val liveImageId = randomUUID()
+        val liveMediaId = randomUUID()
         val liveExportId = randomUUID()
         val liveImportId = randomUUID()
-        renditionsOnDisk(liveImageId)
+        renditionsOnDisk(liveMediaId)
         exportsOnDisk(ExportArchiveKey.forExport(liveExportId, archiveExtension))
         importsOnDisk("imports/$liveImportId.zip")
-        every { imageRepository.findMissingImageIds(listOf(liveImageId)) } returns emptySet()
+        every { mediaRepository.findMissingMediaIds(listOf(liveMediaId)) } returns emptySet()
         every { userDataExportRepository.findMissingExportIds(listOf(liveExportId)) } returns emptySet()
         every { userDataImportRepository.findMissingImportIds(listOf(liveImportId)) } returns emptySet()
 
@@ -134,7 +134,7 @@ class ReapOrphanedStorageTest : BaseTest() {
 
         // Then: nothing reclaimed
         assertEquals(0, count)
-        verify(exactly = 0) { renditionCache.evictImage(any()) }
+        verify(exactly = 0) { renditionCache.evictMedia(any()) }
         verify(exactly = 0) { exportArchiveStore.delete(any()) }
         verify(exactly = 0) { importArchiveStore.delete(any()) }
     }
@@ -149,7 +149,7 @@ class ReapOrphanedStorageTest : BaseTest() {
         exportsOnDisk()
         importsOnDisk()
         val capturedChunks = mutableListOf<Collection<UUID>>()
-        every { imageRepository.findMissingImageIds(capture(capturedChunks)) } returns emptySet()
+        every { mediaRepository.findMissingMediaIds(capture(capturedChunks)) } returns emptySet()
 
         // When
         val count = useCase.reap()

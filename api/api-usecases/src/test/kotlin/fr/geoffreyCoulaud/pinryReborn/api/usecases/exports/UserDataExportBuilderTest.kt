@@ -35,7 +35,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
-        every { imageRepository.findByPinId(any()) } returns null
+        every { mediaRepository.findByPinId(any()) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(any()) } returns emptyList()
 
         // When
@@ -54,25 +54,25 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         stubArchiveStore()
         every { clock.now() } returns now
         val pin = aPin()
-        val image = anImage(pinId = pin.id, mimeType = "image/png")
+        val media = aMedia(pinId = pin.id, mimeType = "image/png")
         stubActivePins(listOf(pin))
         stubRecycledPins(emptyList())
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
-        every { imageRepository.findByPinId(pin.id) } returns image
-        every { imageStore.openStream(image.storageKey) } returns ByteArrayInputStream(byteArrayOf(1, 2, 3))
+        every { mediaRepository.findByPinId(pin.id) } returns media
+        every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(byteArrayOf(1, 2, 3))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
 
         // When
         builder.stageArchive(anExport(), user, renewLease = {})
 
         // Then
-        val expectedPath = "images/${image.id}.png"
+        val expectedPath = "media/${media.id}.png"
         assertTrue(sink.binary.containsKey(expectedPath))
         assertArrayEquals(byteArrayOf(1, 2, 3), sink.binary[expectedPath])
         val exportedPin = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>().single()
-        assertEquals(expectedPath, exportedPin.image?.path)
+        assertEquals(expectedPath, exportedPin.media?.path)
         assertTrue(sink.order.indexOf(expectedPath) < sink.order.indexOf("pins.jsonl"))
     }
 
@@ -82,14 +82,14 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         stubArchiveStore()
         every { clock.now() } returns now
         val pin = aPin()
-        val image = anImage(pinId = pin.id)
+        val media = aMedia(pinId = pin.id)
         stubActivePins(listOf(pin))
         stubRecycledPins(emptyList())
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
-        every { imageRepository.findByPinId(pin.id) } returnsMany listOf(image, null)
-        every { imageStore.openStream(image.storageKey) } returns ByteArrayInputStream(byteArrayOf(9))
+        every { mediaRepository.findByPinId(pin.id) } returnsMany listOf(media, null)
+        every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(byteArrayOf(9))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
 
         // When
@@ -97,7 +97,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
 
         // Then
         val exportedPin = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>().single()
-        assertNull(exportedPin.image)
+        assertNull(exportedPin.media)
     }
 
     @Test
@@ -107,15 +107,15 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         stubArchiveStore()
         every { clock.now() } returns now
         val pin = aPin()
-        val writtenImage = anImage(pinId = pin.id, mimeType = "image/jpeg")
-        val staleImage = anImage(pinId = pin.id, mimeType = "image/png")
+        val writtenMedia = aMedia(pinId = pin.id, mimeType = "image/jpeg")
+        val staleMedia = aMedia(pinId = pin.id, mimeType = "image/png")
         stubActivePins(listOf(pin))
         stubRecycledPins(emptyList())
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
-        every { imageRepository.findByPinId(pin.id) } returnsMany listOf(writtenImage, staleImage)
-        every { imageStore.openStream(writtenImage.storageKey) } returns ByteArrayInputStream(byteArrayOf(1))
+        every { mediaRepository.findByPinId(pin.id) } returnsMany listOf(writtenMedia, staleMedia)
+        every { mediaStore.openStream(writtenMedia.storageKey) } returns ByteArrayInputStream(byteArrayOf(1))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
 
         // When
@@ -123,7 +123,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
 
         // Then
         val exportedPin = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>().single()
-        assertNull(exportedPin.image)
+        assertNull(exportedPin.media)
     }
 
     @Test
@@ -138,7 +138,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns listOf(recycledBoard)
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
-        every { imageRepository.findByPinId(pin.id) } returns null
+        every { mediaRepository.findByPinId(pin.id) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns listOf(recycledBoard)
 
         // When
@@ -186,7 +186,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
-        every { imageRepository.findByPinId(any()) } returns null
+        every { mediaRepository.findByPinId(any()) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(any()) } returns emptyList()
         var renewCount = 0
 
@@ -205,7 +205,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         stubArchiveStore()
         every { clock.now() } returns now
         val pin = aPin()
-        val image = anImage(pinId = pin.id)
+        val media = aMedia(pinId = pin.id)
         val board = aBoard()
         val tag = Tag(id = randomUUID(), author = user, name = "t", createdAt = now)
         stubActivePins(listOf(pin))
@@ -213,8 +213,8 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns listOf(board)
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns listOf(tag)
-        every { imageRepository.findByPinId(pin.id) } returns image
-        every { imageStore.openStream(image.storageKey) } returns ByteArrayInputStream(byteArrayOf(5, 6))
+        every { mediaRepository.findByPinId(pin.id) } returns media
+        every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(byteArrayOf(5, 6))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
         val export = anExport()
 
@@ -223,7 +223,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
 
         // Then
         val manifest = sink.json.getValue("manifest.json") as ExportManifest
-        assertEquals(ExportCounts(pins = 1, boards = 1, tags = 1, images = 1), manifest.counts)
+        assertEquals(ExportCounts(pins = 1, boards = 1, tags = 1, media = 1), manifest.counts)
         assertEquals(export.id, manifest.exportId)
         assertEquals(export.formatVersion, manifest.formatVersion)
         assertEquals(now, manifest.createdAt)
@@ -232,7 +232,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         assertEquals(3, manifest.excluded.size)
         val entryPaths = manifest.entries.map { it.path }.toSet()
         assertEquals(
-            setOf("README.md", "user.json", "boards.jsonl", "tags.jsonl", "images/${image.id}.jpg", "pins.jsonl"),
+            setOf("README.md", "user.json", "boards.jsonl", "tags.jsonl", "media/${media.id}.jpg", "pins.jsonl"),
             entryPaths,
         )
         assertTrue(manifest.entries.all { it.sha256.isNotBlank() && it.byteSize > 0 })

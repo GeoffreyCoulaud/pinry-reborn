@@ -5,9 +5,9 @@
     <ID>CommentCarriesDocumentation:CountingDigestOutputStream.kt:CountingDigestOutputStream : FilterOutputStream</ID>
     <ID>CommentCarriesDocumentation:DataDirPaths.kt:DataDirPaths$fun atomicMove</ID>
     <ID>CommentCarriesDocumentation:DataDirPaths.kt:DataDirPaths$fun resolveWithinRoot: Path</ID>
-    <ID>CommentCarriesDocumentation:FilesystemImageStore.kt:FilesystemImageStore : ImageStore</ID>
-    <ID>CommentCarriesDocumentation:FilesystemImageStore.kt:FilesystemImageStore$@Suppress("TooGenericExceptionCaught") override fun stage: StagedFile</ID>
-    <ID>CommentCarriesDocumentation:FilesystemImageStore.kt:FilesystemImageStore$private fun writeAndDigest: Pair&lt;Long, ByteArray&gt;</ID>
+    <ID>CommentCarriesDocumentation:FilesystemMediaStore.kt:FilesystemMediaStore : MediaStore</ID>
+    <ID>CommentCarriesDocumentation:FilesystemMediaStore.kt:FilesystemMediaStore$@Suppress("TooGenericExceptionCaught") override fun stage: StagedFile</ID>
+    <ID>CommentCarriesDocumentation:FilesystemMediaStore.kt:FilesystemMediaStore$private fun writeAndDigest: Pair&lt;Long, ByteArray&gt;</ID>
     <ID>CommentCarriesDocumentation:FilesystemRenditionCache.kt:FilesystemRenditionCache : RenditionCache</ID>
     <ID>CommentCarriesDocumentation:FilesystemRenditionCache.kt:FilesystemRenditionCache$@Suppress("TooGenericExceptionCaught") override fun store</ID>
     <ID>CommentCarriesDocumentation:FilesystemZipExportArchiveStore.kt:FilesystemZipExportArchiveStore : ExportArchiveStore</ID>

@@ -25,7 +25,7 @@ class PinCreationIntegrationTest : IntegrationTest() {
             .body(
                 """{
                     "sourceContextUrl": "https://example.com/page",
-                    "sourceMediaUrl": "https://example.com/image.jpg",
+                    "sourceMediaUrl": "https://example.com/media.jpg",
                     "description": "A test pin"
                 }"""
             )
@@ -37,7 +37,7 @@ class PinCreationIntegrationTest : IntegrationTest() {
             .body("id", notNullValue())
             .body("authorId", equalTo(auth.user.id.toString()))
             .body("sourceContextUrl", equalTo("https://example.com/page"))
-            .body("sourceMediaUrl", equalTo("https://example.com/image.jpg"))
+            .body("sourceMediaUrl", equalTo("https://example.com/media.jpg"))
             .body("description", equalTo("A test pin"))
             .body("tags", emptyIterable<Any>())
     }
@@ -72,7 +72,7 @@ class PinCreationIntegrationTest : IntegrationTest() {
             .body(
                 """{
                     "sourceContextUrl": null,
-                    "sourceMediaUrl": "https://example.com/image.jpg",
+                    "sourceMediaUrl": "https://example.com/media.jpg",
                     "description": "A pin found on no page at all"
                 }"""
             )
@@ -112,7 +112,7 @@ class PinCreationIntegrationTest : IntegrationTest() {
             .body(
                 """{
                     "sourceContextUrl": "https://example.com/page",
-                    "sourceMediaUrl": "https://example.com/image.jpg",
+                    "sourceMediaUrl": "https://example.com/media.jpg",
                     "description": "A test pin"
                 }"""
             )
@@ -132,7 +132,7 @@ class PinCreationIntegrationTest : IntegrationTest() {
             .body(
                 """{
                     "sourceContextUrl": "https://example.com/page",
-                    "sourceMediaUrl": "https://example.com/image.jpg",
+                    "sourceMediaUrl": "https://example.com/media.jpg",
                     "description": "A test pin"
                 }"""
             )

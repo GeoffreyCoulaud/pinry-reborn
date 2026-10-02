@@ -21,7 +21,7 @@ data class HandshakeOutputDto(
         val maxImportArchiveBytes: Long,
     )
 
-    /** Shortest side, in pixels, each `size` of `GET /api/v1/pins/{pinId}/image` answers. */
+    /** Shortest side, in pixels, each `size` of `GET /api/v1/pins/{pinId}/media` answers. */
     data class RenditionSizesDto(
         val tiny: Int,
         val small: Int,

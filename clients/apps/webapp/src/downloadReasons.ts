@@ -11,14 +11,14 @@ const REASONS: Record<Known<"DownloadReasonDto">, () => string> = {
 	ACCESS_DENIED: m.reason_access_denied,
 	NOT_FOUND: m.reason_not_found,
 	TOO_LARGE: m.reason_too_large,
-	INVALID_IMAGE: m.reason_invalid_image,
+	INVALID_MEDIA: m.reason_invalid_image,
 	TOO_MANY_PIXELS: m.reason_too_many_pixels,
 	INTERNAL_ERROR: m.reason_internal_error,
 	FETCH_FAILED: m.reason_fetch_failed,
 };
 
 /**
- * Whether the same request can pass next time: the two reasons `DownloadPinImage` retries itself.
+ * Whether the same request can pass next time: the two reasons `DownloadPinMedia` retries itself.
  * The others would earn the same answer, `FETCH_FAILED` included (specification 2026-09-27, decision D).
  */
 const RETRIABLE: Record<Known<"DownloadReasonDto">, boolean> = {
@@ -27,7 +27,7 @@ const RETRIABLE: Record<Known<"DownloadReasonDto">, boolean> = {
 	ACCESS_DENIED: false,
 	NOT_FOUND: false,
 	TOO_LARGE: false,
-	INVALID_IMAGE: false,
+	INVALID_MEDIA: false,
 	TOO_MANY_PIXELS: false,
 	INTERNAL_ERROR: true,
 	FETCH_FAILED: false,

@@ -8,7 +8,7 @@ import { m } from "../paraglide/messages.js";
 import { type Pin, useRecyclePins } from "../pins";
 import { IconButton } from "./IconButton";
 import { PinEditForm } from "./PinEditForm";
-import { PinImage } from "./PinImage";
+import { PinMedia } from "./PinMedia";
 import { PinSides } from "./PinSides";
 
 /** The column beside the image. */
@@ -178,7 +178,7 @@ export function PinDialog({
 		return (
 			<PinEditForm
 				pin={pin}
-				image={<PinImage pin={pin} placeholder={placeholder} retries={false} />}
+				media={<PinMedia pin={pin} placeholder={placeholder} retries={false} />}
 				close={() => setEditing(false)}
 			/>
 		);
@@ -187,10 +187,10 @@ export function PinDialog({
 	return (
 		<PinSides
 			onPointerDown={swipe}
-			image={
+			media={
 				<>
 					{/* Keyed, like the column: stepping would otherwise carry one pin's mutation onto the next. */}
-					<PinImage key={pin.id} pin={pin} placeholder={placeholder} />
+					<PinMedia key={pin.id} pin={pin} placeholder={placeholder} />
 					<IconButton
 						icon={ChevronLeft}
 						name={m.pin_previous()}

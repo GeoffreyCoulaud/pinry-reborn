@@ -92,7 +92,7 @@ internal class UserDataImportCompletionTest : UserDataImportRunnerFixtures() {
         stubDigest()
         stubHashLookup()
         stubArchiveRelease()
-        every { imageStore.stage(any(), MAX_IMAGE_BYTES) } throws IOException("No space left on device")
+        every { mediaStore.stage(any(), MAX_MEDIA_BYTES) } throws IOException("No space left on device")
 
         // When / Then: rethrown, so the queue still counts the attempt and dead-letters the task
         assertThrows(IOException::class.java) { runner.run(importId, isLastAttempt = true, renewLease) }

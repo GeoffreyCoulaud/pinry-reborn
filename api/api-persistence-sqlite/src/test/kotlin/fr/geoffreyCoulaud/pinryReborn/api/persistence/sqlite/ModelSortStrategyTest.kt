@@ -58,7 +58,7 @@ class ModelSortStrategyTest : RepositoryTest() {
             id = randomUUID(),
             author = UserModel(id = randomUUID(), name = "author", createdAt = storableNow()),
             sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/image.jpeg",
+            sourceMediaUrl = "https://example.com/media.jpeg",
             description = "d",
             createdAt = storableNow(),
             updatedAt = storableNow(),

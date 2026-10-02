@@ -17,7 +17,6 @@ import {
 } from "react-aria-components";
 import { preload } from "react-dom";
 import { downloadReason } from "../downloadReasons";
-import { useHandshake } from "../images";
 import type { PinSort } from "../lib/sorts";
 import {
 	neighbours,
@@ -25,8 +24,9 @@ import {
 	type Rendition,
 	renditionForColumn,
 	tileAspectRatio,
-	tileImageSource,
+	tileMediaSource,
 } from "../lib/tiles";
+import { useHandshake } from "../media";
 import { m } from "../paraglide/messages.js";
 import { type Pin, usePins } from "../pins";
 import { useSelection } from "../selection";
@@ -74,8 +74,8 @@ function Tile({
 }) {
 	const ref = useRef<HTMLDivElement>(null);
 	const columnWidth = useColumnWidth(ref);
-	const image = pin.image;
-	const ratio = { aspectRatio: tileAspectRatio(image?.width, image?.height) };
+	const media = pin.media;
+	const ratio = { aspectRatio: tileAspectRatio(media?.width, media?.height) };
 	const rendition = renditionForColumn(
 		columnWidth,
 		window.devicePixelRatio,
@@ -86,9 +86,9 @@ function Tile({
 
 	return (
 		<div ref={ref} className="w-full">
-			{image?.url ? (
+			{media?.url ? (
 				<img
-					src={tileImageSource(image.url, rendition)}
+					src={tileMediaSource(media.url, rendition)}
 					alt={pin.description}
 					style={ratio}
 					className="w-full rounded object-cover"
@@ -99,7 +99,7 @@ function Tile({
 					style={ratio}
 					className="grid place-content-center rounded bg-surface p-2 text-center shadow-surface"
 				>
-					{downloadReason(image?.reasonCode, image?.message) ?? pin.description}
+					{downloadReason(media?.reasonCode, media?.message) ?? pin.description}
 				</p>
 			)}
 		</div>
@@ -109,8 +109,8 @@ function Tile({
 /** The neighbours' placeholder and never their original, so a step shows an image at once. */
 function preloadNeighbours(around: (Pin | undefined)[], rendition: Rendition) {
 	for (const neighbour of around) {
-		if (neighbour?.image?.url) {
-			preload(tileImageSource(neighbour.image.url, rendition), { as: "image" });
+		if (neighbour?.media?.url) {
+			preload(tileMediaSource(neighbour.media.url, rendition), { as: "image" });
 		}
 	}
 }

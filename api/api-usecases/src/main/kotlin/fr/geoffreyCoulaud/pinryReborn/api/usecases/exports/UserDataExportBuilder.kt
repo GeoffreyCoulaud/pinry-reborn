@@ -1,7 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Image
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
@@ -11,9 +11,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveEntryDigest
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveSink
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -46,10 +46,10 @@ class UserDataExportBuilder(
     private val exportRepository: UserDataExportRepositoryInterface,
     private val userRepository: UserRepositoryInterface,
     private val pinRepository: PinRepositoryInterface,
-    private val imageRepository: ImageRepositoryInterface,
+    private val mediaRepository: MediaRepositoryInterface,
     private val boardRepository: BoardRepositoryInterface,
     private val tagRepository: TagRepositoryInterface,
-    private val imageStore: ImageStore,
+    private val mediaStore: MediaStore,
     private val archiveStore: ExportArchiveStore,
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
@@ -195,7 +195,7 @@ class UserDataExportBuilder(
             createdAt = createdAt,
             expiresAt = createdAt.plus(retention),
             user = ExportedRef(user.id, user.name),
-            counts = ExportCounts(pins = 0, boards = 0, tags = 0, images = 0),
+            counts = ExportCounts(pins = 0, boards = 0, tags = 0, media = 0),
             entries = emptyList(),
             excluded = EXCLUSIONS,
         )
@@ -217,12 +217,12 @@ class UserDataExportBuilder(
             ExportedTag(tag.id, tag.name, tag.createdAt)
         }
 
-        val writtenImagePaths = mutableSetOf<String>()
-        val imageCount = writeImages(sink, entries, user, renewLease, writtenImagePaths)
-        val pinCount = writePins(sink, entries, user, renewLease, writtenImagePaths)
+        val writtenMediaPaths = mutableSetOf<String>()
+        val mediaCount = writeMedia(sink, entries, user, renewLease, writtenMediaPaths)
+        val pinCount = writePins(sink, entries, user, renewLease, writtenMediaPaths)
 
         val manifest = header.copy(
-            counts = ExportCounts(pins = pinCount, boards = boardCount, tags = tagCount, images = imageCount),
+            counts = ExportCounts(pins = pinCount, boards = boardCount, tags = tagCount, media = mediaCount),
             entries = entries.toList(),
         )
         sink.putJsonEntry("manifest.json", manifest)
@@ -246,20 +246,20 @@ class UserDataExportBuilder(
      * Walk 1: writes every pin's image, BEFORE `pins.jsonl` is opened (a ZIP holds one open entry at
      * a time). Records each written path so walk 2 can tell a dangling reference from a real one.
      */
-    private fun writeImages(
+    private fun writeMedia(
         sink: ArchiveSink,
         entries: MutableList<ArchiveEntryDigest>,
         user: User,
         renewLease: () -> Unit,
-        writtenImagePaths: MutableSet<String>,
+        writtenMediaPaths: MutableSet<String>,
     ): Int {
         var count = 0
         for (pin in allPins(user, renewLease)) {
-            val image = imageRepository.findByPinId(pin.id) ?: continue
-            val path = imagePath(image)
-            entries += sink.putBinaryEntry(path, imageStore.openStream(image.storageKey))
+            val media = mediaRepository.findByPinId(pin.id) ?: continue
+            val path = mediaPath(media)
+            entries += sink.putBinaryEntry(path, mediaStore.openStream(media.storageKey))
             renewLease()
-            writtenImagePaths += path
+            writtenMediaPaths += path
             count++
         }
         return count
@@ -271,17 +271,17 @@ class UserDataExportBuilder(
         entries: MutableList<ArchiveEntryDigest>,
         user: User,
         renewLease: () -> Unit,
-        writtenImagePaths: Set<String>,
+        writtenMediaPaths: Set<String>,
     ): Int {
         var count = 0
         val pins = allPins(user, renewLease)
-            .map { pin -> exportedPin(pin, writtenImagePaths) }
+            .map { pin -> exportedPin(pin, writtenMediaPaths) }
             .onEach { count++ }
         entries += sink.putJsonLinesEntry("pins.jsonl", pins)
         return count
     }
 
-    private fun exportedPin(pin: Pin, writtenImagePaths: Set<String>): ExportedPin = ExportedPin(
+    private fun exportedPin(pin: Pin, writtenMediaPaths: Set<String>): ExportedPin = ExportedPin(
         id = pin.id,
         description = pin.description,
         sourceContextUrl = pin.sourceContextUrl,
@@ -292,7 +292,7 @@ class UserDataExportBuilder(
         tags = pin.tags.map { tag -> ExportedRef(tag.id, tag.name) },
         boards = pinRepository.findBoardsForPinIncludingRecycled(pin.id)
             .map { board -> ExportedRef(board.id, board.name) },
-        image = exportedImage(pin, writtenImagePaths),
+        media = exportedMedia(pin, writtenMediaPaths),
     )
 
     /**
@@ -300,28 +300,28 @@ class UserDataExportBuilder(
      * second condition is what makes a dangling reference structurally impossible, since a path only
      * survives here if walk 1 actually wrote it.
      */
-    private fun exportedImage(pin: Pin, writtenImagePaths: Set<String>): ExportedImage? {
-        val image = imageRepository.findByPinId(pin.id) ?: return null
-        val path = imagePath(image)
-        return if (path in writtenImagePaths) {
-            ExportedImage(
-                id = image.id,
+    private fun exportedMedia(pin: Pin, writtenMediaPaths: Set<String>): ExportedMedia? {
+        val media = mediaRepository.findByPinId(pin.id) ?: return null
+        val path = mediaPath(media)
+        return if (path in writtenMediaPaths) {
+            ExportedMedia(
+                id = media.id,
                 path = path,
-                mimeType = image.mimeType,
-                width = image.width,
-                height = image.height,
-                animated = image.animated,
-                byteSize = image.byteSize,
-                sha256 = image.contentHash,
-                createdAt = image.createdAt,
+                mimeType = media.mimeType,
+                width = media.width,
+                height = media.height,
+                animated = media.animated,
+                byteSize = media.byteSize,
+                sha256 = media.contentHash,
+                createdAt = media.createdAt,
             )
         } else {
             null
         }
     }
 
-    private fun imagePath(image: Image): String =
-        "images/${image.id}.${ExportImageExtension.forMimeType(image.mimeType)}"
+    private fun mediaPath(media: Media): String =
+        "media/${media.id}.${ExportMediaExtension.forMimeType(media.mimeType)}"
 
     /** Active pins, then recycled pins: the set walked by both image and pin passes. */
     private fun allPins(user: User, renewLease: () -> Unit): Sequence<Pin> =

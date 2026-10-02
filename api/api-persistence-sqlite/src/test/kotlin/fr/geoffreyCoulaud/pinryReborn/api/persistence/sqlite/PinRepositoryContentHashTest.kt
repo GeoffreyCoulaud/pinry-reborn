@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Image
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanImageRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -15,16 +15,16 @@ import java.util.UUID.randomUUID
  * accounts unless the author is part of the question, which is why the cross-user case is here.
  */
 class PinRepositoryContentHashTest : PinRepositoryFixtures() {
-    private val imageRepository = EbeanImageRepository(persistor, transactionRunner)
+    private val mediaRepository = EbeanMediaRepository(persistor, transactionRunner)
     private val contentHash = "a".repeat(64)
     private val otherContentHash = "b".repeat(64)
 
-    private fun giveImage(
+    private fun giveMedia(
         pin: Pin,
         hash: String = contentHash,
-    ): Image =
-        imageRepository.save(
-            Image(
+    ): Media =
+        mediaRepository.save(
+            Media(
                 id = randomUUID(),
                 pinId = pin.id,
                 mimeType = "image/png",
@@ -44,8 +44,8 @@ class PinRepositoryContentHashTest : PinRepositoryFixtures() {
         val author = createAndSaveUser()
         val first = createAndSavePin(author)
         val second = createAndSavePin(author)
-        giveImage(first)
-        giveImage(second)
+        giveMedia(first)
+        giveMedia(second)
 
         // When
         val found = repository.findPinIdsByContentHashForUser(author, contentHash)
@@ -59,7 +59,7 @@ class PinRepositoryContentHashTest : PinRepositoryFixtures() {
         // Given: recycling a pin must not make the import create a second copy of it
         val author = createAndSaveUser()
         val pin = createAndSavePin(author)
-        giveImage(pin)
+        giveMedia(pin)
         repository.softDeletePin(pin, storableNow())
 
         // When
@@ -74,7 +74,7 @@ class PinRepositoryContentHashTest : PinRepositoryFixtures() {
         // Given
         val author = createAndSaveUser()
         val stranger = createAndSaveUser()
-        giveImage(createAndSavePin(stranger))
+        giveMedia(createAndSavePin(stranger))
 
         // When
         val found = repository.findPinIdsByContentHashForUser(author, contentHash)
@@ -87,7 +87,7 @@ class PinRepositoryContentHashTest : PinRepositoryFixtures() {
     fun `Given only another digest, Then the lookup returns empty`() {
         // Given
         val author = createAndSaveUser()
-        giveImage(createAndSavePin(author), hash = otherContentHash)
+        giveMedia(createAndSavePin(author), hash = otherContentHash)
 
         // When
         val found = repository.findPinIdsByContentHashForUser(author, contentHash)
@@ -114,7 +114,7 @@ class PinRepositoryContentHashTest : PinRepositoryFixtures() {
                 .joinToString("\n") { "${it["detail"]}" }
 
         // Then: read on a table with no statistics, so this pins the plan the planner picks unaided
-        assertTrue(plan.contains("ix_images_content_hash"), plan)
+        assertTrue(plan.contains("ix_media_content_hash"), plan)
         assertFalse(plan.contains("SCAN"), plan)
     }
 }

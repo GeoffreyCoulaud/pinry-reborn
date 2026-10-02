@@ -25,7 +25,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin = pinCreator.createPin(
             author = auth.user,
             sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/image.jpg",
+            sourceMediaUrl = "https://example.com/media.jpg",
             description = "My pin",
             tags = emptyList()
         )
@@ -44,7 +44,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin = pinCreator.createPin(
             author = auth.user,
             sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/image.jpg",
+            sourceMediaUrl = "https://example.com/media.jpg",
             description = "My pin",
             tags = listOf("landscape"),
         )
@@ -81,7 +81,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin = pinCreator.createPin(
             author = auth.user,
             sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/image.jpg",
+            sourceMediaUrl = "https://example.com/media.jpg",
             description = "My pin",
             tags = listOf("oldtag1", "oldtag2")
         )
@@ -99,7 +99,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin = pinCreator.createPin(
             author = auth.user,
             sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/image.jpg",
+            sourceMediaUrl = "https://example.com/media.jpg",
             description = "My pin",
             tags = listOf("tag1", "tag2")
         )
@@ -117,7 +117,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin = pinCreator.createPin(
             author = owner.user,
             sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/image.jpg",
+            sourceMediaUrl = "https://example.com/media.jpg",
             description = "Owner's pin",
             tags = emptyList()
         )
@@ -149,7 +149,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin = pinCreator.createPin(
             author = auth.user,
             sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/image.jpg",
+            sourceMediaUrl = "https://example.com/media.jpg",
             description = "My pin",
             tags = emptyList()
         )
@@ -168,7 +168,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         mapOf(
             "description" to "My pin",
             "sourceContextUrl" to "https://example.com/page",
-            "sourceMediaUrl" to "https://example.com/image.jpg",
+            "sourceMediaUrl" to "https://example.com/media.jpg",
             "tags" to tags,
             "boardIds" to emptyList<String>(),
         )
