@@ -22,12 +22,7 @@ object ByteRangeResponse {
         return builder
     }
 
-    /**
-     * Copies exactly [byteCount] bytes from [input] to [output]. Deliberately NOT `copyTo`, which
-     * streams to end-of-file: that would contradict an announced `Content-Length` on a range slice.
-     * Stops early on end-of-stream instead of looping forever, even though that should not happen
-     * in practice (the announced size always comes from the same row as the bytes on disk).
-     */
+    // Not `copyTo`, which reads to the end and would overrun a slice's announced `Content-Length`.
     private fun copyBounded(input: InputStream, output: OutputStream, byteCount: Long) {
         val buffer = ByteArray(COPY_BUFFER_SIZE)
         var remaining = byteCount
