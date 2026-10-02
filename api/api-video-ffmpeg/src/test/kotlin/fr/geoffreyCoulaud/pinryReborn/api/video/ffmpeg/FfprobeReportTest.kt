@@ -55,11 +55,16 @@ class FfprobeReportTest {
         }
     }
 
+    private fun dimensionsTurned(degrees: Int): Pair<Int, Int> {
+        val turn = mapOf("side_data_type" to "Display Matrix", "rotation" to degrees)
+        val result = FfprobeReport.read(report(h264("side_data_list" to listOf(turn))), maxDuration)
+        return result.width to result.height
+    }
+
     @Test
-    fun `Given a quarter turn either way, Then the width and height swap`() {
-        val quarterTurn = mapOf("side_data_type" to "Display Matrix", "rotation" to -90)
-        val result = FfprobeReport.read(report(h264("side_data_list" to listOf(quarterTurn))), maxDuration)
-        assertEquals(120 to 160, result.width to result.height)
+    fun `Given a quarter turn either way, Then the width and height swap, and a half turn keeps them`() {
+        assertEquals(120 to 160, dimensionsTurned(-90))
+        assertEquals(160 to 120, dimensionsTurned(180))
     }
 
     @Test
@@ -101,37 +106,18 @@ class FfprobeReportTest {
     }
 
     @Test
-    fun `Given a pixel aspect ratio of 2 to 1, Then the width displayed is doubled`() {
-        val result = FfprobeReport.read(report(h264("sample_aspect_ratio" to "2:1")), maxDuration)
-        assertEquals(320 to 120, result.width to result.height)
+    fun `Given a pixel aspect ratio of 2 to 1, Then the width displayed is doubled, and square otherwise`() {
+        val width = { fields: Array<Pair<String, Any>> -> FfprobeReport.read(report(h264(*fields)), maxDuration).width }
+        assertEquals(320, width(arrayOf("sample_aspect_ratio" to "2:1")))
+        assertEquals(160, width(arrayOf("sample_aspect_ratio" to "0:1")))
+        assertEquals(160, width(emptyArray()))
     }
 
     @Test
-    fun `Given an unknown or missing pixel aspect ratio, Then the pixels are square`() {
-        val unknown = FfprobeReport.read(report(h264("sample_aspect_ratio" to "0:1")), maxDuration)
-        val missing = FfprobeReport.read(report(h264()), maxDuration)
-        assertEquals(160, unknown.width)
-        assertEquals(160, missing.width)
-    }
-
-    @Test
-    fun `Given a half turn, Then the width and height stay`() {
-        val halfTurn = mapOf("side_data_type" to "Display Matrix", "rotation" to 180)
-        val upsideDown = h264("side_data_list" to listOf(halfTurn))
-        val result = FfprobeReport.read(report(upsideDown), maxDuration)
-        assertEquals(160 to 120, result.width to result.height)
-    }
-
-    @Test
-    fun `Given H265 in profile space 1, high tier, with no constraint, Then its parameter carries each`() {
-        val record = "01" + "61" + "60000000" + "000000000000" + "5d"
-        assertEquals("hvc1.A1.6.H93", codecsOf(track("video", "hevc", "extradata" to dump(record))))
-    }
-
-    @Test
-    fun `Given H265 with a constraint byte, Then its parameter keeps it and drops the trailing zeros`() {
-        val record = "01" + "01" + "60000000" + "900000000000" + "1e"
-        assertEquals("hvc1.1.6.L30.90", codecsOf(track("video", "hevc", "extradata" to dump(record))))
+    fun `Given H265 records, Then its parameter carries the space, the tier and the constraints but trailing zeros`() {
+        val hevc = { record: String -> track("video", "hevc", "extradata" to dump(record)) }
+        assertEquals("hvc1.A1.6.H93", codecsOf(hevc("01" + "61" + "60000000" + "000000000000" + "5d")))
+        assertEquals("hvc1.1.6.L30.90", codecsOf(hevc("01" + "01" + "60000000" + "900000000000" + "1e")))
     }
 
     @Test
