@@ -11,10 +11,11 @@ FROM eclipse-temurin:25-jre@sha256:bb036ed6cfdc57e3da7c22634d15f1b840d2caf761838
 
 # curl is used only by the HEALTHCHECK below. libvips42t64 is the native
 # library vips-ffm loads for api-imaging-vips (eclipse-temurin:25-jre is
-# Ubuntu-based, post 64-bit-time_t transition, hence the t64 suffix). Install
-# both minimally and drop the apt lists to keep the layer small.
+# Ubuntu-based, post 64-bit-time_t transition, hence the t64 suffix). ffmpeg
+# brings the ffprobe and ffmpeg processes api-video-ffmpeg runs (ADR 0047).
+# Install them minimally and drop the apt lists to keep the layer small.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl libvips42t64 \
+    && apt-get install -y --no-install-recommends curl libvips42t64 ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root runtime user.

@@ -242,6 +242,7 @@ The lead adds four decisions, submitted with this document:
 | 20 | `feat/the-orphans-are-swept` | Originals with no row, and stale staged files |
 | 30 | `feat/the-original-answers-ranges` | `Range` on the original |
 | 40 | `feat/ffprobe-reads-a-video` | The `api-video-ffmpeg` module, `probe`, ffmpeg in both images |
+| 42 | `test/the-probe-reads-its-fixtures` | The probe's other fixtures and their assertions |
 | 45 | `feat/ffmpeg-repackages-a-video` | `repackage`, `poster`, the container function |
 | 50 | `refactor/one-ingestion-path` | `MediaIngestion` for images, the three callers moved onto it |
 | 53 | `feat/a-video-is-ingested` | The video branch, the bounds, the refusals, the handshake |
@@ -302,7 +303,17 @@ merges whole.
 - A process past `media.video_timeout` is destroyed and reported as a domain exception.
 - ffmpeg is in `api/Dockerfile`, `.dagger/gradle.Dockerfile` and `api/AGENTS.md`'s setup.
 - `VideoProcessor`'s consumer is block 50, which the pull request says. If the block passes 20 files, the fixtures
-  that only `repackage` needs move to 45.
+  that only `repackage` needs move to 45. (Corrected: every fixture is `probe`'s, and the block measured 24 files
+  and 523 lines; the operator chose on 2026-10-03 to keep the H.264 with AAC, the MPEG-TS and the playlist here,
+  each other case asserted on ffprobe's JSON written by hand, and to move the other seven fixtures to block 42.
+  `media.video_timeout` and the processor's producer move to block 50.)
+
+### 42, the probe's fixtures
+
+- The seven fixtures block 40 left out, their commands added to the `README`: H.265 tagged `hev1` with AAC, VP9
+  with Opus, AV1 without audio, H.264 with AC-3, the 121-second clip, the rotated clip, the AVIF still.
+- `probe` returns their codecs, the rotated one with width and height swapped, and refuses AC-3 naming it, the
+  121-second clip and the AVIF.
 
 ### 45, repackaging
 
@@ -321,6 +332,8 @@ merges whole.
 - The upload, the download and the import call `MediaIngestion`; the storage key is built once
   (`command grep -rn 'originals/' api/*/src/main` finds one site).
 - Every existing image test passes unchanged in what it asserts.
+- `media.video_timeout` (`PT60S`) joins `MediaConfig`, and a producer builds `FfmpegVideoProcessor` from it, moved
+  here from block 40 so that the key is read where `VideoProcessor` is first called.
 
 ### 53, video ingestion
 
