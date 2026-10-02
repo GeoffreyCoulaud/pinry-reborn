@@ -2,7 +2,7 @@
 
 Status: Accepted
 Date: 2026-10-02
-Specification: `docs/specs/2026-10-02-the-pin-holds-a-video.md`, decisions E2, F1, G1, H1, M1, P1, T1, v.
+Specification: `docs/specs/2026-10-02-the-pin-holds-a-video.md`, decisions E2, F1, G1, H1, M1, P1, T1, Y2, v.
 Written in block 10.
 
 ## Context
@@ -40,10 +40,12 @@ Behind a proxy, a refusal reaches neither client as such: the JDK reports a refu
    format the first run chose. The format is chosen by a chain of `-f` selectors, H.264, then VP9, then AV1, then
    H.265, each with AAC, Opus or MP3. The worker bounds the run in time and its directory in bytes.
 
-4. **yt-dlp is pinned by uv and raised by Dependabot**: `api/tools/yt-dlp/pyproject.toml` (`yt-dlp[default]`) and
-   `uv.lock`, installed with `uv sync --frozen` on the apt `python3`, `UV_PYTHON_DOWNLOADS=never`, in the API's
-   image and the gate's container, under Dependabot's `uv` ecosystem, weekly. It never updates itself: the code
-   that runs is the code the gate ran.
+4. **yt-dlp is pinned by pip and raised by Dependabot**: `api/tools/yt-dlp/requirements.in` (`yt-dlp[default]`)
+   compiled to a `requirements.txt` carrying every pin and hash, installed with `pip install --require-hashes` in a
+   venv on the apt `python3`, in the API's image and the gate's container, under Dependabot's `pip` ecosystem,
+   weekly. It never updates itself: the code that runs is the code the gate ran. uv would be one tool more for one
+   package; the release's standalone binary is a file Dependabot cannot follow, and Ubuntu's package was five
+   months old.
 
 5. **Deno ships beside it**, copied from a pinned `denoland/deno:bin` image (95.8 MB): yt-dlp needs a JavaScript
    runtime and `yt-dlp-ejs` for YouTube, and enables `deno` by default.

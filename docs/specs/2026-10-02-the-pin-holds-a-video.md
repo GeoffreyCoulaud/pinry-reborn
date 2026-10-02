@@ -53,11 +53,14 @@ the pin's view plays it with sound. A browser that cannot decode it shows the po
 
 ## 3. The decisions
 
-Each letter is the question the operator answered on 2026-10-02 in Discuss.
+Each letter is the question the operator answered on 2026-10-02, in Discuss or, for T1, X1 and Y2, in reading this
+document.
 
 **A. A video is at most 120 seconds and 50 MiB**, two keys, `media.max_video_seconds` and
 `media.max_video_bytes`. An image keeps its own bound, `media.max_image_bytes` (today's `images.max_file_bytes`).
-`quarkus.http.limits.max-body-size` rises to 64M so that `BodyLimitCheck` holds.
+`quarkus.http.limits.max-body-size` rises to 64M so that `BodyLimitCheck` holds, and `proxy.conf`'s
+`client_max_body_size` to 96M, which its comment keeps above Quarkus' so that an oversized upload is refused by the
+API in `application/problem+json` rather than by nginx in HTML.
 
 **B1, K1. A video is never re-encoded.** Video codecs H.264, H.265, VP9 and AV1; audio codecs AAC, Opus and MP3, or
 no audio. The first video track and the first audio track are kept, every other track dropped (a subtitle track
@@ -68,10 +71,15 @@ would otherwise make a WebM output fail). Anything else is refused, naming the c
 configuration keys and the default directory `/var/lib/pinry/media` follow; nothing is deployed (`git tag -l 'v*'`
 and `gh release list` are both empty). ADR 0049.
 
-**D1. A video's renditions are its poster**: ffmpeg's `thumbnail` filter over the first 100 frames, scaled to square
-pixels (`scale=iw*sar:ih,setsar=1`), drawn by libvips at the four sizes. Extracted on a rendition's cache miss and
-never stored apart. A video always takes the rendition path, at the smaller of the requested size and its shortest
-side: the original is never served to an `<img>`. No animated rendition; the original plays instead.
+**D1, X1. A video's still rendition is its poster, its animated rendition its first three seconds.** The poster is
+the frame ffmpeg's `thumbnail` filter picks over the first 100 frames, drawn by libvips at the four sizes. The
+animated rendition (`?animated=true`) is the first three seconds at 12 frames per second, encoded by ffmpeg's
+`libwebp_anim` at the rendition's size and `media.renditions.webp_quality`: 0.3 s and 184 KB for a 320x240 lavfi
+clip on ffmpeg 9.0.2, `libwebp_anim` being in the image's 8.0.1 too. Both correct an anamorphic source, whose pixels
+are not square, so that they keep the proportions the video displays at (`scale=iw*sar:ih,setsar=1`). Both are
+made on a rendition's cache miss and never stored apart. A video always takes the rendition path, at the smaller
+of the requested size and its shortest side: the original is never served to an `<img>`. The web application asks
+for the still and plays the original on hover; the original itself is never touched.
 
 **E2, H1. A page address yields its video through yt-dlp, now.** The worker reads the response's `Content-Type`:
 `text/html` and `application/xhtml+xml` go to yt-dlp; anything else, `application/octet-stream` and a missing
@@ -85,10 +93,16 @@ said: `api-fetch-http` depends on no framework. The proxy's record, not an HTTP 
 turns a failure into `URL_NOT_ALLOWED` or `UNREACHABLE`: through a tunnel, the JDK reports a refusal as
 `IOException: Tunnel failed, got: 403` (measured by the review). ADR 0048.
 
-**G1. yt-dlp is pinned by uv**: `api/tools/yt-dlp/pyproject.toml` (`yt-dlp[default]`, the set yt-dlp
-recommends, which carries `yt-dlp-ejs` at the version yt-dlp pins) and its `uv.lock`, marked `linguist-generated`.
-In both images: `python3` from apt, `uv` copied from a pinned `ghcr.io/astral-sh/uv` image,
-`UV_PYTHON_DOWNLOADS=never`, `uv sync --frozen`. Dependabot's `uv` ecosystem raises it weekly. ADR 0048.
+**G1, Y2. yt-dlp is pinned by pip**: `api/tools/yt-dlp/requirements.in` names `yt-dlp[default]`, the set yt-dlp
+recommends, which carries `yt-dlp-ejs` at the version yt-dlp pins; `requirements.txt`, compiled from it by
+`pip-compile --generate-hashes` (pip-tools, on the workstation only) with every transitive pin and its hash, is
+marked `linguist-generated`. Dependabot recognises a pip-compile output by its header and recompiles it; block 100
+confirms it in Dependabot's documentation and says where. In both images: `python3` and `python3-venv` from apt,
+a venv under `/opt/yt-dlp`, `pip install --require-hashes --no-cache-dir -r requirements.txt`, its `bin/` on the
+`PATH`. Dependabot's `pip` ecosystem raises it weekly. uv was the first answer, then dropped: one tool more for one
+package. The release's standalone binary was weighed too: Dependabot cannot follow a release asset, and a pull
+request opened by a workflow's own token starts no workflow. Ubuntu's `yt-dlp` is `2026.03.17-1`, five months old.
+ADR 0048.
 
 **T1. Deno ships with yt-dlp**, the JavaScript runtime yt-dlp 2026.08.19 enables by default and needs for YouTube,
 Shorts included. Its binary is copied from a pinned `denoland/deno:bin` image (95.8 MB, `docker export` of the
@@ -134,8 +148,8 @@ The lead adds four decisions, submitted with this document:
 - **iii. The export archive carries `media/`, format version 2**, the import refusing version 1. Taken in block
   10, whose script rewrites the archive's literal. The import stores a video as the archive carries it, after
   probing it: it was repackaged when first ingested, and a second pass would change its bytes. ADR 0049.
-- **iv. A video stores `animated = false`** and the dimensions it displays at: a 90 degree rotation in the stream's
-  side data swaps width and height, so a portrait phone video gets a portrait tile.
+- **iv. A video stores `animated = true`** (decision X1) and the dimensions it displays at: a 90 degree rotation in
+  the stream's side data swaps width and height, so a portrait phone video gets a portrait tile.
 - **v. yt-dlp runs twice per page.** First `--dump-single-json`, which downloads nothing: the worker reads the
   duration, the live flag and the chosen format's size, and refuses with an exact reason. Then the download, with
   `-f` fixed to the format the first run chose. One page fetch more, and no reason read from stderr. ADR 0048.
@@ -156,14 +170,16 @@ The lead adds four decisions, submitted with this document:
   sit in separate sets.
 - **Routes**: `/pins/{pinId}/media`, `/pins/{pinId}/media/status`, `/me/media-downloads`. **Keys**: `media.*`,
   `media.renditions.*`, `media.download.*`, also in `compose.yml` (`MEDIA_DATA_DIR: /data/media`) and in the
-  `api/Dockerfile` comment that names them. **Tables**: `media`, `media_download`, by migration `1.28`.
+  `api/Dockerfile` comment that names them. **Tables**: `media`, `media_download`, by migration `1.28` as Ebean's
+  generator writes it. If that drops and creates the tables, a workstation's rows are lost, which the operator
+  accepts ("on casse des choses"), and block 20's sweep removes the originals left behind.
 - **The export** writes `media/<id>.<ext>` and `EXPORT_FORMAT_VERSION = 2` (decision iii).
 - **The client follows** in the same block: paths, schema names and the `pin.media` field.
 
 ### The video processor (blocks 40 and 45)
 
 - **A new module `api-video-ffmpeg`** (role `video`, a new `Layer` in `ArchitectureKonsistTest`) implements a domain
-  port `VideoProcessor`: `probe`, `repackage`, `poster`. Each runs `ffprobe` or `ffmpeg` with decision J1's flags
+  port `VideoProcessor`: `probe`, `repackage`, `poster`, `preview`. Each runs `ffprobe` or `ffmpeg` with decision J1's flags
   and `media.video_timeout` (`PT60S`), after which the process is destroyed.
 - **`probe`** reads `ffprobe -of json -show_streams -show_format -show_data`: the demuxer, the codecs, the display
   dimensions, the duration, the extradata. It refuses an unlisted codec, a duration past the bound, a missing
@@ -185,8 +201,9 @@ The lead adds four decisions, submitted with this document:
 
 - **The original answers `Range`** with `206`, `Accept-Ranges: bytes` and a quoted `ETag`; the `206` builder moves
   out of `MeExportController` to `http/`, both controllers calling it.
-- **A video's rendition**: `VideoProcessor.poster` writes a PNG to a staged file, `ImageTransformer.render` draws
-  the WebP, the cache keeps it as it keeps any rendition.
+- **A video's still rendition**: `VideoProcessor.poster` writes a PNG to a staged file, `ImageTransformer.render`
+  draws the WebP. **Its animated rendition**: `VideoProcessor.preview` writes the WebP itself, at the size and
+  quality the rendition asks. The cache keeps both as it keeps any rendition.
 
 ### Fetching (blocks 90 to 110)
 
@@ -228,13 +245,13 @@ The lead adds four decisions, submitted with this document:
 | 50 | `refactor/one-ingestion-path` | `MediaIngestion` for images, the three callers moved onto it |
 | 53 | `feat/a-video-is-ingested` | The video branch, the bounds, the refusals, the handshake |
 | 56 | `fix/the-download-renews-its-lease` | The lease renewed during a fetch |
-| 60 | `feat/a-video-has-a-poster` | The poster as rendition |
+| 60 | `feat/a-video-has-renditions` | The poster and the animated preview as renditions |
 | 70 | `feat/the-webapp-plays-a-video` | The player and its fallback |
 | 75 | `feat/the-grid-previews-a-video` | Badge and hover |
 | 80 | `feat/the-webapp-uploads-a-video` | Upload, previews, sentences |
 | 90 | `feat/a-guarding-proxy` | The proxy and its record |
 | 95 | `refactor/the-fetch-goes-through-the-proxy` | The fetcher behind it, its `Content-Type` |
-| 100 | `feat/yt-dlp-extracts-a-page` | uv, yt-dlp in both images, the `api-fetch-ytdlp` module |
+| 100 | `feat/yt-dlp-extracts-a-page` | pip, yt-dlp and Deno in both images, the `api-fetch-ytdlp` module |
 | 110 | `feat/a-page-address-yields-its-video` | The worker's dispatch on `Content-Type` |
 
 Each block measures its budget once committed, against its parent branch, and each test that guards a refusal is
@@ -245,14 +262,13 @@ merges whole.
 
 - `dagger call gate` green, `contract/openapi.json` regenerated at `21.0.0`.
 - The script, run on `main`, reproduces the block's diff except these files, listed in the report: the script,
-  migration `1.28` with its model file and its test, `EXPORT_FORMAT_VERSION` and the import's version test,
+  migration `1.28` with its model file, `EXPORT_FORMAT_VERSION` and the import's version test,
   `contract/openapi.json` and the contract's version, this specification and the three ADRs.
 - `command grep -rnw` of each renamed identifier over `api/*/src` and `clients/apps/webapp/src`, `dbmigration/`,
   `model/` and `src/paraglide/` excluded, finds nothing.
-- Migration `1.28` (`ALTER TABLE images RENAME TO media`, the same for `image_download`, `DROP INDEX` and
-  `CREATE INDEX` for `ix_images_content_hash` and `ux_image_download_pin`; `1.28.model.xml` with `<renameTable>`),
-  applied to a database holding a pin with an image and a failed download at `1.27`, keeps both rows: a migration
-  test. `GenerateDbMigration` run after it writes no `1.29`.
+- Migration `1.28` is what `GenerateDbMigration` writes; run a second time, it writes no `1.29`. Every constraint
+  and index of the two tables is named after `media` or `media_download` (`sqlite_master` read in the migration
+  guard tests).
 
 ### 20, the sweeps
 
@@ -288,9 +304,11 @@ merges whole.
 - `repackage` gives MP4 for the H.264 and H.265 fixtures, H.265 tagged `hvc1`, and WebM for VP9 and AV1; each
   output probes to the same codecs, profile, level and packet count; repackaging the same fixture twice gives the
   same bytes; a fixture with a subtitle track repackages to WebM without it.
-- `poster` gives a PNG whose dimensions equal what `probe` returns, the rotated fixture included, and a 2:1 sample
-  aspect ratio fixture gives a square-pixel PNG.
-- `repackage` and `poster` refuse the MPEG-TS and the playlist themselves, not through `probe`.
+- `poster` gives a PNG whose dimensions equal what `probe` returns, the rotated fixture included; a fixture with a
+  2:1 pixel aspect ratio gives a PNG twice as wide as its coded frame.
+- `preview` gives an animated WebP of at most three seconds and more than one frame (`n-pages`), whose shortest side
+  is the requested one.
+- `repackage`, `poster` and `preview` refuse the MPEG-TS and the playlist themselves, not through `probe`.
 - The container function at 100 % for every pair of decision L1.
 
 ### 50, one ingestion path
@@ -303,7 +321,8 @@ merges whole.
 
 - Uploading each accepted fixture answers `201` and `GET /media` serves `video/mp4` or `video/webm` with its
   `codecs`; the AC-3 fixture answers `415 MEDIA_CODEC_UNSUPPORTED`, the 121-second clip `422 MEDIA_TOO_LONG`, a
-  51 MiB file `413`, the AVIF `415`.
+  51 MiB file `413`, the AVIF `415`. Through the compose stack's nginx, the 51 MiB file still answers the API's
+  `413` in `application/problem+json`.
 - An image upload still refuses past `media.max_image_bytes` though under `media.max_video_bytes`.
 - A video fetched from a file address becomes the pin's media.
 - An export holding a video imports into an empty account with the same bytes and the same hash.
@@ -315,12 +334,13 @@ merges whole.
 - In a test with a short `tasks.lease_duration`, a fetch slower than the lease runs once: the task is never
   reclaimed, its lease renewed.
 
-### 60, the poster
+### 60, the renditions
 
-- `GET /media?size=small` of a video answers `image/webp` whose shortest side is `media.renditions.small`, and a
-  second request is a cache hit.
+- `GET /media?size=small` of a video answers a single-frame `image/webp` whose shortest side is
+  `media.renditions.small`, and a second request is a cache hit.
+- `GET /media?size=small&animated=true` of a video answers an `image/webp` of more than one frame, cached apart from
+  the still.
 - A video whose shortest side is under the requested size still answers `image/webp`, never `video/*`.
-- `?animated=true` on a video answers the same still.
 
 ### 70, playing
 
@@ -361,9 +381,10 @@ merges whole.
 
 ### 100, yt-dlp
 
-- `api/tools/yt-dlp/pyproject.toml` and `uv.lock` pin yt-dlp, `linguist-generated` in `.gitattributes`; both images
-  install it as decision G1 says, and `deno` as decision T1 says; `.github/dependabot.yml` gains the `uv` entry;
-  `imageContext` and the gate's environment receive both files.
+- `api/tools/yt-dlp/requirements.in` and `requirements.txt` pin yt-dlp, the second `linguist-generated` in
+  `.gitattributes`; both images install it as decision G1 says, and `deno` as decision T1 says;
+  `.github/dependabot.yml` gains the `pip` entry; `imageContext` and the gate's environment receive
+  `requirements.txt`. A `requirements.txt` with one hash altered fails the image's build.
 - In the API image, `yt-dlp --verbose` lists `deno` among its enabled JavaScript runtimes and `yt-dlp-ejs` among
   its components (`dagger call smoke` or a dedicated check in the image function, the block chooses and says).
 - `PageMediaExtractor` extracts the `<video>` of a local HTML page; refuses a page with none; refuses a page whose
@@ -392,15 +413,14 @@ merges whole.
 | **Import from 3rd party sites** (Features) | Left open: a bulk import of collections is its own design; this lot pins one address at a time |
 | **Import follow-ons** (`P1`) | Not adjacent: the archive changes its directory, not what travels |
 | **Perceptual `ImageHash`** (Features) | Not adjacent: images only |
-| **A table rebuild's row-carrying path**, **`foreign_keys` is off** (`P2`) | Not adjacent: migration `1.28` renames, it rebuilds nothing, and no key points at either table |
+| **A table rebuild's row-carrying path**, **`foreign_keys` is off** (`P2`) | Not adjacent: migration `1.28` carries no row the operator wants kept, and no key points at either table |
 | **`.dagger/` is neither linted nor formatted** (`P2`) | Left open: blocks 40 and 100 edit `.dagger/src/index.ts`, but linting it is a choice of tool for a third ecosystem |
 
 ## 7. Out of scope
 
 | Not done | Observable |
 |---|---|
-| Re-encoding anything | No `-c:v` or `-c:a` other than `copy` in `api-video-ffmpeg`, `png` for the poster aside |
-| An animated rendition of a video | `?animated=true` on a video answers a still |
+| Re-encoding an original | `repackage` passes no `-c:v` or `-c:a` other than `copy`; only `poster` (`png`) and `preview` (`libwebp_anim`) encode, and only renditions |
 | Choosing the poster | No route takes a timestamp |
 | The video's duration in the API's responses | `MediaOutputDto` and `PinMediaStateDto` gain no field |
 | Private or signed-in pages | yt-dlp gets no `--cookies` |
@@ -411,8 +431,9 @@ merges whole.
 
 - **The rename script must not touch a MIME literal, a kept name, or a frozen migration**: the tables were
   `images` and `image_download` (`1.4.sql`, `1.5.sql`), and `DbMigrationModelCoverageTest` reads the history.
-- **Ebean's generator may write a table rename as a drop and a create**: `1.28` is written by hand. SQLite has no
-  `ALTER INDEX`; the inline names `pk_images` and `uq_images_pin_id` stay in the table's SQL after `RENAME TO`.
+- **A hand-written `ALTER TABLE ... RENAME TO` would leave the inline names `pk_images` and `uq_images_pin_id` in
+  the table's SQL**, SQLite having no `ALTER INDEX`: `1.28` is the generator's, constraints named after the new
+  tables.
 - **The flags go before `-i`**: after it they are output options, and an MPEG-TS goes through.
 - **ffprobe gives no VP9 level (`-99`)** and its JSON lacks H.264's constraint byte, H.265's tier and compatibility
   flags, AV1's tier: the `codecs` builder reads them from the extradata. A malformed string makes `canPlayType`
@@ -435,5 +456,6 @@ merges whole.
 - **`denoland/deno:bin` holds the binary alone, linked against glibc**: it does not run in its own image, only once
   copied into ours.
 - **The gate's environment is built from a context holding its Dockerfile alone** (`.dagger/src/index.ts:682-684`),
-  and `imageContext` from the `Dockerfile` and the fast jar (`495-500`): both must be given the uv files.
+  and `imageContext` from the `Dockerfile` and the fast jar (`495-500`): both must be given `requirements.txt`.
+- **Ubuntu's `python3` refuses a system-wide `pip install`** (PEP 668, externally managed): yt-dlp goes in a venv.
 - **The workstation's ffmpeg is not the image's** (9.0.2 here, 8.0.1 there): tests assert behaviour, never a version.
