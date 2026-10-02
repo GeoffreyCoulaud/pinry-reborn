@@ -75,6 +75,7 @@ class SharedRefusalsFilter : OASFilter {
         const val EXPORT_NOT_FOUND = "ExportNotFound"
         const val IMPORT_FORBIDDEN = "ImportForbidden"
         const val IMPORT_NOT_FOUND = "ImportNotFound"
+        const val RANGE_NOT_SATISFIABLE = "RangeNotSatisfiable"
 
         private const val SMALLRYE_FORBIDDEN = "Not Allowed"
 
@@ -192,6 +193,10 @@ class SharedRefusalsFilter : OASFilter {
                 "The import does not exist, or a path or query value could not be read",
                 ProblemCode.IMPORT_DOES_NOT_EXIST,
                 ProblemCode.UNKNOWN_ROUTE,
+            ),
+            RANGE_NOT_SATISFIABLE to refusal(
+                "The Range header starts at or past the body's end; Content-Range names its size",
+                ProblemCode.RANGE_NOT_SATISFIABLE,
             ),
         )
 

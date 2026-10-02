@@ -390,7 +390,7 @@ class ContractSchemaDeclarationTest {
     private fun statusesIn(endpoint: Endpoint): Set<String> {
         val delegated = endpoint.helpers.filter { endpoint.function.text.contains("${it.name}(") }
         val text = endpoint.function.text + delegated.joinToString("\n") { it.text }
-        return STATUS_BUILDERS.filterKeys { text.contains(it) }.values.toSet()
+        return STATUS_BUILDERS.filter { (builder, _) -> text.contains(builder) }.map { (_, status) -> status }.toSet()
     }
 
     private fun restResponseRoutes(): List<Endpoint> =
@@ -455,7 +455,7 @@ class ContractSchemaDeclarationTest {
          * What a route writes to name a status, and the status it names. `notModified` is left out:
          * `304` is not a success, and SmallRye declares none of the routes that build it.
          */
-        val STATUS_BUILDERS = mapOf(
+        val STATUS_BUILDERS = listOf(
             ".created<" to "201",
             "Status.CREATED" to "201",
             "Status.ACCEPTED" to "202",
@@ -464,6 +464,8 @@ class ContractSchemaDeclarationTest {
             "Status.PARTIAL_CONTENT" to "206",
             "Status.OK" to "200",
             ".ok(" to "200",
+            "ByteRangeResponse.builder(" to "200",
+            "ByteRangeResponse.builder(" to "206",
         )
     }
 

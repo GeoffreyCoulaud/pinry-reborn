@@ -9,6 +9,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinMed
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.MediaOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinMediaStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.http.ByteRangeResponse
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.http.RangeHeader
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.MediaMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinMediaStateMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
@@ -124,16 +126,20 @@ class MediaController(
     @Path("/{pinId}/media")
     @APIResponse(responseCode = "200", description = "The original, or a WebP rendition",
         content = [Content(mediaType = "image/*")])
+    @APIResponse(responseCode = "206", description = "The requested byte range of the original, Content-Range set",
+        content = [Content(mediaType = "image/*")])
     @APIResponse(responseCode = "400", description = "The size names no rendition",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_RENDITION_SIZE_INVALID"])]))])
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.MEDIA_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.MEDIA_NOT_FOUND)
+    @APIResponse(responseCode = "416", ref = SharedRefusalsFilter.RANGE_NOT_SATISFIABLE)
     fun getMedia(
         pinId: UUID,
         @QueryParam("size") size: String?,
         @QueryParam("animated") animated: Boolean?,
         @HeaderParam("If-None-Match") ifNoneMatch: String?,
+        @HeaderParam("Range") rangeHeader: String?,
     ): RestResponse<StreamingOutput> {
         val requester = securityIdentity.getUser()
         val requestedPx = size?.let { resolveSizePx(it) }
@@ -142,7 +148,7 @@ class MediaController(
         // `NoWhenBranchMatchedException` branch that Kover counts as uncovered.
         val response: RestResponse<StreamingOutput>
         when (served) {
-            is ServedMedia.Original -> response = serveOriginal(served.media, ifNoneMatch)
+            is ServedMedia.Original -> response = serveOriginal(served.media, ifNoneMatch, rangeHeader)
             is ServedMedia.Rendition -> response = serveRendition(served, ifNoneMatch)
         }
         return response
@@ -151,18 +157,14 @@ class MediaController(
     private fun resolveSizePx(size: String): Int =
         (RenditionSize.fromName(size) ?: throw MediaRenditionSizeInvalidError()).pxFrom(renditionsConfig)
 
-    private fun serveOriginal(media: Media, ifNoneMatch: String?): RestResponse<StreamingOutput> {
-        // Kotlin's `==` is null-safe (delegates to `equals`), so a null `ifNoneMatch` simply
-        // compares unequal to `media.contentHash` without a separate null check/branch.
-        if (ifNoneMatch == media.contentHash) return RestResponse.notModified()
-        val streamingOutput = StreamingOutput { output ->
-            mediaStore.openStream(media.storageKey).use { it.copyTo(output) }
-        }
-        return ResponseBuilder.ok(streamingOutput)
+    private fun serveOriginal(media: Media, ifNoneMatch: String?, rangeHeader: String?): RestResponse<StreamingOutput> {
+        val etag = "\"${media.contentHash}\""
+        if (ifNoneMatch == etag) return RestResponse.notModified()
+        val range = RangeHeader.parse(rangeHeader, media.byteSize)
+        return ByteRangeResponse.builder(mediaStore.openStream(media.storageKey), media.byteSize, range)
             .header("Content-Type", media.mimeType)
-            .header("ETag", media.contentHash)
+            .header("ETag", etag)
             .header("Cache-Control", "private, must-revalidate")
-            .header("Content-Length", media.byteSize)
             .build()
     }
 
@@ -185,7 +187,7 @@ class MediaController(
     // The encoder version is imported from the use case that builds the cache key rather than
     // duplicated here, so a bump invalidates the cached bytes and their validator together.
     private fun renditionEtag(rendition: ServedMedia.Rendition): String =
-        "$ENCODER_VERSION-${rendition.mediaId}-${rendition.effectivePx}-${if (rendition.animated) "a" else "s"}"
+        "\"$ENCODER_VERSION-${rendition.mediaId}-${rendition.effectivePx}-${if (rendition.animated) "a" else "s"}\""
 
     @DELETE
     @Path("/{pinId}/media")

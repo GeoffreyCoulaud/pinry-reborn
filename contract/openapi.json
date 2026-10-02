@@ -1366,6 +1366,23 @@
             }
           }
         }
+      },
+      "RangeNotSatisfiable" : {
+        "description" : "The Range header starts at or past the body's end; Content-Range names its size",
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/ProblemDetail"
+              } ],
+              "properties" : {
+                "code" : {
+                  "enum" : [ "RANGE_NOT_SATISFIABLE" ]
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -2348,21 +2365,7 @@
             }
           },
           "416" : {
-            "description" : "The Range header names bytes past the archive's end",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "allOf" : [ {
-                    "$ref" : "#/components/schemas/ProblemDetail"
-                  } ],
-                  "properties" : {
-                    "code" : {
-                      "enum" : [ "RANGE_NOT_SATISFIABLE" ]
-                    }
-                  }
-                }
-              }
-            }
+            "$ref" : "#/components/responses/RangeNotSatisfiable"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
@@ -3658,10 +3661,23 @@
             "type" : [ "string", "null" ]
           },
           "required" : true
+        }, {
+          "name" : "Range",
+          "in" : "header",
+          "schema" : {
+            "type" : [ "string", "null" ]
+          },
+          "required" : true
         } ],
         "responses" : {
           "200" : {
             "description" : "The original, or a WebP rendition",
+            "content" : {
+              "image/*" : { }
+            }
+          },
+          "206" : {
+            "description" : "The requested byte range of the original, Content-Range set",
             "content" : {
               "image/*" : { }
             }
@@ -3688,6 +3704,9 @@
           },
           "404" : {
             "$ref" : "#/components/responses/MediaNotFound"
+          },
+          "416" : {
+            "$ref" : "#/components/responses/RangeNotSatisfiable"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
