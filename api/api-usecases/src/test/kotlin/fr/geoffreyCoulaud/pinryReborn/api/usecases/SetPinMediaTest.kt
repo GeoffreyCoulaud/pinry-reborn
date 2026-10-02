@@ -45,7 +45,8 @@ class SetPinMediaTest : BaseTest() {
     private val clock = mockk<Clock>()
     private val clearPinDownload = mockk<ClearPinDownload>(relaxed = true)
     private val renditionCache = mockk<RenditionCache>()
-    private val useCase = SetPinMedia(pins, mediaRepository, store, probe, clock, clearPinDownload, renditionCache)
+    private val useCase =
+        SetPinMedia(pins, mediaRepository, store, MediaIngestion(store, probe), clock, clearPinDownload, renditionCache)
 
     private val owner = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
     private fun pin(author: User = owner) = Pin(randomUUID(), author, "https://c", null, "d", emptyList(), emptyList(),
@@ -148,6 +149,7 @@ class SetPinMediaTest : BaseTest() {
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
         every { probe.probe(staged, 50) } throws UndecodableImageException("nope")
+        every { clock.now() } returns Instant.EPOCH
         assertThrows(MediaInvalidError::class.java) { useCase.set(p.id, owner, upload(), 30, 50) }
         verify { store.discard(staged) }
     }

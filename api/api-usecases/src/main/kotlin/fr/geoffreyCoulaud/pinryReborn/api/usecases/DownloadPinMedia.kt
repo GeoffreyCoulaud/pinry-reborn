@@ -1,7 +1,5 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchAccessDeniedException
@@ -11,12 +9,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchNotFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaFetcher
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.TooManyRedirectsException
@@ -32,7 +28,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.TaskContext
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.PermanentTaskException
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
-import java.util.UUID.randomUUID
 
 @ApplicationScoped
 @Suppress("LongParameterList") // CDI-injected: every parameter is a collaborator provided by the container.
@@ -41,7 +36,7 @@ class DownloadPinMedia(
     private val mediaRepository: MediaRepositoryInterface,
     private val mediaDownloadRepository: MediaDownloadRepositoryInterface,
     private val mediaStore: MediaStore,
-    private val imageProbe: ImageProbe,
+    private val mediaIngestion: MediaIngestion,
     private val mediaFetcher: MediaFetcher,
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
@@ -53,15 +48,14 @@ class DownloadPinMedia(
         val pin = pinRepository.findPinById(pinId) ?: return
 
         val staged = stageFromSource(pinId, downloadRow.sourceUrl, maxBytes, context)
-        val probeResult = probeStaged(pinId, staged, maxPixels, context)
-        val media = buildMedia(pin, pinId, staged, probeResult)
-        promoteAndSwap(pinId, staged, media, context)
+        val ingested = ingestStaged(pin.author.id, pinId, staged, maxPixels, context)
+        promoteAndSwap(pinId, ingested, context)
     }
 
     @Suppress("TooGenericExceptionCaught")
     private fun stageFromSource(pinId: UUID, sourceUrl: String, maxBytes: Long, context: TaskContext): StagedFile =
         try {
-            mediaFetcher.openStream(sourceUrl).use { mediaStore.stage(it, maxBytes) }
+            mediaFetcher.openStream(sourceUrl).use { mediaIngestion.stage(it, maxBytes) }
         } catch (e: FetchException) {
             val reason = mapFetch(e)
             if (reason == DownloadReason.UNREACHABLE) {
@@ -80,26 +74,31 @@ class DownloadPinMedia(
         }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun probeStaged(pinId: UUID, staged: StagedFile, maxPixels: Long, context: TaskContext): ProbeResult =
+    private fun ingestStaged(
+        ownerId: UUID,
+        pinId: UUID,
+        staged: StagedFile,
+        maxPixels: Long,
+        context: TaskContext,
+    ): IngestedMedia =
         try {
-            imageProbe.probe(staged, maxPixels)
+            mediaIngestion.ingest(staged, ownerId, pinId, maxPixels, clock.now())
         } catch (e: ImageProbeException) {
-            mediaStore.discardQuietly(staged)
             failPermanent(pinId, mapProbe(e))
         } catch (e: Exception) {
             // A probe failure outside the declared ImageProbeException contract (e.g. a native/FFM
             // error) must still route through the failure policy; otherwise the download row is
-            // left stuck PENDING and the staged temp file leaks. Treat it as a transient internal
-            // error so an exhausted retry becomes terminal FAILED instead of DEAD-with-PENDING-row.
-            mediaStore.discardQuietly(staged)
+            // left stuck PENDING. Treat it as a transient internal error so an exhausted retry
+            // becomes terminal FAILED instead of DEAD-with-PENDING-row.
             failRetryable(pinId, DownloadReason.INTERNAL_ERROR, context, e)
         }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun promoteAndSwap(pinId: UUID, staged: StagedFile, media: Media, context: TaskContext) {
+    private fun promoteAndSwap(pinId: UUID, ingested: IngestedMedia, context: TaskContext) {
+        val media = ingested.media
         val superseded = mediaRepository.findByPinId(pinId)
         try {
-            mediaStore.promote(staged, media.storageKey)
+            mediaIngestion.promote(ingested)
             val swapped =
                 transactionRunner.inTransaction {
                     if (mediaDownloadRepository.deleteIfPending(pinId) > 0) {
@@ -125,22 +124,11 @@ class DownloadPinMedia(
                 mediaStore.deleteQuietly(media.storageKey)
             }
         } catch (e: Exception) {
-            mediaStore.discardQuietly(staged)
             // Best-effort: a cleanup failure must not mask `e`, which the retry policy records
             // and rethrows. The orphan (if any) is reclaimed by the periodic garbage collection.
-            mediaStore.deleteQuietly(media.storageKey)
+            mediaIngestion.discard(ingested)
             failRetryable(pinId, DownloadReason.INTERNAL_ERROR, context, e)
         }
-    }
-
-    private fun buildMedia(pin: Pin, pinId: UUID, staged: StagedFile, probe: ProbeResult): Media {
-        val mediaId = randomUUID()
-        val storageKey = "originals/${pin.author.id}/$pinId/$mediaId.${probe.format.extension}"
-        return Media(
-            id = mediaId, pinId = pinId, mimeType = probe.format.mimeType, width = probe.width,
-            height = probe.height, animated = probe.animated, byteSize = staged.byteSize,
-            contentHash = staged.contentHash, storageKey = storageKey, createdAt = clock.now(),
-        )
     }
 
     private fun mapFetch(e: FetchException): DownloadReason =

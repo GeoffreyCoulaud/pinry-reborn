@@ -2,7 +2,6 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
@@ -17,7 +16,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLargeError
 import jakarta.enterprise.context.ApplicationScoped
 import java.io.InputStream
 import java.util.UUID
-import java.util.UUID.randomUUID
 
 /**
  * Result of [SetPinMedia.set]: the persisted canonical image, plus whether it replaced a
@@ -31,7 +29,7 @@ class SetPinMedia(
     private val pinRepository: PinRepositoryInterface,
     private val mediaRepository: MediaRepositoryInterface,
     private val mediaStore: MediaStore,
-    private val imageProbe: ImageProbe,
+    private val mediaIngestion: MediaIngestion,
     private val clock: Clock,
     private val clearPinDownload: ClearPinDownload,
     private val renditionCache: RenditionCache,
@@ -41,24 +39,20 @@ class SetPinMedia(
         if (pin.author.id != requester.id) throw MediaPermissionError()
 
         val staged = try {
-            mediaStore.stage(upload, maxBytes)
+            mediaIngestion.stage(upload, maxBytes)
         } catch (e: MediaTooLargeException) {
             throw MediaTooLargeError(e)
         }
 
-        val probeResult = try {
-            imageProbe.probe(staged, maxPixels)
+        val ingested = try {
+            mediaIngestion.ingest(staged, requester.id, pinId, maxPixels, clock.now())
         } catch (e: ImageProbeException) {
-            mediaStore.discardQuietly(staged)
             // Keep the client-facing message fixed (consistent with the other MediaError
             // siblings); the underlying probe detail is preserved via `cause` for logs, not
             // echoed to the API caller.
             throw MediaInvalidError("Invalid image", e)
         }
 
-        val mediaId = randomUUID()
-        val storageKey = "originals/${requester.id}/$pinId/$mediaId.${probeResult.format.extension}"
-        val createdAt = clock.now()
         val existing = mediaRepository.findByPinId(pinId)
         // Promote/save can fail for many reasons: an I/O failure during promote (disk full,
         // permission denied -- FilesystemMediaStore.promote throws java.io.IOException, a
@@ -67,22 +61,16 @@ class SetPinMedia(
         // promoted-but-unsaved file at storageKey must never be left behind. Catch broadly,
         // clean up both paths, and rethrow unchanged so the caller still sees the original
         // failure.
-        @Suppress("TooGenericExceptionCaught")
+        // RowMergedOutsideTransaction: an insert of the row `MediaIngestion` just built, which the rule
+        // cannot see through the property.
+        @Suppress("TooGenericExceptionCaught", "RowMergedOutsideTransaction")
         val saved = try {
-            mediaStore.promote(staged, storageKey)
-            mediaRepository.save(
-                Media(
-                    id = mediaId, pinId = pinId, mimeType = probeResult.format.mimeType,
-                    width = probeResult.width, height = probeResult.height, animated = probeResult.animated,
-                    byteSize = staged.byteSize, contentHash = staged.contentHash, storageKey = storageKey,
-                    createdAt = createdAt,
-                ),
-            )
+            mediaIngestion.promote(ingested)
+            mediaRepository.save(ingested.media)
         } catch (e: Exception) {
-            mediaStore.discardQuietly(staged)
             // Best-effort: a cleanup failure here must not mask `e`, which is the cause the caller
             // needs to see. The orphan (if any) is reclaimed by the periodic garbage collection.
-            mediaStore.deleteQuietly(storageKey)
+            mediaIngestion.discard(ingested)
             throw e
         }
         // Deleting the superseded file (and evicting its cached renditions) is best-effort only:

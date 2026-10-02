@@ -1,6 +1,5 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
@@ -15,6 +14,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInte
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemZipImportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ImportUploadBounds
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ReapUserDataImports
@@ -95,7 +95,7 @@ class ImportProducers {
         mediaRepository: MediaRepositoryInterface,
         archiveStore: ImportArchiveStore,
         mediaStore: MediaStore,
-        imageProbe: ImageProbe,
+        mediaIngestion: MediaIngestion,
         tagCreator: TagCreator,
         transactionRunner: TransactionRunner,
         clock: Clock,
@@ -104,7 +104,7 @@ class ImportProducers {
     ): UserDataImportRunner =
         UserDataImportRunner(
             importRepository, issueRepository, userRepository, tagRepository, boardRepository,
-            pinRepository, mediaRepository, archiveStore, mediaStore, imageProbe, tagCreator,
+            pinRepository, mediaRepository, archiveStore, mediaStore, mediaIngestion, tagCreator,
             transactionRunner, clock,
             maxMetadataBytes = config.maxMetadataBytes(),
             maxEntries = config.maxEntries(),
