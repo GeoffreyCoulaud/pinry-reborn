@@ -2,7 +2,7 @@
 
 Status: Accepted
 Date: 2026-10-02
-Specification: `docs/specs/2026-10-02-the-pin-holds-a-video.md`, decisions A, B1, D1, J1, K1, L1, M1, Q1, R1, S1.
+Specification: `docs/specs/2026-10-02-the-pin-holds-a-video.md`, decisions A, B1, D1, J1, K1, L1, M1, Q1, R1, S1, X1.
 Written in block 10.
 
 ## Context
@@ -52,8 +52,11 @@ layer, then with ffmpeg), LLVM and Mesa being most of it; the static binaries of
    would run that parser inside the API; a wrapper would add a dependency for an argument list. The 353 MB are
    accepted: the operator weighs maintenance over bytes.
 
-5. **A video's renditions are its poster**, ffmpeg's `thumbnail` filter over the first frames, scaled to square
-   pixels, drawn by libvips. A video always takes the rendition path; the original plays where an animation would.
+5. **A video's still rendition is its poster, its animated rendition its first three seconds.** The poster is the
+   frame ffmpeg's `thumbnail` filter picks over the first frames, drawn by libvips; the animated rendition is
+   encoded by ffmpeg's `libwebp_anim`. Both keep the proportions the video displays at, an anamorphic source's
+   pixels corrected. A video always takes the rendition path, never serving the original to an `<img>`. Only
+   renditions are encoded; the original is not.
 
 6. **The client decides what it can play.** The stored `mimeType` carries the `codecs` parameter, built from the
    stream's extradata; the web application asks `canPlayType`, and falls back to the poster and a download link on
