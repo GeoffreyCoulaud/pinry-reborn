@@ -260,7 +260,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
         startedAt = startedAt,
     )
 
-    protected fun aManifest(pins: Int? = ANNOUNCED_PINS, formatVersion: Int = 1) =
+    protected fun aManifest(pins: Int? = ANNOUNCED_PINS, formatVersion: Int = 2) =
         ImportedManifest(formatVersion = formatVersion, counts = pins?.let { ImportedCounts(pins = it) })
 
     protected fun aBoard(

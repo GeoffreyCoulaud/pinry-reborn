@@ -3,7 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 import java.time.Instant
 
 /**
- * What the importer reads out of a `formatVersion` 1 archive (spec section 4): only the fields it acts
+ * What the importer reads out of a `formatVersion` 2 archive (spec section 4): only the fields it acts
  * on, so an archive identifier never reaches a row. Plain Kotlin, no Jackson: the adapter owns the mapper.
  */
 

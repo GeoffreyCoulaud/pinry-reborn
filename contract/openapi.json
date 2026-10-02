@@ -121,7 +121,7 @@
       },
       "DownloadReasonDto" : {
         "type" : "string",
-        "x-extensible-enum" : [ "URL_NOT_ALLOWED", "UNREACHABLE", "ACCESS_DENIED", "NOT_FOUND", "TOO_LARGE", "INVALID_IMAGE", "TOO_MANY_PIXELS", "INTERNAL_ERROR", "FETCH_FAILED" ]
+        "x-extensible-enum" : [ "URL_NOT_ALLOWED", "UNREACHABLE", "ACCESS_DENIED", "NOT_FOUND", "TOO_LARGE", "INVALID_MEDIA", "TOO_MANY_PIXELS", "INTERNAL_ERROR", "FETCH_FAILED" ]
       },
       "DownloadStatusDto" : {
         "type" : "string",
@@ -157,82 +157,6 @@
           }
         }
       },
-      "ImageDownloadListOutputDto" : {
-        "type" : "object",
-        "required" : [ "downloads", "pagination" ],
-        "properties" : {
-          "downloads" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/ImageDownloadOutputDto"
-            }
-          },
-          "pagination" : {
-            "$ref" : "#/components/schemas/PaginationOutputDto"
-          }
-        }
-      },
-      "ImageDownloadOutputDto" : {
-        "type" : "object",
-        "required" : [ "pinId", "sourceUrl", "status", "requestedAt", "updatedAt", "reasonCode", "message" ],
-        "properties" : {
-          "pinId" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "sourceUrl" : {
-            "type" : "string"
-          },
-          "status" : {
-            "$ref" : "#/components/schemas/DownloadStatusDto"
-          },
-          "requestedAt" : {
-            "$ref" : "#/components/schemas/Instant"
-          },
-          "updatedAt" : {
-            "$ref" : "#/components/schemas/Instant"
-          },
-          "reasonCode" : {
-            "anyOf" : [ {
-              "$ref" : "#/components/schemas/DownloadReasonDto"
-            }, {
-              "type" : "null"
-            } ]
-          },
-          "message" : {
-            "type" : [ "string", "null" ]
-          }
-        }
-      },
-      "ImageOutputDto" : {
-        "type" : "object",
-        "required" : [ "id", "pinId", "mimeType", "width", "height", "byteSize", "url" ],
-        "properties" : {
-          "id" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "pinId" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "mimeType" : {
-            "type" : "string"
-          },
-          "width" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "height" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "byteSize" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "url" : {
-            "type" : "string"
-          }
-        }
-      },
       "Instant" : {
         "type" : "string",
         "format" : "date-time",
@@ -263,6 +187,82 @@
           "maxImportArchiveBytes" : {
             "type" : "integer",
             "format" : "int64"
+          }
+        }
+      },
+      "MediaDownloadListOutputDto" : {
+        "type" : "object",
+        "required" : [ "downloads", "pagination" ],
+        "properties" : {
+          "downloads" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MediaDownloadOutputDto"
+            }
+          },
+          "pagination" : {
+            "$ref" : "#/components/schemas/PaginationOutputDto"
+          }
+        }
+      },
+      "MediaDownloadOutputDto" : {
+        "type" : "object",
+        "required" : [ "pinId", "sourceUrl", "status", "requestedAt", "updatedAt", "reasonCode", "message" ],
+        "properties" : {
+          "pinId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "sourceUrl" : {
+            "type" : "string"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/DownloadStatusDto"
+          },
+          "requestedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "updatedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "reasonCode" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/DownloadReasonDto"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "message" : {
+            "type" : [ "string", "null" ]
+          }
+        }
+      },
+      "MediaOutputDto" : {
+        "type" : "object",
+        "required" : [ "id", "pinId", "mimeType", "width", "height", "byteSize", "url" ],
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "pinId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "mimeType" : {
+            "type" : "string"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "byteSize" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "url" : {
+            "type" : "string"
           }
         }
       },
@@ -334,7 +334,22 @@
           }
         }
       },
-      "PinImageDownloadInputDto" : {
+      "PinListOutputDto" : {
+        "type" : "object",
+        "required" : [ "pins", "pagination" ],
+        "properties" : {
+          "pins" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PinOutputDto"
+            }
+          },
+          "pagination" : {
+            "$ref" : "#/components/schemas/PaginationOutputDto"
+          }
+        }
+      },
+      "PinMediaDownloadInputDto" : {
         "type" : "object",
         "required" : [ "sourceUrl" ],
         "properties" : {
@@ -344,12 +359,12 @@
           }
         }
       },
-      "PinImageStateDto" : {
+      "PinMediaStateDto" : {
         "type" : "object",
         "required" : [ "status" ],
         "properties" : {
           "status" : {
-            "$ref" : "#/components/schemas/PinImageStatusDto"
+            "$ref" : "#/components/schemas/PinMediaStatusDto"
           },
           "url" : {
             "type" : [ "string", "null" ]
@@ -388,24 +403,9 @@
           }
         }
       },
-      "PinImageStatusDto" : {
+      "PinMediaStatusDto" : {
         "type" : "string",
         "enum" : [ "NONE", "PENDING", "READY", "FAILED" ]
-      },
-      "PinListOutputDto" : {
-        "type" : "object",
-        "required" : [ "pins", "pagination" ],
-        "properties" : {
-          "pins" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/PinOutputDto"
-            }
-          },
-          "pagination" : {
-            "$ref" : "#/components/schemas/PaginationOutputDto"
-          }
-        }
       },
       "PinOutputDto" : {
         "type" : "object",
@@ -445,9 +445,9 @@
               "type" : "null"
             } ]
           },
-          "image" : {
+          "media" : {
             "anyOf" : [ {
-              "$ref" : "#/components/schemas/PinImageStateDto"
+              "$ref" : "#/components/schemas/PinMediaStateDto"
             }, {
               "type" : "null"
             } ]
@@ -1265,7 +1265,7 @@
           }
         }
       },
-      "ImageForbidden" : {
+      "MediaForbidden" : {
         "description" : "The pin belongs to another account",
         "content" : {
           "application/problem+json" : {
@@ -1275,14 +1275,14 @@
               } ],
               "properties" : {
                 "code" : {
-                  "enum" : [ "IMAGE_INSUFFICIENT_PERMISSIONS" ]
+                  "enum" : [ "MEDIA_INSUFFICIENT_PERMISSIONS" ]
                 }
               }
             }
           }
         }
       },
-      "ImageNotFound" : {
+      "MediaNotFound" : {
         "description" : "The pin, its image or its download does not exist, or a path or query value could not be read",
         "content" : {
           "application/problem+json" : {
@@ -1292,7 +1292,7 @@
               } ],
               "properties" : {
                 "code" : {
-                  "enum" : [ "IMAGE_DOES_NOT_EXIST", "UNKNOWN_ROUTE" ]
+                  "enum" : [ "MEDIA_DOES_NOT_EXIST", "UNKNOWN_ROUTE" ]
                 }
               }
             }
@@ -2376,102 +2376,6 @@
         } ]
       }
     },
-    "/api/v1/me/image-downloads" : {
-      "get" : {
-        "summary" : "List the caller's running and failed image downloads",
-        "description" : "One page, newest request first. A recycled pin's download is left out, like every other read.",
-        "parameters" : [ {
-          "name" : "cursor",
-          "in" : "query",
-          "schema" : {
-            "anyOf" : [ {
-              "$ref" : "#/components/schemas/CursorDto"
-            }, {
-              "type" : "null"
-            } ]
-          }
-        }, {
-          "name" : "pageSize",
-          "in" : "query",
-          "schema" : {
-            "type" : [ "integer", "null" ],
-            "format" : "int32"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "One page of the caller's downloads, running and failed",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ImageDownloadListOutputDto"
-                }
-              }
-            }
-          },
-          "404" : {
-            "$ref" : "#/components/responses/UnreadableQuery"
-          },
-          "401" : {
-            "$ref" : "#/components/responses/Unauthenticated"
-          }
-        },
-        "tags" : [ "Me Image Download Controller" ],
-        "security" : [ {
-          "BearerScheme" : [ ]
-        }, {
-          "CookieScheme" : [ ]
-        } ]
-      }
-    },
-    "/api/v1/me/image-downloads/{pinId}" : {
-      "delete" : {
-        "summary" : "Drop one settled download",
-        "description" : "The pin and its image are untouched.",
-        "parameters" : [ {
-          "name" : "pinId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "$ref" : "#/components/schemas/UUID"
-          }
-        } ],
-        "responses" : {
-          "204" : {
-            "description" : "Download dropped"
-          },
-          "404" : {
-            "$ref" : "#/components/responses/ImageNotFound"
-          },
-          "409" : {
-            "description" : "The download is still running, and the worker owns its row",
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "allOf" : [ {
-                    "$ref" : "#/components/schemas/ProblemDetail"
-                  } ],
-                  "properties" : {
-                    "code" : {
-                      "enum" : [ "IMAGE_DOWNLOAD_IN_PROGRESS" ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401" : {
-            "$ref" : "#/components/responses/Unauthenticated"
-          }
-        },
-        "tags" : [ "Me Image Download Controller" ],
-        "security" : [ {
-          "BearerScheme" : [ ]
-        }, {
-          "CookieScheme" : [ ]
-        } ]
-      }
-    },
     "/api/v1/me/imports" : {
       "get" : {
         "parameters" : [ {
@@ -2858,6 +2762,102 @@
           }
         },
         "tags" : [ "Me Import Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/me/media-downloads" : {
+      "get" : {
+        "summary" : "List the caller's running and failed image downloads",
+        "description" : "One page, newest request first. A recycled pin's download is left out, like every other read.",
+        "parameters" : [ {
+          "name" : "cursor",
+          "in" : "query",
+          "schema" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/CursorDto"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        }, {
+          "name" : "pageSize",
+          "in" : "query",
+          "schema" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "One page of the caller's downloads, running and failed",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediaDownloadListOutputDto"
+                }
+              }
+            }
+          },
+          "404" : {
+            "$ref" : "#/components/responses/UnreadableQuery"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          }
+        },
+        "tags" : [ "Me Media Download Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/me/media-downloads/{pinId}" : {
+      "delete" : {
+        "summary" : "Drop one settled download",
+        "description" : "The pin and its image are untouched.",
+        "parameters" : [ {
+          "name" : "pinId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Download dropped"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/MediaNotFound"
+          },
+          "409" : {
+            "description" : "The download is still running, and the worker owns its row",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "MEDIA_DOWNLOAD_IN_PROGRESS" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          }
+        },
+        "tags" : [ "Me Media Download Controller" ],
         "security" : [ {
           "BearerScheme" : [ ]
         }, {
@@ -3494,7 +3494,7 @@
         } ]
       }
     },
-    "/api/v1/pins/{pinId}/image" : {
+    "/api/v1/pins/{pinId}/media" : {
       "put" : {
         "summary" : "Set the pin's canonical image (upload bytes, or request a server-side fetch)",
         "parameters" : [ {
@@ -3521,7 +3521,7 @@
             },
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/PinImageDownloadInputDto"
+                "$ref" : "#/components/schemas/PinMediaDownloadInputDto"
               }
             }
           },
@@ -3533,7 +3533,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ImageOutputDto"
+                  "$ref" : "#/components/schemas/MediaOutputDto"
                 }
               }
             }
@@ -3543,7 +3543,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ImageOutputDto"
+                  "$ref" : "#/components/schemas/MediaOutputDto"
                 }
               }
             }
@@ -3558,7 +3558,7 @@
                   } ],
                   "properties" : {
                     "code" : {
-                      "enum" : [ "IMAGE_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY" ]
+                      "enum" : [ "MEDIA_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY" ]
                     }
                   }
                 }
@@ -3566,13 +3566,13 @@
             }
           },
           "403" : {
-            "$ref" : "#/components/responses/ImageForbidden"
+            "$ref" : "#/components/responses/MediaForbidden"
           },
           "404" : {
-            "$ref" : "#/components/responses/ImageNotFound"
+            "$ref" : "#/components/responses/MediaNotFound"
           },
           "413" : {
-            "description" : "IMAGE_TOO_LARGE: the upload is past images.max_file_bytes. BODY_TOO_LARGE: the Content-Length is past quarkus.http.limits.max-body-size, which is above images.max_file_bytes; a chunked body past it gets a 413 with no body",
+            "description" : "MEDIA_TOO_LARGE: the upload is past media.max_file_bytes. BODY_TOO_LARGE: the Content-Length is past quarkus.http.limits.max-body-size, which is above media.max_file_bytes; a chunked body past it gets a 413 with no body",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -3581,7 +3581,7 @@
                   } ],
                   "properties" : {
                     "code" : {
-                      "enum" : [ "IMAGE_TOO_LARGE", "BODY_TOO_LARGE" ]
+                      "enum" : [ "MEDIA_TOO_LARGE", "BODY_TOO_LARGE" ]
                     }
                   }
                 }
@@ -3592,7 +3592,7 @@
             "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "422" : {
-            "description" : "The upload is not an image the server reads, or it is past images.max_pixels",
+            "description" : "The upload is not an image the server reads, or it is past media.max_pixels",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -3601,7 +3601,7 @@
                   } ],
                   "properties" : {
                     "code" : {
-                      "enum" : [ "IMAGE_INVALID" ]
+                      "enum" : [ "MEDIA_INVALID" ]
                     }
                   }
                 }
@@ -3613,7 +3613,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PinImageStateDto"
+                  "$ref" : "#/components/schemas/PinMediaStateDto"
                 }
               }
             }
@@ -3622,7 +3622,7 @@
             "$ref" : "#/components/responses/Unauthenticated"
           }
         },
-        "tags" : [ "Image Controller" ],
+        "tags" : [ "Media Controller" ],
         "security" : [ {
           "BearerScheme" : [ ]
         }, {
@@ -3676,7 +3676,7 @@
                   } ],
                   "properties" : {
                     "code" : {
-                      "enum" : [ "IMAGE_RENDITION_SIZE_INVALID" ]
+                      "enum" : [ "MEDIA_RENDITION_SIZE_INVALID" ]
                     }
                   }
                 }
@@ -3684,17 +3684,17 @@
             }
           },
           "403" : {
-            "$ref" : "#/components/responses/ImageForbidden"
+            "$ref" : "#/components/responses/MediaForbidden"
           },
           "404" : {
-            "$ref" : "#/components/responses/ImageNotFound"
+            "$ref" : "#/components/responses/MediaNotFound"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
           }
         },
-        "summary" : "Get Image",
-        "tags" : [ "Image Controller" ],
+        "summary" : "Get Media",
+        "tags" : [ "Media Controller" ],
         "security" : [ {
           "BearerScheme" : [ ]
         }, {
@@ -3715,17 +3715,17 @@
             "description" : "No Content"
           },
           "403" : {
-            "$ref" : "#/components/responses/ImageForbidden"
+            "$ref" : "#/components/responses/MediaForbidden"
           },
           "404" : {
-            "$ref" : "#/components/responses/ImageNotFound"
+            "$ref" : "#/components/responses/MediaNotFound"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
           }
         },
-        "summary" : "Delete Image",
-        "tags" : [ "Image Controller" ],
+        "summary" : "Delete Media",
+        "tags" : [ "Media Controller" ],
         "security" : [ {
           "BearerScheme" : [ ]
         }, {
@@ -3733,7 +3733,7 @@
         } ]
       }
     },
-    "/api/v1/pins/{pinId}/image/status" : {
+    "/api/v1/pins/{pinId}/media/status" : {
       "get" : {
         "parameters" : [ {
           "name" : "pinId",
@@ -3749,23 +3749,23 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PinImageStateDto"
+                  "$ref" : "#/components/schemas/PinMediaStateDto"
                 }
               }
             }
           },
           "403" : {
-            "$ref" : "#/components/responses/ImageForbidden"
+            "$ref" : "#/components/responses/MediaForbidden"
           },
           "404" : {
-            "$ref" : "#/components/responses/ImageNotFound"
+            "$ref" : "#/components/responses/MediaNotFound"
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
           }
         },
-        "summary" : "Get Image Status",
-        "tags" : [ "Image Controller" ],
+        "summary" : "Get Media Status",
+        "tags" : [ "Media Controller" ],
         "security" : [ {
           "BearerScheme" : [ ]
         }, {
@@ -4041,7 +4041,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "20.0.0"
+    "version" : "21.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

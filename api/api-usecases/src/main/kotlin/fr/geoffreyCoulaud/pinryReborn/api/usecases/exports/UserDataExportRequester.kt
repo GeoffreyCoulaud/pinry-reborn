@@ -99,6 +99,6 @@ class UserDataExportRequester(
     // Internal, not private: the importer accepts exactly the version this writes, and spec section 4
     // asks for one constant rather than a second copy of the literal.
     internal companion object {
-        const val EXPORT_FORMAT_VERSION = 1
+        const val EXPORT_FORMAT_VERSION = 2
     }
 }
