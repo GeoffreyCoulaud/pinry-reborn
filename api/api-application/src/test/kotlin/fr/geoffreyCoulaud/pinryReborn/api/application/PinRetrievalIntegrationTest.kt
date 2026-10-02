@@ -25,7 +25,7 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         val pin = pinCreator.createPin(
             author = auth.user,
             sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/image.jpg",
+            sourceMediaUrl = "https://example.com/media.jpg",
             description = "My pin",
             tags = emptyList()
         )
@@ -39,7 +39,7 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
             .body("id", equalTo(pin.id.toString()))
             .body("authorId", equalTo(auth.user.id.toString()))
             .body("sourceContextUrl", equalTo("https://example.com/page"))
-            .body("sourceMediaUrl", equalTo("https://example.com/image.jpg"))
+            .body("sourceMediaUrl", equalTo("https://example.com/media.jpg"))
             .body("description", equalTo("My pin"))
             .body("tags", emptyIterable<Any>())
     }

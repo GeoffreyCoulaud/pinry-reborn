@@ -21,7 +21,7 @@ interface ArchiveSink {
 /**
  * Produces, stores and retires export archives.
  *
- * Mirrors [fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore]: stage into a temp file,
+ * Mirrors [fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore]: stage into a temp file,
  * promote by atomic rename, so a truncated archive is never reachable.
  */
 interface ExportArchiveStore {
@@ -38,7 +38,7 @@ interface ExportArchiveStore {
     /**
      * Enumerate every archive storage key present on disk, loaning a lazy [Sequence] to [block].
      *
-     * Same loan contract as [fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache.forEachImageIdOnDisk]:
+     * Same loan contract as [fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache.forEachMediaIdOnDisk]:
      * the adapter owns the directory stream and closes it when [block] returns, so the sequence
      * must be consumed inside [block]. Lets a sweep ask "what is on disk" without holding the whole
      * listing in memory.

@@ -9,7 +9,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.Curso
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinRecycleBinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBinGetter
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinImageState
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
@@ -24,14 +24,14 @@ class PinRecycleBinControllerTest {
     private val securityIdentity = mockk<SecurityIdentity>()
 
     // The real assembler over a stubbed resolver: the responses under assertion are the mapped ones.
-    private val resolvePinImageState = mockk<ResolvePinImageState>().also {
+    private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
         every { it.statesFor(any()) } returns emptyMap()
     }
     private val controller = PinRecycleBinController(
         pinRecycleBin = mockk(),
         pinRecycleBinGetter = pinRecycleBinGetter,
         securityIdentity = securityIdentity,
-        pinResponses = PinResponses(resolvePinImageState),
+        pinResponses = PinResponses(resolvePinMediaState),
     )
 
     @Test

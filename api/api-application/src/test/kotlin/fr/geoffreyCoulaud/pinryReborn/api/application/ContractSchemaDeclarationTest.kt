@@ -13,7 +13,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadStatusDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinImageStatusDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinMediaStatusDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportReasonDto
@@ -24,7 +24,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemCo
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.ExtensibleEnumsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinImageStatus
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMediaStatus
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ErrorCode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -61,16 +61,16 @@ class ContractSchemaDeclarationTest {
     private val closedCodes =
         listOf(
             DownloadStatusDto::class,
-            PinImageStatusDto::class,
+            PinMediaStatusDto::class,
             UserDataExportStateDto::class,
             UserDataImportStateDto::class,
         ).map { it.java.simpleName }
 
     private val openCodePositions =
         listOf(
-            OpenCodePosition(schema = "PinImageStateDto", field = "reasonCode", component = "DownloadReasonDto"),
+            OpenCodePosition(schema = "PinMediaStateDto", field = "reasonCode", component = "DownloadReasonDto"),
             OpenCodePosition(schema = "ReplacementDto", field = "reasonCode", component = "DownloadReasonDto"),
-            OpenCodePosition(schema = "ImageDownloadOutputDto", field = "reasonCode", component = "DownloadReasonDto"),
+            OpenCodePosition(schema = "MediaDownloadOutputDto", field = "reasonCode", component = "DownloadReasonDto"),
             OpenCodePosition(
                 schema = "UserDataImportIssueOutputDto",
                 field = "kind",
@@ -132,13 +132,13 @@ class ContractSchemaDeclarationTest {
     @Test
     fun `Given the published contract, Then the pin image status declares the values the server emits`() {
         // Given
-        val status = PublishedContract.schema("PinImageStateDto").path("properties").path("status")
+        val status = PublishedContract.schema("PinMediaStateDto").path("properties").path("status")
 
         // Then
         assertEquals(
-            PinImageStatus.entries.map { it.name }.toSet(),
+            PinMediaStatus.entries.map { it.name }.toSet(),
             enumeration(status),
-            "PinImageStateMapper fills this field from PinImageStatus, and it is the discriminator " +
+            "PinMediaStateMapper fills this field from PinMediaStatus, and it is the discriminator " +
                 "every tile of the grid reads. Regenerate after fixing the schema: $regenerate",
         )
     }
@@ -152,7 +152,7 @@ class ContractSchemaDeclarationTest {
         assertEquals(
             DownloadStatus.entries.map { it.name }.toSet(),
             enumeration(status),
-            "PinImageStateMapper fills this field from DownloadStatus, the same field one level " +
+            "PinMediaStateMapper fills this field from DownloadStatus, the same field one level " +
                 "down. Regenerate after fixing the schema: $regenerate",
         )
     }
@@ -363,7 +363,7 @@ class ContractSchemaDeclarationTest {
 
     /**
      * The success codes each route builds, keyed as the contract's operation. SmallRye merges the
-     * two `@Consumes`-differentiated functions of `PUT /{pinId}/image`, so codes union per route.
+     * two `@Consumes`-differentiated functions of `PUT /{pinId}/media`, so codes union per route.
      */
     private fun successCodesBuiltPerRoute(): Map<String, Set<String>> =
         endpoints()
@@ -385,7 +385,7 @@ class ContractSchemaDeclarationTest {
 
     /**
      * The statuses a route builds, read from its own text and from the private functions it calls
-     * by name: `downloadExport` and `getImage` both hand the building to one.
+     * by name: `downloadExport` and `getMedia` both hand the building to one.
      */
     private fun statusesIn(endpoint: Endpoint): Set<String> {
         val delegated = endpoint.helpers.filter { endpoint.function.text.contains("${it.name}(") }

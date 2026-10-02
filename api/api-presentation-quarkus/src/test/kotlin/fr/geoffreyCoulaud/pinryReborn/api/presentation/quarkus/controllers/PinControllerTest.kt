@@ -12,7 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOu
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinGetter
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinImageState
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
@@ -28,7 +28,7 @@ class PinControllerTest {
     private val pinGetter = mockk<PinGetter>()
     private val securityIdentity = mockk<SecurityIdentity>()
     // The real assembler over a stubbed resolver: the responses under assertion are the mapped ones.
-    private val resolvePinImageState = mockk<ResolvePinImageState>().also {
+    private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
         every { it.statesFor(any()) } returns emptyMap()
     }
     private val controller = PinController(
@@ -37,7 +37,7 @@ class PinControllerTest {
         pinRecycleBin = mockk(),
         pinUpdater = mockk(),
         securityIdentity = securityIdentity,
-        pinResponses = PinResponses(resolvePinImageState),
+        pinResponses = PinResponses(resolvePinMediaState),
     )
 
     /** Creates a pin through the controller and answers what the created pin actually carries. */

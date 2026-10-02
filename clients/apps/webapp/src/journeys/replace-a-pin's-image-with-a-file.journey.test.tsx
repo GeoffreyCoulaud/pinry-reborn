@@ -22,17 +22,17 @@ const FOUND_AT = "https://example.test/harbour.png";
 const aPicture = () => new File(["ok"], "harbour.png", { type: "image/png" });
 
 /** The pin's image state, rebuilt rather than spread: the field is optional on the pin. */
-function imageOf(
+function mediaOf(
 	shown: Pin,
-	change: Partial<NonNullable<Pin["image"]>>,
-): Pin["image"] {
-	return { status: "READY", url: `/api/v1/pins/${shown.id}/image`, ...change };
+	change: Partial<NonNullable<Pin["media"]>>,
+): Pin["media"] {
+	return { status: "READY", url: `/api/v1/pins/${shown.id}/media`, ...change };
 }
 
 /** What each write carried, in the order the two arrived: the pin's body, then the image's. */
 type Written =
 	| { pin: { sourceMediaUrl: string | null } }
-	| { image: string | { sourceUrl: string } | null };
+	| { media: string | { sourceUrl: string } | null };
 
 function recorder() {
 	return { written: [] as Written[] };
@@ -47,8 +47,8 @@ function account(
 	record: ReturnType<typeof recorder>,
 	{
 		reread = current,
-		imageStatus = 202,
-	}: { reread?: () => Pin; imageStatus?: number } = {},
+		mediaStatus = 202,
+	}: { reread?: () => Pin; mediaStatus?: number } = {},
 ) {
 	server.use(
 		sessionRoute(() => true),
@@ -62,17 +62,17 @@ function account(
 		// What the write rereads into the pages the grid holds (specification 2026-09-20, decision P),
 		// served as the pin was read: a tile that changes shape can then only have followed the write.
 		http.get("/api/v1/pins/:pinId", () => HttpResponse.json(reread())),
-		http.put("/api/v1/pins/:pinId/image", async ({ request }) => {
+		http.put("/api/v1/pins/:pinId/media", async ({ request }) => {
 			const type = request.headers.get("content-type")?.split(";")[0] ?? null;
 			// A multipart body is read by its media type alone: the parts do not survive a jsdom
 			// upload the same way on every Node the gate and a workstation run.
 			const body = type === "application/json" ? await request.json() : type;
 			record.written.push({
-				image: body as { sourceUrl: string } | string | null,
+				media: body as { sourceUrl: string } | string | null,
 			});
-			return imageStatus < 300
-				? HttpResponse.json({ status: "PENDING" }, { status: imageStatus })
-				: new HttpResponse(null, { status: imageStatus });
+			return mediaStatus < 300
+				? HttpResponse.json({ status: "PENDING" }, { status: mediaStatus })
+				: new HttpResponse(null, { status: mediaStatus });
 		}),
 		...boardRoutes([]),
 		downloadsRoute(),
@@ -91,7 +91,7 @@ async function openTheForm(
 }
 
 /** One of the image's three options, in the selector on the image side. */
-function imageChoice(dialog: HTMLElement, name: string) {
+function mediaChoice(dialog: HTMLElement, name: string) {
 	return within(
 		within(dialog).getByRole("radiogroup", { name: m.image() }),
 	).getByRole("radio", { name });
@@ -109,7 +109,7 @@ describe("replace a pin's image with a file", () => {
 		// new bytes arrived is the shape the layout places the tile at.
 		const replaced = {
 			...original,
-			image: imageOf(original, { width: 400, height: 1000 }),
+			media: mediaOf(original, { width: 400, height: 1000 }),
 		};
 		let held: Pin = original;
 		const record = recorder();
@@ -122,7 +122,7 @@ describe("replace a pin's image with a file", () => {
 		expect(
 			within(dialog).getByRole("img", { name: original.description }),
 		).toBeVisible();
-		await user.click(imageChoice(dialog, m.image_from_file()));
+		await user.click(mediaChoice(dialog, m.image_from_file()));
 		await user.upload(
 			within(dialog).getByLabelText(m.drop_image()),
 			aPicture(),
@@ -141,7 +141,7 @@ describe("replace a pin's image with a file", () => {
 		// The pin first, then the option chosen, on the route that supersedes atomically: no DELETE
 		// precedes it (decision M).
 		await waitFor(() => expect(record.written).toHaveLength(2));
-		expect(record.written[1]).toEqual({ image: "multipart/form-data" });
+		expect(record.written[1]).toEqual({ media: "multipart/form-data" });
 
 		// The dialog is back to reading, and the grid behind it carries the image that just landed.
 		await user.click(
@@ -157,7 +157,7 @@ describe("replace a pin's image with a file", () => {
 		// replacement beside it (property 8).
 		const fetching = {
 			...found,
-			image: imageOf(found, { replacement: { status: "PENDING" } }),
+			media: mediaOf(found, { replacement: { status: "PENDING" } }),
 		};
 		let held: Pin = found;
 		const record = recorder();
@@ -172,7 +172,7 @@ describe("replace a pin's image with a file", () => {
 			within(theColumn(dialog)).getByRole("textbox", address),
 			FOUND_AT,
 		);
-		await user.click(imageChoice(dialog, m.image_from_address()));
+		await user.click(mediaChoice(dialog, m.image_from_address()));
 
 		// One field, in one place at a time: the selector's now, carrying what the column held.
 		expect(
@@ -194,7 +194,7 @@ describe("replace a pin's image with a file", () => {
 		await waitFor(() => expect(record.written).toHaveLength(2));
 		expect(record.written).toEqual([
 			{ pin: expect.objectContaining({ sourceMediaUrl: FOUND_AT }) },
-			{ image: { sourceUrl: FOUND_AT } },
+			{ media: { sourceUrl: FOUND_AT } },
 		]);
 		// The form closes on the save, so the sub-state is what the next edit of that pin reads.
 		await user.click(
@@ -213,7 +213,7 @@ describe("replace a pin's image with a file", () => {
 
 		const dialog = await openTheForm(user, held.description);
 		// Keeping is the default, and the address is then an ordinary field of the column.
-		expect(imageChoice(dialog, m.image_keep())).toBeChecked();
+		expect(mediaChoice(dialog, m.image_keep())).toBeChecked();
 		const address = within(theColumn(dialog)).getByRole("textbox", {
 			name: m.image_address(),
 		});
@@ -251,7 +251,7 @@ describe("replace a pin's image with a file", () => {
 		expect(
 			within(dialog).queryByRole("button", { name: m.retry() }),
 		).toBeNull();
-		await user.click(imageChoice(dialog, m.image_from_address()));
+		await user.click(mediaChoice(dialog, m.image_from_address()));
 		expect(
 			within(dialog).queryByRole("button", { name: m.retry() }),
 		).toBeNull();
@@ -263,12 +263,12 @@ describe("replace a pin's image with a file", () => {
 			sourceMediaUrl: FOUND_AT,
 		};
 		const record = recorder();
-		account(() => held, record, { imageStatus: 500 });
+		account(() => held, record, { mediaStatus: 500 });
 		renderApp("/");
 		const user = userEvent.setup();
 
 		const dialog = await openTheForm(user, held.description);
-		await user.click(imageChoice(dialog, m.image_from_address()));
+		await user.click(mediaChoice(dialog, m.image_from_address()));
 		await user.click(within(dialog).getByRole("button", { name: m.save() }));
 
 		// The fields are saved and the image is not, so the form says that and not that the save
@@ -289,7 +289,7 @@ describe("replace a pin's image with a file", () => {
 		const user = userEvent.setup();
 
 		const dialog = await openTheForm(user, held.description);
-		await user.click(imageChoice(dialog, m.image_from_file()));
+		await user.click(mediaChoice(dialog, m.image_from_file()));
 		await user.upload(
 			within(dialog).getByLabelText(m.drop_image()),
 			new File(["more than four bytes"], "big.png", { type: "image/png" }),

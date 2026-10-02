@@ -31,9 +31,9 @@ describe("create a pin from a URL through to the tile appearing", () => {
 		const bare = pin("a harbour at dusk", { status: "PENDING" });
 		const ready = {
 			...bare,
-			image: {
+			media: {
 				status: "READY" as const,
-				url: `/api/v1/pins/${bare.id}/image`,
+				url: `/api/v1/pins/${bare.id}/media`,
 				width: 800,
 				height: 600,
 			},
@@ -57,11 +57,11 @@ describe("create a pin from a URL through to the tile appearing", () => {
 				sent = (await request.json()) as Record<string, unknown>;
 				return HttpResponse.json(bare, { status: 201 });
 			}),
-			http.put("/api/v1/pins/:pinId/image", () => {
+			http.put("/api/v1/pins/:pinId/media", () => {
 				requested = true;
 				return HttpResponse.json({ status: "PENDING" }, { status: 202 });
 			}),
-			http.get("/api/v1/me/image-downloads", () => {
+			http.get("/api/v1/me/media-downloads", () => {
 				if (requested) {
 					polls += 1;
 				}
@@ -129,7 +129,7 @@ describe("create a pin from a URL through to the tile appearing", () => {
 			sessionRoute(() => true),
 			handshakeRoute(),
 			onePinPage(() => []),
-			http.get("/api/v1/me/image-downloads", () =>
+			http.get("/api/v1/me/media-downloads", () =>
 				HttpResponse.json(downloadsPage([])),
 			),
 			http.post("/api/v1/pins", () => {

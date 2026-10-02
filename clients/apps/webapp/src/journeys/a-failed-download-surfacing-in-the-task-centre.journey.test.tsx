@@ -39,7 +39,7 @@ describe("a failed download surfacing in the task centre", () => {
 				),
 			]),
 			handshakeRoute(),
-			http.put("/api/v1/pins/:pinId/image", ({ params }) => {
+			http.put("/api/v1/pins/:pinId/media", ({ params }) => {
 				retried = String(params.pinId);
 				return HttpResponse.json({ status: "PENDING" }, { status: 202 });
 			}),
@@ -110,11 +110,11 @@ describe("a failed download surfacing in the task centre", () => {
 			]),
 			handshakeRoute(),
 			http.put(
-				"/api/v1/pins/:pinId/image",
+				"/api/v1/pins/:pinId/media",
 				() => new HttpResponse(null, { status: 503 }),
 			),
 			http.delete(
-				"/api/v1/me/image-downloads/:pinId",
+				"/api/v1/me/media-downloads/:pinId",
 				() => new HttpResponse(null, { status: 503 }),
 			),
 		);
@@ -139,20 +139,20 @@ describe("a failed download surfacing in the task centre", () => {
 			status: "FAILED",
 			reasonCode: "FETCH_FAILED",
 		});
-		const url = `/api/v1/pins/${failed.id}/image`;
+		const url = `/api/v1/pins/${failed.id}/media`;
 		const ready = {
 			...failed,
-			image: { status: "READY" as const, url, width: 800, height: 600 },
+			media: { status: "READY" as const, url, width: 800, height: 600 },
 		};
 		let stored = false;
 		server.use(
 			sessionRoute(() => true),
 			onePinPage(() => [stored ? ready : failed]),
 			// The upload clears the row on the server, so the list empties with it and a DELETE the
-			// client sent afterwards would answer 404 (SetPinImage calls ClearPinDownload).
+			// client sent afterwards would answer 404 (SetPinMedia calls ClearPinDownload).
 			downloadsRoute(() => (stored ? [] : [download(failed.id, "FAILED")])),
 			handshakeRoute(),
-			http.put("/api/v1/pins/:pinId/image", () => {
+			http.put("/api/v1/pins/:pinId/media", () => {
 				stored = true;
 				return HttpResponse.json(
 					{ id: failed.id, pinId: failed.id },
@@ -160,7 +160,7 @@ describe("a failed download surfacing in the task centre", () => {
 				);
 			}),
 			http.delete(
-				"/api/v1/me/image-downloads/:pinId",
+				"/api/v1/me/media-downloads/:pinId",
 				() => new HttpResponse(null, { status: 404 }),
 			),
 		);
@@ -196,7 +196,7 @@ describe("a failed download surfacing in the task centre", () => {
 		server.use(
 			sessionRoute(() => true),
 			onePinPage(() => [failed]),
-			http.get("/api/v1/me/image-downloads", () =>
+			http.get("/api/v1/me/media-downloads", () =>
 				HttpResponse.json(
 					downloadsPage([download(failed.id, "FAILED")], {
 						pivotId: failed.id,

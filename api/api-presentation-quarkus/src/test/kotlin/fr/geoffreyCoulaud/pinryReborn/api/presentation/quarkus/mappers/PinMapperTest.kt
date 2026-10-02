@@ -1,15 +1,15 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Image
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinImageStatusDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinMediaStatusDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinMapper.toDto
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinImageState
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinImageStatus
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMediaState
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMediaStatus
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -64,37 +64,37 @@ class PinMapperTest {
     fun `Given a pin whose image is ready, Then toDto carries its dimensions and a relative url`() {
         // Given
         val pin = createPin()
-        val image = Image(
+        val media = Media(
             id = randomUUID(), pinId = pin.id, mimeType = "image/png", width = 800, height = 600,
             animated = false, byteSize = 1024, contentHash = "h", storageKey = "originals/x/y/z.png",
             createdAt = TestTime.now,
         )
-        val states = mapOf(pin.id to PinImageState(PinImageStatus.READY, image, null, null))
+        val states = mapOf(pin.id to PinMediaState(PinMediaStatus.READY, media, null, null))
 
         // When
         val result = pin.toDto(states)
 
         // Then
-        assertEquals(PinImageStatusDto.READY, result.image?.status)
-        assertEquals("/api/v1/pins/${pin.id}/image", result.image?.url)
-        assertEquals(800, result.image?.width)
-        assertEquals(600, result.image?.height)
+        assertEquals(PinMediaStatusDto.READY, result.media?.status)
+        assertEquals("/api/v1/pins/${pin.id}/media", result.media?.url)
+        assertEquals(800, result.media?.width)
+        assertEquals(600, result.media?.height)
     }
 
     @Test
     fun `Given a pin whose download is pending, Then toDto carries PENDING and no dimensions`() {
         // Given
         val pin = createPin()
-        val states = mapOf(pin.id to PinImageState(PinImageStatus.PENDING, null, null, null))
+        val states = mapOf(pin.id to PinMediaState(PinMediaStatus.PENDING, null, null, null))
 
         // When
         val result = pin.toDto(states)
 
         // Then
-        assertEquals(PinImageStatusDto.PENDING, result.image?.status)
-        assertNull(result.image?.url)
-        assertNull(result.image?.width)
-        assertNull(result.image?.height)
+        assertEquals(PinMediaStatusDto.PENDING, result.media?.status)
+        assertNull(result.media?.url)
+        assertNull(result.media?.width)
+        assertNull(result.media?.height)
     }
 
     @Test
@@ -106,6 +106,6 @@ class PinMapperTest {
         val result = pin.toDto(emptyMap())
 
         // Then
-        assertNull(result.image)
+        assertNull(result.media)
     }
 }

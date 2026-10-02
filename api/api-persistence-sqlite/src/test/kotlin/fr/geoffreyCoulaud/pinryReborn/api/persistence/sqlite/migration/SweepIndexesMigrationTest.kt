@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
  * to keep each sweep a targeted scan rather than O(n) over a growing table. The third serves the task queue's
  * claim query (`docs/specs/2026-08-13-persistence-p2-debt.md` section 3.3).
  *
- * `image_download` is exempt, on the pattern section 11 uses for `users`: the fifth sweep is itself
+ * `media_download` is exempt, on the pattern section 11 uses for `users`: the fifth sweep is itself
  * what bounds that table, so its reads scan one grace of failures rather than a column that grows.
  * Revisit if the table is ever seen to accumulate.
  *

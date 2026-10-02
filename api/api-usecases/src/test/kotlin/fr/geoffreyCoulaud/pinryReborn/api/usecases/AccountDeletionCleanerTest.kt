@@ -1,15 +1,15 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Image
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
@@ -38,11 +38,11 @@ class AccountDeletionCleanerTest : BaseTest() {
     private val pins = mockk<PinRepositoryInterface>(relaxed = true)
     private val boards = mockk<BoardRepositoryInterface>(relaxed = true)
     private val tags = mockk<TagRepositoryInterface>(relaxed = true)
-    private val images = mockk<ImageRepositoryInterface>(relaxed = true)
+    private val mediaRepository = mockk<MediaRepositoryInterface>(relaxed = true)
     private val sessions = mockk<SessionTokenRepositoryInterface>(relaxed = true)
     private val passwords = mockk<UserPasswordHashRepositoryInterface>(relaxed = true)
     private val clearDownload = mockk<ClearPinDownload>(relaxed = true)
-    private val imageStore = mockk<ImageStore>(relaxed = true)
+    private val mediaStore = mockk<MediaStore>(relaxed = true)
     private val renditions = mockk<RenditionCache>(relaxed = true)
     private val exports = mockk<UserDataExportRepositoryInterface>(relaxed = true)
     private val exportArchiveStore = mockk<ExportArchiveStore>(relaxed = true)
@@ -51,7 +51,7 @@ class AccountDeletionCleanerTest : BaseTest() {
     private val importArchiveStore = mockk<ImportArchiveStore>(relaxed = true)
     private val tx = mockk<TransactionRunner>()
     private val cleaner = AccountDeletionCleaner(
-        users, pins, boards, tags, images, sessions, passwords, clearDownload, imageStore, renditions,
+        users, pins, boards, tags, mediaRepository, sessions, passwords, clearDownload, mediaStore, renditions,
         exports, exportArchiveStore, imports, importIssues, importArchiveStore, tx,
     )
 
@@ -65,7 +65,7 @@ class AccountDeletionCleanerTest : BaseTest() {
         updatedAt = TestTime.now,
     )
 
-    private fun buildImage(pinId: UUID) = Image(
+    private fun buildMedia(pinId: UUID) = Media(
         id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1,
         animated = false, byteSize = 1, contentHash = "h", storageKey = "originals/x/$pinId/i.png",
         createdAt = Instant.parse("2026-07-10T00:00:00Z"),
@@ -78,8 +78,8 @@ class AccountDeletionCleanerTest : BaseTest() {
         every { users.findUserByIdIncludingDeleted(userId) } returns user
         val pin = buildPin()
         every { pins.findAllPinIdsForUser(user) } returns listOf(pin.id)
-        val image = buildImage(pin.id)
-        every { images.findByPinId(pin.id) } returns image
+        val media = buildMedia(pin.id)
+        every { mediaRepository.findByPinId(pin.id) } returns media
 
         // When
         cleaner.deleteAccountData(userId)
@@ -87,7 +87,7 @@ class AccountDeletionCleanerTest : BaseTest() {
         // Then
         verifyOrder {
             clearDownload.clear(pin.id)
-            images.deleteByPinId(pin.id)
+            mediaRepository.deleteByPinId(pin.id)
             pins.permanentlyDeleteAllPinsForUser(user)
             boards.permanentlyDeleteAllBoardsForUser(user)
             tags.deleteAllTagsForUser(user)
@@ -95,8 +95,8 @@ class AccountDeletionCleanerTest : BaseTest() {
             passwords.deleteForUser(user)
             users.permanentlyDeleteUser(user)
         }
-        verify { imageStore.delete(image.storageKey) }
-        verify { renditions.evictImage(image.id) }
+        verify { mediaStore.delete(media.storageKey) }
+        verify { renditions.evictMedia(media.id) }
     }
 
     @Test
@@ -117,10 +117,10 @@ class AccountDeletionCleanerTest : BaseTest() {
         every { tx.inTransaction(any<() -> Any?>()) } answers { (firstArg<() -> Any?>())() }
         every { users.findUserByIdIncludingDeleted(userId) } returns user
         val pin = buildPin()
-        val image = buildImage(pin.id)
+        val media = buildMedia(pin.id)
         every { pins.findAllPinIdsForUser(user) } returns listOf(pin.id)
-        every { images.findByPinId(pin.id) } returns image
-        every { renditions.evictImage(image.id) } throws RuntimeException("disk")
+        every { mediaRepository.findByPinId(pin.id) } returns media
+        every { renditions.evictMedia(media.id) } throws RuntimeException("disk")
 
         // When / Then
         assertDoesNotThrow { cleaner.deleteAccountData(userId) } // committed DB, disk best-effort
@@ -249,42 +249,42 @@ class AccountDeletionCleanerTest : BaseTest() {
         every { users.findUserByIdIncludingDeleted(userId) } returns user
         val pin = buildPin()
         every { pins.findAllPinIdsForUser(user) } returns listOf(pin.id)
-        every { images.findByPinId(pin.id) } returns null
+        every { mediaRepository.findByPinId(pin.id) } returns null
 
         // When
         cleaner.deleteAccountData(userId)
 
         // Then
         verify { clearDownload.clear(pin.id) }
-        verify { images.deleteByPinId(pin.id) }
-        verify(exactly = 0) { imageStore.delete(any()) }
-        verify(exactly = 0) { renditions.evictImage(any()) }
+        verify { mediaRepository.deleteByPinId(pin.id) }
+        verify(exactly = 0) { mediaStore.delete(any()) }
+        verify(exactly = 0) { renditions.evictMedia(any()) }
     }
 
     @Test
-    fun `Given imageStore delete throws mid-loop, Then the disk loop still attempts all images and exports`() {
+    fun `Given mediaStore delete throws mid-loop, Then the disk loop still attempts all images and exports`() {
         // Given: at least two pins with images and one export archive, so the loop has a
         // second iteration plus the export loop to reach after the throw.
         every { tx.inTransaction(any<() -> Any?>()) } answers { (firstArg<() -> Any?>())() }
         every { users.findUserByIdIncludingDeleted(userId) } returns user
         val firstPin = buildPin()
         val secondPin = buildPin()
-        val firstImage = buildImage(firstPin.id)
-        val secondImage = buildImage(secondPin.id)
+        val firstMedia = buildMedia(firstPin.id)
+        val secondMedia = buildMedia(secondPin.id)
         every { pins.findAllPinIdsForUser(user) } returns listOf(firstPin.id, secondPin.id)
-        every { images.findByPinId(firstPin.id) } returns firstImage
-        every { images.findByPinId(secondPin.id) } returns secondImage
+        every { mediaRepository.findByPinId(firstPin.id) } returns firstMedia
+        every { mediaRepository.findByPinId(secondPin.id) } returns secondMedia
         val exportId = randomUUID()
         every { exports.findAllExportIdsForUser(userId) } returns listOf(exportId)
         every { exportArchiveStore.format } returns ArchiveFormat(mediaType = "application/zip", fileExtension = "zip")
-        every { imageStore.delete(any()) } throws RuntimeException("disk down")
+        every { mediaStore.delete(any()) } throws RuntimeException("disk down")
 
         // When / Then: the throw must not abort the loop, and the export loop must still run.
         assertDoesNotThrow { cleaner.deleteAccountData(userId) }
-        verify { imageStore.delete(firstImage.storageKey) }
-        verify { imageStore.delete(secondImage.storageKey) }
-        verify { renditions.evictImage(firstImage.id) }
-        verify { renditions.evictImage(secondImage.id) }
+        verify { mediaStore.delete(firstMedia.storageKey) }
+        verify { mediaStore.delete(secondMedia.storageKey) }
+        verify { renditions.evictMedia(firstMedia.id) }
+        verify { renditions.evictMedia(secondMedia.id) }
         verify { exportArchiveStore.delete(ExportArchiveKey.forExport(exportId, "zip")) }
     }
 }

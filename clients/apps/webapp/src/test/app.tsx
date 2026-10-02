@@ -54,7 +54,7 @@ const AUTHOR_ID = "0f5c6e58-2d6c-4a3a-9c1f-2a1f6b6d4f11";
 let pinsMade = 0;
 
 /** A pin the journey names by its description, which the tile reads as the image's text. */
-export function pin(description: string, image: Pin["image"] = null): Pin {
+export function pin(description: string, media: Pin["media"] = null): Pin {
 	const id = `${AUTHOR_ID.slice(0, -2)}${(pinsMade++).toString().padStart(2, "0")}`;
 	return {
 		id,
@@ -64,15 +64,15 @@ export function pin(description: string, image: Pin["image"] = null): Pin {
 		description,
 		tags: [],
 		boards: [],
-		image,
+		media,
 	};
 }
 
 /** A pin whose image the API downloaded, at the dimensions the tile is placed with. */
 export function readyPin(description: string, width = 800, height = 600): Pin {
 	const bare = pin(description);
-	const url = `/api/v1/pins/${bare.id}/image`;
-	return { ...bare, image: { status: "READY", url, width, height } };
+	const url = `/api/v1/pins/${bare.id}/media`;
+	return { ...bare, media: { status: "READY", url, width, height } };
 }
 
 /**
@@ -213,7 +213,7 @@ export function boardRoutes(boards: Board[]) {
 
 /** The task centre's list, answered from what the journey decided last. */
 export function downloadsRoute(rows: () => unknown[] = () => []) {
-	return http.get("/api/v1/me/image-downloads", () =>
+	return http.get("/api/v1/me/media-downloads", () =>
 		HttpResponse.json(downloadsPage(rows())),
 	);
 }
@@ -303,7 +303,7 @@ export function importsRoute(rows: () => unknown[] = () => []) {
 	);
 }
 
-/** What the API's `ImageFormat` holds, which is what a real handshake publishes. */
+/** What the API's `MediaFormat` holds, which is what a real handshake publishes. */
 export const MEDIA_TYPES = [
 	"image/png",
 	"image/jpeg",
@@ -341,7 +341,7 @@ export function handshakeRoute({
 	});
 }
 
-/** A row of the task centre, as `GET /api/v1/me/image-downloads` answers it. */
+/** A row of the task centre, as `GET /api/v1/me/media-downloads` answers it. */
 export function download(
 	pinId: string,
 	status: "PENDING" | "FAILED",

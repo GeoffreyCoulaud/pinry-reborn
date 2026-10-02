@@ -21,11 +21,11 @@ import kotlin.streams.asSequence
 /**
  * [ExportArchiveStore] adapter backed by the local filesystem, producing ZIP archives.
  *
- * Mirrors [FilesystemImageStore]: bytes are staged under `<dataDir>/tmp/`, measured (size +
+ * Mirrors [FilesystemMediaStore]: bytes are staged under `<dataDir>/tmp/`, measured (size +
  * SHA-256) in a single streaming pass, then promoted (moved) to their final
  * `<dataDir>/<storageKey>` location.
  *
- * [dataDir] is a plain string (not injected) for the same reason as [FilesystemImageStore]: this
+ * [dataDir] is a plain string (not injected) for the same reason as [FilesystemMediaStore]: this
  * class stays framework-light and unit-testable with a temp directory. CDI wiring of the actual
  * data directory is done by a producer elsewhere.
  */
@@ -48,7 +48,7 @@ class FilesystemZipExportArchiveStore(private val dataDir: String) : ExportArchi
     }
 
     // Cleanup-on-failure genuinely has to catch everything here, mirroring
-    // FilesystemImageStore.stage: the writer block can throw anything (a domain guard, a broken
+    // FilesystemMediaStore.stage: the writer block can throw anything (a domain guard, a broken
     // source stream, a write/fsync failure under disk pressure), and "no temp file on error" is
     // this store's guarantee regardless of the failure's shape. The catch-and-rethrow dispatches
     // via the JVM exception table, not a conditional jump, so it adds no uncovered branch.

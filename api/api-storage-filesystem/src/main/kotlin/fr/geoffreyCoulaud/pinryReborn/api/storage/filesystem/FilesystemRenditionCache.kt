@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import java.io.InputStream
 import java.nio.file.Files
@@ -10,20 +10,20 @@ import java.util.UUID
 import kotlin.streams.asSequence
 
 /**
- * [RenditionCache] adapter backed by the local filesystem, under `<dataDir>/cache/<imageId>/`.
+ * [RenditionCache] adapter backed by the local filesystem, under `<dataDir>/cache/<mediaId>/`.
  *
  * Not `@ApplicationScoped` (a `String` ctor param is unresolvable by ARC); a producer in the
- * composition root builds it, mirroring `FilesystemImageStore`.
+ * composition root builds it, mirroring `FilesystemMediaStore`.
  */
 class FilesystemRenditionCache(dataDir: String) : RenditionCache {
     private val paths = DataDirPaths(dataDir)
 
-    private fun keyPath(imageId: UUID, key: String): Path = paths.resolveWithinRoot("cache/$imageId/$key")
+    private fun keyPath(mediaId: UUID, key: String): Path = paths.resolveWithinRoot("cache/$mediaId/$key")
 
-    override fun openStream(imageId: UUID, key: String): InputStream? {
+    override fun openStream(mediaId: UUID, key: String): InputStream? {
         // keyPath stays outside the try so a traversal key still surfaces as an
         // IllegalArgumentException instead of being swallowed into a miss.
-        val path = keyPath(imageId, key)
+        val path = keyPath(mediaId, key)
         // Opening straight away (rather than exists() then open) is race-free: a concurrent evict
         // between the two calls would otherwise turn a miss (regenerate) into a NoSuchFileException
         // (a 500). It also drops a stat call and a branch.
@@ -38,13 +38,13 @@ class FilesystemRenditionCache(dataDir: String) : RenditionCache {
     // everything: a full or read-only data dir (createDirectories / the move raise IOException), or
     // any other Throwable mid-store, must still leave no orphan behind. Otherwise the cache never
     // populates, every later GET re-renders, and each one leaks another temp into java.io.tmpdir
-    // (frequently a tmpfs, i.e. RAM). Mirrors FilesystemImageStore.stage: the catch-and-rethrow
+    // (frequently a tmpfs, i.e. RAM). Mirrors FilesystemMediaStore.stage: the catch-and-rethrow
     // dispatches via the JVM exception table (not a conditional jump), so it adds no uncovered
     // Kover branch. Hence the deliberate broad catch.
     @Suppress("TooGenericExceptionCaught")
-    override fun store(imageId: UUID, key: String, staged: StagedFile) {
+    override fun store(mediaId: UUID, key: String, staged: StagedFile) {
         try {
-            val dest = keyPath(imageId, key)
+            val dest = keyPath(mediaId, key)
             Files.createDirectories(dest.parent)
             paths.atomicMove(Path.of(staged.path), dest)
         } catch (error: Throwable) {
@@ -53,8 +53,8 @@ class FilesystemRenditionCache(dataDir: String) : RenditionCache {
         }
     }
 
-    override fun evictImage(imageId: UUID) {
-        val dir = paths.resolveWithinRoot("cache/$imageId")
+    override fun evictMedia(mediaId: UUID) {
+        val dir = paths.resolveWithinRoot("cache/$mediaId")
         try {
             // Delete depth-first (children before parents) so the directory tree can be removed.
             Files.walk(dir).use { stream ->
@@ -66,7 +66,7 @@ class FilesystemRenditionCache(dataDir: String) : RenditionCache {
         }
     }
 
-    override fun forEachImageIdOnDisk(block: (Sequence<UUID>) -> Unit) {
+    override fun forEachMediaIdOnDisk(block: (Sequence<UUID>) -> Unit) {
         val cacheRoot = paths.resolveWithinRoot("cache")
         // A fresh install has no cache/ yet: Files.list would throw NoSuchFileException, which the
         // periodic sweep would log as a failure every tick. Run the block once on an empty sequence

@@ -2,12 +2,12 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
-import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.ImageFormat
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageTooLargeException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageTooManyPixelsException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.UndecodableImageException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import io.mockk.every
 import io.mockk.verify
 import java.io.IOException
@@ -58,10 +58,10 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         assertEquals(listOf("Summer"), created.boards.map { it.name })
         assertEquals(pastInstant, savedPins[1].softDeletedAt)
         assertNull(created.softDeletedAt)
-        assertEquals(sha256(alphaBytes), savedImages.first().contentHash)
-        assertEquals(ImageFormat.PNG.mimeType, savedImages.first().mimeType)
-        assertEquals(now, savedImages.first().createdAt)
-        assertEquals(savedImages.map { it.storageKey }.toSet(), promoted)
+        assertEquals(sha256(alphaBytes), savedMedia.first().contentHash)
+        assertEquals(MediaFormat.PNG.mimeType, savedMedia.first().mimeType)
+        assertEquals(now, savedMedia.first().createdAt)
+        assertEquals(savedMedia.map { it.storageKey }.toSet(), promoted)
         assertTrue(stagedPaths.isEmpty())
         assertEquals(2, stored.processedPins)
         assertEquals(2, stored.createdPins)
@@ -133,7 +133,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         assertEquals(2, savedPins.size)
         assertEquals(2, stored.processedPins)
         assertEquals(2, stored.createdPins)
-        assertEquals(savedImages.map { it.storageKey }.toSet(), promoted)
+        assertEquals(savedMedia.map { it.storageKey }.toSet(), promoted)
         assertEquals(1, discarded.size)
         verify(exactly = 0) { archiveStore.delete(any()) }
     }
@@ -164,7 +164,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         // Then
         assertEquals(1, savedPins.size)
         assertEquals(UserDataImportState.CANCELLED, stored.state)
-        assertEquals(savedImages.map { it.storageKey }.toSet(), promoted)
+        assertEquals(savedMedia.map { it.storageKey }.toSet(), promoted)
         assertEquals(1, discarded.size)
     }
 
@@ -189,7 +189,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
 
         // Then
         assertEquals(1, savedPins.size)
-        assertEquals(savedImages.map { it.storageKey }.toSet(), promoted)
+        assertEquals(savedMedia.map { it.storageKey }.toSet(), promoted)
         assertEquals(1, discarded.size)
     }
 
@@ -208,7 +208,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         stubDelete()
         stubIssues()
         every { pinRepository.savePin(any()) } answers { firstArg<Pin>().also { pin -> savedPins += pin } }
-        every { imageRepository.save(any()) } throws IllegalStateException("constraint violation")
+        every { mediaRepository.save(any()) } throws IllegalStateException("constraint violation")
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)
@@ -227,7 +227,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         // Given: a digest mismatch to report, then a transaction that throws on the pin it was settling.
         // The real transaction rolls the issue row back; the recorder's counter, held in memory, cannot
         // follow it, so the cap would end an attempt short by every issue a rejected line had reported.
-        val lying = aPin().copy(image = ImportedImage(ALPHA_PATH, "0".repeat(HASH_LENGTH)))
+        val lying = aPin().copy(media = ImportedMedia(ALPHA_PATH, "0".repeat(HASH_LENGTH)))
         val source = FakeArchiveSource(aManifest(), pins = listOf(TestLine(1, lying)), media = everyMedium)
         stubWalk(source)
         stubDigest()
@@ -268,12 +268,12 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
 
         // Then: three pins, not five, and the counters are the sums of both attempts
         assertEquals(3, savedPins.size)
-        assertEquals(3, savedImages.size)
+        assertEquals(3, savedMedia.size)
         assertEquals(3, stageCalls)
         assertEquals(3, stored.processedPins)
         assertEquals(3, stored.createdPins)
         assertEquals(0, stored.skippedPins)
-        assertEquals(savedImages.map { it.storageKey }.toSet(), promoted)
+        assertEquals(savedMedia.map { it.storageKey }.toSet(), promoted)
         assertTrue(savedIssues.isEmpty())
     }
 
@@ -291,7 +291,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         assertEquals(listOf(UserDataImportIssueKind.PIN_HAS_NO_MEDIA), kinds())
         assertEquals(1, stored.skippedPins)
         assertEquals(1, stored.issueCount)
-        verify(exactly = 0) { imageStore.digest(any(), any()) }
+        verify(exactly = 0) { mediaStore.digest(any(), any()) }
     }
 
     @Test
@@ -334,8 +334,8 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
                 manifest = aManifest(),
                 pins =
                     listOf(
-                        TestLine(1, aPin(path = "images/..")),
-                        TestLine(2, aPin(path = "elsewhere/images/alpha.png")),
+                        TestLine(1, aPin(path = "media/..")),
+                        TestLine(2, aPin(path = "elsewhere/media/alpha.png")),
                     ),
                 media = everyMedium,
             )
@@ -348,7 +348,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         // Then
         assertEquals(List(2) { UserDataImportIssueKind.ENTRY_PATH_INVALID }, kinds())
         assertEquals(2, stored.skippedPins)
-        verify(exactly = 0) { imageStore.digest(any(), any()) }
+        verify(exactly = 0) { mediaStore.digest(any(), any()) }
     }
 
     @Test
@@ -382,7 +382,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         val source = FakeArchiveSource(aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
         stubWalk(source)
         stubIssues()
-        every { imageStore.digest(any(), MAX_IMAGE_BYTES) } throws ImageTooLargeException("over the bound")
+        every { mediaStore.digest(any(), MAX_MEDIA_BYTES) } throws MediaTooLargeException("over the bound")
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)
@@ -390,7 +390,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         // Then
         assertEquals(listOf(UserDataImportIssueKind.MEDIA_TOO_LARGE), kinds())
         assertEquals(1, stored.skippedPins)
-        verify(exactly = 0) { imageStore.stage(any(), any()) }
+        verify(exactly = 0) { mediaStore.stage(any(), any()) }
     }
 
     @Test
@@ -439,7 +439,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given a medium two pins already hold, Then it is reported and nothing is staged`() {
         // Given: nothing binds a medium to at most one pin, so inventing a winner would be arbitrary
-        repeat(2) { anExistingImageRow(sha256(alphaBytes)) }
+        repeat(2) { anExistingMediaRow(sha256(alphaBytes)) }
         val source = FakeArchiveSource(aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
         stubWalk(source)
         stubDigest()
@@ -452,13 +452,13 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         // Then
         assertEquals(listOf(UserDataImportIssueKind.MEDIA_AMBIGUOUS), kinds())
         assertEquals(1, stored.skippedPins)
-        verify(exactly = 0) { imageStore.stage(any(), any()) }
+        verify(exactly = 0) { mediaStore.stage(any(), any()) }
     }
 
     @Test
     fun `Given a declared digest that disagrees with the bytes, Then it is reported and the pin is created`() {
         // Given: the only signal an archive was altered in transit, and it changes no outcome
-        val lying = aPin().copy(image = ImportedImage(ALPHA_PATH, "0".repeat(HASH_LENGTH)))
+        val lying = aPin().copy(media = ImportedMedia(ALPHA_PATH, "0".repeat(HASH_LENGTH)))
         val source = FakeArchiveSource(aManifest(), pins = listOf(TestLine(1, lying)), media = everyMedium)
         stubWalk(source)
         stubMediaPath()
@@ -472,7 +472,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         assertEquals(1, savedPins.size)
         assertEquals(1, stored.createdPins)
         assertEquals(0, stored.skippedPins)
-        assertEquals(sha256(alphaBytes), savedImages.single().contentHash)
+        assertEquals(sha256(alphaBytes), savedMedia.single().contentHash)
     }
 
     @Test
@@ -500,7 +500,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         // Then
         assertEquals(List(4) { UserDataImportIssueKind.FIELD_INVALID }, kinds())
         assertEquals(4, stored.skippedPins)
-        verify(exactly = 0) { imageStore.digest(any(), any()) }
+        verify(exactly = 0) { mediaStore.digest(any(), any()) }
     }
 
     @Test
@@ -604,7 +604,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         every { issueRepository.countForImport(any()) } returns 0
         stubDigest()
         stubHashLookup()
-        every { imageStore.stage(any(), MAX_IMAGE_BYTES) } throws IOException("No space left on device")
+        every { mediaStore.stage(any(), MAX_MEDIA_BYTES) } throws IOException("No space left on device")
 
         // When / Then
         assertThrows(IOException::class.java) { runner.run(importId, isLastAttempt = false, renewLease) }

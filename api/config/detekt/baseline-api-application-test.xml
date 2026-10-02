@@ -4,9 +4,9 @@
   <CurrentIssues>
     <ID>CommentCarriesDocumentation:ArchitectureKonsistTest.kt:ArchitectureKonsistTest</ID>
     <ID>CommentCarriesDocumentation:ArchitectureKonsistTest.kt:ArchitectureKonsistTest$@Test fun `Given production sources, Then none outside queries and pagination names a recyclable query bean`</ID>
-    <ID>CommentCarriesDocumentation:ImageHostingIntegrationTest.kt:ImageHostingDataDirTestProfile : QuarkusTestProfile</ID>
-    <ID>CommentCarriesDocumentation:ImageHostingIntegrationTest.kt:ImageHostingIntegrationTest : IntegrationTest</ID>
-    <ID>CommentCarriesDocumentation:ImageHostingOversizeIntegrationTest.kt:ImageHostingTinyLimitTestProfile : QuarkusTestProfile</ID>
+    <ID>CommentCarriesDocumentation:MediaHostingIntegrationTest.kt:MediaHostingDataDirTestProfile : QuarkusTestProfile</ID>
+    <ID>CommentCarriesDocumentation:MediaHostingIntegrationTest.kt:MediaHostingIntegrationTest : IntegrationTest</ID>
+    <ID>CommentCarriesDocumentation:MediaHostingOversizeIntegrationTest.kt:MediaHostingTinyLimitTestProfile : QuarkusTestProfile</ID>
     <ID>CommentCarriesDocumentation:IntegrationTest.kt:IntegrationTest$@BeforeEach fun truncateAllTables</ID>
     <ID>CommentCarriesDocumentation:IntegrationTest.kt:IntegrationTest$protected fun waitForTheClockToTick</ID>
     <ID>CommentCarriesDocumentation:MeDeleteCompletionIntegrationTest.kt:MeDeleteCompletionIntegrationTest : IntegrationTest</ID>
@@ -14,8 +14,8 @@
     <ID>CommentCarriesDocumentation:MeExportIntegrationTest.kt:MeExportIntegrationTest : IntegrationTest</ID>
     <ID>CommentCarriesDocumentation:MeExportIntegrationTest.kt:MeExportIntegrationTest$@Test fun `Given two POSTs fired back-to-back, Then the second is refused or the PENDING invariant holds`</ID>
     <ID>CommentCarriesDocumentation:MeExportTestProfile.kt:MeExportTestProfile : QuarkusTestProfile</ID>
-    <ID>CommentCarriesDocumentation:ModeBImageHostingIntegrationTest.kt:ModeBImageHostingIntegrationTest : IntegrationTest</ID>
-    <ID>CommentCarriesDocumentation:ModeBImageHostingIntegrationTest.kt:ModeBImageHostingTestProfile : QuarkusTestProfile</ID>
+    <ID>CommentCarriesDocumentation:ModeBMediaHostingIntegrationTest.kt:ModeBMediaHostingIntegrationTest : IntegrationTest</ID>
+    <ID>CommentCarriesDocumentation:ModeBMediaHostingIntegrationTest.kt:ModeBMediaHostingTestProfile : QuarkusTestProfile</ID>
     <ID>CommentCarriesDocumentation:ProductionDatasourceDeclarationTest.kt:ProductionDatasourceDeclarationTest</ID>
     <ID>CommentCarriesDocumentation:RenditionsIntegrationTest.kt:RenditionsIntegrationTest : IntegrationTest</ID>
     <ID>CommentCarriesDocumentation:RenditionsIntegrationTest.kt:RenditionsTestProfile : QuarkusTestProfile</ID>

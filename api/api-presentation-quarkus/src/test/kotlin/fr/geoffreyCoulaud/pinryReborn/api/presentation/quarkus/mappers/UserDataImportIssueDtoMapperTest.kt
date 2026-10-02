@@ -19,7 +19,7 @@ class UserDataImportIssueDtoMapperTest {
         importId = randomUUID(),
         kind = UserDataImportIssueKind.MEDIA_DIGEST_MISMATCH,
         line = 42,
-        subject = "images/a1b2.jpg",
+        subject = "media/a1b2.jpg",
         detail = "declared sha256 does not match the bytes",
     )
 
@@ -35,7 +35,7 @@ class UserDataImportIssueDtoMapperTest {
         assertEquals(issue.id, dto.id)
         assertEquals(UserDataImportIssueKindDto.MEDIA_DIGEST_MISMATCH, dto.kind)
         assertEquals(42, dto.line)
-        assertEquals("images/a1b2.jpg", dto.subject)
+        assertEquals("media/a1b2.jpg", dto.subject)
         assertEquals("declared sha256 does not match the bytes", dto.detail)
     }
 

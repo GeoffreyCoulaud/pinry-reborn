@@ -72,7 +72,7 @@ class SharedRefusalsFilterTest {
     @Test
     fun `Given an operation reading a body with a 413 of its own, Then BODY_TOO_LARGE joins its codes once`() {
         // Given
-        val code = OASFactory.createSchema().enumeration(listOf("IMAGE_TOO_LARGE"))
+        val code = OASFactory.createSchema().enumeration(listOf("MEDIA_TOO_LARGE"))
         val own = OASFactory.createAPIResponse().content(
             OASFactory.createContent().addMediaType(
                 "application/problem+json",
@@ -87,7 +87,7 @@ class SharedRefusalsFilterTest {
         filter.filterOperation(filter.filterOperation(operation))
 
         // Then
-        assertEquals(listOf("IMAGE_TOO_LARGE", "BODY_TOO_LARGE"), code.enumeration)
+        assertEquals(listOf("MEDIA_TOO_LARGE", "BODY_TOO_LARGE"), code.enumeration)
     }
 
     @Test

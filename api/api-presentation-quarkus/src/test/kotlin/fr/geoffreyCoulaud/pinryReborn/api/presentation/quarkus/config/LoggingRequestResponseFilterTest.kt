@@ -56,14 +56,14 @@ class LoggingRequestResponseFilterTest {
 
     @Test
     fun `Given a multipart request, Then requestFilter does not read the entity stream`() {
-        // Given - a canonical-image upload can be up to 32 MiB; buffering it into memory to log
+        // Given - a canonical-media upload can be up to 32 MiB; buffering it into memory to log
         // it as UTF-8 garbage would defeat the streaming design, so the entity stream must be
         // left completely untouched for the multipart parser downstream.
         val ctx = mockk<ContainerRequestContext>()
         val uriInfo = mockk<UriInfo>()
         every { ctx.method } returns "PUT"
         every { ctx.uriInfo } returns uriInfo
-        every { uriInfo.requestUri } returns URI.create("http://localhost/api/v1/pins/1/image")
+        every { uriInfo.requestUri } returns URI.create("http://localhost/api/v1/pins/1/media")
         every {
             ctx.headers
         } returns MultivaluedHashMap<String, String>().apply {

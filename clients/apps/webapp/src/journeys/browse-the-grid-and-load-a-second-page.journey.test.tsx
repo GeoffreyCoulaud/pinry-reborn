@@ -115,7 +115,7 @@ describe("browse the grid and load a second page", () => {
 		// The column is unmeasurable in jsdom, so the narrowest rendition is what a zero width asks for.
 		expect(tile).toHaveAttribute(
 			"src",
-			`/api/v1/pins/${wide.id}/image?size=SMALL`,
+			`/api/v1/pins/${wide.id}/media?size=SMALL`,
 		);
 	});
 

@@ -20,7 +20,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardPinLister
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardRecycleBin
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardUpdater
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinBoardSetter
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinImageState
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
@@ -40,10 +40,10 @@ class BoardControllerTest {
     private val pinBoardSetter = mockk<PinBoardSetter>(relaxed = true)
     private val securityIdentity = mockk<SecurityIdentity>()
     // The real assembler over a stubbed resolver: the responses under assertion are the mapped ones.
-    private val resolvePinImageState = mockk<ResolvePinImageState>().also {
+    private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
         every { it.statesFor(any()) } returns emptyMap()
     }
-    private val pinResponses = PinResponses(resolvePinImageState)
+    private val pinResponses = PinResponses(resolvePinMediaState)
     private val controller = BoardController(
         boardCreator = boardCreator,
         boardGetter = boardGetter,

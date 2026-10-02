@@ -88,7 +88,7 @@ describe("step through the grid from a pin", () => {
 			readyPin("a cat asleep"),
 			readyPin("a lighthouse"),
 		];
-		const [first, second, third] = pins.map((one) => String(one.image?.url));
+		const [first, second, third] = pins.map((one) => String(one.media?.url));
 		const { user, dialog } = await openTheFirst(pins);
 
 		// The grid's own rendition, which jsdom's unmeasurable column makes the small one.

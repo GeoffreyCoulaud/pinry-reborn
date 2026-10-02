@@ -34,7 +34,7 @@ class FilesystemZipExportArchiveStoreTest {
             sink.putTextEntry("README.md", "hello")
             sink.putJsonEntry("manifest.json", mapOf("formatVersion" to 1))
             sink.putJsonLinesEntry("pins.jsonl", sequenceOf(mapOf("id" to "a"), mapOf("id" to "b")))
-            sink.putBinaryEntry("images/x.bin", ByteArrayInputStream(byteArrayOf(1, 2, 3)))
+            sink.putBinaryEntry("media/x.bin", ByteArrayInputStream(byteArrayOf(1, 2, 3)))
         }
 
         // When
@@ -47,7 +47,7 @@ class FilesystemZipExportArchiveStoreTest {
                 2,
                 zip.getInputStream(zip.getEntry("pins.jsonl")).readBytes().decodeToString().trim().lines().size,
             )
-            assertArrayEquals(byteArrayOf(1, 2, 3), zip.getInputStream(zip.getEntry("images/x.bin")).readBytes())
+            assertArrayEquals(byteArrayOf(1, 2, 3), zip.getInputStream(zip.getEntry("media/x.bin")).readBytes())
         }
     }
 
@@ -126,7 +126,7 @@ class FilesystemZipExportArchiveStoreTest {
         val tmp = Files.createDirectories(tempDir.resolve("tmp"))
         val old = Files.createFile(tmp.resolve("export-old.tmp"))
         val recent = Files.createFile(tmp.resolve("export-recent.tmp"))
-        val foreign = Files.createFile(tmp.resolve("stage-image.tmp"))
+        val foreign = Files.createFile(tmp.resolve("stage-media.tmp"))
         Files.setLastModifiedTime(old, FileTime.from(Instant.parse("2026-07-01T00:00:00Z")))
 
         // When

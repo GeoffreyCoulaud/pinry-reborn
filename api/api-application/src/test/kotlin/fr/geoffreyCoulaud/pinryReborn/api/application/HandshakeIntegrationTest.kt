@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.ImageFormat
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
@@ -14,12 +14,12 @@ import org.junit.jupiter.api.Test
  */
 class HandshakeTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> = mapOf(
-        "images.max_file_bytes" to "$MAX_FILE_BYTES",
-        "images.max_pixels" to "$MAX_PIXELS",
-        "images.renditions.tiny" to "$TINY",
-        "images.renditions.small" to "$SMALL",
-        "images.renditions.medium" to "$MEDIUM",
-        "images.renditions.large" to "$LARGE",
+        "media.max_file_bytes" to "$MAX_FILE_BYTES",
+        "media.max_pixels" to "$MAX_PIXELS",
+        "media.renditions.tiny" to "$TINY",
+        "media.renditions.small" to "$SMALL",
+        "media.renditions.medium" to "$MEDIUM",
+        "media.renditions.large" to "$LARGE",
         "imports.max_chunk_bytes" to "$MAX_IMPORT_CHUNK_BYTES",
         "imports.max_archive_bytes" to "$MAX_IMPORT_ARCHIVE_BYTES",
     )
@@ -75,7 +75,7 @@ class HandshakeIntegrationTest {
     fun `Given the formats the storage accepts, Then the handshake answers their media types`() {
         // Given / When / Then
         assertEquals(
-            ImageFormat.entries.map { it.mimeType },
+            MediaFormat.entries.map { it.mimeType },
             handshake().getList<String>("limits.mediaTypes"),
         )
     }

@@ -2,6 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>CommentCarriesDocumentation:HttpImageFetcher.kt:HttpImageFetcher$@Suppress("ThrowsCount") override fun openStream: InputStream</ID>
+    <ID>CommentCarriesDocumentation:HttpMediaFetcher.kt:HttpMediaFetcher$@Suppress("ThrowsCount") override fun openStream: InputStream</ID>
   </CurrentIssues>
 </SmellBaseline>

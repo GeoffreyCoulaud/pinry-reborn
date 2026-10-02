@@ -9,7 +9,6 @@ import type { Schemas } from "@pinry-reborn/auth";
 import { type ReactNode, useState } from "react";
 import { importFailure } from "../dataFailures";
 import { importRefusal } from "../dataRefusals";
-import { useHandshake } from "../images";
 import {
 	useCancelImport,
 	useLatestImport,
@@ -26,6 +25,7 @@ import {
 } from "../imports";
 import { sameFile } from "../lib/imports";
 import { AccountRefusal } from "../me";
+import { useHandshake } from "../media";
 import { m } from "../paraglide/messages.js";
 import { getLocale } from "../paraglide/runtime.js";
 import { ImportIssuesDialog } from "./ImportIssuesDialog";

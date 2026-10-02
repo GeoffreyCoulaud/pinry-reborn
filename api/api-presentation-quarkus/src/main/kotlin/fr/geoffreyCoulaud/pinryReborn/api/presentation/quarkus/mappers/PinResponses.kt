@@ -5,16 +5,16 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinMapper.toDto
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinImageState
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import jakarta.enterprise.context.ApplicationScoped
 
 /**
- * Every payload that carries a pin, built here so none forgets the image state: a null `image` then
+ * Every payload that carries a pin, built here so none forgets the image state: a null `media` then
  * means the pin has none, never that the response did not look.
  */
 @ApplicationScoped
-class PinResponses(private val resolvePinImageState: ResolvePinImageState) {
-    fun pin(pin: Pin): PinOutputDto = pin.toDto(resolvePinImageState.statesFor(listOf(pin)))
+class PinResponses(private val resolvePinMediaState: ResolvePinMediaState) {
+    fun pin(pin: Pin): PinOutputDto = pin.toDto(resolvePinMediaState.statesFor(listOf(pin)))
 
-    fun page(page: Page<Pin>): PinListOutputDto = page.toDto(resolvePinImageState.statesFor(page.items))
+    fun page(page: Page<Pin>): PinListOutputDto = page.toDto(resolvePinMediaState.statesFor(page.items))
 }

@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageDownloadRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
@@ -12,7 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInte
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.AccountDeletionCleaner
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapOrphanedStorage
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapStaleImageDownloads
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapStaleMediaDownloads
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapTombstonedAccounts
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.ReapTerminalTasks
 import fr.geoffreyCoulaud.pinryReborn.api.worker.GarbageCollectionConfig
@@ -22,7 +22,7 @@ import jakarta.enterprise.inject.Produces
 /**
  * CDI wiring for the four garbage collection sweeps whose constructor takes a primitive ARC cannot
  * resolve ([ReapOrphanedStorage] takes an `Int`, [ReapTombstonedAccounts] a `Duration`,
- * [ReapTerminalTasks] and [ReapStaleImageDownloads] a `Duration`).
+ * [ReapTerminalTasks] and [ReapStaleMediaDownloads] a `Duration`).
  * Mirrors [ExportProducers.reapExpiredUserDataExports]:
  * `GarbageCollectionConfig` lives in `api-worker-quarkus`, so a use case in `api-usecases` cannot
  * take it directly and the primitive is read here. `ReapExpiredSessionTokens` is
@@ -38,7 +38,7 @@ class GarbageCollectionProducers {
         renditionCache: RenditionCache,
         exportArchiveStore: ExportArchiveStore,
         importArchiveStore: ImportArchiveStore,
-        imageRepository: ImageRepositoryInterface,
+        mediaRepository: MediaRepositoryInterface,
         userDataExportRepository: UserDataExportRepositoryInterface,
         userDataImportRepository: UserDataImportRepositoryInterface,
         config: GarbageCollectionConfig,
@@ -47,7 +47,7 @@ class GarbageCollectionProducers {
             renditionCache,
             exportArchiveStore,
             importArchiveStore,
-            imageRepository,
+            mediaRepository,
             userDataExportRepository,
             userDataImportRepository,
             batchSize = config.orphanBatchSize(),
@@ -70,14 +70,14 @@ class GarbageCollectionProducers {
 
     @Produces
     @ApplicationScoped
-    fun reapStaleImageDownloads(
-        imageDownloadRepository: ImageDownloadRepositoryInterface,
+    fun reapStaleMediaDownloads(
+        mediaDownloadRepository: MediaDownloadRepositoryInterface,
         taskQueue: TaskQueueInterface,
         clock: Clock,
         config: GarbageCollectionConfig,
-    ): ReapStaleImageDownloads =
-        ReapStaleImageDownloads(
-            imageDownloadRepository,
+    ): ReapStaleMediaDownloads =
+        ReapStaleMediaDownloads(
+            mediaDownloadRepository,
             taskQueue,
             clock,
             failedGrace = config.failedDownloadGrace(),

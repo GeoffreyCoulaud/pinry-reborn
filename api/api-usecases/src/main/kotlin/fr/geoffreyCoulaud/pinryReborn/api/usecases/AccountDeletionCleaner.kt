@@ -1,11 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
@@ -32,11 +32,11 @@ class AccountDeletionCleaner(
     private val pinRepository: PinRepositoryInterface,
     private val boardRepository: BoardRepositoryInterface,
     private val tagRepository: TagRepositoryInterface,
-    private val imageRepository: ImageRepositoryInterface,
+    private val mediaRepository: MediaRepositoryInterface,
     private val sessionTokenRepository: SessionTokenRepositoryInterface,
     private val userPasswordRepository: UserPasswordHashRepositoryInterface,
     private val clearPinDownload: ClearPinDownload,
-    private val imageStore: ImageStore,
+    private val mediaStore: MediaStore,
     private val renditionCache: RenditionCache,
     private val userDataExportRepository: UserDataExportRepositoryInterface,
     private val exportArchiveStore: ExportArchiveStore,
@@ -47,7 +47,7 @@ class AccountDeletionCleaner(
 ) {
     fun deleteAccountData(userId: UUID) {
         val user = userRepository.findUserByIdIncludingDeleted(userId) ?: return
-        val toEvict = mutableListOf<Pair<String, UUID>>() // storageKey to imageId
+        val toEvict = mutableListOf<Pair<String, UUID>>() // storageKey to mediaId
         // Collected before the transaction: the rows are deleted inside it, but the archive keys are
         // derived from the ids (not read from the rows), so they must be captured while the rows exist.
         val exportIds = userDataExportRepository.findAllExportIdsForUser(user.id)
@@ -55,9 +55,9 @@ class AccountDeletionCleaner(
         transactionRunner.inTransaction {
             val pinIds = pinRepository.findAllPinIdsForUser(user)
             for (pinId in pinIds) {
-                imageRepository.findByPinId(pinId)?.let { toEvict += it.storageKey to it.id }
+                mediaRepository.findByPinId(pinId)?.let { toEvict += it.storageKey to it.id }
                 clearPinDownload.clear(pinId)
-                imageRepository.deleteByPinId(pinId)
+                mediaRepository.deleteByPinId(pinId)
             }
             pinRepository.permanentlyDeleteAllPinsForUser(user)
             boardRepository.permanentlyDeleteAllBoardsForUser(user)
@@ -70,9 +70,9 @@ class AccountDeletionCleaner(
             userDataImportRepository.deleteAllForUser(user.id)
             userRepository.permanentlyDeleteUser(user)
         }
-        for ((storageKey, imageId) in toEvict) {
-            imageStore.deleteQuietly(storageKey)
-            renditionCache.evictImageQuietly(imageId)
+        for ((storageKey, mediaId) in toEvict) {
+            mediaStore.deleteQuietly(storageKey)
+            renditionCache.evictMediaQuietly(mediaId)
         }
         // Derive each archive key from its id, not from the (now-deleted) row: this reclaims an
         // archive promoted by a builder that died before writing its storageKey column.

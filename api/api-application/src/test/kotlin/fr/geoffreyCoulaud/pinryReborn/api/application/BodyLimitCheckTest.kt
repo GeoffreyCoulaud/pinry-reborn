@@ -22,7 +22,7 @@ class BodyLimitCheckTest {
 
         // Then
         assertEquals(
-            "images.max_file_bytes (100) must be strictly under quarkus.http.limits.max-body-size (100)",
+            "media.max_file_bytes (100) must be strictly under quarkus.http.limits.max-body-size (100)",
             error.message,
         )
     }

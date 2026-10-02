@@ -24,13 +24,13 @@ import java.util.Base64
 import java.util.UUID
 
 /**
- * Isolated, writable data directories for the class run, as in [ModeBImageHostingTestProfile], so the
+ * Isolated, writable data directories for the class run, as in [ModeBMediaHostingTestProfile], so the
  * mode-A upload can write, the import upload can stream, and the cleaner can erase both.
  */
 class MeDeleteCompletionTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> =
         mapOf(
-            "images.data_dir" to "build/test-image-data/${UUID.randomUUID()}",
+            "media.data_dir" to "build/test-media-data/${UUID.randomUUID()}",
             "imports.data_dir" to "build/test-import-data/${UUID.randomUUID()}",
         )
 }
@@ -167,11 +167,11 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/${pin.id}/image")
+            .`when`().put("/api/v1/pins/${pin.id}/media")
             .then().statusCode(201)
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/${pin.id}/image")
+            .`when`().get("/api/v1/pins/${pin.id}/media")
             .then().statusCode(200)
 
         // When: the account is deleted with a valid step-up

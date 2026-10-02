@@ -62,7 +62,7 @@ class ModelPaginationHelperTest : RepositoryTest() {
                     id = randomUUID(),
                     author = user,
                     sourceContextUrl = "https://example.com/$index",
-                    sourceMediaUrl = "https://example.com/image-$index.jpeg",
+                    sourceMediaUrl = "https://example.com/media-$index.jpeg",
                     description = "Pin $index",
                     tags = emptyList(),
                     boards = emptyList(),

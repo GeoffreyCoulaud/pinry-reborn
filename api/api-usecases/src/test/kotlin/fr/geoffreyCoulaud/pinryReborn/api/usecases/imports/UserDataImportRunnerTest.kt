@@ -517,7 +517,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         assertEquals(UserDataImportState.CANCELLED, stored.state)
         assertEquals(0, stored.createdBoards)
         assertEquals(0, stored.processedPins)
-        verify(exactly = 0) { imageStore.digest(any(), any()) }
+        verify(exactly = 0) { mediaStore.digest(any(), any()) }
     }
 
     @Test

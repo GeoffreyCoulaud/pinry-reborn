@@ -2,9 +2,9 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
@@ -19,8 +19,8 @@ import java.util.UUID
 @Suppress("LongParameterList") // CDI-injected: every parameter is a collaborator provided by the container.
 class PinRecycleBin(
     private val pinRepository: PinRepositoryInterface,
-    private val imageRepository: ImageRepositoryInterface,
-    private val imageStore: ImageStore,
+    private val mediaRepository: MediaRepositoryInterface,
+    private val mediaStore: MediaStore,
     private val clearPinDownload: ClearPinDownload,
     private val renditionCache: RenditionCache,
     private val clock: Clock,
@@ -69,27 +69,27 @@ class PinRecycleBin(
     fun permanentlyDelete(pinId: UUID, user: User) {
         val pin = recycledOrRefused(pinRepository.findPinById(pinId), user)
         clearPinDownload.clear(pin.id)
-        val image = imageRepository.findByPinId(pin.id)
-        imageRepository.deleteByPinId(pin.id)
+        val media = mediaRepository.findByPinId(pin.id)
+        mediaRepository.deleteByPinId(pin.id)
         pinRepository.permanentlyDeletePin(pin)
-        image?.let {
-            imageStore.deleteQuietly(it.storageKey)
-            renditionCache.evictImageQuietly(it.id)
+        media?.let {
+            mediaStore.deleteQuietly(it.storageKey)
+            renditionCache.evictMediaQuietly(it.id)
         }
     }
 
     fun emptyRecycleBin(user: User) {
         val pins = pinRepository.findAllSoftDeletedPinsForUser(user)
-        val images = pins.mapNotNull { pin ->
+        val deletedMedia = pins.mapNotNull { pin ->
             clearPinDownload.clear(pin.id)
-            val image = imageRepository.findByPinId(pin.id)
-            imageRepository.deleteByPinId(pin.id)
-            image
+            val media = mediaRepository.findByPinId(pin.id)
+            mediaRepository.deleteByPinId(pin.id)
+            media
         }
         pinRepository.permanentlyDeleteAllSoftDeletedPinsForUser(user)
-        images.forEach {
-            imageStore.deleteQuietly(it.storageKey)
-            renditionCache.evictImageQuietly(it.id)
+        deletedMedia.forEach {
+            mediaStore.deleteQuietly(it.storageKey)
+            renditionCache.evictMediaQuietly(it.id)
         }
     }
 }
