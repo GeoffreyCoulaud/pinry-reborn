@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.ImageDownload
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageDownloadRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.CancelTask
 import io.mockk.every
 import io.mockk.mockk
@@ -14,7 +14,7 @@ import java.time.Instant
 import java.util.UUID.randomUUID
 
 class ClearPinDownloadTest {
-    private val downloads: ImageDownloadRepositoryInterface = mockk(relaxed = true)
+    private val downloads: MediaDownloadRepositoryInterface = mockk(relaxed = true)
     private val cancelTask: CancelTask = mockk(relaxed = true)
     private val pinId = randomUUID()
     private val subject = ClearPinDownload(downloads, cancelTask)
@@ -22,7 +22,7 @@ class ClearPinDownloadTest {
     @Test fun `Given a download row, Then it cancels the task and deletes the row`() {
         val taskId = randomUUID()
         every { downloads.findByPinId(pinId) } returns
-            ImageDownload(pinId, "https://x", DownloadStatus.PENDING, null, null, taskId, Instant.EPOCH, Instant.EPOCH)
+            MediaDownload(pinId, "https://x", DownloadStatus.PENDING, null, null, taskId, Instant.EPOCH, Instant.EPOCH)
         val result = subject.clear(pinId)
         assertTrue(result)
         verify { cancelTask.cancel(taskId) }

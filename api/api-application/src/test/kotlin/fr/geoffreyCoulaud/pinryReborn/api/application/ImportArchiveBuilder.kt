@@ -9,7 +9,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * A `formatVersion` 1 archive built entry by entry, so a case can hand the real importer what the real
+ * A `formatVersion` 2 archive built entry by entry, so a case can hand the real importer what the real
  * exporter never writes: a lying manifest, a truncated line, a traversal path, a text file named `.jpg`.
  */
 internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
@@ -55,7 +55,7 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
     }
 
     companion object {
-        const val FORMAT_VERSION = 1
+        const val FORMAT_VERSION = 2
         val PAST: Instant = Instant.parse("2026-01-02T03:04:05Z")
 
         fun sha256(bytes: ByteArray): String =
@@ -74,16 +74,16 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
             "deletedAt" to deletedAt?.toString(),
         )
 
-        /** One `pins.jsonl` line. [imagePath] null is a pin with no medium, which has no identity. */
+        /** One `pins.jsonl` line. [mediaPath] null is a pin with no medium, which has no identity. */
         @Suppress("LongParameterList") // The published line's shape; grouping it would invent a type.
         fun pinLine(
             sourceContextUrl: String,
             description: String = "a pin",
             tags: List<String> = emptyList(),
             boards: List<String> = emptyList(),
-            imagePath: String? = null,
-            imageSha256: String = "",
-            imageMimeType: String = "image/png",
+            mediaPath: String? = null,
+            mediaSha256: String = "",
+            mediaMimeType: String = "image/png",
             deletedAt: Instant? = null,
         ): Map<String, Any?> = mapOf(
             "id" to "22222222-2222-2222-2222-222222222222",
@@ -95,8 +95,8 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
             "deletedAt" to deletedAt?.toString(),
             "tags" to tags.map { mapOf("name" to it) },
             "boards" to boards.map { mapOf("name" to it) },
-            "image" to imagePath?.let {
-                mapOf("path" to it, "sha256" to imageSha256, "mimeType" to imageMimeType)
+            "media" to mediaPath?.let {
+                mapOf("path" to it, "sha256" to mediaSha256, "mimeType" to mediaMimeType)
             },
         )
     }

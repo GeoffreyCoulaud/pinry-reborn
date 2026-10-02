@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StorageLayout
@@ -28,7 +28,7 @@ class ReapOrphanedStorage(
     private val renditionCache: RenditionCache,
     private val exportArchiveStore: ExportArchiveStore,
     private val importArchiveStore: ImportArchiveStore,
-    private val imageRepository: ImageRepositoryInterface,
+    private val mediaRepository: MediaRepositoryInterface,
     private val userDataExportRepository: UserDataExportRepositoryInterface,
     private val userDataImportRepository: UserDataImportRepositoryInterface,
     private val batchSize: Int,
@@ -41,10 +41,10 @@ class ReapOrphanedStorage(
      */
     fun reap(): Int {
         var reclaimed = 0
-        renditionCache.forEachImageIdOnDisk { ids ->
+        renditionCache.forEachMediaIdOnDisk { ids ->
             ids.chunked(batchSize).forEach { chunk ->
-                val missing = imageRepository.findMissingImageIds(chunk)
-                missing.forEach { id -> renditionCache.evictImageQuietly(id) }
+                val missing = mediaRepository.findMissingMediaIds(chunk)
+                missing.forEach { id -> renditionCache.evictMediaQuietly(id) }
                 reclaimed += missing.size
             }
         }

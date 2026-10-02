@@ -7,9 +7,9 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import { auth, bodyOf } from "./api";
-import { rereadSettledPins } from "./images";
 import type { PinSort } from "./lib/sorts";
 import { removePins } from "./lib/tiles";
+import { rereadSettledPins } from "./media";
 
 export type Pin = Schemas["PinOutputDto"];
 export type PinPage = Schemas["PinListOutputDto"];

@@ -28,7 +28,7 @@ import java.util.UUID
  * registers it here either, so every type below is still serialized through plain JavaBean getter
  * introspection, not constructor/property metadata. The one place that matters is `Boolean`: a
  * property named `isX` compiles to a getter `isX()`, which Jackson reads as a property named `x` (the
- * `is` prefix is stripped). [ExportedImage.animated] is named `animated`, not `isAnimated`,
+ * `is` prefix is stripped). [ExportedMedia.animated] is named `animated`, not `isAnimated`,
  * specifically so its getter is `getAnimated()` and its published field name stays `animated`,
  * matching spec §4 exactly.
  */
@@ -139,12 +139,12 @@ class ExportContentGoldenJsonTest {
     }
 
     @Test
-    fun `Given a fully populated ExportedImage, Then it serializes to the published JSON shape`() {
+    fun `Given a fully populated ExportedMedia, Then it serializes to the published JSON shape`() {
         // Given
-        val image =
-            ExportedImage(
+        val media =
+            ExportedMedia(
                 id = UUID.fromString("55555555-5555-5555-5555-555555555555"),
-                path = "images/55555555-5555-5555-5555-555555555555.jpg",
+                path = "media/55555555-5555-5555-5555-555555555555.jpg",
                 mimeType = "image/jpeg",
                 width = 1920,
                 height = 1080,
@@ -155,12 +155,12 @@ class ExportContentGoldenJsonTest {
             )
 
         // When
-        val json = mapper.writeValueAsString(image)
+        val json = mapper.writeValueAsString(media)
 
         // Then
         assertEquals(
             """{"id":"55555555-5555-5555-5555-555555555555",""" +
-                """"path":"images/55555555-5555-5555-5555-555555555555.jpg","mimeType":"image/jpeg",""" +
+                """"path":"media/55555555-5555-5555-5555-555555555555.jpg","mimeType":"image/jpeg",""" +
                 """"width":1920,"height":1080,"animated":false,"byteSize":482913,"sha256":"deadbeef",""" +
                 """"createdAt":"2026-01-05T00:00:00Z"}""",
             json,
@@ -175,7 +175,7 @@ class ExportContentGoldenJsonTest {
                 id = UUID.fromString("66666666-6666-6666-6666-666666666666"),
                 description = "A pin",
                 sourceContextUrl = "https://example.org/article",
-                sourceMediaUrl = "https://example.org/image.jpg",
+                sourceMediaUrl = "https://example.org/media.jpg",
                 createdAt = Instant.parse("2026-01-06T00:00:00Z"),
                 updatedAt = Instant.parse("2026-01-07T00:00:00Z"),
                 deletedAt = null,
@@ -183,10 +183,10 @@ class ExportContentGoldenJsonTest {
                     listOf(ExportedRef(id = UUID.fromString("11111111-1111-1111-1111-111111111111"), name = "travel")),
                 boards =
                     listOf(ExportedRef(id = UUID.fromString("44444444-4444-4444-4444-444444444444"), name = "Summer")),
-                image =
-                    ExportedImage(
+                media =
+                    ExportedMedia(
                         id = UUID.fromString("55555555-5555-5555-5555-555555555555"),
-                        path = "images/55555555-5555-5555-5555-555555555555.jpg",
+                        path = "media/55555555-5555-5555-5555-555555555555.jpg",
                         mimeType = "image/jpeg",
                         width = 1920,
                         height = 1080,
@@ -204,12 +204,12 @@ class ExportContentGoldenJsonTest {
         assertEquals(
             """{"id":"66666666-6666-6666-6666-666666666666","description":"A pin",""" +
                 """"sourceContextUrl":"https://example.org/article",""" +
-                """"sourceMediaUrl":"https://example.org/image.jpg",""" +
+                """"sourceMediaUrl":"https://example.org/media.jpg",""" +
                 """"createdAt":"2026-01-06T00:00:00Z","updatedAt":"2026-01-07T00:00:00Z","deletedAt":null,""" +
                 """"tags":[{"id":"11111111-1111-1111-1111-111111111111","name":"travel"}],""" +
                 """"boards":[{"id":"44444444-4444-4444-4444-444444444444","name":"Summer"}],""" +
-                """"image":{"id":"55555555-5555-5555-5555-555555555555",""" +
-                """"path":"images/55555555-5555-5555-5555-555555555555.jpg","mimeType":"image/jpeg",""" +
+                """"media":{"id":"55555555-5555-5555-5555-555555555555",""" +
+                """"path":"media/55555555-5555-5555-5555-555555555555.jpg","mimeType":"image/jpeg",""" +
                 """"width":1920,"height":1080,"animated":false,"byteSize":482913,"sha256":"deadbeef",""" +
                 """"createdAt":"2026-01-05T00:00:00Z"}}""",
             json,
@@ -230,7 +230,7 @@ class ExportContentGoldenJsonTest {
                 deletedAt = Instant.parse("2026-01-08T00:00:00Z"),
                 tags = emptyList(),
                 boards = emptyList(),
-                image = null,
+                media = null,
             )
 
         // When
@@ -242,7 +242,7 @@ class ExportContentGoldenJsonTest {
                 """"sourceContextUrl":null,"sourceMediaUrl":null,""" +
                 """"createdAt":"2026-01-06T00:00:00Z","updatedAt":"2026-01-07T00:00:00Z",""" +
                 """"deletedAt":"2026-01-08T00:00:00Z",""" +
-                """"tags":[],"boards":[],"image":null}""",
+                """"tags":[],"boards":[],"media":null}""",
             json,
         )
     }
@@ -258,7 +258,7 @@ class ExportContentGoldenJsonTest {
                 createdAt = Instant.parse("2026-07-22T10:15:30Z"),
                 expiresAt = Instant.parse("2026-07-29T10:15:30Z"),
                 user = ExportedRef(id = UUID.fromString("22222222-2222-2222-2222-222222222222"), name = "alice"),
-                counts = ExportCounts(pins = 1234, boards = 12, tags = 90, images = 1180),
+                counts = ExportCounts(pins = 1234, boards = 12, tags = 90, media = 1180),
                 entries = listOf(ArchiveEntryDigest(path = "pins.jsonl", byteSize = 918273, sha256 = "cafef00d")),
                 excluded =
                     listOf(
@@ -278,7 +278,7 @@ class ExportContentGoldenJsonTest {
                 """"exportId":"77777777-7777-7777-7777-777777777777",""" +
                 """"createdAt":"2026-07-22T10:15:30Z","expiresAt":"2026-07-29T10:15:30Z",""" +
                 """"user":{"id":"22222222-2222-2222-2222-222222222222","name":"alice"},""" +
-                """"counts":{"pins":1234,"boards":12,"tags":90,"images":1180},""" +
+                """"counts":{"pins":1234,"boards":12,"tags":90,"media":1180},""" +
                 """"entries":[{"path":"pins.jsonl","byteSize":918273,"sha256":"cafef00d"}],""" +
                 """"excluded":[{"what":"password hashes",""" +
                 """"why":"secrets; useless to you, dangerous if this archive leaks"}]}""",

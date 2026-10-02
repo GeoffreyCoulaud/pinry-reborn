@@ -333,7 +333,7 @@ class FilesystemZipImportArchiveStoreTest {
         val storageKey =
             promoteArchive("imports/undeclared.zip") { zip ->
                 writeEntry(zip, "manifest.json", """{"formatVersion":1,"generator":"pinry-reborn","counts":{}}""")
-                writeEntry(zip, "pins.jsonl", """{"id":"a-b-c","name":"good","count":1,"image":{"path":"x"}}""")
+                writeEntry(zip, "pins.jsonl", """{"id":"a-b-c","name":"good","count":1,"media":{"path":"x"}}""")
             }
 
         // When
@@ -496,16 +496,16 @@ class FilesystemZipImportArchiveStoreTest {
         // Given
         val storageKey =
             promoteArchive("imports/binary.zip") { zip ->
-                zip.putNextEntry(ZipEntry("images/a.bin"))
+                zip.putNextEntry(ZipEntry("media/a.bin"))
                 zip.write(byteArrayOf(1, 2, 3))
                 zip.closeEntry()
             }
 
         // When / Then: read byte by byte too, since that path is translated like the bulk one
         store.open(storageKey).use { source ->
-            assertArrayEquals(byteArrayOf(1, 2, 3), checkNotNull(source.openEntry("images/a.bin")).readBytes())
-            assertEquals(1, checkNotNull(source.openEntry("images/a.bin")).read())
-            assertNull(source.openEntry("images/absent.bin"))
+            assertArrayEquals(byteArrayOf(1, 2, 3), checkNotNull(source.openEntry("media/a.bin")).readBytes())
+            assertEquals(1, checkNotNull(source.openEntry("media/a.bin")).read())
+            assertNull(source.openEntry("media/absent.bin"))
         }
     }
 
@@ -519,7 +519,7 @@ class FilesystemZipImportArchiveStoreTest {
             exportStore.stage { sink ->
                 sink.putJsonEntry("manifest.json", mapOf("formatVersion" to 1, "generator" to "pinry-reborn"))
                 sink.putJsonLinesEntry("pins.jsonl", sequenceOf(mapOf("name" to "first", "count" to 1)))
-                sink.putBinaryEntry("images/a.bin", ByteArrayInputStream(byteArrayOf(7, 8)))
+                sink.putBinaryEntry("media/a.bin", ByteArrayInputStream(byteArrayOf(7, 8)))
             }
         val storageKey = "imports/round-trip.zip"
         exportStore.promote(staged, storageKey)
@@ -533,7 +533,7 @@ class FilesystemZipImportArchiveStoreTest {
             // Then
             assertEquals(ManifestFixture(formatVersion = 1, generator = "pinry-reborn"), manifest)
             assertEquals(LineFixture(name = "first", count = 1), lines.single().value)
-            assertArrayEquals(byteArrayOf(7, 8), checkNotNull(source.openEntry("images/a.bin")).readBytes())
+            assertArrayEquals(byteArrayOf(7, 8), checkNotNull(source.openEntry("media/a.bin")).readBytes())
         }
     }
 

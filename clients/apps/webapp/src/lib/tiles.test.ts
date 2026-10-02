@@ -6,7 +6,7 @@ import {
 	renditionForColumn,
 	replacePins,
 	tileAspectRatio,
-	tileImageSource,
+	tileMediaSource,
 } from "./tiles";
 
 describe("a tile's ratio", () => {
@@ -46,8 +46,8 @@ describe("a tile's rendition", () => {
 
 describe("a tile's source", () => {
 	it("Given the relative URL the API gave, Then the rendition is a parameter on it", () => {
-		expect(tileImageSource("/api/v1/pins/7/image", "MEDIUM")).toBe(
-			"/api/v1/pins/7/image?size=MEDIUM",
+		expect(tileMediaSource("/api/v1/pins/7/media", "MEDIUM")).toBe(
+			"/api/v1/pins/7/media?size=MEDIUM",
 		);
 	});
 });
@@ -58,7 +58,7 @@ describe("the tiles a page places", () => {
 		status: "NONE" | "PENDING" | "READY" | "FAILED",
 	) => ({
 		id,
-		image: { status },
+		media: { status },
 	});
 
 	it("Given a download the server is still running, Then the pin has no tile yet", () => {
@@ -72,7 +72,7 @@ describe("the tiles a page places", () => {
 
 	it("Given a pin the API reports no image for at all, Then it is placed like any other", () => {
 		const pins = [
-			{ id: "bare", image: null },
+			{ id: "bare", media: null },
 			withStatus("failed", "FAILED"),
 			withStatus("none", "NONE"),
 		];
@@ -88,7 +88,7 @@ describe("the tiles a page places", () => {
 describe("the pins either side of the opened one", () => {
 	const withStatus = (id: string, status: "READY" | "PENDING") => ({
 		id,
-		image: { status },
+		media: { status },
 	});
 	const ids = ({
 		previous,

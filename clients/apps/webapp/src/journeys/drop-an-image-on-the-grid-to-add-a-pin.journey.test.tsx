@@ -68,7 +68,7 @@ describe("drop an image on the grid to add a pin", () => {
 				sent = await request.json();
 				return HttpResponse.json(created, { status: 201 });
 			}),
-			http.put("/api/v1/pins/:pinId/image", () =>
+			http.put("/api/v1/pins/:pinId/media", () =>
 				HttpResponse.json(
 					{ id: created.id, pinId: created.id },
 					{ status: 201 },

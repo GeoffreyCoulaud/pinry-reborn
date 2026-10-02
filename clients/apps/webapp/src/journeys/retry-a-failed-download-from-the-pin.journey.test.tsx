@@ -24,11 +24,11 @@ describe("retry a failed download from the pin", () => {
 		server.use(
 			sessionRoute(() => true),
 			onePinPage(() => [
-				sent === null ? failed : { ...failed, image: { status: "PENDING" } },
+				sent === null ? failed : { ...failed, media: { status: "PENDING" } },
 			]),
 			downloadsRoute(),
 			handshakeRoute(),
-			http.put("/api/v1/pins/:pinId/image", async ({ request }) => {
+			http.put("/api/v1/pins/:pinId/media", async ({ request }) => {
 				sent = await request.json();
 				return HttpResponse.json({ status: "PENDING" }, { status: 202 });
 			}),
@@ -113,7 +113,7 @@ describe("retry a failed download from the pin", () => {
 			downloadsRoute(),
 			handshakeRoute(),
 			http.put(
-				"/api/v1/pins/:pinId/image",
+				"/api/v1/pins/:pinId/media",
 				() => new HttpResponse(null, { status: 503 }),
 			),
 		);

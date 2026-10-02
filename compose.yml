@@ -9,7 +9,7 @@ services:
   api:
     build: ./api
     environment:
-      IMAGES_DATA_DIR: /data/images
+      MEDIA_DATA_DIR: /data/media
       EXPORTS_DATA_DIR: /data/exports
       IMPORTS_DATA_DIR: /data/imports
     volumes:

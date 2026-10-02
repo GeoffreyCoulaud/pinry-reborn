@@ -4,16 +4,16 @@ import { downloadReason, retriable } from "../downloadReasons";
 import {
 	type Download,
 	useDropDownload,
-	useImageDownloads,
-	useSetPinImage,
-} from "../images";
+	useMediaDownloads,
+	useSetPinMedia,
+} from "../media";
 import { m } from "../paraglide/messages.js";
 import { IconButton } from "./IconButton";
 import { useDataTasks } from "./useDataTasks";
 
 /** A failed download offers what question V exists for: the same address again if it can pass, or a file. */
 function Task({ download }: { download: Download }) {
-	const setImage = useSetPinImage();
+	const setMedia = useSetPinMedia();
 	const drop = useDropDownload();
 	const failed = download.status === "FAILED";
 	const reason = downloadReason(download.reasonCode, download.message);
@@ -31,7 +31,7 @@ function Task({ download }: { download: Download }) {
 						<Button
 							size="sm"
 							onPress={() =>
-								setImage.mutate({
+								setMedia.mutate({
 									pinId: download.pinId,
 									source: { url: download.sourceUrl },
 								})
@@ -52,7 +52,7 @@ function Task({ download }: { download: Download }) {
 							onChange={(event) => {
 								const file = event.currentTarget.files?.[0];
 								if (file) {
-									setImage.mutate({ pinId: download.pinId, source: { file } });
+									setMedia.mutate({ pinId: download.pinId, source: { file } });
 								}
 							}}
 						/>
@@ -67,7 +67,7 @@ function Task({ download }: { download: Download }) {
 				</div>
 			) : null}
 			{/* A refused action is silent otherwise, which is what the creation screen already avoids. */}
-			{setImage.isError ? <p role="alert">{m.image_refused()}</p> : null}
+			{setMedia.isError ? <p role="alert">{m.image_refused()}</p> : null}
 			{drop.isError ? <p role="alert">{m.dismissal_refused()}</p> : null}
 		</li>
 	);
@@ -79,7 +79,7 @@ function Task({ download }: { download: Download }) {
  * being the pin (specification 2026-09-10, question J).
  */
 export function TaskCentre() {
-	const page = useImageDownloads().data;
+	const page = useMediaDownloads().data;
 	const downloads = page?.downloads ?? [];
 	const partial = page?.hasMore === true;
 	const data = useDataTasks();

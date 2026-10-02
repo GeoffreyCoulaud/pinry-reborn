@@ -1,7 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Image
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
@@ -12,9 +12,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveEntryDigest
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveSink
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
@@ -86,10 +86,10 @@ internal abstract class UserDataExportFixtures : BaseTest() {
     protected val exportRepository = mockk<UserDataExportRepositoryInterface>()
     protected val userRepository = mockk<UserRepositoryInterface>()
     protected val pinRepository = mockk<PinRepositoryInterface>()
-    protected val imageRepository = mockk<ImageRepositoryInterface>()
+    protected val mediaRepository = mockk<MediaRepositoryInterface>()
     protected val boardRepository = mockk<BoardRepositoryInterface>()
     protected val tagRepository = mockk<TagRepositoryInterface>()
-    protected val imageStore = mockk<ImageStore>()
+    protected val mediaStore = mockk<MediaStore>()
     protected val clock = mockk<Clock>()
 
     /** Run inline, so a read inside the fence is told from the one the build took before it. */
@@ -110,8 +110,8 @@ internal abstract class UserDataExportFixtures : BaseTest() {
     protected val stagedFile = StagedFile(path = "tmp/staged.zip", byteSize = stagedByteSize, contentHash = stagedHash)
 
     protected fun builderOver(store: ExportArchiveStore) = UserDataExportBuilder(
-        exportRepository, userRepository, pinRepository, imageRepository, boardRepository, tagRepository,
-        imageStore, store, transactions, clock, applicationVersion = "1.2.3", pageSize = pageSize,
+        exportRepository, userRepository, pinRepository, mediaRepository, boardRepository, tagRepository,
+        mediaStore, store, transactions, clock, applicationVersion = "1.2.3", pageSize = pageSize,
         retention = retention, minimumFreeBytes = minimumFreeBytes,
     )
 
@@ -191,7 +191,7 @@ internal abstract class UserDataExportFixtures : BaseTest() {
         createdAt = createdAt, updatedAt = updatedAt,
     )
 
-    protected fun anImage(pinId: UUID, id: UUID = randomUUID(), mimeType: String = "image/jpeg") = Image(
+    protected fun aMedia(pinId: UUID, id: UUID = randomUUID(), mimeType: String = "image/jpeg") = Media(
         id = id, pinId = pinId, mimeType = mimeType, width = 10, height = 10, animated = false,
         byteSize = 3L, contentHash = "content-hash", storageKey = "originals/$id", createdAt = now,
     )

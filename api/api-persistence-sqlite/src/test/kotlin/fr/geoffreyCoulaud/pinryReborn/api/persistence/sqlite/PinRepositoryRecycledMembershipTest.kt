@@ -30,7 +30,7 @@ class PinRepositoryRecycledMembershipTest : PinRepositoryFixtures() {
                 id = randomUUID(),
                 author = user,
                 sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/image.jpeg",
+                sourceMediaUrl = "https://example.com/media.jpeg",
                 description = "Something",
                 tags = emptyList(),
                 boards = listOf(board),

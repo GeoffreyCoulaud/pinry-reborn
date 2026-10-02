@@ -99,7 +99,7 @@ class MeExportIntegrationTest : IntegrationTest() {
             .then().statusCode(202)
             .body("id", notNullValue())
             .body("state", equalTo("PENDING"))
-            .body("formatVersion", equalTo(1))
+            .body("formatVersion", equalTo(2))
     }
 
     // --- POST: at most one PENDING export per user ---

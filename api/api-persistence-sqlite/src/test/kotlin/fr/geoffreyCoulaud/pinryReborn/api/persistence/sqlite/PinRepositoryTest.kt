@@ -44,7 +44,7 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         val updatedPin =
             pin.copy(
                 sourceContextUrl = "https://new-example.com/new.jpeg",
-                sourceMediaUrl = "https://new-example.com/new_image.jpeg",
+                sourceMediaUrl = "https://new-example.com/new_media.jpeg",
                 description = "New description",
             )
 

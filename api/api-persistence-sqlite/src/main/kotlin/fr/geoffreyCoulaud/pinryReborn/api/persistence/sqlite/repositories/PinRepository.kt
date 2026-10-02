@@ -19,7 +19,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.BoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinBoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinTagModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QImageModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinBoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinTagModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
@@ -160,11 +160,11 @@ class PinRepository(
         pinIdsByContentHashQuery(user, contentHash).findSingleAttributeList()
 
     /**
-     * Rooted on the image so `ix_images_content_hash` stays the selective predicate. `internal` so
+     * Rooted on the image so `ix_media_content_hash` stays the selective predicate. `internal` so
      * its plan test reads this SQL, and the override above must keep delegating to it.
      */
     internal fun pinIdsByContentHashQuery(user: User, contentHash: String) =
-        QImageModel()
+        QMediaModel()
             .withPinInAnyState()
             .contentHash
             .equalTo(contentHash)

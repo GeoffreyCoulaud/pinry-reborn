@@ -84,25 +84,25 @@ class BaseErrorMapperTest {
     }
 
     @Test
-    fun `Given IMAGE_DOES_NOT_EXIST, Then status is NOT_FOUND`() {
-        assertEquals(Response.Status.NOT_FOUND, statusFor(ErrorCode.IMAGE_DOES_NOT_EXIST))
+    fun `Given MEDIA_DOES_NOT_EXIST, Then status is NOT_FOUND`() {
+        assertEquals(Response.Status.NOT_FOUND, statusFor(ErrorCode.MEDIA_DOES_NOT_EXIST))
     }
 
     @Test
-    fun `Given IMAGE_INSUFFICIENT_PERMISSIONS, Then status is FORBIDDEN`() {
-        assertEquals(Response.Status.FORBIDDEN, statusFor(ErrorCode.IMAGE_INSUFFICIENT_PERMISSIONS))
+    fun `Given MEDIA_INSUFFICIENT_PERMISSIONS, Then status is FORBIDDEN`() {
+        assertEquals(Response.Status.FORBIDDEN, statusFor(ErrorCode.MEDIA_INSUFFICIENT_PERMISSIONS))
     }
 
     @Test
-    fun `Given IMAGE_TOO_LARGE, Then status is 413 REQUEST_ENTITY_TOO_LARGE`() {
-        assertEquals(Response.Status.REQUEST_ENTITY_TOO_LARGE, statusFor(ErrorCode.IMAGE_TOO_LARGE))
+    fun `Given MEDIA_TOO_LARGE, Then status is 413 REQUEST_ENTITY_TOO_LARGE`() {
+        assertEquals(Response.Status.REQUEST_ENTITY_TOO_LARGE, statusFor(ErrorCode.MEDIA_TOO_LARGE))
     }
 
     @Test
-    fun `Given IMAGE_INVALID, Then status is 422`() {
+    fun `Given MEDIA_INVALID, Then status is 422`() {
         // jakarta.ws.rs 4.0's Response.Status has no UNPROCESSABLE_ENTITY constant, so this
         // asserts the raw status code instead of going through Response.Status.fromStatusCode.
-        val exception = BaseError(message = "boom", code = ErrorCode.IMAGE_INVALID)
+        val exception = BaseError(message = "boom", code = ErrorCode.MEDIA_INVALID)
 
         val response = mapper.toResponse(exception)
 
@@ -110,22 +110,22 @@ class BaseErrorMapperTest {
         val body = response.entity as ProblemDetail
         assertEquals("Unprocessable Entity", body.title)
         assertEquals(422, body.status)
-        assertEquals("IMAGE_INVALID", body.code)
+        assertEquals("MEDIA_INVALID", body.code)
     }
 
     @Test
-    fun `Given IMAGE_SOURCE_URL_INVALID, Then status is BAD_REQUEST`() {
-        assertEquals(Response.Status.BAD_REQUEST, statusFor(ErrorCode.IMAGE_SOURCE_URL_INVALID))
+    fun `Given MEDIA_SOURCE_URL_INVALID, Then status is BAD_REQUEST`() {
+        assertEquals(Response.Status.BAD_REQUEST, statusFor(ErrorCode.MEDIA_SOURCE_URL_INVALID))
     }
 
     @Test
-    fun `Given IMAGE_DOWNLOAD_IN_PROGRESS, Then status is CONFLICT`() {
-        assertEquals(Response.Status.CONFLICT, statusFor(ErrorCode.IMAGE_DOWNLOAD_IN_PROGRESS))
+    fun `Given MEDIA_DOWNLOAD_IN_PROGRESS, Then status is CONFLICT`() {
+        assertEquals(Response.Status.CONFLICT, statusFor(ErrorCode.MEDIA_DOWNLOAD_IN_PROGRESS))
     }
 
     @Test
-    fun `Given IMAGE_RENDITION_SIZE_INVALID, Then status is BAD_REQUEST`() {
-        assertEquals(Response.Status.BAD_REQUEST, statusFor(ErrorCode.IMAGE_RENDITION_SIZE_INVALID))
+    fun `Given MEDIA_RENDITION_SIZE_INVALID, Then status is BAD_REQUEST`() {
+        assertEquals(Response.Status.BAD_REQUEST, statusFor(ErrorCode.MEDIA_RENDITION_SIZE_INVALID))
     }
 
     @Test

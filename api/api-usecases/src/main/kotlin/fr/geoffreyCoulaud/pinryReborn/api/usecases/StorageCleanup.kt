@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -22,17 +22,17 @@ object StorageCleanup {
     }
 }
 
-/** Best-effort [ImageStore.delete]: logs WARN and swallows on failure. */
-fun ImageStore.deleteQuietly(storageKey: String) =
+/** Best-effort [MediaStore.delete]: logs WARN and swallows on failure. */
+fun MediaStore.deleteQuietly(storageKey: String) =
     StorageCleanup.runQuietly("image $storageKey") { delete(storageKey) }
 
-/** Best-effort [ImageStore.discard]: logs WARN and swallows on failure. */
-fun ImageStore.discardQuietly(staged: StagedFile) =
+/** Best-effort [MediaStore.discard]: logs WARN and swallows on failure. */
+fun MediaStore.discardQuietly(staged: StagedFile) =
     StorageCleanup.runQuietly("staged ${staged.path}") { discard(staged) }
 
-/** Best-effort [RenditionCache.evictImage]: logs WARN and swallows on failure. */
-fun RenditionCache.evictImageQuietly(imageId: UUID) =
-    StorageCleanup.runQuietly("renditions $imageId") { evictImage(imageId) }
+/** Best-effort [RenditionCache.evictMedia]: logs WARN and swallows on failure. */
+fun RenditionCache.evictMediaQuietly(mediaId: UUID) =
+    StorageCleanup.runQuietly("renditions $mediaId") { evictMedia(mediaId) }
 
 /** Best-effort [ExportArchiveStore.delete]: logs WARN and swallows on failure. */
 fun ExportArchiveStore.deleteQuietly(storageKey: String) =

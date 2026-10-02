@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
@@ -25,7 +25,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty
 /**
  * CDI wiring for the export use cases, hosted in the composition root because it needs both
  * `exports.*` (owned by the worker module) and the `api-storage-filesystem` adapter, which the
- * worker module must not depend on. Companion to [ImageAdapterProducers] and
+ * worker module must not depend on. Companion to [MediaAdapterProducers] and
  * [TaskHandlerProducers].
  *
  * `FilesystemZipExportArchiveStore`, [UserDataExportRequester], [UserDataExportBuilder] and
@@ -64,10 +64,10 @@ class ExportProducers {
         exportRepository: UserDataExportRepositoryInterface,
         userRepository: UserRepositoryInterface,
         pinRepository: PinRepositoryInterface,
-        imageRepository: ImageRepositoryInterface,
+        mediaRepository: MediaRepositoryInterface,
         boardRepository: BoardRepositoryInterface,
         tagRepository: TagRepositoryInterface,
-        imageStore: ImageStore,
+        mediaStore: MediaStore,
         archiveStore: ExportArchiveStore,
         transactionRunner: TransactionRunner,
         clock: Clock,
@@ -75,8 +75,8 @@ class ExportProducers {
         @ConfigProperty(name = "quarkus.application.version") applicationVersion: String,
     ): UserDataExportBuilder =
         UserDataExportBuilder(
-            exportRepository, userRepository, pinRepository, imageRepository, boardRepository, tagRepository,
-            imageStore, archiveStore, transactionRunner, clock,
+            exportRepository, userRepository, pinRepository, mediaRepository, boardRepository, tagRepository,
+            mediaStore, archiveStore, transactionRunner, clock,
             applicationVersion = applicationVersion,
             pageSize = config.pageSize(),
             retention = config.retention(),

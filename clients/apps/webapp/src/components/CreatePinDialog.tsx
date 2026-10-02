@@ -1,7 +1,6 @@
 import { Button, Input, Label, Modal, TextField } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { refuse } from "../drops";
-import { type ImageSource, useCreatePin, useHandshake } from "../images";
 import {
 	type DropPartition,
 	entriesOf,
@@ -9,8 +8,9 @@ import {
 	withDrop,
 } from "../lib/drops";
 import { isStorableFile, uploadRefusal } from "../lib/uploads";
+import { type MediaSource, useCreatePin, useHandshake } from "../media";
 import { m } from "../paraglide/messages.js";
-import { ImageDropBox } from "./ImageDropBox";
+import { MediaDropBox } from "./MediaDropBox";
 
 /**
  * The label follows the input so Tailwind's `peer-*` variants reach it. react-aria links the two
@@ -122,7 +122,7 @@ function CreatePinForm({
 	function submit(fields: FormData) {
 		// Provenance and bytes are independent: the address says where the picture was found and is
 		// always sent, and it supplies the bytes only when no file was chosen.
-		let source: ImageSource = { url: entry.url };
+		let source: MediaSource = { url: entry.url };
 		if (entry.file !== null) {
 			// Judged again here, for the file chosen before the handshake's limits arrived, the format
 			// included: until they do, a picture is judged on being one rather than on being stored.
@@ -183,7 +183,7 @@ function CreatePinForm({
 				value={entry.url}
 				onChange={(url) => change({ url })}
 			/>
-			<ImageDropBox limits={handshake.data?.limits} multiple onDrop={take}>
+			<MediaDropBox limits={handshake.data?.limits} multiple onDrop={take}>
 				{entry.file === null ? null : (
 					<>
 						{/* One render behind the file: the object URL is drawn by the effect above. */}
@@ -202,7 +202,7 @@ function CreatePinForm({
 						</Button>
 					</>
 				)}
-			</ImageDropBox>
+			</MediaDropBox>
 			<Field name="description" label={m.description()} />
 			{/* Never required: a file from disk and a direct image address both name no page. */}
 			<Field name="sourceContextUrl" type="url" label={m.source_page()} />

@@ -33,8 +33,8 @@ internal object ExportReadme {
             |- `boards.jsonl` - every board you created, active and recycled, one JSON object per
             |  line.
             |- `tags.jsonl` - every tag you have used, one JSON object per line.
-            |- `images/` - the original image bytes referenced from `pins.jsonl`, one file per image,
-            |  named `<imageId>.<ext>`.
+            |- `media/` - the original image bytes referenced from `pins.jsonl`, one file per image,
+            |  named `<mediaId>.<ext>`.
             |
             |## The `.jsonl` convention
             |

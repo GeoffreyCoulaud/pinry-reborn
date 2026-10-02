@@ -67,7 +67,7 @@ class BoardRepositoryTest : RepositoryTest() {
                 id = randomUUID(),
                 author = author,
                 sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/image.jpeg",
+                sourceMediaUrl = "https://example.com/media.jpeg",
                 description = "Something",
                 tags = emptyList(),
                 boards = boards,

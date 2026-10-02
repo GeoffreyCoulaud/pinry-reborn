@@ -1,13 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Image
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.ExponentialBackoffWithJitter
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.NewTask
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanImageDownloadRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanImageRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaDownloadRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanTaskQueue
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
@@ -27,8 +27,8 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
     // No case here reaps a lease, so the policy is only what the constructor asks for.
     private val queue =
         EbeanTaskQueue(persistor, transactionRunner, ExponentialBackoffWithJitter(BACKOFF, BACKOFF) { 1.0 })
-    private val downloads = EbeanImageDownloadRepository(persistor)
-    private val images = EbeanImageRepository(persistor, transactionRunner)
+    private val downloads = EbeanMediaDownloadRepository(persistor)
+    private val mediaRepository = EbeanMediaRepository(persistor, transactionRunner)
     private val userRepository = UserRepository(persistor)
     private val pinRepository = PinRepository(persistor)
     private val now = Instant.parse("2026-07-10T00:00:00Z")
@@ -46,7 +46,7 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
         )
     }
 
-    private fun imageFor(pinId: UUID) = Image(
+    private fun mediaFor(pinId: UUID) = Media(
         id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1, animated = false,
         byteSize = 1, contentHash = "h", storageKey = "originals/x/$pinId/i.png", createdAt = now,
     )
@@ -103,8 +103,8 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
     @Test
     fun `Given a committed transaction, Then an image saved within it joins and is persisted`() {
         val pin = savedPin()
-        val saved = runner.inTransaction { images.save(imageFor(pin.id)) }
-        assertEquals(saved, images.findByPinId(pin.id))
+        val saved = runner.inTransaction { mediaRepository.save(mediaFor(pin.id)) }
+        assertEquals(saved, mediaRepository.findByPinId(pin.id))
     }
 
     @Test
@@ -112,11 +112,11 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
         val pin = savedPin()
         assertThrows(IllegalStateException::class.java) {
             runner.inTransaction {
-                images.save(imageFor(pin.id))
+                mediaRepository.save(mediaFor(pin.id))
                 error("boom")
             }
         }
-        assertNull(images.findByPinId(pin.id))
+        assertNull(mediaRepository.findByPinId(pin.id))
     }
 
     private companion object {

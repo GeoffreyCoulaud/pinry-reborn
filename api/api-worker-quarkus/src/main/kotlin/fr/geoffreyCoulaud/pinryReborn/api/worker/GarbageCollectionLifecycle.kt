@@ -2,7 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.worker
 
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapExpiredSessionTokens
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapOrphanedStorage
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapStaleImageDownloads
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapStaleMediaDownloads
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapTombstonedAccounts
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.ReapTerminalTasks
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -32,7 +32,7 @@ class GarbageCollectionLifecycle(
     private val reapOrphanedStorage: ReapOrphanedStorage,
     private val reapTombstonedAccounts: ReapTombstonedAccounts,
     private val reapTerminalTasks: ReapTerminalTasks,
-    private val reapStaleImageDownloads: ReapStaleImageDownloads,
+    private val reapStaleMediaDownloads: ReapStaleMediaDownloads,
     private val executor: PeriodicScheduler,
     private val config: GarbageCollectionConfig,
 ) {
@@ -79,7 +79,7 @@ class GarbageCollectionLifecycle(
             logger.error(e) { "terminal task sweep failed" }
         }
         try {
-            reapStaleImageDownloads.reap()
+            reapStaleMediaDownloads.reap()
         } catch (e: Exception) {
             logger.error(e) { "stale image download sweep failed" }
         }

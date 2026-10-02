@@ -34,7 +34,7 @@ class PinRepositorySearchTest : PinRepositoryFixtures() {
                 id = randomUUID(),
                 author = author,
                 sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/image.jpeg",
+                sourceMediaUrl = "https://example.com/media.jpeg",
                 description = description,
                 tags = tags,
                 boards = boards,

@@ -53,18 +53,18 @@ class FilesystemRenditionCacheTest {
     }
 
     @Test
-    fun `Given cached renditions for an image, Then evictImage removes the whole subtree`() {
+    fun `Given cached renditions for an image, Then evictMedia removes the whole subtree`() {
         val id = UUID.randomUUID()
         cache().store(id, "v1-4-a.webp", staged(byteArrayOf(1)))
         cache().store(id, "v1-8-s.webp", staged(byteArrayOf(2)))
-        cache().evictImage(id)
+        cache().evictMedia(id)
         assertFalse(Files.exists(dataDir.resolve("cache/$id")))
         assertNull(cache().openStream(id, "v1-4-a.webp"))
     }
 
     @Test
-    fun `Given no cache subtree, Then evictImage is a no-op`() {
-        cache().evictImage(UUID.randomUUID()) // must not throw
+    fun `Given no cache subtree, Then evictMedia is a no-op`() {
+        cache().evictMedia(UUID.randomUUID()) // must not throw
     }
 
     @Test
@@ -92,7 +92,7 @@ class FilesystemRenditionCacheTest {
     }
 
     @Test
-    fun `Given cached subtrees on disk, Then forEachImageIdOnDisk yields their image ids`() {
+    fun `Given cached subtrees on disk, Then forEachMediaIdOnDisk yields their image ids`() {
         // Given: two UUID-named cache subtrees and a non-UUID junk directory under cache/
         val id1 = UUID.randomUUID()
         val id2 = UUID.randomUUID()
@@ -102,14 +102,14 @@ class FilesystemRenditionCacheTest {
 
         // When: the sweep loans the on-disk ids as a lazy sequence
         val yielded = mutableSetOf<UUID>()
-        cache().forEachImageIdOnDisk { ids -> ids.forEach(yielded::add) }
+        cache().forEachMediaIdOnDisk { ids -> ids.forEach(yielded::add) }
 
         // Then: exactly the two UUID-named subtrees are yielded, the junk dir is skipped
         assertEquals(setOf(id1, id2), yielded)
     }
 
     @Test
-    fun `Given no cache directory on disk, Then forEachImageIdOnDisk yields nothing and does not throw`() {
+    fun `Given no cache directory on disk, Then forEachMediaIdOnDisk yields nothing and does not throw`() {
         // Given: a fresh install where the cache/ directory has never been created
         assertFalse(Files.exists(dataDir.resolve("cache")))
 
@@ -117,7 +117,7 @@ class FilesystemRenditionCacheTest {
         var blockRuns = 0
         val yielded = mutableSetOf<UUID>()
         assertDoesNotThrow {
-            cache().forEachImageIdOnDisk { ids ->
+            cache().forEachMediaIdOnDisk { ids ->
                 blockRuns++
                 ids.forEach(yielded::add)
             }

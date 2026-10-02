@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageProbe
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
@@ -13,7 +13,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportIssu
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ImagesConfig
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemZipImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ImportUploadBounds
@@ -26,7 +26,7 @@ import jakarta.enterprise.inject.Produces
 
 /**
  * The import beans ARC cannot build itself, their scalars coming from `imports.*` in the worker
- * module and the runner's two image bounds from `images.*`, as [TaskHandlerProducers] takes them.
+ * module and the runner's two image bounds from `media.*`, as [TaskHandlerProducers] takes them.
  */
 @ApplicationScoped
 class ImportProducers {
@@ -79,8 +79,8 @@ class ImportProducers {
         )
 
     /**
-     * The `images.*` bounds are reused rather than given import twins: an archived medium is bounded by
-     * what this instance hosts, [ImagesConfig]'s to say. `LongParameterList`: ten ports and two configs.
+     * The `media.*` bounds are reused rather than given import twins: an archived medium is bounded by
+     * what this instance hosts, [MediaConfig]'s to say. `LongParameterList`: ten ports and two configs.
      */
     @Suppress("LongParameterList")
     @Produces
@@ -92,24 +92,24 @@ class ImportProducers {
         tagRepository: TagRepositoryInterface,
         boardRepository: BoardRepositoryInterface,
         pinRepository: PinRepositoryInterface,
-        imageRepository: ImageRepositoryInterface,
+        mediaRepository: MediaRepositoryInterface,
         archiveStore: ImportArchiveStore,
-        imageStore: ImageStore,
+        mediaStore: MediaStore,
         imageProbe: ImageProbe,
         tagCreator: TagCreator,
         transactionRunner: TransactionRunner,
         clock: Clock,
         config: ImportsConfig,
-        imagesConfig: ImagesConfig,
+        mediaConfig: MediaConfig,
     ): UserDataImportRunner =
         UserDataImportRunner(
             importRepository, issueRepository, userRepository, tagRepository, boardRepository,
-            pinRepository, imageRepository, archiveStore, imageStore, imageProbe, tagCreator,
+            pinRepository, mediaRepository, archiveStore, mediaStore, imageProbe, tagCreator,
             transactionRunner, clock,
             maxMetadataBytes = config.maxMetadataBytes(),
             maxEntries = config.maxEntries(),
-            maxImageBytes = imagesConfig.maxFileBytes(),
-            maxPixels = imagesConfig.maxPixels(),
+            maxMediaBytes = mediaConfig.maxFileBytes(),
+            maxPixels = mediaConfig.maxPixels(),
             leaseRenewalLines = config.leaseRenewalLines(),
             reportDetailLimit = config.reportDetailLimit(),
         )

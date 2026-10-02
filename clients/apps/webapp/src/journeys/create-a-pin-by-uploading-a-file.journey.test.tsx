@@ -376,7 +376,7 @@ describe("create a pin by uploading a file", () => {
 				sent = await request.json();
 				return HttpResponse.json(created, { status: 201 });
 			}),
-			http.put("/api/v1/pins/:pinId/image", ({ request }) => {
+			http.put("/api/v1/pins/:pinId/media", ({ request }) => {
 				// The media type is what tells the two entries apart on one route, and it is all this
 				// reads: reading the parts back costs the body, which a jsdom upload does not survive
 				// the same way on every Node the gate and a workstation run.

@@ -5,7 +5,7 @@ export type Rendition = "SMALL" | "MEDIUM";
 
 /**
  * The widest column, in device pixels, the small rendition covers without stretching. It is
- * `images.renditions.small`'s default, and it stands in only until the handshake answers with
+ * `media.renditions.small`'s default, and it stands in only until the handshake answers with
  * the deployment's own: a deployment that narrowed `small` would upscale every tile visibly.
  */
 const SMALL_RENDITION_PX = 240;
@@ -33,15 +33,15 @@ export function renditionForColumn(
 }
 
 /** The bytes an `<img>` fetches: the relative URL the API gave, at one rendition. */
-export function tileImageSource(url: string, rendition: Rendition): string {
+export function tileMediaSource(url: string, rendition: Rendition): string {
 	return `${url}?size=${rendition}`;
 }
 
 /** The one test of what the grid places, which the viewer's order shares (decision F). */
 function isPlaceable(pin: {
-	image?: { status: Schemas["PinImageStateDto"]["status"] } | null;
+	media?: { status: Schemas["PinMediaStateDto"]["status"] } | null;
 }): boolean {
-	return pin.image?.status !== "PENDING";
+	return pin.media?.status !== "PENDING";
 }
 
 /**
@@ -51,7 +51,7 @@ function isPlaceable(pin: {
  */
 export function placeableTiles<
 	T extends {
-		image?: { status: Schemas["PinImageStateDto"]["status"] } | null;
+		media?: { status: Schemas["PinMediaStateDto"]["status"] } | null;
 	},
 >(pins: readonly T[]): T[] {
 	return pins.filter(isPlaceable);
@@ -64,7 +64,7 @@ export function placeableTiles<
 export function neighbours<
 	T extends {
 		id: string;
-		image?: { status: Schemas["PinImageStateDto"]["status"] } | null;
+		media?: { status: Schemas["PinMediaStateDto"]["status"] } | null;
 	},
 >(
 	pins: readonly T[],

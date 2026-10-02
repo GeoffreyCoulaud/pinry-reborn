@@ -42,7 +42,7 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   someone will do rather than limits: **selective import** (one board, or skipping the recycle bin)
   and its mirror **partial export**; **merging metadata onto a pin that already exists**, which is
   the option the v1 "skip" rule forecloses; and **making a pin with no medium travel**, which needs
-  the export to carry `ImageDownload` so a pending or failed download survives the round trip.
+  the export to carry `MediaDownload` so a pending or failed download survives the round trip.
 
 ### P2: Operational debt
 

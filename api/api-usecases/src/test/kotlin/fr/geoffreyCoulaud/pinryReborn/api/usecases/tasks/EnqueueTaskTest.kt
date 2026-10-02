@@ -64,8 +64,8 @@ class EnqueueTaskTest {
     @Test
     fun `Given no delay specified, Then enqueue uses availableAt equals now`() {
         // Given
-        val kind = "process-image"
-        val payload = "{\"url\": \"https://example.com/image.jpg\"}"
+        val kind = "process-media"
+        val payload = "{\"url\": \"https://example.com/media.jpg\"}"
         val maxAttempts = 2
         val expectedTask = Task(
             id = randomUUID(),

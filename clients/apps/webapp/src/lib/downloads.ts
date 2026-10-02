@@ -7,7 +7,7 @@ import type { Schemas } from "@pinry-reborn/auth";
  */
 export interface DownloadProgress {
 	pinId: string;
-	status: Schemas["ImageDownloadOutputDto"]["status"];
+	status: Schemas["MediaDownloadOutputDto"]["status"];
 }
 
 export const POLL_MS = 1000;

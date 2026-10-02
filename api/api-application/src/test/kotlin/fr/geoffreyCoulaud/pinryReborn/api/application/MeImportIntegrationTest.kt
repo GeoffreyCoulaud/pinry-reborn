@@ -5,15 +5,15 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
-import fr.geoffreyCoulaud.pinryReborn.api.domain.images.ImageStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.ImageRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.ImagesConfig
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
@@ -63,7 +63,7 @@ class MeImportIntegrationTest : IntegrationTest() {
 
     @Inject lateinit var tagRepository: TagRepositoryInterface
 
-    @Inject lateinit var imageRepository: ImageRepositoryInterface
+    @Inject lateinit var mediaRepository: MediaRepositoryInterface
 
     @Inject lateinit var importRepository: UserDataImportRepositoryInterface
 
@@ -71,11 +71,11 @@ class MeImportIntegrationTest : IntegrationTest() {
 
     @Inject lateinit var enqueueTask: EnqueueTask
 
-    @Inject lateinit var imageStore: ImageStore
+    @Inject lateinit var mediaStore: MediaStore
 
     @Inject lateinit var importsConfig: ImportsConfig
 
-    @Inject lateinit var imagesConfig: ImagesConfig
+    @Inject lateinit var mediaConfig: MediaConfig
 
     @Inject lateinit var objectMapper: ObjectMapper
 
@@ -154,11 +154,11 @@ class MeImportIntegrationTest : IntegrationTest() {
     private fun stepUp(password: String) =
         "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())
 
-    private fun uploadImage(auth: AuthenticatedUser, pinId: UUID, name: String, mediaType: String) {
+    private fun uploadMedia(auth: AuthenticatedUser, pinId: UUID, name: String, mediaType: String) {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture(name), mediaType)
-            .`when`().put("/api/v1/pins/$pinId/image")
+            .`when`().put("/api/v1/pins/$pinId/media")
             .then().statusCode(201)
     }
 
@@ -184,12 +184,12 @@ class MeImportIntegrationTest : IntegrationTest() {
         val beta = createPin(auth, BETA, tags = listOf("nature"))
         val gamma = createPin(auth, GAMMA, sourceContextUrl = null)
         val delta = createPin(auth, DELTA)
-        uploadImage(auth, alpha.id, "sample.png", "image/png")
-        uploadImage(auth, beta.id, "sample.jpg", "image/jpeg")
-        uploadImage(auth, gamma.id, "animated.gif", "image/gif")
+        uploadMedia(auth, alpha.id, "sample.png", "image/png")
+        uploadMedia(auth, beta.id, "sample.jpg", "image/jpeg")
+        uploadMedia(auth, gamma.id, "animated.gif", "image/gif")
         // Beta's medium, not alpha's: the pair collapses into whichever line the archive lists first, so
         // the pin carrying the recycled membership must not be one of the two.
-        uploadImage(auth, delta.id, "sample.jpg", "image/jpeg")
+        uploadMedia(auth, delta.id, "sample.jpg", "image/jpeg")
         val activeBoard = boardCreator.create(auth.user, "Active board", "kept")
         val recycledBoard = boardCreator.create(auth.user, "Recycled board", "recycled")
         replacePin(auth, alpha, boardIds = listOf(activeBoard.id, recycledBoard.id)).statusCode(200)
@@ -229,7 +229,7 @@ class MeImportIntegrationTest : IntegrationTest() {
 
     private data class PinFacts(
         val id: UUID,
-        val imageId: UUID,
+        val mediaId: UUID,
         val description: String,
         val sourceMediaUrl: String?,
         val createdAt: Instant,
@@ -237,7 +237,7 @@ class MeImportIntegrationTest : IntegrationTest() {
         val deletedAt: Instant?,
         val tagNames: Set<String>,
         val boardNames: Set<String>,
-        val imageBytes: ByteArray,
+        val mediaBytes: ByteArray,
     )
 
     private data class AccountFacts(
@@ -247,10 +247,10 @@ class MeImportIntegrationTest : IntegrationTest() {
     )
 
     private fun factsOf(pin: Pin): PinFacts {
-        val image = requireNotNull(imageRepository.findByPinId(pin.id)) { "pin ${pin.id} carries no image" }
+        val media = requireNotNull(mediaRepository.findByPinId(pin.id)) { "pin ${pin.id} carries no image" }
         return PinFacts(
             id = pin.id,
-            imageId = image.id,
+            mediaId = media.id,
             description = pin.description,
             sourceMediaUrl = pin.sourceMediaUrl,
             createdAt = pin.createdAt,
@@ -259,7 +259,7 @@ class MeImportIntegrationTest : IntegrationTest() {
             tagNames = pin.tags.map { it.name }.toSet(),
             // Including the recycled ones, which is the membership the round trip is really about.
             boardNames = pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { it.name }.toSet(),
-            imageBytes = imageStore.openStream(image.storageKey).use { it.readBytes() },
+            mediaBytes = mediaStore.openStream(media.storageKey).use { it.readBytes() },
         )
     }
 
@@ -291,9 +291,9 @@ class MeImportIntegrationTest : IntegrationTest() {
         assertEquals(source.deletedAt, imported.deletedAt)
         assertEquals(source.tagNames, imported.tagNames)
         assertEquals(source.boardNames, imported.boardNames)
-        assertArrayEquals(source.imageBytes, imported.imageBytes, "the medium should survive byte for byte")
+        assertArrayEquals(source.mediaBytes, imported.mediaBytes, "the medium should survive byte for byte")
         assertNotEquals(source.id, imported.id, "the copy must be a new row, never the same identifier")
-        assertNotEquals(source.imageId, imported.imageId)
+        assertNotEquals(source.mediaId, imported.mediaId)
     }
 
     // --- The round trip ---
@@ -444,21 +444,21 @@ class MeImportIntegrationTest : IntegrationTest() {
                 .manifest(announcedPins = 5)
                 .tags("nature")
                 .boards(ImportArchiveBuilder.boardLine(name = "a".repeat(OVER_LONG_NAME)))
-                .entry("images/good.png", png)
-                .entry("images/text.jpg", text)
+                .entry("media/good.png", png)
+                .entry("media/text.jpg", text)
                 .pins(
                     ImportArchiveBuilder.pinLine(
                         sourceContextUrl = "https://example.test/good",
                         tags = listOf("nature"),
-                        imagePath = "images/good.png",
-                        imageSha256 = ImportArchiveBuilder.sha256(png),
+                        mediaPath = "media/good.png",
+                        mediaSha256 = ImportArchiveBuilder.sha256(png),
                     ),
-                    ImportArchiveBuilder.pinLine("https://example.test/traversal", imagePath = "../escape.png"),
-                    ImportArchiveBuilder.pinLine("https://example.test/absent", imagePath = "images/absent.png"),
+                    ImportArchiveBuilder.pinLine("https://example.test/traversal", mediaPath = "../escape.png"),
+                    ImportArchiveBuilder.pinLine("https://example.test/absent", mediaPath = "media/absent.png"),
                     ImportArchiveBuilder.pinLine(
                         sourceContextUrl = "https://example.test/text",
-                        imagePath = "images/text.jpg",
-                        imageSha256 = ImportArchiveBuilder.sha256(text),
+                        mediaPath = "media/text.jpg",
+                        mediaSha256 = ImportArchiveBuilder.sha256(text),
                     ),
                     ImportArchiveBuilder.pinLine("https://example.test/nomedia"),
                 ).appendLine("pins.jsonl", "{\"description\": \"cut in ha")
@@ -486,13 +486,13 @@ class MeImportIntegrationTest : IntegrationTest() {
                 .manifest(announcedPins = 1)
                 .tags()
                 .boards()
-                .entry("images/lying.png", png)
+                .entry("media/lying.png", png)
                 .pins(
                     ImportArchiveBuilder.pinLine(
                         sourceContextUrl = "https://example.test/lying",
-                        imagePath = "images/lying.png",
-                        imageSha256 = ImportArchiveBuilder.sha256("not these bytes".toByteArray()),
-                        imageMimeType = "image/jpeg",
+                        mediaPath = "media/lying.png",
+                        mediaSha256 = ImportArchiveBuilder.sha256("not these bytes".toByteArray()),
+                        mediaMimeType = "image/jpeg",
                     ),
                 ).bytes()
 
@@ -501,10 +501,10 @@ class MeImportIntegrationTest : IntegrationTest() {
 
         // Then
         val pin = activePinsOf(auth.user).single()
-        val image = requireNotNull(imageRepository.findByPinId(pin.id))
-        assertEquals("image/png", image.mimeType, "the probe decides the stored type, never the archive")
+        val media = requireNotNull(mediaRepository.findByPinId(pin.id))
+        assertEquals("image/png", media.mimeType, "the probe decides the stored type, never the archive")
         assertEquals(listOf("MEDIA_DIGEST_MISMATCH"), issueKinds(auth, importId))
-        assertArrayEquals(png, imageStore.openStream(image.storageKey).use { it.readBytes() })
+        assertArrayEquals(png, mediaStore.openStream(media.storageKey).use { it.readBytes() })
     }
 
     // --- A medium two pins already hold ---
@@ -515,10 +515,10 @@ class MeImportIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         val png = fixture("sample.png").readBytes()
         listOf("first", "second").forEach { slug ->
-            uploadImage(auth, createPin(auth, slug).id, "sample.png", "image/png")
+            uploadMedia(auth, createPin(auth, slug).id, "sample.png", "image/png")
         }
         val storedBefore = storedObjectCount(auth.user.id)
-        // Scoped like the count above: `images.data_dir` outlives a case and is shared with the sweep
+        // Scoped like the count above: `media.data_dir` outlives a case and is shared with the sweep
         // suite, which runs on this profile too, so emptiness would be another suite's business.
         val stagedBefore = stagedFiles()
         val archive =
@@ -526,12 +526,12 @@ class MeImportIntegrationTest : IntegrationTest() {
                 .manifest(announcedPins = 1)
                 .tags()
                 .boards()
-                .entry("images/ambiguous.png", png)
+                .entry("media/ambiguous.png", png)
                 .pins(
                     ImportArchiveBuilder.pinLine(
                         sourceContextUrl = "https://example.test/ambiguous",
-                        imagePath = "images/ambiguous.png",
-                        imageSha256 = ImportArchiveBuilder.sha256(png),
+                        mediaPath = "media/ambiguous.png",
+                        mediaSha256 = ImportArchiveBuilder.sha256(png),
                     ),
                 ).bytes()
 
@@ -679,22 +679,22 @@ class MeImportIntegrationTest : IntegrationTest() {
             .manifest(announcedPins = 1)
             .tags("nature")
             .boards()
-            .entry("images/only.png", png)
+            .entry("media/only.png", png)
             .pins(
                 ImportArchiveBuilder.pinLine(
                     sourceContextUrl = "https://example.test/only",
                     tags = listOf("nature"),
-                    imagePath = "images/only.png",
-                    imageSha256 = ImportArchiveBuilder.sha256(png),
+                    mediaPath = "media/only.png",
+                    mediaSha256 = ImportArchiveBuilder.sha256(png),
                 ),
             ).bytes()
     }
 
     /** Scoped to the account: the data directory outlives a case, since only the database is truncated. */
     private fun storedObjectCount(userId: UUID): Int =
-        countFiles(Path.of(imagesConfig.dataDir()).resolve("originals").resolve(userId.toString()))
+        countFiles(Path.of(mediaConfig.dataDir()).resolve("originals").resolve(userId.toString()))
 
-    private fun stagedFiles(): List<Path> = listFiles(Path.of(imagesConfig.dataDir()).resolve("tmp"))
+    private fun stagedFiles(): List<Path> = listFiles(Path.of(mediaConfig.dataDir()).resolve("tmp"))
 
     private fun countFiles(root: Path): Int = listFiles(root).size
 

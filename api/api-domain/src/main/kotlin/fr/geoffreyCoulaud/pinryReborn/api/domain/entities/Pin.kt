@@ -14,5 +14,5 @@ data class Pin(
     val createdAt: Instant,
     val updatedAt: Instant,
     val softDeletedAt: Instant? = null,
-    val image: Image? = null,
+    val media: Media? = null,
 ) : Identifiable

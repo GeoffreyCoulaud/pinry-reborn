@@ -52,12 +52,12 @@ internal data class ExportedBoard(
 )
 
 /**
- * A pin's `image` object. `path` is the archive-relative entry path (`images/<imageId>.<ext>`, from
- * [ExportImageExtension]), never a bare id, so the file only needs `path` to be located inside the
- * archive. `sha256` is [fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Image.contentHash] under
+ * A pin's `media` object. `path` is the archive-relative entry path (`media/<mediaId>.<ext>`, from
+ * [ExportMediaExtension]), never a bare id, so the file only needs `path` to be located inside the
+ * archive. `sha256` is [fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media.contentHash] under
  * its published name.
  */
-internal data class ExportedImage(
+internal data class ExportedMedia(
     val id: UUID,
     val path: String,
     val mimeType: String,
@@ -70,7 +70,7 @@ internal data class ExportedImage(
 )
 
 /**
- * One `pins.jsonl` line. `image` is `null` when the pin has no image **or** when its bytes could not
+ * One `pins.jsonl` line. `media` is `null` when the pin has no image **or** when its bytes could not
  * be written (spec §4); `boards` lists memberships regardless of the board's state, since
  * `boards.jsonl` (via `ExportedBoard.deletedAt`) is the authority on whether a board is recycled.
  */
@@ -84,11 +84,11 @@ internal data class ExportedPin(
     val deletedAt: Instant?,
     val tags: List<ExportedRef>,
     val boards: List<ExportedRef>,
-    val image: ExportedImage?,
+    val media: ExportedMedia?,
 )
 
 /** `manifest.json`'s `counts` object: incremented while writing, never re-derived by re-iterating. */
-internal data class ExportCounts(val pins: Int, val boards: Int, val tags: Int, val images: Int)
+internal data class ExportCounts(val pins: Int, val boards: Int, val tags: Int, val media: Int)
 
 /**
  * `manifest.json` in full, written last, once every other entry's [ArchiveEntryDigest] is known.
