@@ -26,4 +26,15 @@ interface VideoProcessor {
      * [maxDuration], a missing duration, a single frame, or a file its two demuxers refuse.
      */
     fun probe(staged: StagedFile, maxDuration: Duration): VideoProbeResult
+
+    // Each method below writes a fresh file beside [staged], owned by the caller, and refuses what the demuxers refuse.
+
+    /** The first video and first audio tracks, never re-encoded, in the [VideoContainer] their codecs choose. */
+    fun repackage(staged: StagedFile, video: VideoProbeResult): StagedFile
+
+    /** The frame that best represents the start of the video, as a PNG at the dimensions it displays at. */
+    fun poster(staged: StagedFile): StagedFile
+
+    /** The first three seconds as an animated WebP whose shortest side is [shortestSide]. */
+    fun preview(staged: StagedFile, shortestSide: Int, quality: Int): StagedFile
 }
