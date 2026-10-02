@@ -54,9 +54,10 @@ import org.jetbrains.kotlin.psi.psiUtil.parents
  * transaction at all, which is the shape every one of the twelve sites took.
  *
  * A row built somewhere else and handed over through a property is reported all the same
- * (`mediaRepository.save(created.media)` in `UserDataImportRunner`, suppressed inline with its reason):
+ * (`mediaRepository.save(created.ingested.media)` in `UserDataImportRunner` and
+ * `mediaRepository.save(ingested.media)` in `SetPinMedia`, each suppressed inline with its reason):
  * the rule cannot see where that value came from, and the answer that keeps its reach is to report and
- * let the site say why. That suppression is the rule's only one, and the function that saves is the
+ * let the site say why. Those are the rule's only suppressions, and the function that saves is the
  * function that opens the transaction everywhere else, which is what keeps the fence lexical.
  */
 class RowMergedOutsideTransaction(
