@@ -112,6 +112,7 @@ class ArchitectureKonsistTest {
             val storage = Layer("Storage", "fr.geoffreyCoulaud.pinryReborn.api.storage..")
             val imaging = Layer("Imaging", "fr.geoffreyCoulaud.pinryReborn.api.imaging..")
             val fetch = Layer("Fetch", "fr.geoffreyCoulaud.pinryReborn.api.fetch..")
+            val video = Layer("Video", "fr.geoffreyCoulaud.pinryReborn.api.video..")
 
             // api-application (composition root) and api-utilities are intentionally not modelled:
             // the composition root may depend on everything, and imports to an unmodelled layer are
@@ -125,6 +126,7 @@ class ArchitectureKonsistTest {
             storage.dependsOn(domain)
             imaging.dependsOn(domain)
             fetch.dependsOn(domain)
+            video.dependsOn(domain)
         }
     }
 
