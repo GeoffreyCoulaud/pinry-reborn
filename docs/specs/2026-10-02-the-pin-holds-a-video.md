@@ -1,8 +1,9 @@
 # The pin holds a video
 
 Date: 2026-10-02
-Status: Draft for the operator. One specification review ran, `.reviews/the-pin-holds-a-video-spec.md`, its
-0 CRITICAL, 16 MAJOR and 23 MINOR closed in this document. Frozen when the lot's closing block merges.
+Status: Approved by the operator on 2026-10-02. One specification review ran,
+`.reviews/the-pin-holds-a-video-spec.md`, its 0 CRITICAL, 16 MAJOR and 23 MINOR closed in this document. Frozen when
+the lot's closing block merges.
 Lot: `0.45.0`. Branches: one stack, each block on the branch below it, listed in section 5.
 ADRs, all written in block 10: `docs/adr/0047-a-video-is-repackaged-never-re-encoded.md` (what a stored video
 is), `docs/adr/0048-every-remote-fetch-goes-through-one-guarding-proxy.md` (how a remote video is fetched) and
