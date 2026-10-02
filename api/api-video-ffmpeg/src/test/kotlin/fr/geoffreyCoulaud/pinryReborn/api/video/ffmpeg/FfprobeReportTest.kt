@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.video.ffmpeg
 import com.fasterxml.jackson.databind.ObjectMapper
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -27,6 +28,47 @@ class FfprobeReportTest {
         mapper.writeValueAsString(mapOf("streams" to tracks.toList(), "format" to mapOf("duration" to "1.000000")))
 
     private fun codecsOf(vararg tracks: Map<String, Any>) = FfprobeReport.read(report(*tracks), maxDuration).codecs
+
+    private fun lasting(format: Map<String, String>) =
+        mapper.writeValueAsString(mapOf("streams" to listOf(h264()), "format" to format))
+
+    @Test
+    fun `Given an unlisted audio codec, Then read refuses it naming the codec`() {
+        val exception =
+            assertThrows(VideoCodecUnsupportedException::class.java) {
+                codecsOf(h264(), track("audio", "ac3"))
+            }
+        assertEquals("The audio codec ac3 is not accepted", exception.message)
+    }
+
+    @Test
+    fun `Given no duration, Then read refuses the file`() {
+        assertThrows(UndecodableVideoException::class.java) {
+            FfprobeReport.read(lasting(emptyMap()), maxDuration)
+        }
+    }
+
+    @Test
+    fun `Given a duration past the bound, Then read refuses it as too long`() {
+        assertThrows(VideoTooLongException::class.java) {
+            FfprobeReport.read(lasting(mapOf("duration" to "121.000000")), maxDuration)
+        }
+    }
+
+    @Test
+    fun `Given a quarter turn either way, Then the width and height swap`() {
+        val quarterTurn = mapOf("side_data_type" to "Display Matrix", "rotation" to -90)
+        val result = FfprobeReport.read(report(h264("side_data_list" to listOf(quarterTurn))), maxDuration)
+        assertEquals(120 to 160, result.width to result.height)
+    }
+
+    @Test
+    fun `Given Opus beside VP9 or AV1, Then its parameter is spelled as WebM does`() {
+        val vp9 = track("video", "vp9", "pix_fmt" to "yuv420p")
+        val av1 = track("video", "av1", "extradata" to dump("81000c"))
+        assertEquals("vp09.00.10.08,opus", codecsOf(vp9, track("audio", "opus")))
+        assertEquals("av01.0.00M.08,opus", codecsOf(av1, track("audio", "opus")))
+    }
 
     @Test
     fun `Given no video track, Then read refuses the file`() {
@@ -84,6 +126,12 @@ class FfprobeReportTest {
     fun `Given H265 in profile space 1, high tier, with no constraint, Then its parameter carries each`() {
         val record = "01" + "61" + "60000000" + "000000000000" + "5d"
         assertEquals("hvc1.A1.6.H93", codecsOf(track("video", "hevc", "extradata" to dump(record))))
+    }
+
+    @Test
+    fun `Given H265 with a constraint byte, Then its parameter keeps it and drops the trailing zeros`() {
+        val record = "01" + "01" + "60000000" + "900000000000" + "1e"
+        assertEquals("hvc1.1.6.L30.90", codecsOf(track("video", "hevc", "extradata" to dump(record))))
     }
 
     @Test
