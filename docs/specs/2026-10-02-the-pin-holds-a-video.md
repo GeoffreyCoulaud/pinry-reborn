@@ -1,12 +1,13 @@
 # The pin holds a video
 
 Date: 2026-10-02
-Status: Draft for the specification review. Frozen when the lot's closing block merges.
+Status: Draft for the operator. One specification review ran, `.reviews/the-pin-holds-a-video-spec.md`, its
+0 CRITICAL, 16 MAJOR and 23 MINOR closed in this document. Frozen when the lot's closing block merges.
 Lot: `0.45.0`. Branches: one stack, each block on the branch below it, listed in section 5.
-ADRs: `docs/adr/0047-a-video-is-repackaged-never-re-encoded.md` and
-`docs/adr/0048-every-remote-fetch-goes-through-one-guarding-proxy.md`, both written in block 10: this lot adds
-the API's first external processes (ffmpeg, yt-dlp), a storage format (the video containers), a public surface
-(the `/media` routes) and a network boundary (the proxy).
+ADRs, all written in block 10: `docs/adr/0047-a-video-is-repackaged-never-re-encoded.md` (what a stored video
+is), `docs/adr/0048-every-remote-fetch-goes-through-one-guarding-proxy.md` (how a remote video is fetched) and
+`docs/adr/0049-the-pins-medium-is-a-media.md` (the rename, the routes, the tables, the ingestion path, the export
+format and the refusals).
 
 The backlog's Features band carries **Video support**. This lot takes it: a pin's medium may be a short video,
 uploaded, fetched from a file address or extracted from a web page, and played in the web application.
@@ -22,27 +23,32 @@ the pin's view plays it with sound. A browser that cannot decode it shows the po
 - **A pin holds at most one `Image`** (`api-domain/.../entities/Image.kt`), read through
   `ImageRepositoryInterface.findByPinId`; `Pin.image` exists and no mapper fills it.
 - **`ImageFormat` is closed to PNG, JPEG, WebP and GIF**, decided by libvips' `vips-loader`
-  (`VipsImageProbe.formatOf`). Nothing reads a `Content-Type`, the upload's or the fetched response's: an HTML page
-  is staged, then refused as `INVALID_IMAGE`.
+  (`VipsImageProbe.formatOf`). A file libvips cannot open at all, a video included, becomes
+  `UndecodableImageException` (`VipsImageProbe.kt:37-38`); `UnsupportedImageFormatException` is a format libvips
+  reads and the enum lacks, such as AVIF (`heifload`). Nothing reads a `Content-Type`.
 - **An original is staged, probed, promoted, then saved**, in three places that each build the storage key
   `originals/<userId>/<pinId>/<id>.<ext>`: `SetPinImage.kt:60`, `DownloadPinImage.kt:138`,
   `UserDataImportRunner.kt:655`.
-- **Renditions are WebP, rendered on the first `GET ?size=` and cached** (`GetPinImageRendition`,
-  `FilesystemRenditionCache`).
+- **Renditions are WebP, rendered on the first `GET ?size=` and cached**; when no downscale is needed and the source
+  is not animated, the original is served instead (`GetPinImageRendition.kt:45-51`).
 - **The original is served whole**: `ImageController.serveOriginal` answers `200` with no `Accept-Ranges`, and its
-  `ETag` is the raw hash, unquoted. `http/RangeHeader.kt` parses `bytes=a-` and `bytes=a-b` for the export alone; the
-  `206` response is built in private functions of `MeExportController` (lines 188 to 230).
-- **The SSRF guard is in `HttpImageFetcher`**: it resolves the host, checks the address with `AddressPolicy`, then
-  the JDK client resolves the host again to connect.
+  `ETag` is the raw hash, unquoted (`ImageController.kt:163`). `http/RangeHeader.kt` parses `bytes=a-` and
+  `bytes=a-b` for the export alone; the `206` response is built in private functions of `MeExportController`
+  (lines 188 to 230).
+- **The SSRF guard is in `HttpImageFetcher`**: it resolves the host and checks the address (`:102`), then the JDK
+  client resolves the host again to connect (`:78`).
 - **A download's task lease is never renewed** (`DownloadPinImage` never calls `TaskContext.renewLease`), and
   `tasks.lease_duration` is one minute: a fetch longer than that is reclaimed and runs twice.
 - **No sweep walks `originals/` or `tmp/`** (`ReapOrphanedStorage` covers renditions and the data archives).
 - **`images.max_file_bytes` is 30 MiB** and `BodyLimitCheck` refuses a boot where it is not under
   `quarkus.http.limits.max-body-size`, 32M.
 - **The API runs no external process** (no `ProcessBuilder` under `api/`), and ships libvips from apt
-  (`api/Dockerfile:16-18`, `.dagger/gradle.Dockerfile:5`).
-- **The web application measures every dropped file with `createImageBitmap`** (`drops.ts`), so a video is refused
-  as `UNREADABLE`. It holds no `<video>` and no `canPlayType`. `TaskCentre.tsx:50` hardcodes `accept="image/*"`.
+  (`api/Dockerfile:16-18`, `.dagger/gradle.Dockerfile:5`). Neither base image has `python3`.
+- **The web application refuses a video as `UNSUPPORTED_FORMAT`**: `isStorableFile` checks `mediaTypes`, which
+  lists images only, before `createImageBitmap` measures the file (`drops.ts:52-55`). It holds no `<video>` and no
+  `canPlayType`. `TaskCentre.tsx:50` hardcodes `accept="image/*"`. `REASONS` and `RETRIABLE` in
+  `downloadReasons.ts` are keyed by every `DownloadReasonDto`, so a reason the server adds fails `tsc` until the
+  client has its sentence.
 - **The contract is at `20.0.0`** (`application.properties:40`).
 
 ## 3. The decisions
@@ -53,97 +59,122 @@ Each letter is the question the operator answered on 2026-10-02 in Discuss.
 `media.max_video_bytes`. An image keeps its own bound, `media.max_image_bytes` (today's `images.max_file_bytes`).
 `quarkus.http.limits.max-body-size` rises to 64M so that `BodyLimitCheck` holds.
 
-**B1. A video is never re-encoded.** Video codecs H.264, H.265, VP9 and AV1; audio codecs AAC, Opus and MP3, or no
-audio track (K1). Anything else is refused, naming the codec. The reasoning is ADR 0047.
+**B1, K1. A video is never re-encoded.** Video codecs H.264, H.265, VP9 and AV1; audio codecs AAC, Opus and MP3, or
+no audio. The first video track and the first audio track are kept, every other track dropped (a subtitle track
+would otherwise make a WebM output fail). Anything else is refused, naming the codec. ADR 0047.
 
-**C1. `Image` becomes `Media`.** One pin, at most one media, an image or a video. Renditions are WebP stills for both.
+**C1, N1. `Image` becomes `Media`, in one mechanical block outside the bounds**, as decision E of
+`docs/specs/2026-09-28-knip-and-biome-keep-the-clients-clean.md` let the formatting pass them. Code, routes, tables,
+configuration keys and the default directory `/var/lib/pinry/media` follow; nothing is deployed (`git tag -l 'v*'`
+and `gh release list` are both empty). ADR 0049.
 
-**D1. A video's renditions are its poster**, the frame ffmpeg's `thumbnail` filter picks among the first 100 frames,
-rendered by libvips at the four sizes. Extracted on a rendition's cache miss, like any rendition, and never stored
-apart: nothing new to export, sweep or migrate. No animated rendition; the original plays instead.
+**D1. A video's renditions are its poster**: ffmpeg's `thumbnail` filter over the first 100 frames, scaled to square
+pixels (`scale=iw*sar:ih,setsar=1`), drawn by libvips at the four sizes. Extracted on a rendition's cache miss and
+never stored apart. A video always takes the rendition path, at the smaller of the requested size and its shortest
+side: the original is never served to an `<img>`. No animated rendition; the original plays instead.
 
-**E2, H1. A page address yields its video through yt-dlp, now.** The worker reads the fetched response's
-`Content-Type`: a media type goes down today's path, an HTML page goes to yt-dlp. One route, the client unaware.
+**E2, H1. A page address yields its video through yt-dlp, now.** The worker reads the response's `Content-Type`:
+`text/html` and `application/xhtml+xml` go to yt-dlp; anything else, `application/octet-stream` and a missing
+header included, goes down the direct path, where the probe judges. ADR 0048.
 
-**F1, P1. One guarding proxy for every remote fetch.** A local HTTP proxy in the worker resolves each host once,
-checks the address with `AddressPolicy`, and connects to that address. yt-dlp is given it with `--proxy`; the direct
-fetcher with a `ProxySelector`, and loses its own guard. This closes the second resolution of section 2 on both paths.
-Written with the JDK alone (`ServerSocket`, one virtual thread per connection), not Vert.x as Discuss first said:
-`api-fetch-http` depends on no Quarkus module today, and the JDK covers it.
+**F1, P1. One guarding proxy per download.** Each download starts its own proxy on the loopback, which resolves
+each host once, checks the address with `AddressPolicy`, connects to that address, and records what it refused
+or failed to reach. yt-dlp is given it with `--proxy`, the direct fetcher with a `ProxySelector`; the fetcher
+loses its own guard. Written with the JDK alone (`ServerSocket`, virtual threads), not Vert.x as Discuss first
+said: `api-fetch-http` depends on no framework. The proxy's record, not an HTTP status or yt-dlp's stderr, is what
+turns a failure into `URL_NOT_ALLOWED` or `UNREACHABLE`: through a tunnel, the JDK reports a refusal as
+`IOException: Tunnel failed, got: 403` (measured by the review). ADR 0048.
 
-**G1. yt-dlp is pinned by uv**: `api/tools/yt-dlp/pyproject.toml` and its `uv.lock`, installed with
-`uv sync --frozen` in the API image and in the gate's container, bumped weekly by Dependabot's `uv` ecosystem.
+**G1. yt-dlp is pinned by uv**: `api/tools/yt-dlp/pyproject.toml` (yt-dlp alone, no extras) and its `uv.lock`,
+marked `linguist-generated`. In both images: `python3` from apt, `uv` copied from a pinned
+`ghcr.io/astral-sh/uv` image, `UV_PYTHON_DOWNLOADS=never`, `uv sync --frozen`. Dependabot's `uv` ecosystem raises
+it weekly. ADR 0048.
 
 **I1. One lot, API then web application, yt-dlp last.**
 
-**J1, S1. Any container in a closed list, repackaged.** ffprobe and ffmpeg run with
-`-format_whitelist mov,matroska -protocol_whitelist file -nostdin`: the `mov` demuxer reads `.mp4`, `.mov`, `.m4v`
-and `.3gp`, the `matroska` one `.mkv` and `.webm`. A playlist or a concatenation, which could read a file of the
-server into the output, is refused at opening.
+**J1, S1. Two demuxers, before `-i`, on every call the API makes.** ffprobe and ffmpeg take
+`-format_whitelist mov,matroska -protocol_whitelist file` before `-i`, and ffmpeg also `-nostdin` (ffprobe has no
+such option and exits 1 on it). After `-i` they would be output options and an MPEG-TS would pass (measured by the
+review). `mov` reads `.mp4`, `.mov`, `.m4v`, `.3gp`; `matroska` reads `.mkv`, `.webm`. A playlist or a
+concatenation is refused at opening. yt-dlp's own ffmpeg and ffprobe calls get the same flags through
+`--postprocessor-args`, `mpegts` added for its HLS fixup, and each yt-dlp run writes into an empty directory of its
+own, so a relative entry of a hostile concatenation finds nothing. ADR 0047.
 
-**L1. The stored container follows the codecs**: WebM when every track fits it (VP9 or AV1, with Opus or no audio),
-MP4 otherwise. Always repackaged with `-c copy`, MP4 with `-movflags +faststart`. A pure function in `api-domain`.
+**L1. The stored container follows the codecs**: WebM when every kept track fits it (VP9 or AV1, with Opus or no
+audio), MP4 otherwise. Repackaged with `-c copy -fflags +bitexact`, MP4 with `-movflags +faststart` and H.265
+tagged `hvc1`. A pure function in `api-domain`.
 
-**M1. AV1 and H.265 are accepted**, the web application falling back where the browser cannot decode them. yt-dlp
-prefers H.264, then VP9, then AV1, then H.265.
-
-**M1's fallback.** The stored `mimeType` of a video carries its `codecs` parameter (RFC 6381), for instance
-`video/mp4; codecs="hvc1.1.6.L60.B0, mp4a.40.2"`, and is served as the original's `Content-Type`. The web
-application asks `canPlayType` with it; an empty answer, or an `error` event on the `<video>`, shows the poster, a
-sentence and a link to the original. No new field: `mimeType` already travels in `PinMediaStateDto`.
-
-**N1. The rename is one mechanical block, outside the bounds**, as decision E of
-`docs/specs/2026-09-28-knip-and-biome-keep-the-clients-clean.md` let the formatting pass them. Code, tables,
-routes, configuration keys and the default directory `/var/lib/pinry/media` all follow; nothing is deployed.
+**M1. AV1 and H.265 are accepted**, the web application falling back where the browser cannot decode them. The
+stored `mimeType` of a video carries its `codecs` parameter (RFC 6381), built from the stream's extradata
+(`ffprobe -show_data`: avcC, hvcC, av1C hold the exact bytes) and, for VP9, from a documented default; it is served
+as the original's `Content-Type`. The web application asks `canPlayType`; an empty answer, or an `error` event on
+the `<video>`, shows the poster, a sentence and a link to the original. yt-dlp asks for H.264, then VP9, then AV1,
+then H.265, each with an accepted audio codec, through a chain of `-f` selectors: `-S` cannot express that order,
+its codec ladder being fixed (`yt_dlp/utils/_utils.py`, read by the review).
 
 **O1. Two orphan sweeps join the lot**: an original with no row, and a staged file past a grace.
 
-**Q1, R1. ffmpeg and ffprobe run as processes, installed from apt.** Measured in the API's base image on 2026-10-02
-(`eclipse-temurin:25-jre@sha256:bb036ed6…`, Ubuntu 26.04.1, ffmpeg `8.0.1-3ubuntu2`): the image grows from 463 MB to
-816 MB, LLVM (135 MB) and Mesa (45 MB) being most of it. Accepted: the operator weighs maintenance over bytes.
+**Q1, R1. ffmpeg and ffprobe run as processes, installed from apt.** Measured on 2026-10-02 with `du -sxm /` in a
+container of `eclipse-temurin:25-jre@sha256:bb036ed6…` (Ubuntu 26.04.1, ffmpeg `8.0.1-3ubuntu2`): 463 MB after the
+API's own `curl libvips42t64` layer, 816 MB with ffmpeg; `libllvm21` (135 MB) and `mesa-libgallium` (45 MB) by
+`dpkg-query`. Accepted: the operator weighs maintenance over bytes. ADR 0047.
 
-The lead adds three decisions, submitted with this document:
+The lead adds four decisions, submitted with this document:
 
-- **ii. One ingestion path.** A use case `MediaIngestion` stages, probes, repackages a video and promotes, called by
-  the upload, the download and the import, each of which builds the storage key today. The three copies would each
-  have to learn the video branch otherwise.
-- **iii. The export archive carries `media/`, format version 2**, the import refusing version 1, as the rename
-  leaves no reader of version 1 in the code.
-- **iv. A video stores `animated = false`**: its renditions are stills, and the rendition spec intersects the
-  request with this flag.
+- **ii. One ingestion path.** A use case `MediaIngestion` stages, probes, repackages a video and promotes, called
+  by the upload, the download and the import, which each build the storage key today. The dispatch: libvips first;
+  if it cannot open the file (`Undecodable`) or reads a format the enum lacks (`Unsupported`), ffprobe. The video
+  probe refuses a stream with no duration or a single frame, so an AVIF or a HEIC is refused, never stored as a
+  video. ADR 0049.
+- **iii. The export archive carries `media/`, format version 2**, the import refusing version 1. Taken in block
+  10, whose script rewrites the archive's literal. The import stores a video as the archive carries it, after
+  probing it: it was repackaged when first ingested, and a second pass would change its bytes. ADR 0049.
+- **iv. A video stores `animated = false`** and the dimensions it displays at: a 90 degree rotation in the stream's
+  side data swaps width and height, so a portrait phone video gets a portrait tile.
+- **v. yt-dlp runs twice per page.** First `--dump-single-json`, which downloads nothing: the worker reads the
+  duration, the live flag and the chosen format's size, and refuses with an exact reason. Then the download, with
+  `-f` fixed to the format the first run chose. One page fetch more, and no reason read from stderr. ADR 0048.
 
 ## 4. The change
 
 ### The rename (block 10)
 
-- **Every identifier where "image" names the pin's medium becomes "media"**, case kept: `Image` to `Media`,
-  `ImageStore` to `MediaStore`, `ImageDownload` to `MediaDownload`, `ImagesConfig` to `MediaConfig`, `ImageFormat`
-  to `MediaFormat`, `PinImageState` to `PinMediaState`, the `IMAGE_*` codes to `MEDIA_*`, `INVALID_IMAGE` to
+- **The script renames a closed list of identifiers**, written in the script and pasted in the block's report:
+  every identifier where "image" names the pin's medium, case kept. `Image` to `Media`, `ImageStore` to
+  `MediaStore`, `ImageDownload` to `MediaDownload`, `ImagesConfig` to `MediaConfig`, `ImageFormat` to
+  `MediaFormat`, `PinImageState` to `PinMediaState`, the `IMAGE_*` codes to `MEDIA_*`, `INVALID_IMAGE` to
   `INVALID_MEDIA`, and their test names.
-- **What "image" still names stays**: `ImageProbe` and its exceptions (libvips probes an image), `ImageTransformer`
-  and `VipsImageTransformer` (they draw WebP images), `VImage`, the module `api-imaging-vips`, and every MIME type
-  literal (`image/png`).
+- **What "image" still names stays**: `ImageProbe` and its exceptions, `ImageTransformer`, `VipsImageTransformer`,
+  `VImage`, `createImageBitmap`, the module `api-imaging-vips`, every MIME literal (`image/png`), the history
+  migrations under `dbmigration/` and `model/`, and the client's sentences until block 80.
+- **`IMAGE_TOO_LARGE` becomes `MEDIA_TOO_LARGE`**, the name an import issue kind already carries. Accepted: the two
+  sit in separate sets.
 - **Routes**: `/pins/{pinId}/media`, `/pins/{pinId}/media/status`, `/me/media-downloads`. **Keys**: `media.*`,
-  `media.renditions.*`, `media.download.*`. **Tables**: `media`, `media_download`, by migration `1.28`.
-- **The client follows** in the same block: paths, schema names and the `pin.media` field. Its sentences still say
-  "image" until block 80.
-- **The block's pull request carries the script that made it** and the command that replays it on the parent.
+  `media.renditions.*`, `media.download.*`, also in `compose.yml` (`MEDIA_DATA_DIR: /data/media`) and in the
+  `api/Dockerfile` comment that names them. **Tables**: `media`, `media_download`, by migration `1.28`.
+- **The export** writes `media/<id>.<ext>` and `EXPORT_FORMAT_VERSION = 2` (decision iii).
+- **The client follows** in the same block: paths, schema names and the `pin.media` field.
 
-### Video ingestion (blocks 40 and 50)
+### The video processor (blocks 40 and 45)
 
 - **A new module `api-video-ffmpeg`** (role `video`, a new `Layer` in `ArchitectureKonsistTest`) implements a domain
-  port `VideoProcessor`: `probe`, `repackage`, `poster`. Each runs `ffprobe` or `ffmpeg` with section 3's flags and
-  a timeout, `media.video_timeout`, after which the process is destroyed.
-- **`probe`** reads `ffprobe -of json`: the demuxer, the streams' codecs, width, height and duration. It refuses an
-  unlisted codec, a duration past the bound, or more than one video track, and builds the `codecs` parameter from
-  `codec_name`, `profile` and `level`.
-- **`MediaIngestion`** (decision ii) stages with the larger of the two byte bounds, asks `ImageProbe` first, and on
-  `UnsupportedImageFormatException` asks `VideoProcessor.probe`. A video is repackaged into a second staged file,
-  whose hash and size are the ones stored.
+  port `VideoProcessor`: `probe`, `repackage`, `poster`. Each runs `ffprobe` or `ffmpeg` with decision J1's flags
+  and `media.video_timeout` (`PT60S`), after which the process is destroyed.
+- **`probe`** reads `ffprobe -of json -show_streams -show_format -show_data`: the demuxer, the codecs, the display
+  dimensions, the duration, the extradata. It refuses an unlisted codec, a duration past the bound, a missing
+  duration or a single frame.
+
+### Ingestion (blocks 50 to 56)
+
+- **`MediaIngestion`** (decision ii) stages with the larger of the two byte bounds, dispatches, applies the bound of
+  what it found, repackages a video into a second staged file whose hash and size are the ones stored.
 - **New refusals**: `MEDIA_TOO_LONG` (422) and `MEDIA_CODEC_UNSUPPORTED` (415) on the upload; `TOO_LONG` and
-  `UNSUPPORTED_CODEC` as download reasons. `LimitsDto` gains `maxImageBytes`, `maxVideoBytes`, `maxVideoSeconds`
-  in place of `maxFileBytes`, and `mediaTypes` lists the upload types: the four images, `video/mp4`, `video/webm`,
-  `video/quicktime`, `video/x-matroska`.
+  `UNSUPPORTED_CODEC` as download reasons, their sentences in the same block, `downloadReasons.ts` requiring them.
+  `LimitsDto` gains `maxImageBytes`, `maxVideoBytes`, `maxVideoSeconds` in place of `maxFileBytes`; `mediaTypes`
+  lists the upload types: the four images, `video/mp4`, `video/webm`, `video/quicktime`, `video/x-matroska`,
+  `video/x-m4v`, `video/3gpp`. `ExportMediaExtension` maps the two stored video types to `mp4` and `webm`, reading
+  the type without its parameters.
+- **The download renews its lease** while it fetches and while yt-dlp runs, every third of `tasks.lease_duration`.
 
 ### Serving (blocks 30 and 60)
 
@@ -154,26 +185,31 @@ The lead adds three decisions, submitted with this document:
 
 ### Fetching (blocks 90 to 110)
 
-- **`GuardingProxy`** in `api-fetch-http`, bound to `127.0.0.1` on an ephemeral port, started and stopped by a
-  producer in `api-application`. It serves `CONNECT` and absolute-form requests, one request per connection.
+- **`GuardingProxy`** in `api-fetch-http`: one instance per download, bound to `127.0.0.1` on an ephemeral port,
+  closed when the download ends. It serves `CONNECT` and absolute-form requests, one request per connection, and
+  keeps a record: the addresses it refused, the hosts it failed to reach.
 - **`HttpMediaFetcher`** returns the response's `Content-Type` with its stream, and reaches the network through the
   proxy alone.
-- **A new module `api-fetch-ytdlp`** implements `PageMediaExtractor`: `yt-dlp` with `--proxy`, `--no-playlist`,
-  `--ignore-config`, `--no-cache-dir`, `--match-filters "!is_live & duration<=?<seconds>"`, `--max-filesize`, a
-  format sort for section 3's codec order, an output path under the media `tmp/`, and `--print after_move:filepath`
-  to name the file it wrote. Its file then goes through `MediaIngestion`. A page with no video ends the download
-  with a new reason, `NO_MEDIA_FOUND`.
-- **The download renews its lease** while it fetches and while yt-dlp runs, every third of `tasks.lease_duration`.
+- **A new module `api-fetch-ytdlp`** implements `PageMediaExtractor` with yt-dlp's two runs (decision v), both with
+  `--proxy`, `--no-playlist`, `--playlist-items 1`, `--ignore-config`, `--no-plugin-dirs`, `--no-cache-dir`, and
+  `--postprocessor-args` carrying J1's flags. The download writes into a fresh directory under the media `tmp/`,
+  names its file with `--print after_move:filepath`, and is destroyed past `media.download.extraction_timeout`
+  (`PT5M`) or when its directory passes `media.max_video_bytes`, which the worker checks while it runs. Its file then
+  goes through `MediaIngestion`.
+- **Reasons** come from the first run's JSON (`TOO_LONG`, `TOO_LARGE`, live refused as `NO_MEDIA_FOUND`), from the
+  proxy's record (`URL_NOT_ALLOWED`, `UNREACHABLE`), and otherwise `NO_MEDIA_FOUND` for an extractor that found
+  nothing. A page whose extractor knows no duration (a bare `<video src>`, an HLS stream) passes the first run and
+  is bounded at ingestion.
 
-### Web application (blocks 70 and 80)
+### Web application (blocks 70 to 80)
 
 - **`lib/media.ts`**: whether a `mimeType` is a video, and what `canPlayType`'s answer means. 100 % as `lib/` is.
-- **The grid**: a video tile shows its rendition and a `Play` icon; on pointer hover it swaps in a muted, looping
-  `<video>` with `preload="none"` until hovered.
-- **The pin's view**: a `<video controls>` whose `poster` is the grid's rendition; the fallback of decision M1.
-- **The upload**: a video skips `createImageBitmap` and is judged by type and bytes alone, the server judging the
-  rest; the previews draw a `<video>`; every `accept` follows `mediaTypes`; the new refusal codes and reasons get
-  sentences, and the sentences that say "image" for the medium say "media".
+- **The pin's view**: a `<video controls>` whose `poster` is the grid's rendition; decision M1's fallback.
+- **The grid**: a video tile shows its rendition and a `Play` icon; on pointer hover it mounts a muted, looping
+  `<video>`, unmounted when the pointer leaves.
+- **The upload**: a video skips `createImageBitmap` and is judged by type and bytes alone; a file whose
+  `File.type` is empty is sent and judged by the server; the previews draw a `<video>`; every `accept` follows
+  `mediaTypes`; the upload refusals get sentences, and the sentences that say "image" for the medium say "media".
 
 ## 5. Blocks
 
@@ -182,35 +218,43 @@ The lead adds three decisions, submitted with this document:
 | 10 | `refactor/the-image-becomes-a-media` | The rename, mechanical, outside the bounds |
 | 20 | `feat/the-orphans-are-swept` | Originals with no row, and stale staged files |
 | 30 | `feat/the-original-answers-ranges` | `Range` on the original |
-| 40 | `feat/ffmpeg-reads-a-video` | The `api-video-ffmpeg` module and ffmpeg in both images |
-| 50 | `feat/a-video-is-ingested` | `MediaIngestion`, the bounds, the refusals |
+| 40 | `feat/ffprobe-reads-a-video` | The `api-video-ffmpeg` module, `probe`, ffmpeg in both images |
+| 45 | `feat/ffmpeg-repackages-a-video` | `repackage`, `poster`, the container function |
+| 50 | `refactor/one-ingestion-path` | `MediaIngestion` for images, the three callers moved onto it |
+| 53 | `feat/a-video-is-ingested` | The video branch, the bounds, the refusals, the handshake |
+| 56 | `fix/the-download-renews-its-lease` | The lease renewed during a fetch |
 | 60 | `feat/a-video-has-a-poster` | The poster as rendition |
-| 70 | `feat/the-webapp-plays-a-video` | Badge, hover, player, fallback |
+| 70 | `feat/the-webapp-plays-a-video` | The player and its fallback |
+| 75 | `feat/the-grid-previews-a-video` | Badge and hover |
 | 80 | `feat/the-webapp-uploads-a-video` | Upload, previews, sentences |
-| 90 | `feat/the-fetch-goes-through-a-guarding-proxy` | The proxy, the fetcher behind it |
+| 90 | `feat/a-guarding-proxy` | The proxy and its record |
+| 95 | `refactor/the-fetch-goes-through-the-proxy` | The fetcher behind it, its `Content-Type` |
 | 100 | `feat/yt-dlp-extracts-a-page` | uv, yt-dlp in both images, the `api-fetch-ytdlp` module |
 | 110 | `feat/a-page-address-yields-its-video` | The worker's dispatch on `Content-Type` |
 
-Each block measures its budget once committed, against its parent branch. Each must fail on what its subsection
-lists, and each test that guards a refusal is seen red before the code that answers it.
+Each block measures its budget once committed, against its parent branch, and each test that guards a refusal is
+seen red before the code that answers it. Between blocks 53 and 60 a video's tile has no rendition; the stack
+merges whole.
 
 ### 10, the rename
 
-- `dagger call gate` green, and `contract/openapi.json` regenerated at `21.0.0`.
-- The script, run on `main`, reproduces the block's diff outside migration `1.28`, its model file and the script
-  itself: `git diff` empty after replaying it. The reproduction is the review of the mechanical part (decision N1).
-- `command grep -rniE 'image' api/*/src clients/apps/webapp/src` lists only the kept names of section 4 and MIME
-  literals; the list is pasted in the block's report.
-- Migration `1.28`, applied to a database holding a pin with an image and a failed download at `1.27`, keeps both
-  rows under the new tables: a migration test.
-- Carries this specification and both ADRs.
+- `dagger call gate` green, `contract/openapi.json` regenerated at `21.0.0`.
+- The script, run on `main`, reproduces the block's diff except these files, listed in the report: the script,
+  migration `1.28` with its model file and its test, `EXPORT_FORMAT_VERSION` and the import's version test,
+  `contract/openapi.json` and the contract's version, this specification and the three ADRs.
+- `command grep -rnw` of each renamed identifier over `api/*/src` and `clients/apps/webapp/src`, `dbmigration/`,
+  `model/` and `src/paraglide/` excluded, finds nothing.
+- Migration `1.28` (`ALTER TABLE images RENAME TO media`, the same for `image_download`, `DROP INDEX` and
+  `CREATE INDEX` for `ix_images_content_hash` and `ux_image_download_pin`; `1.28.model.xml` with `<renameTable>`),
+  applied to a database holding a pin with an image and a failed download at `1.27`, keeps both rows: a migration
+  test. `GenerateDbMigration` run after it writes no `1.29`.
 
 ### 20, the sweeps
 
 - A file under `originals/` whose media id has no row, older than `garbage-collection.orphan_grace` (new, `PT1H`),
   is deleted; the same file younger than the grace stays, which is what a promotion awaiting its transaction looks
-  like.
-- A file under `tmp/` older than the same grace is deleted, a younger one stays.
+  like. The grace is longer than `media.download.extraction_timeout`, so a running yt-dlp's directory is younger.
+- A file under `tmp/` older than the grace is deleted, a younger one stays.
 - An original that has its row stays at any age.
 
 ### 30, ranges
@@ -220,76 +264,117 @@ lists, and each test that guards a refusal is seen red before the code that answ
 - The `ETag` is quoted, and `If-None-Match` with the quoted value answers `304`.
 - The export's download keeps its behaviour, its existing tests unchanged.
 
-### 40, ffmpeg
+### 40, the probe
 
-- Fixtures generated by ffmpeg's `lavfi` sources, a few hundred KB each, their generating command in a `README` next
-  to them: H.264 with AAC in `.mkv`, H.265 with AAC in `.mov`, VP9 with Opus in `.webm`, AV1 without audio in `.mp4`,
-  H.264 with AC-3, a 121-second clip, an MPEG-TS, an HLS playlist pointing at a local file.
-- `probe` returns the dimensions, the duration and a `codecs` parameter per accepted fixture; refuses AC-3 naming
-  it, the 121-second clip, the MPEG-TS and the playlist.
-- `repackage` gives MP4 for the H.264 and H.265 fixtures and WebM for VP9 and AV1, each probed again unchanged in
-  codecs; `poster` gives a PNG of the video's size.
+- Fixtures generated by ffmpeg's `lavfi` sources, a few hundred KB each, their generating commands in one `README`:
+  H.264 with AAC in `.mkv`, H.265 tagged `hev1` with AAC in `.mov`, VP9 with Opus in `.webm`, AV1 without audio in
+  `.mp4`, H.264 with AC-3, a 121-second clip, an H.264 clip with a 90 degree display rotation, an MPEG-TS, an HLS
+  playlist pointing at a local file, an AVIF still.
+- `probe` returns the display dimensions, the duration and a `codecs` parameter per accepted fixture, the rotated
+  one with width and height swapped; refuses AC-3 naming it, the 121-second clip, the MPEG-TS, the playlist and the
+  AVIF.
 - A process past `media.video_timeout` is destroyed and reported as a domain exception.
-- ffmpeg is in `api/Dockerfile` and `.dagger/gradle.Dockerfile`, and in `api/AGENTS.md`'s setup.
-- `VideoProcessor`'s consumer is block 50, which this block's pull request says.
+- ffmpeg is in `api/Dockerfile`, `.dagger/gradle.Dockerfile` and `api/AGENTS.md`'s setup.
+- `VideoProcessor`'s consumer is block 50, which the pull request says. If the block passes 20 files, the fixtures
+  that only `repackage` needs move to 45.
 
-### 50, ingestion
+### 45, repackaging
+
+- `repackage` gives MP4 for the H.264 and H.265 fixtures, H.265 tagged `hvc1`, and WebM for VP9 and AV1; each
+  output probes to the same codecs, profile, level and packet count; repackaging the same fixture twice gives the
+  same bytes; a fixture with a subtitle track repackages to WebM without it.
+- `poster` gives a PNG whose dimensions equal what `probe` returns, the rotated fixture included, and a 2:1 sample
+  aspect ratio fixture gives a square-pixel PNG.
+- `repackage` and `poster` refuse the MPEG-TS and the playlist themselves, not through `probe`.
+- The container function at 100 % for every pair of decision L1.
+
+### 50, one ingestion path
+
+- The upload, the download and the import call `MediaIngestion`; the storage key is built once
+  (`command grep -rn 'originals/' api/*/src/main` finds one site).
+- Every existing image test passes unchanged in what it asserts.
+
+### 53, video ingestion
 
 - Uploading each accepted fixture answers `201` and `GET /media` serves `video/mp4` or `video/webm` with its
   `codecs`; the AC-3 fixture answers `415 MEDIA_CODEC_UNSUPPORTED`, the 121-second clip `422 MEDIA_TOO_LONG`, a
-  51 MiB file `413`.
+  51 MiB file `413`, the AVIF `415`.
 - An image upload still refuses past `media.max_image_bytes` though under `media.max_video_bytes`.
-- A video fetched from a file address becomes the pin's media; a download whose fetch outlasts
-  `tasks.lease_duration` in a test with a short lease runs once, its lease renewed.
-- An export holding a video imports into an empty account with the same bytes; a version-1 archive is refused.
-- `LimitsDto` answers the three bounds from overridden keys, not the defaults. The client reads `maxImageBytes`.
+- A video fetched from a file address becomes the pin's media.
+- An export holding a video imports into an empty account with the same bytes and the same hash.
+- `LimitsDto` answers the three bounds from overridden keys, not the defaults. The client reads `maxImageBytes`;
+  `TOO_LONG` and `UNSUPPORTED_CODEC` have their sentences, `downloadReasons.ts` compiling.
+
+### 56, the lease
+
+- In a test with a short `tasks.lease_duration`, a fetch slower than the lease runs once: the task is never
+  reclaimed, its lease renewed.
 
 ### 60, the poster
 
 - `GET /media?size=small` of a video answers `image/webp` whose shortest side is `media.renditions.small`, and a
   second request is a cache hit.
+- A video whose shortest side is under the requested size still answers `image/webp`, never `video/*`.
 - `?animated=true` on a video answers the same still.
 
 ### 70, playing
 
-- Journeys **play a video pin**, **a video this browser cannot play falls back**, **hover a video tile**: a video
-  tile carries the play icon and an image tile does not; hovering mounts a muted `<video>` and leaving unmounts it;
-  the pin's view mounts `<video controls>` with the original's address; `canPlayType` answering `""`, or an `error`
-  event, shows the fallback sentence and a link whose `href` is the original.
+- Journeys **play a video pin** and **a video this browser cannot play falls back**: the pin's view mounts
+  `<video controls>` with the original's address and the rendition as `poster`; `canPlayType` answering `""`, or
+  an `error` event, shows the fallback sentence and a link whose `href` is the original.
 - `lib/media.ts` at 100 %.
+
+### 75, previewing
+
+- Journey **hover a video tile**: a video tile carries the play icon and an image tile does not; hovering mounts a
+  muted `<video>` and leaving unmounts it.
 
 ### 80, uploading
 
 - Journey **upload a video**: an `.mp4` drop sends the `PUT` without calling `createImageBitmap`; a video past
-  `maxVideoBytes` is refused with no request sent; `MEDIA_TOO_LONG` and `MEDIA_CODEC_UNSUPPORTED` show their
-  sentences, an unknown code the general one.
+  `maxVideoBytes` is refused with no request sent; a file with an empty type is sent; `MEDIA_TOO_LONG` and
+  `MEDIA_CODEC_UNSUPPORTED` show their sentences, an unknown code the general one.
 - Every `accept` in the application reads `mediaTypes`.
 - `command grep -n 'image' clients/apps/webapp/messages/en.json` lists no sentence naming the medium.
 
 ### 90, the proxy
 
-- Through the proxy with `AddressPolicy.Standard`, a request to `127.0.0.1` is refused, a `CONNECT` to a host
-  resolving to a private address is refused, and a redirect from a public origin to a private one is refused at the
-  second connection.
-- A host whose resolver answers a public address and then a private one is connected to the first, checked address:
-  a test with a stub resolver counting calls, one call per connection.
-- `HttpMediaFetcher` holds no `AddressPolicy` call; its tests reach a local origin through the proxy under
-  `AllowAll`.
+- Under `AddressPolicy.Standard`, a request to `127.0.0.1` is refused and recorded; a `CONNECT` to a host whose stub
+  resolver answers a private address is refused and recorded.
+- A host whose stub resolver answers a public address and then a private one is connected to the first, checked
+  address: one resolution per connection, the stub counting calls.
+- A redirect hop is a new connection, checked again: with a test policy refusing one stub address, the second hop
+  to it is refused and recorded.
+- A host that does not answer is recorded as unreachable.
+- The proxy's consumer is block 95, which the pull request says.
+
+### 95, the fetcher behind it
+
+- `HttpMediaFetcher` holds no `AddressPolicy` call and returns the `Content-Type`.
+- A download refused by the proxy ends `FAILED` with `URL_NOT_ALLOWED`, over `http` and over `https`; one whose host
+  does not answer ends with `UNREACHABLE`, retried.
 
 ### 100, yt-dlp
 
-- `api/tools/yt-dlp/pyproject.toml` and `uv.lock` pin yt-dlp; both images install it with `uv sync --frozen`;
-  `.github/dependabot.yml` gains the `uv` entry; `imageContext` and the gate's environment receive both files.
-- `PageMediaExtractor` extracts the `<video>` of a local HTML page through the proxy, refuses a page with none, and
-  refuses a page whose video is past the duration bound before downloading it: the origin's request log holds no
-  request for the media file.
-- With the proxy refusing every address, extraction fails as unreachable: yt-dlp opened nothing directly.
+- `api/tools/yt-dlp/pyproject.toml` and `uv.lock` pin yt-dlp, `linguist-generated` in `.gitattributes`; both images
+  install it as decision G1 says; `.github/dependabot.yml` gains the `uv` entry; `imageContext` and the gate's
+  environment receive both files.
+- `PageMediaExtractor` extracts the `<video>` of a local HTML page; refuses a page with none; refuses a page whose
+  JSON-LD gives a duration past the bound with no file written and no media body transferred (the origin may log a
+  probing request); refuses a stream past `media.max_video_bytes` by destroying the process; destroys a run past the
+  timeout.
+- A page offering H.265 and H.264 yields H.264.
+- An HLS page yields a file that ingestion accepts; a hostile concatenation named `.mp4` in an HLS stream is
+  refused by the postprocessor's whitelist.
+- With the proxy refusing every address, extraction fails `URL_NOT_ALLOWED` and the origin's log is empty.
 - `AGENTS.md`'s claim that python3 is pinned in the API's gate is corrected.
+- `PageMediaExtractor`'s consumer is block 110, which the pull request says.
 
 ### 110, the dispatch
 
-- Journey-level integration: a page address yields the video pin; a direct image address still yields the image; an
-  HTML page with no video ends `FAILED` with `NO_MEDIA_FOUND`, which the client maps to a sentence.
+- An integration test per path: a page address yields the video pin; a direct image address still yields the
+  image; an HTML page with no video ends `FAILED` with `NO_MEDIA_FOUND`, which the client maps to a sentence in the
+  same block.
 - Deletes the backlog's **Video support** item.
 
 ## 6. Adjacent backlog items
@@ -312,26 +397,33 @@ lists, and each test that guards a refusal is seen red before the code that answ
 | Choosing the poster | No route takes a timestamp |
 | The video's duration in the API's responses | `MediaOutputDto` and `PinMediaStateDto` gain no field |
 | Private or signed-in pages | yt-dlp gets no `--cookies` |
-| Playlists and live streams | `--no-playlist`, and `!is_live` refuses them |
+| More than one video per page, and what the extractor marks live | `--playlist-items 1`, and the first run refuses `is_live` |
 | Triage of the new packages' CVEs | `security/vex.openvex.json` unchanged |
 
 ## 8. Pitfalls
 
-- **The rename script must not touch a MIME literal** (`image/webp`), nor the names section 4 keeps.
-- **Ebean's migration generator may write a table rename as a drop and a create.** `1.28` is written by hand as two
-  `ALTER TABLE ... RENAME TO` plus the index renames, SQLite having no `ALTER INDEX`.
-- **Both flags go on every ffprobe and ffmpeg call**: `-format_whitelist` on one alone leaves the other open.
-- **ffprobe gives no VP9 level (`-99`) and AV1's as `seq_level_idx`**, measured on lavfi clips with ffprobe 9.0.2: the
-  `codecs` builder takes a documented default where a field is missing, and the fallback's `error` event covers a
-  wrong guess.
-- **A `.mov` may carry H.265 tagged `hev1`**; MP4 output takes `-tag:v hvc1`, which Safari requires.
+- **The rename script must not touch a MIME literal, a kept name, or a frozen migration**: the tables were
+  `images` and `image_download` (`1.4.sql`, `1.5.sql`), and `DbMigrationModelCoverageTest` reads the history.
+- **Ebean's generator may write a table rename as a drop and a create**: `1.28` is written by hand. SQLite has no
+  `ALTER INDEX`; the inline names `pk_images` and `uq_images_pin_id` stay in the table's SQL after `RENAME TO`.
+- **The flags go before `-i`**: after it they are output options, and an MPEG-TS goes through.
+- **ffprobe gives no VP9 level (`-99`)** and its JSON lacks H.264's constraint byte, H.265's tier and compatibility
+  flags, AV1's tier: the `codecs` builder reads them from the extradata. A malformed string makes `canPlayType`
+  answer `""`, so a playable video would show the fallback.
+- **Two repackagings of one file differ without `-fflags +bitexact`** (Matroska writes random UIDs), and an MP4
+  repackaged a second time differs from the first even with it (measured by the review).
 - **`createImageBitmap` refuses a video**, and jsdom implements neither `canPlayType` nor `play`: `test/setup.ts`
   stubs them.
-- **A proxy connection kept alive could carry a second host**: the proxy answers one request per connection.
+- **A proxy connection kept alive carries several hosts** (measured by the review): the proxy answers one request
+  per connection.
 - **The JDK client refuses Basic authentication on a proxy tunnel by default**; the proxy takes none, being bound to
   the loopback and refusing every private address.
-- **The API's user has no home directory**: yt-dlp runs with `--ignore-config` and `--no-cache-dir`.
+- **The API's home directory, `/app`, is root-owned**: yt-dlp runs with `--ignore-config`, `--no-plugin-dirs` and
+  `--no-cache-dir`.
+- **yt-dlp's `--max-filesize` applies per fragment on HLS**, and `--match-filters` lets an unknown duration through
+  with `<=?`: the bounds that hold are the worker's, on the directory and at ingestion.
+- **YouTube needs a JavaScript runtime** for yt-dlp 2026.08.19, `deno` by default; the image ships none, while a
+  workstation may have one, so a local run can pass where the image fails.
 - **The gate's environment is built from a context holding its Dockerfile alone** (`.dagger/src/index.ts:682-684`),
   and `imageContext` from the `Dockerfile` and the fast jar (`495-500`): both must be given the uv files.
-- **`BodyLimitCheck` reads every upload bound**: the video bound joins it in block 50.
 - **The workstation's ffmpeg is not the image's** (9.0.2 here, 8.0.1 there): tests assert behaviour, never a version.
