@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.InputStream
+import java.time.Instant
 
 class MediaPortsTest {
     @Test
@@ -27,6 +28,8 @@ class MediaPortsTest {
             override fun openStream(storageKey: String): InputStream = ByteArrayInputStream(ByteArray(0))
             override fun delete(storageKey: String) {}
             override fun discard(staged: StagedFile) {}
+            override fun discardOrphanedStagedFiles(olderThan: Instant) = 0
+            override fun forEachStorageKeyOnDisk(olderThan: Instant, block: (Sequence<String>) -> Unit) {}
         }
         val probe = object : ImageProbe {
             override fun probe(staged: StagedFile, maxPixels: Long) =

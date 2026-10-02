@@ -12,9 +12,14 @@ import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.FileTime
+import java.time.Instant
+import java.util.UUID
 
 class FilesystemMediaStoreTest {
     @TempDir lateinit var dataDir: Path
+
+    private val cutoff = Instant.parse("2026-10-02T12:00:00Z")
 
     private fun store() = FilesystemMediaStore(dataDir.toString())
 
@@ -122,6 +127,76 @@ class FilesystemMediaStoreTest {
         assertThrows(MediaTooLargeException::class.java) {
             store().digest(source, maxBytes = 100)
         }
+    }
+
+    @Test
+    fun `Given originals of both ages, Then forEachStorageKeyOnDisk yields the old ones only`() {
+        // Given: an old and a young original, an old staged file and an old rendition beside them
+        val old = writeAged("originals/u/p/old.png", before = true)
+        writeAged("originals/u/p/young.png", before = false)
+        writeAged("tmp/stage-old.tmp", before = true)
+        writeAged("cache/${UUID.randomUUID()}/small.webp", before = true)
+        val yielded = mutableListOf<String>()
+
+        // When
+        store().forEachStorageKeyOnDisk(cutoff) { keys -> keys.forEach(yielded::add) }
+
+        // Then: the storage key, never the staged file or the rendition
+        assertEquals(listOf("originals/u/p/old.png"), yielded)
+        assertTrue(Files.exists(old))
+    }
+
+    @Test
+    fun `Given no originals directory, Then forEachStorageKeyOnDisk yields nothing and does not throw`() {
+        // Given: a fresh data directory
+        var runs = 0
+
+        // When
+        store().forEachStorageKeyOnDisk(cutoff) { keys ->
+            runs++
+            assertEquals(0, keys.count())
+        }
+
+        // Then: the block still runs once
+        assertEquals(1, runs)
+    }
+
+    @Test
+    fun `Given staged files of both ages, Then discardOrphanedStagedFiles deletes the old ones only`() {
+        // Given: an old and a young staged file, and an old directory, which is not a staged file
+        val old = writeAged("tmp/stage-old.tmp", before = true)
+        val young = writeAged("tmp/stage-young.tmp", before = false)
+        val directory = Files.createDirectories(dataDir.resolve("tmp/extraction"))
+        Files.setLastModifiedTime(directory, FileTime.from(cutoff.minusSeconds(1)))
+
+        // When
+        val discarded = store().discardOrphanedStagedFiles(cutoff)
+
+        // Then
+        assertEquals(1, discarded)
+        assertFalse(Files.exists(old))
+        assertTrue(Files.exists(young))
+        assertTrue(Files.exists(directory))
+    }
+
+    @Test
+    fun `Given no tmp directory, Then discardOrphanedStagedFiles is a no-op`() {
+        // When
+        val discarded = store().discardOrphanedStagedFiles(cutoff)
+
+        // Then
+        assertEquals(0, discarded)
+        assertFalse(Files.exists(dataDir.resolve("tmp")))
+    }
+
+    /** A file under the data directory, last modified a second either side of [cutoff]. */
+    private fun writeAged(key: String, before: Boolean): Path {
+        val path = dataDir.resolve(key)
+        Files.createDirectories(path.parent)
+        Files.write(path, byteArrayOf(1))
+        val offset = if (before) -1L else 1L
+        Files.setLastModifiedTime(path, FileTime.from(cutoff.plusSeconds(offset)))
+        return path
     }
 
     /**
