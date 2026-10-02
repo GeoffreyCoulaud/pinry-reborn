@@ -1,0 +1,29 @@
+package fr.geoffreyCoulaud.pinryReborn.api.domain.media
+
+import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import java.time.Duration
+
+enum class VideoCodec { H264, H265, VP9, AV1 }
+
+enum class AudioCodec { AAC, OPUS, MP3 }
+
+/**
+ * A video's first video track and first audio track, if any. [width] and [height] are what it displays at, and
+ * [codecs] is the RFC 6381 `codecs` parameter of the two tracks (ADR 0047, decision 6).
+ */
+data class VideoProbeResult(
+    val videoCodec: VideoCodec,
+    val audioCodec: AudioCodec?,
+    val width: Int,
+    val height: Int,
+    val duration: Duration,
+    val codecs: String,
+)
+
+interface VideoProcessor {
+    /**
+     * Read the staged file's tracks. Throws a [VideoProcessorException] on an unlisted codec, a duration past
+     * [maxDuration], a missing duration, a single frame, or a file its two demuxers refuse.
+     */
+    fun probe(staged: StagedFile, maxDuration: Duration): VideoProbeResult
+}
