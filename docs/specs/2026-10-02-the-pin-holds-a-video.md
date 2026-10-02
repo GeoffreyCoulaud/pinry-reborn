@@ -264,12 +264,16 @@ merges whole.
 - `dagger call gate` green, `contract/openapi.json` regenerated at `21.0.0`.
 - The script, run on `main`, reproduces the block's diff except these files, listed in the report: the script,
   migration `1.28` with its model file, `EXPORT_FORMAT_VERSION` and the import's version test,
-  `contract/openapi.json` and the contract's version, this specification and the three ADRs.
+  `contract/openapi.json` and the contract's version, this specification and the three ADRs. (Corrected: also
+  migration `1.29__dropsFor_1.28`, the tests reading the archive's version, and the two migration guard tests below.)
 - `command grep -rnw` of each renamed identifier over `api/*/src` and `clients/apps/webapp/src`, `dbmigration/`,
-  `model/` and `src/paraglide/` excluded, finds nothing.
+  `model/` and `src/paraglide/` excluded, finds nothing. (Corrected: but `uq_images_pin_id` and
+  `ux_image_download_pin` in `UniqueConstraintOutcomeTest`, which reads the whole history.)
 - Migration `1.28` is what `GenerateDbMigration` writes; run a second time, it writes no `1.29`. Every constraint
   and index of the two tables is named after `media` or `media_download` (`sqlite_master` read in the migration
-  guard tests).
+  guard tests). (Corrected: the generator creates the new tables and leaves the old ones pending a drop;
+  `1.29__dropsFor_1.28` drops them, the operator's answer of 2026-10-02, and its two no-op markers are removed
+  from `1.28` as `1.22` and `1.24` did.)
 
 ### 20, the sweeps
 
