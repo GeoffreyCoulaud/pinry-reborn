@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.video.ffmpeg
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.AudioCodec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
@@ -12,15 +13,180 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
 import java.time.Duration
+import java.util.HexFormat
+import javax.imageio.ImageIO
 
 class FfmpegVideoProcessorTest {
     private val processor = FfmpegVideoProcessor(Duration.ofSeconds(60))
     private val maxDuration = Duration.ofSeconds(120)
 
-    private fun staged(name: String) =
-        StagedFile(path = Path.of("src/test/resources/fixtures", name).toString(), byteSize = 0, contentHash = "")
+    @TempDir
+    lateinit var directory: Path
+
+    private fun fixture(name: String) = Path.of("src/test/resources/fixtures", name)
+
+    private fun staged(name: String) = StagedFile(path = fixture(name).toString(), byteSize = 0, contentHash = "")
+
+    // A copy in the test's own directory, where the processor writes its output beside it.
+    private fun copied(name: String): StagedFile {
+        val copy = Files.copy(fixture(name), directory.resolve(name))
+        return StagedFile(path = copy.toString(), byteSize = 0, contentHash = "")
+    }
+
+    private fun repackaged(name: String): StagedFile {
+        val source = copied(name)
+        return processor.repackage(source, processor.probe(source, maxDuration))
+    }
+
+    // What ADR 0047 decision 1 compares: the kept tracks' codec, profile, level and packet count.
+    private fun tracksOf(staged: StagedFile): List<Map<String, String>> {
+        val entries = "stream=codec_type,codec_name,profile,level,nb_read_packets,codec_tag_string"
+        val command = listOf("ffprobe", "-v", "error", "-count_packets", "-show_entries", entries, "-of", "json")
+        val json = ProcessBuilder(command + staged.path).start().inputStream.readAllBytes().decodeToString()
+        return ObjectMapper().readTree(json).path("streams")
+            .filter { it.path("codec_type").asText() in setOf("video", "audio") }
+            .map { track -> track.properties().associate { (key, value) -> key to value.asText() } }
+    }
+
+    private fun containerOf(staged: StagedFile): String {
+        val header = String(Files.readAllBytes(Path.of(staged.path)).copyOf(48), Charsets.ISO_8859_1)
+        return when {
+            header.substring(4, 8) == "ftyp" -> "mp4"
+            header.contains("webm") -> "webm"
+            else -> "unknown"
+        }
+    }
+
+    private fun assertRepackagedInto(container: String, name: String) {
+        val output = repackaged(name)
+        assertEquals(container, containerOf(output), name)
+        val compared = setOf("codec_type", "codec_name", "profile", "level", "nb_read_packets")
+        fun keptOf(file: StagedFile) = tracksOf(file).map { track -> track.filterKeys { it in compared } }
+        assertEquals(keptOf(staged(name)), keptOf(output), name)
+    }
+
+    // The canvas and each frame's duration, read from the RIFF chunks of an animated WebP.
+    private fun animationOf(staged: StagedFile): Pair<Pair<Int, Int>, List<Int>> {
+        val bytes = Files.readAllBytes(Path.of(staged.path))
+        val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+        fun uint24(at: Int) = buffer.getInt(at) and 0xFFFFFF
+        var canvas = 0 to 0
+        val durations = mutableListOf<Int>()
+        var offset = 12
+        while (offset < bytes.size) {
+            val payload = offset + 8
+            when (String(bytes, offset, 4, Charsets.US_ASCII)) {
+                "VP8X" -> canvas = uint24(payload + 4) + 1 to uint24(payload + 7) + 1
+                "ANMF" -> durations += uint24(payload + 12)
+            }
+            val size = buffer.getInt(offset + 4)
+            offset = payload + size + size % 2
+        }
+        return canvas to durations
+    }
+
+    @Test
+    fun `Given H264 or H265, Then repackage writes MP4 with the same tracks`() {
+        assertRepackagedInto("mp4", "h264-aac.mkv")
+        assertRepackagedInto("mp4", "h265-hev1-aac.mov")
+    }
+
+    @Test
+    fun `Given H265 tagged hev1, Then repackage tags it hvc1`() {
+        val output = repackaged("h265-hev1-aac.mov")
+        assertEquals("hvc1", tracksOf(output).first().getValue("codec_tag_string"))
+    }
+
+    @Test
+    fun `Given VP9 or AV1, Then repackage writes WebM with the same tracks`() {
+        assertRepackagedInto("webm", "vp9-opus.webm")
+        assertRepackagedInto("webm", "av1.mp4")
+    }
+
+    @Test
+    fun `Given the same fixture repackaged twice, Then both outputs hold the same bytes`() {
+        for (name in listOf("h264-aac.mkv", "vp9-opus.webm")) {
+            // Given
+            val source = copied(name)
+            val video = processor.probe(source, maxDuration)
+            // When
+            val first = processor.repackage(source, video)
+            val second = processor.repackage(source, video)
+            // Then
+            assertEquals(first.contentHash, second.contentHash, name)
+            assertTrue(Files.readAllBytes(Path.of(first.path)).contentEquals(Files.readAllBytes(Path.of(second.path))))
+        }
+    }
+
+    @Test
+    fun `Given a subtitle track beside VP9 and Opus, Then repackage writes WebM without it`() {
+        val output = repackaged("subtitled.mkv")
+        assertEquals("webm", containerOf(output))
+        assertEquals(listOf("video", "audio"), tracksOf(output).map { it.getValue("codec_type") })
+    }
+
+    @Test
+    fun `Given a repackaged video, Then its staged file carries its size and hash`() {
+        val output = repackaged("h264-aac.mkv")
+        val bytes = Files.readAllBytes(Path.of(output.path))
+        val hash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
+        assertEquals(bytes.size.toLong() to hash, output.byteSize to output.contentHash)
+        assertEquals(directory, Path.of(output.path).parent)
+    }
+
+    @Test
+    fun `Given a video, Then poster is a PNG at the dimensions probe returns`() {
+        for (name in listOf("h264-aac.mkv", "rotated.mp4", "anamorphic.mkv")) {
+            // Given
+            val source = copied(name)
+            val video = processor.probe(source, maxDuration)
+            // When
+            val image = ImageIO.read(File(processor.poster(source).path))
+            // Then
+            assertEquals(video.width to video.height, image.width to image.height, name)
+        }
+    }
+
+    @Test
+    fun `Given pixels twice as wide as tall, Then poster is twice as wide as the coded frame`() {
+        val image = ImageIO.read(File(processor.poster(copied("anamorphic.mkv")).path))
+        assertEquals(320 to 120, image.width to image.height)
+    }
+
+    @Test
+    fun `Given a long video, Then preview is an animated WebP of at most three seconds at the requested size`() {
+        // When
+        val preview = processor.preview(copied("too-long.mkv"), shortestSide = 24, quality = 75)
+        val (canvas, durations) = animationOf(preview)
+        // Then
+        assertEquals(32 to 24, canvas)
+        assertTrue(durations.size > 1, "frames: $durations")
+        assertTrue(durations.sum() <= 3_000, "frames: $durations")
+    }
+
+    @Test
+    fun `Given an MPEG-TS or an HLS playlist, Then repackage, poster and preview refuse it and leave nothing`() {
+        // Given
+        val playlist = copied("playlist.m3u8")
+        val segment = copied("mpegts.ts")
+        val video = processor.probe(staged("h264-aac.mkv"), maxDuration)
+        for (refused in listOf(segment, playlist)) {
+            // Then
+            assertThrows(UndecodableVideoException::class.java) { processor.repackage(refused, video) }
+            assertThrows(UndecodableVideoException::class.java) { processor.poster(refused) }
+            assertThrows(UndecodableVideoException::class.java) { processor.preview(refused, 24, 75) }
+        }
+        val left = Files.list(directory).use { files -> files.map(Path::toString).toList() }
+        assertEquals(setOf(playlist.path, segment.path), left.toSet())
+    }
 
     @Test
     fun `Given H264 with AAC in Matroska, Then probe returns its codecs, dimensions and duration`() {

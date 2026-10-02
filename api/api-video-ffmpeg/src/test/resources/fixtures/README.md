@@ -15,4 +15,6 @@ ffmpeg -y -f lavfi -i testsrc2=size=64x48:rate=1:duration=121 -c:v libx264 too-l
 ffmpeg -y -display_rotation 90 -i h264-aac.mkv -c copy rotated.mp4
 ffmpeg -y "${V[@]}" -c:v libx264 mpegts.ts
 ffmpeg -y -f lavfi -i testsrc2=size=160x120 -frames:v 1 -c:v libsvtav1 still.avif
+ffmpeg -y "${V[@]}" -vf setsar=2 -c:v libx264 anamorphic.mkv
+ffmpeg -y -i vp9-opus.webm -i <(printf '1\n00:00:00,000 --> 00:00:01,000\nA subtitle\n') -map 0 -map 1 -c copy subtitled.mkv
 ```
