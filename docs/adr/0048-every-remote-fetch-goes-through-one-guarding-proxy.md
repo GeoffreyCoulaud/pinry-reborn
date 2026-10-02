@@ -2,7 +2,7 @@
 
 Status: Accepted
 Date: 2026-10-02
-Specification: `docs/specs/2026-10-02-the-pin-holds-a-video.md`, decisions E2, F1, G1, H1, M1, P1, v.
+Specification: `docs/specs/2026-10-02-the-pin-holds-a-video.md`, decisions E2, F1, G1, H1, M1, P1, T1, v.
 Written in block 10.
 
 ## Context
@@ -40,15 +40,17 @@ Behind a proxy, a refusal reaches neither client as such: the JDK reports a refu
    format the first run chose. The format is chosen by a chain of `-f` selectors, H.264, then VP9, then AV1, then
    H.265, each with AAC, Opus or MP3. The worker bounds the run in time and its directory in bytes.
 
-4. **yt-dlp is pinned by uv and raised by Dependabot**: `api/tools/yt-dlp/pyproject.toml` and `uv.lock`, installed
-   with `uv sync --frozen` on the apt `python3`, `UV_PYTHON_DOWNLOADS=never`, in the API's image and the gate's
-   container, under Dependabot's `uv` ecosystem, weekly. It never updates itself: the code that runs is the code
-   the gate ran.
+4. **yt-dlp is pinned by uv and raised by Dependabot**: `api/tools/yt-dlp/pyproject.toml` (`yt-dlp[default]`) and
+   `uv.lock`, installed with `uv sync --frozen` on the apt `python3`, `UV_PYTHON_DOWNLOADS=never`, in the API's
+   image and the gate's container, under Dependabot's `uv` ecosystem, weekly. It never updates itself: the code
+   that runs is the code the gate ran.
+
+5. **Deno ships beside it**, copied from a pinned `denoland/deno:bin` image (95.8 MB): yt-dlp needs a JavaScript
+   runtime and `yt-dlp-ejs` for YouTube, and enables `deno` by default.
 
 ## Consequences
 
 - **yt-dlp's freshness follows the releases.** Sites change weekly; an image a few months old fails on some of them,
   and the failure reads as a page with no video. A key pointing at one's own binary is the next step if it matters.
-- **YouTube needs a JavaScript runtime** for yt-dlp 2026.08.19, `deno` by default, which the image does not ship.
-- **Python joins the API's image**, as the interpreter of one tool.
+- **Python and Deno join the API's image**, as the interpreters of one tool.
 - **`media.download.allow_private_addresses` now opens both paths at once**, being read by the proxy alone.
