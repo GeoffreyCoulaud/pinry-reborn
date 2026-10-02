@@ -7,6 +7,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.RenditionsConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.MediaOutputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.http.RangeNotSatisfiableException
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.DeletePinMedia
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.GetPinMediaRendition
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.RequestPinMediaDownload
@@ -147,7 +148,13 @@ class MediaControllerTest {
         every { getPinMediaRendition.get(pinId, user, null, true) } returns ServedMedia.Original(media)
 
         // When
-        val response = controller.getMedia(pinId, size = null, animated = null, ifNoneMatch = media.contentHash)
+        val response = controller.getMedia(
+            pinId,
+            size = null,
+            animated = null,
+            ifNoneMatch = "\"${media.contentHash}\"",
+            rangeHeader = null,
+        )
 
         // Then
         assertEquals(304, response.status)
@@ -167,19 +174,62 @@ class MediaControllerTest {
         every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(bytes)
 
         // When
-        val response = controller.getMedia(pinId, size = null, animated = null, ifNoneMatch = null)
+        val response = controller.getMedia(pinId, size = null, animated = null, ifNoneMatch = null, rangeHeader = null)
 
         // Then
         assertEquals(200, response.status)
         assertEquals(media.mimeType, response.getHeaderString("Content-Type"))
-        assertEquals(media.contentHash, response.getHeaderString("ETag"))
+        assertEquals("\"${media.contentHash}\"", response.getHeaderString("ETag"))
         assertEquals("private, must-revalidate", response.getHeaderString("Cache-Control"))
         assertEquals(media.byteSize.toString(), response.getHeaderString("Content-Length"))
+        assertEquals("bytes", response.getHeaderString("Accept-Ranges"))
+        assertNull(response.getHeaderString("Content-Range"))
 
         val streamingOutput = response.entity as StreamingOutput
         val out = ByteArrayOutputStream()
         streamingOutput.write(out)
         assertArrayEquals(bytes, out.toByteArray())
+    }
+
+    @Test
+    fun `Given no size and a Range header, Then getMedia returns 206 with that slice of the original`() {
+        // Given
+        val pinId = randomUUID()
+        val user = aUser()
+        val media = aMedia(pinId)
+        val bytes = byteArrayOf(9, 8, 7, 6)
+        every { securityIdentity.getAttribute<User>("user") } returns user
+        every { getPinMediaRendition.get(pinId, user, null, true) } returns ServedMedia.Original(media)
+        every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(bytes)
+
+        // When
+        val response =
+            controller.getMedia(pinId, size = null, animated = null, ifNoneMatch = null, rangeHeader = "bytes=1-2")
+
+        // Then
+        assertEquals(206, response.status)
+        assertEquals("bytes 1-2/4", response.getHeaderString("Content-Range"))
+        assertEquals("2", response.getHeaderString("Content-Length"))
+        assertEquals("\"${media.contentHash}\"", response.getHeaderString("ETag"))
+        val out = ByteArrayOutputStream()
+        (response.entity as StreamingOutput).write(out)
+        assertArrayEquals(byteArrayOf(8, 7), out.toByteArray())
+    }
+
+    @Test
+    fun `Given a Range starting at the original's size, Then getMedia throws before opening the store`() {
+        // Given
+        val pinId = randomUUID()
+        val user = aUser()
+        val media = aMedia(pinId)
+        every { securityIdentity.getAttribute<User>("user") } returns user
+        every { getPinMediaRendition.get(pinId, user, null, true) } returns ServedMedia.Original(media)
+
+        // Then
+        assertThrows(RangeNotSatisfiableException::class.java) {
+            controller.getMedia(pinId, size = null, animated = null, ifNoneMatch = null, rangeHeader = "bytes=4-")
+        }
+        verify(exactly = 0) { mediaStore.openStream(any()) }
     }
 
     @Test
@@ -195,12 +245,13 @@ class MediaControllerTest {
         every { renditionCache.openStream(mediaId, "v1-240-a.webp") } returns ByteArrayInputStream(byteArrayOf(7, 7))
 
         // When
-        val response = controller.getMedia(pinId, size = "small", animated = null, ifNoneMatch = null)
+        val response =
+            controller.getMedia(pinId, size = "small", animated = null, ifNoneMatch = null, rangeHeader = null)
 
         // Then
         assertEquals(200, response.status)
         assertEquals("image/webp", response.getHeaderString("Content-Type"))
-        assertEquals("v1-$mediaId-240-a", response.getHeaderString("ETag"))
+        assertEquals("\"v1-$mediaId-240-a\"", response.getHeaderString("ETag"))
         assertEquals("private, must-revalidate", response.getHeaderString("Cache-Control"))
         val streamingOutput = response.entity as StreamingOutput
         val out = ByteArrayOutputStream()
@@ -221,7 +272,8 @@ class MediaControllerTest {
         every { renditionCache.openStream(mediaId, "v1-240-s.webp") } returns ByteArrayInputStream(byteArrayOf(4))
 
         // When
-        val response = controller.getMedia(pinId, size = "small", animated = false, ifNoneMatch = null)
+        val response =
+            controller.getMedia(pinId, size = "small", animated = false, ifNoneMatch = null, rangeHeader = null)
 
         // Then
         assertEquals(200, response.status)
@@ -241,11 +293,12 @@ class MediaControllerTest {
         every { renditionCache.openStream(mediaId, "v1-240-s.webp") } returns ByteArrayInputStream(byteArrayOf(3))
 
         // When
-        val response = controller.getMedia(pinId, size = "small", animated = null, ifNoneMatch = null)
+        val response =
+            controller.getMedia(pinId, size = "small", animated = null, ifNoneMatch = null, rangeHeader = null)
 
         // Then
         assertEquals(200, response.status)
-        assertEquals("v1-$mediaId-240-s", response.getHeaderString("ETag"))
+        assertEquals("\"v1-$mediaId-240-s\"", response.getHeaderString("ETag"))
         val streamingOutput = response.entity as StreamingOutput
         val out = ByteArrayOutputStream()
         streamingOutput.write(out)
@@ -268,7 +321,8 @@ class MediaControllerTest {
             pinId,
             size = "small",
             animated = null,
-            ifNoneMatch = "v1-$mediaId-240-a",
+            ifNoneMatch = "\"v1-$mediaId-240-a\"",
+            rangeHeader = null,
         )
 
         // Then
@@ -285,7 +339,7 @@ class MediaControllerTest {
 
         // Then
         assertThrows(MediaRenditionSizeInvalidError::class.java) {
-            controller.getMedia(randomUUID(), size = "huge", animated = null, ifNoneMatch = null)
+            controller.getMedia(randomUUID(), size = "huge", animated = null, ifNoneMatch = null, rangeHeader = null)
         }
     }
 
@@ -302,7 +356,8 @@ class MediaControllerTest {
         every { renditionCache.openStream(mediaId, "v1-240-a.webp") } returns null
 
         // When
-        val response = controller.getMedia(pinId, size = "small", animated = null, ifNoneMatch = null)
+        val response =
+            controller.getMedia(pinId, size = "small", animated = null, ifNoneMatch = null, rangeHeader = null)
         val streamingOutput = response.entity as StreamingOutput
 
         // Then

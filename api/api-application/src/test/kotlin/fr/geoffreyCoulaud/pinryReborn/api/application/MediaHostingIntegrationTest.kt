@@ -11,6 +11,8 @@ import jakarta.inject.Inject
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.CoreMatchers.notNullValue
+import org.hamcrest.Matchers.matchesPattern
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -84,7 +86,7 @@ class MediaHostingIntegrationTest : IntegrationTest() {
             .then()
             .statusCode(200)
             .contentType("image/png")
-            .header("ETag", notNullValue())
+            .header("ETag", matchesPattern("\"[0-9a-f]{64}\""))
             .extract()
             .header("ETag")
 
@@ -95,6 +97,48 @@ class MediaHostingIntegrationTest : IntegrationTest() {
             .`when`().get("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(304)
+    }
+
+    @Test
+    fun `Given an uploaded image, Then a Range answers 206 with that slice, and one past its end 416`() {
+        // Given
+        val (auth, pinId) = createPinForNewUser()
+        val bytes = fixture("sample.png").readBytes()
+        given()
+            .authenticatedAs(auth)
+            .multiPart("file", fixture("sample.png"), "image/png")
+            .`when`().put("/api/v1/pins/$pinId/media")
+            .then()
+            .statusCode(201)
+
+        // Then: no Range serves the whole original and advertises ranges
+        given()
+            .authenticatedAs(auth)
+            .`when`().get("/api/v1/pins/$pinId/media")
+            .then()
+            .statusCode(200)
+            .header("Accept-Ranges", "bytes")
+
+        // Then: the first ten bytes
+        val slice = given()
+            .authenticatedAs(auth)
+            .header("Range", "bytes=0-9")
+            .`when`().get("/api/v1/pins/$pinId/media")
+            .then()
+            .statusCode(206)
+            .header("Content-Range", "bytes 0-9/${bytes.size}")
+            .extract()
+            .asByteArray()
+        assertArrayEquals(bytes.copyOfRange(0, 10), slice)
+
+        // Then: a start at the size is past the end
+        given()
+            .authenticatedAs(auth)
+            .header("Range", "bytes=${bytes.size}-")
+            .`when`().get("/api/v1/pins/$pinId/media")
+            .then()
+            .statusCode(416)
+            .header("Content-Range", "bytes */${bytes.size}")
     }
 
     @Test
