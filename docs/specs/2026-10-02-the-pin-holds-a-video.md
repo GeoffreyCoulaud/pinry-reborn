@@ -85,10 +85,15 @@ said: `api-fetch-http` depends on no framework. The proxy's record, not an HTTP 
 turns a failure into `URL_NOT_ALLOWED` or `UNREACHABLE`: through a tunnel, the JDK reports a refusal as
 `IOException: Tunnel failed, got: 403` (measured by the review). ADR 0048.
 
-**G1. yt-dlp is pinned by uv**: `api/tools/yt-dlp/pyproject.toml` (yt-dlp alone, no extras) and its `uv.lock`,
-marked `linguist-generated`. In both images: `python3` from apt, `uv` copied from a pinned
-`ghcr.io/astral-sh/uv` image, `UV_PYTHON_DOWNLOADS=never`, `uv sync --frozen`. Dependabot's `uv` ecosystem raises
-it weekly. ADR 0048.
+**G1. yt-dlp is pinned by uv**: `api/tools/yt-dlp/pyproject.toml` (`yt-dlp[default]`, the set yt-dlp
+recommends, which carries `yt-dlp-ejs` at the version yt-dlp pins) and its `uv.lock`, marked `linguist-generated`.
+In both images: `python3` from apt, `uv` copied from a pinned `ghcr.io/astral-sh/uv` image,
+`UV_PYTHON_DOWNLOADS=never`, `uv sync --frozen`. Dependabot's `uv` ecosystem raises it weekly. ADR 0048.
+
+**T1. Deno ships with yt-dlp**, the JavaScript runtime yt-dlp 2026.08.19 enables by default and needs for YouTube,
+Shorts included. Its binary is copied from a pinned `denoland/deno:bin` image (95.8 MB, `docker export` of the
+2026-09-16 build, amd64 and arm64), in both images, Dependabot raising the tag. Without it a YouTube address ends
+as a page with no video.
 
 **I1. One lot, API then web application, yt-dlp last.**
 
@@ -357,8 +362,10 @@ merges whole.
 ### 100, yt-dlp
 
 - `api/tools/yt-dlp/pyproject.toml` and `uv.lock` pin yt-dlp, `linguist-generated` in `.gitattributes`; both images
-  install it as decision G1 says; `.github/dependabot.yml` gains the `uv` entry; `imageContext` and the gate's
-  environment receive both files.
+  install it as decision G1 says, and `deno` as decision T1 says; `.github/dependabot.yml` gains the `uv` entry;
+  `imageContext` and the gate's environment receive both files.
+- In the API image, `yt-dlp --verbose` lists `deno` among its enabled JavaScript runtimes and `yt-dlp-ejs` among
+  its components (`dagger call smoke` or a dedicated check in the image function, the block chooses and says).
 - `PageMediaExtractor` extracts the `<video>` of a local HTML page; refuses a page with none; refuses a page whose
   JSON-LD gives a duration past the bound with no file written and no media body transferred (the origin may log a
   probing request); refuses a stream past `media.max_video_bytes` by destroying the process; destroys a run past the
@@ -422,8 +429,11 @@ merges whole.
   `--no-cache-dir`.
 - **yt-dlp's `--max-filesize` applies per fragment on HLS**, and `--match-filters` lets an unknown duration through
   with `<=?`: the bounds that hold are the worker's, on the directory and at ingestion.
-- **YouTube needs a JavaScript runtime** for yt-dlp 2026.08.19, `deno` by default; the image ships none, while a
-  workstation may have one, so a local run can pass where the image fails.
+- **YouTube needs both a JavaScript runtime and `yt-dlp-ejs`**: without the `default` extra, or without `deno` on
+  the `PATH`, YouTube fails while other sites pass. A workstation may have its own `deno`, so a local run can pass
+  where the image fails.
+- **`denoland/deno:bin` holds the binary alone, linked against glibc**: it does not run in its own image, only once
+  copied into ours.
 - **The gate's environment is built from a context holding its Dockerfile alone** (`.dagger/src/index.ts:682-684`),
   and `imageContext` from the `Dockerfile` and the fast jar (`495-500`): both must be given the uv files.
 - **The workstation's ffmpeg is not the image's** (9.0.2 here, 8.0.1 there): tests assert behaviour, never a version.
