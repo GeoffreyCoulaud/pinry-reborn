@@ -9,7 +9,7 @@ enum class AudioCodec { AAC, OPUS, MP3 }
 
 /**
  * A video's first video track and first audio track, if any. [width] and [height] are what it displays at, and
- * [codecs] is the RFC 6381 `codecs` parameter of the two tracks (ADR 0047, decision 6).
+ * [codecs] is the RFC 6381 `codecs` parameter of the two tracks (ADR 0047, decision 6), [demuxedAs] its container now.
  */
 data class VideoProbeResult(
     val videoCodec: VideoCodec,
@@ -18,6 +18,7 @@ data class VideoProbeResult(
     val height: Int,
     val duration: Duration,
     val codecs: String,
+    val demuxedAs: VideoContainer,
 )
 
 interface VideoProcessor {

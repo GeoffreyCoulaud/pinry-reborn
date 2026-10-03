@@ -30,8 +30,10 @@ class FfmpegVideoProcessor(private val timeout: Duration) : VideoProcessor {
                 VideoContainer.MP4 -> listOf("-movflags", "+faststart", "-f", "mp4")
             }
         val tag = if (video.videoCodec == VideoCodec.H265) listOf("-tag:v", "hvc1") else emptyList()
-        // Without bitexact, Matroska writes random identifiers and two repackagings of one file differ.
-        val copy = listOf("-map", "0:v:0", "-map", "0:a:0?", "-c", "copy", "-fflags", "+bitexact")
+        // Without bitexact, Matroska writes random identifiers and two repackagings of one file differ; without
+        // dropping the metadata, a source's tags are reordered on each pass, so a stored WebM repackaged again would.
+        val copy =
+            listOf("-map", "0:v:0", "-map", "0:a:0?", "-map_metadata", "-1", "-c", "copy", "-fflags", "+bitexact")
         return write(staged, copy + tag + container)
     }
 

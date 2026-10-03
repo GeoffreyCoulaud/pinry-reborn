@@ -111,11 +111,14 @@ class MediaIngestion(
             }
         refuseOver(staged, bounds.maxVideoBytes)
         val container = VideoContainer.of(video.videoCodec, video.audioCodec)
+        // An archived MP4 alone is kept: repackaged again it would change, where a WebM keeps its bytes and one
+        // demuxer reads both WebM and Matroska, so a file in any other container is made the one its codecs choose.
+        val keptAsArchived = !repackage && video.demuxedAs == VideoContainer.MP4 && container == VideoContainer.MP4
         val stored =
-            if (repackage) {
-                videoProcessor.repackage(staged, video).also { mediaStore.discardQuietly(staged) }
-            } else {
+            if (keptAsArchived) {
                 staged
+            } else {
+                videoProcessor.repackage(staged, video).also { mediaStore.discardQuietly(staged) }
             }
         val mimeType = "${container.mimeType}; codecs=\"${video.codecs}\""
         return Found(mimeType, container.extension, video.width, video.height, animated = true, stored)

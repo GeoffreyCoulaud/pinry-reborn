@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoContainer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
@@ -34,8 +35,9 @@ class MediaIngestionTest : BaseTest() {
     private val maxDuration = Duration.ofSeconds(120)
     private val bounds = MediaBounds(maxImageBytes = 30, maxVideoBytes = 40, maxVideoDuration = maxDuration, maxPixels)
     private val ingestion = MediaIngestion(store, probe, video, bounds)
-    private val aVideo =
-        VideoProbeResult(VideoCodec.VP9, AudioCodec.OPUS, 4, 6, Duration.ofSeconds(1), "vp09.00.10.08,opus")
+    private val aVideo = VideoProbeResult(
+        VideoCodec.VP9, AudioCodec.OPUS, 4, 6, Duration.ofSeconds(1), "vp09.00.10.08,opus", VideoContainer.WEBM,
+    )
 
     private val ownerId = randomUUID()
     private val pinId = randomUUID()
@@ -143,10 +145,13 @@ class MediaIngestionTest : BaseTest() {
         verify { store.discard(staged) }
     }
 
-    @Test fun `Given an archived video, Then it is stored as the archive carries it`() {
-        // Given
+    @Test fun `Given an archived MP4, Then it is stored as the archive carries it`() {
+        // Given: repackaged again, an MP4 would not keep its bytes
+        val mp4 = aVideo.copy(
+            videoCodec = VideoCodec.H264, audioCodec = null, codecs = "avc1.640015", demuxedAs = VideoContainer.MP4,
+        )
         every { probe.probe(staged, maxPixels) } throws UndecodableImageException("not an image")
-        every { video.probe(staged, maxDuration) } returns aVideo
+        every { video.probe(staged, maxDuration) } returns mp4
 
         // When
         val ingested = ingestion.ingestArchived(staged, ownerId, pinId, createdAt)
@@ -154,8 +159,39 @@ class MediaIngestionTest : BaseTest() {
         // Then
         assertEquals(staged, ingested.staged)
         assertEquals(staged.contentHash, ingested.media.contentHash)
-        assertEquals("video/webm; codecs=\"vp09.00.10.08,opus\"", ingested.media.mimeType)
+        assertEquals("video/mp4; codecs=\"avc1.640015\"", ingested.media.mimeType)
         verify(exactly = 0) { video.repackage(any(), any()) }
+    }
+
+    @Test fun `Given an archived WebM, Then it is repackaged, which keeps a stored WebM's bytes`() {
+        // Given: one demuxer reads WebM and Matroska alike, so only a repackaging makes it a real WebM
+        val repackaged = StagedFile("/tmp/r", 7, "repackaged")
+        every { probe.probe(staged, maxPixels) } throws UndecodableImageException("not an image")
+        every { video.probe(staged, maxDuration) } returns aVideo
+        every { video.repackage(staged, aVideo) } returns repackaged
+
+        // When
+        val ingested = ingestion.ingestArchived(staged, ownerId, pinId, createdAt)
+
+        // Then
+        assertEquals(repackaged, ingested.staged)
+    }
+
+    @Test fun `Given an archived video outside the container its codecs choose, Then it is repackaged`() {
+        // Given: VP9 with Opus found in an MP4, where its codecs choose WebM
+        val misplaced = aVideo.copy(demuxedAs = VideoContainer.MP4)
+        val repackaged = StagedFile("/tmp/r", 7, "repackaged")
+        every { probe.probe(staged, maxPixels) } throws UndecodableImageException("not an image")
+        every { video.probe(staged, maxDuration) } returns misplaced
+        every { video.repackage(staged, misplaced) } returns repackaged
+
+        // When
+        val ingested = ingestion.ingestArchived(staged, ownerId, pinId, createdAt)
+
+        // Then
+        assertEquals(repackaged, ingested.staged)
+        assertEquals("repackaged", ingested.media.contentHash)
+        verify { store.discard(staged) }
     }
 
     @Test fun `Given a video past its byte bound, Then it is discarded and refused before repackaging`() {

@@ -27,7 +27,9 @@ learn the video. The project is in alpha and deployed nowhere (`git tag -l 'v*'`
    **Fails if** a storage key is built anywhere else, or an AVIF or HEIC is stored as `video/*`.
 
 3. **The export archive carries `media/` and format version 2**; the import refuses version 1. The import stores a
-   video as the archive carries it once probed, so a round trip keeps its bytes and its hash.
+   video as the archive carries it once probed, so a round trip keeps its bytes and its hash. (Corrected: an MP4
+   alone; any other video is repackaged into the container its codecs choose, which a stored WebM survives byte for
+   byte, block 58.)
 
 4. **The refusals name the medium**: the `IMAGE_*` codes become `MEDIA_*`, and the upload gains `MEDIA_TOO_LONG`
    (422) and `MEDIA_CODEC_UNSUPPORTED` (415); the download reasons gain `TOO_LONG`, `UNSUPPORTED_CODEC` and
