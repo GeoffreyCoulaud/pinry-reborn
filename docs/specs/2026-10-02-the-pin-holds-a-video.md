@@ -256,7 +256,8 @@ The lead adds four decisions, submitted with this document:
 | 60 | `feat/a-video-has-renditions` | The poster and the animated preview as renditions |
 | 70 | `feat/the-webapp-plays-a-video` | The player and its fallback |
 | 75 | `feat/the-grid-previews-a-video` | Badge and hover |
-| 80 | `feat/the-webapp-uploads-a-video` | Upload, previews, sentences |
+| 80 | `feat/the-webapp-uploads-a-video` | Upload, previews, sentences (Corrected: upload, previews, refusal sentences) |
+| 85 | `feat/the-webapp-says-media` | The sentences say media for the medium |
 | 90 | `feat/a-guarding-proxy` | The proxy and its record |
 | 95 | `refactor/the-fetch-goes-through-the-proxy` | The fetcher behind it, its `Content-Type` |
 | 100 | `feat/yt-dlp-extracts-a-page` | pip, yt-dlp and Deno in both images, the `api-fetch-ytdlp` module |
@@ -266,7 +267,8 @@ The lead adds four decisions, submitted with this document:
 split it into four blocks, the operator's answer of 2026-10-03. Block 54 then measured 26 files and gave the handshake
 to a block of its own, the lead's answer the same day, and the numbers were reassigned so that their order is the
 stack's: the lease, block 56 until then, is block 58.) (Corrected: block 58 is a fix-back on 57 the lead asked
-for, which would have taken 57 to 20 files, and the lease is block 59.)
+for, which would have taken 57 to 20 files, and the lease is block 59.) (Corrected: block 80 measured 25 files and
+gave the sentences that say "image" for the medium to block 85, the lead's answer of 2026-10-03.)
 
 Each block measures its budget once committed, against its parent branch, and each test that guards a refusal is
 seen red before the code that answers it. Between blocks 53 and 60 a video's tile has no rendition; the stack
@@ -453,6 +455,13 @@ merges whole.
 - Every `accept` in the application reads `mediaTypes`.
 - (Corrected: added on 2026-10-03, moved from block 56.) `LimitsDto.mediaTypes` lists the upload types: the four
   images, `video/mp4`, `video/webm`, `video/quicktime`, `video/x-matroska`, `video/x-m4v`, `video/3gpp`.
+- (Corrected: the criterion below moved to block 85.) ~~`command grep -n 'image' clients/apps/webapp/messages/en.json`
+  lists no sentence naming the medium.~~
+
+### 85, the sentences say media
+
+(Corrected: added on 2026-10-03, split from block 80.)
+
 - `command grep -n 'image' clients/apps/webapp/messages/en.json` lists no sentence naming the medium.
 
 ### 90, the proxy

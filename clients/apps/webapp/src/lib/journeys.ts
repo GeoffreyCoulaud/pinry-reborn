@@ -41,6 +41,7 @@ export const REQUIRED_JOURNEYS = [
 	"play a video pin",
 	"a video this browser cannot play falls back",
 	"hover a video tile",
+	"upload a video",
 ];
 
 /** The file under `src/journeys/` that holds a journey's test. */

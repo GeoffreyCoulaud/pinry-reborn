@@ -16,7 +16,9 @@ import { useBoards } from "../boards";
 import { useDebounced } from "../debounce";
 import { downloadReason } from "../downloadReasons";
 import type { KeptFile } from "../lib/drops";
+import { isVideo } from "../lib/media";
 import { type MediaSource, useHandshake, useSetPinMedia } from "../media";
+import { mediaRefusal } from "../mediaRefusals";
 import { m } from "../paraglide/messages.js";
 import { type Pin, useTagSearch, useUpdatePin } from "../pins";
 import { MediaDropBox } from "./MediaDropBox";
@@ -136,8 +138,14 @@ function BoardField({
 /** What the save does to the image, one of three and applied after the pin is written. */
 type MediaIntent = "keep" | "replace" | "fetch";
 
-/** The file about to replace the image, drawn in its place. */
-function FilePreview({ file }: { file: File }) {
+/** A file chosen and not sent yet, drawn where it will go; the creation dialog draws its own with it. */
+export function FilePreview({
+	file,
+	className,
+}: {
+	file: File;
+	className: string;
+}) {
 	const [preview, setPreview] = useState<string | null>(null);
 
 	// Mounted only while a file is chosen, so this revokes the URL on Cancel, on save and on Remove.
@@ -147,14 +155,14 @@ function FilePreview({ file }: { file: File }) {
 		return () => URL.revokeObjectURL(drawn);
 	}, [file]);
 
+	if (preview === null) {
+		return null;
+	}
+	if (isVideo(file.type)) {
+		return <video src={preview} muted className={className} />;
+	}
 	// A file not sent yet is not the pin, so it takes no name of the pin's.
-	return preview ? (
-		<img
-			src={preview}
-			alt=""
-			className="min-h-0 w-full flex-1 object-contain"
-		/>
-	) : null;
+	return <img src={preview} alt="" className={className} />;
 }
 
 /** Either choice with nothing to apply would save as though the image were being kept. */
@@ -267,7 +275,10 @@ export function PinEditForm({
 								/>
 							) : (
 								<>
-									<FilePreview file={chosen.file} />
+									<FilePreview
+										file={chosen.file}
+										className="min-h-0 w-full flex-1 object-contain"
+									/>
 									<p>{chosen.file.name}</p>
 									<p className="text-sm text-muted">{m.image_unsaved()}</p>
 									<Button variant="secondary" onPress={() => setChosen(null)}>
@@ -364,7 +375,9 @@ export function PinEditForm({
 					{/* Two halves, two sentences: the pin is written before its image, so a refused image
               leaves the fields saved and only the image to try again. */}
 					{save.isError ? <p role="alert">{m.pin_refused()}</p> : null}
-					{setMedia.isError ? <p role="alert">{m.image_refused()}</p> : null}
+					{setMedia.isError ? (
+						<p role="alert">{mediaRefusal(setMedia.error, m.image_refused)}</p>
+					) : null}
 					{/* At the column's foot while the fields scroll above it. */}
 					<div className="sticky bottom-0 mt-auto flex justify-end gap-2 bg-overlay py-2">
 						<Button variant="ghost" onPress={close}>

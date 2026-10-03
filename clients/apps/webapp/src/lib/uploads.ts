@@ -1,4 +1,5 @@
 import type { Schemas } from "@pinry-reborn/auth";
+import { isVideo } from "./media";
 
 /** Why this deployment will not store this file, told before a byte of it is sent. */
 export type UploadRefusal =
@@ -10,11 +11,11 @@ export type UploadRefusal =
 /** The limits the handshake publishes, read from the contract rather than retyped (4.3). */
 export type UploadLimits = Schemas["HandshakeOutputDto"]["limits"];
 
-/** A file the browser has decoded far enough to know what it would cost the server. */
+/** What a file would cost the server: a picture's pixels, which the browser decodes, and no video's. */
 export interface MeasuredUpload {
 	size: number;
-	width: number;
-	height: number;
+	type: string;
+	pixels: number | null;
 }
 
 /**
@@ -31,17 +32,25 @@ export function uploadRefusal(
 		return null;
 	}
 	return (
-		byteRefusal(upload.size, limits) ??
-		(upload.width * upload.height > limits.maxPixels ? "TOO_MANY_PIXELS" : null)
+		byteRefusal(upload, limits) ??
+		((upload.pixels ?? 0) > limits.maxPixels ? "TOO_MANY_PIXELS" : null)
 	);
 }
 
-/** The one limit a file's size alone answers, read before a decode that can take seconds. */
+/** The bound a file is weighed against: an untyped file can be either, so the larger one. */
+function byteBound(type: string, limits: UploadLimits): number {
+	if (type === "") {
+		return Math.max(limits.maxImageBytes, limits.maxVideoBytes);
+	}
+	return isVideo(type) ? limits.maxVideoBytes : limits.maxImageBytes;
+}
+
+/** The one limit a file's size and type answer, read before a decode that can take seconds. */
 export function byteRefusal(
-	size: number,
+	file: { size: number; type: string },
 	limits: UploadLimits | undefined,
 ): "TOO_MANY_BYTES" | null {
-	return limits !== undefined && size > limits.maxImageBytes
+	return limits !== undefined && file.size > byteBound(file.type, limits)
 		? "TOO_MANY_BYTES"
 		: null;
 }
@@ -49,15 +58,23 @@ export function byteRefusal(
 /**
  * A drop bypasses `accept`, which only the file picker honours, so the type is read here too. The
  * formats are the deployment's, as the limits are: an SVG is a picture the browser decodes and the
- * storage refuses. Before the handshake answers, only what the browser calls a picture passes, and
- * the format then meets the server's own answer.
+ * storage refuses. Before the handshake answers, only what the browser calls a picture or a video
+ * passes, and a file it names no type for always does: the format then meets the server's answer.
  */
 export function isStorableFile(
 	file: { type: string },
 	limits: UploadLimits | undefined,
 ): boolean {
+	if (file.type === "") {
+		return true;
+	}
 	if (limits === undefined) {
-		return file.type.startsWith("image/");
+		return file.type.startsWith("image/") || isVideo(file.type);
 	}
 	return limits.mediaTypes.includes(file.type);
+}
+
+/** A file picker's `accept`, which offers what `isStorableFile` would pass. */
+export function acceptOf(limits: UploadLimits | undefined): string {
+	return limits?.mediaTypes.join(",") ?? "image/*,video/*";
 }

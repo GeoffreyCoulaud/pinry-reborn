@@ -7,6 +7,7 @@ import {
 	downloadsPage,
 	downloadsRoute,
 	handshakeRoute,
+	MEDIA_TYPES,
 	onePinPage,
 	pin,
 	renderApp,
@@ -70,6 +71,13 @@ describe("a failed download surfacing in the task centre", () => {
 		expect(screen.queryByText("The server could not fetch it.")).toBeNull();
 		// The recourse question V exists for: the address again, a file from disk, or neither.
 		expect(screen.getByLabelText("Image file")).toBeInTheDocument();
+		// The picker offers what the deployment stores, videos included.
+		await waitFor(() =>
+			expect(screen.getByLabelText("Image file")).toHaveAttribute(
+				"accept",
+				MEDIA_TYPES.join(","),
+			),
+		);
 		expect(screen.getByRole("button", { name: "Forget it" })).toBeVisible();
 
 		await user.click(screen.getByRole("button", { name: "Try again" }));
