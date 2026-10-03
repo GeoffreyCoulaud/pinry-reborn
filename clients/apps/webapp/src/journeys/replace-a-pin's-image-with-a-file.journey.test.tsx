@@ -284,7 +284,7 @@ describe("replace a pin's image with a file", () => {
 		const held = readyPin("a harbour in the rain");
 		const record = recorder();
 		account(() => held, record);
-		server.use(handshakeRoute({ maxFileBytes: 4 }));
+		server.use(handshakeRoute({ maxImageBytes: 4 }));
 		renderApp("/");
 		const user = userEvent.setup();
 

@@ -14,6 +14,9 @@ interface MediaConfig {
     @WithDefault("52428800") // 50 MiB
     fun maxVideoBytes(): Long
 
+    @WithDefault("120")
+    fun maxVideoSeconds(): Long
+
     @WithDefault("50000000") // 50 megapixels
     fun maxPixels(): Long
 }
