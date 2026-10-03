@@ -12,4 +12,5 @@ enum class DownloadReason {
     FETCH_FAILED,
     TOO_LONG,
     UNSUPPORTED_CODEC,
+    NO_MEDIA_FOUND,
 }

@@ -219,6 +219,31 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given a page address whose video element names a file, Then the video becomes the pin's media`() {
+        // Given
+        val (auth, pinId) = createUserAndPin()
+
+        // When
+        requestDownload(pinId, auth, originUrl("/video-page.html")).then().statusCode(202)
+
+        // Then
+        val ready = pollStatus(pinId, auth, "READY")
+        assertTrue(ready.getString("mimeType").startsWith("video/webm; codecs="), "the page's VP9 with Opus is kept")
+    }
+
+    @Test
+    fun `Given a page address showing no video, Then the download fails with NO_MEDIA_FOUND`() {
+        // Given
+        val (auth, pinId) = createUserAndPin()
+
+        // When
+        requestDownload(pinId, auth, originUrl("/empty-page.html")).then().statusCode(202)
+
+        // Then
+        assertEquals("NO_MEDIA_FOUND", pollStatus(pinId, auth, "FAILED").getString("reasonCode"))
+    }
+
+    @Test
     fun `Given a video whose codec the server refuses, Then the download fails with UNSUPPORTED_CODEC`() {
         // Given
         val (auth, pinId) = createUserAndPin()
@@ -569,6 +594,13 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             server.createContext("/missing") { exchange -> respondStatus(exchange, HTTP_NOT_FOUND) }
             server.createContext("/not-media") { exchange -> respondBytes(exchange, HTTP_OK, "text/plain", textBytes) }
             server.createContext("/clip.webm") { exchange -> respondBytes(exchange, HTTP_OK, "video/webm", webmBytes) }
+            server.createContext("/video-page.html") { exchange ->
+                val video = page("""<video src="/clip.webm"></video>""")
+                respondBytes(exchange, HTTP_OK, "text/html; charset=utf-8", video)
+            }
+            server.createContext("/empty-page.html") { exchange ->
+                respondBytes(exchange, HTTP_OK, "text/html", page("<p>No video here.</p>"))
+            }
             server.createContext("/ac3.mkv") { exchange ->
                 respondBytes(exchange, HTTP_OK, "video/x-matroska", ac3Bytes)
             }
@@ -588,6 +620,8 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             server.stop(0)
             originExecutor.shutdownNow()
         }
+
+        private fun page(body: String) = "<html><body>$body</body></html>".toByteArray()
 
         private fun respondBytes(exchange: HttpExchange, status: Int, contentType: String, body: ByteArray) {
             try {

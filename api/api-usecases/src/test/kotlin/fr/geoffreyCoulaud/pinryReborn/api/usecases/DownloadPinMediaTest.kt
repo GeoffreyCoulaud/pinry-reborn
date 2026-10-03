@@ -18,6 +18,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaExtractor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
@@ -62,6 +65,7 @@ class DownloadPinMediaTest {
     private val store: MediaStore = mockk(relaxed = true)
     private val probe: ImageProbe = mockk()
     private val fetcher: MediaFetcher = mockk()
+    private val pageExtractor: PageMediaExtractor = mockk()
     private val runner: TransactionRunner = mockk()
     private val clock: Clock = mockk()
     private val renditionCache: RenditionCache = mockk()
@@ -72,8 +76,8 @@ class DownloadPinMediaTest {
     private val subject =
         DownloadPinMedia(
             pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, NoVideoProcessor,MediaBounds(100, 0, Duration.ZERO, 100)), fetcher, runner,
-            clock, renditionCache,
+            MediaIngestion(store, probe, NoVideoProcessor,MediaBounds(100, 0, Duration.ZERO, 100)), fetcher,
+            pageExtractor, runner, clock, renditionCache,
         )
 
     init {
@@ -256,6 +260,90 @@ class DownloadPinMediaTest {
     }
 
     @Test
+    fun `Given a source answering a page type, Then the page is closed and its extracted video is what gets staged`() {
+        for (pageType in listOf("text/html", "text/html; charset=utf-8", "Application/XHTML+XML")) {
+            // Given
+            stubUntilStage()
+            var pageClosed = false
+            val page = object : ByteArrayInputStream(byteArrayOf(0)) {
+                override fun close() { pageClosed = true }
+            }
+            val video = byteArrayOf(7, 8, 9)
+            every { fetcher.openStream("https://x/i.png") } returns FetchedMedia(page, pageType)
+            every { pageExtractor.extract("https://x/i.png", any()) } returns
+                FetchedMedia(ByteArrayInputStream(video), null)
+            var stagedBytes = byteArrayOf()
+            every { store.stage(any(), any()) } answers {
+                stagedBytes = firstArg<InputStream>().readAllBytes()
+                staged()
+            }
+            every { probe.probe(any(), any()) } throws UndecodableImageException("judged by ingestion")
+
+            // When
+            assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
+
+            // Then
+            assertEquals(video.toList(), stagedBytes.toList(), pageType)
+            assertEquals(true, pageClosed, pageType)
+        }
+    }
+
+    @Test
+    fun `Given a source answering a type other than a page, or none, Then no page extraction starts`() {
+        for (fileType in listOf("application/octet-stream", "image/png", "text/plain", "video/mp4", null)) {
+            // Given
+            stubUntilStage()
+            every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1)), fileType)
+            every { probe.probe(any(), any()) } throws UndecodableImageException("judged by ingestion")
+
+            // When
+            assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
+        }
+
+        // Then
+        verify(exactly = 0) { pageExtractor.extract(any(), any()) }
+    }
+
+    @Test
+    fun `Given a page whose extraction refuses, Then each refusal marks FAILED with its reason and throws Permanent`() {
+        val reasons = mapOf(
+            NoMediaFoundException("no video") to DownloadReason.NO_MEDIA_FOUND,
+            PageMediaTooLongException("121 s") to DownloadReason.TOO_LONG,
+            UrlNotAllowedException("refused by the proxy") to DownloadReason.URL_NOT_ALLOWED,
+        )
+        for ((refusal, reason) in reasons) {
+            // Given
+            stubUntilStage()
+            every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf()), "text/html")
+            every { pageExtractor.extract(any(), any()) } throws refusal
+
+            // When / Then
+            assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
+            verify { downloads.markFailed(pinId, reason, now) }
+        }
+    }
+
+    @Test
+    fun `Given a page extraction that beats, Then each heartbeat offers the lease a renewal`() {
+        // Given
+        stubUntilStage()
+        every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf()), "text/html")
+        val beats = 4
+        every { pageExtractor.extract(any(), any()) } answers {
+            repeat(beats) { secondArg<() -> Unit>().invoke() }
+            throw NoMediaFoundException("no video")
+        }
+        var renewals = 0
+        val context = ctx().apply { renewLeaseIfDue = { renewals++ } }
+
+        // When
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, context) }
+
+        // Then
+        assertEquals(beats, renewals)
+    }
+
+    @Test
     fun `Given an undecodable image, Then it discards and marks FAILED INVALID_MEDIA and throws Permanent`() {
         stubUntilStage()
         every { probe.probe(any(), any()) } throws UndecodableImageException("garbage")
@@ -279,8 +367,8 @@ class DownloadPinMediaTest {
         val video = mockk<VideoProcessor>()
         val withVideo = DownloadPinMedia(
             pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, video, MediaBounds(100, 100, Duration.ofSeconds(1), 100)), fetcher, runner,
-            clock, renditionCache,
+            MediaIngestion(store, probe, video, MediaBounds(100, 100, Duration.ofSeconds(1), 100)), fetcher,
+            pageExtractor, runner, clock, renditionCache,
         )
         stubUntilStage()
         every { probe.probe(any(), any()) } throws UndecodableImageException("not an image")
@@ -305,8 +393,8 @@ class DownloadPinMediaTest {
         val video = mockk<VideoProcessor>()
         val withVideo = DownloadPinMedia(
             pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, video, MediaBounds(100, 100, Duration.ofSeconds(1), 100)), fetcher, runner,
-            clock, renditionCache,
+            MediaIngestion(store, probe, video, MediaBounds(100, 100, Duration.ofSeconds(1), 100)), fetcher,
+            pageExtractor, runner, clock, renditionCache,
         )
         stubUntilStage()
         every { probe.probe(any(), any()) } throws UndecodableImageException("not an image")
