@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Pinry Reborn's API server: business logic of a self-hosted pin board (users, pins, boards, tags, images, exports),
-exposed as an HTTP API. Kotlin + Quarkus, Clean Architecture, SQLite store, filesystem image storage, task worker for
+Pinry Reborn's API server: business logic of a self-hosted pin board (users, pins, boards, tags, media, exports),
+exposed as an HTTP API. Kotlin + Quarkus, Clean Architecture, SQLite store, filesystem media storage, task worker for
 long operations.
 
 This file holds what is true of the Kotlin build alone: its norms, its commands and its gate
@@ -20,7 +20,7 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
 | `api-usecases`             | Business logic, exceptions, search, exports, task contracts.              |
 | `api-persistence-sqlite`   | Ebean/SQLite: models, mappers, repositories, migrations (`dbmigration/`). |
 | `api-presentation-quarkus` | Jakarta REST: controllers, DTOs, mappers, security, OpenAPI.              |
-| `api-storage-filesystem`   | Image store, rendition cache, export archives.                            |
+| `api-storage-filesystem`   | Media store, rendition cache, export archives.                            |
 | `api-imaging-vips`         | libvips adapter (vips-ffm).                                               |
 | `api-video-ffmpeg`         | ffprobe and ffmpeg adapter, run as processes.                             |
 | `api-fetch-http`           | Remote media fetch through a guarding proxy per download.                 |
@@ -39,7 +39,8 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
   that `api-video-ffmpeg` runs. The workstation's version may differ from the images': tests assert behaviour.
 - `yt-dlp` and `deno` on the `PATH`, the images installing yt-dlp from `api/tools/yt-dlp/requirements.txt`
   (`pip install --require-hashes -r` in a venv) and copying deno from `denoland/deno:bin`. That file is
-  `pip-compile`'s output: edit `requirements.in` and recompile with the command it names.
+  `pip-compile`'s output: edit `requirements.in` and recompile with the command its comment names, not the one in
+  `requirements.txt`'s header, whose `--no-index` resolves nothing from PyPI.
 - **`JAVA_HOME` on JDK 25**, exported before any `./gradlew`:
   `export JAVA_HOME=$(printf '%s\n' ~/.sdkman/candidates/java/25* | tail -1)`. The candidate's name carries the patch
   version, so the glob is what survives a bump, and one match per line is what keeps a second JDK 25 from putting two
