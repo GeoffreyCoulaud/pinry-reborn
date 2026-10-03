@@ -89,7 +89,8 @@ class DownloadPinMedia(
     // A page goes to the extractor, anything else down the direct path, where the probe judges (ADR 0048, decision 1).
     private fun openSource(sourceUrl: String, context: TaskContext): FetchedMedia {
         val fetched = mediaFetcher.openStream(sourceUrl)
-        if (fetched.contentType?.substringBefore(';')?.trim()?.lowercase() !in PAGE_TYPES) return fetched
+        val mediaType = fetched.contentType.orEmpty().substringBefore(';').trim().lowercase()
+        if (mediaType !in PAGE_TYPES) return fetched
         fetched.close()
         return pageMediaExtractor.extract(sourceUrl) { context.renewLeaseIfDue() }
     }
