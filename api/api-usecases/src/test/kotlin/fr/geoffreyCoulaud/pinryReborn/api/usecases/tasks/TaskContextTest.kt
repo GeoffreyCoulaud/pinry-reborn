@@ -12,6 +12,7 @@ class TaskContextTest {
 
         // When / Then (the default heartbeat must be safe to call and do nothing)
         context.renewLease()
+        context.renewLeaseIfDue()
     }
 
     @Test

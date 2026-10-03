@@ -237,4 +237,22 @@ class TaskProcessorTest {
         // Then
         verify { queue.renewLease(c.id, "lease-1", now.plus(Duration.ofMinutes(2))) }
     }
+
+    @Test
+    fun `Given a handler that offers renewals, Then the lease is renewed once a third of it has passed`() {
+        // Given: offered just before a third of the lease, at a third, then right after that renewal
+        val third = leaseDuration.dividedBy(3)
+        every { clock.now() } returnsMany
+            listOf(now, now.plus(third).minusMillis(1), now.plus(third), now.plus(third).plusMillis(1), now)
+        every { queue.renewLease(any(), any(), any()) } returns true
+        val c = claimed()
+        val p = processorWith(object : TaskHandler {
+            override val kind = "k"
+            override fun handle(payload: String, context: TaskContext) = repeat(3) { context.renewLeaseIfDue() }
+        })
+        // When
+        p.execute(c, leaseDuration)
+        // Then
+        verify(exactly = 1) { queue.renewLease(any(), any(), any()) }
+    }
 }
