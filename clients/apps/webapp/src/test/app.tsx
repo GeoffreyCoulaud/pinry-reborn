@@ -75,6 +75,19 @@ export function readyPin(description: string, width = 800, height = 600): Pin {
 	return { ...bare, media: { status: "READY", url, width, height } };
 }
 
+/** A pin whose media is a video, its stored type carrying the `codecs` the API builds. */
+export function videoPin(
+	description: string,
+	mimeType = 'video/mp4; codecs="avc1.64001F, mp4a.40.2"',
+): Pin {
+	const bare = pin(description);
+	const url = `/api/v1/pins/${bare.id}/media`;
+	return {
+		...bare,
+		media: { status: "READY", url, mimeType, width: 640, height: 360 },
+	};
+}
+
 /**
  * The page a request's cursor names. A cursor is the index of the page it answers, which is all
  * the client may assume of it: block 5 made it an opaque string.

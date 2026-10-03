@@ -44,6 +44,9 @@ globalThis.createImageBitmap = () =>
 // jsdom implements no `decode`, and loads no image to decode: an original never arrives unless a test says so.
 HTMLImageElement.prototype.decode = () => new Promise(() => {});
 
+// jsdom decodes no video and answers `""` to every type: the stub plays what it is given unless a test says so.
+HTMLMediaElement.prototype.canPlayType = () => "maybe";
+
 // jsdom implements no matchMedia, and the theme switch reads one to resolve `system`.
 globalThis.matchMedia = (media: string) =>
 	({
