@@ -24,6 +24,7 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
 | `api-imaging-vips`         | libvips adapter (vips-ffm).                                               |
 | `api-video-ffmpeg`         | ffprobe and ffmpeg adapter, run as processes.                             |
 | `api-fetch-http`           | Remote media fetch through a guarding proxy per download.                 |
+| `api-fetch-ytdlp`          | A page's video extracted by yt-dlp, run as a process behind that proxy.   |
 | `api-system`               | Clock, bcrypt, token generation.                                          |
 | `api-worker-quarkus`       | Task worker: dispatcher, handlers, export retention.                      |
 | `api-utilities`            | Shared helpers, `BaseTest` fixture (testFixtures).                        |
