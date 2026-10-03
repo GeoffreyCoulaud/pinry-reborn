@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
 /** The container a video is stored in, which follows its kept tracks' codecs (ADR 0047, decision 2). */
-enum class VideoContainer {
-    MP4,
-    WEBM,
+enum class VideoContainer(val mimeType: String, val extension: String) {
+    MP4("video/mp4", "mp4"),
+    WEBM("video/webm", "webm"),
     ;
 
     companion object {

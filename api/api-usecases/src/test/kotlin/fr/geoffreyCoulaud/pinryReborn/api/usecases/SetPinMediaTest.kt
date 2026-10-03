@@ -11,13 +11,23 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaCodecUnsupportedError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaInvalidError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPinDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLargeError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLongError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -34,6 +44,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.IOException
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
 
@@ -45,8 +56,8 @@ class SetPinMediaTest : BaseTest() {
     private val clock = mockk<Clock>()
     private val clearPinDownload = mockk<ClearPinDownload>(relaxed = true)
     private val renditionCache = mockk<RenditionCache>()
-    private val bounds = MediaBounds(maxImageBytes = 30, maxVideoBytes = 0, maxPixels = 50)
-    private val ingestion = MediaIngestion(store, probe, bounds)
+    private val bounds = MediaBounds(maxImageBytes = 30, maxVideoBytes = 0, Duration.ZERO, maxPixels = 50)
+    private val ingestion = MediaIngestion(store, probe, NoVideoProcessor, bounds)
     private val useCase = SetPinMedia(pins, mediaRepository, store, ingestion, clock, clearPinDownload, renditionCache)
 
     private val owner = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
@@ -152,6 +163,45 @@ class SetPinMediaTest : BaseTest() {
         every { probe.probe(any(), 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
         every { clock.now() } returns Instant.EPOCH
         assertThrows(MediaTooLargeError::class.java) { useCase.set(p.id, owner, upload()) }
+    }
+
+    @Test fun `Given a format libvips reads and the server refuses, Then it throws MediaCodecUnsupportedError`() {
+        val p = pin()
+        every { pins.findPinById(p.id) } returns p
+        every { store.stage(any(), 30) } returns staged
+        every { probe.probe(staged, 50) } throws UnsupportedImageFormatException("heifload")
+        every { clock.now() } returns Instant.EPOCH
+        assertThrows(MediaCodecUnsupportedError::class.java) { useCase.set(p.id, owner, upload()) }
+    }
+
+    @Test fun `Given a video the processor refuses, Then each refusal takes its own error`() {
+        // Given
+        val p = pin()
+        val video = mockk<VideoProcessor>()
+        val videoBounds = MediaBounds(maxImageBytes = 30, maxVideoBytes = 30, Duration.ofSeconds(1), maxPixels = 50)
+        val withVideo = SetPinMedia(
+            pins, mediaRepository, store, MediaIngestion(store, probe, video, videoBounds), clock, clearPinDownload,
+            renditionCache,
+        )
+        every { pins.findPinById(p.id) } returns p
+        every { store.stage(any(), 30) } returns staged
+        every { probe.probe(staged, 50) } throws UndecodableImageException("not an image")
+        every { clock.now() } returns Instant.EPOCH
+        val refusals = mapOf(
+            VideoCodecUnsupportedException("ac3") to MediaCodecUnsupportedError::class.java,
+            VideoTooLongException("121 s") to MediaTooLongError::class.java,
+            VideoProcessorTimeoutException("ffprobe") to VideoProcessorTimeoutException::class.java,
+        )
+        for ((refusal, expected) in refusals) {
+            every { video.probe(staged, Duration.ofSeconds(1)) } throws refusal
+            // When / Then
+            assertThrows(expected) { withVideo.set(p.id, owner, upload()) }
+        }
+        // A file ffprobe reads and ffmpeg then refuses
+        every { video.probe(staged, Duration.ofSeconds(1)) } returns
+            VideoProbeResult(VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), "avc1.640015")
+        every { video.repackage(staged, any()) } throws UndecodableVideoException("refused")
+        assertThrows(MediaInvalidError::class.java) { withVideo.set(p.id, owner, upload()) }
     }
 
     @Test fun `Given an undecodable upload, Then it discards the temp and throws MediaInvalidError`() {

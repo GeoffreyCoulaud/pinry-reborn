@@ -3,14 +3,17 @@ package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.imaging.vips.VipsImageTransformer
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.RenditionsConfig
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemMediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemRenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaBounds
+import fr.geoffreyCoulaud.pinryReborn.api.video.ffmpeg.FfmpegVideoProcessor
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
+import java.time.Duration
 
 /**
  * CDI wiring for [MediaStore], [RenditionCache] and [ImageTransformer], hosted in the composition
@@ -37,7 +40,14 @@ class MediaAdapterProducers {
     @Produces
     @ApplicationScoped
     fun mediaBounds(config: MediaConfig): MediaBounds =
-        MediaBounds(config.maxImageBytes(), config.maxVideoBytes(), config.maxPixels())
+        MediaBounds(
+            config.maxImageBytes(), config.maxVideoBytes(), Duration.ofSeconds(config.maxVideoSeconds()),
+            config.maxPixels(),
+        )
+
+    @Produces
+    @ApplicationScoped
+    fun videoProcessor(config: MediaConfig): VideoProcessor = FfmpegVideoProcessor(config.videoTimeout())
 
     @Produces
     @ApplicationScoped

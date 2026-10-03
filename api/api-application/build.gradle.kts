@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":api-presentation-quarkus"))
     implementation(project(":api-storage-filesystem"))
     implementation(project(":api-imaging-vips"))
+    implementation(project(":api-video-ffmpeg"))
     implementation(project(":api-fetch-http"))
     implementation(project(":api-system"))
     implementation(project(":api-worker-quarkus"))

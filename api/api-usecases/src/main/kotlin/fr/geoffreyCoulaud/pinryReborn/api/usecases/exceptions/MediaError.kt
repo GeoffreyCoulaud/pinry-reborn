@@ -6,19 +6,25 @@ class MediaPinDoesNotExistError : MediaError("Pin does not exist", ErrorCode.MED
 
 class MediaPermissionError : MediaError("Insufficient permissions", ErrorCode.MEDIA_INSUFFICIENT_PERMISSIONS)
 
-class MediaDoesNotExistError : MediaError("Pin has no image", ErrorCode.MEDIA_DOES_NOT_EXIST)
+class MediaDoesNotExistError : MediaError("Pin has no media", ErrorCode.MEDIA_DOES_NOT_EXIST)
 
 class MediaTooLargeError(cause: Throwable? = null) :
-    MediaError("Image exceeds the maximum size", ErrorCode.MEDIA_TOO_LARGE, cause)
+    MediaError("Media exceeds the maximum size", ErrorCode.MEDIA_TOO_LARGE, cause)
 
 class MediaInvalidError(message: String, cause: Throwable? = null) : MediaError(message, ErrorCode.MEDIA_INVALID, cause)
+
+class MediaTooLongError(cause: Throwable) : MediaError("The video lasts too long", ErrorCode.MEDIA_TOO_LONG, cause)
+
+/** The message names the refused codec or format, which the probe read from the file. */
+class MediaCodecUnsupportedError(cause: Throwable) :
+    MediaError("${cause.message}", ErrorCode.MEDIA_CODEC_UNSUPPORTED, cause)
 
 class MediaSourceUrlInvalidError(cause: Throwable? = null) :
     MediaError("Invalid source URL", ErrorCode.MEDIA_SOURCE_URL_INVALID, cause)
 
 // The image family's 404, as for a pin nobody can reach: the message names the case, the code names
 // the family, and a requester learns nothing about another account's rows.
-class MediaDownloadDoesNotExistError : MediaError("Pin has no image download", ErrorCode.MEDIA_DOES_NOT_EXIST)
+class MediaDownloadDoesNotExistError : MediaError("Pin has no media download", ErrorCode.MEDIA_DOES_NOT_EXIST)
 
 class MediaDownloadInProgressError :
     MediaError("The download is still running", ErrorCode.MEDIA_DOWNLOAD_IN_PROGRESS)
