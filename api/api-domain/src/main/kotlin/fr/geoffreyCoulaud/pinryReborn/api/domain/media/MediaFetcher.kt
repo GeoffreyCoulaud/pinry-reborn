@@ -1,13 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
-import java.io.InputStream
-
 interface MediaFetcher {
     /**
-     * Apply the scheme allowlist + per-hop SSRF checks, follow redirects (capped), require a 2xx
-     * response, and return the body stream for staging. Throws a typed [FetchException] on any
+     * Reach only the addresses the deployment allows, follow redirects (capped), require a 2xx
+     * response, and return its body with its `Content-Type`. Throws a typed [FetchException] on any
      * failure. Does not read/validate image content (that is [ImageProbe]'s job). The caller owns
-     * closing the returned stream.
+     * closing the returned media.
      */
-    fun openStream(sourceUrl: String): InputStream
+    fun openStream(sourceUrl: String): FetchedMedia
 }
