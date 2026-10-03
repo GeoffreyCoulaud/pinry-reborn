@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPlayable, isVideo } from "./media";
+import { isPlayable, isVideo, videoFileName } from "./media";
 
 describe("isVideo", () => {
 	it("reads a video type, its codecs parameter included", () => {
@@ -26,5 +26,18 @@ describe("isPlayable", () => {
 
 	it("gives up on the empty answer", () => {
 		expect(isPlayable("")).toBe(false);
+	});
+});
+
+describe("videoFileName", () => {
+	it("names a stored MP4 or WebM with its extension, its codecs parameter and case left out", () => {
+		expect(videoFileName('video/mp4; codecs="avc1.64001F, mp4a.40.2"')).toBe(
+			"video.mp4",
+		);
+		expect(videoFileName("Video/WebM")).toBe("video.webm");
+	});
+
+	it("leaves the extension to the browser for a type the server never stores", () => {
+		expect(videoFileName("video/quicktime")).toBe("video");
 	});
 });
