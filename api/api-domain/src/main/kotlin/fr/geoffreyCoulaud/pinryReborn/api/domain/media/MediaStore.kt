@@ -40,7 +40,7 @@ interface MediaStore {
      */
     fun discard(staged: StagedFile)
 
-    /** Delete every staged file last modified before [olderThan], returning how many. */
+    /** Delete every staged file older than [olderThan], and every staged directory whose newest entry is. */
     fun discardOrphanedStagedFiles(olderThan: Instant): Int
 
     /**
