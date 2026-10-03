@@ -210,6 +210,7 @@
 	"too_many_attempts": "Too many attempts on this account. Try again later.",
 	"task_running": "Downloading",
 	"username": "Username",
+	"video_badge": "Video",
 	"video_download": "Download the video",
 	"video_unplayable": "This browser cannot play this video."
 }

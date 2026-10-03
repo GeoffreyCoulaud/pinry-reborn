@@ -210,6 +210,7 @@
 	"too_many_attempts": "Trop de tentatives sur ce compte. Réessayez plus tard.",
 	"task_running": "Téléchargement",
 	"username": "Nom d’utilisateur",
+	"video_badge": "Vidéo",
 	"video_download": "Télécharger la vidéo",
 	"video_unplayable": "Ce navigateur ne peut pas lire cette vidéo."
 }
