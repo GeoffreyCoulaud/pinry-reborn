@@ -37,11 +37,13 @@ class FfmpegVideoProcessor(private val timeout: Duration, private val webpQualit
         // dropping the metadata, a source's tags are reordered on each pass, so a stored WebM repackaged again would.
         val copy =
             listOf("-map", "0:v:0", "-map", "0:a:0?", "-map_metadata", "-1", "-c", "copy", "-fflags", "+bitexact")
-        return write(staged, copy + tag + container)
+        return write(staged, copy + tag + container, ::copyCommand)
     }
 
-    override fun poster(staged: StagedFile, shortestSide: Int): StagedFile =
-        write(staged, listOf("-vf", posterFilters(shortestSide), "-frames:v", "1", "-c:v", "png", "-f", "image2"))
+    override fun poster(staged: StagedFile, shortestSide: Int): StagedFile {
+        val options = listOf("-vf", posterFilters(shortestSide), "-frames:v", "1", "-c:v", "png", "-f", "image2")
+        return write(staged, options, ::renderCommand)
+    }
 
     // Scaled first: thumbnail holds the hundred frames it chooses among, so their size is its memory.
     internal fun posterFilters(shortestSide: Int) = "$SQUARE_PIXELS,${scaleTo(shortestSide)},thumbnail=n=100"
@@ -49,15 +51,26 @@ class FfmpegVideoProcessor(private val timeout: Duration, private val webpQualit
     override fun preview(staged: StagedFile, shortestSide: Int): StagedFile {
         val filters = listOf("-t", "3", "-vf", "$SQUARE_PIXELS,fps=12,${scaleTo(shortestSide)}")
         val encoder = listOf("-c:v", "libwebp_anim", "-quality", "$webpQuality", "-loop", "0", "-f", "webp")
-        return write(staged, filters + encoder)
+        return write(staged, filters + encoder, ::renderCommand)
     }
+
+    private fun copyCommand(input: String, options: List<String>, output: String) =
+        FFMPEG + listOf("-i", input) + options + output
+
+    // One decoder thread per core holds its own frames: a 4K poster peaked at 663 MB on 12 cores, 331 MB on two.
+    internal fun renderCommand(input: String, options: List<String>, output: String) =
+        FFMPEG + listOf("-threads", "2", "-i", input) + options + output
 
     // The broad catch rethrows: any failure, a timeout included, first removes the output beside the input.
     @Suppress("TooGenericExceptionCaught")
-    private fun write(input: StagedFile, options: List<String>): StagedFile {
+    private fun write(
+        input: StagedFile,
+        options: List<String>,
+        command: (String, List<String>, String) -> List<String>,
+    ): StagedFile {
         val output = Files.createTempFile(Path.of(input.path).toAbsolutePath().parent, "video-", ".tmp")
         try {
-            run(FFMPEG + input.path + options + output.toString())
+            run(command(input.path, options, output.toString()))
             return stagedAt(output)
         } catch (error: Throwable) {
             Files.deleteIfExists(output)
@@ -92,7 +105,7 @@ class FfmpegVideoProcessor(private val timeout: Duration, private val webpQualit
         val PROBE =
             listOf("ffprobe", "-v", "error") + DEMUXERS +
                 listOf("-of", "json", "-show_streams", "-show_format", "-show_data", "-count_packets", "-i")
-        val FFMPEG = listOf("ffmpeg", "-nostdin", "-y", "-v", "error") + DEMUXERS + "-i"
+        val FFMPEG = listOf("ffmpeg", "-nostdin", "-y", "-v", "error") + DEMUXERS
 
         // An anamorphic source's pixels made square, so a rendition keeps the proportions the video displays at.
         const val SQUARE_PIXELS = "scale=iw*sar:ih,setsar=1"
