@@ -20,7 +20,7 @@ interface MediaDownloadConfig {
     @WithDefault("false")
     fun allowPrivateAddresses(): Boolean
 
-    /** How long one yt-dlp run may take before it is destroyed; `OrphanGraceCheck` keeps it under the orphan grace. */
+    /** Bounds one yt-dlp run and a direct download's body; `OrphanGraceCheck` keeps two runs under the orphan grace. */
     @WithDefault("PT5M")
     fun extractionTimeout(): Duration
 }
