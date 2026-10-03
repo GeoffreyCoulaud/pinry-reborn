@@ -88,7 +88,7 @@ the holistic review.
 - Block 102: green at `e1ea6c5c`; budget 479 lines, 10 files (#289).
 - Block 103: green at `e212b656`; budget 165 lines, 5 files (#290).
 - Block 104: green at `5ca1a65a`; budget 179 lines, 10 files (#291).
-- Block 110: green at its tip, log `gate-110.log` in the teammate's scratchpad; budget 165 lines, 10 files against
+- Block 110: green at `60afebd1`, log `gate-110.log` in the teammate's scratchpad; budget 167 lines, 10 files against
   `feat/the-extractor-is-wired`. `ModeBMediaHostingIntegrationTest` pins the `<video src>` of a local page as a
   `video/webm; codecs=` media through the wired application and real yt-dlp, and a page with no video ends `FAILED`
   with `NO_MEDIA_FOUND`.
@@ -124,6 +124,8 @@ the holistic review.
   it.
 - **A page is fetched three times**: once by the worker, which reads its `Content-Type` and closes it unread, then by
   each yt-dlp run.
+- **Kover counts each `?.` of a chain as a branch**: `a?.b()?.c()` leaves the second null branch unreachable and
+  the package under 100 %. Resolve the null once (`orEmpty()`), then chain plainly.
 - **An injected `@ApplicationScoped` bean is ARC's client proxy**: unwrap it with `ClientProxy.unwrap` before an `is`.
 - **Dependabot opens two pull requests per Deno release**, the tag sitting in two `docker` entries (`/api` and
   `/.dagger`). pip-tools 7.6.1 writes `--no-index` into `requirements.txt`'s header, which Dependabot never reads.
