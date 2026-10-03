@@ -1,7 +1,14 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.sun.net.httpserver.HttpServer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveLine
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveSource
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemZipImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
+import fr.geoffreyCoulaud.pinryReborn.api.worker.ImportsConfig
+import io.quarkus.test.junit.QuarkusMock
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
@@ -19,8 +26,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
-/** A lease far shorter than the slow origin's body, which no other suite can run under. */
-class MediaDownloadLeaseTestProfile : QuarkusTestProfile {
+/** A lease far shorter than a slow task, which no other suite can run under. */
+class LeaseRenewalTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> =
         mapOf(
             "media.data_dir" to "build/test-media-data/${UUID.randomUUID()}",
@@ -30,11 +37,71 @@ class MediaDownloadLeaseTestProfile : QuarkusTestProfile {
 }
 
 @QuarkusTest
-@TestProfile(MediaDownloadLeaseTestProfile::class)
-class MediaDownloadLeaseIntegrationTest : IntegrationTest() {
+@TestProfile(LeaseRenewalTestProfile::class)
+class LeaseRenewalIntegrationTest : IntegrationTest() {
 
     @Inject
     lateinit var pinCreator: PinCreator
+
+    @Inject
+    lateinit var importsConfig: ImportsConfig
+
+    @Inject
+    lateinit var objectMapper: ObjectMapper
+
+    /** A real store whose archives yield each tag line a beat late. */
+    private class SlowTagsArchiveStore(private val store: ImportArchiveStore) : ImportArchiveStore by store {
+        override fun open(storageKey: String): ArchiveSource = SlowTagsSource(store.open(storageKey))
+    }
+
+    private class SlowTagsSource(private val source: ArchiveSource) : ArchiveSource by source {
+        override fun <T : Any> readJsonLines(name: String, type: Class<T>, block: (Sequence<ArchiveLine<T>>) -> Unit) =
+            source.readJsonLines(name, type) { lines ->
+                block(if (name == "tags.jsonl") lines.onEach { Thread.sleep(DRIP_INTERVAL_MS) } else lines)
+            }
+    }
+
+    @Test
+    fun `Given an import whose lines outlast the lease, Then it completes on its first attempt`() {
+        // Given: tag lines, since the pin walk renewed on every line before the metadata walks did. A reaped
+        // attempt waits out the ten-minute retry floor, so only a renewed lease completes within the poll.
+        QuarkusMock.installMockForType(
+            SlowTagsArchiveStore(FilesystemZipImportArchiveStore(importsConfig.dataDir(), importsConfig.maxLineBytes())),
+            ImportArchiveStore::class.java,
+        )
+        val auth = createAuthenticatedUser()
+        val archive =
+            ImportArchiveBuilder(objectMapper)
+                .manifest(announcedPins = 1)
+                .tags(*Array(DRIP_CHUNKS) { "tag-$it" })
+                .boards()
+                .pins(ImportArchiveBuilder.pinLine(sourceContextUrl = "https://example.test/slow"))
+                .bytes()
+
+        // When
+        val importId =
+            given().authenticatedAs(auth).`when`().post("/api/v1/me/imports")
+                .then().statusCode(202).extract().jsonPath().getString("id")
+        given().authenticatedAs(auth).contentType("application/octet-stream").body(archive)
+            .`when`().put("/api/v1/me/imports/$importId/archive?offset=0").then().statusCode(200)
+        given().authenticatedAs(auth).`when`().post("/api/v1/me/imports/$importId/archive/complete")
+            .then().statusCode(202)
+
+        // Then
+        assertEquals("COMPLETED", pollImportUntilSettled(importId, auth))
+    }
+
+    private fun pollImportUntilSettled(importId: String, auth: AuthenticatedUser): String {
+        var state = "UNKNOWN"
+        repeat(POLL_ATTEMPTS) {
+            state =
+                given().authenticatedAs(auth).`when`().get("/api/v1/me/imports/$importId")
+                    .then().statusCode(200).extract().jsonPath().getString("state")
+            if (state != "PENDING" && state != "RUNNING") return state
+            Thread.sleep(POLL_INTERVAL_MS)
+        }
+        return state
+    }
 
     @Test
     fun `Given a fetch slower than the lease, Then it runs once and settles READY`() {

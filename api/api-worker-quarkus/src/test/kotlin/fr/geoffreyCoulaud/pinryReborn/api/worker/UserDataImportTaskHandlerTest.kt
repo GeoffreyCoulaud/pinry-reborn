@@ -40,7 +40,7 @@ class UserDataImportTaskHandlerTest {
         handler.handle(importId.toString(), TaskContext(attempt = 5, maxAttempts = 5))
 
         // Then
-        verify { runner.run(importId, isLastAttempt = true, renewLease = any()) }
+        verify { runner.run(importId, isLastAttempt = true, renewLeaseIfDue = any()) }
     }
 
     @Test
@@ -52,21 +52,21 @@ class UserDataImportTaskHandlerTest {
         handler.handle(importId.toString(), TaskContext(attempt = 1, maxAttempts = 5))
 
         // Then
-        verify { runner.run(importId, isLastAttempt = false, renewLease = any()) }
+        verify { runner.run(importId, isLastAttempt = false, renewLeaseIfDue = any()) }
     }
 
     @Test
-    fun `Given a lease heartbeat on the context, Then the runner is handed that heartbeat`() {
-        // Given
+    fun `Given a throttled lease heartbeat on the context, Then the runner is handed that heartbeat`() {
+        // Given: the runner calls it on every line, so the unthrottled one would write a row per line
         val importId = UUID.randomUUID()
         val heartbeat: () -> Unit = {}
         val context = TaskContext(attempt = 1, maxAttempts = 5)
-        context.renewLease = heartbeat
+        context.renewLeaseIfDue = heartbeat
 
         // When
         handler.handle(importId.toString(), context)
 
         // Then
-        verify { runner.run(importId, isLastAttempt = false, renewLease = heartbeat) }
+        verify { runner.run(importId, isLastAttempt = false, renewLeaseIfDue = heartbeat) }
     }
 }

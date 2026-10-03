@@ -17,6 +17,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveBoundExceededException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveEntryUnreadableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveLine
@@ -64,19 +65,19 @@ class UserDataImportRunner(
     private val clock: Clock,
     private val maxMetadataBytes: Long,
     private val maxEntries: Int,
-    private val leaseRenewalLines: Int,
     private val reportDetailLimit: Int,
 ) {
     /**
      * The `account.import` task's entry point. A row that is neither `PENDING` nor `RUNNING` is left
      * alone: it was cancelled, swept or already finished, and running it would resurrect it.
+     * [renewLeaseIfDue] is called on every line, a video line costing seconds, so the caller throttles it.
      */
-    fun run(importId: UUID, isLastAttempt: Boolean, renewLease: () -> Unit) {
+    fun run(importId: UUID, isLastAttempt: Boolean, renewLeaseIfDue: () -> Unit) {
         val userDataImport = importRepository.findById(importId)?.takeIf { it.state.isRunnable() } ?: return
         val user = requireUser(userDataImport)
         val runToken = UUID.randomUUID()
         val claimed = claim(importId, runToken) ?: return
-        replay(project(claimed, runToken), user, isLastAttempt, renewLease)
+        replay(project(claimed, runToken), user, isLastAttempt, renewLeaseIfDue)
     }
 
     /**
@@ -91,10 +92,10 @@ class UserDataImportRunner(
         runnable: RunnableImport,
         user: User,
         isLastAttempt: Boolean,
-        renewLease: () -> Unit,
+        renewLeaseIfDue: () -> Unit,
     ) {
         try {
-            walkArchive(runnable, user, renewLease)
+            walkArchive(runnable, user, renewLeaseIfDue)
             complete(runnable)
         } catch (error: TaskLeaseLostException) {
             throw error
@@ -154,13 +155,13 @@ class UserDataImportRunner(
             runToken = runToken,
         )
 
-    private fun walkArchive(runnable: RunnableImport, user: User, renewLease: () -> Unit) {
+    private fun walkArchive(runnable: RunnableImport, user: User, renewLeaseIfDue: () -> Unit) {
         readingArchive(runnable) { archiveStore.open(runnable.storageKey) }.use { source ->
             // Read where the central directory already is, so it costs nothing: an archive past the
             // bound is refused before a walk has created anything, rather than after both of them.
             val entryNames = readingArchive(runnable) { source.entryNames(maxEntries) }
             val opened = recordManifest(source, runnable) ?: return
-            walkContent(source, runnable, user, renewLease, recorderFor(opened), entryNames)
+            walkContent(source, runnable, user, renewLeaseIfDue, recorderFor(opened), entryNames)
         }
     }
 
@@ -169,15 +170,15 @@ class UserDataImportRunner(
         source: ArchiveSource,
         runnable: RunnableImport,
         user: User,
-        renewLease: () -> Unit,
+        renewLeaseIfDue: () -> Unit,
         recorder: ImportIssueRecorder,
         entryNames: Set<String>,
     ) {
         val now = clock.now()
         val clamp = ImportInstantClamp(user.createdAt, now)
-        walkTags(source, user, clamp, runnable, renewLease, recorder) ?: return
-        val walked = walkBoards(source, user, clamp, runnable, renewLease, recorder) ?: return
-        walkPins(PinWalk(source, runnable, user, clamp, now, entryNames, recorder, renewLease), walked)
+        walkTags(source, user, clamp, runnable, renewLeaseIfDue, recorder) ?: return
+        val walked = walkBoards(source, user, clamp, runnable, renewLeaseIfDue, recorder) ?: return
+        walkPins(PinWalk(source, runnable, user, clamp, now, entryNames, recorder, renewLeaseIfDue), walked)
     }
 
     /**
@@ -252,14 +253,12 @@ class UserDataImportRunner(
         source: ArchiveSource,
         name: String,
         type: Class<T>,
-        renewLease: () -> Unit,
+        renewLeaseIfDue: () -> Unit,
         importLine: (ArchiveLine<T>) -> Unit,
     ) {
         source.readJsonLines(name, type) { lines ->
             lines.forEach { line ->
-                // Numbering counts the lines the reader skipped, so this fires on file position, not on
-                // how many lines happened to parse.
-                if (line.line % leaseRenewalLines == 0) renewLease()
+                renewLeaseIfDue()
                 importLine(line)
             }
         }
@@ -271,11 +270,11 @@ class UserDataImportRunner(
         user: User,
         clamp: ImportInstantClamp,
         runnable: RunnableImport,
-        renewLease: () -> Unit,
+        renewLeaseIfDue: () -> Unit,
         recorder: ImportIssueRecorder,
     ): UserDataImport? {
         val tally = MetadataTally(recorder)
-        walkLines(source, TAGS_ENTRY, ImportedTag::class.java, renewLease) {
+        walkLines(source, TAGS_ENTRY, ImportedTag::class.java, renewLeaseIfDue) {
             rejecting(tally, it.line) { importTag(it, user, clamp, tally) }
         }
         return advance(runnable) {
@@ -330,11 +329,11 @@ class UserDataImportRunner(
         user: User,
         clamp: ImportInstantClamp,
         runnable: RunnableImport,
-        renewLease: () -> Unit,
+        renewLeaseIfDue: () -> Unit,
         recorder: ImportIssueRecorder,
     ): UserDataImport? {
         val tally = MetadataTally(recorder)
-        walkLines(source, BOARDS_ENTRY, ImportedBoard::class.java, renewLease) {
+        walkLines(source, BOARDS_ENTRY, ImportedBoard::class.java, renewLeaseIfDue) {
             rejecting(tally, it.line) { importBoard(it, user, clamp, tally) }
         }
         return advance(runnable) {
@@ -429,7 +428,7 @@ class UserDataImportRunner(
         walk.source.readJsonLines(PINS_ENTRY, ImportedPin::class.java) { lines ->
             lines.takeWhile { holding }.forEach { line ->
                 seen++
-                walk.renewLease()
+                walk.renewLeaseIfDue()
                 if (seen > cursor) holding = importPin(walk, line)
             }
         }
@@ -607,6 +606,8 @@ class UserDataImportRunner(
         } catch (error: ImageProbeException) {
             reported(UserDataImportIssueKind.MEDIA_UNREADABLE, media.path, error.message)
         } catch (error: VideoProcessorException) {
+            // A timeout is the server's failure, not the file's: it escapes and the attempt retries from this line.
+            if (error is VideoProcessorTimeoutException) throw error
             reported(UserDataImportIssueKind.MEDIA_UNREADABLE, media.path, error.message)
         }
     }
@@ -662,7 +663,7 @@ class UserDataImportRunner(
         val importInstant: Instant,
         val entryNames: Set<String>,
         val recorder: ImportIssueRecorder,
-        val renewLease: () -> Unit,
+        val renewLeaseIfDue: () -> Unit,
     )
 
     /** What one `pins.jsonl` line settles into: one transaction writes all of it, or none of it. */

@@ -208,7 +208,6 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             clock = clock,
             maxMetadataBytes = MAX_METADATA_BYTES,
             maxEntries = MAX_ENTRIES,
-            leaseRenewalLines = LEASE_RENEWAL_LINES,
             reportDetailLimit = REPORT_DETAIL_LIMIT,
         )
 
@@ -493,7 +492,6 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
         const val MAX_ENTRIES = 200_000
         const val MAX_MEDIA_BYTES = 10L * 1024 * 1024
         const val MAX_PIXELS = 50_000_000L
-        const val LEASE_RENEWAL_LINES = 2
         const val REPORT_DETAIL_LIMIT = 500
         const val ANNOUNCED_PINS = 7
         const val ISSUE_TEXT_LIMIT = 200
