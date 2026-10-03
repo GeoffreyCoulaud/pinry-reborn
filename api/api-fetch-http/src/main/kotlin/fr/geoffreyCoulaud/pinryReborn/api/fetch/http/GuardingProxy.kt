@@ -37,6 +37,9 @@ class GuardingProxy(
     /** The hosts that did not resolve or did not accept the connection, which make it `UNREACHABLE`. */
     val unreachableHosts: List<String> get() = unreachable.toList()
 
+    /** Whether the proxy has stopped listening. */
+    internal val isClosed: Boolean get() = server.isClosed
+
     /** The reason the record gives a failed download, if any: a refusal reaches neither client as such. */
     fun refusal(cause: Throwable? = null): FetchException? =
         when {

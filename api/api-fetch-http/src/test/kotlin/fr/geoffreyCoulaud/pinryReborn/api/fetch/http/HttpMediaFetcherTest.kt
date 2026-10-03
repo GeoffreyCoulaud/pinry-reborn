@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.InetAddress
@@ -19,6 +20,7 @@ import java.net.ServerSocket
 import java.net.UnknownHostException
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
 
 class HttpMediaFetcherTest {
     private lateinit var server: HttpServer
@@ -66,7 +68,13 @@ class HttpMediaFetcherTest {
         server.start()
     }
 
-    @AfterEach fun stop() = server.stop(0)
+    // Holds a stalling handler until the test ends, so the server can stop.
+    private val stalled = CountDownLatch(1)
+
+    @AfterEach fun stop() {
+        stalled.countDown()
+        server.stop(0)
+    }
 
     private fun base() = "http://127.0.0.1:${server.address.port}"
 
@@ -152,6 +160,49 @@ class HttpMediaFetcherTest {
         // When / Then
         slowFetcher.openStream("${base()}/trickle").use {
             assertThrows(FetchUnreachableException::class.java) { while (it.stream.read() != -1) continue }
+        }
+    }
+
+    @Test
+    fun `Given a chunked body that stalls, Then a read throws FetchUnreachable at the body timeout`() {
+        // Given headers, then no byte of the body
+        server.createContext("/stall") { exchange ->
+            exchange.sendResponseHeaders(200, 0)
+            exchange.responseBody.flush()
+            stalled.await()
+            exchange.close()
+        }
+        val slowFetcher = fetcherThrough(AddressPolicy.AllowAll, bodyTimeout = Duration.ofSeconds(1))
+
+        // When / Then
+        assertTimeoutPreemptively(Duration.ofSeconds(STALL_TEST_DEADLINE_SECONDS)) {
+            slowFetcher.openStream("${base()}/stall").use {
+                assertThrows(FetchUnreachableException::class.java) { it.stream.read() }
+            }
+        }
+    }
+
+    @Test
+    fun `Given a close-delimited body that stalls, Then a read throws FetchUnreachable at the body timeout`() {
+        // Given headers, then no byte of a body whose end would be the close the timeout itself causes
+        val stalling = ServerSocket(0, 0, loopback)
+        Thread.ofVirtual().start {
+            runCatching {
+                stalling.accept().use { socket ->
+                    socket.getOutputStream().write("HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n".toByteArray())
+                    stalled.await()
+                }
+            }
+        }
+        val slowFetcher = fetcherThrough(AddressPolicy.AllowAll, bodyTimeout = Duration.ofSeconds(1))
+
+        // When / Then
+        stalling.use {
+            assertTimeoutPreemptively(Duration.ofSeconds(STALL_TEST_DEADLINE_SECONDS)) {
+                slowFetcher.openStream("http://127.0.0.1:${it.localPort}/stall").use { fetched ->
+                    assertThrows(FetchUnreachableException::class.java) { fetched.stream.read() }
+                }
+            }
         }
     }
 
@@ -381,5 +432,6 @@ class HttpMediaFetcherTest {
     private companion object {
         const val TRICKLE_BYTES = 50
         const val TRICKLE_INTERVAL_MILLIS = 200L
+        const val STALL_TEST_DEADLINE_SECONDS = 5L
     }
 }
