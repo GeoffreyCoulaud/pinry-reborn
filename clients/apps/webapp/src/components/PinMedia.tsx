@@ -1,6 +1,7 @@
 import { Button, Spinner } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
 import { downloadReason, retriable } from "../downloadReasons";
+import { isPlayable, isVideo } from "../lib/media";
 import { type Rendition, tileMediaSource } from "../lib/tiles";
 import { useSetPinMedia } from "../media";
 import { m } from "../paraglide/messages.js";
@@ -8,6 +9,14 @@ import type { Pin } from "../pins";
 
 /** How long the original may take before a spinner says it is coming, as long as a drop's reading. */
 const SPINNER_DELAY_MS = 300;
+
+/** The box the media is drawn in: its own size or less to fit, never more. */
+function fitted(width: number, height: number) {
+	return {
+		aspectRatio: `${width} / ${height}`,
+		width: `min(${width}px, 100%, calc(var(--fit-height) * ${width / height}))`,
+	};
+}
 
 /**
  * The original in a box of the size it is drawn at, its own or less to fit, never more. The grid's
@@ -31,10 +40,6 @@ function OriginalMedia({
 		"loading",
 	);
 	const [slow, setSlow] = useState(false);
-	const size = {
-		aspectRatio: `${width} / ${height}`,
-		width: `min(${width}px, 100%, calc(var(--fit-height) * ${width / height}))`,
-	};
 
 	useEffect(() => {
 		let shown = true;
@@ -51,7 +56,7 @@ function OriginalMedia({
 	}, []);
 
 	return (
-		<div className="relative" style={size}>
+		<div className="relative" style={fitted(width, height)}>
 			{state === "decoded" ? null : (
 				<img
 					src={tileMediaSource(url, placeholder)}
@@ -76,6 +81,54 @@ function OriginalMedia({
 }
 
 /**
+ * The original played under the grid's rendition, or that rendition and a link to the bytes where
+ * this browser cannot decode them (ADR 0047, decision 6).
+ */
+function VideoMedia({
+	url,
+	mimeType,
+	width,
+	height,
+	alt,
+	placeholder,
+}: {
+	url: string;
+	mimeType: string;
+	width: number;
+	height: number;
+	alt: string;
+	placeholder: Rendition;
+}) {
+	const [failed, setFailed] = useState(
+		() => !isPlayable(document.createElement("video").canPlayType(mimeType)),
+	);
+	const poster = tileMediaSource(url, placeholder);
+
+	if (failed) {
+		return (
+			<div className="flex w-full flex-col items-center gap-3 text-center">
+				<img src={poster} alt={alt} style={fitted(width, height)} />
+				<p>{m.video_unplayable()}</p>
+				<a href={url} download className="text-accent hover:underline">
+					{m.video_download()}
+				</a>
+			</div>
+		);
+	}
+	return (
+		// biome-ignore lint/a11y/useMediaCaption: a pin's video carries no captions to offer.
+		<video
+			src={url}
+			poster={poster}
+			controls
+			aria-label={alt}
+			style={fitted(width, height)}
+			onError={() => setFailed(true)}
+		/>
+	);
+}
+
+/**
  * The image side: the picture, or what stands in its place (specification 2026-09-27, decision C).
  * The form leaves Retry out, its own choice being where the image is fetched from.
  */
@@ -93,6 +146,23 @@ export function PinMedia({
 	const address = pin.sourceMediaUrl;
 
 	if (media?.status === "READY" && media.url != null) {
+		if (
+			isVideo(media.mimeType) &&
+			media.width != null &&
+			media.height != null
+		) {
+			return (
+				<VideoMedia
+					key={media.url}
+					url={media.url}
+					mimeType={media.mimeType}
+					width={media.width}
+					height={media.height}
+					alt={pin.description}
+					placeholder={placeholder}
+				/>
+			);
+		}
 		return media.width != null && media.height != null ? (
 			<OriginalMedia
 				key={media.url}

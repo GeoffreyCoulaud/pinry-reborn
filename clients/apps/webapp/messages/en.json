@@ -209,5 +209,7 @@
 	"theme_system": "System",
 	"too_many_attempts": "Too many attempts on this account. Try again later.",
 	"task_running": "Downloading",
-	"username": "Username"
+	"username": "Username",
+	"video_download": "Download the video",
+	"video_unplayable": "This browser cannot play this video."
 }

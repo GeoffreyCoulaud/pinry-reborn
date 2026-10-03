@@ -123,15 +123,21 @@ function useSwipe(previous?: () => void, next?: () => void) {
 		},
 	});
 	// Its pointer down alone, for touch alone: it prevents a mouse from dragging the image out, and
-	// its key handler would swallow the arrows the dialog steps on.
+	// its key handler would swallow the arrows the dialog steps on. A video's controls take their own drags.
 	return (event: PointerEvent<HTMLElement>) => {
-		if (event.pointerType === "touch") {
+		if (
+			event.pointerType === "touch" &&
+			!(event.target instanceof HTMLMediaElement)
+		) {
 			moveProps.onPointerDown?.(event);
 		}
 	};
 }
 
-/** `←` and `→` on the document: the dialog holds the focus once open, and passes on no key handler. */
+/**
+ * `←` and `→` on the document: the dialog holds the focus once open, and passes on no key handler.
+ * A video's own arrows seek it.
+ */
 function useArrowKeys(previous?: () => void, next?: () => void) {
 	useEffect(() => {
 		const step = (event: KeyboardEvent) => {
@@ -140,7 +146,8 @@ function useArrowKeys(previous?: () => void, next?: () => void) {
 				event.ctrlKey ||
 				event.metaKey ||
 				event.shiftKey ||
-				event.defaultPrevented
+				event.defaultPrevented ||
+				event.target instanceof HTMLMediaElement
 			) {
 				return;
 			}
