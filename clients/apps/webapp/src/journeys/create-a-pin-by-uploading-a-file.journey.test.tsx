@@ -15,7 +15,7 @@ import {
 import { server } from "../test/server";
 
 /** The drop area's accessible name is its visible invitation, and nothing else names it. */
-const DROP_AREA = "Drop an image here, or pick one";
+const DROP_AREA = "Drop a media file here, or pick one";
 
 /** Where the picture was found, which the server stores beside a file it never fetched. */
 const FOUND_AT = "https://example.test/cat.png";
@@ -100,7 +100,7 @@ describe("create a pin by uploading a file", () => {
 		);
 
 		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"This image could not be read. Try another file.",
+			"This file could not be read. Try another one.",
 		);
 		expect(dialog.queryByRole("alert")).toBeNull();
 		// A file refused takes nothing from the one already accepted.
@@ -131,7 +131,7 @@ describe("create a pin by uploading a file", () => {
 		expect(dialog.queryByRole("alert")).toBeNull();
 		expect(dialog.queryByText("notes.pdf")).toBeNull();
 		// No file was kept, so the other way in is required again.
-		expect(dialog.getByLabelText("Image address")).toBeRequired();
+		expect(dialog.getByLabelText("Media address")).toBeRequired();
 	});
 
 	it("Given a picture in a format the handshake does not publish, Then it never reaches the server", async () => {
@@ -245,7 +245,7 @@ describe("create a pin by uploading a file", () => {
 		// An address touches provenance alone, so it has nothing to remove
 		// (specification 2026-09-19-the-drop-is-the-gesture, decision H).
 		await waitFor(() =>
-			expect(dialog.getByLabelText("Image address")).toHaveValue(FOUND_AT),
+			expect(dialog.getByLabelText("Media address")).toHaveValue(FOUND_AT),
 		);
 		expect(dialog.getByText("small.png")).toBeVisible();
 		expect(screen.queryByRole("alert")).toBeNull();
@@ -280,7 +280,7 @@ describe("create a pin by uploading a file", () => {
 		expect(dialog.queryByRole("alert")).toBeNull();
 		// The drop took nothing, so it takes nothing away either.
 		expect(dialog.getByText("small.png")).toBeVisible();
-		expect(dialog.getByLabelText("Image address")).not.toBeRequired();
+		expect(dialog.getByLabelText("Media address")).not.toBeRequired();
 	});
 
 	it("Given limits that arrive after the file, Then the refusal takes the file with it", async () => {
@@ -328,7 +328,7 @@ describe("create a pin by uploading a file", () => {
 		expect(dialog.queryByRole("alert")).toBeNull();
 		// The message names one recourse, choosing another file, so the screen states one thing too.
 		expect(dialog.queryByText("big.png")).toBeNull();
-		expect(dialog.getByLabelText("Image address")).toBeRequired();
+		expect(dialog.getByLabelText("Media address")).toBeRequired();
 	});
 
 	it("Given the file removed from the thumbnail, Then the address is the way in again", async () => {
@@ -353,7 +353,7 @@ describe("create a pin by uploading a file", () => {
 		// Nothing was refused, so nothing is said: the file is simply gone and the address is back.
 		expect(dialog.queryByText("small.png")).toBeNull();
 		expect(screen.queryByRole("alert")).toBeNull();
-		expect(dialog.getByLabelText("Image address")).toBeRequired();
+		expect(dialog.getByLabelText("Media address")).toBeRequired();
 		// The picker fires no change event for a file it still holds, so the same one must go back in.
 		await user.upload(
 			dialog.getByLabelText(DROP_AREA),
@@ -399,7 +399,7 @@ describe("create a pin by uploading a file", () => {
 		expect(await dialog.findByText("small.png")).toBeVisible();
 		// Provenance and bytes are independent (decision G): the address names where the picture was
 		// found, the file carries it, and the server is told both.
-		await user.type(dialog.getByLabelText("Image address"), FOUND_AT);
+		await user.type(dialog.getByLabelText("Media address"), FOUND_AT);
 		const submit = dialog.getByRole("button", { name: "Add a pin" });
 		await waitFor(() => expect(submit).toBeEnabled());
 		await user.click(submit);

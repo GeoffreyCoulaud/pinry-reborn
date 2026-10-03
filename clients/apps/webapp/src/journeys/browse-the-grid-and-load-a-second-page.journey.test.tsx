@@ -153,7 +153,7 @@ describe("browse the grid and load a second page", () => {
 		renderApp("/");
 
 		expect(
-			await screen.findByText("There is no image at that address."),
+			await screen.findByText("There is no media at that address."),
 		).toBeVisible();
 		expect(screen.queryByText("No image at this URL.")).toBeNull();
 	});
