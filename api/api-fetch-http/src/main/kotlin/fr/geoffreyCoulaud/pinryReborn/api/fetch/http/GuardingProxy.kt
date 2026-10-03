@@ -1,5 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.fetch.http
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
 import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -33,6 +36,14 @@ class GuardingProxy(
 
     /** The hosts that did not resolve or did not accept the connection, which make it `UNREACHABLE`. */
     val unreachableHosts: List<String> get() = unreachable.toList()
+
+    /** The reason the record gives a failed download, if any: a refusal reaches neither client as such. */
+    fun refusal(cause: Throwable? = null): FetchException? =
+        when {
+            refused.isNotEmpty() -> UrlNotAllowedException("address not allowed", cause)
+            unreachable.isNotEmpty() -> FetchUnreachableException("could not reach the origin", cause)
+            else -> null
+        }
 
     init {
         Thread.ofVirtual().start(::acceptAll)
