@@ -22,6 +22,13 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.TooManyRedirectsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
@@ -234,12 +241,58 @@ class DownloadPinMediaTest {
     }
 
     @Test
-    fun `Given an unsupported image format, Then it discards and marks FAILED INVALID_MEDIA and throws Permanent`() {
+    fun `Given an unsupported image format, Then it discards and marks FAILED UNSUPPORTED_CODEC`() {
         stubUntilStage()
         every { probe.probe(any(), any()) } throws UnsupportedImageFormatException("tiff")
         assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { store.discard(staged()) }
-        verify { downloads.markFailed(pinId, DownloadReason.INVALID_MEDIA, now) }
+        verify { downloads.markFailed(pinId, DownloadReason.UNSUPPORTED_CODEC, now) }
+    }
+
+    @Test
+    fun `Given a video the processor refuses, Then each refusal marks FAILED with its reason and throws Permanent`() {
+        // Given
+        val video = mockk<VideoProcessor>()
+        val withVideo = DownloadPinMedia(
+            pins, mediaRepository, downloads, store,
+            MediaIngestion(store, probe, video, MediaBounds(100, 100, Duration.ofSeconds(1), 100)), fetcher, runner,
+            clock, renditionCache,
+        )
+        stubUntilStage()
+        every { probe.probe(any(), any()) } throws UndecodableImageException("not an image")
+        val reasons = mapOf(
+            VideoTooLongException("121 s") to DownloadReason.TOO_LONG,
+            VideoCodecUnsupportedException("ac3") to DownloadReason.UNSUPPORTED_CODEC,
+            UndecodableVideoException("refused by ffmpeg") to DownloadReason.INVALID_MEDIA,
+        )
+        for ((refusal, reason) in reasons) {
+            every { video.probe(any(), any()) } returns
+                VideoProbeResult(VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), "avc1.640015")
+            every { video.repackage(any(), any()) } throws refusal
+            // When / Then
+            assertThrows(PermanentTaskException::class.java) { withVideo.download(pinId, ctx()) }
+            verify { downloads.markFailed(pinId, reason, now) }
+        }
+    }
+
+    @Test
+    fun `Given a processor timeout below the attempt limit, Then it records a retryable error`() {
+        // Given
+        val video = mockk<VideoProcessor>()
+        val withVideo = DownloadPinMedia(
+            pins, mediaRepository, downloads, store,
+            MediaIngestion(store, probe, video, MediaBounds(100, 100, Duration.ofSeconds(1), 100)), fetcher, runner,
+            clock, renditionCache,
+        )
+        stubUntilStage()
+        every { probe.probe(any(), any()) } throws UndecodableImageException("not an image")
+        every { video.probe(any(), any()) } throws VideoProcessorTimeoutException("ffprobe ran past PT1S")
+
+        // When / Then
+        assertThrows(VideoProcessorTimeoutException::class.java) {
+            withVideo.download(pinId, ctx(attempt = 1, max = 3))
+        }
+        verify { downloads.recordLastError(pinId, "ffprobe ran past PT1S", now) }
     }
 
     @Test

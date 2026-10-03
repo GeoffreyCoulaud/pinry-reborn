@@ -12,6 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveEntryUnreadableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveLine
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveSource
@@ -28,7 +29,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaBounds
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.NoVideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
@@ -166,6 +166,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
     protected val archiveStore = mockk<ImportArchiveStore>()
     protected val mediaStore = mockk<MediaStore>()
     protected val imageProbe = mockk<ImageProbe>()
+    protected val videoProcessor = mockk<VideoProcessor>()
     protected val clock = mockk<Clock>()
 
     protected val accountCreatedAt: Instant = Instant.parse("2026-01-01T00:00:00Z")
@@ -198,8 +199,8 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             archiveStore = archiveStore,
             mediaIngestion =
                 MediaIngestion(
-                    mediaStore, imageProbe, NoVideoProcessor,
-                    MediaBounds(MAX_MEDIA_BYTES, 0, Duration.ZERO, MAX_PIXELS),
+                    mediaStore, imageProbe, videoProcessor,
+                    MediaBounds(MAX_MEDIA_BYTES, MAX_MEDIA_BYTES, Duration.ZERO, MAX_PIXELS),
                 ),
             // The real one over the same fake repository: the boundary it owns is what the walk needs.
             tagCreator = TagCreator(tagRepository, transactions, clock),

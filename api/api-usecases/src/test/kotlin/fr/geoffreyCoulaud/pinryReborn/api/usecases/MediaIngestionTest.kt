@@ -143,6 +143,21 @@ class MediaIngestionTest : BaseTest() {
         verify { store.discard(staged) }
     }
 
+    @Test fun `Given an archived video, Then it is stored as the archive carries it`() {
+        // Given
+        every { probe.probe(staged, maxPixels) } throws UndecodableImageException("not an image")
+        every { video.probe(staged, maxDuration) } returns aVideo
+
+        // When
+        val ingested = ingestion.ingestArchived(staged, ownerId, pinId, createdAt)
+
+        // Then
+        assertEquals(staged, ingested.staged)
+        assertEquals(staged.contentHash, ingested.media.contentHash)
+        assertEquals("video/webm; codecs=\"vp09.00.10.08,opus\"", ingested.media.mimeType)
+        verify(exactly = 0) { video.repackage(any(), any()) }
+    }
+
     @Test fun `Given a video past its byte bound, Then it is discarded and refused before repackaging`() {
         // Given
         val heavy = StagedFile("/tmp/heavy", 41, "hash")
