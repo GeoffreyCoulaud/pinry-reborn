@@ -247,9 +247,9 @@ class MediaController(
             "Set the pin's canonical image (upload bytes, or request a server-side fetch)"
 
         // Both arms declare these identically, SmallRye merging them (spec 2026-09-23, section 3).
-        const val TOO_LARGE = "MEDIA_TOO_LARGE: the upload is past media.max_file_bytes. BODY_TOO_LARGE: the " +
-            "Content-Length is past quarkus.http.limits.max-body-size, which is above media.max_file_bytes; " +
-            "a chunked body past it gets a 413 with no body"
+        const val TOO_LARGE = "MEDIA_TOO_LARGE: the upload is past media.max_image_bytes for an image, " +
+            "media.max_video_bytes for a video. BODY_TOO_LARGE: the Content-Length is past " +
+            "quarkus.http.limits.max-body-size, which is above both; a chunked body past it gets a 413 with no body"
         const val INVALID_REQUEST = "The upload has no file part, the body is not JSON or breaks a constraint, " +
             "or the source URL is not an http or https address"
     }

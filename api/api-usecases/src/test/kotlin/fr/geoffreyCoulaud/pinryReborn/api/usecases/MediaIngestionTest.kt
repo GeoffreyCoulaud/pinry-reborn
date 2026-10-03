@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
@@ -21,18 +22,19 @@ class MediaIngestionTest : BaseTest() {
     private val store = mockk<MediaStore>(relaxed = true)
     private val probe = mockk<ImageProbe>()
     private val maxPixels = 50L
-    private val ingestion = MediaIngestion(store, probe, MediaBounds(maxImageBytes = 30, maxPixels = maxPixels))
+    private val bounds = MediaBounds(maxImageBytes = 30, maxVideoBytes = 40, maxPixels = maxPixels)
+    private val ingestion = MediaIngestion(store, probe, bounds)
 
     private val ownerId = randomUUID()
     private val pinId = randomUUID()
     private val createdAt = Instant.parse("2026-10-03T00:00:00Z")
     private val staged = StagedFile("/tmp/s", 3, "hash")
 
-    @Test fun `Given a source, Then it is staged and digested under the byte bound`() {
+    @Test fun `Given a source, Then it is staged and digested under the larger byte bound`() {
         // Given
         val source = ByteArrayInputStream(byteArrayOf(1))
-        every { store.stage(source, 30) } returns staged
-        every { store.digest(source, 30) } returns "digest"
+        every { store.stage(source, 40) } returns staged
+        every { store.digest(source, 40) } returns "digest"
 
         // When
         val stagedFile = ingestion.stage(source)
@@ -41,6 +43,18 @@ class MediaIngestionTest : BaseTest() {
         // Then
         assertEquals(staged, stagedFile)
         assertEquals("digest", digest)
+    }
+
+    @Test fun `Given an image past its own byte bound but under the video's, Then it is discarded and refused`() {
+        // Given
+        val heavy = StagedFile("/tmp/heavy", 35, "hash")
+        every { probe.probe(heavy, maxPixels) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+
+        // When
+        assertThrows(MediaTooLargeException::class.java) { ingestion.ingest(heavy, ownerId, pinId, createdAt) }
+
+        // Then
+        verify { store.discard(heavy) }
     }
 
     @Test fun `Given a decodable file, Then the row carries the probe's answer under its owner's and pin's key`() {

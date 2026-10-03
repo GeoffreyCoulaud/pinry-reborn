@@ -194,7 +194,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             pinRepository = pinRepository,
             mediaRepository = mediaRepository,
             archiveStore = archiveStore,
-            mediaIngestion = MediaIngestion(mediaStore, imageProbe, MediaBounds(MAX_MEDIA_BYTES, MAX_PIXELS)),
+            mediaIngestion = MediaIngestion(mediaStore, imageProbe, MediaBounds(MAX_MEDIA_BYTES, 0, MAX_PIXELS)),
             // The real one over the same fake repository: the boundary it owns is what the walk needs.
             tagCreator = TagCreator(tagRepository, transactions, clock),
             transactionRunner = transactions,

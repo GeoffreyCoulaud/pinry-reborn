@@ -186,7 +186,7 @@ The lead adds four decisions, submitted with this document:
   dimensions, the duration, the extradata. It refuses an unlisted codec, a duration past the bound, a missing
   duration or a single frame.
 
-### Ingestion (blocks 50 to 56)
+### Ingestion (blocks 50 to 56) (Corrected: 50 to 58)
 
 - **`MediaIngestion`** (decision ii) stages with the larger of the two byte bounds, dispatches, applies the bound of
   what it found, repackages a video into a second staged file whose hash and size are the ones stored.
@@ -246,10 +246,11 @@ The lead adds four decisions, submitted with this document:
 | 45 | `feat/ffmpeg-repackages-a-video` | `repackage`, `poster`, the container function |
 | 50 | `refactor/one-ingestion-path` | `MediaIngestion` for images, the three callers moved onto it |
 | 53 | `feat/a-video-is-ingested` | `MediaIngestion` holds its bounds |
-| 54 | `feat/a-video-has-its-own-bounds` | The keys, the body limits, the handshake |
-| 55 | `feat/an-uploaded-video-is-ingested` | The video branch on the upload, its refusals |
+| 54 | `feat/a-video-has-its-own-bounds` | The keys and the body limits |
+| 55 | `feat/the-handshake-publishes-the-video-bounds` | The handshake's bounds, the client reading them |
+| 56 | `feat/an-uploaded-video-is-ingested` | The video branch on the upload, its refusals |
 | 57 | `feat/a-fetched-or-imported-video-is-ingested` | Download, import and export of a video |
-| 56 | `fix/the-download-renews-its-lease` | The lease renewed during a fetch |
+| 58 | `fix/the-download-renews-its-lease` | The lease renewed during a fetch |
 | 60 | `feat/a-video-has-renditions` | The poster and the animated preview as renditions |
 | 70 | `feat/the-webapp-plays-a-video` | The player and its fallback |
 | 75 | `feat/the-grid-previews-a-video` | Badge and hover |
@@ -260,7 +261,9 @@ The lead adds four decisions, submitted with this document:
 | 110 | `feat/a-page-address-yields-its-video` | The worker's dispatch on `Content-Type` |
 
 (Corrected: block 53 was "the video branch, the bounds, the refusals, the handshake"; an inventory of about 45 files
-split it into 53, 54, 55 and 57, the operator's answer of 2026-10-03. Block 57 stacks on 55, block 56 after it.)
+split it into four blocks, the operator's answer of 2026-10-03. Block 54 then measured 26 files and gave the handshake
+to a block of its own, the lead's answer the same day, and the numbers were reassigned so that their order is the
+stack's: the lease, block 56 until then, is block 58.)
 
 Each block measures its budget once committed, against its parent branch, and each test that guards a refusal is
 seen red before the code that answers it. Between blocks 53 and 60 a video's tile has no rendition; the stack
@@ -313,7 +316,8 @@ merges whole.
   and 523 lines; the operator chose on 2026-10-03 to keep the H.264 with AAC, the MPEG-TS and the playlist here,
   each other case asserted on ffprobe's JSON written by hand, and to move the other seven fixtures to block 42.
   `media.video_timeout` and the processor's producer move to block 50.) (Corrected: to block 53, block 50's
-  ingestion calling no `VideoProcessor`; `VideoProcessor`'s consumer is block 53.)
+  ingestion calling no `VideoProcessor`; `VideoProcessor`'s consumer is block 53.) (Corrected: block 56, after the
+  split of block 53.)
 
 ### 42, the probe's fixtures
 
@@ -344,7 +348,8 @@ merges whole.
 - Every existing image test passes unchanged in what it asserts.
 - `media.video_timeout` (`PT60S`) joins `MediaConfig`, and a producer builds `FfmpegVideoProcessor` from it, moved
   here from block 40 so that the key is read where `VideoProcessor` is first called. (Corrected: moved to block 53,
-  this block's `MediaIngestion` handling images alone and calling no `VideoProcessor`.)
+  this block's `MediaIngestion` handling images alone and calling no `VideoProcessor`.) (Corrected: block 56, after
+  the split of block 53.)
 
 ### 53, video ingestion
 
@@ -359,7 +364,7 @@ merges whole.
   `TOO_LONG` and `UNSUPPORTED_CODEC` have their sentences, `downloadReasons.ts` compiling.
 - (Corrected: added from block 50.) `media.video_timeout` (`PT60S`) joins `MediaConfig`, and a producer builds
   `FfmpegVideoProcessor` from it, read where `MediaIngestion` first calls `VideoProcessor`.
-- (Corrected: split on 2026-10-03, the criteria above moving to blocks 54, 55 and 57 below. This block holds that
+- (Corrected: split on 2026-10-03, the criteria above moving to blocks 54 to 57 below. This block holds that
   `MediaIngestion` reads its bounds from a `MediaBounds` the composition root builds from `MediaConfig`, so the
   upload, the download and the import pass none, and every existing test passes unchanged in what it asserts.)
 
@@ -370,9 +375,14 @@ merges whole.
 - An image upload still refuses past `media.max_image_bytes` though under `media.max_video_bytes`.
 - A 51 MiB file answers `413`; through the compose stack's nginx it still answers the API's `413` in
   `application/problem+json`.
+
+### 55, the handshake
+
+(Corrected: added on 2026-10-03.)
+
 - `LimitsDto` answers the three bounds from overridden keys, not the defaults. The client reads `maxImageBytes`.
 
-### 55, an uploaded video
+### 56, an uploaded video
 
 (Corrected: added on 2026-10-03.)
 
@@ -383,17 +393,18 @@ merges whole.
   MEDIA_CODEC_UNSUPPORTED`, a TIFF included; a file neither reads keeps `422 MEDIA_INVALID` (the lead's reading of
   "the AVIF `415`", 2026-10-03).
 - `media.video_timeout` (`PT60S`) joins `MediaConfig`, and a producer builds `FfmpegVideoProcessor` from it.
+- `LimitsDto.mediaTypes` lists the upload types, the video ones included, now that the upload takes them.
 
 ### 57, a fetched or imported video
 
-(Corrected: added on 2026-10-03, stacked on block 55, block 56 coming after it.)
+(Corrected: added on 2026-10-03.)
 
 - A video fetched from a file address becomes the pin's media; a refused one ends with `TOO_LONG` or
   `UNSUPPORTED_CODEC`, the AVIF and a TIFF with `UNSUPPORTED_CODEC`.
 - An export holding a video imports into an empty account with the same bytes and the same hash.
 - `TOO_LONG` and `UNSUPPORTED_CODEC` have their sentences, `downloadReasons.ts` compiling.
 
-### 56, the lease
+### 56, the lease (Corrected: 58)
 
 - In a test with a short `tasks.lease_duration`, a fetch slower than the lease runs once: the task is never
   reclaimed, its lease renewed.
