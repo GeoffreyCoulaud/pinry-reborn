@@ -60,8 +60,8 @@ class DownloadPinMediaTest {
 
     private val subject =
         DownloadPinMedia(
-            pins, mediaRepository, downloads, store, MediaIngestion(store, probe, MediaBounds(100, 100)), fetcher, runner, clock,
-            renditionCache,
+            pins, mediaRepository, downloads, store, MediaIngestion(store, probe, MediaBounds(100, 100)), fetcher,
+            runner, clock, renditionCache,
         )
 
     init {
