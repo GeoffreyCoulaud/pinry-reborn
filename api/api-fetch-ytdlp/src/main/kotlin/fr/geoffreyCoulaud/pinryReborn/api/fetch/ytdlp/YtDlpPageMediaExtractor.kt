@@ -37,7 +37,7 @@ class YtDlpPageMediaExtractor(
         }
     }
 
-    // One extraction: both runs share its proxy and its directory, where a hostile concatenation finds nothing.
+    // One extraction: both runs share its proxy and its directory, where a hostile concatenation finds the report.
     private inner class Extraction(
         private val pageUrl: String,
         private val directory: Path,
@@ -46,13 +46,16 @@ class YtDlpPageMediaExtractor(
     ) {
         private val options = OPTIONS + listOf("--proxy", "http://${proxy.address.hostString}:${proxy.address.port}")
 
+        // The second run reads the first's report, not the page, which could offer other formats the second time.
         fun download(): Path {
-            val format = YtDlpReport.formatOf(run(listOf("-f", FORMATS, "--dump-single-json")), maxDuration, maxBytes)
-            return directory.resolve(run(listOf("-f", format) + DOWNLOAD).trim())
+            val report = run(listOf("-f", FORMATS, "--dump-single-json", "--", pageUrl))
+            val format = YtDlpReport.formatOf(report, maxDuration, maxBytes)
+            val info = Files.writeString(directory.resolve(INFO_FILE), YtDlpReport.infoOf(report))
+            return directory.resolve(run(listOf("--load-info-json", info.toString(), "-f", format) + DOWNLOAD).trim())
         }
 
         private fun run(arguments: List<String>): String {
-            val command = listOf("yt-dlp") + options + arguments + listOf("--", pageUrl)
+            val command = listOf("yt-dlp") + options + arguments
             val process = ProcessBuilder(command).directory(directory.toFile()).start()
             try {
                 val output = FutureTask { process.inputStream.readAllBytes() }.also { Thread.ofVirtual().start(it) }
@@ -100,7 +103,7 @@ class YtDlpPageMediaExtractor(
         const val TICK_MILLIS = 100L
         const val DEMUXERS = "-nostdin -format_whitelist mov,matroska,mpegts -protocol_whitelist file"
 
-        // Decision J1, mpegts added for the HLS fixup. A bare `ffmpeg_i` reaches no postprocessor: each is named.
+        // ADR 0047 decision 3, mpegts added for the HLS fixup. A bare `ffmpeg_i` reaches no postprocessor.
         val POSTPROCESSORS =
             listOf("Merger", "FixupM3u8", "FixupM4a", "FixupStretched", "FixupDuplicateMoov", "FixupTimestamp") +
                 "FixupDuration"
@@ -112,13 +115,15 @@ class YtDlpPageMediaExtractor(
                 listOf("--downloader", "native") +
                 POSTPROCESSORS.flatMap { listOf("--postprocessor-args", "$it+ffmpeg_i:$DEMUXERS") }
 
+        const val INFO_FILE = "info.json"
+
         val DOWNLOAD = listOf("-o", "media.%(ext)s", "--print", "after_move:filepath")
 
         // The protocols yt-dlp downloads itself, through `--proxy`: rtmp, rtsp or mms would go to an external program.
         private const val PROXIED = "[protocol~='^(https?|m3u8(_native)?|http_dash_segments)$']"
 
-        // H.264, then VP9, then AV1, then H.265, each with an accepted audio codec (decision M1); then whatever
-        // declares no codec, as a bare `<video src>` does, which ingestion judges.
+        // H.264, then VP9, then AV1, then H.265, each with an accepted audio codec (ADR 0048, decision 3); then
+        // whatever declares no codec, as a bare `<video src>` does, which ingestion judges.
         val FORMATS =
             listOf("^(avc|h264)", "^vp0?9", "^av01", "^(hvc1|hev1|h265)").joinToString("/") { video ->
                 val audio = "[acodec~='^(mp4a|opus|mp3)']"
