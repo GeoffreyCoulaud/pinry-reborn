@@ -17,8 +17,11 @@ import java.util.HexFormat
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
 
-/** [VideoProcessor] running the `ffprobe` and `ffmpeg` on the `PATH`, each destroyed past [timeout] (ADR 0047). */
-class FfmpegVideoProcessor(private val timeout: Duration) : VideoProcessor {
+/**
+ * [VideoProcessor] running the `ffprobe` and `ffmpeg` on the `PATH`, each destroyed past [timeout] (ADR 0047), its
+ * previews encoded at [webpQuality].
+ */
+class FfmpegVideoProcessor(private val timeout: Duration, private val webpQuality: Int) : VideoProcessor {
     override fun probe(staged: StagedFile, maxDuration: Duration): VideoProbeResult {
         return FfprobeReport.read(run(PROBE + staged.path), maxDuration)
     }
@@ -40,10 +43,10 @@ class FfmpegVideoProcessor(private val timeout: Duration) : VideoProcessor {
     override fun poster(staged: StagedFile): StagedFile =
         write(staged, listOf("-vf", "thumbnail=n=100,$SQUARE_PIXELS", "-frames:v", "1", "-c:v", "png", "-f", "image2"))
 
-    override fun preview(staged: StagedFile, shortestSide: Int, quality: Int): StagedFile {
+    override fun preview(staged: StagedFile, shortestSide: Int): StagedFile {
         val scale = "scale=$shortestSide:$shortestSide:force_original_aspect_ratio=increase"
         val filters = listOf("-t", "3", "-vf", "$SQUARE_PIXELS,fps=12,$scale")
-        val encoder = listOf("-c:v", "libwebp_anim", "-quality", "$quality", "-loop", "0", "-f", "webp")
+        val encoder = listOf("-c:v", "libwebp_anim", "-quality", "$webpQuality", "-loop", "0", "-f", "webp")
         return write(staged, filters + encoder)
     }
 

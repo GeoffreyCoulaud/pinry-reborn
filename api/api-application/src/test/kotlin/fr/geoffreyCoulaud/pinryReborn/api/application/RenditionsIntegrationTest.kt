@@ -214,6 +214,78 @@ class RenditionsIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given a video and size=small (6), Then GET returns its poster as a still WebP, cached for the next GET`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pinId = createPinFor(auth)
+        uploadVideo(auth, pinId)
+        val mediaId = requireNotNull(mediaRepository.findByPinId(pinId)).id
+
+        // When
+        val bytes = getWebp(auth, pinId, "size=small")
+
+        // Then
+        val probe = probeBytes(bytes)
+        assertFalse(probe.animated)
+        assertEquals(6, minOf(probe.width, probe.height))
+        val cached = Path.of(mediaConfig.dataDir()).resolve("cache/$mediaId/v1-6-s.webp")
+        val firstWrite = Files.getLastModifiedTime(cached)
+        assertArrayEquals(bytes, getWebp(auth, pinId, "size=small"))
+        assertEquals(firstWrite, Files.getLastModifiedTime(cached), "the second GET should be a cache hit")
+    }
+
+    @Test
+    fun `Given a video and animated=true, Then GET returns an animated WebP cached apart from the still`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pinId = createPinFor(auth)
+        uploadVideo(auth, pinId)
+        val mediaId = requireNotNull(mediaRepository.findByPinId(pinId)).id
+        getWebp(auth, pinId, "size=small")
+
+        // When
+        val bytes = getWebp(auth, pinId, "size=small&animated=true")
+
+        // Then
+        assertTrue(probeBytes(bytes).animated)
+        val cache = Path.of(mediaConfig.dataDir()).resolve("cache/$mediaId")
+        assertTrue(Files.exists(cache.resolve("v1-6-s.webp")) && Files.exists(cache.resolve("v1-6-a.webp")))
+    }
+
+    @Test
+    fun `Given a video smaller than size=large (960), Then GET still returns a WebP`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pinId = createPinFor(auth)
+        uploadVideo(auth, pinId)
+
+        // When
+        val probe = probeBytes(getWebp(auth, pinId, "size=large"))
+
+        // Then: the 160x120 fixture at its own shortest side, never upscaled
+        assertEquals(120, minOf(probe.width, probe.height))
+    }
+
+    private fun uploadVideo(auth: AuthenticatedUser, pinId: UUID) {
+        given()
+            .authenticatedAs(auth)
+            .multiPart("file", File("../api-video-ffmpeg/src/test/resources/fixtures/h264-aac.mkv"), "video/mp4")
+            .`when`().put("/api/v1/pins/$pinId/media")
+            .then()
+            .statusCode(201)
+    }
+
+    private fun getWebp(auth: AuthenticatedUser, pinId: UUID, query: String): ByteArray =
+        given()
+            .authenticatedAs(auth)
+            .`when`().get("/api/v1/pins/$pinId/media?$query")
+            .then()
+            .statusCode(200)
+            .contentType("image/webp")
+            .extract()
+            .asByteArray()
+
+    @Test
     fun `Given a cached rendition, Then deleting the image evicts the cache subtree`() {
         // Given
         val auth = createAuthenticatedUser()

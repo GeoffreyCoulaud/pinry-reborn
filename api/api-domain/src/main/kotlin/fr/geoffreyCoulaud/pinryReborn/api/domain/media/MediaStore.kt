@@ -27,6 +27,9 @@ interface MediaStore {
      */
     fun openStream(storageKey: String): InputStream
 
+    /** Open a read stream for a staged temp file, which stays staged. */
+    fun openStaged(staged: StagedFile): InputStream
+
     /**
      * Delete [storageKey] if present (idempotent).
      */

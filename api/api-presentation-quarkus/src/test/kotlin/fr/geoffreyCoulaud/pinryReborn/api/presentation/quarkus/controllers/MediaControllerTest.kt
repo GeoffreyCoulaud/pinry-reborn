@@ -130,7 +130,7 @@ class MediaControllerTest {
         val user = aUser()
         val media = aMedia(pinId)
         every { securityIdentity.getAttribute<User>("user") } returns user
-        every { getPinMediaRendition.get(pinId, user, null, true) } returns ServedMedia.Original(media)
+        every { getPinMediaRendition.get(pinId, user, null, null) } returns ServedMedia.Original(media)
 
         // When
         val response = controller.getMedia(
@@ -155,7 +155,7 @@ class MediaControllerTest {
         val media = aMedia(pinId)
         val bytes = byteArrayOf(9, 8, 7, 6)
         every { securityIdentity.getAttribute<User>("user") } returns user
-        every { getPinMediaRendition.get(pinId, user, null, true) } returns ServedMedia.Original(media)
+        every { getPinMediaRendition.get(pinId, user, null, null) } returns ServedMedia.Original(media)
         every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(bytes)
 
         // When
@@ -184,7 +184,7 @@ class MediaControllerTest {
         val media = aMedia(pinId)
         val bytes = byteArrayOf(9, 8, 7, 6)
         every { securityIdentity.getAttribute<User>("user") } returns user
-        every { getPinMediaRendition.get(pinId, user, null, true) } returns ServedMedia.Original(media)
+        every { getPinMediaRendition.get(pinId, user, null, null) } returns ServedMedia.Original(media)
         every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(bytes)
 
         // When
@@ -208,7 +208,7 @@ class MediaControllerTest {
         val user = aUser()
         val media = aMedia(pinId)
         every { securityIdentity.getAttribute<User>("user") } returns user
-        every { getPinMediaRendition.get(pinId, user, null, true) } returns ServedMedia.Original(media)
+        every { getPinMediaRendition.get(pinId, user, null, null) } returns ServedMedia.Original(media)
 
         // Then
         assertThrows(RangeNotSatisfiableException::class.java) {
@@ -225,7 +225,7 @@ class MediaControllerTest {
         val user = aUser()
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
-        every { getPinMediaRendition.get(pinId, user, 240, true) } returns
+        every { getPinMediaRendition.get(pinId, user, 240, null) } returns
             ServedMedia.Rendition(mediaId, "v1-240-a.webp", 240, animated = true)
         every { renditionCache.openStream(mediaId, "v1-240-a.webp") } returns ByteArrayInputStream(byteArrayOf(7, 7))
 
@@ -245,7 +245,7 @@ class MediaControllerTest {
     }
 
     @Test
-    fun `Given animated is explicitly false, Then it is passed through instead of the default`() {
+    fun `Given animated is explicitly false, Then it is passed through`() {
         // Given
         val pinId = randomUUID()
         val mediaId = randomUUID()
@@ -273,7 +273,7 @@ class MediaControllerTest {
         val user = aUser()
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
-        every { getPinMediaRendition.get(pinId, user, 240, true) } returns
+        every { getPinMediaRendition.get(pinId, user, 240, null) } returns
             ServedMedia.Rendition(mediaId, "v1-240-s.webp", 240, animated = false)
         every { renditionCache.openStream(mediaId, "v1-240-s.webp") } returns ByteArrayInputStream(byteArrayOf(3))
 
@@ -298,7 +298,7 @@ class MediaControllerTest {
         val user = aUser()
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
-        every { getPinMediaRendition.get(pinId, user, 240, true) } returns
+        every { getPinMediaRendition.get(pinId, user, 240, null) } returns
             ServedMedia.Rendition(mediaId, "v1-240-a.webp", 240, animated = true)
 
         // When
@@ -336,7 +336,7 @@ class MediaControllerTest {
         val user = aUser()
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
-        every { getPinMediaRendition.get(pinId, user, 240, true) } returns
+        every { getPinMediaRendition.get(pinId, user, 240, null) } returns
             ServedMedia.Rendition(mediaId, "v1-240-a.webp", 240, animated = true)
         every { renditionCache.openStream(mediaId, "v1-240-a.webp") } returns null
 
