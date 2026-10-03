@@ -126,7 +126,7 @@
 	"issue_unknown": "Something on this line was not imported.",
 	"media": "Media",
 	"media_address": "Media address",
-	"media_codec_unsupported": "This server does not store this format or codec.",
+	"media_codec_unsupported": "This server does not support this format or codec.",
 	"media_fetched_on_save": "Fetched from this address on save",
 	"media_file": "Media file",
 	"media_from_address": "Address",

@@ -126,7 +126,7 @@
 	"issue_unknown": "Un élément de cette ligne n’a pas été importé.",
 	"media": "Média",
 	"media_address": "Adresse du média",
-	"media_codec_unsupported": "Ce serveur ne stocke pas ce format ou ce codec.",
+	"media_codec_unsupported": "Ce serveur ne prend pas en charge ce format ou ce codec.",
 	"media_fetched_on_save": "Récupéré depuis cette adresse à l’enregistrement",
 	"media_file": "Fichier média",
 	"media_from_address": "Adresse",
