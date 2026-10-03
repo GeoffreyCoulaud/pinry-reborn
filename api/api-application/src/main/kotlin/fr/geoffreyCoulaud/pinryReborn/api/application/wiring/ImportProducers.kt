@@ -101,7 +101,6 @@ class ImportProducers {
             transactionRunner, clock,
             maxMetadataBytes = config.maxMetadataBytes(),
             maxEntries = config.maxEntries(),
-            leaseRenewalLines = config.leaseRenewalLines(),
             reportDetailLimit = config.reportDetailLimit(),
         )
 }

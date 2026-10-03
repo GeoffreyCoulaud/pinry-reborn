@@ -188,8 +188,28 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         assertEquals(0, stored.skippedTags)
         // The metadata bound has no other caller in this codebase, so this is where it is pinned
         assertEquals(MAX_METADATA_BYTES, source.metadataBound)
-        // Every second line, so line 1 renews nothing and line 2 renews once
-        assertEquals(1, renewals)
+    }
+
+    @Test
+    fun `Given one tag line and one board line, Then the lease heartbeat is offered on each line`() {
+        // Given: the caller throttles the heartbeat, so the walk offers it whatever a line costs
+        val source =
+            FakeArchiveSource(
+                manifest = aManifest(),
+                tags = listOf(TestLine(1, ImportedTag(name = "voyage", createdAt = pastInstant))),
+                boards = listOf(TestLine(1, aBoard("Summer"))),
+            )
+        stubWalk(source)
+        stubTagLookup()
+        stubTagCreation()
+        stubBoardLookup()
+        stubBoardCreation()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(2, renewals)
     }
 
     @Test
@@ -630,6 +650,5 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         assertNull(stored.announcedPins)
         // Stamped once: the second claim keeps the instant the first one wrote
         assertEquals(now, stored.startedAt)
-        assertEquals(2, renewals)
     }
 }
