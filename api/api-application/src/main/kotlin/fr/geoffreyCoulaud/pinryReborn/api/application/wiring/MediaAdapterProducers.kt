@@ -47,7 +47,8 @@ class MediaAdapterProducers {
 
     @Produces
     @ApplicationScoped
-    fun videoProcessor(config: MediaConfig): VideoProcessor = FfmpegVideoProcessor(config.videoTimeout())
+    fun videoProcessor(config: MediaConfig, renditions: RenditionsConfig): VideoProcessor =
+        FfmpegVideoProcessor(config.videoTimeout(), renditions.webpQuality())
 
     @Produces
     @ApplicationScoped

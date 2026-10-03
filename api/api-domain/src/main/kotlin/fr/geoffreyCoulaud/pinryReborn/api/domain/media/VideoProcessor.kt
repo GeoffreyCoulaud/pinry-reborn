@@ -37,5 +37,5 @@ interface VideoProcessor {
     fun poster(staged: StagedFile): StagedFile
 
     /** The first three seconds as an animated WebP whose shortest side is [shortestSide]. */
-    fun preview(staged: StagedFile, shortestSide: Int, quality: Int): StagedFile
+    fun preview(staged: StagedFile, shortestSide: Int): StagedFile
 }

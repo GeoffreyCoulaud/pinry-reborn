@@ -6,6 +6,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionSpec
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
@@ -21,16 +23,19 @@ class GetPinMediaRendition(
     private val mediaStore: MediaStore,
     private val imageTransformer: ImageTransformer,
     private val renditionCache: RenditionCache,
+    private val videoProcessor: VideoProcessor,
 ) {
-    fun get(pinId: UUID, requester: User, requestedPx: Int?, animated: Boolean): ServedMedia {
+    fun get(pinId: UUID, requester: User, requestedPx: Int?, animated: Boolean?): ServedMedia {
         // Reuse 2a's load + owner/not-found guards verbatim (403/404 behaviour unchanged).
         val media = getPinMedia.get(pinId, requester)
+        // Left unsaid, an image keeps its animation and a video gives its poster (decision D1).
+        val requestedAnimated = animated ?: !media.isVideo
         // The requested flag is a no-op on a non-animated source (spec section 3), so intersect it
         // with the source before it reaches the key, the spec, or the descriptor. Without this a
         // static original renders under an "-a" key: identical bytes cached twice and served under
         // two ETags, and the transformer is told to decode frames from a source that has none.
-        val effectiveAnimated = animated && media.animated
-        val effectivePx = effectiveRenditionPx(media, requestedPx, animated)
+        val effectiveAnimated = requestedAnimated && media.animated
+        val effectivePx = effectiveRenditionPx(media, requestedPx, requestedAnimated)
         return if (effectivePx == null) {
             ServedMedia.Original(media)
         } else {
@@ -39,13 +44,14 @@ class GetPinMediaRendition(
     }
 
     // The clamped shortest-side px for a rendition, or null when the original must be served as-is
-    // (no size requested, or the source needs neither downscaling nor flattening).
+    // (no size requested, or an image that needs neither downscaling nor flattening). A video's
+    // original is never served to an `<img>`.
     private fun effectiveRenditionPx(media: Media, requestedPx: Int?, animated: Boolean): Int? {
         if (requestedPx == null) return null
         val srcShort = minOf(media.width, media.height)
         val needsDownscale = srcShort > requestedPx
         val needsFlatten = media.animated && !animated
-        return if (needsDownscale || needsFlatten) minOf(requestedPx, srcShort) else null
+        return if (media.isVideo || needsDownscale || needsFlatten) minOf(requestedPx, srcShort) else null
     }
 
     private fun serveRendition(media: Media, effectivePx: Int, animated: Boolean): ServedMedia.Rendition {
@@ -55,12 +61,38 @@ class GetPinMediaRendition(
             cached.close()
             return ServedMedia.Rendition(media.id, key, effectivePx, animated)
         }
-        val staged = mediaStore.openStream(media.storageKey).use { source ->
-            imageTransformer.render(source, RenditionSpec(effectivePx, animated))
-        }
+        val staged =
+            if (media.isVideo) {
+                renderVideo(media, effectivePx, animated)
+            } else {
+                mediaStore.openStream(media.storageKey).use { source ->
+                    imageTransformer.render(source, RenditionSpec(effectivePx, animated))
+                }
+            }
         renditionCache.store(media.id, key, staged)
         return ServedMedia.Rendition(media.id, key, effectivePx, animated)
     }
+
+    // The processor reads a file, so the original is staged for the time of one rendition.
+    private fun renderVideo(media: Media, effectivePx: Int, animated: Boolean): StagedFile {
+        val original = mediaStore.openStream(media.storageKey).use { mediaStore.stage(it, media.byteSize) }
+        try {
+            return if (animated) videoProcessor.preview(original, effectivePx) else drawPoster(original, effectivePx)
+        } finally {
+            mediaStore.discardQuietly(original)
+        }
+    }
+
+    private fun drawPoster(original: StagedFile, effectivePx: Int): StagedFile {
+        val poster = videoProcessor.poster(original)
+        try {
+            return mediaStore.openStaged(poster).use { imageTransformer.render(it, RenditionSpec(effectivePx, false)) }
+        } finally {
+            mediaStore.discardQuietly(poster)
+        }
+    }
+
+    private val Media.isVideo: Boolean get() = mimeType.startsWith("video/")
 
     private fun keyFor(effectivePx: Int, animated: Boolean): String =
         "$ENCODER_VERSION-$effectivePx-${if (animated) "a" else "s"}.webp"

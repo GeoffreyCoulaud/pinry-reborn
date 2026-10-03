@@ -137,7 +137,7 @@ class MediaController(
     ): RestResponse<StreamingOutput> {
         val requester = securityIdentity.getUser()
         val requestedPx = size?.let { resolveSizePx(it) }
-        val served = getPinMediaRendition.get(pinId, requester, requestedPx, animated ?: true)
+        val served = getPinMediaRendition.get(pinId, requester, requestedPx, animated)
         // A statement, not `return when`: the expression form compiles a synthetic
         // `NoWhenBranchMatchedException` branch that Kover counts as uncovered.
         val response: RestResponse<StreamingOutput>
