@@ -26,6 +26,7 @@ class MediaPortsTest {
             override fun digest(source: InputStream, maxBytes: Long) = "hash"
             override fun promote(staged: StagedFile, storageKey: String) {}
             override fun openStream(storageKey: String): InputStream = ByteArrayInputStream(ByteArray(0))
+            override fun openStaged(staged: StagedFile): InputStream = ByteArrayInputStream(ByteArray(0))
             override fun delete(storageKey: String) {}
             override fun discard(staged: StagedFile) {}
             override fun discardOrphanedStagedFiles(olderThan: Instant) = 0

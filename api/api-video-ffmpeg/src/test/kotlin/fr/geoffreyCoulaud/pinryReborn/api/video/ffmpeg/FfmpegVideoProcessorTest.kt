@@ -25,7 +25,7 @@ import java.util.HexFormat
 import javax.imageio.ImageIO
 
 class FfmpegVideoProcessorTest {
-    private val processor = FfmpegVideoProcessor(Duration.ofSeconds(60))
+    private val processor = FfmpegVideoProcessor(Duration.ofSeconds(60), webpQuality = 75)
     private val maxDuration = Duration.ofSeconds(120)
 
     @TempDir
@@ -177,7 +177,7 @@ class FfmpegVideoProcessorTest {
     @Test
     fun `Given a long video, Then preview is an animated WebP of at most three seconds at the requested size`() {
         // When
-        val preview = processor.preview(copied("too-long.mkv"), shortestSide = 24, quality = 75)
+        val preview = processor.preview(copied("too-long.mkv"), shortestSide = 24)
         val (canvas, durations) = animationOf(preview)
         // Then
         assertEquals(32 to 24, canvas)
@@ -195,7 +195,7 @@ class FfmpegVideoProcessorTest {
             // Then
             assertThrows(UndecodableVideoException::class.java) { processor.repackage(refused, video) }
             assertThrows(UndecodableVideoException::class.java) { processor.poster(refused) }
-            assertThrows(UndecodableVideoException::class.java) { processor.preview(refused, 24, 75) }
+            assertThrows(UndecodableVideoException::class.java) { processor.preview(refused, 24) }
         }
         val left = Files.list(directory).use { files -> files.map(Path::toString).toList() }
         assertEquals(setOf(playlist.path, segment.path), left.toSet())
@@ -281,7 +281,7 @@ class FfmpegVideoProcessorTest {
     @Test
     fun `Given a timeout ffprobe cannot meet, Then the process is destroyed and reported`() {
         // Given
-        val impatient = FfmpegVideoProcessor(Duration.ZERO)
+        val impatient = FfmpegVideoProcessor(Duration.ZERO, webpQuality = 75)
         // When
         assertThrows(VideoProcessorTimeoutException::class.java) {
             impatient.probe(staged("h264-aac.mkv"), maxDuration)

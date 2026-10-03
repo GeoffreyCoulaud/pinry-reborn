@@ -31,6 +31,8 @@ import kotlin.streams.asSequence
  * `MediaConfig`. Adding `@ApplicationScoped` back here alongside that `@Produces` method
  * would create an ambiguous `MediaStore` bean resolution.
  */
+// One override per MediaStore method plus three private helpers: splitting would fragment one cohesive adapter.
+@Suppress("TooManyFunctions")
 class FilesystemMediaStore(private val dataDir: String) : MediaStore {
 
     private companion object {
@@ -76,6 +78,8 @@ class FilesystemMediaStore(private val dataDir: String) : MediaStore {
 
     override fun openStream(storageKey: String): InputStream =
         Files.newInputStream(paths.resolveWithinRoot(storageKey))
+
+    override fun openStaged(staged: StagedFile): InputStream = Files.newInputStream(Path.of(staged.path))
 
     override fun delete(storageKey: String) {
         Files.deleteIfExists(paths.resolveWithinRoot(storageKey))

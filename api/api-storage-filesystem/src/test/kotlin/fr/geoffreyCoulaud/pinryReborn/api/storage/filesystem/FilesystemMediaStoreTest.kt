@@ -56,6 +56,15 @@ class FilesystemMediaStoreTest {
     }
 
     @Test
+    fun `Given a staged file, Then openStaged reads it in place`() {
+        val store = store()
+        val staged = store.stage(ByteArrayInputStream(byteArrayOf(7, 8)), maxBytes = 100)
+        val read = store.openStaged(staged).use { it.readBytes() }
+        assertTrue(read.contentEquals(byteArrayOf(7, 8)))
+        assertTrue(Files.exists(Path.of(staged.path)))
+    }
+
+    @Test
     fun `Given a stored key, Then delete removes it and is idempotent`() {
         val store = store()
         val staged = store.stage(ByteArrayInputStream(byteArrayOf(1)), maxBytes = 100)
