@@ -34,18 +34,18 @@ class SetPinMedia(
     private val clearPinDownload: ClearPinDownload,
     private val renditionCache: RenditionCache,
 ) {
-    fun set(pinId: UUID, requester: User, upload: InputStream, maxBytes: Long, maxPixels: Long): SetPinMediaResult {
+    fun set(pinId: UUID, requester: User, upload: InputStream): SetPinMediaResult {
         val pin = pinRepository.findPinById(pinId) ?: throw MediaPinDoesNotExistError()
         if (pin.author.id != requester.id) throw MediaPermissionError()
 
         val staged = try {
-            mediaIngestion.stage(upload, maxBytes)
+            mediaIngestion.stage(upload)
         } catch (e: MediaTooLargeException) {
             throw MediaTooLargeError(e)
         }
 
         val ingested = try {
-            mediaIngestion.ingest(staged, requester.id, pinId, maxPixels, clock.now())
+            mediaIngestion.ingest(staged, requester.id, pinId, clock.now())
         } catch (e: ImageProbeException) {
             // Keep the client-facing message fixed (consistent with the other MediaError
             // siblings); the underlying probe detail is preserved via `cause` for logs, not

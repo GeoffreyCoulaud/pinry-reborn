@@ -25,8 +25,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty
 /**
  * CDI wiring for the export use cases, hosted in the composition root because it needs both
  * `exports.*` (owned by the worker module) and the `api-storage-filesystem` adapter, which the
- * worker module must not depend on. Companion to [MediaAdapterProducers] and
- * [TaskHandlerProducers].
+ * worker module must not depend on. Companion to [MediaAdapterProducers].
  *
  * `FilesystemZipExportArchiveStore`, [UserDataExportRequester], [UserDataExportBuilder] and
  * [ReapUserDataExports] are deliberately not `@ApplicationScoped` (see their kdoc) since

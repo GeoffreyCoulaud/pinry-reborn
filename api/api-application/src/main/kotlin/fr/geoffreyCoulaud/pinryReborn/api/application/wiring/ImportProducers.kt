@@ -1,6 +1,5 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
@@ -12,7 +11,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportIssu
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemZipImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
@@ -24,10 +22,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.worker.ImportsConfig
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 
-/**
- * The import beans ARC cannot build itself, their scalars coming from `imports.*` in the worker
- * module and the runner's two image bounds from `media.*`, as [TaskHandlerProducers] takes them.
- */
+/** The import beans ARC cannot build itself, their scalars coming from `imports.*` in the worker module. */
 @ApplicationScoped
 class ImportProducers {
     @Produces
@@ -79,8 +74,8 @@ class ImportProducers {
         )
 
     /**
-     * The `media.*` bounds are reused rather than given import twins: an archived medium is bounded by
-     * what this instance hosts, [MediaConfig]'s to say. `LongParameterList`: ten ports and two configs.
+     * An archived medium is bounded by what this instance hosts, through [MediaIngestion]'s own bounds.
+     * `LongParameterList`: the ports and the config.
      */
     @Suppress("LongParameterList")
     @Produces
@@ -94,22 +89,18 @@ class ImportProducers {
         pinRepository: PinRepositoryInterface,
         mediaRepository: MediaRepositoryInterface,
         archiveStore: ImportArchiveStore,
-        mediaStore: MediaStore,
         mediaIngestion: MediaIngestion,
         tagCreator: TagCreator,
         transactionRunner: TransactionRunner,
         clock: Clock,
         config: ImportsConfig,
-        mediaConfig: MediaConfig,
     ): UserDataImportRunner =
         UserDataImportRunner(
             importRepository, issueRepository, userRepository, tagRepository, boardRepository,
-            pinRepository, mediaRepository, archiveStore, mediaStore, mediaIngestion, tagCreator,
+            pinRepository, mediaRepository, archiveStore, mediaIngestion, tagCreator,
             transactionRunner, clock,
             maxMetadataBytes = config.maxMetadataBytes(),
             maxEntries = config.maxEntries(),
-            maxMediaBytes = mediaConfig.maxFileBytes(),
-            maxPixels = mediaConfig.maxPixels(),
             leaseRenewalLines = config.leaseRenewalLines(),
             reportDetailLimit = config.reportDetailLimit(),
         )

@@ -245,7 +245,10 @@ The lead adds four decisions, submitted with this document:
 | 42 | `test/the-probe-reads-its-fixtures` | The probe's other fixtures and their assertions |
 | 45 | `feat/ffmpeg-repackages-a-video` | `repackage`, `poster`, the container function |
 | 50 | `refactor/one-ingestion-path` | `MediaIngestion` for images, the three callers moved onto it |
-| 53 | `feat/a-video-is-ingested` | The video branch, the bounds, the refusals, the handshake |
+| 53 | `feat/a-video-is-ingested` | `MediaIngestion` holds its bounds |
+| 54 | `feat/a-video-has-its-own-bounds` | The keys, the body limits, the handshake |
+| 55 | `feat/an-uploaded-video-is-ingested` | The video branch on the upload, its refusals |
+| 57 | `feat/a-fetched-or-imported-video-is-ingested` | Download, import and export of a video |
 | 56 | `fix/the-download-renews-its-lease` | The lease renewed during a fetch |
 | 60 | `feat/a-video-has-renditions` | The poster and the animated preview as renditions |
 | 70 | `feat/the-webapp-plays-a-video` | The player and its fallback |
@@ -255,6 +258,9 @@ The lead adds four decisions, submitted with this document:
 | 95 | `refactor/the-fetch-goes-through-the-proxy` | The fetcher behind it, its `Content-Type` |
 | 100 | `feat/yt-dlp-extracts-a-page` | pip, yt-dlp and Deno in both images, the `api-fetch-ytdlp` module |
 | 110 | `feat/a-page-address-yields-its-video` | The worker's dispatch on `Content-Type` |
+
+(Corrected: block 53 was "the video branch, the bounds, the refusals, the handshake"; an inventory of about 45 files
+split it into 53, 54, 55 and 57, the operator's answer of 2026-10-03. Block 57 stacks on 55, block 56 after it.)
 
 Each block measures its budget once committed, against its parent branch, and each test that guards a refusal is
 seen red before the code that answers it. Between blocks 53 and 60 a video's tile has no rendition; the stack
@@ -353,6 +359,39 @@ merges whole.
   `TOO_LONG` and `UNSUPPORTED_CODEC` have their sentences, `downloadReasons.ts` compiling.
 - (Corrected: added from block 50.) `media.video_timeout` (`PT60S`) joins `MediaConfig`, and a producer builds
   `FfmpegVideoProcessor` from it, read where `MediaIngestion` first calls `VideoProcessor`.
+- (Corrected: split on 2026-10-03, the criteria above moving to blocks 54, 55 and 57 below. This block holds that
+  `MediaIngestion` reads its bounds from a `MediaBounds` the composition root builds from `MediaConfig`, so the
+  upload, the download and the import pass none, and every existing test passes unchanged in what it asserts.)
+
+### 54, the bounds
+
+(Corrected: added on 2026-10-03.)
+
+- An image upload still refuses past `media.max_image_bytes` though under `media.max_video_bytes`.
+- A 51 MiB file answers `413`; through the compose stack's nginx it still answers the API's `413` in
+  `application/problem+json`.
+- `LimitsDto` answers the three bounds from overridden keys, not the defaults. The client reads `maxImageBytes`.
+
+### 55, an uploaded video
+
+(Corrected: added on 2026-10-03.)
+
+- Uploading each accepted fixture answers `201` and `GET /media` serves `video/mp4` or `video/webm` with its
+  `codecs`; the AC-3 fixture answers `415 MEDIA_CODEC_UNSUPPORTED`, the 121-second clip `422 MEDIA_TOO_LONG`, the
+  AVIF `415 MEDIA_CODEC_UNSUPPORTED`.
+- A format libvips reads and the server refuses, which ffprobe then refuses too, answers `415
+  MEDIA_CODEC_UNSUPPORTED`, a TIFF included; a file neither reads keeps `422 MEDIA_INVALID` (the lead's reading of
+  "the AVIF `415`", 2026-10-03).
+- `media.video_timeout` (`PT60S`) joins `MediaConfig`, and a producer builds `FfmpegVideoProcessor` from it.
+
+### 57, a fetched or imported video
+
+(Corrected: added on 2026-10-03, stacked on block 55, block 56 coming after it.)
+
+- A video fetched from a file address becomes the pin's media; a refused one ends with `TOO_LONG` or
+  `UNSUPPORTED_CODEC`, the AVIF and a TIFF with `UNSUPPORTED_CODEC`.
+- An export holding a video imports into an empty account with the same bytes and the same hash.
+- `TOO_LONG` and `UNSUPPORTED_CODEC` have their sentences, `downloadReasons.ts` compiling.
 
 ### 56, the lease
 
