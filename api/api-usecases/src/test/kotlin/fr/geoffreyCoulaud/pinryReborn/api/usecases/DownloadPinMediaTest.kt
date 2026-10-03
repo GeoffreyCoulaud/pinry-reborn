@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.IOException
+import java.io.InputStream
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
@@ -230,6 +231,27 @@ class DownloadPinMediaTest {
             subject.download(pinId, ctx(attempt = 3, max = 3))
         }
         verify { downloads.markFailed(pinId, DownloadReason.UNREACHABLE, now) }
+    }
+
+    @Test
+    fun `Given a body being fetched, Then each read offers the lease a renewal`() {
+        // Given
+        stubUntilStage()
+        every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1, 2, 3))
+        every { store.stage(any(), any()) } answers {
+            firstArg<InputStream>().run { read(); readAllBytes() }
+            staged()
+        }
+        every { probe.probe(any(), any()) } throws UndecodableImageException("garbage")
+        var renewals = 0
+        val context = ctx().apply { renewLeaseIfDue = { renewals++ } }
+
+        // When
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, context) }
+
+        // Then: one single-byte read, one buffered read of the rest, one read of the end
+        val reads = 3
+        assertEquals(reads, renewals)
     }
 
     @Test

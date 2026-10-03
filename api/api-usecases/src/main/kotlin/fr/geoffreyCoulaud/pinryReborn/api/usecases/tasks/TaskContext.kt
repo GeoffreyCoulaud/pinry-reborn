@@ -11,8 +11,10 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks
  * (`docs/adr/0022`). It defaults to a no-op, so handlers that finish well within one lease never have
  * to think about it. It is deliberately not part of the value identity (only [attempt] and
  * [maxAttempts] are), so two contexts for the same attempt compare equal regardless of which
- * heartbeat they carry.
+ * heartbeat they carry. [renewLeaseIfDue] renews only once a third of the lease has passed, so a read loop
+ * can call it on every chunk.
  */
 data class TaskContext(val attempt: Int, val maxAttempts: Int) {
     var renewLease: () -> Unit = {}
+    var renewLeaseIfDue: () -> Unit = {}
 }
