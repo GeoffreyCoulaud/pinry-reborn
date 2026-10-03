@@ -19,4 +19,8 @@ interface MediaDownloadConfig {
     // integration tests that fetch from a loopback origin. Default false = full Standard SSRF guard.
     @WithDefault("false")
     fun allowPrivateAddresses(): Boolean
+
+    /** How long one yt-dlp run may take before it is destroyed; `OrphanGraceCheck` keeps it under the orphan grace. */
+    @WithDefault("PT5M")
+    fun extractionTimeout(): Duration
 }

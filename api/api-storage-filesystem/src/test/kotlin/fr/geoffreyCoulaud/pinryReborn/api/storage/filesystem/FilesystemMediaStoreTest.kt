@@ -172,11 +172,9 @@ class FilesystemMediaStoreTest {
 
     @Test
     fun `Given staged files of both ages, Then discardOrphanedStagedFiles deletes the old ones only`() {
-        // Given: an old and a young staged file, and an old directory, which is not a staged file
+        // Given: an old and a young staged file
         val old = writeAged("tmp/stage-old.tmp", before = true)
         val young = writeAged("tmp/stage-young.tmp", before = false)
-        val directory = Files.createDirectories(dataDir.resolve("tmp/extraction"))
-        Files.setLastModifiedTime(directory, FileTime.from(cutoff.minusSeconds(1)))
 
         // When
         val discarded = store().discardOrphanedStagedFiles(cutoff)
@@ -185,7 +183,37 @@ class FilesystemMediaStoreTest {
         assertEquals(1, discarded)
         assertFalse(Files.exists(old))
         assertTrue(Files.exists(young))
-        assertTrue(Files.exists(directory))
+    }
+
+    @Test
+    fun `Given a staged directory whose entries all predate the cutoff, Then discardOrphanedStagedFiles deletes it`() {
+        // Given: what a yt-dlp run killed with the API leaves, a nested directory included
+        writeAged("tmp/yt-dlp-killed/media.mp4.part", before = true)
+        writeAged("tmp/yt-dlp-killed/fragments/frag1", before = true)
+        val directory = ageDirectories("tmp/yt-dlp-killed", "tmp/yt-dlp-killed/fragments")
+
+        // When
+        val discarded = store().discardOrphanedStagedFiles(cutoff)
+
+        // Then
+        assertEquals(1, discarded)
+        assertFalse(Files.exists(directory))
+    }
+
+    @Test
+    fun `Given a staged directory with one entry after the cutoff, Then discardOrphanedStagedFiles keeps it whole`() {
+        // Given: a running yt-dlp's directory, its newest fragment written after the cutoff
+        val old = writeAged("tmp/yt-dlp-running/fragments/frag1", before = true)
+        val young = writeAged("tmp/yt-dlp-running/fragments/frag2", before = false)
+        ageDirectories("tmp/yt-dlp-running", "tmp/yt-dlp-running/fragments")
+
+        // When
+        val discarded = store().discardOrphanedStagedFiles(cutoff)
+
+        // Then
+        assertEquals(0, discarded)
+        assertTrue(Files.exists(old))
+        assertTrue(Files.exists(young))
     }
 
     @Test
@@ -206,6 +234,13 @@ class FilesystemMediaStoreTest {
         val offset = if (before) -1L else 1L
         Files.setLastModifiedTime(path, FileTime.from(cutoff.plusSeconds(offset)))
         return path
+    }
+
+    /** Dates [keys] a second before [cutoff], once their files are written; returns the first. */
+    private fun ageDirectories(vararg keys: String): Path {
+        val paths = keys.map { dataDir.resolve(it) }
+        paths.forEach { Files.setLastModifiedTime(it, FileTime.from(cutoff.minusSeconds(1))) }
+        return paths.first()
     }
 
     /**

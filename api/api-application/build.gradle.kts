@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":api-imaging-vips"))
     implementation(project(":api-video-ffmpeg"))
     implementation(project(":api-fetch-http"))
+    implementation(project(":api-fetch-ytdlp"))
     implementation(project(":api-system"))
     implementation(project(":api-worker-quarkus"))
 

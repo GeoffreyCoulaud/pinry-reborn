@@ -550,7 +550,8 @@ merges whole.
 - The extractor's own refusals, too long and no media found, are a sealed hierarchy beside `FetchException`, which
   block 110 maps; the proxy's refusals and the overflow reuse `UrlNotAllowedException`, `FetchUnreachableException`
   and `FetchTooLargeException`, so `DownloadPinMedia.mapFetch` is unchanged.
-- Each run's directory under `tmp/` is deleted when the run ends, block 20's sweep deleting files alone.
+- Each run's directory under `tmp/` is deleted when the run ends, block 20's sweep deleting files alone. (Corrected:
+  block 104's sweep also deletes a stale directory, which an API killed mid-run leaves.)
 - `PageMediaExtractor`'s consumer is block 110, through block 104's producer, which the pull request says.
 - (Corrected: the hostile concatenation passes yt-dlp untouched, its HLS fixup handing ffmpeg only what its ffprobe
   reads as MPEG-TS, and is refused by ingestion's probe, which the test asserts. The `-f` chain ends with `/b`, for a
@@ -579,6 +580,8 @@ merges whole.
 - A boot where `garbage-collection.orphan_grace` is not longer than `media.download.extraction_timeout` is refused
   (block 20's criterion).
 - The producer's consumer is block 110, which the pull request says.
+- (Corrected: added on 2026-10-03, the lead's answer.) The stale-staged sweep deletes a directory under `tmp/` whose
+  newest entry is older than `garbage-collection.orphan_grace`, contents included; a younger one stays.
 
 ### 110, the dispatch
 

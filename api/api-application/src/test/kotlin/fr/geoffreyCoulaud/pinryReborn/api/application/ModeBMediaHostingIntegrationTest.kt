@@ -2,7 +2,10 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaExtractor
+import fr.geoffreyCoulaud.pinryReborn.api.fetch.ytdlp.YtDlpPageMediaExtractor
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
+import io.quarkus.arc.ClientProxy
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
@@ -53,6 +56,9 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
 
     @Inject
     lateinit var pinCreator: PinCreator
+
+    @Inject
+    lateinit var pageMediaExtractor: PageMediaExtractor
 
     private fun fixture(name: String) = File("src/test/resources/fixtures/$name")
 
@@ -120,6 +126,15 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             .`when`().get(DOWNLOADS_PATH)
             .then().statusCode(200)
             .extract().jsonPath()
+
+    @Test
+    fun `Given the running instance, Then its page media extractor is the yt-dlp adapter`() {
+        // Given / When: the injected bean is ARC's client proxy, which only an unwrap sees through
+        val extractor = ClientProxy.unwrap(pageMediaExtractor)
+
+        // Then
+        assertTrue(extractor is YtDlpPageMediaExtractor, "Expected yt-dlp's, got ${extractor.javaClass}")
+    }
 
     @Test
     fun `Given a mode-B request for a real image, Then it settles READY and the bytes are served`() {
