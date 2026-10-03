@@ -24,14 +24,14 @@ class LoggingRequestResponseFilterTest {
         every { ctx.method } returns "POST"
         every { ctx.uriInfo } returns uriInfo
         every { uriInfo.requestUri } returns URI.create("http://localhost/api/v1/sessions")
-        every { ctx.headers } returns MultivaluedHashMap<String, String>().apply { headers.forEach { (name, value) -> add(name, value) } }
+        every { ctx.headers } returns MultivaluedHashMap(headers)
         return ctx
     }
 
     private fun response(headers: Map<String, Any>): ContainerResponseContext {
         val ctx = mockk<ContainerResponseContext>()
         every { ctx.status } returns 201
-        every { ctx.headers } returns MultivaluedHashMap<String, Any>().apply { headers.forEach { (name, value) -> add(name, value) } }
+        every { ctx.headers } returns MultivaluedHashMap(headers)
         return ctx
     }
 
@@ -55,7 +55,7 @@ class LoggingRequestResponseFilterTest {
     }
 
     @Test
-    fun `Given a request with Authorization and Cookie headers, Then requestFilter logs them redacted and keeps the rest`() {
+    fun `Given Authorization and Cookie request headers, Then requestFilter redacts them and keeps the rest`() {
         // Given
         val ctx = request(
             mapOf("Authorization" to "Bearer a-token", "Cookie" to "pinry_session=a-token", "Accept" to "*/*"),
