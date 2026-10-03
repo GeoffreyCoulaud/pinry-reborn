@@ -50,8 +50,8 @@ class YtDlpPageMediaExtractor(
         fun download(): Path {
             val report = run(listOf("-f", FORMATS, "--dump-single-json", "--", pageUrl))
             val format = YtDlpReport.formatOf(report, maxDuration, maxBytes)
-            val info = Files.writeString(directory.resolve(INFO_FILE), YtDlpReport.infoOf(report))
-            return directory.resolve(run(listOf("--load-info-json", info.toString(), "-f", format) + DOWNLOAD).trim())
+            Files.writeString(directory.resolve(INFO_FILE), YtDlpReport.infoOf(report))
+            return directory.resolve(run(listOf("--load-info-json", INFO_FILE, "-f", format) + DOWNLOAD).trim())
         }
 
         private fun run(arguments: List<String>): String {
