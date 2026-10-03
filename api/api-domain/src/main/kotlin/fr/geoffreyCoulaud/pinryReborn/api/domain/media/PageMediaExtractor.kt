@@ -11,5 +11,8 @@ interface PageMediaExtractor {
 /** Base for what the page itself makes the extractor refuse (ADR 0048, decision 3). */
 sealed class PageExtractionException(message: String) : Exception(message)
 
-/** The page shows no video the extractor can download. */
+/** The page declares a video longer than the bound. */
+class PageMediaTooLongException(message: String) : PageExtractionException(message)
+
+/** The page shows no video the extractor can download, a live stream included. */
 class NoMediaFoundException(message: String) : PageExtractionException(message)
