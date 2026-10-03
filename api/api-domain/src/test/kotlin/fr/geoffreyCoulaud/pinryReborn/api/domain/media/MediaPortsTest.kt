@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -26,6 +27,7 @@ class MediaPortsTest {
             override fun digest(source: InputStream, maxBytes: Long) = "hash"
             override fun promote(staged: StagedFile, storageKey: String) {}
             override fun openStream(storageKey: String): InputStream = ByteArrayInputStream(ByteArray(0))
+            override fun stageStored(media: Media) = StagedFile("/tmp/stored", media.byteSize, media.contentHash)
             override fun openStaged(staged: StagedFile): InputStream = ByteArrayInputStream(ByteArray(0))
             override fun delete(storageKey: String) {}
             override fun discard(staged: StagedFile) {}

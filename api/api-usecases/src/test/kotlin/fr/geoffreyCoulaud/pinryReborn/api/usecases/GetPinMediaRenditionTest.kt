@@ -47,10 +47,10 @@ class GetPinMediaRenditionTest {
     private val poster = StagedFile("/tmp/poster.png", 2, "p")
     private val rendered = StagedFile("/tmp/out.webp", 3, "hh")
 
+    // The strict store answers no openStream or stage: a video's original is staged in place, never copied.
     private fun stubVideoMiss(video: Media, key: String) {
         every { renditionCache.openStream(video.id, key) } returns null
-        every { mediaStore.openStream(video.storageKey) } returns ByteArrayInputStream(byteArrayOf(1))
-        every { mediaStore.stage(any(), video.byteSize) } returns original
+        every { mediaStore.stageStored(video) } returns original
         every { mediaStore.discard(any()) } returns Unit
         every { renditionCache.store(video.id, key, any()) } returns Unit
     }
@@ -214,7 +214,7 @@ class GetPinMediaRenditionTest {
         val video = video(pinId)
         every { getPinMedia.get(pinId, requester) } returns video
         stubVideoMiss(video, "v1-40-s.webp")
-        every { videoProcessor.poster(original) } returns poster
+        every { videoProcessor.poster(original, 40) } returns poster
         every { mediaStore.openStaged(poster) } returns ByteArrayInputStream(byteArrayOf(2))
         every { imageTransformer.render(any(), RenditionSpec(40, false)) } returns rendered
 

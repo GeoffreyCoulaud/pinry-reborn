@@ -200,7 +200,10 @@ class SetPinMediaTest : BaseTest() {
         }
         // A file ffprobe reads and ffmpeg then refuses
         every { video.probe(staged, Duration.ofSeconds(1)) } returns
-            VideoProbeResult(VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4)
+            VideoProbeResult(
+                VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4,
+                alreadyRepackaged = true,
+            )
         every { video.repackage(staged, any()) } throws UndecodableVideoException("refused")
         assertThrows(MediaInvalidError::class.java) { withVideo.set(p.id, owner, upload()) }
     }

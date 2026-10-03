@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
@@ -49,14 +50,14 @@ class MediaIngestion(
     fun digest(source: InputStream): String = mediaStore.digest(source, bounds.maxStagedBytes)
 
     fun ingest(staged: StagedFile, ownerId: UUID, pinId: UUID, createdAt: Instant): IngestedMedia =
-        ingest(staged, ownerId, pinId, createdAt, repackage = true)
+        ingest(staged, ownerId, pinId, createdAt, keepArchivedMp4 = false)
 
     /**
-     * An export's video is stored as the archive carries it: it was repackaged when first ingested, and a second
-     * pass would change its bytes (decision iii).
+     * An archived MP4 already repackaged is kept, a second pass changing its bytes; any other video is repackaged,
+     * which keeps a stored WebM's bytes (ADR 0049, decision 3).
      */
     fun ingestArchived(staged: StagedFile, ownerId: UUID, pinId: UUID, createdAt: Instant): IngestedMedia =
-        ingest(staged, ownerId, pinId, createdAt, repackage = false)
+        ingest(staged, ownerId, pinId, createdAt, keepArchivedMp4 = true)
 
     /** Whatever a probe, a bound or the repackaging throws, the staged file is discarded first. */
     @Suppress("TooGenericExceptionCaught")
@@ -65,11 +66,11 @@ class MediaIngestion(
         ownerId: UUID,
         pinId: UUID,
         createdAt: Instant,
-        repackage: Boolean,
+        keepArchivedMp4: Boolean,
     ): IngestedMedia {
         val found =
             try {
-                identify(staged, repackage)
+                identify(staged, keepArchivedMp4)
             } catch (e: Exception) {
                 mediaStore.discardQuietly(staged)
                 throw e
@@ -85,8 +86,8 @@ class MediaIngestion(
         return IngestedMedia(media, found.stored)
     }
 
-    /** libvips first, ffprobe for what libvips cannot store (decision ii). */
-    private fun identify(staged: StagedFile, repackage: Boolean): Found {
+    /** libvips first, ffprobe for what libvips cannot store (ADR 0049, decision 2). */
+    private fun identify(staged: StagedFile, keepArchivedMp4: Boolean): Found {
         val imageRefusal: ImageProbeException
         try {
             val image = imageProbe.probe(staged, bounds.maxPixels)
@@ -98,22 +99,28 @@ class MediaIngestion(
         } catch (e: UnsupportedImageFormatException) {
             imageRefusal = e
         }
-        return video(staged, imageRefusal, repackage)
+        return video(staged, imageRefusal, keepArchivedMp4)
     }
 
     /** A file ffprobe cannot read either keeps libvips' refusal, so an AVIF stays an unsupported format. */
-    private fun video(staged: StagedFile, imageRefusal: ImageProbeException, repackage: Boolean): Found {
+    private fun video(staged: StagedFile, imageRefusal: ImageProbeException, keepArchivedMp4: Boolean): Found {
         val video =
             try {
                 videoProcessor.probe(staged, bounds.maxVideoDuration)
             } catch (ignored: UndecodableVideoException) {
                 throw imageRefusal
             }
+        // The image's refusal, so each caller answers a video's pixels as it answers an image's.
+        if (video.width.toLong() * video.height > bounds.maxPixels) {
+            throw ImageTooManyPixelsException("${video.width}x${video.height}, past ${bounds.maxPixels} pixels")
+        }
         refuseOver(staged, bounds.maxVideoBytes)
         val container = VideoContainer.of(video.videoCodec, video.audioCodec)
         // An archived MP4 alone is kept: repackaged again it would change, where a WebM keeps its bytes and one
         // demuxer reads both WebM and Matroska, so a file in any other container is made the one its codecs choose.
-        val keptAsArchived = !repackage && video.demuxedAs == VideoContainer.MP4 && container == VideoContainer.MP4
+        val keptAsArchived =
+            keepArchivedMp4 && video.alreadyRepackaged &&
+                video.demuxedAs == VideoContainer.MP4 && container == VideoContainer.MP4
         val stored =
             if (keptAsArchived) {
                 staged

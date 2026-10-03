@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.AudioCodec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
@@ -37,6 +38,10 @@ class MediaIngestionTest : BaseTest() {
     private val ingestion = MediaIngestion(store, probe, video, bounds)
     private val aVideo = VideoProbeResult(
         VideoCodec.VP9, AudioCodec.OPUS, 4, 6, Duration.ofSeconds(1), "vp09.00.10.08,opus", VideoContainer.WEBM,
+        alreadyRepackaged = true,
+    )
+    private val anMp4 = aVideo.copy(
+        videoCodec = VideoCodec.H264, audioCodec = null, codecs = "avc1.640015", demuxedAs = VideoContainer.MP4,
     )
 
     private val ownerId = randomUUID()
@@ -145,13 +150,10 @@ class MediaIngestionTest : BaseTest() {
         verify { store.discard(staged) }
     }
 
-    @Test fun `Given an archived MP4, Then it is stored as the archive carries it`() {
+    @Test fun `Given an archived MP4 already repackaged, Then it is stored as the archive carries it`() {
         // Given: repackaged again, an MP4 would not keep its bytes
-        val mp4 = aVideo.copy(
-            videoCodec = VideoCodec.H264, audioCodec = null, codecs = "avc1.640015", demuxedAs = VideoContainer.MP4,
-        )
         every { probe.probe(staged, maxPixels) } throws UndecodableImageException("not an image")
-        every { video.probe(staged, maxDuration) } returns mp4
+        every { video.probe(staged, maxDuration) } returns anMp4
 
         // When
         val ingested = ingestion.ingestArchived(staged, ownerId, pinId, createdAt)
@@ -160,6 +162,34 @@ class MediaIngestionTest : BaseTest() {
         assertEquals(staged, ingested.staged)
         assertEquals(staged.contentHash, ingested.media.contentHash)
         assertEquals("video/mp4; codecs=\"avc1.640015\"", ingested.media.mimeType)
+        verify(exactly = 0) { video.repackage(any(), any()) }
+    }
+
+    @Test fun `Given an archived MP4 with a track or a tag repackaging drops, Then it is repackaged`() {
+        // Given: an H.265 tagged hev1, say, which its stored type would call hvc1
+        val handMade = anMp4.copy(alreadyRepackaged = false)
+        val repackaged = StagedFile("/tmp/r", 7, "repackaged")
+        every { probe.probe(staged, maxPixels) } throws UndecodableImageException("not an image")
+        every { video.probe(staged, maxDuration) } returns handMade
+        every { video.repackage(staged, handMade) } returns repackaged
+
+        // When
+        val ingested = ingestion.ingestArchived(staged, ownerId, pinId, createdAt)
+
+        // Then
+        assertEquals(repackaged, ingested.staged)
+    }
+
+    @Test fun `Given a video past the pixel bound, Then it is discarded and refused before repackaging`() {
+        // Given: 10 by 6 is 60 pixels, past the bound of 50
+        every { probe.probe(staged, maxPixels) } throws UndecodableImageException("not an image")
+        every { video.probe(staged, maxDuration) } returns aVideo.copy(width = 10, height = 6)
+
+        // When
+        assertThrows(ImageTooManyPixelsException::class.java) { ingestion.ingest(staged, ownerId, pinId, createdAt) }
+
+        // Then
+        verify { store.discard(staged) }
         verify(exactly = 0) { video.repackage(any(), any()) }
     }
 
@@ -241,7 +271,7 @@ internal object NoVideoProcessor : VideoProcessor {
 
     override fun repackage(staged: StagedFile, video: VideoProbeResult): StagedFile = error("never probed")
 
-    override fun poster(staged: StagedFile): StagedFile = error("never probed")
+    override fun poster(staged: StagedFile, shortestSide: Int): StagedFile = error("never probed")
 
     override fun preview(staged: StagedFile, shortestSide: Int): StagedFile = error("never probed")
 }

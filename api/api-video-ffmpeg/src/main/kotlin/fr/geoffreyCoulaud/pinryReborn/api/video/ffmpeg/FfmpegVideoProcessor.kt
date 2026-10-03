@@ -40,12 +40,14 @@ class FfmpegVideoProcessor(private val timeout: Duration, private val webpQualit
         return write(staged, copy + tag + container)
     }
 
-    override fun poster(staged: StagedFile): StagedFile =
-        write(staged, listOf("-vf", "thumbnail=n=100,$SQUARE_PIXELS", "-frames:v", "1", "-c:v", "png", "-f", "image2"))
+    override fun poster(staged: StagedFile, shortestSide: Int): StagedFile =
+        write(staged, listOf("-vf", posterFilters(shortestSide), "-frames:v", "1", "-c:v", "png", "-f", "image2"))
+
+    // Scaled first: thumbnail holds the hundred frames it chooses among, so their size is its memory.
+    internal fun posterFilters(shortestSide: Int) = "$SQUARE_PIXELS,${scaleTo(shortestSide)},thumbnail=n=100"
 
     override fun preview(staged: StagedFile, shortestSide: Int): StagedFile {
-        val scale = "scale=$shortestSide:$shortestSide:force_original_aspect_ratio=increase"
-        val filters = listOf("-t", "3", "-vf", "$SQUARE_PIXELS,fps=12,$scale")
+        val filters = listOf("-t", "3", "-vf", "$SQUARE_PIXELS,fps=12,${scaleTo(shortestSide)}")
         val encoder = listOf("-c:v", "libwebp_anim", "-quality", "$webpQuality", "-loop", "0", "-f", "webp")
         return write(staged, filters + encoder)
     }
@@ -85,7 +87,7 @@ class FfmpegVideoProcessor(private val timeout: Duration, private val webpQualit
     }
 
     private companion object {
-        // Before -i, where ffmpeg reads them as input options: after it, an MPEG-TS would pass (decision J1).
+        // Before -i, where ffmpeg reads them as input options: after it, an MPEG-TS would pass (ADR 0047, decision 3).
         val DEMUXERS = listOf("-format_whitelist", "mov,matroska", "-protocol_whitelist", "file")
         val PROBE =
             listOf("ffprobe", "-v", "error") + DEMUXERS +
@@ -94,5 +96,7 @@ class FfmpegVideoProcessor(private val timeout: Duration, private val webpQualit
 
         // An anamorphic source's pixels made square, so a rendition keeps the proportions the video displays at.
         const val SQUARE_PIXELS = "scale=iw*sar:ih,setsar=1"
+
+        fun scaleTo(shortestSide: Int) = "scale=$shortestSide:$shortestSide:force_original_aspect_ratio=increase"
     }
 }

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import java.io.InputStream
 import java.time.Instant
@@ -26,6 +27,9 @@ interface MediaStore {
      * Open a read stream for a stored key.
      */
     fun openStream(storageKey: String): InputStream
+
+    /** Stage [media]'s original without copying its bytes, for a reader that needs a path; discard it after. */
+    fun stageStored(media: Media): StagedFile
 
     /** Open a read stream for a staged temp file, which stays staged. */
     fun openStaged(staged: StagedFile): InputStream
