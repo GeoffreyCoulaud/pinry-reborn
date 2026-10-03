@@ -43,9 +43,13 @@ layer, then with ffmpeg), LLVM and Mesa being most of it; the static binaries of
    file` before `-i` on every call, ffmpeg also taking `-nostdin`. yt-dlp's own calls get the same flags through
    `--postprocessor-args`, with `mpegts` added for its HLS fixup, and each of its runs writes into an empty
    directory. A playlist or a concatenation could otherwise read a file of the server into the output.
+   (Corrected: yt-dlp's ffmpeg calls alone take them, through the named `<Name>+ffmpeg_i` postprocessors. Its
+   ffprobe calls take no arguments: their bound is the run's directory, empty but for the first run's report since
+   block 124, and ingestion's probe, blocks 102 and 124.)
 
    **Fails if** an HLS playlist or a concatenation naming a local file is probed, repackaged or postprocessed
-   instead of refused.
+   instead of refused. (Corrected: a concatenation passes yt-dlp untouched, its HLS fixup handing ffmpeg only what
+   its ffprobe reads as MPEG-TS, and is refused by ingestion's probe; it fails if ingestion stores it, block 102.)
 
 4. **ffmpeg runs as a process, installed from apt.** A crash on a hostile file ends the process and not the API, a
    timeout ends it by `destroy`, and its security fixes arrive with the base image Dependabot already raises. JavaCV

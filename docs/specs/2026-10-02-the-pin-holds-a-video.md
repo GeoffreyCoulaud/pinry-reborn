@@ -166,6 +166,8 @@ The lead adds four decisions, submitted with this document:
 - **v. yt-dlp runs twice per page.** First `--dump-single-json`, which downloads nothing: the worker reads the
   duration, the live flag and the chosen format's size, and refuses with an exact reason. Then the download, with
   `-f` fixed to the format the first run chose. One page fetch more, and no reason read from stderr. ADR 0048.
+  (Corrected: since block 124 the second run loads the first run's report with `--load-info-json` and fetches no
+  page.)
 
 ## 4. The change
 
@@ -236,7 +238,7 @@ The lead adds four decisions, submitted with this document:
   nothing. A page whose extractor knows no duration (a bare `<video src>`, an HLS stream) passes the first run and
   is bounded at ingestion.
 
-### Web application (blocks 70 to 80)
+### Web application (blocks 70 to 80) (Corrected: 70 to 85)
 
 - **`lib/media.ts`**: whether a `mimeType` is a video, and what `canPlayType`'s answer means. 100 % as `lib/` is.
 - **The pin's view**: a `<video controls>` whose `poster` is the grid's rendition; decision M1's fallback.
@@ -247,6 +249,9 @@ The lead adds four decisions, submitted with this document:
   `mediaTypes`; the upload refusals get sentences, and the sentences that say "image" for the medium say "media".
 
 ## 5. Blocks
+
+(Corrected: where a split copied a block's criteria into the blocks it created, the later subsections govern: 54 to
+57 over 53, 102 and 103 over 100, 42 over 40, 92 over 90 and 85 over 80.)
 
 | Block | Branch | Title |
 |---|---|---|
@@ -287,7 +292,11 @@ gave the sentences that say "image" for the medium to block 85, the lead's answe
 measured 580 lines and gave plain HTTP forwarding to block 92, the lead's answer of 2026-10-03.) (Corrected: block
 100's inventory counted about 28 files and gave the `api-fetch-ytdlp` module to block 102 and its wiring to block
 104, the lead's answer of 2026-10-03.) (Corrected: block 102 measured 590 lines and gave the extraction's bounds to
-block 103, the lead's answer of 2026-10-03.)
+block 103, the lead's answer of 2026-10-03.) (Corrected: the holistic review's findings
+(`.reviews/the-pin-holds-a-video-holistic.md`) go to the closing blocks stacked above block 110 (`agents/workflow.md`,
+phase 6): 120 `fix/the-video-path-holds-its-resources`, 122 `fix/the-import-renews-its-lease-per-line`, 124
+`fix/the-download-is-bounded-in-time`, 126 `fix/the-api-says-media` and 128 `fix/a-stalled-download-is-abandoned`,
+then the documents and the handoff above them.)
 
 Each block measures its budget once committed, against its parent branch, and each test that guards a refusal is
 seen red before the code that answers it. Between blocks 53 and 60 a video's tile has no rendition; the stack
@@ -314,6 +323,7 @@ merges whole.
 - A file under `originals/` whose media id has no row, older than `garbage-collection.orphan_grace` (new, `PT1H`),
   is deleted; the same file younger than the grace stays, which is what a promotion awaiting its transaction looks
   like. The grace is longer than `media.download.extraction_timeout`, so a running yt-dlp's directory is younger.
+  (Corrected: longer than twice the timeout, which bounds each of the two runs, block 124.)
 - A file under `tmp/` older than the grace is deleted, a younger one stays.
 - An original that has its row stays at any age.
 
@@ -442,6 +452,8 @@ merges whole.
   WebM, as of an MP4, keeps its bytes and its hash.
 
 ### 56, the lease (Corrected: 58) (Corrected: 59)
+
+(Corrected: this subsection is block 59; its heading keeps the number it was written under.)
 
 - In a test with a short `tasks.lease_duration`, a fetch slower than the lease runs once: the task is never
   reclaimed, its lease renewed.
@@ -578,7 +590,7 @@ merges whole.
 
 - `media.download.extraction_timeout` (`PT5M`) is read by a producer that builds the extractor.
 - A boot where `garbage-collection.orphan_grace` is not longer than `media.download.extraction_timeout` is refused
-  (block 20's criterion).
+  (block 20's criterion). (Corrected: not longer than twice the timeout, one per yt-dlp run, block 124.)
 - The producer's consumer is block 110, which the pull request says.
 - (Corrected: added on 2026-10-03, the lead's answer.) The stale-staged sweep deletes a directory under `tmp/` whose
   newest entry is older than `garbage-collection.orphan_grace`, contents included; a younger one stays.
