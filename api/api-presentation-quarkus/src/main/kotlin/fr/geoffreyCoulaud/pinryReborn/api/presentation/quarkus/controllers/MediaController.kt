@@ -155,7 +155,7 @@ class MediaController(
         val etag = "\"${media.contentHash}\""
         if (ifNoneMatch == etag) return RestResponse.notModified()
         val range = RangeHeader.parse(rangeHeader, media.byteSize)
-        return ByteRangeResponse.builder(mediaStore.openStream(media.storageKey), media.byteSize, range)
+        return ByteRangeResponse.builder({ mediaStore.openStream(media.storageKey) }, media.byteSize, range)
             .header("Content-Type", media.mimeType)
             .header("ETag", etag)
             .header("Cache-Control", "private, must-revalidate")
@@ -258,8 +258,8 @@ class MediaController(
             "media.max_video_bytes for a video. BODY_TOO_LARGE: the Content-Length is past " +
             "quarkus.http.limits.max-body-size, which is above both; a chunked body past it gets a 413 with no body"
         const val UNSUPPORTED = "UNSUPPORTED_MEDIA_TYPE: the route does not read this Content-Type. " +
-            "MEDIA_CODEC_UNSUPPORTED: the upload is a format or a codec the server reads and does not store, " +
-            "which the detail names"
+            "MEDIA_CODEC_UNSUPPORTED: the upload is a format or a codec the server reads and does not store; " +
+            "for a video, the detail names the codec"
         const val INVALID_REQUEST = "The upload has no file part, the body is not JSON or breaks a constraint, " +
             "or the source URL is not an http or https address"
     }

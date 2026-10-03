@@ -11,13 +11,13 @@ class MediaDoesNotExistError : MediaError("Pin has no media", ErrorCode.MEDIA_DO
 class MediaTooLargeError(cause: Throwable? = null) :
     MediaError("Media exceeds the maximum size", ErrorCode.MEDIA_TOO_LARGE, cause)
 
-class MediaInvalidError(message: String, cause: Throwable? = null) : MediaError(message, ErrorCode.MEDIA_INVALID, cause)
+class MediaInvalidError(cause: Throwable) : MediaError("Invalid media", ErrorCode.MEDIA_INVALID, cause)
 
 class MediaTooLongError(cause: Throwable) : MediaError("The video lasts too long", ErrorCode.MEDIA_TOO_LONG, cause)
 
-/** The message names the refused codec or format, which the probe read from the file. */
-class MediaCodecUnsupportedError(cause: Throwable) :
-    MediaError("${cause.message}", ErrorCode.MEDIA_CODEC_UNSUPPORTED, cause)
+/** A video's message names the codec ffprobe read; an image's is fixed, libvips naming only its loader. */
+class MediaCodecUnsupportedError(message: String, cause: Throwable) :
+    MediaError(message, ErrorCode.MEDIA_CODEC_UNSUPPORTED, cause)
 
 class MediaSourceUrlInvalidError(cause: Throwable? = null) :
     MediaError("Invalid source URL", ErrorCode.MEDIA_SOURCE_URL_INVALID, cause)
