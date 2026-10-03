@@ -49,9 +49,6 @@ interface ImportsConfig {
     @WithDefault("500")
     fun sweepBatchSize(): Int
 
-    @WithDefault("200")
-    fun leaseRenewalLines(): Int
-
     /** The queue's default backoff spends five attempts in seconds, which no operator can use. */
     @WithDefault("PT10M")
     fun retryFloor(): Duration

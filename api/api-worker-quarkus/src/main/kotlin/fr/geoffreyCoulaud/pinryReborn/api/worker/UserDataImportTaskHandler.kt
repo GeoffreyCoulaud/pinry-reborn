@@ -23,6 +23,6 @@ class UserDataImportTaskHandler(
         runner.run(
             UUID.fromString(payload),
             isLastAttempt = context.attempt >= context.maxAttempts,
-            renewLease = context.renewLease,
+            renewLeaseIfDue = context.renewLeaseIfDue,
         )
 }

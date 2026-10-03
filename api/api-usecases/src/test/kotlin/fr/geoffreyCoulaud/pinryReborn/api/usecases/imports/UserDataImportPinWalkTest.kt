@@ -12,6 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoContainer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import io.mockk.every
 import io.mockk.verify
@@ -461,6 +462,29 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
 
         // Then
         assertEquals(listOf(UserDataImportIssueKind.MEDIA_UNREADABLE), kinds())
+        assertTrue(stagedPaths.isEmpty())
+    }
+
+    @Test
+    fun `Given a video processor that times out, Then the failure is rethrown for a retry and nothing is reported`() {
+        // Given: the server's failure rather than the file's, as the upload and the download answer it
+        val source = FakeArchiveSource(aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
+        stubOpen(source)
+        every { issueRepository.countForImport(any()) } returns 0
+        stubDigest()
+        stubHashLookup()
+        stubStage()
+        stubDiscard()
+        every { imageProbe.probe(any(), MAX_PIXELS) } throws UndecodableImageException("not an image")
+        every { videoProcessor.probe(any(), any()) } throws VideoProcessorTimeoutException("ffprobe ran past 60 s")
+
+        // When / Then
+        assertThrows(VideoProcessorTimeoutException::class.java) {
+            runner.run(importId, isLastAttempt = false, renewLease)
+        }
+        assertEquals(UserDataImportState.RUNNING, stored.state)
+        assertEquals(0, stored.processedPins)
+        assertTrue(savedIssues.isEmpty())
         assertTrue(stagedPaths.isEmpty())
     }
 
