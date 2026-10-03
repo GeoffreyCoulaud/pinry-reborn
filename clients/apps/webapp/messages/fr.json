@@ -161,6 +161,7 @@
 	"reason_fetch_failed": "Ce téléchargement a échoué.",
 	"reason_internal_error": "Erreur temporaire. Réessayez plus tard.",
 	"reason_invalid_image": "Ce contenu n’est pas un média pris en charge par ce serveur.",
+	"reason_no_media_found": "Cette page ne montre aucun média que ce serveur puisse télécharger.",
 	"reason_not_found": "Il n’y a aucun média à cette adresse.",
 	"reason_too_large": "Ce média est trop lourd.",
 	"reason_too_long": "Cette vidéo est trop longue.",

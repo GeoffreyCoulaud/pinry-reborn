@@ -62,6 +62,7 @@ object PinMediaStateMapper {
             DownloadReason.FETCH_FAILED -> DownloadReasonDto.FETCH_FAILED
             DownloadReason.TOO_LONG -> DownloadReasonDto.TOO_LONG
             DownloadReason.UNSUPPORTED_CODEC -> DownloadReasonDto.UNSUPPORTED_CODEC
+            DownloadReason.NO_MEDIA_FOUND -> DownloadReasonDto.NO_MEDIA_FOUND
         }
 
     // Shared with MediaDownloadDtoMapper: one reason, one sentence, declared once.
@@ -78,5 +79,6 @@ object PinMediaStateMapper {
             DownloadReason.FETCH_FAILED -> "The download failed."
             DownloadReason.TOO_LONG -> "Video too long."
             DownloadReason.UNSUPPORTED_CODEC -> "The format or codec is not supported."
+            DownloadReason.NO_MEDIA_FOUND -> "No media found on this page."
         }
 }

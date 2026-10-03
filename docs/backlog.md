@@ -124,9 +124,6 @@ Dated events. No session starts these early.
   On some of these sites, a post may contain multiple media. We're not changing our semantic 1 pin = 1 media rule.
   Can be either a one-time import, or to sync a local pinry board with a remote source periodically, as the user
   chooses.
-- **Video support** : Completes the 3rd party use case, since those allow posting videos as well. Videos are a 1st class
-  citizen, just like images. Their renditions are the video's thumbnail in case of a still rendition, or an animated
-  image of the first few seconds of the video (eg. 3s)
 - **RBAC and quota system** : Allow admins to toggle features and define quotas per-role, from the API
 - **Audience mechanics (public / private).** Until this lands everything stays `@Authenticated` and owner-scoped (
   non-owner → 403); no anonymous browsing, no public gallery, no shareable links. It will interact with boards (public /

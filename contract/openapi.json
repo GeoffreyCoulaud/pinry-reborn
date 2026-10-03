@@ -121,7 +121,7 @@
       },
       "DownloadReasonDto" : {
         "type" : "string",
-        "x-extensible-enum" : [ "URL_NOT_ALLOWED", "UNREACHABLE", "ACCESS_DENIED", "NOT_FOUND", "TOO_LARGE", "INVALID_MEDIA", "TOO_MANY_PIXELS", "INTERNAL_ERROR", "FETCH_FAILED", "TOO_LONG", "UNSUPPORTED_CODEC" ]
+        "x-extensible-enum" : [ "URL_NOT_ALLOWED", "UNREACHABLE", "ACCESS_DENIED", "NOT_FOUND", "TOO_LARGE", "INVALID_MEDIA", "TOO_MANY_PIXELS", "INTERNAL_ERROR", "FETCH_FAILED", "TOO_LONG", "UNSUPPORTED_CODEC", "NO_MEDIA_FOUND" ]
       },
       "DownloadStatusDto" : {
         "type" : "string",
