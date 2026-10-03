@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Pinry Reborn, a self-hosted pin board: users, pins, boards, tags, images and exports. The repository holds the projects
+Pinry Reborn, a self-hosted pin board: users, pins, boards, tags, media and exports. The repository holds the projects
 `docs/adr/0024-three-projects-share-one-repository.md` names: the API server that owns the business logic, and the
 web application and browser extension that will consume it.
 
@@ -85,8 +85,8 @@ The calls below sit outside the gate, because minutes of image build have no pla
 
 | Function                   | What it does                                                                        |
 |----------------------------|---------------------------------------------------------------------------------------|
-| `dagger call image`        | Builds `api/Dockerfile` for the engine's own platform and reads the machine back from inside it. `--platforms=linux/amd64,linux/arm64` builds everything the image ships on. |
-| `dagger call smoke`        | Starts the image and waits for `/q/health`. The only thing in the repository that runs what ships. |
+| `dagger call image`        | Builds `api/Dockerfile` for the engine's own platform and reads the machine back from inside it. `--platforms=linux/amd64,linux/arm64` builds everything the image ships on. Then builds it again with every hash of `api/tools/yt-dlp/requirements.txt` altered, which must fail. |
+| `dagger call smoke`        | Starts the image and waits for `/q/health`. The only thing in the repository that runs what ships. Then reads `yt-dlp --verbose` in the image, which must list `deno` and `yt-dlp-ejs`. |
 | `dagger call webapp-image` | Builds `clients/apps/webapp/Dockerfile` the same way, from a context it assembles out of that file, `contract/` and `clients/`. |
 | `dagger call webapp-smoke` | Starts that image and asks it for `/` and for a path that exists in the browser alone. It reads the body both times: the `index.html` fallback answers `200` to anything. |
 | `dagger call quarkus-app`  | Returns the fast-jar layout the `Dockerfile` copies, so a caller builds the image with no JDK of its own. Used by the release path alone, and produced by the gate's own build: on a runner it is a cache hit of the `ci` call that precedes it, and therefore the bytes `smoke` started. |

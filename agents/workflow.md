@@ -122,8 +122,8 @@ lower one.
 - **A changed line is counted per hunk of `git diff -U0`**: each hunk costs the larger of its deleted and added
   counts, and the block costs the sum. A line edited in place costs one.
 - **Outside both counts**: the dated documents (`docs/specs`, `docs/adr`, `docs/handoffs`) and the files marked
-  `linguist-generated`, which are `.dagger/sdk/**`, `clients/pnpm-lock.yaml` and `contract/openapi.json`. A binary
-  file counts one file and no line.
+  `linguist-generated`, which are `.dagger/sdk/**`, `clients/pnpm-lock.yaml`, `contract/openapi.json` and
+  `api/tools/yt-dlp/requirements.txt`. A binary file counts one file and no line.
 - **Measured after committing**, from anywhere in the repository: the command reads commits, so a file not yet
   committed is missing from the count, however long.
 - **Measured against the block's parent branch**, `main` for the lot's first block, in place of `<parent>` below.
