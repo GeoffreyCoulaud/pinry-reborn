@@ -177,6 +177,22 @@ class MediaControllerTest {
     }
 
     @Test
+    fun `Given an original response whose body is never written, Then the store's stream is never opened`() {
+        // Given
+        val pinId = randomUUID()
+        val user = aUser()
+        val media = aMedia(pinId)
+        every { securityIdentity.getAttribute<User>("user") } returns user
+        every { getPinMediaRendition.get(pinId, user, null, null) } returns ServedMedia.Original(media)
+
+        // When
+        controller.getMedia(pinId, size = null, animated = null, ifNoneMatch = null, rangeHeader = "bytes=1-2")
+
+        // Then
+        verify(exactly = 0) { mediaStore.openStream(any()) }
+    }
+
+    @Test
     fun `Given no size and a Range header, Then getMedia returns 206 with that slice of the original`() {
         // Given
         val pinId = randomUUID()
