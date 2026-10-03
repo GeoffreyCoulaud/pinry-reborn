@@ -595,7 +595,8 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             server.createContext("/not-media") { exchange -> respondBytes(exchange, HTTP_OK, "text/plain", textBytes) }
             server.createContext("/clip.webm") { exchange -> respondBytes(exchange, HTTP_OK, "video/webm", webmBytes) }
             server.createContext("/video-page.html") { exchange ->
-                respondBytes(exchange, HTTP_OK, "text/html; charset=utf-8", page("""<video src="/clip.webm"></video>"""))
+                val video = page("""<video src="/clip.webm"></video>""")
+                respondBytes(exchange, HTTP_OK, "text/html; charset=utf-8", video)
             }
             server.createContext("/empty-page.html") { exchange ->
                 respondBytes(exchange, HTTP_OK, "text/html", page("<p>No video here.</p>"))
