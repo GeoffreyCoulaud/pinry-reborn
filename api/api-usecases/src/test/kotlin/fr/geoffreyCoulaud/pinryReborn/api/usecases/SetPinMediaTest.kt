@@ -15,6 +15,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoContainer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
@@ -199,7 +200,7 @@ class SetPinMediaTest : BaseTest() {
         }
         // A file ffprobe reads and ffmpeg then refuses
         every { video.probe(staged, Duration.ofSeconds(1)) } returns
-            VideoProbeResult(VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), "avc1.640015")
+            VideoProbeResult(VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4)
         every { video.repackage(staged, any()) } throws UndecodableVideoException("refused")
         assertThrows(MediaInvalidError::class.java) { withVideo.set(p.id, owner, upload()) }
     }

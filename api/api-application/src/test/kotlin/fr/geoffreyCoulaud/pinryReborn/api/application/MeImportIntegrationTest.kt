@@ -339,28 +339,87 @@ class MeImportIntegrationTest : IntegrationTest() {
 
     @Test
     fun `Given an export holding a video, Then it imports into an empty account with the same bytes and hash`() {
-        // Given: an MP4, which a second repackaging would change even with bitexact
-        val password = DEFAULT_PASSWORD
-        val destination = createAuthenticatedUser()
-        val origin = createAuthenticatedUser(password = password)
-        val pin = createPin(origin, ALPHA)
-        given()
-            .authenticatedAs(origin)
-            .multiPart("file", File("../api-video-ffmpeg/src/test/resources/fixtures/h264-aac.mkv"), "video/x-matroska")
-            .`when`().put("/api/v1/pins/${pin.id}/media")
-            .then().statusCode(201)
+        // Given: an MP4, which the import keeps, and a WebM, which it repackages into the same bytes
+        for (name in listOf("h264-aac.mkv", "av1.mp4")) {
+            val password = DEFAULT_PASSWORD
+            val destination = createAuthenticatedUser()
+            val origin = createAuthenticatedUser(password = password)
+            val pin = createPin(origin, ALPHA)
+            given()
+                .authenticatedAs(origin)
+                .multiPart("file", File("../api-video-ffmpeg/src/test/resources/fixtures/$name"), "video/mp4")
+                .`when`().put("/api/v1/pins/${pin.id}/media")
+                .then().statusCode(201)
+
+            // When
+            importArchive(destination, exportArchiveOf(origin, password))
+
+            // Then
+            val source = factsOf(origin.user).pins.values.single()
+            val copy = factsOf(destination.user).pins.values.single()
+            assertArrayEquals(source.mediaBytes, copy.mediaBytes, "$name should survive byte for byte")
+            val sourceMedia = requireNotNull(mediaRepository.findByPinId(source.id))
+            val copyMedia = requireNotNull(mediaRepository.findByPinId(copy.id))
+            assertEquals(sourceMedia.contentHash, copyMedia.contentHash, name)
+            assertEquals(sourceMedia.mimeType, copyMedia.mimeType, name)
+        }
+    }
+
+    @Test
+    fun `Given an archived video whose container its codecs do not choose, Then it is repackaged into that one`() {
+        // Given: H.264 with AAC in Matroska, which no export writes and which belongs in MP4 (decision L1)
+        val auth = createAuthenticatedUser()
+        val mkv = File("../api-video-ffmpeg/src/test/resources/fixtures/h264-aac.mkv").readBytes()
+        val archive =
+            ImportArchiveBuilder(objectMapper)
+                .manifest(announcedPins = 1)
+                .entry("media/clip.mkv", mkv)
+                .pins(
+                    ImportArchiveBuilder.pinLine(
+                        sourceContextUrl = "https://example.test/clip",
+                        mediaPath = "media/clip.mkv",
+                        mediaSha256 = ImportArchiveBuilder.sha256(mkv),
+                        mediaMimeType = "video/x-matroska",
+                    ),
+                ).bytes()
 
         // When
-        importArchive(destination, exportArchiveOf(origin, password))
+        importArchive(auth, archive)
 
-        // Then
-        val source = factsOf(origin.user).pins.values.single()
-        val copy = factsOf(destination.user).pins.values.single()
-        assertArrayEquals(source.mediaBytes, copy.mediaBytes, "the video should survive byte for byte")
-        val sourceMedia = requireNotNull(mediaRepository.findByPinId(source.id))
-        val copyMedia = requireNotNull(mediaRepository.findByPinId(copy.id))
-        assertEquals(sourceMedia.contentHash, copyMedia.contentHash)
-        assertEquals(sourceMedia.mimeType, copyMedia.mimeType)
+        // Then: the stored bytes are an MP4, whose box type sits at offset 4, and the row says so
+        val pin = activePinsOf(auth.user).single()
+        val media = requireNotNull(mediaRepository.findByPinId(pin.id))
+        val stored = mediaStore.openStream(media.storageKey).use { it.readBytes() }
+        assertTrue(media.mimeType.startsWith("video/mp4;"), "the type follows the codecs: ${media.mimeType}")
+        assertEquals("ftyp", String(stored, 4, 4), "the bytes follow the type")
+    }
+
+    @Test
+    fun `Given an archived Matroska holding WebM's codecs, Then it is stored as a real WebM`() {
+        // Given: VP9 and Opus with a subtitle track, in a Matroska whose doctype is not webm
+        val auth = createAuthenticatedUser()
+        val mkv = File("../api-video-ffmpeg/src/test/resources/fixtures/subtitled.mkv").readBytes()
+        val archive =
+            ImportArchiveBuilder(objectMapper)
+                .manifest(announcedPins = 1)
+                .entry("media/clip.mkv", mkv)
+                .pins(
+                    ImportArchiveBuilder.pinLine(
+                        sourceContextUrl = "https://example.test/clip",
+                        mediaPath = "media/clip.mkv",
+                        mediaSha256 = ImportArchiveBuilder.sha256(mkv),
+                        mediaMimeType = "video/x-matroska",
+                    ),
+                ).bytes()
+
+        // When
+        importArchive(auth, archive)
+
+        // Then: the EBML header names the webm doctype, which a browser's WebM parser requires
+        val media = requireNotNull(mediaRepository.findByPinId(activePinsOf(auth.user).single().id))
+        val header = mediaStore.openStream(media.storageKey).use { it.readNBytes(HEADER_BYTES) }
+        assertTrue(String(header, Charsets.ISO_8859_1).contains("webm"), "the doctype should be webm")
+        assertTrue(media.mimeType.startsWith("video/webm;"), media.mimeType)
     }
 
     // --- The upload itself ---
@@ -732,6 +791,7 @@ class MeImportIntegrationTest : IntegrationTest() {
 
     private companion object {
         const val POLL_ATTEMPTS = 50
+        const val HEADER_BYTES = 48
         const val POLL_INTERVAL_MS = 200L
         const val ISSUE_PAGE_SIZE = 100
         const val OVER_LONG_NAME = 300
