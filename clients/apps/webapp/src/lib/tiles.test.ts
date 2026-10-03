@@ -5,6 +5,7 @@ import {
 	removePins,
 	renditionForColumn,
 	replacePins,
+	tileAnimatedSource,
 	tileAspectRatio,
 	tileMediaSource,
 } from "./tiles";
@@ -48,6 +49,12 @@ describe("a tile's source", () => {
 	it("Given the relative URL the API gave, Then the rendition is a parameter on it", () => {
 		expect(tileMediaSource("/api/v1/pins/7/media", "MEDIUM")).toBe(
 			"/api/v1/pins/7/media?size=MEDIUM",
+		);
+	});
+
+	it("Given the relative URL the API gave, Then the animated rendition adds its flag to the size", () => {
+		expect(tileAnimatedSource("/api/v1/pins/7/media", "SMALL")).toBe(
+			"/api/v1/pins/7/media?size=SMALL&animated=true",
 		);
 	});
 });

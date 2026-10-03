@@ -34,7 +34,7 @@ describe("hover a video tile", () => {
 		).toBeNull();
 	});
 
-	it("Given a video tile, Then hovering plays the original muted and leaving stops it", async () => {
+	it("Given a video tile, Then hovering shows its animated rendition and leaving brings the still back", async () => {
 		const hovered = videoPin("waves on the pier");
 		server.use(
 			sessionRoute(() => true),
@@ -44,22 +44,39 @@ describe("hover a video tile", () => {
 		);
 		renderApp("/");
 		const tile = await screen.findByRole("row", { name: hovered.description });
-		const still = within(tile).getByRole("img", { name: hovered.description });
+		const media = within(tile).getByRole("img", { name: hovered.description });
 		const user = userEvent.setup();
-		expect(tile.querySelector("video")).toBeNull();
-
-		await user.hover(still);
-
 		const url = String(hovered.media?.url);
-		const video = tile.querySelector("video");
-		expect(video).toHaveAttribute("src", url);
-		expect(video?.muted).toBe(true);
-		expect(video?.loop).toBe(true);
-		await user.unhover(still);
+
+		await user.hover(media);
+
+		expect(media).toHaveAttribute("src", `${url}?size=SMALL&animated=true`);
 		expect(tile.querySelector("video")).toBeNull();
+		await user.unhover(media);
+		expect(media).toHaveAttribute("src", `${url}?size=SMALL`);
 	});
 
-	it("Given a touch on a video tile, Then the original is not fetched", async () => {
+	it("Given an image tile, Then hovering keeps its still", async () => {
+		const hovered = readyPin("a cat asleep");
+		server.use(
+			sessionRoute(() => true),
+			pinsRoute([[hovered]]),
+			downloadsRoute(),
+			handshakeRoute(),
+		);
+		renderApp("/");
+		const tile = await screen.findByRole("row", { name: hovered.description });
+		const media = within(tile).getByRole("img", { name: hovered.description });
+
+		await userEvent.setup().hover(media);
+
+		expect(media).toHaveAttribute(
+			"src",
+			`${String(hovered.media?.url)}?size=SMALL`,
+		);
+	});
+
+	it("Given a touch on a video tile, Then its still stays and nothing animated is fetched", async () => {
 		const touched = videoPin("waves on the pier");
 		server.use(
 			sessionRoute(() => true),
@@ -69,12 +86,13 @@ describe("hover a video tile", () => {
 		);
 		renderApp("/");
 		const tile = await screen.findByRole("row", { name: touched.description });
+		const media = within(tile).getByRole("img", { name: touched.description });
 
-		fireEvent.pointerOver(
-			within(tile).getByRole("img", { name: touched.description }),
-			{ pointerType: "touch" },
+		fireEvent.pointerOver(media, { pointerType: "touch" });
+
+		expect(media).toHaveAttribute(
+			"src",
+			`${String(touched.media?.url)}?size=SMALL`,
 		);
-
-		expect(tile.querySelector("video")).toBeNull();
 	});
 });
