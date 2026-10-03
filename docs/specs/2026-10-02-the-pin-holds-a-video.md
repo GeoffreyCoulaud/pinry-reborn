@@ -80,7 +80,9 @@ clip on ffmpeg 9.0.2, `libwebp_anim` being in the image's 8.0.1 too. Both correc
 are not square, so that they keep the proportions the video displays at (`scale=iw*sar:ih,setsar=1`). Both are
 made on a rendition's cache miss and never stored apart. A video always takes the rendition path, at the smaller
 of the requested size and its shortest side: the original is never served to an `<img>`. The web application asks
-for the still and plays the original on hover; the original itself is never touched.
+for the still and plays the original on hover; the original itself is never touched. (Corrected: since block 136
+the hover swaps the tile's still for the animated rendition at the tile's size, the operator's answer to question AE
+on 2026-10-04: no original fetched on hover, and none the browser cannot decode.)
 
 **E2, H1. A page address yields its video through yt-dlp, now.** The worker reads the response's `Content-Type`:
 `text/html` and `application/xhtml+xml` go to yt-dlp; anything else, `application/octet-stream` and a missing
@@ -243,7 +245,8 @@ The lead adds four decisions, submitted with this document:
 - **`lib/media.ts`**: whether a `mimeType` is a video, and what `canPlayType`'s answer means. 100 % as `lib/` is.
 - **The pin's view**: a `<video controls>` whose `poster` is the grid's rendition; decision M1's fallback.
 - **The grid**: a video tile shows its rendition and a `Play` icon; on pointer hover it mounts a muted, looping
-  `<video>`, unmounted when the pointer leaves.
+  `<video>`, unmounted when the pointer leaves. (Corrected: the animated rendition in the tile's `<img>`, decision
+  D1.)
 - **The upload**: a video skips `createImageBitmap` and is judged by type and bytes alone; a file whose
   `File.type` is empty is sent and judged by the server; the previews draw a `<video>`; every `accept` follows
   `mediaTypes`; the upload refusals get sentences, and the sentences that say "image" for the medium say "media".
@@ -476,7 +479,8 @@ merges whole.
 ### 75, previewing
 
 - Journey **hover a video tile**: a video tile carries the play icon and an image tile does not; hovering mounts a
-  muted `<video>` and leaving unmounts it.
+  muted `<video>` and leaving unmounts it. (Corrected: hovering shows the animated rendition and leaving the still,
+  decision D1.)
 
 ### 80, uploading
 
