@@ -161,6 +161,7 @@
 	"reason_fetch_failed": "That download failed.",
 	"reason_internal_error": "A temporary error. Try again later.",
 	"reason_invalid_image": "That content is not a media this server supports.",
+	"reason_no_media_found": "That page shows no media this server can download.",
 	"reason_not_found": "There is no media at that address.",
 	"reason_too_large": "That media is too heavy.",
 	"reason_too_long": "That video is too long.",

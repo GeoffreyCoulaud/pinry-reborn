@@ -17,6 +17,7 @@ const REASONS: Record<Known<"DownloadReasonDto">, () => string> = {
 	FETCH_FAILED: m.reason_fetch_failed,
 	TOO_LONG: m.reason_too_long,
 	UNSUPPORTED_CODEC: m.reason_unsupported_codec,
+	NO_MEDIA_FOUND: m.reason_no_media_found,
 };
 
 /**
@@ -35,6 +36,7 @@ const RETRIABLE: Record<Known<"DownloadReasonDto">, boolean> = {
 	FETCH_FAILED: false,
 	TOO_LONG: false,
 	UNSUPPORTED_CODEC: false,
+	NO_MEDIA_FOUND: false,
 };
 
 /** A reason this bundle does not know is not offered again. */

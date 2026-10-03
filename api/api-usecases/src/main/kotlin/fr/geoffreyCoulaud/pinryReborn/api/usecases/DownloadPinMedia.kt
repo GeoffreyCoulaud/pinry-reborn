@@ -13,6 +13,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchedMedia
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageExtractionException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaExtractor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.TooManyRedirectsException
@@ -43,6 +48,7 @@ class DownloadPinMedia(
     private val mediaStore: MediaStore,
     private val mediaIngestion: MediaIngestion,
     private val mediaFetcher: MediaFetcher,
+    private val pageMediaExtractor: PageMediaExtractor,
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
     private val renditionCache: RenditionCache,
@@ -60,7 +66,7 @@ class DownloadPinMedia(
     @Suppress("TooGenericExceptionCaught")
     private fun stageFromSource(pinId: UUID, sourceUrl: String, context: TaskContext): StagedFile =
         try {
-            mediaFetcher.openStream(sourceUrl).use { mediaIngestion.stage(LeaseRenewingStream(it.stream, context)) }
+            openSource(sourceUrl, context).use { mediaIngestion.stage(LeaseRenewingStream(it.stream, context)) }
         } catch (e: FetchException) {
             val reason = mapFetch(e)
             if (reason == DownloadReason.UNREACHABLE) {
@@ -68,6 +74,8 @@ class DownloadPinMedia(
             } else {
                 failPermanent(pinId, reason)
             }
+        } catch (e: PageExtractionException) {
+            failPermanent(pinId, mapExtraction(e))
         } catch (ignored: MediaTooLargeException) {
             failPermanent(pinId, DownloadReason.TOO_LARGE)
         } catch (e: Exception) {
@@ -77,6 +85,14 @@ class DownloadPinMedia(
             // leaving the row stuck PENDING.
             failRetryable(pinId, DownloadReason.UNREACHABLE, context, e)
         }
+
+    // A page goes to the extractor, anything else down the direct path, where the probe judges (ADR 0048, decision 1).
+    private fun openSource(sourceUrl: String, context: TaskContext): FetchedMedia {
+        val fetched = mediaFetcher.openStream(sourceUrl)
+        if (fetched.contentType?.substringBefore(';')?.trim()?.lowercase() !in PAGE_TYPES) return fetched
+        fetched.close()
+        return pageMediaExtractor.extract(sourceUrl) { context.renewLeaseIfDue() }
+    }
 
     @Suppress("TooGenericExceptionCaught")
     private fun ingestStaged(ownerId: UUID, pinId: UUID, staged: StagedFile, context: TaskContext): IngestedMedia =
@@ -147,6 +163,12 @@ class DownloadPinMedia(
             is FetchUnreachableException -> DownloadReason.UNREACHABLE
         }
 
+    private fun mapExtraction(e: PageExtractionException): DownloadReason =
+        when (e) {
+            is PageMediaTooLongException -> DownloadReason.TOO_LONG
+            is NoMediaFoundException -> DownloadReason.NO_MEDIA_FOUND
+        }
+
     private fun mapProbe(e: ImageProbeException): DownloadReason =
         when (e) {
             is ImageTooManyPixelsException -> DownloadReason.TOO_MANY_PIXELS
@@ -166,6 +188,10 @@ class DownloadPinMedia(
         }
         mediaDownloadRepository.recordLastError(pinId, cause.message ?: reason.name, clock.now())
         throw cause
+    }
+
+    private companion object {
+        val PAGE_TYPES = setOf("text/html", "application/xhtml+xml")
     }
 
     /** A body slower than the lease would otherwise be reclaimed mid-fetch and fetched a second time. */
