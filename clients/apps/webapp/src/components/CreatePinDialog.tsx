@@ -166,7 +166,7 @@ function CreatePinForm({
 			<Field
 				name="sourceMediaUrl"
 				type="url"
-				label={m.image_address()}
+				label={m.media_address()}
 				isRequired={entry.file === null}
 				value={entry.url}
 				onChange={(url) => change({ url })}

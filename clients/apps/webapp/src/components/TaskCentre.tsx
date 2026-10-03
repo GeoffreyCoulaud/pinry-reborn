@@ -48,7 +48,7 @@ function Task({ download }: { download: Download }) {
 					<label
 						className={buttonVariants({ variant: "secondary", size: "sm" })}
 					>
-						{m.image_file()}
+						{m.media_file()}
 						<input
 							type="file"
 							accept={acceptOf(limits)}
@@ -72,7 +72,7 @@ function Task({ download }: { download: Download }) {
 			) : null}
 			{/* A refused action is silent otherwise, which is what the creation screen already avoids. */}
 			{setMedia.isError ? (
-				<p role="alert">{mediaRefusal(setMedia.error, m.image_refused)}</p>
+				<p role="alert">{mediaRefusal(setMedia.error, m.media_refused)}</p>
 			) : null}
 			{drop.isError ? <p role="alert">{m.dismissal_refused()}</p> : null}
 		</li>

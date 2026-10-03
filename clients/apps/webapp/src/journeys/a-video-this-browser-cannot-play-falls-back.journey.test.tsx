@@ -1,9 +1,12 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { m } from "../paraglide/messages.js";
 import type { Pin } from "../pins";
 import {
+	download,
+	downloadsPage,
 	downloadsRoute,
 	handshakeRoute,
 	pinsRoute,
@@ -13,11 +16,11 @@ import {
 } from "../test/app";
 import { server } from "../test/server";
 
-async function openThe(pin: Pin) {
+async function openThe(pin: Pin, downloads = downloadsRoute()) {
 	server.use(
 		sessionRoute(() => true),
 		pinsRoute([[pin]]),
-		downloadsRoute(),
+		downloads,
 		handshakeRoute(),
 	);
 	renderApp("/");
@@ -37,6 +40,8 @@ async function expectTheFallback(dialog: HTMLElement, pin: Pin) {
 	).toHaveAttribute("src", `${url}?size=SMALL`);
 	const link = within(dialog).getByRole("link", { name: m.video_download() });
 	expect(link).toHaveAttribute("href", url);
+	// The address ends in `media` and the original carries no `Content-Disposition` to name the file.
+	expect(link).toHaveAttribute("download", "video.mp4");
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -69,4 +74,50 @@ describe("a video this browser cannot play falls back", () => {
 
 		await expectTheFallback(dialog, opened);
 	});
+
+	it("Given the video replaced by a playable one while its pin is open, Then the new one gets a player", async () => {
+		const opened = videoPin(
+			"a drone over the bay",
+			'video/mp4; codecs="hvc1.1.6.L93.B0"',
+		);
+		// The address stays the pin's own across a replacement: only the stored type and size change.
+		const replaced = {
+			...opened,
+			media: {
+				...opened.media,
+				status: "READY",
+				mimeType: 'video/mp4; codecs="avc1.64001F, mp4a.40.2"',
+				byteSize: 2,
+			},
+		} satisfies Pin;
+		vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockImplementation(
+			(type) => (type.includes("hvc1") ? "" : "maybe"),
+		);
+		// The replacing download runs on the first poll and has settled by the next.
+		let polls = 0;
+		server.use(
+			http.get("/api/v1/pins/:pinId", () => HttpResponse.json(replaced)),
+		);
+
+		const dialog = await openThe(
+			opened,
+			http.get("/api/v1/me/media-downloads", () => {
+				polls += 1;
+				return HttpResponse.json(
+					downloadsPage(polls > 1 ? [] : [download(opened.id, "PENDING")]),
+				);
+			}),
+		);
+		await expectTheFallback(dialog, opened);
+
+		await waitFor(
+			() =>
+				expect(dialog.querySelector("video")).toHaveAttribute(
+					"src",
+					String(opened.media?.url),
+				),
+			{ timeout: 4000 },
+		);
+		expect(within(dialog).queryByText(m.video_unplayable())).toBeNull();
+	}, 15_000);
 });

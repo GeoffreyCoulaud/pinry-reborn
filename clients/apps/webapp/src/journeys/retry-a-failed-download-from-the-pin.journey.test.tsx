@@ -123,7 +123,7 @@ describe("retry a failed download from the pin", () => {
 		const dialog = await screen.findByRole("dialog");
 		await user.click(within(dialog).getByRole("button", { name: m.retry() }));
 		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
-			m.image_refused(),
+			m.media_refused(),
 		);
 
 		await user.click(

@@ -55,7 +55,7 @@ export function MediaDropBox({
 			{/* The invitation is the input's accessible name, which is what Label in Name asks for. Its
           hit area is stretched over the whole box without the thumbnail joining that name. */}
 			<label className="cursor-pointer before:absolute before:inset-0 before:content-['']">
-				{m.drop_image()}
+				{m.drop_media()}
 				<input
 					type="file"
 					accept={acceptOf(limits)}

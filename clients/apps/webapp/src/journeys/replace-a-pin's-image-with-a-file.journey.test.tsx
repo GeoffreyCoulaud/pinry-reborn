@@ -93,7 +93,7 @@ async function openTheForm(
 /** One of the image's three options, in the selector on the image side. */
 function mediaChoice(dialog: HTMLElement, name: string) {
 	return within(
-		within(dialog).getByRole("radiogroup", { name: m.image() }),
+		within(dialog).getByRole("radiogroup", { name: m.media() }),
 	).getByRole("radio", { name });
 }
 
@@ -122,14 +122,14 @@ describe("replace a pin's image with a file", () => {
 		expect(
 			within(dialog).getByRole("img", { name: original.description }),
 		).toBeVisible();
-		await user.click(mediaChoice(dialog, m.image_from_file()));
+		await user.click(mediaChoice(dialog, m.media_from_file()));
 		await user.upload(
-			within(dialog).getByLabelText(m.drop_image()),
+			within(dialog).getByLabelText(m.drop_media()),
 			aPicture(),
 		);
 		// Chosen and not sent: nothing reaches the server until the pin is saved.
 		expect(await within(dialog).findByText("harbour.png")).toBeVisible();
-		expect(within(dialog).getByText(m.image_unsaved())).toBeVisible();
+		expect(within(dialog).getByText(m.media_unsaved())).toBeVisible();
 		expect(
 			within(dialog).queryByRole("img", { name: original.description }),
 		).toBeNull();
@@ -167,12 +167,12 @@ describe("replace a pin's image with a file", () => {
 
 		const dialog = await openTheForm(user, found.description);
 		expect(found.sourceMediaUrl).toBeNull();
-		const address = { name: m.image_address() };
+		const address = { name: m.media_address() };
 		await user.type(
 			within(theColumn(dialog)).getByRole("textbox", address),
 			FOUND_AT,
 		);
-		await user.click(mediaChoice(dialog, m.image_from_address()));
+		await user.click(mediaChoice(dialog, m.media_from_address()));
 
 		// One field, in one place at a time: the selector's now, carrying what the column held.
 		expect(
@@ -180,7 +180,7 @@ describe("replace a pin's image with a file", () => {
 		).toBeNull();
 		const field = within(dialog).getByRole("textbox", address);
 		expect(field).toHaveValue(FOUND_AT);
-		expect(within(dialog).getByText(m.image_fetched_on_save())).toBeVisible();
+		expect(within(dialog).getByText(m.media_fetched_on_save())).toBeVisible();
 		// Emptied, it no longer falls back to keeping the image: there is nothing to save.
 		await user.clear(field);
 		expect(
@@ -200,7 +200,7 @@ describe("replace a pin's image with a file", () => {
 		await user.click(
 			await within(dialog).findByRole("button", { name: m.edit_pin() }),
 		);
-		expect(await within(dialog).findByText(m.image_replacing())).toBeVisible();
+		expect(await within(dialog).findByText(m.media_replacing())).toBeVisible();
 	});
 
 	it("Given the image kept and its address corrected, Then the save writes the pin and touches no image", async () => {
@@ -213,9 +213,9 @@ describe("replace a pin's image with a file", () => {
 
 		const dialog = await openTheForm(user, held.description);
 		// Keeping is the default, and the address is then an ordinary field of the column.
-		expect(mediaChoice(dialog, m.image_keep())).toBeChecked();
+		expect(mediaChoice(dialog, m.media_keep())).toBeChecked();
 		const address = within(theColumn(dialog)).getByRole("textbox", {
-			name: m.image_address(),
+			name: m.media_address(),
 		});
 		await user.clear(address);
 		await user.type(address, corrected);
@@ -251,7 +251,7 @@ describe("replace a pin's image with a file", () => {
 		expect(
 			within(dialog).queryByRole("button", { name: m.retry() }),
 		).toBeNull();
-		await user.click(mediaChoice(dialog, m.image_from_address()));
+		await user.click(mediaChoice(dialog, m.media_from_address()));
 		expect(
 			within(dialog).queryByRole("button", { name: m.retry() }),
 		).toBeNull();
@@ -268,12 +268,12 @@ describe("replace a pin's image with a file", () => {
 		const user = userEvent.setup();
 
 		const dialog = await openTheForm(user, held.description);
-		await user.click(mediaChoice(dialog, m.image_from_address()));
+		await user.click(mediaChoice(dialog, m.media_from_address()));
 		await user.click(within(dialog).getByRole("button", { name: m.save() }));
 
 		// The fields are saved and the image is not, so the form says that and not that the save
 		// failed whole.
-		expect(await within(dialog).findByText(m.image_refused())).toBeVisible();
+		expect(await within(dialog).findByText(m.media_refused())).toBeVisible();
 		expect(within(dialog).queryByText(m.pin_refused())).toBeNull();
 		expect(
 			within(dialog).getByRole("button", { name: m.save() }),
@@ -289,9 +289,9 @@ describe("replace a pin's image with a file", () => {
 		const user = userEvent.setup();
 
 		const dialog = await openTheForm(user, held.description);
-		await user.click(mediaChoice(dialog, m.image_from_file()));
+		await user.click(mediaChoice(dialog, m.media_from_file()));
 		await user.upload(
-			within(dialog).getByLabelText(m.drop_image()),
+			within(dialog).getByLabelText(m.drop_media()),
 			new File(["more than four bytes"], "big.png", { type: "image/png" }),
 		);
 

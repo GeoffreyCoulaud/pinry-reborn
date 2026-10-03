@@ -1,7 +1,7 @@
 import { Button, Spinner } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
 import { downloadReason, retriable } from "../downloadReasons";
-import { isPlayable, isVideo } from "../lib/media";
+import { isPlayable, isVideo, videoFileName } from "../lib/media";
 import { type Rendition, tileMediaSource } from "../lib/tiles";
 import { useSetPinMedia } from "../media";
 import { m } from "../paraglide/messages.js";
@@ -17,6 +17,9 @@ function fitted(width: number, height: number) {
 		width: `min(${width}px, 100%, calc(var(--fit-height) * ${width / height}))`,
 	};
 }
+
+/** A square to fit, for a video stored without its dimensions. */
+const SQUARE = { aspectRatio: "1 / 1", width: "min(100%, var(--fit-height))" };
 
 /**
  * The original in a box of the size it is drawn at, its own or less to fit, never more. The grid's
@@ -73,7 +76,7 @@ function OriginalMedia({
 			/>
 			{state === "loading" && slow ? (
 				<span className="absolute end-2 bottom-2 flex rounded-full bg-overlay p-1 shadow-surface">
-					<Spinner size="sm" aria-label={m.image_original_loading()} />
+					<Spinner size="sm" aria-label={m.media_original_loading()} />
 				</span>
 			) : null}
 		</div>
@@ -94,8 +97,8 @@ function VideoMedia({
 }: {
 	url: string;
 	mimeType: string;
-	width: number;
-	height: number;
+	width: number | null | undefined;
+	height: number | null | undefined;
 	alt: string;
 	placeholder: Rendition;
 }) {
@@ -103,13 +106,18 @@ function VideoMedia({
 		() => !isPlayable(document.createElement("video").canPlayType(mimeType)),
 	);
 	const poster = tileMediaSource(url, placeholder);
+	const box = width != null && height != null ? fitted(width, height) : SQUARE;
 
 	if (failed) {
 		return (
 			<div className="flex w-full flex-col items-center gap-3 text-center">
-				<img src={poster} alt={alt} style={fitted(width, height)} />
+				<img src={poster} alt={alt} style={box} />
 				<p>{m.video_unplayable()}</p>
-				<a href={url} download className="text-accent hover:underline">
+				<a
+					href={url}
+					download={videoFileName(mimeType)}
+					className="text-accent hover:underline"
+				>
 					{m.video_download()}
 				</a>
 			</div>
@@ -122,7 +130,7 @@ function VideoMedia({
 			poster={poster}
 			controls
 			aria-label={alt}
-			style={fitted(width, height)}
+			style={box}
 			onError={() => setFailed(true)}
 		/>
 	);
@@ -146,14 +154,11 @@ export function PinMedia({
 	const address = pin.sourceMediaUrl;
 
 	if (media?.status === "READY" && media.url != null) {
-		if (
-			isVideo(media.mimeType) &&
-			media.width != null &&
-			media.height != null
-		) {
+		if (isVideo(media.mimeType)) {
 			return (
 				<VideoMedia
-					key={media.url}
+					// The address survives a replacement, so the stored size and type tell the new video apart.
+					key={`${media.url}:${media.byteSize}:${media.mimeType}`}
 					url={media.url}
 					mimeType={media.mimeType}
 					width={media.width}
@@ -203,9 +208,9 @@ export function PinMedia({
 						{m.retry()}
 					</Button>
 				) : null}
-				{retry.isError ? <p role="alert">{m.image_refused()}</p> : null}
+				{retry.isError ? <p role="alert">{m.media_refused()}</p> : null}
 			</div>
 		);
 	}
-	return <p>{m.pin_no_image()}</p>;
+	return <p>{m.pin_no_media()}</p>;
 }

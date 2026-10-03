@@ -107,7 +107,7 @@ describe("open a pin", () => {
 		const dialog = await openThe(readyPin("a harbour at dusk"));
 
 		const loading = await within(dialog).findByRole("status", {
-			name: m.image_original_loading(),
+			name: m.media_original_loading(),
 		});
 		expect(dialog.querySelector('img[alt=""]')).not.toBeNull();
 		decoded();
@@ -122,7 +122,7 @@ describe("open a pin", () => {
 		let shown = false;
 		const watch = new MutationObserver(() => {
 			shown ||=
-				screen.queryByRole("status", { name: m.image_original_loading() }) !==
+				screen.queryByRole("status", { name: m.media_original_loading() }) !==
 				null;
 		});
 		watch.observe(document.body, { childList: true, subtree: true });
@@ -144,7 +144,7 @@ describe("open a pin", () => {
 
 		expect(
 			within(dialog).queryByRole("status", {
-				name: m.image_original_loading(),
+				name: m.media_original_loading(),
 			}),
 		).toBeNull();
 		expect(dialog.querySelector('img[alt=""]')).not.toBeNull();

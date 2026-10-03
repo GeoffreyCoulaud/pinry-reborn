@@ -40,7 +40,7 @@ async function dropOnTheDialog(file: File) {
 	renderApp("/");
 	await user.click(await screen.findByRole("button", { name: m.create_pin() }));
 	const dialog = await screen.findByRole("dialog", { name: m.create_pin() });
-	fireEvent.drop(within(dialog).getByLabelText(m.drop_image()), dropOf([file]));
+	fireEvent.drop(within(dialog).getByLabelText(m.drop_media()), dropOf([file]));
 	return { user, dialog };
 }
 
@@ -114,6 +114,8 @@ describe("upload a video", () => {
 	it.each([
 		[422, "MEDIA_TOO_LONG", m.media_too_long()],
 		[415, "MEDIA_CODEC_UNSUPPORTED", m.media_codec_unsupported()],
+		[413, "MEDIA_TOO_LARGE", m.file_too_heavy()],
+		[415, "UNSUPPORTED_MEDIA_TYPE", m.file_unsupported()],
 		[422, "A_CODE_THIS_BUNDLE_LACKS", m.creation_refused()],
 	])(
 		"Given the upload refused with %i %s, Then the dialog says why",
