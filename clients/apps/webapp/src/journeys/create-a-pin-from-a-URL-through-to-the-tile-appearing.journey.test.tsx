@@ -80,7 +80,7 @@ describe("create a pin from a URL through to the tile appearing", () => {
 		);
 		await user.type(dialog.getByLabelText("Description"), bare.description);
 		await user.type(
-			dialog.getByLabelText("Image address"),
+			dialog.getByLabelText("Media address"),
 			"https://example.test/i.png",
 		);
 		const submit = dialog.getByRole("button", { name: "Add a pin" });

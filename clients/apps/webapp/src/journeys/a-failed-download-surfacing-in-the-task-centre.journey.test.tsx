@@ -70,10 +70,10 @@ describe("a failed download surfacing in the task centre", () => {
 		).toBeVisible();
 		expect(screen.queryByText("The server could not fetch it.")).toBeNull();
 		// The recourse question V exists for: the address again, a file from disk, or neither.
-		expect(screen.getByLabelText("Image file")).toBeInTheDocument();
+		expect(screen.getByLabelText("Media file")).toBeInTheDocument();
 		// The picker offers what the deployment stores, videos included.
 		await waitFor(() =>
-			expect(screen.getByLabelText("Image file")).toHaveAttribute(
+			expect(screen.getByLabelText("Media file")).toHaveAttribute(
 				"accept",
 				MEDIA_TYPES.join(","),
 			),
@@ -132,7 +132,7 @@ describe("a failed download surfacing in the task centre", () => {
 
 		await user.click(await screen.findByRole("button", { name: "Try again" }));
 		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"That image could not be added.",
+			"That media could not be added.",
 		);
 
 		await user.click(screen.getByRole("button", { name: "Forget it" }));
@@ -181,7 +181,7 @@ describe("a failed download surfacing in the task centre", () => {
 		// The same request would earn the same answer, so the centre offers a file and no retry.
 		expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
 		await user.upload(
-			screen.getByLabelText("Image file"),
+			screen.getByLabelText("Media file"),
 			new File(["ok"], "cat.png", { type: "image/png" }),
 		);
 		// Read by alt text and by text: react-aria calls `ariaHideOutside` while the popover is

@@ -14,7 +14,7 @@ import {
 import { server } from "../test/server";
 
 /** The drop area's accessible name is its visible invitation, and nothing else names it. */
-const DROP_AREA = "Drop an image here, or pick one";
+const DROP_AREA = "Drop a media file here, or pick one";
 
 /** The whole screen is the drop target, and the bar's name is what reaches it from the inside. */
 async function theScreen() {
