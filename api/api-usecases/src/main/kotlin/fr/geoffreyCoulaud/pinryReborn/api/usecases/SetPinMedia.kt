@@ -57,14 +57,11 @@ class SetPinMedia(
         } catch (e: MediaTooLargeException) {
             throw MediaTooLargeError(e)
         } catch (e: UnsupportedImageFormatException) {
-            throw MediaCodecUnsupportedError(e)
+            throw MediaCodecUnsupportedError("The image format is not accepted", e)
         } catch (e: VideoProcessorException) {
             throw refusalOf(e)
         } catch (e: ImageProbeException) {
-            // Keep the client-facing message fixed (consistent with the other MediaError
-            // siblings); the underlying probe detail is preserved via `cause` for logs, not
-            // echoed to the API caller.
-            throw MediaInvalidError("Invalid media", e)
+            throw MediaInvalidError(e)
         }
 
         val existing = mediaRepository.findByPinId(pinId)
@@ -101,9 +98,9 @@ class SetPinMedia(
     /** A timeout is the server's failure rather than the file's, so it keeps its own exception. */
     private fun refusalOf(e: VideoProcessorException): Exception =
         when (e) {
-            is VideoCodecUnsupportedException -> MediaCodecUnsupportedError(e)
+            is VideoCodecUnsupportedException -> MediaCodecUnsupportedError("${e.message}", e)
             is VideoTooLongException -> MediaTooLongError(e)
-            is UndecodableVideoException -> MediaInvalidError("Invalid video", e)
+            is UndecodableVideoException -> MediaInvalidError(e)
             is VideoProcessorTimeoutException -> e
         }
 }

@@ -1291,7 +1291,7 @@
         }
       },
       "MediaNotFound" : {
-        "description" : "The pin, its image or its download does not exist, or a path or query value could not be read",
+        "description" : "The pin, its media or its download does not exist, or a path or query value could not be read",
         "content" : {
           "application/problem+json" : {
             "schema" : {
@@ -2782,7 +2782,7 @@
     },
     "/api/v1/me/media-downloads" : {
       "get" : {
-        "summary" : "List the caller's running and failed image downloads",
+        "summary" : "List the caller's running and failed media downloads",
         "description" : "One page, newest request first. A recycled pin's download is left out, like every other read.",
         "parameters" : [ {
           "name" : "cursor",
@@ -2831,7 +2831,7 @@
     "/api/v1/me/media-downloads/{pinId}" : {
       "delete" : {
         "summary" : "Drop one settled download",
-        "description" : "The pin and its image are untouched.",
+        "description" : "The pin and its media are untouched.",
         "parameters" : [ {
           "name" : "pinId",
           "in" : "path",
@@ -3600,7 +3600,7 @@
             }
           },
           "415" : {
-            "description" : "UNSUPPORTED_MEDIA_TYPE: the route does not read this Content-Type. MEDIA_CODEC_UNSUPPORTED: the upload is a format or a codec the server reads and does not store, which the detail names",
+            "description" : "UNSUPPORTED_MEDIA_TYPE: the route does not read this Content-Type. MEDIA_CODEC_UNSUPPORTED: the upload is a format or a codec the server reads and does not store; for a video, the detail names the codec",
             "content" : {
               "application/problem+json" : {
                 "schema" : {

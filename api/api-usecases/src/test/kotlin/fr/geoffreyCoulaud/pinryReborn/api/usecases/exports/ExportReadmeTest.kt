@@ -47,4 +47,16 @@ class ExportReadmeTest {
             assertTrue(readme.contains(exclusion.why), "expected README to mention '${exclusion.why}'")
         }
     }
+
+    @Test
+    fun `Given a manifest, Then the README says media holds both images and videos`() {
+        // Given
+        val manifest = sampleManifest(excluded = emptyList())
+
+        // When
+        val readme = ExportReadme.render(manifest)
+
+        // Then
+        assertTrue(readme.contains("`media/` - the original media bytes (images and videos)"))
+    }
 }

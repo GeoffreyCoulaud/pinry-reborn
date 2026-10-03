@@ -81,7 +81,7 @@ class GarbageCollectionLifecycle(
         try {
             reapStaleMediaDownloads.reap()
         } catch (e: Exception) {
-            logger.error(e) { "stale image download sweep failed" }
+            logger.error(e) { "stale media download sweep failed" }
         }
     }
 

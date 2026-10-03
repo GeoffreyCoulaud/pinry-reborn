@@ -56,9 +56,7 @@ class LoggingRequestResponseFilterTest {
 
     @Test
     fun `Given a multipart request, Then requestFilter does not read the entity stream`() {
-        // Given - a canonical-media upload can be up to 32 MiB; buffering it into memory to log
-        // it as UTF-8 garbage would defeat the streaming design, so the entity stream must be
-        // left completely untouched for the multipart parser downstream.
+        // Given - an upload runs up to `quarkus.http.limits.max-body-size`, so the stream stays untouched
         val ctx = mockk<ContainerRequestContext>()
         val uriInfo = mockk<UriInfo>()
         every { ctx.method } returns "PUT"

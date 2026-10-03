@@ -162,7 +162,7 @@ class MeExportController(
         // export row is read, and this use case is the single validated source for it (spec §5).
         val opened = downloader.open(user, id, 0)
         val range = RangeHeader.parse(rangeHeader, opened.totalByteSize)
-        return ByteRangeResponse.builder(opened.stream, opened.totalByteSize, range)
+        return ByteRangeResponse.builder({ opened.stream }, opened.totalByteSize, range)
             .header("Content-Type", opened.mediaType)
             .header("ETag", "\"${opened.sha256}\"")
             .header("Content-Disposition", contentDispositionHeader(opened, user))
