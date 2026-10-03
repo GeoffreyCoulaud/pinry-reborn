@@ -26,7 +26,7 @@ class HandshakeController(
             maxVideoBytes = mediaConfig.maxVideoBytes(),
             maxVideoSeconds = mediaConfig.maxVideoSeconds(),
             maxPixels = mediaConfig.maxPixels(),
-            mediaTypes = MediaFormat.entries.map { it.mimeType },
+            mediaTypes = MediaFormat.entries.map { it.mimeType } + VIDEO_UPLOAD_TYPES,
             maxImportChunkBytes = importBounds.maxChunkBytes,
             maxImportArchiveBytes = importBounds.maxArchiveBytes,
         ),
@@ -37,4 +37,10 @@ class HandshakeController(
             large = renditionsConfig.large(),
         ),
     )
+
+    companion object {
+        /** The types a browser names a file the two demuxers read: the probe, not this list, decides. */
+        val VIDEO_UPLOAD_TYPES =
+            listOf("video/mp4", "video/webm", "video/quicktime", "video/x-matroska", "video/x-m4v", "video/3gpp")
+    }
 }

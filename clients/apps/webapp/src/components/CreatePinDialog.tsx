@@ -1,5 +1,5 @@
 import { Button, Input, Label, Modal, TextField } from "@heroui/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { refuse } from "../drops";
 import {
 	type DropPartition,
@@ -9,8 +9,10 @@ import {
 } from "../lib/drops";
 import { isStorableFile, uploadRefusal } from "../lib/uploads";
 import { type MediaSource, useCreatePin, useHandshake } from "../media";
+import { mediaRefusal } from "../mediaRefusals";
 import { m } from "../paraglide/messages.js";
 import { MediaDropBox } from "./MediaDropBox";
+import { FilePreview } from "./PinEditForm";
 
 /**
  * The label follows the input so Tailwind's `peer-*` variants reach it. react-aria links the two
@@ -74,22 +76,8 @@ function CreatePinForm({
 		at: 0,
 	}));
 	const { entries, at } = queue;
-	const [preview, setPreview] = useState<string | null>(null);
 	// `at` is always inside the queue; the fallback is what `noUncheckedIndexedAccess` asks for.
 	const entry = entries[at] ?? { file: null, url: "" };
-
-	// The content is mounted only while the dialog is open, so this cleanup revokes the URL on
-	// Escape and on the backdrop as much as on a pin created.
-	useEffect(() => {
-		const file = entry.file?.file;
-		if (file === undefined) {
-			setPreview(null);
-			return;
-		}
-		const drawn = URL.createObjectURL(file);
-		setPreview(drawn);
-		return () => URL.revokeObjectURL(drawn);
-	}, [entry.file]);
 
 	/** The entry being worked on, changed where it stands: the queue around it is untouched. */
 	function change(patch: Partial<PinEntry>) {
@@ -186,10 +174,7 @@ function CreatePinForm({
 			<MediaDropBox limits={handshake.data?.limits} multiple onDrop={take}>
 				{entry.file === null ? null : (
 					<>
-						{/* One render behind the file: the object URL is drawn by the effect above. */}
-						{preview === null ? null : (
-							<img src={preview} alt="" className="max-h-32 rounded" />
-						)}
+						<FilePreview file={entry.file.file} className="max-h-32 rounded" />
 						<span className="text-sm text-muted">{entry.file.file.name}</span>
 						{/* Positioned above the label's stretched hit area, which would otherwise take this
                 press and open the picker instead. */}
@@ -206,7 +191,9 @@ function CreatePinForm({
 			<Field name="description" label={m.description()} />
 			{/* Never required: a file from disk and a direct image address both name no page. */}
 			<Field name="sourceContextUrl" type="url" label={m.source_page()} />
-			{create.isError ? <p role="alert">{m.creation_refused()}</p> : null}
+			{create.isError ? (
+				<p role="alert">{mediaRefusal(create.error, m.creation_refused)}</p>
+			) : null}
 			<div className="flex justify-end gap-2">
 				{/* Two verbs, two effects on the counter: `Remove` empties this entry and leaves it where
             it is, `Ignore` abandons it and moves on. */}

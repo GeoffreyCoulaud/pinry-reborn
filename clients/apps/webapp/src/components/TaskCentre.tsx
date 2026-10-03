@@ -1,12 +1,15 @@
 import { Badge, Button, buttonVariants, Popover } from "@heroui/react";
 import { ArrowDownUp } from "lucide-react";
 import { downloadReason, retriable } from "../downloadReasons";
+import { acceptOf } from "../lib/uploads";
 import {
 	type Download,
 	useDropDownload,
+	useHandshake,
 	useMediaDownloads,
 	useSetPinMedia,
 } from "../media";
+import { mediaRefusal } from "../mediaRefusals";
 import { m } from "../paraglide/messages.js";
 import { IconButton } from "./IconButton";
 import { useDataTasks } from "./useDataTasks";
@@ -15,6 +18,7 @@ import { useDataTasks } from "./useDataTasks";
 function Task({ download }: { download: Download }) {
 	const setMedia = useSetPinMedia();
 	const drop = useDropDownload();
+	const limits = useHandshake().data?.limits;
 	const failed = download.status === "FAILED";
 	const reason = downloadReason(download.reasonCode, download.message);
 
@@ -47,7 +51,7 @@ function Task({ download }: { download: Download }) {
 						{m.image_file()}
 						<input
 							type="file"
-							accept="image/*"
+							accept={acceptOf(limits)}
 							className="sr-only"
 							onChange={(event) => {
 								const file = event.currentTarget.files?.[0];
@@ -67,7 +71,9 @@ function Task({ download }: { download: Download }) {
 				</div>
 			) : null}
 			{/* A refused action is silent otherwise, which is what the creation screen already avoids. */}
-			{setMedia.isError ? <p role="alert">{m.image_refused()}</p> : null}
+			{setMedia.isError ? (
+				<p role="alert">{mediaRefusal(setMedia.error, m.image_refused)}</p>
+			) : null}
 			{drop.isError ? <p role="alert">{m.dismissal_refused()}</p> : null}
 		</li>
 	);

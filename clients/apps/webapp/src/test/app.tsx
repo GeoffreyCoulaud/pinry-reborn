@@ -316,23 +316,31 @@ export function importsRoute(rows: () => unknown[] = () => []) {
 	);
 }
 
-/** What the API's `MediaFormat` holds, which is what a real handshake publishes. */
+/** What the API's `MediaFormat` holds and the video types it reads, which is what a real handshake publishes. */
 export const MEDIA_TYPES = [
 	"image/png",
 	"image/jpeg",
 	"image/webp",
 	"image/gif",
+	"video/mp4",
+	"video/webm",
+	"video/quicktime",
+	"video/x-matroska",
+	"video/x-m4v",
+	"video/3gpp",
 ];
 
 /** The deployment's limits and rendition sizes, as narrow as the journey needs them to be. */
 export function handshakeRoute({
 	maxImageBytes = 30 * 1024 * 1024,
+	maxVideoBytes = 50 * 1024 * 1024,
 	small = 240,
 	maxImportChunkBytes = 16 * 1024 * 1024,
 	maxImportArchiveBytes = 20 * 1024 ** 3,
 	onRequest = () => {},
 }: {
 	maxImageBytes?: number;
+	maxVideoBytes?: number;
 	small?: number;
 	maxImportChunkBytes?: number;
 	maxImportArchiveBytes?: number;
@@ -344,7 +352,7 @@ export function handshakeRoute({
 			contractVersion: "4.0.0",
 			limits: {
 				maxImageBytes,
-				maxVideoBytes: 50 * 1024 * 1024,
+				maxVideoBytes,
 				maxVideoSeconds: 120,
 				maxPixels: 50_000_000,
 				mediaTypes: MEDIA_TYPES,

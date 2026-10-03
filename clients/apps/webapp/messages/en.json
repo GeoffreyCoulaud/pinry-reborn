@@ -135,6 +135,8 @@
 	"issue_name_taken_by_recycled": "A board in the recycle bin already has this name, so this one was not added.",
 	"issue_pin_has_no_media": "This pin has no image, so it was not added.",
 	"issue_unknown": "Something on this line was not imported.",
+	"media_codec_unsupported": "This server does not store this format or codec.",
+	"media_too_long": "This video lasts longer than this server accepts.",
 	"membership_refused": "That board could not be changed.",
 	"name": "Name",
 	"new_board": "New board…",

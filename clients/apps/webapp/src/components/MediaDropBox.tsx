@@ -2,7 +2,7 @@ import { type ReactNode, useState } from "react";
 import { judgeDrop, refuse } from "../drops";
 import { dragDepth } from "../lib/drags";
 import type { DropPartition } from "../lib/drops";
-import type { UploadLimits } from "../lib/uploads";
+import { acceptOf, type UploadLimits } from "../lib/uploads";
 import { m } from "../paraglide/messages.js";
 
 /**
@@ -58,7 +58,7 @@ export function MediaDropBox({
 				{m.drop_image()}
 				<input
 					type="file"
-					accept={limits?.mediaTypes.join(",") ?? "image/*"}
+					accept={acceptOf(limits)}
 					multiple={multiple}
 					className="sr-only"
 					onChange={(event) => {

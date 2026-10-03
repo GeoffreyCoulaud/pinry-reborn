@@ -13,6 +13,7 @@ import {
 	downloadPollInterval,
 	settledPinIds,
 } from "./lib/downloads";
+import { refusalCode } from "./lib/refusals";
 import { replacePins } from "./lib/tiles";
 
 export type Download = Schemas["MediaDownloadOutputDto"];
@@ -30,6 +31,15 @@ export interface PinCreation {
 	sourceMediaUrl: string | null;
 	description: string;
 	source: MediaSource;
+}
+
+/** A media the API refused, carrying its problem's `code`: two refusals share a 422, two a 415. */
+export class MediaRefusal extends Error {
+	readonly code: string | null;
+	constructor(error: unknown, status: number) {
+		super(`The API refused the media: ${status}.`);
+		this.code = refusalCode(error);
+	}
 }
 
 const DOWNLOADS = ["media-downloads"];
@@ -60,7 +70,9 @@ async function setPinMedia(pinId: string, source: MediaSource): Promise<void> {
 					params,
 					body: { sourceUrl: source.url },
 				});
-	bodyOf(answer, "the image");
+	if (!answer.response.ok) {
+		throw new MediaRefusal(answer.error, answer.response.status);
+	}
 }
 
 async function dropDownload(pinId: string): Promise<void> {
