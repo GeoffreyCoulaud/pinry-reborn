@@ -114,6 +114,19 @@ class BaseErrorMapperTest {
     }
 
     @Test
+    fun `Given MEDIA_TOO_LONG, Then status is 422`() {
+        val response = mapper.toResponse(BaseError(message = "boom", code = ErrorCode.MEDIA_TOO_LONG))
+
+        assertEquals(422, response.status)
+        assertEquals("MEDIA_TOO_LONG", (response.entity as ProblemDetail).code)
+    }
+
+    @Test
+    fun `Given MEDIA_CODEC_UNSUPPORTED, Then status is UNSUPPORTED_MEDIA_TYPE`() {
+        assertEquals(Response.Status.UNSUPPORTED_MEDIA_TYPE, statusFor(ErrorCode.MEDIA_CODEC_UNSUPPORTED))
+    }
+
+    @Test
     fun `Given MEDIA_SOURCE_URL_INVALID, Then status is BAD_REQUEST`() {
         assertEquals(Response.Status.BAD_REQUEST, statusFor(ErrorCode.MEDIA_SOURCE_URL_INVALID))
     }

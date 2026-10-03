@@ -14,6 +14,7 @@ import jakarta.ws.rs.core.Response.Status.NOT_FOUND
 import jakarta.ws.rs.core.Response.Status.REQUEST_ENTITY_TOO_LARGE
 import jakarta.ws.rs.core.Response.Status.TOO_MANY_REQUESTS
 import jakarta.ws.rs.core.Response.Status.UNAUTHORIZED
+import jakarta.ws.rs.core.Response.Status.UNSUPPORTED_MEDIA_TYPE
 import jakarta.ws.rs.core.UriInfo
 import jakarta.ws.rs.ext.ExceptionMapper
 import jakarta.ws.rs.ext.Provider
@@ -67,6 +68,9 @@ class BaseErrorMapper : ExceptionMapper<BaseError> {
                 ProblemCode.MEDIA_INSUFFICIENT_PERMISSIONS to FORBIDDEN.statusCode
             ErrorCode.MEDIA_TOO_LARGE -> ProblemCode.MEDIA_TOO_LARGE to REQUEST_ENTITY_TOO_LARGE.statusCode
             ErrorCode.MEDIA_INVALID -> ProblemCode.MEDIA_INVALID to UNPROCESSABLE_ENTITY_STATUS_CODE
+            ErrorCode.MEDIA_TOO_LONG -> ProblemCode.MEDIA_TOO_LONG to UNPROCESSABLE_ENTITY_STATUS_CODE
+            ErrorCode.MEDIA_CODEC_UNSUPPORTED ->
+                ProblemCode.MEDIA_CODEC_UNSUPPORTED to UNSUPPORTED_MEDIA_TYPE.statusCode
             ErrorCode.MEDIA_SOURCE_URL_INVALID -> ProblemCode.MEDIA_SOURCE_URL_INVALID to BAD_REQUEST.statusCode
             ErrorCode.MEDIA_DOWNLOAD_IN_PROGRESS -> ProblemCode.MEDIA_DOWNLOAD_IN_PROGRESS to CONFLICT.statusCode
             ErrorCode.MEDIA_RENDITION_SIZE_INVALID -> ProblemCode.MEDIA_RENDITION_SIZE_INVALID to BAD_REQUEST.statusCode

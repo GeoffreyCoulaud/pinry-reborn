@@ -72,7 +72,7 @@ class MediaController(
     @Operation(summary = SET_MEDIA_OPERATION_SUMMARY)
     @APIResponse(
         responseCode = "201",
-        description = "Image created",
+        description = "Media created",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -82,7 +82,7 @@ class MediaController(
     )
     @APIResponse(
         responseCode = "200",
-        description = "Image replaced",
+        description = "Media replaced",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -99,11 +99,15 @@ class MediaController(
     @APIResponse(responseCode = "413", description = TOO_LARGE,
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_TOO_LARGE"])]))])
-    @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
-    @APIResponse(responseCode = "422",
-        description = "The upload is not an image the server reads, or it is past media.max_pixels",
+    @APIResponse(responseCode = "415", description = UNSUPPORTED,
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_INVALID"])]))])
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["UNSUPPORTED_MEDIA_TYPE", "MEDIA_CODEC_UNSUPPORTED"])]))])
+    @APIResponse(responseCode = "422",
+        description = "MEDIA_INVALID: the upload is neither an image nor a video the server reads, or it is past " +
+            "media.max_pixels. MEDIA_TOO_LONG: the video lasts longer than media.max_video_seconds",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_INVALID", "MEDIA_TOO_LONG"])]))])
     fun setMedia(pinId: UUID, @RestForm("file") @NotNull file: FileUpload): RestResponse<MediaOutputDto> {
         val requester = securityIdentity.getUser()
         val result = Files.newInputStream(file.uploadedFile()).use { setPinMedia.set(pinId, requester, it) }
@@ -115,9 +119,9 @@ class MediaController(
     @GET
     @Path("/{pinId}/media")
     @APIResponse(responseCode = "200", description = "The original, or a WebP rendition",
-        content = [Content(mediaType = "image/*")])
+        content = [Content(mediaType = "image/*"), Content(mediaType = "video/*")])
     @APIResponse(responseCode = "206", description = "The requested byte range of the original, Content-Range set",
-        content = [Content(mediaType = "image/*")])
+        content = [Content(mediaType = "image/*"), Content(mediaType = "video/*")])
     @APIResponse(responseCode = "400", description = "The size names no rendition",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_RENDITION_SIZE_INVALID"])]))])
@@ -213,7 +217,10 @@ class MediaController(
     @APIResponse(responseCode = "413", description = TOO_LARGE,
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_TOO_LARGE"])]))])
-    @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
+    @APIResponse(responseCode = "415", description = UNSUPPORTED,
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["UNSUPPORTED_MEDIA_TYPE", "MEDIA_CODEC_UNSUPPORTED"])]))])
     fun requestMediaDownload(
         pinId: UUID,
         @Valid @NotNull body: PinMediaDownloadInputDto,
@@ -244,12 +251,15 @@ class MediaController(
         // SmallRye OpenAPI merges the two `@Consumes`-differentiated methods into a single
         // Operation. Keeping the summary in one place avoids the two annotations drifting apart.
         const val SET_MEDIA_OPERATION_SUMMARY =
-            "Set the pin's canonical image (upload bytes, or request a server-side fetch)"
+            "Set the pin's media (upload bytes, or request a server-side fetch)"
 
         // Both arms declare these identically, SmallRye merging them (spec 2026-09-23, section 3).
         const val TOO_LARGE = "MEDIA_TOO_LARGE: the upload is past media.max_image_bytes for an image, " +
             "media.max_video_bytes for a video. BODY_TOO_LARGE: the Content-Length is past " +
             "quarkus.http.limits.max-body-size, which is above both; a chunked body past it gets a 413 with no body"
+        const val UNSUPPORTED = "UNSUPPORTED_MEDIA_TYPE: the route does not read this Content-Type. " +
+            "MEDIA_CODEC_UNSUPPORTED: the upload is a format or a codec the server reads and does not store, " +
+            "which the detail names"
         const val INVALID_REQUEST = "The upload has no file part, the body is not JSON or breaks a constraint, " +
             "or the source URL is not an http or https address"
     }

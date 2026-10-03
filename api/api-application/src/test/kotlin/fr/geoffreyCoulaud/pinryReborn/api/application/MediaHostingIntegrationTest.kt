@@ -287,4 +287,59 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         // Then: the stored file is gone
         assertFalse(Files.exists(storedPath), "image file should be removed from disk after permanent delete")
     }
+
+    @Test
+    fun `Given each accepted video, Then the upload answers 201 and the original is served with its codecs`() {
+        // Given: each fixture and the container its codecs choose (decision L1)
+        val containers = mapOf(
+            "h264-aac.mkv" to "video/mp4",
+            "h265-hev1-aac.mov" to "video/mp4",
+            "vp9-opus.webm" to "video/webm",
+            "av1.mp4" to "video/webm",
+        )
+        for ((name, container) in containers) {
+            val (auth, pinId) = createPinForNewUser()
+
+            // When
+            given()
+                .authenticatedAs(auth)
+                .multiPart("file", videoFixture(name), "application/octet-stream")
+                .`when`().put("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(201)
+
+            // Then
+            given()
+                .authenticatedAs(auth)
+                .`when`().get("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(200)
+                .header("Content-Type", matchesPattern("$container; codecs=\"[^\"]+\""))
+        }
+    }
+
+    @Test
+    fun `Given a video or a format the server refuses, Then the upload answers its refusal code`() {
+        // Given: AC-3 audio, 121 seconds, and an AVIF libvips reads and ffprobe finds a single frame in
+        val refusals = mapOf(
+            "h264-ac3.mkv" to (415 to "MEDIA_CODEC_UNSUPPORTED"),
+            "too-long.mkv" to (422 to "MEDIA_TOO_LONG"),
+            "still.avif" to (415 to "MEDIA_CODEC_UNSUPPORTED"),
+        )
+        for ((name, refusal) in refusals) {
+            val (auth, pinId) = createPinForNewUser()
+
+            // When / Then
+            given()
+                .authenticatedAs(auth)
+                .multiPart("file", videoFixture(name), "application/octet-stream")
+                .`when`().put("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(refusal.first)
+                .body("code", equalTo(refusal.second))
+        }
+    }
+
+    // The probe's own fixtures, generated once in the module that reads them (its README holds the commands).
+    private fun videoFixture(name: String) = File("../api-video-ffmpeg/src/test/resources/fixtures/$name")
 }

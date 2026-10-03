@@ -5,6 +5,12 @@ import org.junit.jupiter.api.Test
 
 class VideoContainerTest {
     @Test
+    fun `Given each container, Then it names its media type and extension`() {
+        assertEquals("video/mp4" to "mp4", VideoContainer.MP4.mimeType to VideoContainer.MP4.extension)
+        assertEquals("video/webm" to "webm", VideoContainer.WEBM.mimeType to VideoContainer.WEBM.extension)
+    }
+
+    @Test
     fun `Given every pair of codecs, Then only VP9 or AV1 with Opus or no audio lands in WebM`() {
         // Given
         val audioCodecs = AudioCodec.entries + null

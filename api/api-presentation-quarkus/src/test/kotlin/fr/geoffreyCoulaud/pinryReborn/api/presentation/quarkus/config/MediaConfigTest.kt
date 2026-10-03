@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.time.Duration
 
 class MediaConfigTest {
     @Test
@@ -13,6 +14,7 @@ class MediaConfigTest {
             override fun maxVideoBytes() = 52_428_800L
             override fun maxVideoSeconds() = 120L
             override fun maxPixels() = 50_000_000L
+            override fun videoTimeout() = Duration.ofSeconds(60)
         }
         // Then
         assertEquals("/var/lib/pinry", config.dataDir())
@@ -20,5 +22,6 @@ class MediaConfigTest {
         assertEquals(52_428_800L, config.maxVideoBytes())
         assertEquals(120L, config.maxVideoSeconds())
         assertEquals(50_000_000L, config.maxPixels())
+        assertEquals(Duration.ofSeconds(60), config.videoTimeout())
     }
 }
