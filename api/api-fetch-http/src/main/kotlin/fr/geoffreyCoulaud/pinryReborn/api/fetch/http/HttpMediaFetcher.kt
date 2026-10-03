@@ -18,6 +18,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 class HttpMediaFetcher(
     private val connectTimeout: Duration,
@@ -118,24 +119,39 @@ class HttpMediaFetcher(
         return uri
     }
 
-    // Closing the body ends the download: the client, then its proxy. Past the deadline a read throws, since
-    // every read renews the task's lease and a trickling origin would otherwise hold a worker for good.
+    // Closing the body ends the download: the client, then its proxy. At the deadline a watchdog ends it under any
+    // read, which then throws, since every read renews the task's lease and a slow origin would hold a worker for good.
     private class EndingStream(
         body: InputStream,
         private val deadline: Long,
         private val end: () -> Unit,
     ) : FilterInputStream(body) {
-        override fun read(): Int = beforeDeadline(super.read())
+        private val watchdog = Thread.ofVirtual().start(::endAtDeadline)
 
-        override fun read(b: ByteArray, off: Int, len: Int): Int = beforeDeadline(super.read(b, off, len))
+        override fun read(): Int = unreachableOnFailure { super.read() }
 
-        private fun beforeDeadline(read: Int): Int {
-            if (System.nanoTime() > deadline) throw FetchUnreachableException("the body outlasted its timeout")
-            return read
+        override fun read(b: ByteArray, off: Int, len: Int): Int = unreachableOnFailure { super.read(b, off, len) }
+
+        private inline fun unreachableOnFailure(read: () -> Int): Int =
+            try {
+                read()
+            } catch (e: IOException) {
+                throw FetchUnreachableException("the body could not be read", e)
+            }
+
+        // The JDK documents no effect of shutdownNow on a read; the suite pins that it fails one, even mid-body.
+        private fun endAtDeadline() {
+            try {
+                TimeUnit.NANOSECONDS.sleep(deadline - System.nanoTime())
+            } catch (_: InterruptedException) {
+                return
+            }
+            end()
         }
 
         override fun close() =
             try {
+                watchdog.interrupt()
                 super.close()
             } finally {
                 end()

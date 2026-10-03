@@ -4,11 +4,9 @@ import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.net.ConnectException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ProxySelector
@@ -346,7 +344,7 @@ class GuardingProxyTest {
         assertEquals("HTTP/1.1 200 Connection Established\r\n\r\n", established.toString(Charsets.ISO_8859_1))
         assertEquals(-1, tunnel.getInputStream().read())
         tunnel.close()
-        assertThrows(ConnectException::class.java) { Socket(proxy.address.address, proxy.address.port) }
+        assertTrue(proxy.isClosed)
     }
 
     private companion object {
