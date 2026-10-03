@@ -214,7 +214,7 @@ export function PinEditForm({
 			onChange={setAddress}
 			variant="secondary"
 		>
-			<Label>{m.image_address()}</Label>
+			<Label>{m.media_address()}</Label>
 			{/* The form's wherever it sits, so Enter saves from the image side too. */}
 			<Input form={form} />
 		</TextField>
@@ -238,20 +238,20 @@ export function PinEditForm({
 			media={
 				<div className="flex h-full w-full flex-col items-center gap-3">
 					<ToggleButtonGroup
-						aria-label={m.image()}
+						aria-label={m.media()}
 						selectionMode="single"
 						disallowEmptySelection
 						selectedKeys={[intent]}
 						onSelectionChange={(keys) => setIntent([...keys][0] as MediaIntent)}
 					>
-						<ToggleButton id="keep">{m.image_keep()}</ToggleButton>
+						<ToggleButton id="keep">{m.media_keep()}</ToggleButton>
 						<ToggleButton id="replace">
 							<ToggleButtonGroup.Separator />
-							{m.image_from_file()}
+							{m.media_from_file()}
 						</ToggleButton>
 						<ToggleButton id="fetch">
 							<ToggleButtonGroup.Separator />
-							{m.image_from_address()}
+							{m.media_from_address()}
 						</ToggleButton>
 					</ToggleButtonGroup>
 					{intent === "fetch" ? (
@@ -280,7 +280,7 @@ export function PinEditForm({
 										className="min-h-0 w-full flex-1 object-contain"
 									/>
 									<p>{chosen.file.name}</p>
-									<p className="text-sm text-muted">{m.image_unsaved()}</p>
+									<p className="text-sm text-muted">{m.media_unsaved()}</p>
 									<Button variant="secondary" onPress={() => setChosen(null)}>
 										{m.remove()}
 									</Button>
@@ -294,7 +294,7 @@ export function PinEditForm({
 						</div>
 					)}
 					{intent === "fetch" ? (
-						<p className="text-sm text-muted">{m.image_fetched_on_save()}</p>
+						<p className="text-sm text-muted">{m.media_fetched_on_save()}</p>
 					) : null}
 				</div>
 			}
@@ -343,7 +343,7 @@ export function PinEditForm({
 					{/* The sub-state the contract has carried since before any client read it: the pin keeps
               the image it has while the server downloads the one asked for. */}
 					{replacement?.status === "PENDING" ? (
-						<p role="status">{m.image_replacing()}</p>
+						<p role="status">{m.media_replacing()}</p>
 					) : null}
 					{replacement?.status === "FAILED" ? (
 						<p role="alert">
@@ -376,7 +376,7 @@ export function PinEditForm({
               leaves the fields saved and only the image to try again. */}
 					{save.isError ? <p role="alert">{m.pin_refused()}</p> : null}
 					{setMedia.isError ? (
-						<p role="alert">{mediaRefusal(setMedia.error, m.image_refused)}</p>
+						<p role="alert">{mediaRefusal(setMedia.error, m.media_refused)}</p>
 					) : null}
 					{/* At the column's foot while the fields scroll above it. */}
 					<div className="sticky bottom-0 mt-auto flex justify-end gap-2 bg-overlay py-2">
