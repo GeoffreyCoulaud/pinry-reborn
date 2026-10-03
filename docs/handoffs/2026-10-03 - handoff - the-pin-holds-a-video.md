@@ -17,7 +17,12 @@ Lot `0.45.0`, one stack of 27 code blocks: 10 `refactor/the-image-becomes-a-medi
 `feat/the-ytdlp-module-extracts-a-page` (#289), 103 `feat/the-extraction-holds-its-bounds` (#290), 104
 `feat/the-extractor-is-wired` (#291), 110 `feat/a-page-address-yields-its-video` (the pull request this file arrives
 in). Written in block 110 from the block reports collapsed in those pull requests; the closing block corrects it after
-the holistic review.
+the holistic review. (Corrected: #292 is block 110. The closing blocks are 120 `fix/the-video-path-holds-its-resources`
+(#293), 122 `fix/the-import-renews-its-lease-per-line` (#294), 124 `fix/the-download-is-bounded-in-time` (#295), 126
+`fix/the-api-says-media` (#296), 128 `fix/a-stalled-download-is-abandoned` (#297), 130 `docs/the-records-match-the-code`
+(#298), 132 `fix/the-webapp-says-media-everywhere` (#299) and 134 `docs/the-lot-closes`, the pull request these
+corrections arrive in. Two blocks the operator added on 2026-10-04 follow it: 136, the grid hovers on the animated
+rendition, and 138, the request log redacts credentials.)
 
 ## Current state
 
@@ -26,16 +31,24 @@ the holistic review.
   `media/` directory at format version 2 (ADR 0049). The contract is at `21.0.0`.
 - **A video is at most 120 seconds and 50 MiB** (`media.max_video_seconds`, `media.max_video_bytes`), an image keeping
   `media.max_image_bytes`. The handshake publishes the three bounds and the ten upload types in `mediaTypes`.
+  (Corrected: since block 120 `media.max_pixels` applies to a video at ingestion too, refused as an image is.)
 - **`api-video-ffmpeg` runs ffprobe and ffmpeg as processes**, with `-format_whitelist mov,matroska -protocol_whitelist
   file` before `-i`. A video is repackaged with `-c copy`, never re-encoded, into WebM or MP4 as its codecs choose, its
   stored type carrying an RFC 6381 `codecs` parameter built from the stream's extradata (ADR 0047).
 - **One ingestion path**, `MediaIngestion`, stages, probes (libvips first, ffprobe when libvips cannot open the file or
   reads a format the enum lacks), repackages a video and promotes, for the upload, the download and the import. An
-  imported MP4 is stored as the archive carries it; a WebM is repackaged, which keeps its bytes.
+  imported MP4 is stored as the archive carries it; a WebM is repackaged, which keeps its bytes. (Corrected: since
+  block 120 an archived MP4 is kept only when the probe finds it already repackaged, one video and one audio track and
+  a tag matching its `codecs`; any other is repackaged.)
 - **The original answers `Range`** with `206` and a quoted `ETag`. A video's still rendition is its poster drawn by
   libvips; `?animated=true` is its first three seconds as an animated WebP; both are cached like any rendition.
+  (Corrected: the poster's frames are scaled to the rendition's side before `thumbnail` holds them (block 120), the
+  poster and the preview decode on two threads (block 134), and a render reads the original through a hard link in
+  `tmp/` rather than a copy (`MediaStore.stageStored`, block 120). The original's stream opens inside the response's
+  `StreamingOutput` (block 126).)
 - **Two orphan sweeps**: an original with no row, and a staged file, or a yt-dlp run's directory, older than
   `garbage-collection.orphan_grace`, which a boot check keeps longer than `media.download.extraction_timeout`.
+  (Corrected: longer than twice it, one per yt-dlp run, since block 124.)
 - **Every remote fetch goes through one `GuardingProxy` per download** (`api-fetch-http`), bound to the loopback, which
   resolves each host once, checks it with `AddressPolicy`, serves `CONNECT` and plain HTTP one request per connection,
   and keeps the record that names `URL_NOT_ALLOWED` or `UNREACHABLE` (ADR 0048).
@@ -44,13 +57,21 @@ the holistic review.
   header included, down the direct path. yt-dlp runs twice behind the proxy, a `--dump-single-json` that refuses a live
   stream, a duration or a size past the bounds, then the download of the chosen format, each run bounded in time and in
   bytes. Its refusals arrive as `NO_MEDIA_FOUND` and `TOO_LONG`; the proxy's as `URL_NOT_ALLOWED` and `UNREACHABLE`.
+  (Corrected: since block 124 the second run loads the first run's report with `--load-info-json`, less its
+  `webpage_url`, and fetches no page; since block 134 that report is the chosen entry alone when yt-dlp reports the
+  page as a playlist.)
 - **yt-dlp is pinned by hash** (`api/tools/yt-dlp/requirements.txt`, pip-compile's output) in a venv in both images,
   Deno copied from `denoland/deno:bin`, both raised by Dependabot.
 - **The download renews its lease** on each read of the body and each heartbeat of an extraction, granted at most
-  every third of `tasks.lease_duration`.
+  every third of `tasks.lease_duration`. (Corrected: the import offers the same throttled renewal on every line since
+  block 122, `imports.lease_renewal_lines` deleted. A direct body is ended past `media.download.extraction_timeout`
+  from the fetch's start (block 124), by a watchdog closing the client when no byte arrives at all (block 128).)
 - **The web application plays a video**: a `<video controls>` in the pin's view with a poster, a fallback (poster,
   sentence, download link) where `canPlayType` answers `""` or the element errors; a play badge and a muted hover
   preview in the grid; uploads of a video judged by type and bytes; every sentence that named the medium says "media".
+  (Corrected: since block 132 a video always gets the player, in a square box when its dimensions are missing; the
+  player is keyed on the address, size and type; the download link names the file from the type; the catalogue keys
+  say `media`. The hover still mounts the original: block 136 moves it to the animated rendition.)
 
 ## Evidence
 
@@ -73,7 +94,8 @@ the holistic review.
 - Block 58: green at its tip; budget 164 lines, 10 files (#278). With `-map_metadata -1`, `av1.mp4`, `vp9-opus.webm`
   and `subtitled.mkv` each repackaged three times gave identical outputs.
 - Block 59: green at `66c5de4e`; budget 195 lines, 7 files (#279). `MediaDownloadLeaseIntegrationTest` counted 3
-  origin fetches before the renewal and 1 after.
+  origin fetches before the renewal and 1 after. (Corrected: the suite is `LeaseRenewalIntegrationTest` since block
+  122, which added the import's case to it.)
 - Block 60: green at `9f00741d`; budget 277 lines, 14 files (#280).
 - Block 70: green at `058cae0c`; budget 297 lines, 11 files (#281).
 - Block 75: green at `ec30d0c9`; budget 121 lines, 5 files (#282).
@@ -92,10 +114,69 @@ the holistic review.
   `feat/the-extractor-is-wired`. `ModeBMediaHostingIntegrationTest` pins the `<video src>` of a local page as a
   `video/webm; codecs=` media through the wired application and real yt-dlp, and a page with no video ends `FAILED`
   with `NO_MEDIA_FOUND`.
+- Block 120: green, log `gate-120.log`; budget 174 lines, 16 files (#293).
+- Block 122: green at `45e2430b`; budget 158 lines, 10 files (#294). `LeaseRenewalIntegrationTest`'s import, its tag
+  lines each 200 ms late under a one-second lease, ended `RUNNING` before the change and `COMPLETED` after.
+- Block 124: green at `186b0d7c`, log `gate-124.log`; budget 162 lines, 9 files (#295).
+- Block 126: green; budget 107 lines, 14 files (#296).
+- Block 128: green at `26764da7`, log `gate-128.log`; budget 82 lines, 4 files (#297). `:api-fetch-http:test --rerun`
+  passed 15 runs of 15.
+- Block 130: green at `3cee7951`, log `gate-130.log`; budget 29 lines, 5 files (#298).
+- Block 132: green at `7d411814`, log `gate-132.log`; budget 212 lines, 17 files (#299).
+- Block 134: see "The real check" below for its measurements; gate and budget in its pull request.
 - Continuous integration green on #265 to #290 (`gh pr view <n> --json statusCheckRollup`, 2026-10-03); #291 was
-  running when this file was written.
+  running when this file was written. (Corrected: green on every pull request from #265 to #299 on 2026-10-04, read
+  the same way; #287 and #295 each needed one rerun, counted below.)
 - Read headless in Firefox 156.0.1 over WebDriver BiDi at 1280x800, each against a throwaway stub API: blocks 70, 75,
   80, 85 and 110 (the readings each report details). Block 70's found one defect, fixed before its push.
+
+## The real check
+
+Block 134 ran what ships against real sites on 2026-10-03 and 2026-10-04, the first time any block did. Each log is in
+block 134's teammate's scratchpad, under the name given.
+
+- **The pipeline.** `dagger call image` built `linux/amd64` and refused the altered hashes (`real-check-image.log`);
+  `dagger call smoke` answered healthy after 1 s and read `deno-2.9.7` and `yt_dlp_ejs-0.8.0`
+  (`real-check-smoke.log`).
+- **yt-dlp's flags in the image** (yt-dlp 2026.08.19, ffmpeg 8.0.1, Deno 2.9.7), the image built locally from
+  `dagger call quarkus-app export`. `extract.py` replays both runs with `YtDlpPageMediaExtractor`'s options, format
+  chain and `--load-info-json`, without `--proxy` (the proxy lives in the JVM), then ffprobe and the repackage with
+  `FfmpegVideoProcessor`'s flags.
+  - `https://www.youtube.com/shorts/jNQXAC9IVRw`: format `133+251`, 19 s, merged to Matroska, probed H.264 320x240
+    with Opus, repackaged to MP4 with `avc1` and Opus (`real-check-youtube.log`).
+  - `https://www.w3schools.com/html/html5_video.asp`, a plain `<video>`: the second run failed with
+    `EntryNotInPlaylist: There are no entries` (`real-check-plain-video.log`). yt-dlp reports a page of several videos
+    as a playlist, and `--load-info-json` on the whole report fails where the chosen entry alone downloads
+    (`real-check-playlist.log`). Fixed in block 134 (`8446b637`), the operator's answer AF.
+  - `https://vimeo.com/76979871`: refused by Vimeo, "The web client only works when logged-in"
+    (`real-check-vimeo.log`). An upstream limit; the lot passes no `--cookies` (specification section 7).
+- **Through the running API** (`compose.yml`'s `api` service, so `GuardingProxy` on the real path; `api-check.py`
+  creates a user and a pin, sets the media from the address and polls):
+  - The YouTube Short: `READY` after 9 s, `video/mp4; codecs="avc1.4D400C,Opus"`, 320x240, 687,900 bytes; the
+    original, the still (`image/webp`, 12,576 bytes) and the animated rendition (`image/webp`, 436,750 bytes) each
+    answered `200` (`real-check-api-youtube.log`). Again after block 134's two fixes: `READY` after 4 s, same bytes
+    (`real-check-api-youtube-2.log`).
+  - The w3schools page, after the fix: `READY` after 2 s, `video/mp4; codecs="avc1.4D400C,mp4a.40.2"`, 320x176,
+    585,930 bytes, its renditions `200` (`real-check-api-plain-video.log`).
+- **The poster's peak memory** (`poster-memory.py`, `real-check-poster-memory.log`): peak RSS from `getrusage` of the
+  image's ffmpeg running `FfmpegVideoProcessor`'s poster command on 5-second `testsrc2` clips encoded to H.264
+  Matroska, on a host with 12 cores. The grid asks for SMALL (240) and MEDIUM (480) alone.
+
+  | Clip | Graph | Default threads | `-threads 2` |
+  |---|---|---|---|
+  | 1080p | before block 120 | 802 MB | 722 MB |
+  | 1080p | SMALL (240) | 226 MB | 144 MB |
+  | 1080p | MEDIUM (480) | 322 MB | 241 MB |
+  | 1080p | LARGE (960) | 687 MB | 605 MB |
+  | 4K | before block 120 | 2,954 MB | 2,675 MB |
+  | 4K | SMALL (240) | 567 MB | 211 MB |
+  | 4K | MEDIUM (480) | 663 MB | 331 MB |
+  | 4K | LARGE (960) | 1,028 MB | 747 MB |
+
+  The review's own method, frames straight from `lavfi` and no decoder, gives 362 MB and 1,292 MB before block 120
+  (the review measured 348 MB and 1,264 MB) and 149 MB and 182 MB at MEDIUM after it. What block 120 left was the
+  decoder, one thread per core each holding its frames, and the two threads are block 134's (`d4bdf4d3`), the
+  operator's answer AH.
 
 ## Pitfalls
 
@@ -123,7 +204,28 @@ the holistic review.
   `contentUrl` during the first run; `extraction_timeout` bounds each of the two runs, so one extraction may last twice
   it.
 - **A page is fetched three times**: once by the worker, which reads its `Content-Type` and closes it unread, then by
-  each yt-dlp run.
+  each yt-dlp run. (Corrected: twice since block 124, the second run reading the first run's report.)
+- **yt-dlp's report for `--load-info-json` must be the chosen entry, never a playlist around it**: the whole playlist
+  fails with "There are no entries". The generic extractor reports a page of two `<video>` as a playlist. And the
+  report must not carry `webpage_url`, which yt-dlp re-extracts when a DASH download raises `ReExtractInfo` (124).
+- **The report's path is relative to the run's directory**: the suites' `media.data_dir` is relative, and yt-dlp
+  runs in the run's directory (124).
+- **A hard link in `tmp/` shares the original's modification time**, so the staged-file sweep may delete a link
+  during a render. Harmless: ffmpeg keeps reading the open file, and the original stays. The link needs `tmp/` and
+  `originals/` on one filesystem, one volume in the image (120).
+- **`HttpClient.shutdownNow` is documented to promise nothing about a read in progress**; two suite tests pin that it
+  ends one here, chunked and close-delimited (128).
+- **`QuarkusMock.installMockForType` needs a hand-built delegate**: one delegating to the injected bean reaches the
+  client proxy, which routes back to the mock (122).
+- **ffmpeg's default decoder threads follow the host's cores**, each holding its own frames, so a render's memory
+  grows with the machine; the poster and the preview pass `-threads 2` before `-i` (134).
+- **`LoggingRequestResponseFilter` logs every header and body at INFO**, passwords and session tokens included, in
+  the shipped image too. Found by block 134 on the compose stack; block 138 redacts them.
+- **Firefox's BiDi refuses commands on the initial context** without `-remote-allow-system-access`: create a tab with
+  `browsingContext.create` (132).
+- **An Edit whose `new_string` ends in a space can lose it**: three renamed JSON keys lost theirs (132).
+- **The evidence guard refuses `python3 -` reading a script from stdin**, as it refuses a redirection into a
+  variable's path: write the script with the edit tool first (134).
 - **Kover counts each `?.` of a chain as a branch**: `a?.b()?.c()` leaves the second null branch unreachable and
   the package under 100 %. Resolve the null once (`orEmpty()`), then chain plainly.
 - **An injected `@ApplicationScoped` bean is ARC's client proxy**: unwrap it with `ClientProxy.unwrap` before an `is`.
@@ -168,6 +270,22 @@ Tier-1 fixes: the upload discards on any probe failure (50); two stale producer 
 comment (55); the `MediaError` and download sentences say "media" (56, 57); `AGENTS.md`'s claim that python3 is pinned
 in the gate (100); `refusalOf` shared as `GuardingProxy.refusal()` (102).
 
+The closing blocks' departures from the review's suggestions, as each report details:
+
+- **120**: the poster's memory is pinned by the filter order (`posterFilters`), a child's peak memory being unreadable
+  from the JVM; a video's pixel refusal reuses `ImageTooManyPixelsException`; nothing serialises video renders.
+- **122**: the pin walk already renewed on every line, unthrottled; the 200-line period was the tag and board walks',
+  so the integration case slows tag lines, in the lease suite, which runs under a one-second lease.
+- **124**: a test that a failing video fetches the page once was dropped, yt-dlp's `ignoreerrors=only_download`
+  never reaching the fallback; the re-extraction test replaced it.
+- **128**: every body `IOException` becomes `FetchUnreachableException`, a reset before the deadline included, which
+  the use case already retried as `UNREACHABLE`.
+- **130**: the Dependabot group is renamed `docker`; a correction notes that decision v's "one page fetch more" no
+  longer holds.
+- **132**: the bare `image` catalogue key was renamed with the `image_*` keys.
+- **134**: two code fixes the real check found, each a tier-2 question: the playlist report (AF) and the decoder's
+  threads (AH).
+
 ## Tier-2 questions
 
 - Block 10: keep or drop the old tables, answered "reco ok, supprime" by the operator.
@@ -178,6 +296,13 @@ in the gate (100); `refusalOf` shared as `GuardingProxy.refusal()` (102).
 - Block 103: the protocol filter came as the lead's instruction of 2026-10-03.
 - Block 104: the stale-directory sweep, the lead's answer of 2026-10-03.
 - Blocks 20, 30, 42, 45, 50, 55, 57, 58, 59, 60, 70, 75, 85, 92, 95 and 110: none.
+- The holistic review's hover finding (AE): the operator chose the animated rendition, "AF a AE a", 2026-10-04.
+  Block 136.
+- Block 134, the playlist report (AF): fix it in block 134, "AF a AE a", the operator, 2026-10-04.
+- Block 134, the decoder's threads (AH): `-threads 2` in block 134, "recos ok", the operator, 2026-10-04.
+- Block 134, the credentials in the request log, proposed for the backlog as tier 3: fixed in this lot by block 138
+  instead, the operator's decision relayed by the lead on 2026-10-04.
+- Blocks 120 to 132: none.
 
 ## The operator's decisions of 2026-10-03
 
@@ -192,12 +317,17 @@ in the gate (100); `refusalOf` shared as `GuardingProxy.refusal()` (102).
 
 - **Two inline detekt suppressions were added**: `RowMergedOutsideTransaction` in block 50
   (`UserDataImportRunner.kt`), and `TooManyFunctions` on `FilesystemMediaStore` in block 60, when `openStaged` took it
-  to 12 functions. Each gives its reason inline.
+  to 12 functions. Each gives its reason inline. (Corrected: the new `RowMergedOutsideTransaction` suppression is in
+  `SetPinMedia.kt`; the one in `UserDataImportRunner.kt` predates the lot and only changed expression, as the holistic
+  review found.)
 
 ## What is not validated
 
 - No real site was extracted: every page the suites serve is local, a `<video src>`, an HLS playlist or JSON-LD. No
   site makes the generic extractor set `is_live`, so the live refusal is asserted on written JSON alone (103).
+  (Corrected: block 134 extracted a YouTube Short and a plain `<video>` page through the running API, "The real
+  check". No site with its own extractor other than YouTube was extracted, Vimeo asking for a login; the live refusal
+  is still asserted on written JSON alone.)
 - `--downloader native` has no test of its own; the HLS tests pass with it (103).
 - No browser but Firefox was driven; no phone width, no real touch device; H.265 never failed `canPlayType` there
   (70, 75). An undecodable video hovered in the grid was not driven (75). The download link was not tried against the
@@ -205,31 +335,100 @@ in the gate (100); `refusalOf` shared as `GuardingProxy.refusal()` (102).
   were not either (80).
 - The poster `thumbnail` picks was not judged on a real clip, and the time to render a 50 MiB, 120-second video was
   not measured; nor was `-count_packets`'s cost on one (40, 60). `+faststart`'s `moov` placement is not asserted (45).
+  (Corrected: the poster's memory was measured by block 134, "The real check"; time is still not, and neither is an
+  archived MP4's `+faststart`, ffprobe not reporting where `moov` sits (120).)
 - Block 57's two sentences were not read headless; the French sentences are read in a browser only for
   `NO_MEDIA_FOUND` (110), the parity test holding the rest (85).
 - The proxy wiring tests of block 95 were never seen red against a fetcher that bypasses the proxy, only at
   compilation.
 - Dependabot opening a recompiled `requirements.txt` pull request was not seen (100); it runs on `main` alone.
 - The extractor in the production build: injected by `DownloadPinMedia` since block 110, but `dagger call smoke` was not
-  run on it, and nothing read its log for an extraction.
+  run on it, and nothing read its log for an extraction. (Corrected: block 134 ran `dagger call smoke` and two
+  extractions through the running image.)
 - The new packages' CVEs were not triaged; `security/vex.openvex.json` is unchanged (specification section 7).
+- Deno's network access rests on Deno's default-deny permissions as yt-dlp invokes it; nothing asserts it (holistic
+  review).
+- An import of real large videos under the production one-minute lease; the suite proves the renewal with slow tag
+  lines under a one-second lease (122).
+- A direct download from a real remote origin that stalls; the tests use loopback origins through the real proxy
+  (128).
+- The TIFF detail end to end against a running server (126).
+- Dependabot's grouping of three directories in one entry, which runs on GitHub alone (130).
+- The fallback's download link against the real API and in Chrome or Safari; the square box at phone width; the
+  player's key across a real replacement (132).
+- A video rendition miss still has no single flight: a grid's first load draws every video tile's poster at once, about
+  330 MB each for a 4K video at MEDIUM. And `media.max_pixels`, at its 50 MP default, refuses no video (8K is 33 MP).
+  Filed in the backlog.
+- LARGE (960) is asked for by no client; a 4K poster at that size still peaks at 747 MB (134).
 
 ## The holistic review
 
 Not run yet: it reads the top of this stack at the head of Wrap, and the closing block records its findings here.
+(Corrected: run on 2026-10-03 over `lot/0.44.0-knip-and-biome-keep-the-clients-clean..origin/feat/a-page-address-yields-its-video`
+(`ed2ab5e6`), report `.reviews/the-pin-holds-a-video-holistic.md`: 0 CRITICAL, 4 MAJOR, 28 MINOR. Every finding was
+fixed inside the lot except the grid's hover, which goes to block 136; none was refused or filed. Each, in the review's
+order, with its exit:)
+
+- MAJOR, the poster holding 100 full-resolution frames: block 120, frames scaled first and `media.max_pixels` applied to
+  a video; the decoder's remaining cost bounded by block 134. The single flight it also named is filed in the backlog.
+- MAJOR, the import's 200-line lease period: block 122, `renewLeaseIfDue` on every line, the key deleted.
+- MAJOR, the second yt-dlp run's unfiltered `-f`: block 124, `--load-info-json` on the first run's report.
+- MAJOR, ADRs 0047 and 0048 overclaiming the security bound: block 130, `(Corrected: ...)` notes.
+- The boot check guarding half an extraction: block 124, twice the timeout.
+- The direct path with no wall clock: block 124, a deadline on each read; block 128, a watchdog for a body that sends
+  nothing.
+- The rendition copying the original into `tmp/`: block 120, a hard link.
+- The import's processor timeout reported as `MEDIA_UNREADABLE`: block 122, retried.
+- An archived MP4 trusted as is: block 120, kept only when already repackaged.
+- `MEDIA_CODEC_UNSUPPORTED` echoing `tiffload`, and two details for `MEDIA_INVALID`: block 126.
+- `ByteRangeResponse` opening the stream at build time: block 126, an opener.
+- `FilesystemMediaStore`'s suppression comment: block 120.
+- The handoff naming `UserDataImportRunner.kt` for the new suppression: block 134, corrected above.
+- Text the lot made stale: block 126; "no media at this url" by block 124.
+- The animated rendition with no consumer: the operator chose to hover on it (AE), block 136.
+- Dependabot's two pull requests per Deno release: block 130.
+- `ingestArchived`'s KDoc: block 120, the parameter renamed `keepArchivedMp4`.
+- `ExportReadme`: block 126.
+- The contract's descriptions saying "image": block 126.
+- Living text saying "image": block 130.
+- `AGENTS.md`'s `image` and `smoke` rows: block 130.
+- `api/AGENTS.md`'s recompile instruction: block 130.
+- `agents/workflow.md`'s generated list: block 130.
+- The specification's correction chains: block 130, a reading guide at the head of section 5. The workflow rule the
+  review proposed (a split adds its block section once) is for Improve.
+- ADR 0049's evidence and the script's usage: block 130.
+- Comments citing bare decision letters: blocks 120 and 124.
+- Catalogue keys naming "image": block 132.
+- A video with null dimensions in an `<img>`: block 132.
+- `VideoMedia` keyed by its address: block 132.
+- `413 MEDIA_TOO_LARGE` and `415 UNSUPPORTED_MEDIA_TYPE` on the general sentence: block 132.
+- One refusal, two wordings: block 132.
+- The download link naming the file `media`: block 132.
 
 ## The backlog
 
 **Video support** is deleted in block 110. The other items of the specification's section 6 keep the exits it states.
-Nothing was filed during the lot.
+Nothing was filed during the lot. (Corrected: block 134 files one item, a video rendition miss with no single flight,
+`P2`. The credentials in the request log are not filed: block 138 fixes them.)
 
 ## The lot's counts
 
 Fix-backs 3, listed above, none a cascaded rebase as far as the reports show. Cascaded rebases, the runs they
-re-triggered and the operator's reading of the bodies: filled in by the closing block.
+re-triggered and the operator's reading of the bodies: filled in by the closing block. (Corrected, for the stack up to
+block 134:)
+
+- **Fix-backs: 7**, each a block or a commit stacked above what it fixes. Block 58 from 57; the `rtmp`, `rtsp` and
+  `mms` bypass in 103; the stale yt-dlp directory sweep in 104; block 128's stalled download, from 124's deadline, and
+  its flaky proxy test, from 90; block 134's playlist report, from 124, and its decoder threads, from 120.
+- **Cascaded rebases: none.**
+- **Runs re-triggered: 2**, both reruns rather than cascades: #287, an engine image pull failure, and #295, the flaky
+  proxy test block 128 then fixed.
+- **The operator's reading of the bodies: no remark.**
 
 ## Next step
 
 Wrap: the holistic review over `git diff lot/0.44.0-knip-and-biome-keep-the-clients-clean..origin/feat/a-page-address-yields-its-video`,
 then the closing block, then the operator's review of the stack, and the tag `lot/0.45.0-the-pin-holds-a-video` once
-it merges.
+it merges. (Corrected: the review and blocks 120 to 134 are done. Next, block 136, the grid hovers on the animated
+rendition, and block 138, the request log redacts credentials, each stacked above. Then the operator's review of the
+whole stack, the merge, and the tag `lot/0.45.0-the-pin-holds-a-video`.)
