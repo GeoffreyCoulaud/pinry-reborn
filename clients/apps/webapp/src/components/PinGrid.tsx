@@ -1,4 +1,5 @@
 import { EmptyState, Modal, Spinner } from "@heroui/react";
+import { Play } from "lucide-react";
 import {
 	type RefObject,
 	useEffect,
@@ -17,6 +18,7 @@ import {
 } from "react-aria-components";
 import { preload } from "react-dom";
 import { downloadReason } from "../downloadReasons";
+import { isVideo } from "../lib/media";
 import type { PinSort } from "../lib/sorts";
 import {
 	neighbours,
@@ -81,18 +83,47 @@ function Tile({
 		window.devicePixelRatio,
 		smallRenditionPx,
 	);
+	const [hovered, setHovered] = useState(false);
+	const video = isVideo(media?.mimeType);
 	// Every column is as wide, so the viewer loads under the rendition any tile chose.
 	useEffect(() => onRendition(rendition), [onRendition, rendition]);
 
 	return (
-		<div ref={ref} className="w-full">
+		<div
+			ref={ref}
+			className="relative w-full"
+			// A touch would fetch the original for the instant before its tap opens the pin.
+			onPointerEnter={(event) => setHovered(event.pointerType !== "touch")}
+			onPointerLeave={() => setHovered(false)}
+		>
 			{media?.url ? (
-				<img
-					src={tileMediaSource(media.url, rendition)}
-					alt={pin.description}
-					style={ratio}
-					className="w-full rounded object-cover"
-				/>
+				<>
+					<img
+						src={tileMediaSource(media.url, rendition)}
+						alt={pin.description}
+						style={ratio}
+						className="w-full rounded object-cover"
+					/>
+					{video && hovered ? (
+						<video
+							src={media.url}
+							poster={tileMediaSource(media.url, rendition)}
+							muted
+							loop
+							autoPlay
+							playsInline
+							aria-hidden
+							className="absolute inset-0 size-full rounded object-cover"
+						/>
+					) : null}
+					{video ? (
+						<Play
+							role="img"
+							aria-label={m.video_badge()}
+							className="absolute end-2 top-2 size-6 rounded-full bg-black/60 p-1 text-white"
+						/>
+					) : null}
+				</>
 			) : (
 				// A failed download keeps its tile and says why; a pin with no image at all says what it is.
 				<p
