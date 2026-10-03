@@ -40,6 +40,8 @@ async function expectTheFallback(dialog: HTMLElement, pin: Pin) {
 	).toHaveAttribute("src", `${url}?size=SMALL`);
 	const link = within(dialog).getByRole("link", { name: m.video_download() });
 	expect(link).toHaveAttribute("href", url);
+	// The address ends in `media` and the original carries no `Content-Disposition` to name the file.
+	expect(link).toHaveAttribute("download", "video.mp4");
 }
 
 afterEach(() => vi.restoreAllMocks());

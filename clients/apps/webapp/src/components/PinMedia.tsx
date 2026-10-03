@@ -1,7 +1,7 @@
 import { Button, Spinner } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
 import { downloadReason, retriable } from "../downloadReasons";
-import { isPlayable, isVideo } from "../lib/media";
+import { isPlayable, isVideo, videoFileName } from "../lib/media";
 import { type Rendition, tileMediaSource } from "../lib/tiles";
 import { useSetPinMedia } from "../media";
 import { m } from "../paraglide/messages.js";
@@ -113,7 +113,11 @@ function VideoMedia({
 			<div className="flex w-full flex-col items-center gap-3 text-center">
 				<img src={poster} alt={alt} style={box} />
 				<p>{m.video_unplayable()}</p>
-				<a href={url} download className="text-accent hover:underline">
+				<a
+					href={url}
+					download={videoFileName(mimeType)}
+					className="text-accent hover:underline"
+				>
 					{m.video_download()}
 				</a>
 			</div>
