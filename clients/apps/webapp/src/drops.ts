@@ -32,11 +32,15 @@ export function refuse(refusal: DropRefusal) {
 
 /** The pixel count a limit is read against, which nothing short of a decoder knows. */
 async function measured(file: File): Promise<MeasuredUpload> {
+	// `createImageBitmap` refuses a video, and a file with no type is the server's to judge.
+	if (!file.type.startsWith("image/")) {
+		return { size: file.size, type: file.type, pixels: null };
+	}
 	const bitmap = await createImageBitmap(file);
 	const measurement = {
 		size: file.size,
-		width: bitmap.width,
-		height: bitmap.height,
+		type: file.type,
+		pixels: bitmap.width * bitmap.height,
 	};
 	// A decoded bitmap is four bytes a pixel, so ten photographs held at once are hundreds of
 	// megabytes (MDN, `ImageBitmap.close()`).
@@ -54,7 +58,7 @@ async function judge(
 	if (!isStorableFile(file, limits)) {
 		return "UNSUPPORTED_FORMAT";
 	}
-	const tooHeavy = byteRefusal(file.size, limits);
+	const tooHeavy = byteRefusal(file, limits);
 	if (tooHeavy !== null) {
 		return tooHeavy;
 	}

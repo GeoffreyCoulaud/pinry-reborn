@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers.HandshakeController
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
@@ -81,7 +82,7 @@ class HandshakeIntegrationTest {
     fun `Given the formats the storage accepts, Then the handshake answers their media types`() {
         // Given / When / Then
         assertEquals(
-            MediaFormat.entries.map { it.mimeType },
+            MediaFormat.entries.map { it.mimeType } + HandshakeController.VIDEO_UPLOAD_TYPES,
             handshake().getList<String>("limits.mediaTypes"),
         )
     }

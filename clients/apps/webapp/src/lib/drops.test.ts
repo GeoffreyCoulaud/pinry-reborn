@@ -10,7 +10,7 @@ import {
 
 const kept = (name: string): KeptFile => ({
 	file: new File(["ok"], name, { type: "image/png" }),
-	measurement: { size: 2, width: 100, height: 100 },
+	measurement: { size: 2, type: "image/png", pixels: 10_000 },
 });
 
 /** A drop already judged, which is what both functions under test are handed. */

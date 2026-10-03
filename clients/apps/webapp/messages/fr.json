@@ -135,6 +135,8 @@
 	"issue_name_taken_by_recycled": "Un tableau de la corbeille porte déjà ce nom : celui-ci n’a pas été ajouté.",
 	"issue_pin_has_no_media": "Cette épingle n’a pas d’image : elle n’a pas été ajoutée.",
 	"issue_unknown": "Un élément de cette ligne n’a pas été importé.",
+	"media_codec_unsupported": "Ce serveur ne stocke pas ce format ou ce codec.",
+	"media_too_long": "Cette vidéo dure plus longtemps que ce que ce serveur accepte.",
 	"membership_refused": "Ce tableau n’a pas pu être modifié.",
 	"name": "Nom",
 	"new_board": "Nouveau tableau…",
