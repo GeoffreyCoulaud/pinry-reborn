@@ -39,7 +39,7 @@ describe("drop an image on the grid to add a pin", () => {
 		// is behaviour rather than paint.
 		fireEvent.dragEnter(main);
 		expect(
-			await screen.findByText("Drop an image here to add a pin"),
+			await screen.findByText("Drop a media file here to add a pin"),
 		).toBeVisible();
 
 		// Crossing into a child fires a leave at what is being left and an enter at what is entered,
@@ -47,11 +47,15 @@ describe("drop an image on the grid to add a pin", () => {
 		// stands: it is the depth counter that tells this exit from the real one.
 		fireEvent.dragEnter(screen.getByRole("status"));
 		fireEvent.dragLeave(main);
-		expect(screen.getByText("Drop an image here to add a pin")).toBeVisible();
+		expect(
+			screen.getByText("Drop a media file here to add a pin"),
+		).toBeVisible();
 
 		fireEvent.dragLeave(main);
 		await waitFor(() =>
-			expect(screen.queryByText("Drop an image here to add a pin")).toBeNull(),
+			expect(
+				screen.queryByText("Drop a media file here to add a pin"),
+			).toBeNull(),
 		);
 	});
 
@@ -90,7 +94,7 @@ describe("drop an image on the grid to add a pin", () => {
 		);
 		// The form opens on what the drop kept: nothing is chosen a second time by hand.
 		expect(await dialog.findByText("cat.png")).toBeVisible();
-		expect(dialog.getByLabelText("Image address")).toHaveValue(FOUND_AT);
+		expect(dialog.getByLabelText("Media address")).toHaveValue(FOUND_AT);
 
 		const submit = dialog.getByRole("button", { name: "Add a pin" });
 		await waitFor(() => expect(submit).toBeEnabled());
@@ -130,13 +134,13 @@ describe("drop an image on the grid to add a pin", () => {
 			dropOf([new File(["ok"], "cat.png", { type: "image/png" })], ""),
 		);
 
-		expect(await screen.findByText("Reading dropped images: 1")).toBeVisible();
+		expect(await screen.findByText("Reading dropped files: 1")).toBeVisible();
 		decoded();
 		expect(
 			await screen.findByRole("dialog", { name: "Add a pin" }),
 		).toBeVisible();
 		await waitFor(() =>
-			expect(screen.queryByText("Reading dropped images: 1")).toBeNull(),
+			expect(screen.queryByText("Reading dropped files: 1")).toBeNull(),
 		);
 	});
 
