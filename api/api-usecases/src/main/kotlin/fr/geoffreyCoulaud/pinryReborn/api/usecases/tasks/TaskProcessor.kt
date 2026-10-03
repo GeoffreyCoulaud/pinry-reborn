@@ -53,6 +53,7 @@ class TaskProcessor(
                         throw TaskLeaseLostException(claimed.id)
                     }
                 }
+                renewLeaseIfDue = throttled(leaseDuration.dividedBy(RENEWALS_PER_LEASE), renewLease)
             }
         when (val outcome = runHandler(handler, claimed.id, claimed.payload, context)) {
             is Abandoned -> logger.warn { "task ${outcome.taskId} lost its lease ${claimed.leaseId}, settling nothing" }
@@ -61,6 +62,18 @@ class TaskProcessor(
                 if (!taskQueue.markCancelledIfRequested(claimed.id, claimed.leaseId, now)) {
                     settle(claimed, outcome, now, handler.retryFloor)
                 }
+            }
+        }
+    }
+
+    /** Runs [renew] once [interval] has passed since the claim or the last renewal. */
+    private fun throttled(interval: Duration, renew: () -> Unit): () -> Unit {
+        var renewedAt = clock.now()
+        return {
+            val now = clock.now()
+            if (Duration.between(renewedAt, now) >= interval) {
+                renew()
+                renewedAt = now
             }
         }
     }
@@ -100,6 +113,7 @@ class TaskProcessor(
         }
 
     private companion object {
+        private const val RENEWALS_PER_LEASE = 3L
         private val logger = KotlinLogging.logger {}
     }
 }

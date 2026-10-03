@@ -30,6 +30,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.TaskContext
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.PermanentTaskException
 import jakarta.enterprise.context.ApplicationScoped
+import java.io.FilterInputStream
+import java.io.InputStream
 import java.util.UUID
 
 @ApplicationScoped
@@ -58,7 +60,7 @@ class DownloadPinMedia(
     @Suppress("TooGenericExceptionCaught")
     private fun stageFromSource(pinId: UUID, sourceUrl: String, context: TaskContext): StagedFile =
         try {
-            mediaFetcher.openStream(sourceUrl).use { mediaIngestion.stage(it) }
+            mediaFetcher.openStream(sourceUrl).use { mediaIngestion.stage(LeaseRenewingStream(it, context)) }
         } catch (e: FetchException) {
             val reason = mapFetch(e)
             if (reason == DownloadReason.UNREACHABLE) {
@@ -164,5 +166,14 @@ class DownloadPinMedia(
         }
         mediaDownloadRepository.recordLastError(pinId, cause.message ?: reason.name, clock.now())
         throw cause
+    }
+
+    /** A body slower than the lease would otherwise be reclaimed mid-fetch and fetched a second time. */
+    private class LeaseRenewingStream(source: InputStream, private val context: TaskContext) :
+        FilterInputStream(source) {
+        override fun read(): Int = super.read().also { context.renewLeaseIfDue() }
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int =
+            super.read(b, off, len).also { context.renewLeaseIfDue() }
     }
 }
