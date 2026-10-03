@@ -45,11 +45,12 @@ class HttpMediaFetcherTest {
 
     private val fetcher = fetcherThrough(AddressPolicy.AllowAll)
 
-    private fun fetcherThrough(policy: AddressPolicy) =
+    private fun fetcherThrough(policy: AddressPolicy, bodyTimeout: Duration = Duration.ofSeconds(30)) =
         HttpMediaFetcher(
             connectTimeout = Duration.ofSeconds(2),
             requestTimeout = Duration.ofSeconds(2),
             maxRedirects = 3,
+            bodyTimeout = bodyTimeout,
             openProxy = { GuardingProxy(policy, Duration.ofSeconds(2), ::stubResolve).also { proxies += it } },
         )
 
@@ -113,6 +114,45 @@ class HttpMediaFetcherTest {
 
         // Then
         assertEquals(listOf("origin.test", "cdn.test"), resolvedHosts)
+    }
+
+    // One byte every 200 ms for ten seconds: each read would renew a lease that then never expires.
+    private fun trickle(path: String) {
+        server.createContext(path) { exchange ->
+            exchange.sendResponseHeaders(200, 0)
+            runCatching {
+                repeat(TRICKLE_BYTES) {
+                    exchange.responseBody.write(1)
+                    exchange.responseBody.flush()
+                    Thread.sleep(TRICKLE_INTERVAL_MILLIS)
+                }
+            }
+            exchange.close()
+        }
+    }
+
+    @Test
+    fun `Given a body trickling past the body timeout, Then reading it in blocks throws FetchUnreachable`() {
+        // Given
+        trickle("/trickle")
+        val slowFetcher = fetcherThrough(AddressPolicy.AllowAll, bodyTimeout = Duration.ofSeconds(1))
+
+        // When / Then
+        slowFetcher.openStream("${base()}/trickle").use {
+            assertThrows(FetchUnreachableException::class.java) { it.stream.readAllBytes() }
+        }
+    }
+
+    @Test
+    fun `Given a body trickling past the body timeout, Then reading it byte by byte throws FetchUnreachable`() {
+        // Given
+        trickle("/trickle")
+        val slowFetcher = fetcherThrough(AddressPolicy.AllowAll, bodyTimeout = Duration.ofSeconds(1))
+
+        // When / Then
+        slowFetcher.openStream("${base()}/trickle").use {
+            assertThrows(FetchUnreachableException::class.java) { while (it.stream.read() != -1) continue }
+        }
     }
 
     @Test
@@ -336,5 +376,10 @@ class HttpMediaFetcherTest {
             fetcherThrough(refusingOtherLoopback).openStream("${base()}/redirect")
         }
         assertEquals(listOf(otherLoopback), theProxy().refusedAddresses)
+    }
+
+    private companion object {
+        const val TRICKLE_BYTES = 50
+        const val TRICKLE_INTERVAL_MILLIS = 200L
     }
 }

@@ -2,12 +2,13 @@ package fr.geoffreyCoulaud.pinryReborn.api.fetch.ytdlp
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaTooLongException
 import java.time.Duration
 
-/** Reads the JSON of `yt-dlp --dump-single-json`, the first of the two runs (decision v). */
+/** Reads the JSON of `yt-dlp --dump-single-json`, the first of the two runs (ADR 0048, decision 3). */
 internal object YtDlpReport {
     private val mapper = ObjectMapper()
     private const val MILLIS_PER_SECOND = 1_000
@@ -26,4 +27,8 @@ internal object YtDlpReport {
         if (size > maxBytes) throw FetchTooLargeException("The page's video weighs $size bytes")
         return video.path("format_id").textValue() ?: throw NoMediaFoundException("The page offers no format")
     }
+
+    /** The report for `--load-info-json`, less the page address yt-dlp would fetch again when a download fails. */
+    fun infoOf(json: String): String =
+        mapper.writeValueAsString((mapper.readTree(json) as ObjectNode).apply { remove("webpage_url") })
 }

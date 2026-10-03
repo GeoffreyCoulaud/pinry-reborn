@@ -18,12 +18,14 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.IOException
+import java.lang.ProcessBuilder.Redirect.DISCARD
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.UnknownHostException
@@ -119,13 +121,18 @@ class YtDlpPageMediaExtractorTest {
 
     private fun stagingIsEmpty() = Files.list(staging).use { it.toList().isEmpty() }
 
-    // The format the chain picks from an info JSON offering one format at [formatUrl], or null when it picks none.
-    private fun formatChosenAmong(protocol: String, formatUrl: String): String? {
-        val format = mapOf("format_id" to "stream", "url" to formatUrl, "protocol" to protocol, "ext" to "mp4")
+    // A generic page's info JSON offering [format] alone.
+    private fun infoJson(format: Map<String, String>): String {
         val info =
             mapOf("id" to "clip", "title" to "clip", "extractor" to "generic", "extractor_key" to "Generic") +
                 mapOf("webpage_url" to url("/page.html"), "formats" to listOf(format))
-        val infoFile = Files.writeString(staging.resolve("info.json"), ObjectMapper().writeValueAsString(info))
+        return ObjectMapper().writeValueAsString(info)
+    }
+
+    // The format the chain picks from an info JSON offering one format at [formatUrl], or null when it picks none.
+    private fun formatChosenAmong(protocol: String, formatUrl: String): String? {
+        val format = mapOf("format_id" to "stream", "url" to formatUrl, "protocol" to protocol, "ext" to "mp4")
+        val infoFile = Files.writeString(staging.resolve("info.json"), infoJson(format))
         val command =
             listOf("yt-dlp", "--ignore-config", "--no-cache-dir", "--load-info-json", infoFile.toString()) +
                 listOf("-f", YtDlpPageMediaExtractor.FORMATS, "--print", "format_id")
@@ -215,6 +222,48 @@ class YtDlpPageMediaExtractorTest {
         assertTrue(finished.await(30, TimeUnit.SECONDS))
         assertTrue(sent.get() < ENDLESS_BYTES, "the origin was cut off after ${sent.get()} bytes")
         assertTrue(stagingIsEmpty())
+    }
+
+    @Test
+    fun `Given a page serving another video on its second fetch, Then the first fetch's video is the one extracted`() {
+        // Given
+        val other = fixture("mpegts.ts")
+        serve("/first.mkv", fixture, "video/x-matroska")
+        serve("/second.ts", other, "video/mp2t")
+        val fetches = AtomicLong()
+        routes["/page.html"] = { exchange ->
+            val source = if (fetches.getAndIncrement() == 0L) "/first.mkv" else "/second.ts"
+            val body = """<html><body><video src="$source"></video></body></html>""".toByteArray()
+            exchange.sendResponseHeaders(OK, body.size.toLong())
+            exchange.responseBody.write(body)
+        }
+
+        // When
+        val bytes = extractor().extract(url("/page.html")) {}.use { it.stream.readAllBytes() }
+
+        // Then
+        assertArrayEquals(fixture, bytes)
+        assertEquals(1, requestedPaths.count { it == "/page.html" })
+        assertFalse("/second.ts" in requestedPaths)
+    }
+
+    @Test
+    fun `Given a report whose stream needs re-extracting, Then the second run fails without fetching the page`() {
+        // Given: yt-dlp re-extracts a DASH format whose fragments were a generator, from the info's page address
+        page("/page.html", """<video src="/clip.mkv"></video>""")
+        val format = mapOf("format_id" to "dash", "url" to url("/clip.mpd"), "protocol" to "http_dash_segments") +
+            mapOf("ext" to "mp4", "fragments" to "<generator>")
+        val info = Files.writeString(staging.resolve("info.json"), YtDlpReport.infoOf(infoJson(format)))
+        val secondRun =
+            listOf("yt-dlp") + YtDlpPageMediaExtractor.OPTIONS + listOf("--load-info-json", "$info", "-f", "dash")
+
+        // When
+        val process = ProcessBuilder(secondRun).directory(staging.toFile())
+        val exit = process.redirectOutput(DISCARD).redirectError(DISCARD).start().waitFor()
+
+        // Then
+        assertNotEquals(0, exit)
+        assertEquals(emptyList<String>(), requestedPaths)
     }
 
     @Test
