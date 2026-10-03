@@ -36,7 +36,8 @@ class MediaAdapterProducers {
 
     @Produces
     @ApplicationScoped
-    fun mediaBounds(config: MediaConfig): MediaBounds = MediaBounds(config.maxFileBytes(), config.maxPixels())
+    fun mediaBounds(config: MediaConfig): MediaBounds =
+        MediaBounds(config.maxImageBytes(), config.maxVideoBytes(), config.maxPixels())
 
     @Produces
     @ApplicationScoped

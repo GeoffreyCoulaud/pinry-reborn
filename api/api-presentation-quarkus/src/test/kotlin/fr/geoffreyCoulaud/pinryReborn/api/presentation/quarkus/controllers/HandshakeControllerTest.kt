@@ -20,7 +20,7 @@ class HandshakeControllerTest {
     @Test
     fun `Given the deployment's configuration, Then the handshake carries it beside the contract version`() {
         // Given
-        every { mediaConfig.maxFileBytes() } returns MAX_FILE_BYTES
+        every { mediaConfig.maxImageBytes() } returns MAX_IMAGE_BYTES
         every { mediaConfig.maxPixels() } returns MAX_PIXELS
         every { renditionsConfig.tiny() } returns TINY
         every { renditionsConfig.small() } returns SMALL
@@ -33,7 +33,7 @@ class HandshakeControllerTest {
 
         // Then
         assertEquals(CONTRACT_VERSION, dto.contractVersion)
-        assertEquals(MAX_FILE_BYTES, dto.limits.maxFileBytes)
+        assertEquals(MAX_IMAGE_BYTES, dto.limits.maxFileBytes)
         assertEquals(MAX_PIXELS, dto.limits.maxPixels)
         assertEquals(MAX_IMPORT_CHUNK_BYTES, dto.limits.maxImportChunkBytes)
         assertEquals(MAX_IMPORT_ARCHIVE_BYTES, dto.limits.maxImportArchiveBytes)
@@ -46,7 +46,7 @@ class HandshakeControllerTest {
     @Test
     fun `Given the formats the probe accepts, Then the handshake publishes their media types`() {
         // Given
-        every { mediaConfig.maxFileBytes() } returns MAX_FILE_BYTES
+        every { mediaConfig.maxImageBytes() } returns MAX_IMAGE_BYTES
         every { mediaConfig.maxPixels() } returns MAX_PIXELS
         every { renditionsConfig.tiny() } returns TINY
         every { renditionsConfig.small() } returns SMALL
@@ -64,7 +64,7 @@ class HandshakeControllerTest {
 
     private companion object {
         const val CONTRACT_VERSION = "9.8.7"
-        const val MAX_FILE_BYTES = 1_234_567L
+        const val MAX_IMAGE_BYTES = 1_234_567L
         const val MAX_PIXELS = 7_654_321L
         const val MAX_IMPORT_CHUNK_BYTES = 2_345_678L
         const val MAX_IMPORT_ARCHIVE_BYTES = 98_765_432_109L

@@ -3575,7 +3575,7 @@
             "$ref" : "#/components/responses/MediaNotFound"
           },
           "413" : {
-            "description" : "MEDIA_TOO_LARGE: the upload is past media.max_file_bytes. BODY_TOO_LARGE: the Content-Length is past quarkus.http.limits.max-body-size, which is above media.max_file_bytes; a chunked body past it gets a 413 with no body",
+            "description" : "MEDIA_TOO_LARGE: the upload is past media.max_image_bytes for an image, media.max_video_bytes for a video. BODY_TOO_LARGE: the Content-Length is past quarkus.http.limits.max-body-size, which is above both; a chunked body past it gets a 413 with no body",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
