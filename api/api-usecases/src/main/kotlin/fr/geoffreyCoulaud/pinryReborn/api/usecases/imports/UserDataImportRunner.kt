@@ -68,9 +68,8 @@ class UserDataImportRunner(
     private val reportDetailLimit: Int,
 ) {
     /**
-     * The `account.import` task's entry point. A row that is neither `PENDING` nor `RUNNING` is left
-     * alone: it was cancelled, swept or already finished, and running it would resurrect it.
-     * [renewLeaseIfDue] is called on every line, a video line costing seconds, so the caller throttles it.
+     * The `account.import` task's entry point. A row cancelled, swept or finished is left alone, since running it
+     * would resurrect it. [renewLeaseIfDue] is called on every line, so the caller throttles it.
      */
     fun run(importId: UUID, isLastAttempt: Boolean, renewLeaseIfDue: () -> Unit) {
         val userDataImport = importRepository.findById(importId)?.takeIf { it.state.isRunnable() } ?: return
@@ -596,6 +595,8 @@ class UserDataImportRunner(
         walk.source.openEntry(path) ?: error("the archive refused the entry $path")
 
     /** Step 4: the entry is reopened, since the digest pass consumed the first stream. */
+    // A timeout is the server's failure, not the file's: it escapes and the attempt retries from this line.
+    @Suppress("RethrowCaughtException")
     private fun stagedOutcome(walk: PinWalk, pin: ImportedPin, media: ImportedMedia): PinOutcome {
         val staged = entryOf(walk, media.path).use { mediaIngestion.stage(it) }
         val pinId = randomUUID()
@@ -605,9 +606,9 @@ class UserDataImportRunner(
             reported(UserDataImportIssueKind.MEDIA_TOO_MANY_PIXELS, media.path, error.message)
         } catch (error: ImageProbeException) {
             reported(UserDataImportIssueKind.MEDIA_UNREADABLE, media.path, error.message)
+        } catch (error: VideoProcessorTimeoutException) {
+            throw error
         } catch (error: VideoProcessorException) {
-            // A timeout is the server's failure, not the file's: it escapes and the attempt retries from this line.
-            if (error is VideoProcessorTimeoutException) throw error
             reported(UserDataImportIssueKind.MEDIA_UNREADABLE, media.path, error.message)
         }
     }
