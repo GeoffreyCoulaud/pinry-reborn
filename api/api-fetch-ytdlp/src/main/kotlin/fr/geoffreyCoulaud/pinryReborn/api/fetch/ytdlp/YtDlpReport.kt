@@ -16,9 +16,7 @@ internal object YtDlpReport {
     /** The format to download, or the refusal its duration, its size or its live flag earns. */
     @Suppress("ThrowsCount") // Each throw is a distinct refusal the first run decides, which is this object's purpose.
     fun formatOf(json: String, maxDuration: Duration, maxBytes: Long): String {
-        val report = mapper.readTree(json)
-        // A page of several videos is a playlist, of which `--playlist-items 1` keeps the first.
-        val video = report.path("entries").path(0).takeUnless(JsonNode::isMissingNode) ?: report
+        val video = videoOf(json)
         if (video.path("is_live").asBoolean()) throw NoMediaFoundException("The page shows a live stream")
         val duration = Duration.ofMillis((video.path("duration").asDouble() * MILLIS_PER_SECOND).toLong())
         if (duration > maxDuration) throw PageMediaTooLongException("The page's video lasts $duration")
@@ -28,7 +26,16 @@ internal object YtDlpReport {
         return video.path("format_id").textValue() ?: throw NoMediaFoundException("The page offers no format")
     }
 
-    /** The report for `--load-info-json`, less the page address yt-dlp would fetch again when a download fails. */
+    /**
+     * The chosen video for `--load-info-json`, less the page address yt-dlp would fetch again when a download fails.
+     * A playlist loaded whole fails there with "There are no entries".
+     */
     fun infoOf(json: String): String =
-        mapper.writeValueAsString((mapper.readTree(json) as ObjectNode).apply { remove("webpage_url") })
+        mapper.writeValueAsString((videoOf(json) as ObjectNode).apply { remove("webpage_url") })
+
+    // A page of several videos is a playlist, of which `--playlist-items 1` keeps the first.
+    private fun videoOf(json: String): JsonNode {
+        val report = mapper.readTree(json)
+        return report.path("entries").path(0).takeUnless(JsonNode::isMissingNode) ?: report
+    }
 }
