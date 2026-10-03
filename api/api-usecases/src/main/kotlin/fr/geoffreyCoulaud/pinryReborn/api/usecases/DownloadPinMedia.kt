@@ -77,6 +77,8 @@ class DownloadPinMedia(
     private fun ingestStaged(ownerId: UUID, pinId: UUID, staged: StagedFile, context: TaskContext): IngestedMedia =
         try {
             mediaIngestion.ingest(staged, ownerId, pinId, clock.now())
+        } catch (ignored: MediaTooLargeException) {
+            failPermanent(pinId, DownloadReason.TOO_LARGE)
         } catch (e: ImageProbeException) {
             failPermanent(pinId, mapProbe(e))
         } catch (e: Exception) {

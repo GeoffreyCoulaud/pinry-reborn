@@ -20,11 +20,15 @@ class BodyLimitCheck(
 ) {
     fun onStart(
         @Observes ignored: StartupEvent,
-    ) = verify(mediaConfig.maxFileBytes(), importsConfig.maxChunkBytes(), maxBodySize.asLongValue())
+    ) = verify(
+        mediaConfig.maxImageBytes(), mediaConfig.maxVideoBytes(), importsConfig.maxChunkBytes(),
+        maxBodySize.asLongValue(),
+    )
 
     companion object {
-        fun verify(maxFileBytes: Long, maxChunkBytes: Long, maxBodyBytes: Long) {
-            requireUnder("media.max_file_bytes", maxFileBytes, maxBodyBytes)
+        fun verify(maxImageBytes: Long, maxVideoBytes: Long, maxChunkBytes: Long, maxBodyBytes: Long) {
+            requireUnder("media.max_image_bytes", maxImageBytes, maxBodyBytes)
+            requireUnder("media.max_video_bytes", maxVideoBytes, maxBodyBytes)
             requireUnder("imports.max_chunk_bytes", maxChunkBytes, maxBodyBytes)
         }
 

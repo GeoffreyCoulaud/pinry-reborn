@@ -9,12 +9,14 @@ class MediaConfigTest {
         // Given
         val config = object : MediaConfig {
             override fun dataDir() = "/var/lib/pinry"
-            override fun maxFileBytes() = 31_457_280L
+            override fun maxImageBytes() = 31_457_280L
+            override fun maxVideoBytes() = 52_428_800L
             override fun maxPixels() = 50_000_000L
         }
         // Then
         assertEquals("/var/lib/pinry", config.dataDir())
-        assertEquals(31_457_280L, config.maxFileBytes())
+        assertEquals(31_457_280L, config.maxImageBytes())
+        assertEquals(52_428_800L, config.maxVideoBytes())
         assertEquals(50_000_000L, config.maxPixels())
     }
 }

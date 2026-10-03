@@ -45,7 +45,8 @@ class SetPinMediaTest : BaseTest() {
     private val clock = mockk<Clock>()
     private val clearPinDownload = mockk<ClearPinDownload>(relaxed = true)
     private val renditionCache = mockk<RenditionCache>()
-    private val ingestion = MediaIngestion(store, probe, MediaBounds(maxImageBytes = 30, maxPixels = 50))
+    private val bounds = MediaBounds(maxImageBytes = 30, maxVideoBytes = 0, maxPixels = 50)
+    private val ingestion = MediaIngestion(store, probe, bounds)
     private val useCase = SetPinMedia(pins, mediaRepository, store, ingestion, clock, clearPinDownload, renditionCache)
 
     private val owner = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
@@ -141,6 +142,15 @@ class SetPinMediaTest : BaseTest() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } throws MediaTooLargeException("too big")
+        assertThrows(MediaTooLargeError::class.java) { useCase.set(p.id, owner, upload()) }
+    }
+
+    @Test fun `Given an image past its byte bound once probed, Then it throws MediaTooLargeError`() {
+        val p = pin()
+        every { pins.findPinById(p.id) } returns p
+        every { store.stage(any(), 30) } returns StagedFile("/tmp/s", 31, "hash")
+        every { probe.probe(any(), 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+        every { clock.now() } returns Instant.EPOCH
         assertThrows(MediaTooLargeError::class.java) { useCase.set(p.id, owner, upload()) }
     }
 

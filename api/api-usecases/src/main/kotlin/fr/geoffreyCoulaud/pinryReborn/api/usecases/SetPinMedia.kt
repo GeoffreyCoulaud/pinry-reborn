@@ -46,6 +46,8 @@ class SetPinMedia(
 
         val ingested = try {
             mediaIngestion.ingest(staged, requester.id, pinId, clock.now())
+        } catch (e: MediaTooLargeException) {
+            throw MediaTooLargeError(e)
         } catch (e: ImageProbeException) {
             // Keep the client-facing message fixed (consistent with the other MediaError
             // siblings); the underlying probe detail is preserved via `cause` for logs, not

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
  */
 class HandshakeTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> = mapOf(
-        "media.max_file_bytes" to "$MAX_FILE_BYTES",
+        "media.max_image_bytes" to "$MAX_IMAGE_BYTES",
         "media.max_pixels" to "$MAX_PIXELS",
         "media.renditions.tiny" to "$TINY",
         "media.renditions.small" to "$SMALL",
@@ -25,7 +25,7 @@ class HandshakeTestProfile : QuarkusTestProfile {
     )
 
     companion object {
-        const val MAX_FILE_BYTES = 1_234_567L
+        const val MAX_IMAGE_BYTES = 1_234_567L
         const val MAX_PIXELS = 7_654_321L
         const val MAX_IMPORT_CHUNK_BYTES = 2_345_678L
         const val MAX_IMPORT_ARCHIVE_BYTES = 98_765_432_109L
@@ -61,7 +61,7 @@ class HandshakeIntegrationTest {
         val body = handshake()
 
         // Then
-        assertEquals(HandshakeTestProfile.MAX_FILE_BYTES, body.getLong("limits.maxFileBytes"))
+        assertEquals(HandshakeTestProfile.MAX_IMAGE_BYTES, body.getLong("limits.maxFileBytes"))
         assertEquals(HandshakeTestProfile.MAX_PIXELS, body.getLong("limits.maxPixels"))
         assertEquals(HandshakeTestProfile.MAX_IMPORT_CHUNK_BYTES, body.getLong("limits.maxImportChunkBytes"))
         assertEquals(HandshakeTestProfile.MAX_IMPORT_ARCHIVE_BYTES, body.getLong("limits.maxImportArchiveBytes"))

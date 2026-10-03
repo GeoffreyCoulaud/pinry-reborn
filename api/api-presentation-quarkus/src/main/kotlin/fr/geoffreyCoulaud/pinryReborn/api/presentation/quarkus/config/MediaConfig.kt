@@ -9,7 +9,10 @@ interface MediaConfig {
     fun dataDir(): String
 
     @WithDefault("31457280") // 30 MiB
-    fun maxFileBytes(): Long
+    fun maxImageBytes(): Long
+
+    @WithDefault("52428800") // 50 MiB
+    fun maxVideoBytes(): Long
 
     @WithDefault("50000000") // 50 megapixels
     fun maxPixels(): Long

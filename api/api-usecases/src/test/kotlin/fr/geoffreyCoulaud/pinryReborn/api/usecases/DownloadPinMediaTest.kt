@@ -60,7 +60,7 @@ class DownloadPinMediaTest {
 
     private val subject =
         DownloadPinMedia(
-            pins, mediaRepository, downloads, store, MediaIngestion(store, probe, MediaBounds(100, 100)), fetcher,
+            pins, mediaRepository, downloads, store, MediaIngestion(store, probe, MediaBounds(100, 0, 100)), fetcher,
             runner, clock, renditionCache,
         )
 
@@ -186,6 +186,16 @@ class DownloadPinMediaTest {
         stubUntilFetch()
         every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1))
         every { store.stage(any(), any()) } throws MediaTooLargeException("too big")
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
+        verify { downloads.markFailed(pinId, DownloadReason.TOO_LARGE, now) }
+    }
+
+    @Test
+    fun `Given an image past its byte bound once probed, Then it marks FAILED TOO_LARGE and throws Permanent`() {
+        stubUntilFetch()
+        every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1))
+        every { store.stage(any(), any()) } returns StagedFile("tmp/x", 101, "hash")
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
         assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.TOO_LARGE, now) }
     }
