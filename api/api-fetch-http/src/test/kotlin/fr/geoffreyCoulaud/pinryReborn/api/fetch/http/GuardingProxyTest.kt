@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.fetch.http
 import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -10,10 +11,15 @@ import org.junit.jupiter.api.Test
 import java.net.ConnectException
 import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.net.ProxySelector
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
+import java.net.URI
 import java.net.UnknownHostException
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -40,6 +46,12 @@ class GuardingProxyTest {
             val body = "hello".toByteArray()
             exchange.sendResponseHeaders(OK, body.size.toLong())
             exchange.responseBody.use { it.write(body) }
+        }
+        origin.createContext("/hop") { exchange ->
+            originRequests += exchange.requestURI.toString()
+            exchange.responseHeaders.add("Location", "http://refused.test:${originPort()}/landed")
+            exchange.sendResponseHeaders(FOUND, -1)
+            exchange.close()
         }
         origin.start()
     }
@@ -148,6 +160,83 @@ class GuardingProxyTest {
     }
 
     @Test
+    fun `Given a redirect to a refused address, Then the second hop is checked again and refused`() {
+        // Given
+        val stub = mapOf("allowed.test" to loopback, "refused.test" to otherLoopback)
+        val proxy = proxy(refusingOtherLoopback) { host -> stub.getValue(host) }
+        val client =
+            HttpClient.newBuilder()
+                .proxy(ProxySelector.of(proxy.address))
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build()
+        val request =
+            HttpRequest.newBuilder(URI("http://allowed.test:${originPort()}/hop"))
+                .timeout(Duration.ofMillis(READ_TIMEOUT_MILLIS.toLong()))
+                .build()
+
+        // When
+        val response = client.send(request, HttpResponse.BodyHandlers.discarding())
+
+        // Then
+        assertEquals(FORBIDDEN, response.statusCode())
+        assertEquals(listOf("/hop"), originRequests)
+        assertEquals(listOf(otherLoopback), proxy.refusedAddresses)
+    }
+
+    @Test
+    fun `Given an absolute-form request to an allowed host, Then the origin gets an origin-form request with close`() {
+        // Given
+        val proxy = proxy(AddressPolicy.AllowAll) { loopback }
+
+        // When
+        val response =
+            exchange(
+                proxy,
+                "GET http://allowed.test:${originPort()}/page?q=1 HTTP/1.1\r\nHost: allowed.test\r\n" +
+                    "Connection: keep-alive\r\nKeep-Alive: timeout=5\r\n" +
+                    "Proxy-Connection: keep-alive\r\nProxy-Authorization: Basic c2VjcmV0\r\n\r\n",
+            )
+
+        // Then
+        assertEquals("HTTP/1.1 200 OK", statusOf(response))
+        assertTrue(response.contains("\r\nConnection: close\r\n"), response)
+        assertTrue(response.endsWith("hello"), response)
+        val seen = originRequests.single()
+        assertTrue(seen.startsWith("/page?q=1 "), seen)
+        assertTrue(seen.contains("Connection=[close]"), seen)
+        assertFalse(seen.contains("Proxy-"), seen)
+        assertFalse(seen.contains("Keep-alive"), seen)
+    }
+
+    @Test
+    fun `Given an absolute-form request with an empty path, Then the origin is asked for the root`() {
+        // Given
+        val proxy = proxy(AddressPolicy.AllowAll) { loopback }
+
+        // When
+        val response =
+            exchange(proxy, "GET http://allowed.test:${originPort()} HTTP/1.1\r\nHost: allowed.test\r\n\r\n")
+
+        // Then
+        assertEquals("HTTP/1.1 200 OK", statusOf(response))
+        assertTrue(originRequests.single().startsWith("/ "), originRequests.single())
+    }
+
+    @Test
+    fun `Given an origin that closes without answering, Then the client's connection closes unanswered`() {
+        // Given
+        val mute = ServerSocket(0, 0, loopback)
+        Thread.ofVirtual().start { mute.use { it.accept().use { socket -> socket.getInputStream().read() } } }
+        val proxy = proxy(AddressPolicy.AllowAll) { loopback }
+
+        // When
+        val response = exchange(proxy, "GET http://mute.test:${mute.localPort}/ HTTP/1.1\r\n\r\n")
+
+        // Then
+        assertEquals("", response)
+    }
+
+    @Test
     fun `Given a CONNECT with no port, Then the proxy dials port 80`() {
         // Given
         val proxy = proxy(AddressPolicy.AllowAll) { loopback }
@@ -189,13 +278,15 @@ class GuardingProxyTest {
     }
 
     @Test
-    fun `Given requests that are not a CONNECT to a host, Then each is answered 400`() {
+    fun `Given requests that name no http host, Then each is answered 400`() {
         // Given
         val proxy = proxy(AddressPolicy.AllowAll) { loopback }
         val requests =
             listOf(
                 "NONSENSE\r\n\r\n",
-                "GET http://allowed.test:${originPort()}/page HTTP/1.1\r\n\r\n",
+                "GET /relative HTTP/1.1\r\n\r\n",
+                "GET ftp://allowed.test/ HTTP/1.1\r\n\r\n",
+                "GET http:///no-host HTTP/1.1\r\n\r\n",
                 "CONNECT [unclosed HTTP/1.1\r\n\r\n",
                 "CONNECT allowed.test:no-port HTTP/1.1\r\n\r\n",
             )
@@ -260,6 +351,8 @@ class GuardingProxyTest {
 
     private companion object {
         const val OK = 200
+        const val FOUND = 302
+        const val FORBIDDEN = 403
         const val READ_TIMEOUT_MILLIS = 5_000
         const val OVERSIZED_HEAD = 70_000
     }

@@ -58,10 +58,17 @@ class GuardingProxy(
     private fun serve(client: Socket) =
         tracked(client) {
             val input = BufferedInputStream(client.getInputStream())
-            val requestLine = (readHead(input) ?: return@tracked).substringBefore(CRLF).split(' ')
+            val head = (readHead(input) ?: return@tracked).split(CRLF)
+            val requestLine = head.first().split(' ')
             try {
                 val target = targetOf(requestLine) ?: throw Refusal(BAD_REQUEST)
-                tracked(dial(target)) { upstream -> tunnel(client, input, upstream) }
+                tracked(dial(target)) { upstream ->
+                    if (requestLine.first() == CONNECT) {
+                        tunnel(client, input, upstream)
+                    } else {
+                        forward(requestLine, head.drop(1), target, client, input, upstream)
+                    }
+                }
             } catch (refusal: Refusal) {
                 client.getOutputStream().write(headOf(listOf("HTTP/1.1 ${refusal.status}", "Content-Length: 0")))
             }
@@ -104,6 +111,26 @@ class GuardingProxy(
         client.getOutputStream().write(headOf(listOf("HTTP/1.1 200 Connection Established")))
         pumpToUpstream(clientInput, upstream)
         upstream.getInputStream().transferTo(client.getOutputStream())
+    }
+
+    // Both heads say close, so a client that keeps its connection alive cannot send another host down it.
+    @Suppress("LongParameterList")
+    private fun forward(
+        requestLine: List<String>,
+        headers: List<String>,
+        target: URI,
+        client: Socket,
+        clientInput: InputStream,
+        upstream: Socket,
+    ) {
+        val (method, _, version) = requestLine
+        val path = target.rawPath.ifEmpty { "/" } + target.rawQuery?.let { "?$it" }.orEmpty()
+        upstream.getOutputStream().write(headOf(listOf("$method $path $version") + closing(headers)))
+        pumpToUpstream(clientInput, upstream)
+        val upstreamInput = BufferedInputStream(upstream.getInputStream())
+        val response = (readHead(upstreamInput) ?: return).split(CRLF)
+        client.getOutputStream().write(headOf(listOf(response.first()) + closing(response.drop(1))))
+        upstreamInput.transferTo(client.getOutputStream())
     }
 
     // The client's half-close reaches the origin; the origin's end returns, which closes both sockets.
@@ -158,14 +185,22 @@ class GuardingProxy(
         const val FORBIDDEN = "403 Forbidden"
         const val BAD_GATEWAY = "502 Bad Gateway"
 
-        // A CONNECT names an authority, which reduces to a host and a port.
+        // A CONNECT names an authority, any other method an absolute http URI; both reduce to a host and a port.
         fun targetOf(requestLine: List<String>): URI? {
-            if (requestLine.size != REQUEST_LINE_PARTS || requestLine.first() != CONNECT) return null
-            val uri = runCatching { URI("http://${requestLine[1]}") }.getOrNull()
-            return uri?.takeIf { it.host != null }
+            if (requestLine.size != REQUEST_LINE_PARTS) return null
+            val (method, target) = requestLine
+            val uri = runCatching { URI(if (method == CONNECT) "http://$target" else target) }.getOrNull()
+            return uri?.takeIf { it.scheme == "http" && it.host != null }
         }
 
         fun portOf(target: URI): Int = if (target.port == -1) HTTP_PORT else target.port
+
+        fun closing(headers: List<String>): List<String> = headers.filterNot(::isHopByHop) + "Connection: close"
+
+        fun isHopByHop(header: String): Boolean {
+            val name = header.substringBefore(':').trim().lowercase()
+            return name == "connection" || name == "keep-alive" || name.startsWith("proxy-")
+        }
 
         fun readHead(input: InputStream): String? {
             val head = ByteArrayOutputStream()
