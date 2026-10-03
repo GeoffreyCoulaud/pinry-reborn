@@ -124,6 +124,12 @@ concatenation is refused at opening. yt-dlp's own ffmpeg and ffprobe calls get t
 own, so a relative entry of a hostile concatenation finds nothing. ADR 0047. (Corrected: its ffmpeg calls alone,
 each postprocessor named as `<name>+ffmpeg_i`, a bare `ffmpeg_i` reaching none; its ffprobe calls take no arguments
 at all, `ffprobe_i` reaching none, so the empty directory is their only bound: `yt-dlp -v` 2026.08.19, block 102.)
+(Corrected: every `-f` selector also takes `[protocol~='^(https?|m3u8(_native)?|http_dash_segments)$']`, and yt-dlp
+runs with `--downloader native`, so no format reaches an external program outside `--proxy`: an `rtmp` format goes
+to rtmpdump, and an HLS one may go to ffmpeg. Protocol names from yt-dlp's README, "Filtering Formats"; the
+downloader's choice from `yt_dlp/downloader/__init__.py`, both read through Context7 on 2026-10-03. A suite test
+feeds yt-dlp an info JSON whose only format is `rtmp`, `rtsp` or `mms`, and the chain selects none: block 103, the
+lead's answer of 2026-10-03.)
 
 **L1. The stored container follows the codecs**: WebM when every kept track fits it (VP9 or AV1, with Opus or no
 audio), MP4 otherwise. Repackaged with `-c copy -fflags +bitexact`, MP4 with `-movflags +faststart` and H.265
@@ -562,6 +568,8 @@ merges whole.
   destroying the process.
 - The first run's JSON refuses a live stream as no media found, and a size past the bound, exact or approximate as a
   merged format carries it, as too large.
+- (Corrected: added on 2026-10-03.) The `-f` chain selects no format served over `rtmp`, `rtsp` or `mms`, which an
+  external program would fetch outside the proxy (decision J1's last correction).
 
 ### 104, the extractor wired
 

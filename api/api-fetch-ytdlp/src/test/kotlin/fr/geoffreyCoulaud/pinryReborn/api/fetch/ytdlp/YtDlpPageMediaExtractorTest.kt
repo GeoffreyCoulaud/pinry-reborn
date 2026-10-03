@@ -1,9 +1,12 @@
 package fr.geoffreyCoulaud.pinryReborn.api.fetch.ytdlp
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
@@ -20,6 +23,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.UnknownHostException
@@ -30,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 /** Runs the `yt-dlp` on the `PATH` against a local origin, through a [GuardingProxy]. */
 class YtDlpPageMediaExtractorTest {
@@ -49,9 +55,10 @@ class YtDlpPageMediaExtractorTest {
 
     private fun extractor(
         policy: AddressPolicy = AddressPolicy.AllowAll,
+        maxBytes: Long = 10_000_000,
         timeout: Duration = Duration.ofSeconds(60),
         resolve: (String) -> InetAddress = InetAddress::getByName,
-    ) = YtDlpPageMediaExtractor(staging, timeout) {
+    ) = YtDlpPageMediaExtractor(staging, maxBytes, maxDuration, timeout) {
         GuardingProxy(policy, Duration.ofSeconds(2), resolve)
     }
 
@@ -90,7 +97,42 @@ class YtDlpPageMediaExtractorTest {
     private fun segmentPlaylist(path: String, segment: String) =
         playlist(path, "#EXT-X-TARGETDURATION:1", "#EXTINF:1.0,", segment, "#EXT-X-ENDLIST")
 
+    // Writes a body of [size] bytes slowly, counting what it sent until the client hangs up.
+    private fun slowBody(path: String, size: Int, sent: AtomicLong, finished: CountDownLatch) {
+        routes[path] = { exchange ->
+            exchange.responseHeaders.add("Content-Type", "video/x-matroska")
+            exchange.sendResponseHeaders(OK, size.toLong())
+            try {
+                repeat(size / CHUNK) {
+                    exchange.responseBody.write(ByteArray(CHUNK))
+                    exchange.responseBody.flush()
+                    sent.addAndGet(CHUNK.toLong())
+                    Thread.sleep(CHUNK_INTERVAL_MILLIS)
+                }
+            } catch (_: IOException) {
+                // The client hung up.
+            } finally {
+                finished.countDown()
+            }
+        }
+    }
+
     private fun stagingIsEmpty() = Files.list(staging).use { it.toList().isEmpty() }
+
+    // The format the chain picks from an info JSON offering one format at [formatUrl], or null when it picks none.
+    private fun formatChosenAmong(protocol: String, formatUrl: String): String? {
+        val format = mapOf("format_id" to "stream", "url" to formatUrl, "protocol" to protocol, "ext" to "mp4")
+        val info =
+            mapOf("id" to "clip", "title" to "clip", "extractor" to "generic", "extractor_key" to "Generic") +
+                mapOf("webpage_url" to url("/page.html"), "formats" to listOf(format))
+        val infoFile = Files.writeString(staging.resolve("info.json"), ObjectMapper().writeValueAsString(info))
+        val command =
+            listOf("yt-dlp", "--ignore-config", "--no-cache-dir", "--load-info-json", infoFile.toString()) +
+                listOf("-f", YtDlpPageMediaExtractor.FORMATS, "--print", "format_id")
+        val process = ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.DISCARD).start()
+        val printed = process.inputStream.readAllBytes().decodeToString().trim()
+        return printed.takeIf { process.waitFor() == 0 }
+    }
 
     // Ingestion stages the extracted stream before probing it; this copy stands for that staged file.
     private fun extractedCopy(pageUrl: String): Path {
@@ -139,6 +181,57 @@ class YtDlpPageMediaExtractorTest {
         // When / Then
         assertThrows(NoMediaFoundException::class.java) { extractor().extract(url("/page.html")) {} }
         assertTrue(stagingIsEmpty())
+    }
+
+    @Test
+    fun `Given a page whose JSON-LD declares a duration past the bound, Then it is refused too long undownloaded`() {
+        // Given
+        serve("/clip.mkv", fixture, "video/x-matroska")
+        val jsonLd =
+            """{"@context":"https://schema.org","@type":"VideoObject","name":"clip",""" +
+                """"contentUrl":"${url("/clip.mkv")}","duration":"PT2M1S"}"""
+        page("/page.html", """<script type="application/ld+json">$jsonLd</script>""")
+
+        // When / Then
+        assertThrows(PageMediaTooLongException::class.java) { extractor().extract(url("/page.html")) {} }
+        assertTrue(requestedPaths.count { it == "/clip.mkv" } <= 1, "only a probing request reaches the media")
+        assertTrue(stagingIsEmpty())
+    }
+
+    @Test
+    fun `Given a stream past the byte bound, Then the run is destroyed mid-transfer and refused too large`() {
+        // Given
+        val sent = AtomicLong()
+        val finished = CountDownLatch(1)
+        slowBody("/endless.mkv", ENDLESS_BYTES, sent, finished)
+        page("/page.html", """<video src="/endless.mkv"></video>""")
+
+        // When
+        assertThrows(FetchTooLargeException::class.java) {
+            extractor(maxBytes = 65_536).extract(url("/page.html")) {}
+        }
+
+        // Then
+        assertTrue(finished.await(30, TimeUnit.SECONDS))
+        assertTrue(sent.get() < ENDLESS_BYTES, "the origin was cut off after ${sent.get()} bytes")
+        assertTrue(stagingIsEmpty())
+    }
+
+    @Test
+    fun `Given an info JSON whose only format is served over rtmp, rtsp or mms, Then the format chain selects none`() {
+        // Given
+        val outsideTheProxy = listOf("rtmp", "rtsp", "mms").associateWith { "$it://127.0.0.1:1/live" }
+
+        // When
+        val chosen = outsideTheProxy.mapValues { (protocol, formatUrl) -> formatChosenAmong(protocol, formatUrl) }
+
+        // Then
+        assertEquals(mapOf("rtmp" to null, "rtsp" to null, "mms" to null), chosen)
+    }
+
+    @Test
+    fun `Given an info JSON whose only format is served over https, Then the format chain selects it`() {
+        assertEquals("stream", formatChosenAmong("https", "https://127.0.0.1:1/clip.mp4"))
     }
 
     @Test
@@ -248,6 +341,9 @@ class YtDlpPageMediaExtractorTest {
     private companion object {
         const val OK = 200
         const val NOT_FOUND = 404
+        const val CHUNK = 8_192
+        const val CHUNK_INTERVAL_MILLIS = 20L
+        const val ENDLESS_BYTES = 4 * 1024 * 1024
         const val WEBP_QUALITY = 75
     }
 }
