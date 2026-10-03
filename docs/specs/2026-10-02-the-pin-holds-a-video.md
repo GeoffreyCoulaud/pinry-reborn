@@ -148,7 +148,8 @@ The lead adds four decisions, submitted with this document:
   video. ADR 0049.
 - **iii. The export archive carries `media/`, format version 2**, the import refusing version 1. Taken in block
   10, whose script rewrites the archive's literal. The import stores a video as the archive carries it, after
-  probing it: it was repackaged when first ingested, and a second pass would change its bytes. ADR 0049.
+  probing it: it was repackaged when first ingested, and a second pass would change its bytes. ADR 0049. (Corrected:
+  an MP4 alone, block 58: a WebM repackaged again keeps its bytes, and repackaging it turns a Matroska into one.)
 - **iv. A video stores `animated = true`** (decision X1) and the dimensions it displays at: a 90 degree rotation in
   the stream's side data swaps width and height, so a portrait phone video gets a portrait tile.
 - **v. yt-dlp runs twice per page.** First `--dump-single-json`, which downloads nothing: the worker reads the
@@ -186,7 +187,7 @@ The lead adds four decisions, submitted with this document:
   dimensions, the duration, the extradata. It refuses an unlisted codec, a duration past the bound, a missing
   duration or a single frame.
 
-### Ingestion (blocks 50 to 56) (Corrected: 50 to 58)
+### Ingestion (blocks 50 to 56) (Corrected: 50 to 59)
 
 - **`MediaIngestion`** (decision ii) stages with the larger of the two byte bounds, dispatches, applies the bound of
   what it found, repackages a video into a second staged file whose hash and size are the ones stored.
@@ -250,7 +251,8 @@ The lead adds four decisions, submitted with this document:
 | 55 | `feat/the-handshake-publishes-the-video-bounds` | The handshake's bounds, the client reading them |
 | 56 | `feat/an-uploaded-video-is-ingested` | The video branch on the upload, its refusals |
 | 57 | `feat/a-fetched-or-imported-video-is-ingested` | Download, import and export of a video |
-| 58 | `fix/the-download-renews-its-lease` | The lease renewed during a fetch |
+| 58 | `fix/an-imported-videos-bytes-match-its-type` | An imported video's bytes match its type |
+| 59 | `fix/the-download-renews-its-lease` | The lease renewed during a fetch |
 | 60 | `feat/a-video-has-renditions` | The poster and the animated preview as renditions |
 | 70 | `feat/the-webapp-plays-a-video` | The player and its fallback |
 | 75 | `feat/the-grid-previews-a-video` | Badge and hover |
@@ -263,7 +265,8 @@ The lead adds four decisions, submitted with this document:
 (Corrected: block 53 was "the video branch, the bounds, the refusals, the handshake"; an inventory of about 45 files
 split it into four blocks, the operator's answer of 2026-10-03. Block 54 then measured 26 files and gave the handshake
 to a block of its own, the lead's answer the same day, and the numbers were reassigned so that their order is the
-stack's: the lease, block 56 until then, is block 58.)
+stack's: the lease, block 56 until then, is block 58.) (Corrected: block 58 is a fix-back on 57 the lead asked
+for, which would have taken 57 to 20 files, and the lease is block 59.)
 
 Each block measures its budget once committed, against its parent branch, and each test that guards a refusal is
 seen red before the code that answers it. Between blocks 53 and 60 a video's tile has no rendition; the stack
@@ -407,7 +410,17 @@ merges whole.
 - An export holding a video imports into an empty account with the same bytes and the same hash.
 - `TOO_LONG` and `UNSUPPORTED_CODEC` have their sentences, `downloadReasons.ts` compiling.
 
-### 56, the lease (Corrected: 58)
+### 58, an imported video's bytes match its type
+
+(Corrected: added on 2026-10-03.)
+
+- An archived H.264 in Matroska is stored as an MP4 whose bytes begin with an `ftyp` box, and an archived Matroska
+  holding VP9 and Opus as a WebM whose EBML header names the `webm` doctype: the import keeps an MP4 as the archive
+  carries it and repackages everything else into the container its codecs choose.
+- A stored WebM repackaged again keeps its bytes (`-map_metadata -1` beside `+bitexact`), so a round trip of a
+  WebM, as of an MP4, keeps its bytes and its hash.
+
+### 56, the lease (Corrected: 58) (Corrected: 59)
 
 - In a test with a short `tasks.lease_duration`, a fetch slower than the lease runs once: the task is never
   reclaimed, its lease renewed.

@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.AudioCodec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoContainer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import java.time.Duration
@@ -33,7 +34,15 @@ internal object FfprobeReport {
                 audio?.let { (codec, track) -> CodecsParameter.ofAudio(codec, track, videoCodec) },
             )
         val (width, height) = displayDimensionsOf(video)
-        return VideoProbeResult(videoCodec, audio?.first, width, height, duration, codecs.joinToString(","))
+        // The two demuxers the whitelist admits: matroska reads WebM, mov reads MP4.
+        val demuxedAs =
+            if (report.path("format").path("format_name").asText().startsWith("matroska")) {
+                VideoContainer.WEBM
+            } else {
+                VideoContainer.MP4
+            }
+        val codecsParameter = codecs.joinToString(",")
+        return VideoProbeResult(videoCodec, audio?.first, width, height, duration, codecsParameter, demuxedAs)
     }
 
     private fun videoTrackOf(streams: List<JsonNode>): JsonNode =

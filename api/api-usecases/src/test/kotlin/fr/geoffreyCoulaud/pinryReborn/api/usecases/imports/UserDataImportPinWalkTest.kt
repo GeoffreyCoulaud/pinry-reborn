@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsExcepti
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoContainer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import io.mockk.every
@@ -475,7 +476,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         stubPinWrites()
         every { imageProbe.probe(any(), MAX_PIXELS) } throws UndecodableImageException("not an image")
         every { videoProcessor.probe(any(), any()) } returns
-            VideoProbeResult(VideoCodec.H264, null, 4, 6, Duration.ofSeconds(1), "avc1.640015")
+            VideoProbeResult(VideoCodec.H264, null, 4, 6, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4)
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)

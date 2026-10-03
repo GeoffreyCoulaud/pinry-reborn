@@ -127,6 +127,19 @@ class FfmpegVideoProcessorTest {
     }
 
     @Test
+    fun `Given a stored WebM repackaged again, Then it keeps its bytes, which lets an import repackage it`() {
+        for (name in listOf("av1.mp4", "vp9-opus.webm")) {
+            // Given: what an upload stores, AV1 from an MP4 carrying brand tags among them
+            val source = copied(name)
+            val stored = processor.repackage(source, processor.probe(source, maxDuration))
+            // When
+            val again = processor.repackage(stored, processor.probe(stored, maxDuration))
+            // Then
+            assertEquals(stored.contentHash, again.contentHash, name)
+        }
+    }
+
+    @Test
     fun `Given a subtitle track beside VP9 and Opus, Then repackage writes WebM without it`() {
         val output = repackaged("subtitled.mkv")
         assertEquals("webm", containerOf(output))
