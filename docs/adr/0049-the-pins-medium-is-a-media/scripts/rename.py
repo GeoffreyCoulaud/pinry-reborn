@@ -1,8 +1,8 @@
 """Replays block 10 of lot 0.45.0: wherever "image" names the pin's medium, it becomes "media" (ADR 0049).
 
-Usage: python3 rename.py, from the repository root on a clean tree with the clients installed. It
-moves files with `git mv`, rewrites them in place, lets Biome sort the imports again, and prints
-every identifier it renamed with its count.
+Usage: python3 docs/adr/0049-the-pins-medium-is-a-media/scripts/rename.py, from the repository root
+on a clean tree with the clients installed. It moves files with `git mv`, rewrites them in place,
+lets Biome sort the imports again, and prints every identifier it renamed with its count.
 
 A name is a run of letters, digits and underscores. A compound name (`ImageStore`, `image_download`)
 is renamed wherever it appears. A bare word (`image`, `Images`) is renamed in code, and in a comment

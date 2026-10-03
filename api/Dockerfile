@@ -43,7 +43,7 @@ ENV DB_PATH=/data/pinry.db
 RUN mkdir -p /data && chown 1001:1001 /data
 VOLUME /data
 
-# On-disk bytes live outside the database (no blobs in SQLite): original image
+# On-disk bytes live outside the database (no blobs in SQLite): original media
 # bytes under media.data_dir, user data export archives under exports.data_dir,
 # and uploaded import archives under imports.data_dir. All three default to
 # /var/lib/pinry/* (see application.properties) and MUST be redirected to
@@ -51,12 +51,12 @@ VOLUME /data
 #   -e MEDIA_DATA_DIR=/data/media -e EXPORTS_DATA_DIR=/data/exports \
 #   -e IMPORTS_DATA_DIR=/data/imports
 # so they share the /data volume above. exports.data_dir is a SEPARATE dataset
-# from images: export archives are large, short-lived (7-day retention) and
+# from media: export archives are large, short-lived (7-day retention) and
 # regenerable, so an operator may want it on its own volume with its own backup
 # and quota policy. imports.data_dir is a third one for the same reasons, and it
 # takes uploads of up to imports.max_archive_bytes (20 GiB by default) each.
 #
-# images is created on first write, so the container leaves it alone. imports
+# media is created on first write, so the container leaves it alone. imports
 # and exports are different: ImportDataDirectoryCheck and ExportDataDirectoryCheck
 # create and probe theirs from a startup observer, so a default the image does not
 # provide refuses the boot of every deployment, whether or not anyone imports or

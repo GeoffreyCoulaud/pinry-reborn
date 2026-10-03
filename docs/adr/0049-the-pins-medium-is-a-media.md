@@ -4,6 +4,7 @@ Status: Accepted
 Date: 2026-10-02
 Specification: `docs/specs/2026-10-02-the-pin-holds-a-video.md`, decisions C1, N1, ii, iii.
 Written in block 10.
+Evidence: the folder `docs/adr/0049-the-pins-medium-is-a-media/`. *(Corrected: added in block 130.)*
 
 ## Context
 
