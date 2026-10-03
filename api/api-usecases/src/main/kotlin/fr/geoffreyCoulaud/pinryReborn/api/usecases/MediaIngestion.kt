@@ -14,6 +14,9 @@ import java.util.UUID.randomUUID
 /** A probed original whose row is built and whose bytes are still staged. */
 data class IngestedMedia(val media: Media, val staged: StagedFile)
 
+/** What this instance hosts, read from `media.*` by the composition root. */
+data class MediaBounds(val maxImageBytes: Long, val maxPixels: Long)
+
 /**
  * The only way an original enters storage (ADR 0049, decision 2). Each caller saves the row in its own
  * transaction, so promotion and its undoing are separate steps.
@@ -22,15 +25,18 @@ data class IngestedMedia(val media: Media, val staged: StagedFile)
 class MediaIngestion(
     private val mediaStore: MediaStore,
     private val imageProbe: ImageProbe,
+    private val bounds: MediaBounds,
 ) {
-    fun stage(source: InputStream, maxBytes: Long): StagedFile = mediaStore.stage(source, maxBytes)
+    fun stage(source: InputStream): StagedFile = mediaStore.stage(source, bounds.maxImageBytes)
+
+    fun digest(source: InputStream): String = mediaStore.digest(source, bounds.maxImageBytes)
 
     /** Whatever the probe throws, the staged file is discarded first. */
     @Suppress("TooGenericExceptionCaught")
-    fun ingest(staged: StagedFile, ownerId: UUID, pinId: UUID, maxPixels: Long, createdAt: Instant): IngestedMedia {
+    fun ingest(staged: StagedFile, ownerId: UUID, pinId: UUID, createdAt: Instant): IngestedMedia {
         val probe =
             try {
-                imageProbe.probe(staged, maxPixels)
+                imageProbe.probe(staged, bounds.maxPixels)
             } catch (e: Exception) {
                 mediaStore.discardQuietly(staged)
                 throw e

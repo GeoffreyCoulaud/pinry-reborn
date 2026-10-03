@@ -8,6 +8,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfi
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.RenditionsConfig
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemMediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemRenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaBounds
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 
@@ -32,6 +33,10 @@ class MediaAdapterProducers {
     @Produces
     @ApplicationScoped
     fun renditionCache(config: MediaConfig): RenditionCache = FilesystemRenditionCache(config.dataDir())
+
+    @Produces
+    @ApplicationScoped
+    fun mediaBounds(config: MediaConfig): MediaBounds = MediaBounds(config.maxFileBytes(), config.maxPixels())
 
     @Produces
     @ApplicationScoped

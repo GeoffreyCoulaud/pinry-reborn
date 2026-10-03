@@ -42,20 +42,20 @@ class DownloadPinMedia(
     private val clock: Clock,
     private val renditionCache: RenditionCache,
 ) {
-    fun download(pinId: UUID, context: TaskContext, maxBytes: Long, maxPixels: Long) {
+    fun download(pinId: UUID, context: TaskContext) {
         val downloadRow = mediaDownloadRepository.findByPinId(pinId)
         if (downloadRow == null || downloadRow.status != DownloadStatus.PENDING) return
         val pin = pinRepository.findPinById(pinId) ?: return
 
-        val staged = stageFromSource(pinId, downloadRow.sourceUrl, maxBytes, context)
-        val ingested = ingestStaged(pin.author.id, pinId, staged, maxPixels, context)
+        val staged = stageFromSource(pinId, downloadRow.sourceUrl, context)
+        val ingested = ingestStaged(pin.author.id, pinId, staged, context)
         promoteAndSwap(pinId, ingested, context)
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun stageFromSource(pinId: UUID, sourceUrl: String, maxBytes: Long, context: TaskContext): StagedFile =
+    private fun stageFromSource(pinId: UUID, sourceUrl: String, context: TaskContext): StagedFile =
         try {
-            mediaFetcher.openStream(sourceUrl).use { mediaIngestion.stage(it, maxBytes) }
+            mediaFetcher.openStream(sourceUrl).use { mediaIngestion.stage(it) }
         } catch (e: FetchException) {
             val reason = mapFetch(e)
             if (reason == DownloadReason.UNREACHABLE) {
@@ -74,15 +74,9 @@ class DownloadPinMedia(
         }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun ingestStaged(
-        ownerId: UUID,
-        pinId: UUID,
-        staged: StagedFile,
-        maxPixels: Long,
-        context: TaskContext,
-    ): IngestedMedia =
+    private fun ingestStaged(ownerId: UUID, pinId: UUID, staged: StagedFile, context: TaskContext): IngestedMedia =
         try {
-            mediaIngestion.ingest(staged, ownerId, pinId, maxPixels, clock.now())
+            mediaIngestion.ingest(staged, ownerId, pinId, clock.now())
         } catch (e: ImageProbeException) {
             failPermanent(pinId, mapProbe(e))
         } catch (e: Exception) {

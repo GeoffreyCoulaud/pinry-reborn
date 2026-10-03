@@ -26,6 +26,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepo
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaBounds
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
@@ -193,16 +194,13 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             pinRepository = pinRepository,
             mediaRepository = mediaRepository,
             archiveStore = archiveStore,
-            mediaStore = mediaStore,
-            mediaIngestion = MediaIngestion(mediaStore, imageProbe),
+            mediaIngestion = MediaIngestion(mediaStore, imageProbe, MediaBounds(MAX_MEDIA_BYTES, MAX_PIXELS)),
             // The real one over the same fake repository: the boundary it owns is what the walk needs.
             tagCreator = TagCreator(tagRepository, transactions, clock),
             transactionRunner = transactions,
             clock = clock,
             maxMetadataBytes = MAX_METADATA_BYTES,
             maxEntries = MAX_ENTRIES,
-            maxMediaBytes = MAX_MEDIA_BYTES,
-            maxPixels = MAX_PIXELS,
             leaseRenewalLines = LEASE_RENEWAL_LINES,
             reportDetailLimit = REPORT_DETAIL_LIMIT,
         )

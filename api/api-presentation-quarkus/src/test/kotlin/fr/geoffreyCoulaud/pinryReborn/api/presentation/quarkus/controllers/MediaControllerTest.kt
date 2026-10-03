@@ -4,7 +4,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.RenditionsConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.MediaOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.http.RangeNotSatisfiableException
@@ -46,7 +45,6 @@ class MediaControllerTest {
     private val requestPinMediaDownload = mockk<RequestPinMediaDownload>()
     private val resolvePinMediaState = mockk<ResolvePinMediaState>()
     private val mediaStore = mockk<MediaStore>()
-    private val mediaConfig = mockk<MediaConfig>()
     private val renditionCache = mockk<RenditionCache>()
     private val renditionsConfig = mockk<RenditionsConfig>()
     private val securityIdentity = mockk<SecurityIdentity>()
@@ -57,7 +55,6 @@ class MediaControllerTest {
         requestPinMediaDownload = requestPinMediaDownload,
         resolvePinMediaState = resolvePinMediaState,
         mediaStore = mediaStore,
-        mediaConfig = mediaConfig,
         renditionCache = renditionCache,
         renditionsConfig = renditionsConfig,
         securityIdentity = securityIdentity,
@@ -86,19 +83,13 @@ class MediaControllerTest {
         // Given
         val pinId = randomUUID()
         val user = aUser()
-        val maxBytes = 123L
-        val maxPixels = 456L
         val uploadedPath = Files.createTempFile(tempDir, "upload-", ".tmp")
         Files.write(uploadedPath, byteArrayOf(1, 2, 3))
         val fileUpload = mockk<FileUpload>()
         every { fileUpload.uploadedFile() } returns uploadedPath
         val media = aMedia(pinId)
         every { securityIdentity.getAttribute<User>("user") } returns user
-        every { mediaConfig.maxFileBytes() } returns maxBytes
-        every { mediaConfig.maxPixels() } returns maxPixels
-        every {
-            setPinMedia.set(pinId = pinId, requester = user, upload = any(), maxBytes = maxBytes, maxPixels = maxPixels)
-        } returns SetPinMediaResult(media = media, replaced = false)
+        every { setPinMedia.set(pinId, user, any()) } returns SetPinMediaResult(media = media, replaced = false)
 
         // When
         val response = controller.setMedia(pinId, fileUpload)
@@ -115,19 +106,13 @@ class MediaControllerTest {
         // Given
         val pinId = randomUUID()
         val user = aUser()
-        val maxBytes = 123L
-        val maxPixels = 456L
         val uploadedPath = Files.createTempFile(tempDir, "upload-", ".tmp")
         Files.write(uploadedPath, byteArrayOf(1, 2, 3))
         val fileUpload = mockk<FileUpload>()
         every { fileUpload.uploadedFile() } returns uploadedPath
         val media = aMedia(pinId)
         every { securityIdentity.getAttribute<User>("user") } returns user
-        every { mediaConfig.maxFileBytes() } returns maxBytes
-        every { mediaConfig.maxPixels() } returns maxPixels
-        every {
-            setPinMedia.set(pinId = pinId, requester = user, upload = any(), maxBytes = maxBytes, maxPixels = maxPixels)
-        } returns SetPinMediaResult(media = media, replaced = true)
+        every { setPinMedia.set(pinId, user, any()) } returns SetPinMediaResult(media = media, replaced = true)
 
         // When
         val response = controller.setMedia(pinId, fileUpload)

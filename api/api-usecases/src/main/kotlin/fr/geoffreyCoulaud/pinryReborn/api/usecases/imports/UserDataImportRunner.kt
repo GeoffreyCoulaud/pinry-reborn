@@ -14,7 +14,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure.USE
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveBoundExceededException
@@ -45,7 +44,7 @@ import java.util.UUID
 import java.util.UUID.randomUUID
 
 /** Replays an import archive into its owner's account (spec section 8): a conflict is a skip. */
-// Not `@ApplicationScoped`: `ImportProducers` builds it, since ARC resolves none of its six bounds.
+// Not `@ApplicationScoped`: `ImportProducers` builds it, since ARC resolves none of its four bounds.
 // LongParameterList and TooManyFunctions: those bounds have no type to group them with the ports, and
 // each step being its own named helper is what keeps every one of them under LongMethod.
 @Suppress("LongParameterList", "TooManyFunctions")
@@ -58,15 +57,12 @@ class UserDataImportRunner(
     private val pinRepository: PinRepositoryInterface,
     private val mediaRepository: MediaRepositoryInterface,
     private val archiveStore: ImportArchiveStore,
-    private val mediaStore: MediaStore,
     private val mediaIngestion: MediaIngestion,
     private val tagCreator: TagCreator,
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
     private val maxMetadataBytes: Long,
     private val maxEntries: Int,
-    private val maxMediaBytes: Long,
-    private val maxPixels: Long,
     private val leaseRenewalLines: Int,
     private val reportDetailLimit: Int,
 ) {
@@ -551,7 +547,7 @@ class UserDataImportRunner(
     }
 
     /**
-     * Steps 2 to 5. One arm for the byte bound: [MediaStore.digest] reads it first, so a refusal from
+     * Steps 2 to 5. One arm for the byte bound: [MediaIngestion.digest] reads it first, so a refusal from
      * the staging pass over the same bytes under the same bound is the same answer.
      */
     private fun boundedMedia(walk: PinWalk, pin: ImportedPin, media: ImportedMedia): PinOutcome =
@@ -563,7 +559,7 @@ class UserDataImportRunner(
 
     /** Step 2 then 3: hashed where it lies, so a medium the account already holds costs no write. */
     private fun digested(walk: PinWalk, pin: ImportedPin, media: ImportedMedia): PinOutcome {
-        val digest = entryOf(walk, media.path).use { mediaStore.digest(it, maxMediaBytes) }
+        val digest = entryOf(walk, media.path).use { mediaIngestion.digest(it) }
         val holders = pinRepository.findPinIdsByContentHashForUser(walk.user, digest)
         return matched(walk, pin, media, holders).with(mismatch(media, digest))
     }
@@ -601,10 +597,10 @@ class UserDataImportRunner(
 
     /** Step 4: the entry is reopened, since the digest pass consumed the first stream. */
     private fun stagedOutcome(walk: PinWalk, pin: ImportedPin, media: ImportedMedia): PinOutcome {
-        val staged = entryOf(walk, media.path).use { mediaIngestion.stage(it, maxMediaBytes) }
+        val staged = entryOf(walk, media.path).use { mediaIngestion.stage(it) }
         val pinId = randomUUID()
         return try {
-            created(walk, pin, mediaIngestion.ingest(staged, walk.user.id, pinId, maxPixels, walk.importInstant))
+            created(walk, pin, mediaIngestion.ingest(staged, walk.user.id, pinId, walk.importInstant))
         } catch (error: ImageTooManyPixelsException) {
             reported(UserDataImportIssueKind.MEDIA_TOO_MANY_PIXELS, media.path, error.message)
         } catch (error: ImageProbeException) {
