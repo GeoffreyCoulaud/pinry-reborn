@@ -96,7 +96,7 @@ class YtDlpPageMediaExtractor(
             }
     }
 
-    private companion object {
+    internal companion object {
         const val TICK_MILLIS = 100L
         const val DEMUXERS = "-nostdin -format_whitelist mov,matroska,mpegts -protocol_whitelist file"
 
@@ -105,19 +105,24 @@ class YtDlpPageMediaExtractor(
             listOf("Merger", "FixupM3u8", "FixupM4a", "FixupStretched", "FixupDuplicateMoov", "FixupTimestamp") +
                 "FixupDuration"
 
-        // The API's home is root-owned: yt-dlp reads and writes nothing of its own there.
+        // The API's home is root-owned: yt-dlp reads and writes nothing of its own there. The native downloader
+        // keeps an HLS download in yt-dlp's own networking, through `--proxy`, rather than in an ffmpeg.
         val OPTIONS =
             listOf("--ignore-config", "--no-plugin-dirs", "--no-cache-dir", "--no-playlist", "--playlist-items", "1") +
+                listOf("--downloader", "native") +
                 POSTPROCESSORS.flatMap { listOf("--postprocessor-args", "$it+ffmpeg_i:$DEMUXERS") }
 
         val DOWNLOAD = listOf("-o", "media.%(ext)s", "--print", "after_move:filepath")
+
+        // The protocols yt-dlp downloads itself, through `--proxy`: rtmp, rtsp or mms would go to an external program.
+        private const val PROXIED = "[protocol~='^(https?|m3u8(_native)?|http_dash_segments)$']"
 
         // H.264, then VP9, then AV1, then H.265, each with an accepted audio codec (decision M1); then whatever
         // declares no codec, as a bare `<video src>` does, which ingestion judges.
         val FORMATS =
             listOf("^(avc|h264)", "^vp0?9", "^av01", "^(hvc1|hev1|h265)").joinToString("/") { video ->
                 val audio = "[acodec~='^(mp4a|opus|mp3)']"
-                "bv[vcodec~='$video']+ba$audio/b[vcodec~='$video']$audio"
-            } + "/b"
+                "bv$PROXIED[vcodec~='$video']+ba$PROXIED$audio/b$PROXIED[vcodec~='$video']$audio"
+            } + "/b$PROXIED"
     }
 }

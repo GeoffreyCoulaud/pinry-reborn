@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.fetch.ytdlp
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
@@ -118,6 +119,21 @@ class YtDlpPageMediaExtractorTest {
 
     private fun stagingIsEmpty() = Files.list(staging).use { it.toList().isEmpty() }
 
+    // The format the chain picks from an info JSON offering one format at [formatUrl], or null when it picks none.
+    private fun formatChosenAmong(protocol: String, formatUrl: String): String? {
+        val format = mapOf("format_id" to "stream", "url" to formatUrl, "protocol" to protocol, "ext" to "mp4")
+        val info =
+            mapOf("id" to "clip", "title" to "clip", "extractor" to "generic", "extractor_key" to "Generic") +
+                mapOf("webpage_url" to url("/page.html"), "formats" to listOf(format))
+        val infoFile = Files.writeString(staging.resolve("info.json"), ObjectMapper().writeValueAsString(info))
+        val command =
+            listOf("yt-dlp", "--ignore-config", "--no-cache-dir", "--load-info-json", infoFile.toString()) +
+                listOf("-f", YtDlpPageMediaExtractor.FORMATS, "--print", "format_id")
+        val process = ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.DISCARD).start()
+        val printed = process.inputStream.readAllBytes().decodeToString().trim()
+        return printed.takeIf { process.waitFor() == 0 }
+    }
+
     // Ingestion stages the extracted stream before probing it; this copy stands for that staged file.
     private fun extractedCopy(pageUrl: String): Path {
         val copy = staging.resolve("extracted")
@@ -199,6 +215,23 @@ class YtDlpPageMediaExtractorTest {
         assertTrue(finished.await(30, TimeUnit.SECONDS))
         assertTrue(sent.get() < ENDLESS_BYTES, "the origin was cut off after ${sent.get()} bytes")
         assertTrue(stagingIsEmpty())
+    }
+
+    @Test
+    fun `Given an info JSON whose only format is served over rtmp, rtsp or mms, Then the format chain selects none`() {
+        // Given
+        val outsideTheProxy = listOf("rtmp", "rtsp", "mms").associateWith { "$it://127.0.0.1:1/live" }
+
+        // When
+        val chosen = outsideTheProxy.mapValues { (protocol, formatUrl) -> formatChosenAmong(protocol, formatUrl) }
+
+        // Then
+        assertEquals(mapOf("rtmp" to null, "rtsp" to null, "mms" to null), chosen)
+    }
+
+    @Test
+    fun `Given an info JSON whose only format is served over https, Then the format chain selects it`() {
+        assertEquals("stream", formatChosenAmong("https", "https://127.0.0.1:1/clip.mp4"))
     }
 
     @Test
