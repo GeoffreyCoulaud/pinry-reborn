@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.fetch.ytdlp
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchedMedia
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
@@ -14,10 +15,12 @@ import java.util.concurrent.TimeUnit
 
 /**
  * [PageMediaExtractor] running the `yt-dlp` on the `PATH` twice per page through its own [GuardingProxy], each run
- * writing under [stagingDirectory] and destroyed past [timeout] (ADR 0048, decision 3).
+ * destroyed past [timeout] or once its directory under [stagingDirectory] passes [maxBytes] (ADR 0048, decision 3).
  */
 class YtDlpPageMediaExtractor(
     private val stagingDirectory: Path,
+    private val maxBytes: Long,
+    private val maxDuration: Duration,
     private val timeout: Duration,
     private val openProxy: () -> GuardingProxy,
 ) : PageMediaExtractor {
@@ -44,7 +47,7 @@ class YtDlpPageMediaExtractor(
         private val options = OPTIONS + listOf("--proxy", "http://${proxy.address.hostString}:${proxy.address.port}")
 
         fun download(): Path {
-            val format = YtDlpReport.formatOf(run(listOf("-f", FORMATS, "--dump-single-json")))
+            val format = YtDlpReport.formatOf(run(listOf("-f", FORMATS, "--dump-single-json")), maxDuration, maxBytes)
             return directory.resolve(run(listOf("-f", format) + DOWNLOAD).trim())
         }
 
@@ -71,6 +74,9 @@ class YtDlpPageMediaExtractor(
             while (true) {
                 val exited = process.waitFor(TICK_MILLIS, TimeUnit.MILLISECONDS)
                 heartbeat()
+                if (directory.toFile().walk().sumOf { it.length() } > maxBytes) {
+                    throw FetchTooLargeException("yt-dlp wrote past $maxBytes bytes and was destroyed")
+                }
                 if (exited) return
                 if (System.nanoTime() > deadline) {
                     throw FetchUnreachableException("yt-dlp ran past $timeout and was destroyed")
