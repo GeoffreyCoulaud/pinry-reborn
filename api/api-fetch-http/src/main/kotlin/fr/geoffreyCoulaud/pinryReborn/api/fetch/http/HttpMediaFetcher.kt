@@ -1,58 +1,74 @@
 package fr.geoffreyCoulaud.pinryReborn.api.fetch.http
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchAccessDeniedException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchFailedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchNotFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchedMedia
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaFetcher
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.TooManyRedirectsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
+import java.io.FilterInputStream
 import java.io.IOException
 import java.io.InputStream
-import java.net.InetAddress
+import java.net.ProxySelector
 import java.net.URI
 import java.net.URISyntaxException
-import java.net.UnknownHostException
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
 class HttpMediaFetcher(
-    connectTimeout: Duration,
+    private val connectTimeout: Duration,
     private val requestTimeout: Duration,
     private val maxRedirects: Int,
-    private val addressPolicy: AddressPolicy,
+    private val openProxy: () -> GuardingProxy,
 ) : MediaFetcher {
-    private val client: HttpClient =
-        HttpClient.newBuilder()
-            .connectTimeout(connectTimeout)
-            .followRedirects(HttpClient.Redirect.NEVER)
-            .build()
+    // Each download gets its own proxy, the client's only route out (ADR 0048, decision 2).
+    override fun openStream(sourceUrl: String): FetchedMedia {
+        val url = httpUri(sourceUrl)
+        val proxy = openProxy()
+        val client =
+            HttpClient.newBuilder()
+                .connectTimeout(connectTimeout)
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .proxy(ProxySelector.of(proxy.address))
+                .build()
+        val end = {
+            client.shutdownNow()
+            proxy.close()
+        }
+        val response = runCatching { finalResponse(client, proxy, url) }.onFailure { end() }.getOrThrow()
+        val contentType = response.headers().firstValue("content-type").orElse(null)
+        return FetchedMedia(EndingStream(response.body(), end), contentType)
+    }
 
     // Each throw maps a distinct HTTP outcome to its typed FetchException; that mapping is the
     // adapter's purpose, so the count is intentional.
     @Suppress("ThrowsCount")
-    override fun openStream(sourceUrl: String): InputStream {
-        var url = guarded(sourceUrl)
+    private fun finalResponse(
+        client: HttpClient,
+        proxy: GuardingProxy,
+        first: URI,
+    ): HttpResponse<InputStream> {
+        var url = first
         var redirects = 0
         while (true) {
-            val response = send(url)
+            val response = send(client, proxy, url)
             val status = response.statusCode()
-            // Classified by ascending status boundary rather than closed ranges: the JDK HttpClient
-            // consumes 1xx interim responses internally, so the final status is always >= 200 and a
-            // "status < 200" arm would be dead code. 2xx -> body; 3xx -> follow (capped); 401/403 ->
-            // access denied; 404/410 -> not found; 429 and 5xx -> unreachable (retryable); any other
-            // 4xx -> failed. Non-standard 6xx codes fall into the retryable bucket.
+            if (status < REDIRECT_MIN) return response
+            response.body().close()
+            refusalOf(proxy)?.let { throw it }
+            // Ascending boundaries: the JDK consumes 1xx itself, and a non-standard 6xx is retried as a 5xx.
             when {
-                status < REDIRECT_MIN -> return response.body()
                 status < CLIENT_ERROR_MIN -> {
                     if (redirects >= maxRedirects) throw TooManyRedirectsException("too many redirects")
                     val location =
                         response.headers().firstValue("location").orElse(null)
                             ?: throw FetchFailedException("redirect without a location header")
-                    response.body().close()
-                    url = guarded(url.resolve(location).toString())
+                    url = httpUri(url.resolve(location).toString())
                     redirects += 1
                 }
                 status == UNAUTHORIZED || status == FORBIDDEN ->
@@ -68,7 +84,11 @@ class HttpMediaFetcher(
         }
     }
 
-    private fun send(url: URI): HttpResponse<InputStream> {
+    private fun send(
+        client: HttpClient,
+        proxy: GuardingProxy,
+        url: URI,
+    ): HttpResponse<InputStream> {
         // Note (spec section 17 risk): HttpRequest.timeout() bounds the time to obtain the
         // response headers, not the streaming read of the body. For v1 this is acceptable: the
         // connect timeout plus this response timeout bound the worst case before the body arrives.
@@ -77,17 +97,28 @@ class HttpMediaFetcher(
         return try {
             client.send(request, HttpResponse.BodyHandlers.ofInputStream())
         } catch (e: IOException) {
-            throw FetchUnreachableException("could not reach the origin", e)
+            throw refusalOf(proxy, e) ?: FetchUnreachableException("could not reach the origin", e)
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw FetchUnreachableException("fetch interrupted", e)
         }
     }
 
-    // Each throw rejects a distinct unsafe-URL condition (malformed, bad scheme, no host,
-    // unresolvable, blocked address); the count is intentional for this SSRF guard.
+    // The proxy's record names the reason: a tunnel refusal reaches the client as a bare IOException.
+    private fun refusalOf(
+        proxy: GuardingProxy,
+        cause: Throwable? = null,
+    ): FetchException? =
+        when {
+            proxy.refusedAddresses.isNotEmpty() -> UrlNotAllowedException("address not allowed", cause)
+            proxy.unreachableHosts.isNotEmpty() -> FetchUnreachableException("could not reach the origin", cause)
+            else -> null
+        }
+
+    // Each throw rejects a distinct unsafe-URL condition (malformed, bad scheme, no host); the
+    // address itself is the proxy's to check.
     @Suppress("ThrowsCount")
-    private fun guarded(raw: String): URI {
+    private fun httpUri(raw: String): URI {
         val uri =
             try {
                 URI(raw)
@@ -96,15 +127,21 @@ class HttpMediaFetcher(
             }
         val scheme = uri.scheme?.lowercase()
         if (scheme != "http" && scheme != "https") throw UrlNotAllowedException("scheme not allowed")
-        val host = uri.host ?: throw UrlNotAllowedException("missing host")
-        val address =
-            try {
-                InetAddress.getByName(host)
-            } catch (e: UnknownHostException) {
-                throw FetchUnreachableException("could not resolve host", e)
-            }
-        if (!addressPolicy.isAllowed(address)) throw UrlNotAllowedException("address not allowed")
+        if (uri.host == null) throw UrlNotAllowedException("missing host")
         return uri
+    }
+
+    // Closing the body ends the download: the client, then its proxy.
+    private class EndingStream(
+        body: InputStream,
+        private val end: () -> Unit,
+    ) : FilterInputStream(body) {
+        override fun close() =
+            try {
+                super.close()
+            } finally {
+                end()
+            }
     }
 
     private companion object {

@@ -9,32 +9,56 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.TooManyRedirectsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.net.UnknownHostException
 import java.time.Duration
+import java.util.concurrent.CopyOnWriteArrayList
 
 class HttpMediaFetcherTest {
     private lateinit var server: HttpServer
+    private val proxies = CopyOnWriteArrayList<GuardingProxy>()
+    private val resolvedHosts = CopyOnWriteArrayList<String>()
 
-    private val fetcher =
+    private val loopback: InetAddress = InetAddress.getByName("127.0.0.1")
+    private val otherLoopback: InetAddress = InetAddress.getByName("127.0.0.2")
+
+    // The `.test` names stand for remote hosts only the proxy's resolver knows; any other name does not resolve.
+    private val stubHosts =
+        mapOf(
+            "127.0.0.1" to loopback,
+            "origin.test" to loopback,
+            "cdn.test" to loopback,
+            "private.test" to otherLoopback,
+        )
+
+    // Stands for a public address (127.0.0.1, allowed) and a private one (127.0.0.2, refused).
+    private val refusingOtherLoopback =
+        object : AddressPolicy {
+            override fun isAllowed(address: InetAddress): Boolean = address != otherLoopback
+        }
+
+    private val fetcher = fetcherThrough(AddressPolicy.AllowAll)
+
+    private fun fetcherThrough(policy: AddressPolicy) =
         HttpMediaFetcher(
             connectTimeout = Duration.ofSeconds(2),
             requestTimeout = Duration.ofSeconds(2),
             maxRedirects = 3,
-            addressPolicy = AddressPolicy.AllowAll,
+            openProxy = { GuardingProxy(policy, Duration.ofSeconds(2), ::stubResolve).also { proxies += it } },
         )
 
-    private val guardedFetcher =
-        HttpMediaFetcher(
-            connectTimeout = Duration.ofSeconds(2),
-            requestTimeout = Duration.ofSeconds(2),
-            maxRedirects = 3,
-            addressPolicy = AddressPolicy.Standard,
-        )
+    private fun stubResolve(host: String): InetAddress {
+        resolvedHosts += host
+        return stubHosts[host] ?: throw UnknownHostException(host)
+    }
+
+    private fun theProxy(): GuardingProxy = proxies.single()
 
     @BeforeEach fun start() {
         server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
@@ -44,6 +68,9 @@ class HttpMediaFetcherTest {
     @AfterEach fun stop() = server.stop(0)
 
     private fun base() = "http://127.0.0.1:${server.address.port}"
+
+    // No TLS listens there: a refused CONNECT never reaches a handshake.
+    private fun httpsBase() = "https://127.0.0.1:${server.address.port}"
 
     private fun handle(
         path: String,
@@ -63,13 +90,41 @@ class HttpMediaFetcherTest {
     private fun closedPort(): Int = ServerSocket(0).use { it.localPort }
 
     @Test
-    fun `Given a 200 response, Then openStream returns the body`() {
+    fun `Given a proxy whose policy allows every address, Then a loopback origin's body is fetched`() {
         // Given
         val bytes = byteArrayOf(1, 2, 3)
         handle("/i.png", 200, bytes)
 
         // When / Then
-        fetcher.openStream("${base()}/i.png").use { assertArrayEquals(bytes, it.readAllBytes()) }
+        fetcher.openStream("${base()}/i.png").use { assertArrayEquals(bytes, it.stream.readAllBytes()) }
+    }
+
+    @Test
+    fun `Given an origin that redirects to a second host, Then the proxy resolves both hosts the fetch reached`() {
+        // Given
+        val bytes = byteArrayOf(4, 5)
+        handle("/final.png", 200, bytes)
+        handle("/hop", 302, headers = mapOf("Location" to "http://cdn.test:${server.address.port}/final.png"))
+
+        // When
+        fetcher.openStream("http://origin.test:${server.address.port}/hop").use {
+            assertArrayEquals(bytes, it.stream.readAllBytes())
+        }
+
+        // Then
+        assertEquals(listOf("origin.test", "cdn.test"), resolvedHosts)
+    }
+
+    @Test
+    fun `Given a 200 response with a Content-Type, Then openStream returns it with the body`() {
+        // Given
+        handle("/v", 200, byteArrayOf(1), headers = mapOf("Content-Type" to "video/mp4"))
+
+        // When
+        val contentType = fetcher.openStream("${base()}/v").use { it.contentType }
+
+        // Then
+        assertEquals("video/mp4", contentType)
     }
 
     @Test
@@ -143,7 +198,7 @@ class HttpMediaFetcherTest {
         handle("/redirect", 302, headers = mapOf("Location" to "/final.png"))
 
         // When / Then
-        fetcher.openStream("${base()}/redirect").use { assertArrayEquals(bytes, it.readAllBytes()) }
+        fetcher.openStream("${base()}/redirect").use { assertArrayEquals(bytes, it.stream.readAllBytes()) }
     }
 
     @Test
@@ -189,10 +244,41 @@ class HttpMediaFetcherTest {
     }
 
     @Test
-    fun `Given an unresolvable host, Then it throws FetchUnreachable`() {
+    fun `Given an http host no resolver knows, Then it throws FetchUnreachable and the proxy records the host`() {
+        // When / Then
+        assertThrows(FetchUnreachableException::class.java) { fetcher.openStream("http://nowhere.test/i.png") }
+        assertEquals(listOf("nowhere.test"), theProxy().unreachableHosts)
+    }
+
+    @Test
+    fun `Given an https host no resolver knows, Then it throws FetchUnreachable and the proxy records the host`() {
+        // When / Then
+        assertThrows(FetchUnreachableException::class.java) { fetcher.openStream("https://nowhere.test/i.png") }
+        assertEquals(listOf("nowhere.test"), theProxy().unreachableHosts)
+    }
+
+    @Test
+    fun `Given an http origin that cannot be reached, Then it throws FetchUnreachable`() {
+        // Given
+        val port = closedPort()
+
         // When / Then
         assertThrows(FetchUnreachableException::class.java) {
-            fetcher.openStream("http://does-not-exist.invalid/i.png")
+            fetcher.openStream("http://127.0.0.1:$port/i.png")
+        }
+    }
+
+    @Test
+    fun `Given an origin that closes without answering, Then it throws FetchUnreachable`() {
+        // Given
+        val silent = ServerSocket(0, 0, InetAddress.getByName("127.0.0.1"))
+        Thread.ofVirtual().start { runCatching { while (true) silent.accept().close() } }
+
+        // When / Then
+        silent.use {
+            assertThrows(FetchUnreachableException::class.java) {
+                fetcher.openStream("http://127.0.0.1:${it.localPort}/i.png")
+            }
         }
     }
 
@@ -208,37 +294,47 @@ class HttpMediaFetcherTest {
     }
 
     @Test
-    fun `Given the Standard policy against a loopback origin, Then it throws UrlNotAllowed`() {
+    fun `Given a proxy refusing loopback, Then an http loopback origin throws UrlNotAllowed, recorded by the proxy`() {
         // Given
         handle("/i.png", 200, byteArrayOf(1))
 
         // When / Then
-        assertThrows(UrlNotAllowedException::class.java) { guardedFetcher.openStream("${base()}/i.png") }
+        assertThrows(UrlNotAllowedException::class.java) {
+            fetcherThrough(AddressPolicy.Standard).openStream("${base()}/i.png")
+        }
+        assertEquals(listOf(loopback), theProxy().refusedAddresses)
     }
 
     @Test
-    fun `Given a redirect target the policy rejects, Then it throws UrlNotAllowed`() {
-        // Given: the initial hop is allowed but the redirect target is blocked, proving the
-        // per-hop SSRF re-check runs against the resolved redirect location, not only the first URL.
-        handle("/redirect", 302, headers = mapOf("Location" to "/blocked.png"))
-        val redirectGuardedFetcher =
-            HttpMediaFetcher(
-                connectTimeout = Duration.ofSeconds(2),
-                requestTimeout = Duration.ofSeconds(2),
-                maxRedirects = 3,
-                addressPolicy = FirstHopOnlyPolicy(),
-            )
+    fun `Given a proxy refusing loopback, Then an https loopback origin throws UrlNotAllowed, recorded by the proxy`() {
+        // When / Then
+        assertThrows(UrlNotAllowedException::class.java) {
+            fetcherThrough(AddressPolicy.Standard).openStream("${httpsBase()}/i.png")
+        }
+        assertEquals(listOf(loopback), theProxy().refusedAddresses)
+    }
+
+    @Test
+    fun `Given an http redirect to a private address, Then the proxy refuses and records it as UrlNotAllowed`() {
+        // Given
+        handle("/redirect", 302, headers = mapOf("Location" to "http://private.test:${server.address.port}/x"))
 
         // When / Then
         assertThrows(UrlNotAllowedException::class.java) {
-            redirectGuardedFetcher.openStream("${base()}/redirect")
+            fetcherThrough(refusingOtherLoopback).openStream("${base()}/redirect")
         }
+        assertEquals(listOf(otherLoopback), theProxy().refusedAddresses)
     }
 
-    /** Allows the first address check (the initial URL) and blocks every later one (redirect targets). */
-    private class FirstHopOnlyPolicy : AddressPolicy {
-        private var checks = 0
+    @Test
+    fun `Given an https redirect to a private address, Then the proxy refuses and records it as UrlNotAllowed`() {
+        // Given
+        handle("/redirect", 302, headers = mapOf("Location" to "https://private.test:${server.address.port}/x"))
 
-        override fun isAllowed(address: InetAddress): Boolean = checks++ == 0
+        // When / Then
+        assertThrows(UrlNotAllowedException::class.java) {
+            fetcherThrough(refusingOtherLoopback).openStream("${base()}/redirect")
+        }
+        assertEquals(listOf(otherLoopback), theProxy().refusedAddresses)
     }
 }
