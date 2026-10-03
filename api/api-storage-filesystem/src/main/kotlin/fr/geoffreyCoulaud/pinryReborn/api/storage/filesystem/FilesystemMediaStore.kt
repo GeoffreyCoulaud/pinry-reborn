@@ -91,9 +91,20 @@ class FilesystemMediaStore(private val dataDir: String) : MediaStore {
 
     override fun discardOrphanedStagedFiles(olderThan: Instant): Int {
         if (!Files.isDirectory(tmpDir)) return 0
-        return Files.list(tmpDir).use { stream ->
-            stream.filter { Files.isRegularFile(it) && it.modifiedBefore(olderThan) }.toList()
-        }.count { Files.deleteIfExists(it) }
+        val stale = Files.list(tmpDir).use { stream ->
+            stream.filter { it.modifiedBefore(olderThan) && it.newestEntryBefore(olderThan) }.toList()
+        }
+        return stale.count { it.deleteTree() }
+    }
+
+    // A directory under tmp/ is a yt-dlp run's, which a killed API leaves behind: stale once its newest entry is.
+    private fun Path.newestEntryBefore(instant: Instant): Boolean =
+        Files.walk(this).use { tree -> tree.allMatch { it.modifiedBefore(instant) } }
+
+    // Deepest first, so each directory is empty by its turn; a file walks to itself alone.
+    private fun Path.deleteTree(): Boolean {
+        val deepestFirst = Files.walk(this).use { tree -> tree.sorted(Comparator.reverseOrder()).toList() }
+        return deepestFirst.map { Files.deleteIfExists(it) }.last()
     }
 
     override fun forEachStorageKeyOnDisk(olderThan: Instant, block: (Sequence<String>) -> Unit) {
