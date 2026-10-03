@@ -10,11 +10,16 @@ import java.io.OutputStream
 object ByteRangeResponse {
     private const val COPY_BUFFER_SIZE = 8192
 
-    fun builder(stream: InputStream, totalSize: Long, range: ByteRange?): ResponseBuilder<StreamingOutput> {
-        if (range != null) stream.skipNBytes(range.start)
+    /** [open] runs only when the body is written, so a response never written holds no file open. */
+    fun builder(open: () -> InputStream, totalSize: Long, range: ByteRange?): ResponseBuilder<StreamingOutput> {
         val sliceLength = range?.let { it.endInclusive - it.start + 1 } ?: totalSize
         val status = if (range != null) RestResponse.Status.PARTIAL_CONTENT else RestResponse.Status.OK
-        val body = StreamingOutput { output -> stream.use { copyBounded(it, output, sliceLength) } }
+        val body = StreamingOutput { output ->
+            open().use { stream ->
+                stream.skipNBytes(range?.start ?: 0)
+                copyBounded(stream, output, sliceLength)
+            }
+        }
         val builder = ResponseBuilder.create(status, body)
             .header("Content-Length", sliceLength)
             .header("Accept-Ranges", "bytes")
