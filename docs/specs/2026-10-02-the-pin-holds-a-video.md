@@ -258,7 +258,8 @@ The lead adds four decisions, submitted with this document:
 | 75 | `feat/the-grid-previews-a-video` | Badge and hover |
 | 80 | `feat/the-webapp-uploads-a-video` | Upload, previews, sentences (Corrected: upload, previews, refusal sentences) |
 | 85 | `feat/the-webapp-says-media` | The sentences say media for the medium |
-| 90 | `feat/a-guarding-proxy` | The proxy and its record |
+| 90 | `feat/a-guarding-proxy` | The proxy and its record (Corrected: `CONNECT` alone) |
+| 92 | `feat/the-proxy-forwards-plain-http` | Plain HTTP through the proxy, one request per connection |
 | 95 | `refactor/the-fetch-goes-through-the-proxy` | The fetcher behind it, its `Content-Type` |
 | 100 | `feat/yt-dlp-extracts-a-page` | pip, yt-dlp and Deno in both images, the `api-fetch-ytdlp` module |
 | 110 | `feat/a-page-address-yields-its-video` | The worker's dispatch on `Content-Type` |
@@ -268,7 +269,8 @@ split it into four blocks, the operator's answer of 2026-10-03. Block 54 then me
 to a block of its own, the lead's answer the same day, and the numbers were reassigned so that their order is the
 stack's: the lease, block 56 until then, is block 58.) (Corrected: block 58 is a fix-back on 57 the lead asked
 for, which would have taken 57 to 20 files, and the lease is block 59.) (Corrected: block 80 measured 25 files and
-gave the sentences that say "image" for the medium to block 85, the lead's answer of 2026-10-03.)
+gave the sentences that say "image" for the medium to block 85, the lead's answer of 2026-10-03.) (Corrected: block 90
+measured 580 lines and gave plain HTTP forwarding to block 92, the lead's answer of 2026-10-03.)
 
 Each block measures its budget once committed, against its parent branch, and each test that guards a refusal is
 seen red before the code that answers it. Between blocks 53 and 60 a video's tile has no rendition; the stack
@@ -474,6 +476,18 @@ merges whole.
   to it is refused and recorded.
 - A host that does not answer is recorded as unreachable.
 - The proxy's consumer is block 95, which the pull request says.
+- (Corrected: split on 2026-10-03. This block serves `CONNECT` alone and answers any other request `400`, the
+  request to `127.0.0.1` being a `CONNECT`; the redirect criterion above moves to block 92, a redirect between two
+  tunnels needing TLS.)
+
+### 92, plain HTTP
+
+(Corrected: added on 2026-10-03, split from block 90.)
+
+- An absolute-form request reaches its origin in origin form; both heads lose `Connection`, `Keep-Alive` and
+  `Proxy-*` and gain `Connection: close`, so a client keeping its connection alive opens a new one per request.
+- A redirect hop is a new connection, checked again: with a test policy refusing one stub address, the second hop
+  to it is refused and recorded.
 
 ### 95, the fetcher behind it
 
