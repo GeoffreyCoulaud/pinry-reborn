@@ -44,6 +44,22 @@ describe("play a video pin", () => {
 		expect(within(dialog).queryByText(m.video_unplayable())).toBeNull();
 	});
 
+	it("Given a video stored with no dimensions, Then it plays in a square box and never as an image", async () => {
+		const bare = videoPin("waves at night");
+		const opened = {
+			...bare,
+			media: { ...bare.media, status: "READY", width: null, height: null },
+		} satisfies Pin;
+
+		const { dialog, video } = await openTheFirst([opened]);
+
+		expect(video).toHaveAttribute("src", String(opened.media.url));
+		expect(video).toHaveStyle({ aspectRatio: "1 / 1" });
+		expect(
+			within(dialog).queryByRole("img", { name: opened.description }),
+		).toBeNull();
+	});
+
 	it("Given the video, Then its own arrows and a touch drag on it leave the pin open", async () => {
 		const pins = [videoPin("waves on the pier"), readyPin("a cat asleep")];
 		const { dialog, video } = await openTheFirst(pins);

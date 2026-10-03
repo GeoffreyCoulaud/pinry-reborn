@@ -18,6 +18,9 @@ function fitted(width: number, height: number) {
 	};
 }
 
+/** A square to fit, for a video stored without its dimensions. */
+const SQUARE = { aspectRatio: "1 / 1", width: "min(100%, var(--fit-height))" };
+
 /**
  * The original in a box of the size it is drawn at, its own or less to fit, never more. The grid's
  * rendition fills that box until the original arrives, from the cache when its tile was drawn.
@@ -94,8 +97,8 @@ function VideoMedia({
 }: {
 	url: string;
 	mimeType: string;
-	width: number;
-	height: number;
+	width: number | null | undefined;
+	height: number | null | undefined;
 	alt: string;
 	placeholder: Rendition;
 }) {
@@ -103,11 +106,12 @@ function VideoMedia({
 		() => !isPlayable(document.createElement("video").canPlayType(mimeType)),
 	);
 	const poster = tileMediaSource(url, placeholder);
+	const box = width != null && height != null ? fitted(width, height) : SQUARE;
 
 	if (failed) {
 		return (
 			<div className="flex w-full flex-col items-center gap-3 text-center">
-				<img src={poster} alt={alt} style={fitted(width, height)} />
+				<img src={poster} alt={alt} style={box} />
 				<p>{m.video_unplayable()}</p>
 				<a href={url} download className="text-accent hover:underline">
 					{m.video_download()}
@@ -122,7 +126,7 @@ function VideoMedia({
 			poster={poster}
 			controls
 			aria-label={alt}
-			style={fitted(width, height)}
+			style={box}
 			onError={() => setFailed(true)}
 		/>
 	);
@@ -146,11 +150,7 @@ export function PinMedia({
 	const address = pin.sourceMediaUrl;
 
 	if (media?.status === "READY" && media.url != null) {
-		if (
-			isVideo(media.mimeType) &&
-			media.width != null &&
-			media.height != null
-		) {
+		if (isVideo(media.mimeType)) {
 			return (
 				<VideoMedia
 					key={media.url}
