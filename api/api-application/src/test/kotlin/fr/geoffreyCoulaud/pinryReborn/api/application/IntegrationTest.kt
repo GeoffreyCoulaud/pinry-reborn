@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.LoggingRequestResponseFilter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.UserCreator
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.ebean.DB
@@ -13,6 +14,9 @@ import io.restassured.specification.RequestSpecification
 import jakarta.inject.Inject
 import org.junit.jupiter.api.BeforeEach
 import java.util.UUID
+import java.util.logging.Handler
+import java.util.logging.LogRecord
+import java.util.logging.Logger
 
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a shared test base for concrete subclasses.
 abstract class IntegrationTest {
@@ -102,6 +106,34 @@ abstract class IntegrationTest {
      * one.
      */
     protected fun waitForTheClockToTick() = Thread.sleep(CLOCK_RESOLUTION_MILLIS)
+
+    /** slf4j binds to the JBoss LogManager, which is the JUL one, so a plain JUL handler sees the line. */
+    protected fun capturingLogsOf(loggerName: String, action: () -> Unit): List<LogRecord> {
+        val records = mutableListOf<LogRecord>()
+        val handler =
+            object : Handler() {
+                override fun publish(record: LogRecord) {
+                    records += record
+                }
+
+                override fun flush() = Unit
+
+                override fun close() = Unit
+            }
+        val logger = Logger.getLogger(loggerName)
+        logger.addHandler(handler)
+        try {
+            action()
+        } finally {
+            logger.removeHandler(handler)
+        }
+        return records
+    }
+
+    /** Every line the request log writes while [action] runs, joined. */
+    protected fun requestLogOf(action: () -> Unit): String =
+        capturingLogsOf(LoggingRequestResponseFilter::class.java.name, action)
+            .joinToString(separator = "\n") { it.message.orEmpty() }
 
     companion object {
         const val DEFAULT_PASSWORD = "password123"

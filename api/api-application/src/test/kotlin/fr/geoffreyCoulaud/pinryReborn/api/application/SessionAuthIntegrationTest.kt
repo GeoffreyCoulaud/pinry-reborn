@@ -14,6 +14,7 @@ import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -306,6 +307,58 @@ class SessionAuthIntegrationTest : IntegrationTest() {
             .then().statusCode(500).contentType(PROBLEM_JSON)
             .body("code", equalTo("INTERNAL_ERROR")).body("detail", nullValue())
             .body(not(containsString(TestFailuresResource.MARKER)))
+    }
+
+    // --- The request log: the request line, never a credential ---
+
+    @Test
+    fun `Given a sign-in with the bearer transport, Then the request log carries neither the password nor the token`() {
+        // Given
+        val name = createRandomString()
+        val password = createRandomString()
+        userCreator.createUserWithPassword(name, password)
+        var token = ""
+
+        // When
+        val log = requestLogOf {
+            token = login(name, password).then().statusCode(201).extract().path("token")
+        }
+
+        // Then: the line is there, so its absence below is not a silent logger's
+        assertTrue(log.contains("/api/v1/sessions"), log)
+        assertFalse(log.contains(password), log)
+        assertFalse(log.contains(token), log)
+    }
+
+    @Test
+    fun `Given a request authenticated by a bearer token, Then the request log does not carry the token`() {
+        // Given
+        val auth = createAuthenticatedUser()
+
+        // When
+        val log = requestLogOf { given().authenticatedAs(auth).get("/api/v1/me").then().statusCode(200) }
+
+        // Then
+        assertTrue(log.contains("/api/v1/me"), log)
+        assertFalse(log.contains(auth.token), log)
+    }
+
+    @Test
+    fun `Given a session cookie set and then sent, Then the request log carries it neither time`() {
+        // Given
+        val name = createRandomString()
+        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        var cookie = ""
+
+        // When
+        val log = requestLogOf {
+            cookie = login(name, transport = "COOKIE").then().statusCode(200).extract().cookie(SESSION_COOKIE)
+            given().cookie(SESSION_COOKIE, cookie).get("/api/v1/me").then().statusCode(200)
+        }
+
+        // Then
+        assertTrue(log.contains("/api/v1/me"), log)
+        assertFalse(log.contains(cookie), log)
     }
 
     private companion object {

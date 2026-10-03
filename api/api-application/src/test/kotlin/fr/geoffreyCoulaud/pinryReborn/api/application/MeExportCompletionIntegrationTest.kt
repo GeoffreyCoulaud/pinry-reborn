@@ -50,10 +50,7 @@ import java.time.Instant
 import java.util.Base64
 import java.util.HexFormat
 import java.util.UUID
-import java.util.logging.Handler
 import java.util.logging.Level
-import java.util.logging.LogRecord
-import java.util.logging.Logger
 import java.util.zip.ZipFile
 
 /**
@@ -563,29 +560,6 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
     }
 
     // --- Observability: the line an operator reads, on the channel it is read from ---
-
-    /** slf4j binds to the JBoss LogManager, which is the JUL one, so a plain JUL handler sees the line. */
-    private fun capturingLogsOf(loggerName: String, action: () -> Unit): List<LogRecord> {
-        val records = mutableListOf<LogRecord>()
-        val handler =
-            object : Handler() {
-                override fun publish(record: LogRecord) {
-                    records += record
-                }
-
-                override fun flush() = Unit
-
-                override fun close() = Unit
-            }
-        val logger = Logger.getLogger(loggerName)
-        logger.addHandler(handler)
-        try {
-            action()
-        } finally {
-            logger.removeHandler(handler)
-        }
-        return records
-    }
 
     private fun capturingSweepLogs(sweep: () -> Unit): List<String> =
         capturingLogsOf(ExportRetentionLifecycle::class.java.name, sweep).map { it.message.orEmpty() }
