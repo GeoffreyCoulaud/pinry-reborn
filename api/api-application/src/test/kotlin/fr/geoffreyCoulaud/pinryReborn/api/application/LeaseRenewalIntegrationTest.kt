@@ -65,10 +65,8 @@ class LeaseRenewalIntegrationTest : IntegrationTest() {
     fun `Given an import whose lines outlast the lease, Then it completes on its first attempt`() {
         // Given: tag lines, since the pin walk renewed on every line before the metadata walks did. A reaped
         // attempt waits out the ten-minute retry floor, so only a renewed lease completes within the poll.
-        QuarkusMock.installMockForType(
-            SlowTagsArchiveStore(FilesystemZipImportArchiveStore(importsConfig.dataDir(), importsConfig.maxLineBytes())),
-            ImportArchiveStore::class.java,
-        )
+        val realStore = FilesystemZipImportArchiveStore(importsConfig.dataDir(), importsConfig.maxLineBytes())
+        QuarkusMock.installMockForType(SlowTagsArchiveStore(realStore), ImportArchiveStore::class.java)
         val auth = createAuthenticatedUser()
         val archive =
             ImportArchiveBuilder(objectMapper)
