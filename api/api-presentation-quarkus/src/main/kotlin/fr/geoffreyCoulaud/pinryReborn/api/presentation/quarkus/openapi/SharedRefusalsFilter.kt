@@ -172,7 +172,7 @@ class SharedRefusalsFilter : OASFilter {
                 ProblemCode.MEDIA_INSUFFICIENT_PERMISSIONS,
             ),
             MEDIA_NOT_FOUND to refusal(
-                "The pin, its image or its download does not exist, or a path or query value could not be read",
+                "The pin, its media or its download does not exist, or a path or query value could not be read",
                 ProblemCode.MEDIA_DOES_NOT_EXIST,
                 ProblemCode.UNKNOWN_ROUTE,
             ),

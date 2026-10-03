@@ -37,7 +37,7 @@ class MeMediaDownloadController(
 ) {
     @GET
     @Operation(
-        summary = "List the caller's running and failed image downloads",
+        summary = "List the caller's running and failed media downloads",
         description = "One page, newest request first. A recycled pin's download is left out, like every other read.",
     )
     @APIResponse(
@@ -61,7 +61,7 @@ class MeMediaDownloadController(
 
     @DELETE
     @Path("/{pinId}")
-    @Operation(summary = "Drop one settled download", description = "The pin and its image are untouched.")
+    @Operation(summary = "Drop one settled download", description = "The pin and its media are untouched.")
     @APIResponse(responseCode = "204", description = "Download dropped")
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.MEDIA_NOT_FOUND)
     @APIResponse(responseCode = "409", description = "The download is still running, and the worker owns its row",
