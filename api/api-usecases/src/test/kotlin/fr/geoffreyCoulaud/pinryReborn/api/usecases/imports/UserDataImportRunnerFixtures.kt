@@ -28,6 +28,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaBounds
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.NoVideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
@@ -36,6 +37,7 @@ import io.mockk.verify
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.security.MessageDigest
+import java.time.Duration
 import java.time.Instant
 import java.util.HexFormat
 import java.util.UUID
@@ -194,7 +196,11 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             pinRepository = pinRepository,
             mediaRepository = mediaRepository,
             archiveStore = archiveStore,
-            mediaIngestion = MediaIngestion(mediaStore, imageProbe, MediaBounds(MAX_MEDIA_BYTES, 0, MAX_PIXELS)),
+            mediaIngestion =
+                MediaIngestion(
+                    mediaStore, imageProbe, NoVideoProcessor,
+                    MediaBounds(MAX_MEDIA_BYTES, 0, Duration.ZERO, MAX_PIXELS),
+                ),
             // The real one over the same fake repository: the boundary it owns is what the walk needs.
             tagCreator = TagCreator(tagRepository, transactions, clock),
             transactionRunner = transactions,

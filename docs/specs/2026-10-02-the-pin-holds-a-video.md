@@ -393,7 +393,10 @@ merges whole.
   MEDIA_CODEC_UNSUPPORTED`, a TIFF included; a file neither reads keeps `422 MEDIA_INVALID` (the lead's reading of
   "the AVIF `415`", 2026-10-03).
 - `media.video_timeout` (`PT60S`) joins `MediaConfig`, and a producer builds `FfmpegVideoProcessor` from it.
-- `LimitsDto.mediaTypes` lists the upload types, the video ones included, now that the upload takes them.
+- The server's problem messages that say "image" for the medium say "media".
+- (Corrected: `LimitsDto.mediaTypes` gains the video types in block 80 rather than here, the lead's answer of
+  2026-10-03: published earlier, a video dropped in the web application passes its type check and fails at
+  `createImageBitmap`.)
 
 ### 57, a fetched or imported video
 
@@ -435,6 +438,8 @@ merges whole.
   `maxVideoBytes` is refused with no request sent; a file with an empty type is sent; `MEDIA_TOO_LONG` and
   `MEDIA_CODEC_UNSUPPORTED` show their sentences, an unknown code the general one.
 - Every `accept` in the application reads `mediaTypes`.
+- (Corrected: added on 2026-10-03, moved from block 56.) `LimitsDto.mediaTypes` lists the upload types: the four
+  images, `video/mp4`, `video/webm`, `video/quicktime`, `video/x-matroska`, `video/x-m4v`, `video/3gpp`.
 - `command grep -n 'image' clients/apps/webapp/messages/en.json` lists no sentence naming the medium.
 
 ### 90, the proxy

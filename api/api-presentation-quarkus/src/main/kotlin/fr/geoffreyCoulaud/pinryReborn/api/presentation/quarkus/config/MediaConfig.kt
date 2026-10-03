@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config
 
 import io.smallrye.config.ConfigMapping
 import io.smallrye.config.WithDefault
+import java.time.Duration
 
 @ConfigMapping(prefix = "media", namingStrategy = ConfigMapping.NamingStrategy.SNAKE_CASE)
 interface MediaConfig {
@@ -19,4 +20,8 @@ interface MediaConfig {
 
     @WithDefault("50000000") // 50 megapixels
     fun maxPixels(): Long
+
+    /** How long one ffprobe or ffmpeg run may take before it is destroyed. */
+    @WithDefault("PT60S")
+    fun videoTimeout(): Duration
 }

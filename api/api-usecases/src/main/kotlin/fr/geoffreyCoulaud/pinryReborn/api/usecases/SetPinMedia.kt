@@ -6,13 +6,21 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaCodecUnsupportedError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaInvalidError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPinDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLargeError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLongError
 import jakarta.enterprise.context.ApplicationScoped
 import java.io.InputStream
 import java.util.UUID
@@ -48,11 +56,15 @@ class SetPinMedia(
             mediaIngestion.ingest(staged, requester.id, pinId, clock.now())
         } catch (e: MediaTooLargeException) {
             throw MediaTooLargeError(e)
+        } catch (e: UnsupportedImageFormatException) {
+            throw MediaCodecUnsupportedError(e)
+        } catch (e: VideoProcessorException) {
+            throw refusalOf(e)
         } catch (e: ImageProbeException) {
             // Keep the client-facing message fixed (consistent with the other MediaError
             // siblings); the underlying probe detail is preserved via `cause` for logs, not
             // echoed to the API caller.
-            throw MediaInvalidError("Invalid image", e)
+            throw MediaInvalidError("Invalid media", e)
         }
 
         val existing = mediaRepository.findByPinId(pinId)
@@ -85,4 +97,13 @@ class SetPinMedia(
         clearPinDownload.clear(pinId)
         return SetPinMediaResult(media = saved, replaced = existing != null)
     }
+
+    /** A timeout is the server's failure rather than the file's, so it keeps its own exception. */
+    private fun refusalOf(e: VideoProcessorException): Exception =
+        when (e) {
+            is VideoCodecUnsupportedException -> MediaCodecUnsupportedError(e)
+            is VideoTooLongException -> MediaTooLongError(e)
+            is UndecodableVideoException -> MediaInvalidError("Invalid video", e)
+            is VideoProcessorTimeoutException -> e
+        }
 }

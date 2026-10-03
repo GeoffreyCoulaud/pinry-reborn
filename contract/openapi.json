@@ -3507,7 +3507,7 @@
     },
     "/api/v1/pins/{pinId}/media" : {
       "put" : {
-        "summary" : "Set the pin's canonical image (upload bytes, or request a server-side fetch)",
+        "summary" : "Set the pin's media (upload bytes, or request a server-side fetch)",
         "parameters" : [ {
           "name" : "pinId",
           "in" : "path",
@@ -3540,7 +3540,7 @@
         },
         "responses" : {
           "201" : {
-            "description" : "Image created",
+            "description" : "Media created",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -3550,7 +3550,7 @@
             }
           },
           "200" : {
-            "description" : "Image replaced",
+            "description" : "Media replaced",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -3600,10 +3600,7 @@
             }
           },
           "415" : {
-            "$ref" : "#/components/responses/UnsupportedMediaType"
-          },
-          "422" : {
-            "description" : "The upload is not an image the server reads, or it is past media.max_pixels",
+            "description" : "UNSUPPORTED_MEDIA_TYPE: the route does not read this Content-Type. MEDIA_CODEC_UNSUPPORTED: the upload is a format or a codec the server reads and does not store, which the detail names",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -3612,7 +3609,24 @@
                   } ],
                   "properties" : {
                     "code" : {
-                      "enum" : [ "MEDIA_INVALID" ]
+                      "enum" : [ "UNSUPPORTED_MEDIA_TYPE", "MEDIA_CODEC_UNSUPPORTED" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "MEDIA_INVALID: the upload is neither an image nor a video the server reads, or it is past media.max_pixels. MEDIA_TOO_LONG: the video lasts longer than media.max_video_seconds",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "MEDIA_INVALID", "MEDIA_TOO_LONG" ]
                     }
                   }
                 }
@@ -3681,13 +3695,15 @@
           "200" : {
             "description" : "The original, or a WebP rendition",
             "content" : {
-              "image/*" : { }
+              "image/*" : { },
+              "video/*" : { }
             }
           },
           "206" : {
             "description" : "The requested byte range of the original, Content-Range set",
             "content" : {
-              "image/*" : { }
+              "image/*" : { },
+              "video/*" : { }
             }
           },
           "400" : {

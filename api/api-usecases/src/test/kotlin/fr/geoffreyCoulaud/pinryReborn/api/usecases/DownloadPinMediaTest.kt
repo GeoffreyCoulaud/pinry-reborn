@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.IOException
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
 
@@ -60,8 +61,9 @@ class DownloadPinMediaTest {
 
     private val subject =
         DownloadPinMedia(
-            pins, mediaRepository, downloads, store, MediaIngestion(store, probe, MediaBounds(100, 0, 100)), fetcher,
-            runner, clock, renditionCache,
+            pins, mediaRepository, downloads, store,
+            MediaIngestion(store, probe, NoVideoProcessor,MediaBounds(100, 0, Duration.ZERO, 100)), fetcher, runner,
+            clock, renditionCache,
         )
 
     init {
