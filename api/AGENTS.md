@@ -36,6 +36,9 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
   `api-imaging-vips` and image-touching integration tests cannot load the library.
 - `ffmpeg` on the `PATH` (`brew install ffmpeg`, or `ffmpeg` from apt), which brings the `ffprobe` and `ffmpeg`
   that `api-video-ffmpeg` runs. The workstation's version may differ from the images': tests assert behaviour.
+- `yt-dlp` and `deno` on the `PATH`, the images installing yt-dlp from `api/tools/yt-dlp/requirements.txt`
+  (`pip install --require-hashes -r` in a venv) and copying deno from `denoland/deno:bin`. That file is
+  `pip-compile`'s output: edit `requirements.in` and recompile with the command it names.
 - **`JAVA_HOME` on JDK 25**, exported before any `./gradlew`:
   `export JAVA_HOME=$(printf '%s\n' ~/.sdkman/candidates/java/25* | tail -1)`. The candidate's name carries the patch
   version, so the glob is what survives a bump, and one match per line is what keeps a second JDK 25 from putting two

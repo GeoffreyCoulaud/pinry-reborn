@@ -1,0 +1,3 @@
+# The set yt-dlp recommends, yt-dlp-ejs included (ADR 0048, decision 4). Compiled to requirements.txt by
+# `pip-compile --generate-hashes requirements.in` (pip-tools), from this directory.
+yt-dlp[default]
