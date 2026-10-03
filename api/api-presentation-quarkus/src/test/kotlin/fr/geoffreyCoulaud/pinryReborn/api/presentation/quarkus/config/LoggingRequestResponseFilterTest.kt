@@ -3,119 +3,107 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import io.mockk.verify
 import jakarta.ws.rs.container.ContainerRequestContext
 import jakarta.ws.rs.container.ContainerResponseContext
-import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.MultivaluedHashMap
+import jakarta.ws.rs.core.NewCookie
 import jakarta.ws.rs.core.UriInfo
-import org.junit.jupiter.api.Assertions.assertDoesNotThrow
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayInputStream
 import java.net.URI
 
 class LoggingRequestResponseFilterTest {
-    private val objectMapper = ObjectMapper()
+    private val objectMapper = spyk(ObjectMapper())
     private val filter = LoggingRequestResponseFilter(objectMapper = objectMapper)
 
-    @Test
-    fun `Given a request without an entity, Then requestFilter does not read the body`() {
-        // Given
+    private fun request(headers: Map<String, String>): ContainerRequestContext {
         val ctx = mockk<ContainerRequestContext>()
         val uriInfo = mockk<UriInfo>()
-        every { ctx.method } returns "GET"
-        every { ctx.uriInfo } returns uriInfo
-        every { uriInfo.requestUri } returns URI.create("http://localhost/api/v1/pins")
-        every { ctx.headers } returns MultivaluedHashMap<String, String>().apply { add("Accept", "application/json") }
-        every { ctx.hasEntity() } returns false
-
-        // When, Then
-        assertDoesNotThrow { filter.requestFilter(ctx) }
-    }
-
-    @Test
-    fun `Given a request with an entity, Then requestFilter reads and restores the body`() {
-        // Given
-        val ctx = mockk<ContainerRequestContext>()
-        val uriInfo = mockk<UriInfo>()
-        val bodyBytes = """{"name":"test"}""".toByteArray()
         every { ctx.method } returns "POST"
         every { ctx.uriInfo } returns uriInfo
-        every { uriInfo.requestUri } returns URI.create("http://localhost/api/v1/users")
-        every {
-            ctx.headers
-        } returns MultivaluedHashMap<String, String>().apply { add("Content-Type", "application/json") }
-        every { ctx.hasEntity() } returns true
-        every { ctx.mediaType } returns MediaType.valueOf("application/json")
-        every { ctx.entityStream } returns ByteArrayInputStream(bodyBytes)
-        every { ctx.entityStream = any() } answers { }
+        every { uriInfo.requestUri } returns URI.create("http://localhost/api/v1/sessions")
+        every { ctx.headers } returns MultivaluedHashMap<String, String>().apply { headers.forEach { (name, value) -> add(name, value) } }
+        return ctx
+    }
 
-        // When, Then
-        assertDoesNotThrow { filter.requestFilter(ctx) }
+    private fun response(headers: Map<String, Any>): ContainerResponseContext {
+        val ctx = mockk<ContainerResponseContext>()
+        every { ctx.status } returns 201
+        every { ctx.headers } returns MultivaluedHashMap<String, Any>().apply { headers.forEach { (name, value) -> add(name, value) } }
+        return ctx
+    }
+
+    /** The one header map the filter handed to the serializer. */
+    private fun loggedHeaders(): Any? {
+        val serialized = mutableListOf<Any?>()
+        verify { objectMapper.writeValueAsString(captureNullable(serialized)) }
+        return serialized.single()
     }
 
     @Test
-    fun `Given a multipart request, Then requestFilter does not read the entity stream`() {
-        // Given - an upload runs up to `quarkus.http.limits.max-body-size`, so the stream stays untouched
-        val ctx = mockk<ContainerRequestContext>()
-        val uriInfo = mockk<UriInfo>()
-        every { ctx.method } returns "PUT"
-        every { ctx.uriInfo } returns uriInfo
-        every { uriInfo.requestUri } returns URI.create("http://localhost/api/v1/pins/1/media")
-        every {
-            ctx.headers
-        } returns MultivaluedHashMap<String, String>().apply {
-            add("Content-Type", "multipart/form-data; boundary=----WebKitFormBoundary")
-        }
-        every { ctx.hasEntity() } returns true
-        every { ctx.mediaType } returns MediaType.valueOf("multipart/form-data; boundary=----WebKitFormBoundary")
+    fun `Given a request with a body, Then requestFilter never reads its entity stream`() {
+        // Given
+        val ctx = request(mapOf("Content-Type" to "application/json"))
 
-        // When, Then
-        assertDoesNotThrow { filter.requestFilter(ctx) }
+        // When
+        filter.requestFilter(ctx)
+
+        // Then
         verify(exactly = 0) { ctx.entityStream }
-        verify(exactly = 0) { ctx.entityStream = any() }
     }
 
     @Test
-    fun `Given a response without an entity, Then responseFilter does not log a body`() {
+    fun `Given a request with Authorization and Cookie headers, Then requestFilter logs them redacted and keeps the rest`() {
         // Given
-        val ctx = mockk<ContainerResponseContext>()
-        every { ctx.status } returns 204
-        every { ctx.headers } returns MultivaluedHashMap<String, Any>().apply { add("X-Test", "1") }
-        every { ctx.hasEntity() } returns false
+        val ctx = request(
+            mapOf("Authorization" to "Bearer a-token", "Cookie" to "pinry_session=a-token", "Accept" to "*/*"),
+        )
 
-        // When, Then
-        assertDoesNotThrow { filter.responseFilter(ctx) }
+        // When
+        filter.requestFilter(ctx)
+
+        // Then
+        assertEquals(
+            mapOf("Authorization" to "<redacted>", "Cookie" to "<redacted>", "Accept" to listOf("*/*")),
+            loggedHeaders(),
+        )
     }
 
     @Test
-    fun `Given a response with an entity, Then responseFilter logs the body`() {
+    fun `Given a credential header named in lower case, Then requestFilter still logs it redacted`() {
         // Given
-        val ctx = mockk<ContainerResponseContext>()
-        every { ctx.status } returns 200
-        every {
-            ctx.headers
-        } returns MultivaluedHashMap<String, Any>().apply { add("Content-Type", "application/json") }
-        every { ctx.hasEntity() } returns true
-        every { ctx.entity } returns mapOf("ok" to true)
+        val ctx = request(mapOf("authorization" to "Bearer a-token"))
 
-        // When, Then
-        assertDoesNotThrow { filter.responseFilter(ctx) }
+        // When
+        filter.requestFilter(ctx)
+
+        // Then
+        assertEquals(mapOf("authorization" to "<redacted>"), loggedHeaders())
     }
 
     @Test
-    fun `Given a non-JSON-serializable entity, Then responseFilter logs a placeholder instead of throwing`() {
-        // Given - a bare Any() has no bean properties, so Jackson's default mapper refuses it
-        // (same failure shape as a StreamingOutput lambda, e.g. the image endpoints' raw bytes).
-        val ctx = mockk<ContainerResponseContext>()
-        every { ctx.status } returns 200
-        every {
-            ctx.headers
-        } returns MultivaluedHashMap<String, Any>().apply { add("Content-Type", "application/octet-stream") }
-        every { ctx.hasEntity() } returns true
-        every { ctx.entity } returns Any()
+    fun `Given a response setting a cookie, Then responseFilter logs the Set-Cookie header redacted`() {
+        // Given
+        val ctx = response(mapOf("Set-Cookie" to NewCookie.Builder("pinry_session").value("a-token").build()))
 
-        // When, Then
-        assertDoesNotThrow { filter.responseFilter(ctx) }
+        // When
+        filter.responseFilter(ctx)
+
+        // Then
+        assertEquals(mapOf("Set-Cookie" to "<redacted>"), loggedHeaders())
+    }
+
+    @Test
+    fun `Given a response with an entity, Then responseFilter never reads it`() {
+        // Given
+        val ctx = response(mapOf("Content-Type" to "application/json"))
+
+        // When
+        filter.responseFilter(ctx)
+
+        // Then
+        verify(exactly = 0) { ctx.entity }
     }
 }

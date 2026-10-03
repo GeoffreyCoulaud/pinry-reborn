@@ -9,8 +9,10 @@ import io.restassured.http.ContentType
 import jakarta.inject.Inject
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 @QuarkusTest
@@ -252,6 +254,26 @@ class UserCreationIntegrationTest : IntegrationTest() {
             .statusCode(409)
             .contentType("application/problem+json")
             .body("code", equalTo("USERNAME_ALREADY_EXISTS"))
+    }
+
+    @Test
+    fun `Given a user created, Then the request log does not carry the password`() {
+        // Given
+        val password = createRandomString()
+
+        // When
+        val log = requestLogOf {
+            given()
+                .contentType(ContentType.JSON)
+                .body(mapOf("name" to createRandomString(), "password" to password))
+                .post("/api/v1/users")
+                .then()
+                .statusCode(200)
+        }
+
+        // Then: the line is there, so its absence below is not a silent logger's
+        assertTrue(log.contains("/api/v1/users"), log)
+        assertFalse(log.contains(password), log)
     }
 
     @Test

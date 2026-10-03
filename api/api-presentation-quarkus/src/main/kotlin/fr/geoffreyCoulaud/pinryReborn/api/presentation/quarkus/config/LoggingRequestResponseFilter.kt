@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.ws.rs.container.ContainerRequestContext
 import jakarta.ws.rs.container.ContainerResponseContext
-import jakarta.ws.rs.core.MediaType
+import jakarta.ws.rs.core.HttpHeaders
 import jakarta.ws.rs.core.MultivaluedMap
 import org.jboss.resteasy.reactive.server.ServerRequestFilter
 import org.jboss.resteasy.reactive.server.ServerResponseFilter
-import java.io.ByteArrayInputStream
 
+/** Logs each request line, response status and headers; never a body, and never a credential header's value. */
 class LoggingRequestResponseFilter(
     private val objectMapper: ObjectMapper,
 ) {
@@ -19,50 +19,24 @@ class LoggingRequestResponseFilter(
     fun requestFilter(ctx: ContainerRequestContext) {
         logger.info { "In --> ${ctx.method.uppercase()} ${ctx.uriInfo.requestUri}" }
         logHeaders(ctx.headers)
-        logRequestBody(ctx)
     }
 
     @ServerResponseFilter
     fun responseFilter(ctx: ContainerResponseContext) {
         logger.info { "Out --> ${ctx.status}" }
         logHeaders(ctx.headers)
-        logResponseBody(ctx)
     }
 
     private fun logHeaders(headers: MultivaluedMap<String, out Any>) {
-        val headersMap = headers.entries.associate { it.key to it.value }
+        val headersMap = headers.entries.associate { (name, values) ->
+            name to if (CREDENTIAL_HEADERS.any { it.equals(name, ignoreCase = true) }) REDACTED else values
+        }
         val headersString = objectMapper.writeValueAsString(headersMap)
         logger.info { "Headers: $headersString" }
     }
 
-    private fun logRequestBody(ctx: ContainerRequestContext) {
-        if (ctx.hasEntity()) {
-            if (isMultipart(ctx)) {
-                // An upload runs up to `quarkus.http.limits.max-body-size`: leave entityStream untouched
-                // so the multipart parser downstream still streams it.
-                logger.info { "Body: <multipart upload, not logged>" }
-            } else {
-                val bodyBytes = ctx.entityStream.readAllBytes()
-                val bodyString = String(bodyBytes, Charsets.UTF_8)
-                logger.info { "Body: $bodyString" }
-                ctx.entityStream = ByteArrayInputStream(bodyBytes)
-            }
-        }
-    }
-
-    // Matching only type/subtype (not equals()) means a charset or boundary parameter on the
-    // Content-Type header can never defeat this check.
-    private fun isMultipart(ctx: ContainerRequestContext): Boolean =
-        MediaType.MULTIPART_FORM_DATA_TYPE.isCompatible(ctx.mediaType)
-
-    // Not every response entity is JSON-serializable (e.g. the image endpoints hand back a
-    // StreamingOutput lambda for the raw bytes); falling back to a placeholder keeps this
-    // debug-only filter from turning an otherwise-successful response into a 500.
-    private fun logResponseBody(ctx: ContainerResponseContext) {
-        if (ctx.hasEntity()) {
-            val bodyString = runCatching { objectMapper.writeValueAsString(ctx.entity) }
-                .getOrElse { "<unloggable body: ${ctx.entity::class.simpleName}>" }
-            logger.info { "Body: $bodyString" }
-        }
+    private companion object {
+        val CREDENTIAL_HEADERS = listOf(HttpHeaders.AUTHORIZATION, HttpHeaders.COOKIE, HttpHeaders.SET_COOKIE)
+        const val REDACTED = "<redacted>"
     }
 }
