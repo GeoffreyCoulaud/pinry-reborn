@@ -18,7 +18,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.TooManyRedirectsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -81,11 +84,15 @@ class DownloadPinMedia(
             failPermanent(pinId, DownloadReason.TOO_LARGE)
         } catch (e: ImageProbeException) {
             failPermanent(pinId, mapProbe(e))
+        } catch (ignored: VideoTooLongException) {
+            failPermanent(pinId, DownloadReason.TOO_LONG)
+        } catch (ignored: VideoCodecUnsupportedException) {
+            failPermanent(pinId, DownloadReason.UNSUPPORTED_CODEC)
+        } catch (ignored: UndecodableVideoException) {
+            failPermanent(pinId, DownloadReason.INVALID_MEDIA)
         } catch (e: Exception) {
-            // A probe failure outside the declared ImageProbeException contract (e.g. a native/FFM
-            // error) must still route through the failure policy; otherwise the download row is
-            // left stuck PENDING. Treat it as a transient internal error so an exhausted retry
-            // becomes terminal FAILED instead of DEAD-with-PENDING-row.
+            // A failure outside the declared refusals (a native/FFM error, a processor timeout) is the server's,
+            // not the file's: retried, so an exhausted retry ends FAILED rather than leaving the row PENDING.
             failRetryable(pinId, DownloadReason.INTERNAL_ERROR, context, e)
         }
 
@@ -141,7 +148,7 @@ class DownloadPinMedia(
     private fun mapProbe(e: ImageProbeException): DownloadReason =
         when (e) {
             is ImageTooManyPixelsException -> DownloadReason.TOO_MANY_PIXELS
-            is UnsupportedImageFormatException -> DownloadReason.INVALID_MEDIA
+            is UnsupportedImageFormatException -> DownloadReason.UNSUPPORTED_CODEC
             is UndecodableImageException -> DownloadReason.INVALID_MEDIA
         }
 

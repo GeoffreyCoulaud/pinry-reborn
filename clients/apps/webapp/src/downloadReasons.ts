@@ -15,6 +15,8 @@ const REASONS: Record<Known<"DownloadReasonDto">, () => string> = {
 	TOO_MANY_PIXELS: m.reason_too_many_pixels,
 	INTERNAL_ERROR: m.reason_internal_error,
 	FETCH_FAILED: m.reason_fetch_failed,
+	TOO_LONG: m.reason_too_long,
+	UNSUPPORTED_CODEC: m.reason_unsupported_codec,
 };
 
 /**
@@ -31,6 +33,8 @@ const RETRIABLE: Record<Known<"DownloadReasonDto">, boolean> = {
 	TOO_MANY_PIXELS: false,
 	INTERNAL_ERROR: true,
 	FETCH_FAILED: false,
+	TOO_LONG: false,
+	UNSUPPORTED_CODEC: false,
 };
 
 /** A reason this bundle does not know is not offered again. */

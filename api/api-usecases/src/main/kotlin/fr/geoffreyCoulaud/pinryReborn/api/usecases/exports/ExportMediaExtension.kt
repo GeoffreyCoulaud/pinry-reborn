@@ -7,12 +7,15 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
  * ever reaches a ZIP entry path.
  */
 internal object ExportMediaExtension {
-    fun forMimeType(mimeType: String): String = when (mimeType) {
+    // A video's type carries its `codecs` parameter, which names no other extension.
+    fun forMimeType(mimeType: String): String = when (mimeType.substringBefore(';')) {
         "image/jpeg" -> "jpg"
         "image/png" -> "png"
         "image/webp" -> "webp"
         "image/gif" -> "gif"
         "image/avif" -> "avif"
+        "video/mp4" -> "mp4"
+        "video/webm" -> "webm"
         else -> "bin"
     }
 }

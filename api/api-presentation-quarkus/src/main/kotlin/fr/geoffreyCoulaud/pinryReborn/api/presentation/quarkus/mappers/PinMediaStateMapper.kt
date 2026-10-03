@@ -60,6 +60,8 @@ object PinMediaStateMapper {
             DownloadReason.TOO_MANY_PIXELS -> DownloadReasonDto.TOO_MANY_PIXELS
             DownloadReason.INTERNAL_ERROR -> DownloadReasonDto.INTERNAL_ERROR
             DownloadReason.FETCH_FAILED -> DownloadReasonDto.FETCH_FAILED
+            DownloadReason.TOO_LONG -> DownloadReasonDto.TOO_LONG
+            DownloadReason.UNSUPPORTED_CODEC -> DownloadReasonDto.UNSUPPORTED_CODEC
         }
 
     // Shared with MediaDownloadDtoMapper: one reason, one sentence, declared once.
@@ -67,12 +69,14 @@ object PinMediaStateMapper {
         when (reason) {
             DownloadReason.URL_NOT_ALLOWED -> "This URL is not allowed."
             DownloadReason.UNREACHABLE -> "The server could not reach this URL."
-            DownloadReason.ACCESS_DENIED -> "The site refused the server access. Upload the image directly."
-            DownloadReason.NOT_FOUND -> "No image at this URL."
-            DownloadReason.TOO_LARGE -> "Image too large."
-            DownloadReason.INVALID_MEDIA -> "The content is not a supported image."
+            DownloadReason.ACCESS_DENIED -> "The site refused the server access. Upload the media directly."
+            DownloadReason.NOT_FOUND -> "No media at this URL."
+            DownloadReason.TOO_LARGE -> "Media too large."
+            DownloadReason.INVALID_MEDIA -> "The content is not a supported image or video."
             DownloadReason.TOO_MANY_PIXELS -> "Dimensions too large."
             DownloadReason.INTERNAL_ERROR -> "Temporary error, try again later."
             DownloadReason.FETCH_FAILED -> "The download failed."
+            DownloadReason.TOO_LONG -> "Video too long."
+            DownloadReason.UNSUPPORTED_CODEC -> "The format or codec is not supported."
         }
 }

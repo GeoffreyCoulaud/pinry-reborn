@@ -337,6 +337,32 @@ class MeImportIntegrationTest : IntegrationTest() {
         assertEquals(1, counters.getInt("skippedPins"))
     }
 
+    @Test
+    fun `Given an export holding a video, Then it imports into an empty account with the same bytes and hash`() {
+        // Given: an MP4, which a second repackaging would change even with bitexact
+        val password = DEFAULT_PASSWORD
+        val destination = createAuthenticatedUser()
+        val origin = createAuthenticatedUser(password = password)
+        val pin = createPin(origin, ALPHA)
+        given()
+            .authenticatedAs(origin)
+            .multiPart("file", File("../api-video-ffmpeg/src/test/resources/fixtures/h264-aac.mkv"), "video/x-matroska")
+            .`when`().put("/api/v1/pins/${pin.id}/media")
+            .then().statusCode(201)
+
+        // When
+        importArchive(destination, exportArchiveOf(origin, password))
+
+        // Then
+        val source = factsOf(origin.user).pins.values.single()
+        val copy = factsOf(destination.user).pins.values.single()
+        assertArrayEquals(source.mediaBytes, copy.mediaBytes, "the video should survive byte for byte")
+        val sourceMedia = requireNotNull(mediaRepository.findByPinId(source.id))
+        val copyMedia = requireNotNull(mediaRepository.findByPinId(copy.id))
+        assertEquals(sourceMedia.contentHash, copyMedia.contentHash)
+        assertEquals(sourceMedia.mimeType, copyMedia.mimeType)
+    }
+
     // --- The upload itself ---
 
     @Test

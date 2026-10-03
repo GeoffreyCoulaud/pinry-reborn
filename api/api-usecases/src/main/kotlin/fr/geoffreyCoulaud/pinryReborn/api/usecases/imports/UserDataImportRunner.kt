@@ -16,6 +16,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveBoundExceededException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveEntryUnreadableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveLine
@@ -600,10 +601,12 @@ class UserDataImportRunner(
         val staged = entryOf(walk, media.path).use { mediaIngestion.stage(it) }
         val pinId = randomUUID()
         return try {
-            created(walk, pin, mediaIngestion.ingest(staged, walk.user.id, pinId, walk.importInstant))
+            created(walk, pin, mediaIngestion.ingestArchived(staged, walk.user.id, pinId, walk.importInstant))
         } catch (error: ImageTooManyPixelsException) {
             reported(UserDataImportIssueKind.MEDIA_TOO_MANY_PIXELS, media.path, error.message)
         } catch (error: ImageProbeException) {
+            reported(UserDataImportIssueKind.MEDIA_UNREADABLE, media.path, error.message)
+        } catch (error: VideoProcessorException) {
             reported(UserDataImportIssueKind.MEDIA_UNREADABLE, media.path, error.message)
         }
     }
