@@ -88,6 +88,15 @@ const GRADLE_DOCKERFILE = ".dagger/gradle.Dockerfile"
 const NODE_DOCKERFILE = ".dagger/node.Dockerfile"
 const REPOSITORY_DOCKERFILE = ".dagger/repository.Dockerfile"
 
+/** yt-dlp's pins, under `api/`, at the path both the image's and the gate's Dockerfiles copy it from. */
+const YT_DLP_REQUIREMENTS = "tools/yt-dlp/requirements.txt"
+
+/** What pip says when a downloaded file matches none of its package's hashes. */
+const HASH_MISMATCH = "THESE PACKAGES DO NOT MATCH THE HASHES"
+
+/** The lines of `yt-dlp --verbose` that YouTube needs: deno enabled, and the challenge scripts found. */
+const YT_DLP_COMPONENTS = [/^\[debug\] JS runtimes: .*\bdeno-.*$/m, /^\[debug\] Optional libraries: .*\byt_dlp_ejs-.*$/m]
+
 /** pnpm's store, mounted and named: pnpm's default is one per filesystem, `/src/.pnpm-store` here. */
 const PNPM_STORE = "/root/.local/share/pnpm/store"
 
@@ -215,13 +224,15 @@ export class PinryReborn {
     // Sequential: a gate that fails has to stop the run before any image is built.
     const context = this.imageContext(source, built.directory(`/src/api/${FAST_JAR}`))
     const image = await this.imageReport(context, [])
+    const tampered = await this.tamperedRequirementsReport(context)
     const smoke = await this.smokeReport(context, "api", HTTP_PORT, POLL)
+    const extractor = await this.extractorReport(context)
     const webapp = this.webappContext(source)
     const webappImage = await this.imageReport(webapp, [])
     const webappSmoke = await this.smokeReport(webapp, "webapp", WEBAPP_PORT, WEBAPP_POLL)
     // The context the API's own smoke built, so the topology costs one probe and no second build.
     const compose = await this.composeReport(source, context)
-    return [gate, image, smoke, webappImage, webappSmoke, compose].join("\n")
+    return [gate, image, tampered, smoke, extractor, webappImage, webappSmoke, compose].join("\n")
   }
 
   /**
@@ -349,19 +360,25 @@ export class PinryReborn {
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
     platforms: Platform[] = [],
   ): Promise<string> {
-    return this.imageReport(this.imageContext(source, this.fastJar(source)), platforms)
+    const context = this.imageContext(source, this.fastJar(source))
+    const built = await this.imageReport(context, platforms)
+    const tampered = await this.tamperedRequirementsReport(context)
+    return [built, tampered].join("\n")
   }
 
   /**
-   * The image starts and reports healthy. The test suite never reads production's
-   * `application.properties`, its own sharing that name and winning by classpath order, so this
-   * is the only thing in the repository that starts what ships.
+   * The image starts and reports healthy, and its yt-dlp has what YouTube needs. The test suite
+   * never reads production's `application.properties`, its own sharing that name and winning by
+   * classpath order, so this is the only thing in the repository that starts what ships.
    */
   @func()
   async smoke(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
   ): Promise<string> {
-    return this.smokeReport(this.imageContext(source, this.fastJar(source)), "api", HTTP_PORT, POLL)
+    const context = this.imageContext(source, this.fastJar(source))
+    const healthy = await this.smokeReport(context, "api", HTTP_PORT, POLL)
+    const extractor = await this.extractorReport(context)
+    return [healthy, extractor].join("\n")
   }
 
   /** The web application's image. `platforms` reads as it does on `image`. */
@@ -430,6 +447,42 @@ export class PinryReborn {
     return lines.join("\n")
   }
 
+  /** The image's build refuses yt-dlp's pins once their hashes are altered, so what it installs is what was compiled. */
+  private async tamperedRequirementsReport(context: Directory): Promise<string> {
+    const requirements = await context.file(YT_DLP_REQUIREMENTS).contents()
+    // Every hash and not one: pip accepts a download matching any hash of its package.
+    const tampered = requirements.replace(/sha256:[0-9a-f]{64}/g, `sha256:${"0".repeat(64)}`)
+    const platform = await dag.defaultPlatform()
+    try {
+      await context.withNewFile(YT_DLP_REQUIREMENTS, tampered).dockerBuild({ platform }).sync()
+    } catch (error) {
+      // An `ExecError`, which the SDK's entry point does not export: its field is read as is.
+      const stderr = (error as { stderr?: unknown }).stderr
+      if (typeof stderr === "string" && stderr.includes(HASH_MISMATCH)) {
+        return "yt-dlp's pins with altered hashes fail the build"
+      }
+      throw error
+    }
+    throw new Error(`The image built from ${YT_DLP_REQUIREMENTS} with every hash altered.`)
+  }
+
+  /** yt-dlp in the built image, asked for its debug header and nothing else. */
+  private async extractorReport(context: Directory): Promise<string> {
+    const platform = await dag.defaultPlatform()
+    // With no address yt-dlp prints its header, then exits on a usage error.
+    const run = context
+      .dockerBuild({ platform })
+      .withExec(["yt-dlp", "--verbose", "--ignore-config", "--no-plugin-dirs", "--no-cache-dir"], {
+        expect: ReturnType.Any,
+      })
+    const header = await run.stderr()
+    const lines = YT_DLP_COMPONENTS.map((component) => header.match(component)?.[0])
+    if (lines.includes(undefined)) {
+      throw new Error(`yt-dlp lacks deno or yt-dlp-ejs:\n${header}`)
+    }
+    return lines.join("\n")
+  }
+
   /** The image started and probed by itself. */
   private async smokeReport(
     context: Directory,
@@ -489,14 +542,18 @@ export class PinryReborn {
   }
 
   /**
-   * The `Dockerfile` and the one directory it copies, and nothing else. A context built from
-   * exactly what the image needs keys the build on the artefact instead of on the working tree.
+   * The `Dockerfile` and what it copies, and nothing else. A context built from exactly what the
+   * image needs keys the build on the artefact instead of on the working tree.
    */
   private imageContext(source: Directory, fastJar: Directory): Directory {
-    return dag
-      .directory()
+    return this.ytDlpContext(source)
       .withFile("Dockerfile", source.file("api/Dockerfile"))
       .withDirectory(FAST_JAR, fastJar)
+  }
+
+  /** A context holding yt-dlp's pins alone, which the image's and the gate's Dockerfiles both copy. */
+  private ytDlpContext(source: Directory): Directory {
+    return dag.directory().withFile(YT_DLP_REQUIREMENTS, source.file(`api/${YT_DLP_REQUIREMENTS}`))
   }
 
   /** The two directories that `Dockerfile` copies, and the file itself where `dockerBuild` looks. */
@@ -647,7 +704,7 @@ export class PinryReborn {
 
   /** The Gradle environment, `GRADLE_DOCKERFILE` says what it holds. */
   private gradle(source: Directory): Container {
-    return this.environment(source, GRADLE_DOCKERFILE)
+    return this.environment(source, GRADLE_DOCKERFILE, this.ytDlpContext(source))
       // One volume, locked. Gradle takes exclusive file locks inside its home, so two
       // invocations sharing it make one fail on the journal lock; locked serializes them
       // instead. One volume and not two, because two locks taken in either order deadlock.
@@ -678,9 +735,9 @@ export class PinryReborn {
       .withWorkdir("/src")
   }
 
-  /** An environment built from its Dockerfile alone, so no other change in `source` invalidates it. */
-  private environment(source: Directory, dockerfile: string): Container {
-    return dag.directory().withFile("Dockerfile", source.file(dockerfile)).dockerBuild()
+  /** An environment built from its Dockerfile and what it copies, so no other change in `source` invalidates it. */
+  private environment(source: Directory, dockerfile: string, context = dag.directory()): Container {
+    return context.withFile("Dockerfile", source.file(dockerfile)).dockerBuild()
   }
 
   /** The proxy image `compose.yml` names, so the gate runs what ships. */

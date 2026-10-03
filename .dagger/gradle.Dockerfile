@@ -1,6 +1,14 @@
+FROM denoland/deno:bin-2.9.7@sha256:bc5aa4466e21b6d3021226a85ba2e1911f7c386254d97b9d797903ab74edace2 AS deno
+
 # The JDK is the toolchain the build asks for, so Gradle adopts it instead of provisioning one;
 # libvips is what vips-ffm loads, under the t64 name Ubuntu gives it after the 64-bit time_t transition;
-# ffmpeg brings the ffprobe and ffmpeg api-video-ffmpeg's tests run.
+# ffmpeg brings the ffprobe and ffmpeg api-video-ffmpeg's tests run; yt-dlp and deno as api/Dockerfile has them.
 FROM eclipse-temurin:25-jdk@sha256:97014c4b396021f9ddb7d592a7dbedb0c4e4215c29e03dc01c393558aefb71c2
 
-RUN apt-get update && apt-get install -y --no-install-recommends libvips42t64 ffmpeg
+RUN apt-get update && apt-get install -y --no-install-recommends libvips42t64 ffmpeg python3 python3-venv
+
+COPY --from=deno /deno /usr/local/bin/deno
+COPY tools/yt-dlp/requirements.txt /opt/yt-dlp/requirements.txt
+RUN python3 -m venv /opt/yt-dlp \
+    && /opt/yt-dlp/bin/pip install --require-hashes --no-cache-dir -r /opt/yt-dlp/requirements.txt
+ENV PATH="/opt/yt-dlp/bin:${PATH}"
