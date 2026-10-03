@@ -10,4 +10,6 @@ enum class DownloadReason {
     TOO_MANY_PIXELS,
     INTERNAL_ERROR,
     FETCH_FAILED,
+    TOO_LONG,
+    UNSUPPORTED_CODEC,
 }

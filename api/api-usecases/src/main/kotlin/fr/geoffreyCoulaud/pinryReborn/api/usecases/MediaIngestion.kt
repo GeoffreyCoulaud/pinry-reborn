@@ -48,12 +48,28 @@ class MediaIngestion(
 
     fun digest(source: InputStream): String = mediaStore.digest(source, bounds.maxStagedBytes)
 
+    fun ingest(staged: StagedFile, ownerId: UUID, pinId: UUID, createdAt: Instant): IngestedMedia =
+        ingest(staged, ownerId, pinId, createdAt, repackage = true)
+
+    /**
+     * An export's video is stored as the archive carries it: it was repackaged when first ingested, and a second
+     * pass would change its bytes (decision iii).
+     */
+    fun ingestArchived(staged: StagedFile, ownerId: UUID, pinId: UUID, createdAt: Instant): IngestedMedia =
+        ingest(staged, ownerId, pinId, createdAt, repackage = false)
+
     /** Whatever a probe, a bound or the repackaging throws, the staged file is discarded first. */
     @Suppress("TooGenericExceptionCaught")
-    fun ingest(staged: StagedFile, ownerId: UUID, pinId: UUID, createdAt: Instant): IngestedMedia {
+    private fun ingest(
+        staged: StagedFile,
+        ownerId: UUID,
+        pinId: UUID,
+        createdAt: Instant,
+        repackage: Boolean,
+    ): IngestedMedia {
         val found =
             try {
-                identify(staged)
+                identify(staged, repackage)
             } catch (e: Exception) {
                 mediaStore.discardQuietly(staged)
                 throw e
@@ -70,7 +86,7 @@ class MediaIngestion(
     }
 
     /** libvips first, ffprobe for what libvips cannot store (decision ii). */
-    private fun identify(staged: StagedFile): Found {
+    private fun identify(staged: StagedFile, repackage: Boolean): Found {
         val imageRefusal: ImageProbeException
         try {
             val image = imageProbe.probe(staged, bounds.maxPixels)
@@ -82,11 +98,11 @@ class MediaIngestion(
         } catch (e: UnsupportedImageFormatException) {
             imageRefusal = e
         }
-        return video(staged, imageRefusal)
+        return video(staged, imageRefusal, repackage)
     }
 
     /** A file ffprobe cannot read either keeps libvips' refusal, so an AVIF stays an unsupported format. */
-    private fun video(staged: StagedFile, imageRefusal: ImageProbeException): Found {
+    private fun video(staged: StagedFile, imageRefusal: ImageProbeException, repackage: Boolean): Found {
         val video =
             try {
                 videoProcessor.probe(staged, bounds.maxVideoDuration)
@@ -95,10 +111,14 @@ class MediaIngestion(
             }
         refuseOver(staged, bounds.maxVideoBytes)
         val container = VideoContainer.of(video.videoCodec, video.audioCodec)
-        val repackaged = videoProcessor.repackage(staged, video)
-        mediaStore.discardQuietly(staged)
+        val stored =
+            if (repackage) {
+                videoProcessor.repackage(staged, video).also { mediaStore.discardQuietly(staged) }
+            } else {
+                staged
+            }
         val mimeType = "${container.mimeType}; codecs=\"${video.codecs}\""
-        return Found(mimeType, container.extension, video.width, video.height, animated = true, repackaged)
+        return Found(mimeType, container.extension, video.width, video.height, animated = true, stored)
     }
 
     private fun refuseOver(staged: StagedFile, maxBytes: Long) {

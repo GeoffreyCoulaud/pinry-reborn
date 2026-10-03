@@ -191,6 +191,31 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given a video at a file address, Then it becomes the pin's media`() {
+        // Given
+        val (auth, pinId) = createUserAndPin()
+
+        // When
+        requestDownload(pinId, auth, originUrl("/clip.webm")).then().statusCode(202)
+
+        // Then
+        val ready = pollStatus(pinId, auth, "READY")
+        assertTrue(ready.getString("mimeType").startsWith("video/webm; codecs="), "a VP9 with Opus stays WebM")
+    }
+
+    @Test
+    fun `Given a video whose codec the server refuses, Then the download fails with UNSUPPORTED_CODEC`() {
+        // Given
+        val (auth, pinId) = createUserAndPin()
+
+        // When
+        requestDownload(pinId, auth, originUrl("/ac3.mkv")).then().statusCode(202)
+
+        // Then
+        assertEquals("UNSUPPORTED_CODEC", pollStatus(pinId, auth, "FAILED").getString("reasonCode"))
+    }
+
+    @Test
     fun `Given a FAILED mode-B download, Then a mode-A upload clears the status to READY`() {
         // Given: a download that has settled FAILED
         val (auth, pinId) = createUserAndPin()
@@ -504,12 +529,19 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
 
         private lateinit var pngBytes: ByteArray
         private lateinit var textBytes: ByteArray
+        private lateinit var webmBytes: ByteArray
+        private lateinit var ac3Bytes: ByteArray
+
+        // The probe's own fixtures, generated once in the module that reads them.
+        private const val VIDEO_FIXTURES = "../api-video-ffmpeg/src/test/resources/fixtures"
 
         @JvmStatic
         @BeforeAll
         fun startOrigin() {
             pngBytes = Files.readAllBytes(File("src/test/resources/fixtures/sample.png").toPath())
             textBytes = Files.readAllBytes(File("src/test/resources/fixtures/not-an-image.txt").toPath())
+            webmBytes = Files.readAllBytes(File("$VIDEO_FIXTURES/vp9-opus.webm").toPath())
+            ac3Bytes = Files.readAllBytes(File("$VIDEO_FIXTURES/h264-ac3.mkv").toPath())
             server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
             // A cached thread pool so a deliberately-blocked `/gated` handler cannot stall the other
             // paths the 4 real workers may hit concurrently. HttpServer.stop() does not touch a
@@ -521,6 +553,10 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             server.createContext("/private") { exchange -> respondStatus(exchange, HTTP_FORBIDDEN) }
             server.createContext("/missing") { exchange -> respondStatus(exchange, HTTP_NOT_FOUND) }
             server.createContext("/not-media") { exchange -> respondBytes(exchange, HTTP_OK, "text/plain", textBytes) }
+            server.createContext("/clip.webm") { exchange -> respondBytes(exchange, HTTP_OK, "video/webm", webmBytes) }
+            server.createContext("/ac3.mkv") { exchange ->
+                respondBytes(exchange, HTTP_OK, "video/x-matroska", ac3Bytes)
+            }
             server.createContext("/gated") { exchange ->
                 // Block before writing so the download stays PENDING until the test releases the gate.
                 gateLatch.await(GATE_RELEASE_TIMEOUT_SECONDS, TimeUnit.SECONDS)

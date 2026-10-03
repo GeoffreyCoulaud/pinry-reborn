@@ -8,9 +8,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import io.mockk.every
 import io.mockk.verify
 import java.io.IOException
+import java.time.Duration
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -426,6 +431,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         stubDiscard()
         stubIssues()
         every { imageProbe.probe(any(), MAX_PIXELS) } throws UndecodableImageException("not an image")
+        every { videoProcessor.probe(any(), any()) } throws UndecodableVideoException("not a video")
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)
@@ -434,6 +440,50 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         assertEquals(listOf(UserDataImportIssueKind.MEDIA_UNREADABLE), kinds())
         assertTrue(stagedPaths.isEmpty())
         assertEquals(1, stored.skippedPins)
+    }
+
+    @Test
+    fun `Given a video the processor refuses, Then it is reported unreadable and the staged file goes`() {
+        // Given
+        val source = FakeArchiveSource(aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
+        stubWalk(source)
+        stubDigest()
+        stubHashLookup()
+        stubStage()
+        stubDiscard()
+        stubIssues()
+        every { imageProbe.probe(any(), MAX_PIXELS) } throws UndecodableImageException("not an image")
+        every { videoProcessor.probe(any(), any()) } throws VideoTooLongException("121 s")
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(listOf(UserDataImportIssueKind.MEDIA_UNREADABLE), kinds())
+        assertTrue(stagedPaths.isEmpty())
+    }
+
+    @Test
+    fun `Given a video, Then it is stored as the archive carries it, never repackaged`() {
+        // Given
+        val source = FakeArchiveSource(aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
+        stubWalk(source)
+        stubDigest()
+        stubHashLookup()
+        stubStage()
+        stubPromote()
+        stubPinWrites()
+        every { imageProbe.probe(any(), MAX_PIXELS) } throws UndecodableImageException("not an image")
+        every { videoProcessor.probe(any(), any()) } returns
+            VideoProbeResult(VideoCodec.H264, null, 4, 6, Duration.ofSeconds(1), "avc1.640015")
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then: the archive's own bytes, under their own hash
+        assertEquals(sha256(alphaBytes), savedMedia.single().contentHash)
+        assertEquals("video/mp4; codecs=\"avc1.640015\"", savedMedia.single().mimeType)
+        verify(exactly = 0) { videoProcessor.repackage(any(), any()) }
     }
 
     @Test
