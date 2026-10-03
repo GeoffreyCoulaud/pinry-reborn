@@ -175,6 +175,49 @@ class SetPinMediaTest : BaseTest() {
         assertThrows(MediaCodecUnsupportedError::class.java) { useCase.set(p.id, owner, upload()) }
     }
 
+    @Test fun `Given an image format the server refuses, Then the error's message names no libvips loader`() {
+        // Given
+        val p = pin()
+        every { pins.findPinById(p.id) } returns p
+        every { store.stage(any(), 30) } returns staged
+        every { probe.probe(staged, 50) } throws UnsupportedImageFormatException("Unsupported image loader: tiffload")
+        every { clock.now() } returns Instant.EPOCH
+
+        // When
+        val error = assertThrows(MediaCodecUnsupportedError::class.java) { useCase.set(p.id, owner, upload()) }
+
+        // Then
+        assertEquals("The image format is not accepted", error.message)
+    }
+
+    @Test fun `Given an undecodable image and a video ffmpeg cannot repackage, Then both errors carry one message`() {
+        // Given
+        val p = pin()
+        val video = mockk<VideoProcessor>()
+        val videoBounds = MediaBounds(maxImageBytes = 30, maxVideoBytes = 30, Duration.ofSeconds(1), maxPixels = 50)
+        val withVideo = SetPinMedia(
+            pins, mediaRepository, store, MediaIngestion(store, probe, video, videoBounds), clock, clearPinDownload,
+            renditionCache,
+        )
+        every { pins.findPinById(p.id) } returns p
+        every { store.stage(any(), 30) } returns staged
+        every { probe.probe(staged, 50) } throws UndecodableImageException("not an image")
+        every { clock.now() } returns Instant.EPOCH
+        every { video.probe(staged, Duration.ofSeconds(1)) } returns
+            VideoProbeResult(
+                VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4,
+                alreadyRepackaged = true,
+            )
+        every { video.repackage(staged, any()) } throws UndecodableVideoException("refused")
+
+        // When
+        val imageError = assertThrows(MediaInvalidError::class.java) { useCase.set(p.id, owner, upload()) }
+        val videoError = assertThrows(MediaInvalidError::class.java) { withVideo.set(p.id, owner, upload()) }
+
+        // Then
+        assertEquals(imageError.message, videoError.message)
+    }
+
     @Test fun `Given a video the processor refuses, Then each refusal takes its own error`() {
         // Given
         val p = pin()
