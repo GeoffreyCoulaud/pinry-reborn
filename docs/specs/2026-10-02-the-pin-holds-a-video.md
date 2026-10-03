@@ -121,7 +121,9 @@ such option and exits 1 on it). After `-i` they would be output options and an M
 review). `mov` reads `.mp4`, `.mov`, `.m4v`, `.3gp`; `matroska` reads `.mkv`, `.webm`. A playlist or a
 concatenation is refused at opening. yt-dlp's own ffmpeg and ffprobe calls get the same flags through
 `--postprocessor-args`, `mpegts` added for its HLS fixup, and each yt-dlp run writes into an empty directory of its
-own, so a relative entry of a hostile concatenation finds nothing. ADR 0047.
+own, so a relative entry of a hostile concatenation finds nothing. ADR 0047. (Corrected: its ffmpeg calls alone,
+each postprocessor named as `<name>+ffmpeg_i`, a bare `ffmpeg_i` reaching none; its ffprobe calls take no arguments
+at all, `ffprobe_i` reaching none, so the empty directory is their only bound: `yt-dlp -v` 2026.08.19, block 102.)
 
 **L1. The stored container follows the codecs**: WebM when every kept track fits it (VP9 or AV1, with Opus or no
 audio), MP4 otherwise. Repackaged with `-c copy -fflags +bitexact`, MP4 with `-movflags +faststart` and H.265
@@ -266,6 +268,7 @@ The lead adds four decisions, submitted with this document:
 | 95 | `refactor/the-fetch-goes-through-the-proxy` | The fetcher behind it, its `Content-Type` |
 | 100 | `feat/yt-dlp-extracts-a-page` | pip, yt-dlp and Deno in both images, the `api-fetch-ytdlp` module (Corrected: pip, yt-dlp and Deno in both images) |
 | 102 | `feat/the-ytdlp-module-extracts-a-page` | The `api-fetch-ytdlp` module and its port |
+| 103 | `feat/the-extraction-holds-its-bounds` | The extraction's duration, size and live refusals |
 | 104 | `feat/the-extractor-is-wired` | The extraction timeout, its boot check, the producer |
 | 110 | `feat/a-page-address-yields-its-video` | The worker's dispatch on `Content-Type` |
 
@@ -277,7 +280,8 @@ for, which would have taken 57 to 20 files, and the lease is block 59.) (Correct
 gave the sentences that say "image" for the medium to block 85, the lead's answer of 2026-10-03.) (Corrected: block 90
 measured 580 lines and gave plain HTTP forwarding to block 92, the lead's answer of 2026-10-03.) (Corrected: block
 100's inventory counted about 28 files and gave the `api-fetch-ytdlp` module to block 102 and its wiring to block
-104, the lead's answer of 2026-10-03.)
+104, the lead's answer of 2026-10-03.) (Corrected: block 102 measured 590 lines and gave the extraction's bounds to
+block 103, the lead's answer of 2026-10-03.)
 
 Each block measures its budget once committed, against its parent branch, and each test that guards a refusal is
 seen red before the code that answers it. Between blocks 53 and 60 a video's tile has no rendition; the stack
@@ -542,6 +546,22 @@ merges whole.
   and `FetchTooLargeException`, so `DownloadPinMedia.mapFetch` is unchanged.
 - Each run's directory under `tmp/` is deleted when the run ends, block 20's sweep deleting files alone.
 - `PageMediaExtractor`'s consumer is block 110, through block 104's producer, which the pull request says.
+- (Corrected: the hostile concatenation passes yt-dlp untouched, its HLS fixup handing ffmpeg only what its ffprobe
+  reads as MPEG-TS, and is refused by ingestion's probe, which the test asserts. The `-f` chain ends with `/b`, for a
+  format that declares no codec, as a bare `<video src>` or an HLS media playlist, which ingestion judges. A run past
+  the timeout is `FetchUnreachableException`, retried, as the direct path treats a timeout.)
+- (Corrected: split on 2026-10-03. The criteria on a duration past the bound and a stream past
+  `media.max_video_bytes`, and the too long refusal, move to block 103.)
+
+### 103, the extraction's bounds
+
+(Corrected: added on 2026-10-03, split from block 102.)
+
+- `PageMediaExtractor` refuses a page whose JSON-LD gives a duration past the bound with no file written and no
+  media body transferred (the origin may log a probing request); refuses a stream past `media.max_video_bytes` by
+  destroying the process.
+- The first run's JSON refuses a live stream as no media found, and a size past the bound, exact or approximate as a
+  merged format carries it, as too large.
 
 ### 104, the extractor wired
 

@@ -1,7 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.fetch.http
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchAccessDeniedException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchFailedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchNotFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
@@ -60,7 +59,7 @@ class HttpMediaFetcher(
             val status = response.statusCode()
             if (status < REDIRECT_MIN) return response
             response.body().close()
-            refusalOf(proxy)?.let { throw it }
+            proxy.refusal()?.let { throw it }
             // Ascending boundaries: the JDK consumes 1xx itself, and a non-standard 6xx is retried as a 5xx.
             when {
                 status < CLIENT_ERROR_MIN -> {
@@ -97,23 +96,12 @@ class HttpMediaFetcher(
         return try {
             client.send(request, HttpResponse.BodyHandlers.ofInputStream())
         } catch (e: IOException) {
-            throw refusalOf(proxy, e) ?: FetchUnreachableException("could not reach the origin", e)
+            throw proxy.refusal(e) ?: FetchUnreachableException("could not reach the origin", e)
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw FetchUnreachableException("fetch interrupted", e)
         }
     }
-
-    // The proxy's record names the reason: a tunnel refusal reaches the client as a bare IOException.
-    private fun refusalOf(
-        proxy: GuardingProxy,
-        cause: Throwable? = null,
-    ): FetchException? =
-        when {
-            proxy.refusedAddresses.isNotEmpty() -> UrlNotAllowedException("address not allowed", cause)
-            proxy.unreachableHosts.isNotEmpty() -> FetchUnreachableException("could not reach the origin", cause)
-            else -> null
-        }
 
     // Each throw rejects a distinct unsafe-URL condition (malformed, bad scheme, no host); the
     // address itself is the proxy's to check.
