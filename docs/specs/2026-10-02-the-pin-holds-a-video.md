@@ -98,7 +98,10 @@ turns a failure into `URL_NOT_ALLOWED` or `UNREACHABLE`: through a tunnel, the J
 recommends, which carries `yt-dlp-ejs` at the version yt-dlp pins; `requirements.txt`, compiled from it by
 `pip-compile --generate-hashes` (pip-tools, on the workstation only) with every transitive pin and its hash, is
 marked `linguist-generated`. Dependabot recognises a pip-compile output by its header and recompiles it; block 100
-confirms it in Dependabot's documentation and says where. In both images: `python3` and `python3-venv` from apt,
+confirms it in Dependabot's documentation and says where. (Corrected: by the `requirements.in` beside it, which
+selects pip-compile, `requirements.in` compiling to `requirements.txt` by convention; `--generate-hashes` is
+inferred from the `--hash=sha` lines, the header's command never read: `dependabot-core`,
+`python/lib/dependabot/python/file_updater.rb` and `file_updater/pip_compile_file_updater.rb`, read on 2026-10-03.) In both images: `python3` and `python3-venv` from apt,
 a venv under `/opt/yt-dlp`, `pip install --require-hashes --no-cache-dir -r requirements.txt`, its `bin/` on the
 `PATH`. Dependabot's `pip` ecosystem raises it weekly. uv was the first answer, then dropped: one tool more for one
 package. The release's standalone binary was weighed too: Dependabot cannot follow a release asset, and a pull
@@ -261,7 +264,9 @@ The lead adds four decisions, submitted with this document:
 | 90 | `feat/a-guarding-proxy` | The proxy and its record (Corrected: `CONNECT` alone) |
 | 92 | `feat/the-proxy-forwards-plain-http` | Plain HTTP through the proxy, one request per connection |
 | 95 | `refactor/the-fetch-goes-through-the-proxy` | The fetcher behind it, its `Content-Type` |
-| 100 | `feat/yt-dlp-extracts-a-page` | pip, yt-dlp and Deno in both images, the `api-fetch-ytdlp` module |
+| 100 | `feat/yt-dlp-extracts-a-page` | pip, yt-dlp and Deno in both images, the `api-fetch-ytdlp` module (Corrected: pip, yt-dlp and Deno in both images) |
+| 102 | `feat/the-ytdlp-module-extracts-a-page` | The `api-fetch-ytdlp` module and its port |
+| 104 | `feat/the-extractor-is-wired` | The extraction timeout, its boot check, the producer |
 | 110 | `feat/a-page-address-yields-its-video` | The worker's dispatch on `Content-Type` |
 
 (Corrected: block 53 was "the video branch, the bounds, the refusals, the handshake"; an inventory of about 45 files
@@ -270,7 +275,9 @@ to a block of its own, the lead's answer the same day, and the numbers were reas
 stack's: the lease, block 56 until then, is block 58.) (Corrected: block 58 is a fix-back on 57 the lead asked
 for, which would have taken 57 to 20 files, and the lease is block 59.) (Corrected: block 80 measured 25 files and
 gave the sentences that say "image" for the medium to block 85, the lead's answer of 2026-10-03.) (Corrected: block 90
-measured 580 lines and gave plain HTTP forwarding to block 92, the lead's answer of 2026-10-03.)
+measured 580 lines and gave plain HTTP forwarding to block 92, the lead's answer of 2026-10-03.) (Corrected: block
+100's inventory counted about 28 files and gave the `api-fetch-ytdlp` module to block 102 and its wiring to block
+104, the lead's answer of 2026-10-03.)
 
 Each block measures its budget once committed, against its parent branch, and each test that guards a refusal is
 seen red before the code that answers it. Between blocks 53 and 60 a video's tile has no rendition; the stack
@@ -513,6 +520,37 @@ merges whole.
 - With the proxy refusing every address, extraction fails `URL_NOT_ALLOWED` and the origin's log is empty.
 - `AGENTS.md`'s claim that python3 is pinned in the API's gate is corrected.
 - `PageMediaExtractor`'s consumer is block 110, which the pull request says.
+- (Corrected: split on 2026-10-03. This block keeps the first two criteria and the `AGENTS.md` one, chooses both
+  checks in the pipeline (`dagger call image` builds again with every hash altered, pip accepting a download that
+  matches any hash of its package; `dagger call smoke` reads `yt-dlp --verbose`) and names block 102 as the tools'
+  consumer; the other criteria move to block 102.)
+
+### 102, the `api-fetch-ytdlp` module
+
+(Corrected: added on 2026-10-03, split from block 100.)
+
+- `PageMediaExtractor` extracts the `<video>` of a local HTML page; refuses a page with none; refuses a page whose
+  JSON-LD gives a duration past the bound with no file written and no media body transferred (the origin may log a
+  probing request); refuses a stream past `media.max_video_bytes` by destroying the process; destroys a run past the
+  timeout.
+- A page offering H.265 and H.264 yields H.264.
+- An HLS page yields a file that ingestion accepts; a hostile concatenation named `.mp4` in an HLS stream is
+  refused by the postprocessor's whitelist.
+- With the proxy refusing every address, extraction fails `URL_NOT_ALLOWED` and the origin's log is empty.
+- The extractor's own refusals, too long and no media found, are a sealed hierarchy beside `FetchException`, which
+  block 110 maps; the proxy's refusals and the overflow reuse `UrlNotAllowedException`, `FetchUnreachableException`
+  and `FetchTooLargeException`, so `DownloadPinMedia.mapFetch` is unchanged.
+- Each run's directory under `tmp/` is deleted when the run ends, block 20's sweep deleting files alone.
+- `PageMediaExtractor`'s consumer is block 110, through block 104's producer, which the pull request says.
+
+### 104, the extractor wired
+
+(Corrected: added on 2026-10-03, split from block 100.)
+
+- `media.download.extraction_timeout` (`PT5M`) is read by a producer that builds the extractor.
+- A boot where `garbage-collection.orphan_grace` is not longer than `media.download.extraction_timeout` is refused
+  (block 20's criterion).
+- The producer's consumer is block 110, which the pull request says.
 
 ### 110, the dispatch
 
