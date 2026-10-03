@@ -166,6 +166,20 @@ class YtDlpPageMediaExtractorTest {
     }
 
     @Test
+    fun `Given a page with two video elements, which yt-dlp reports as a playlist, Then the first one is extracted`() {
+        // Given
+        serve("/first.mkv", fixture, "video/x-matroska")
+        serve("/second.ts", fixture("mpegts.ts"), "video/mp2t")
+        page("/page.html", """<video src="/first.mkv"></video><video src="/second.ts"></video>""")
+
+        // When
+        val bytes = extractor().extract(url("/page.html")) {}.use { it.stream.readAllBytes() }
+
+        // Then
+        assertArrayEquals(fixture, bytes)
+    }
+
+    @Test
     fun `Given an extracted file, Then closing its stream deletes the directory the run wrote into`() {
         // Given
         serve("/clip.mkv", fixture, "video/x-matroska")
