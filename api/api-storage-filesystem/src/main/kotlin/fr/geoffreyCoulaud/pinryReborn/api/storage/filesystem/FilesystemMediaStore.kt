@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
@@ -13,6 +14,7 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.HexFormat
+import java.util.UUID
 import kotlin.streams.asSequence
 
 /**
@@ -31,7 +33,7 @@ import kotlin.streams.asSequence
  * `MediaConfig`. Adding `@ApplicationScoped` back here alongside that `@Produces` method
  * would create an ambiguous `MediaStore` bean resolution.
  */
-// One override per MediaStore method plus three private helpers: splitting would fragment one cohesive adapter.
+// One override per MediaStore method plus its helpers: splitting would fragment one cohesive adapter.
 @Suppress("TooManyFunctions")
 class FilesystemMediaStore(private val dataDir: String) : MediaStore {
 
@@ -78,6 +80,14 @@ class FilesystemMediaStore(private val dataDir: String) : MediaStore {
 
     override fun openStream(storageKey: String): InputStream =
         Files.newInputStream(paths.resolveWithinRoot(storageKey))
+
+    // ponytail: a hard link, so tmp/ and originals/ share one filesystem; a copy fallback if a volume ever splits them.
+    override fun stageStored(media: Media): StagedFile {
+        Files.createDirectories(tmpDir)
+        val link = tmpDir.resolve("stored-${UUID.randomUUID()}.tmp")
+        Files.createLink(link, paths.resolveWithinRoot(media.storageKey))
+        return StagedFile(link.toString(), media.byteSize, media.contentHash)
+    }
 
     override fun openStaged(staged: StagedFile): InputStream = Files.newInputStream(Path.of(staged.path))
 

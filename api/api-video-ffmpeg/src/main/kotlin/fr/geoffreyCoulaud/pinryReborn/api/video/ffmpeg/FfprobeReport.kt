@@ -42,7 +42,11 @@ internal object FfprobeReport {
                 VideoContainer.MP4
             }
         val codecsParameter = codecs.joinToString(",")
-        return VideoProbeResult(videoCodec, audio?.first, width, height, duration, codecsParameter, demuxedAs)
+        val videoTag = video.path("codec_tag_string").asText()
+        val alreadyRepackaged = streams.size == codecs.size && videoTag == codecs.first().substringBefore('.')
+        return VideoProbeResult(
+            videoCodec, audio?.first, width, height, duration, codecsParameter, demuxedAs, alreadyRepackaged,
+        )
     }
 
     private fun videoTrackOf(streams: List<JsonNode>): JsonNode =

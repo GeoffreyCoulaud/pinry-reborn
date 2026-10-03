@@ -379,7 +379,10 @@ class DownloadPinMediaTest {
         )
         for ((refusal, reason) in reasons) {
             every { video.probe(any(), any()) } returns
-                VideoProbeResult(VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4)
+                VideoProbeResult(
+                    VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4,
+                    alreadyRepackaged = true,
+                )
             every { video.repackage(any(), any()) } throws refusal
             // When / Then
             assertThrows(PermanentTaskException::class.java) { withVideo.download(pinId, ctx()) }
