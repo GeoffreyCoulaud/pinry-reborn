@@ -476,7 +476,10 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         stubPinWrites()
         every { imageProbe.probe(any(), MAX_PIXELS) } throws UndecodableImageException("not an image")
         every { videoProcessor.probe(any(), any()) } returns
-            VideoProbeResult(VideoCodec.H264, null, 4, 6, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4)
+            VideoProbeResult(
+                VideoCodec.H264, null, 4, 6, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4,
+                alreadyRepackaged = true,
+            )
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)

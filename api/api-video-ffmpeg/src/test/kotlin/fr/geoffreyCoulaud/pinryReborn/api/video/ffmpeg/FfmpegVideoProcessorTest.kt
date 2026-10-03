@@ -156,22 +156,37 @@ class FfmpegVideoProcessorTest {
     }
 
     @Test
-    fun `Given a video, Then poster is a PNG at the dimensions probe returns`() {
+    fun `Given a video, Then poster is a PNG at the requested shortest side, in the proportions probe returns`() {
         for (name in listOf("h264-aac.mkv", "rotated.mp4", "anamorphic.mkv")) {
             // Given
             val source = copied(name)
             val video = processor.probe(source, maxDuration)
             // When
-            val image = ImageIO.read(File(processor.poster(source).path))
+            val image = ImageIO.read(File(processor.poster(source, shortestSide = 60).path))
             // Then
-            assertEquals(video.width to video.height, image.width to image.height, name)
+            assertEquals(60, minOf(image.width, image.height), name)
+            assertEquals(video.width * image.height, video.height * image.width, name)
         }
     }
 
     @Test
     fun `Given pixels twice as wide as tall, Then poster is twice as wide as the coded frame`() {
-        val image = ImageIO.read(File(processor.poster(copied("anamorphic.mkv")).path))
+        val image = ImageIO.read(File(processor.poster(copied("anamorphic.mkv"), shortestSide = 120).path))
         assertEquals(320 to 120, image.width to image.height)
+    }
+
+    @Test
+    fun `Given a poster, Then its frames are scaled to the requested side before thumbnail holds them`() {
+        // At 3840x2160, 1264 MB against 79 MB without thumbnail (lot 0.45.0's holistic review, peak RSS).
+        val filters = processor.posterFilters(shortestSide = 60)
+        assertTrue(filters.indexOf("scale=60:60") in 0..<filters.indexOf("thumbnail"), filters)
+    }
+
+    @Test
+    fun `Given an H265 tagged hev1, Then probe finds it not yet repackaged, and its repackaging already repackaged`() {
+        assertEquals(false, processor.probe(staged("h265-hev1-aac.mov"), maxDuration).alreadyRepackaged)
+        val output = repackaged("h265-hev1-aac.mov")
+        assertEquals(true, processor.probe(output, maxDuration).alreadyRepackaged)
     }
 
     @Test
@@ -194,7 +209,7 @@ class FfmpegVideoProcessorTest {
         for (refused in listOf(segment, playlist)) {
             // Then
             assertThrows(UndecodableVideoException::class.java) { processor.repackage(refused, video) }
-            assertThrows(UndecodableVideoException::class.java) { processor.poster(refused) }
+            assertThrows(UndecodableVideoException::class.java) { processor.poster(refused, 24) }
             assertThrows(UndecodableVideoException::class.java) { processor.preview(refused, 24) }
         }
         val left = Files.list(directory).use { files -> files.map(Path::toString).toList() }

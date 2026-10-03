@@ -144,4 +144,23 @@ class FfprobeReportTest {
         // Object type 31 escapes to 32 plus the next six bits: 42, USAC.
         assertEquals("avc1.64000A,mp4a.40.42", codecsOf(h264(), track("audio", "aac", "extradata" to dump("f940"))))
     }
+
+    private fun alreadyRepackaged(vararg tracks: Map<String, Any>) =
+        FfprobeReport.read(report(*tracks), maxDuration).alreadyRepackaged
+
+    @Test
+    fun `Given the kept tracks alone, tagged as their parameter names them, Then the file is already repackaged`() {
+        assertEquals(true, alreadyRepackaged(h264("codec_tag_string" to "avc1"), track("audio", "opus")))
+    }
+
+    @Test
+    fun `Given a track beyond the first video and first audio, Then the file is not already repackaged`() {
+        val timecode = track("data", "none")
+        assertEquals(false, alreadyRepackaged(h264("codec_tag_string" to "avc1"), track("audio", "opus"), timecode))
+    }
+
+    @Test
+    fun `Given a video tag other than its parameter's, Then the file is not already repackaged`() {
+        assertEquals(false, alreadyRepackaged(h264("codec_tag_string" to "avc3")))
+    }
 }

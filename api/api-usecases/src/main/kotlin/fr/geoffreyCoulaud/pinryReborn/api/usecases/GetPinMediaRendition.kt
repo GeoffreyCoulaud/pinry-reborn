@@ -75,7 +75,7 @@ class GetPinMediaRendition(
 
     // The processor reads a file, so the original is staged for the time of one rendition.
     private fun renderVideo(media: Media, effectivePx: Int, animated: Boolean): StagedFile {
-        val original = mediaStore.openStream(media.storageKey).use { mediaStore.stage(it, media.byteSize) }
+        val original = mediaStore.stageStored(media)
         try {
             return if (animated) videoProcessor.preview(original, effectivePx) else drawPoster(original, effectivePx)
         } finally {
@@ -84,7 +84,7 @@ class GetPinMediaRendition(
     }
 
     private fun drawPoster(original: StagedFile, effectivePx: Int): StagedFile {
-        val poster = videoProcessor.poster(original)
+        val poster = videoProcessor.poster(original, effectivePx)
         try {
             return mediaStore.openStaged(poster).use { imageTransformer.render(it, RenditionSpec(effectivePx, false)) }
         } finally {

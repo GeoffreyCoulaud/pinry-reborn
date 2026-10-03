@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -80,6 +81,29 @@ class FilesystemMediaStoreTest {
         val staged = store.stage(ByteArrayInputStream(byteArrayOf(1)), maxBytes = 100)
         store.discard(staged)
         assertFalse(Files.exists(Path.of(staged.path)))
+    }
+
+    @Test
+    fun `Given a stored original, Then stageStored stages that file uncopied, and its discard keeps the original`() {
+        // Given
+        val store = store()
+        store.promote(store.stage(ByteArrayInputStream(byteArrayOf(5, 6)), maxBytes = 100), "originals/u/p/v.mp4")
+        val media = Media(
+            id = UUID.randomUUID(), pinId = UUID.randomUUID(), mimeType = "video/mp4", width = 2, height = 2,
+            animated = true, byteSize = 2, contentHash = "hash", storageKey = "originals/u/p/v.mp4",
+            createdAt = Instant.EPOCH,
+        )
+        val original = dataDir.resolve("originals/u/p/v.mp4")
+
+        // When
+        val staged = store.stageStored(media)
+
+        // Then
+        assertEquals(dataDir.resolve("tmp"), Path.of(staged.path).parent)
+        assertTrue(Files.isSameFile(original, Path.of(staged.path)) && !Files.isSymbolicLink(Path.of(staged.path)))
+        assertEquals(2L to "hash", staged.byteSize to staged.contentHash)
+        store.discard(staged)
+        assertTrue(Files.exists(original))
     }
 
     @Test

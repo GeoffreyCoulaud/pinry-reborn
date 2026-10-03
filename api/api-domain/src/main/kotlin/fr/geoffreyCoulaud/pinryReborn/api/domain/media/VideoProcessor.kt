@@ -19,6 +19,8 @@ data class VideoProbeResult(
     val duration: Duration,
     val codecs: String,
     val demuxedAs: VideoContainer,
+    // Those two tracks alone, the video tagged as [codecs] names it: what [VideoProcessor.repackage] writes.
+    val alreadyRepackaged: Boolean,
 )
 
 interface VideoProcessor {
@@ -33,8 +35,8 @@ interface VideoProcessor {
     /** The first video and first audio tracks, never re-encoded, in the [VideoContainer] their codecs choose. */
     fun repackage(staged: StagedFile, video: VideoProbeResult): StagedFile
 
-    /** The frame that best represents the start of the video, as a PNG at the dimensions it displays at. */
-    fun poster(staged: StagedFile): StagedFile
+    /** The frame that best represents the start of the video, as a PNG whose shortest side is [shortestSide]. */
+    fun poster(staged: StagedFile, shortestSide: Int): StagedFile
 
     /** The first three seconds as an animated WebP whose shortest side is [shortestSide]. */
     fun preview(staged: StagedFile, shortestSide: Int): StagedFile
