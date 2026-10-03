@@ -60,7 +60,7 @@ class DownloadPinMedia(
     @Suppress("TooGenericExceptionCaught")
     private fun stageFromSource(pinId: UUID, sourceUrl: String, context: TaskContext): StagedFile =
         try {
-            mediaFetcher.openStream(sourceUrl).use { mediaIngestion.stage(LeaseRenewingStream(it, context)) }
+            mediaFetcher.openStream(sourceUrl).use { mediaIngestion.stage(LeaseRenewingStream(it.stream, context)) }
         } catch (e: FetchException) {
             val reason = mapFetch(e)
             if (reason == DownloadReason.UNREACHABLE) {

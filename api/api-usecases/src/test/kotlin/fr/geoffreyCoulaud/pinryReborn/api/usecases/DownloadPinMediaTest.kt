@@ -12,6 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchFailedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchNotFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchedMedia
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaFetcher
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
@@ -98,7 +99,7 @@ class DownloadPinMediaTest {
 
     private fun stubUntilStage() {
         stubUntilFetch()
-        every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1))
+        every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1)), null)
         every { store.stage(any(), any()) } returns staged()
     }
 
@@ -195,7 +196,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the store rejects an oversize stream, Then it marks FAILED TOO_LARGE and throws Permanent`() {
         stubUntilFetch()
-        every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1))
+        every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1)), null)
         every { store.stage(any(), any()) } throws MediaTooLargeException("too big")
         assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.TOO_LARGE, now) }
@@ -204,7 +205,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given an image past its byte bound once probed, Then it marks FAILED TOO_LARGE and throws Permanent`() {
         stubUntilFetch()
-        every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1))
+        every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1)), null)
         every { store.stage(any(), any()) } returns StagedFile("tmp/x", 101, "hash")
         every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
         assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
@@ -214,7 +215,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given a mid-stream stage failure below the attempt limit, Then it records the error and rethrows`() {
         stubUntilFetch()
-        every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1))
+        every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1)), null)
         every { store.stage(any(), any()) } throws IOException("connection reset")
         assertThrows(IOException::class.java) {
             subject.download(pinId, ctx(attempt = 1, max = 3))
@@ -225,7 +226,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given a mid-stream stage failure at the attempt limit, Then it marks FAILED and throws Permanent`() {
         stubUntilFetch()
-        every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1))
+        every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1)), null)
         every { store.stage(any(), any()) } throws IOException("connection reset")
         assertThrows(PermanentTaskException::class.java) {
             subject.download(pinId, ctx(attempt = 3, max = 3))
@@ -237,7 +238,7 @@ class DownloadPinMediaTest {
     fun `Given a body being fetched, Then each read offers the lease a renewal`() {
         // Given
         stubUntilStage()
-        every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1, 2, 3))
+        every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1, 2, 3)), null)
         every { store.stage(any(), any()) } answers {
             firstArg<InputStream>().run { read(); readAllBytes() }
             staged()

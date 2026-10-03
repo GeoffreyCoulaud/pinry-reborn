@@ -23,7 +23,7 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
 | `api-storage-filesystem`   | Image store, rendition cache, export archives.                            |
 | `api-imaging-vips`         | libvips adapter (vips-ffm).                                               |
 | `api-video-ffmpeg`         | ffprobe and ffmpeg adapter, run as processes.                             |
-| `api-fetch-http`           | Remote image fetch behind an address policy.                              |
+| `api-fetch-http`           | Remote media fetch through a guarding proxy per download.                 |
 | `api-system`               | Clock, bcrypt, token generation.                                          |
 | `api-worker-quarkus`       | Task worker: dispatcher, handlers, export retention.                      |
 | `api-utilities`            | Shared helpers, `BaseTest` fixture (testFixtures).                        |
