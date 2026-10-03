@@ -37,6 +37,11 @@ export function tileMediaSource(url: string, rendition: Rendition): string {
 	return `${url}?size=${rendition}`;
 }
 
+/** A video's first seconds as an animated image, at the tile's rendition (decision D1). */
+export function tileAnimatedSource(url: string, rendition: Rendition): string {
+	return `${tileMediaSource(url, rendition)}&animated=true`;
+}
+
 /** The one test of what the grid places, which the viewer's order shares (decision F). */
 function isPlaceable(pin: {
 	media?: { status: Schemas["PinMediaStateDto"]["status"] } | null;

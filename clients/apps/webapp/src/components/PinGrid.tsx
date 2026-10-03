@@ -25,6 +25,7 @@ import {
 	placeableTiles,
 	type Rendition,
 	renditionForColumn,
+	tileAnimatedSource,
 	tileAspectRatio,
 	tileMediaSource,
 } from "../lib/tiles";
@@ -92,30 +93,22 @@ function Tile({
 		<div
 			ref={ref}
 			className="relative w-full"
-			// A touch would fetch the original for the instant before its tap opens the pin.
+			// A touch would fetch the animation for the instant before its tap opens the pin.
 			onPointerEnter={(event) => setHovered(event.pointerType !== "touch")}
 			onPointerLeave={() => setHovered(false)}
 		>
 			{media?.url ? (
 				<>
 					<img
-						src={tileMediaSource(media.url, rendition)}
+						src={
+							video && hovered
+								? tileAnimatedSource(media.url, rendition)
+								: tileMediaSource(media.url, rendition)
+						}
 						alt={pin.description}
 						style={ratio}
 						className="w-full rounded object-cover"
 					/>
-					{video && hovered ? (
-						<video
-							src={media.url}
-							poster={tileMediaSource(media.url, rendition)}
-							muted
-							loop
-							autoPlay
-							playsInline
-							aria-hidden
-							className="absolute inset-0 size-full rounded object-cover"
-						/>
-					) : null}
 					{video ? (
 						<Play
 							role="img"
