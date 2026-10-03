@@ -183,6 +183,13 @@ class FfmpegVideoProcessorTest {
     }
 
     @Test
+    fun `Given a poster or a preview, Then its decoder is bounded to two threads, as an input option before -i`() {
+        val command = processor.renderCommand("in.mkv", listOf("-frames:v", "1"), "out.png")
+        val inputOptions = command.subList(0, command.indexOf("-i"))
+        assertEquals(listOf("-threads", "2"), inputOptions.takeLast(2), command.toString())
+    }
+
+    @Test
     fun `Given an H265 tagged hev1, Then probe finds it not yet repackaged, and its repackaging already repackaged`() {
         assertEquals(false, processor.probe(staged("h265-hev1-aac.mov"), maxDuration).alreadyRepackaged)
         val output = repackaged("h265-hev1-aac.mov")
