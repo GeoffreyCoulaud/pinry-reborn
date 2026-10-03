@@ -39,7 +39,7 @@ describe("create a pin by uploading a file", () => {
 		let requests = 0;
 		server.use(
 			sessionRoute(() => true),
-			handshakeRoute({ maxFileBytes: 4 }),
+			handshakeRoute({ maxImageBytes: 4 }),
 			downloadsRoute(),
 			onePinPage(() => []),
 			http.post("/api/v1/pins", () => {
@@ -300,7 +300,7 @@ describe("create a pin by uploading a file", () => {
 				return HttpResponse.json({
 					contractVersion: "4.0.0",
 					limits: {
-						maxFileBytes: 4,
+						maxImageBytes: 4,
 						maxPixels: 50_000_000,
 						mediaTypes: MEDIA_TYPES,
 					},

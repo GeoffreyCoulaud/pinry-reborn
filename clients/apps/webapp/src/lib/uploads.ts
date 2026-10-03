@@ -41,7 +41,7 @@ export function byteRefusal(
 	size: number,
 	limits: UploadLimits | undefined,
 ): "TOO_MANY_BYTES" | null {
-	return limits !== undefined && size > limits.maxFileBytes
+	return limits !== undefined && size > limits.maxImageBytes
 		? "TOO_MANY_BYTES"
 		: null;
 }

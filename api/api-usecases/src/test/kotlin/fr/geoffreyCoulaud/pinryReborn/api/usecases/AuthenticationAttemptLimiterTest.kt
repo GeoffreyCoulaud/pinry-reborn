@@ -278,7 +278,7 @@ class AuthenticationAttemptLimiterTest : BaseTest() {
         /** The width of a SHA-256 digest in lowercase hexadecimal. */
         const val DIGEST_WIDTH = 64
 
-        /** A megabyte of name: `quarkus.http.limits.max-body-size` is 32M and nothing narrower applies. */
+        /** A megabyte of name: `quarkus.http.limits.max-body-size` is 64M and nothing narrower applies. */
         const val OVERSIZED_NAME_LENGTH = 1_000_000
     }
 }
