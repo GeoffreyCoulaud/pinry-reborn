@@ -39,6 +39,11 @@ Behind a proxy, a refusal reaches neither client as such: the JDK reports a refu
    refuses a live stream, a duration or a size past the bounds, with an exact reason; then the download, with the
    format the first run chose. The format is chosen by a chain of `-f` selectors, H.264, then VP9, then AV1, then
    H.265, each with AAC, Opus or MP3. The worker bounds the run in time and its directory in bytes.
+   (Corrected: every selector also takes a protocol filter, `https?`, `m3u8(_native)?` or `http_dash_segments`, so
+   no format goes to an external program outside `--proxy`, and `--downloader native` keeps an HLS download in
+   yt-dlp's own networking; the chain ends with `/b`, for a format that declares no codec, which ingestion judges,
+   blocks 102 and 103. Since block 124 the second run fetches no page: it loads the first run's report, its
+   `webpage_url` stripped, with `--load-info-json`, so the format it downloads is one the first run's filters chose.)
 
 4. **yt-dlp is pinned by pip and raised by Dependabot**: `api/tools/yt-dlp/requirements.in` (`yt-dlp[default]`)
    compiled to a `requirements.txt` carrying every pin and hash, installed with `pip install --require-hashes` in a
