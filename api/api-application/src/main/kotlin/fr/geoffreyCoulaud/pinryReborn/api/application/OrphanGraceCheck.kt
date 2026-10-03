@@ -8,8 +8,8 @@ import jakarta.enterprise.event.Observes
 import java.time.Duration
 
 /**
- * Refuses the boot when `garbage-collection.orphan_grace` is not longer than `media.download.extraction_timeout`,
- * which would let the orphan sweep take a running extraction's file. Here because the two keys live in two modules.
+ * Refuses the boot when `garbage-collection.orphan_grace` is not longer than an extraction's two yt-dlp runs, which
+ * would let the orphan sweep take a running extraction's file. Here because the two keys live in two modules.
  */
 @ApplicationScoped
 class OrphanGraceCheck(
@@ -22,9 +22,9 @@ class OrphanGraceCheck(
 
     companion object {
         fun verify(orphanGrace: Duration, extractionTimeout: Duration) =
-            check(orphanGrace > extractionTimeout) {
-                "garbage-collection.orphan_grace ($orphanGrace) must be longer than " +
-                    "media.download.extraction_timeout ($extractionTimeout)"
+            check(orphanGrace > extractionTimeout.multipliedBy(2)) {
+                "garbage-collection.orphan_grace ($orphanGrace) must be longer than twice " +
+                    "media.download.extraction_timeout ($extractionTimeout), one per yt-dlp run"
             }
     }
 }
