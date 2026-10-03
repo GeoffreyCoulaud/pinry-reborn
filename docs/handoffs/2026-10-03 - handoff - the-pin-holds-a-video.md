@@ -71,7 +71,8 @@ rendition, and 138, the request log redacts credentials.)
   preview in the grid; uploads of a video judged by type and bytes; every sentence that named the medium says "media".
   (Corrected: since block 132 a video always gets the player, in a square box when its dimensions are missing; the
   player is keyed on the address, size and type; the download link names the file from the type; the catalogue keys
-  say `media`. The hover still mounts the original: block 136 moves it to the animated rendition.)
+  say `media`. Since block 136 the hover swaps the tile's still for the animated rendition at the tile's size, in the
+same `<img>`, and back when the pointer leaves; a touch swaps nothing. No `<video>` is mounted in the grid.)
 
 ## Evidence
 
