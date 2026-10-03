@@ -221,7 +221,11 @@ block 134's teammate's scratchpad, under the name given.
 - **ffmpeg's default decoder threads follow the host's cores**, each holding its own frames, so a render's memory
   grows with the machine; the poster and the preview pass `-threads 2` before `-i` (134).
 - **`LoggingRequestResponseFilter` logs every header and body at INFO**, passwords and session tokens included, in
-  the shipped image too. Found by block 134 on the compose stack; block 138 redacts them.
+  the shipped image too. Found by block 134 on the compose stack. Since block 138 it logs the request line, the
+  status and the headers alone, `Authorization`, `Cookie` and `Set-Cookie` as `<redacted>`, and never a body. Suite
+  tests over `POST /users`, `POST /sessions` and a request authenticated each way hold that the log carries neither
+  the password, nor the bearer token, nor the session cookie. **A log written before block 138 may hold them in clear**: nothing is deployed (`git tag -l 'v*'` is empty),
+  but a workstation's compose logs may, and are to be deleted.
 - **Firefox's BiDi refuses commands on the initial context** without `-remote-allow-system-access`: create a tab with
   `browsingContext.create` (132).
 - **An Edit whose `new_string` ends in a space can lose it**: three renamed JSON keys lost theirs (132).
