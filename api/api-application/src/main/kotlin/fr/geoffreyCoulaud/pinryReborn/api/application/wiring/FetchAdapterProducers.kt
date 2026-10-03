@@ -24,7 +24,12 @@ class FetchAdapterProducers {
     @Produces
     @ApplicationScoped
     fun mediaFetcher(config: MediaDownloadConfig): MediaFetcher =
-        HttpMediaFetcher(config.connectTimeout(), config.requestTimeout(), config.maxRedirects()) { proxy(config) }
+        HttpMediaFetcher(
+            connectTimeout = config.connectTimeout(),
+            requestTimeout = config.requestTimeout(),
+            maxRedirects = config.maxRedirects(),
+            bodyTimeout = config.extractionTimeout(),
+        ) { proxy(config) }
 
     @Produces
     @ApplicationScoped

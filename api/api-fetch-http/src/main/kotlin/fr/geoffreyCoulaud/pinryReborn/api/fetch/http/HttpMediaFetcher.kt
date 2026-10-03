@@ -23,11 +23,13 @@ class HttpMediaFetcher(
     private val connectTimeout: Duration,
     private val requestTimeout: Duration,
     private val maxRedirects: Int,
+    private val bodyTimeout: Duration,
     private val openProxy: () -> GuardingProxy,
 ) : MediaFetcher {
     // Each download gets its own proxy, the client's only route out (ADR 0048, decision 2).
     override fun openStream(sourceUrl: String): FetchedMedia {
         val url = httpUri(sourceUrl)
+        val deadline = System.nanoTime() + bodyTimeout.toNanos()
         val proxy = openProxy()
         val client =
             HttpClient.newBuilder()
@@ -41,7 +43,7 @@ class HttpMediaFetcher(
         }
         val response = runCatching { finalResponse(client, proxy, url) }.onFailure { end() }.getOrThrow()
         val contentType = response.headers().firstValue("content-type").orElse(null)
-        return FetchedMedia(EndingStream(response.body(), end), contentType)
+        return FetchedMedia(EndingStream(response.body(), deadline, end), contentType)
     }
 
     // Each throw maps a distinct HTTP outcome to its typed FetchException; that mapping is the
@@ -73,7 +75,7 @@ class HttpMediaFetcher(
                 status == UNAUTHORIZED || status == FORBIDDEN ->
                     throw FetchAccessDeniedException("origin refused access ($status)")
                 status == NOT_FOUND || status == GONE ->
-                    throw FetchNotFoundException("no image at this url ($status)")
+                    throw FetchNotFoundException("no media at this url ($status)")
                 status == TOO_MANY_REQUESTS ->
                     throw FetchUnreachableException("origin error ($status)")
                 status < SERVER_ERROR_MIN ->
@@ -88,10 +90,7 @@ class HttpMediaFetcher(
         proxy: GuardingProxy,
         url: URI,
     ): HttpResponse<InputStream> {
-        // Note (spec section 17 risk): HttpRequest.timeout() bounds the time to obtain the
-        // response headers, not the streaming read of the body. For v1 this is acceptable: the
-        // connect timeout plus this response timeout bound the worst case before the body arrives.
-        // If a slow-body origin becomes a problem, wrap the returned stream with a read deadline.
+        // HttpRequest.timeout() stops at the response headers; EndingStream's deadline bounds the body.
         val request = HttpRequest.newBuilder(url).timeout(requestTimeout).GET().build()
         return try {
             client.send(request, HttpResponse.BodyHandlers.ofInputStream())
@@ -119,11 +118,22 @@ class HttpMediaFetcher(
         return uri
     }
 
-    // Closing the body ends the download: the client, then its proxy.
+    // Closing the body ends the download: the client, then its proxy. Past the deadline a read throws, since
+    // every read renews the task's lease and a trickling origin would otherwise hold a worker for good.
     private class EndingStream(
         body: InputStream,
+        private val deadline: Long,
         private val end: () -> Unit,
     ) : FilterInputStream(body) {
+        override fun read(): Int = beforeDeadline(super.read())
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int = beforeDeadline(super.read(b, off, len))
+
+        private fun beforeDeadline(read: Int): Int {
+            if (System.nanoTime() > deadline) throw FetchUnreachableException("the body outlasted its timeout")
+            return read
+        }
+
         override fun close() =
             try {
                 super.close()
