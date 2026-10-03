@@ -11,6 +11,8 @@ type MediaRefusalCode = RefusalCode<"/api/v1/pins/{pinId}/media", "put">;
 const REFUSALS = {
 	MEDIA_TOO_LONG: m.media_too_long,
 	MEDIA_CODEC_UNSUPPORTED: m.media_codec_unsupported,
+	MEDIA_TOO_LARGE: m.file_too_heavy,
+	UNSUPPORTED_MEDIA_TYPE: m.file_unsupported,
 } satisfies Partial<Record<MediaRefusalCode, () => string>>;
 
 // `hasOwn` and not `in`: the code is the server's string, and `constructor` would answer otherwise.
