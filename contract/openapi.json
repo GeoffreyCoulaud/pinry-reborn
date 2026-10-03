@@ -164,9 +164,17 @@
       },
       "LimitsDto" : {
         "type" : "object",
-        "required" : [ "maxFileBytes", "maxPixels", "mediaTypes", "maxImportChunkBytes", "maxImportArchiveBytes" ],
+        "required" : [ "maxImageBytes", "maxVideoBytes", "maxVideoSeconds", "maxPixels", "mediaTypes", "maxImportChunkBytes", "maxImportArchiveBytes" ],
         "properties" : {
-          "maxFileBytes" : {
+          "maxImageBytes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "maxVideoBytes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "maxVideoSeconds" : {
             "type" : "integer",
             "format" : "int64"
           },

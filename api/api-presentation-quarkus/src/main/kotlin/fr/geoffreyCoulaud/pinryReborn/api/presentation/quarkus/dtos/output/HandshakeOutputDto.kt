@@ -11,7 +11,9 @@ data class HandshakeOutputDto(
 ) {
     /** What an upload is refused for, so a client refuses it before sending the bytes. */
     data class LimitsDto(
-        val maxFileBytes: Long,
+        val maxImageBytes: Long,
+        val maxVideoBytes: Long,
+        val maxVideoSeconds: Long,
         val maxPixels: Long,
         /** The media types the storage accepts; anything else the probe refuses. */
         val mediaTypes: List<String>,

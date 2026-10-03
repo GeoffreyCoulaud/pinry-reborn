@@ -22,7 +22,9 @@ class HandshakeController(
     fun getHandshake(): HandshakeOutputDto = HandshakeOutputDto(
         contractVersion = contractConfig.infoVersion(),
         limits = HandshakeOutputDto.LimitsDto(
-            maxFileBytes = mediaConfig.maxImageBytes(),
+            maxImageBytes = mediaConfig.maxImageBytes(),
+            maxVideoBytes = mediaConfig.maxVideoBytes(),
+            maxVideoSeconds = mediaConfig.maxVideoSeconds(),
             maxPixels = mediaConfig.maxPixels(),
             mediaTypes = MediaFormat.entries.map { it.mimeType },
             maxImportChunkBytes = importBounds.maxChunkBytes,

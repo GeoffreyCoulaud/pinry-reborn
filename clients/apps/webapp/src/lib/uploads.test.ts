@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { byteRefusal, isStorableFile, uploadRefusal } from "./uploads";
 
 const LIMITS = {
-	maxFileBytes: 1000,
+	maxImageBytes: 1000,
+	maxVideoBytes: 2000,
+	maxVideoSeconds: 120,
 	maxPixels: 10_000,
 	mediaTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
 	maxImportChunkBytes: 100,

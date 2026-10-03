@@ -313,13 +313,13 @@ export const MEDIA_TYPES = [
 
 /** The deployment's limits and rendition sizes, as narrow as the journey needs them to be. */
 export function handshakeRoute({
-	maxFileBytes = 30 * 1024 * 1024,
+	maxImageBytes = 30 * 1024 * 1024,
 	small = 240,
 	maxImportChunkBytes = 16 * 1024 * 1024,
 	maxImportArchiveBytes = 20 * 1024 ** 3,
 	onRequest = () => {},
 }: {
-	maxFileBytes?: number;
+	maxImageBytes?: number;
 	small?: number;
 	maxImportChunkBytes?: number;
 	maxImportArchiveBytes?: number;
@@ -330,7 +330,9 @@ export function handshakeRoute({
 		return HttpResponse.json({
 			contractVersion: "4.0.0",
 			limits: {
-				maxFileBytes,
+				maxImageBytes,
+				maxVideoBytes: 50 * 1024 * 1024,
+				maxVideoSeconds: 120,
 				maxPixels: 50_000_000,
 				mediaTypes: MEDIA_TYPES,
 				maxImportChunkBytes,
