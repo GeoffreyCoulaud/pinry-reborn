@@ -3,7 +3,6 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.RenditionsConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinMediaDownloadInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.MediaOutputDto
@@ -63,7 +62,6 @@ class MediaController(
     private val requestPinMediaDownload: RequestPinMediaDownload,
     private val resolvePinMediaState: ResolvePinMediaState,
     private val mediaStore: MediaStore,
-    private val mediaConfig: MediaConfig,
     private val renditionCache: RenditionCache,
     private val renditionsConfig: RenditionsConfig,
     private val securityIdentity: SecurityIdentity,
@@ -108,15 +106,7 @@ class MediaController(
             properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_INVALID"])]))])
     fun setMedia(pinId: UUID, @RestForm("file") @NotNull file: FileUpload): RestResponse<MediaOutputDto> {
         val requester = securityIdentity.getUser()
-        val result = Files.newInputStream(file.uploadedFile()).use { upload ->
-            setPinMedia.set(
-                pinId = pinId,
-                requester = requester,
-                upload = upload,
-                maxBytes = mediaConfig.maxFileBytes(),
-                maxPixels = mediaConfig.maxPixels(),
-            )
-        }
+        val result = Files.newInputStream(file.uploadedFile()).use { setPinMedia.set(pinId, requester, it) }
         val dto = result.media.toDto()
         val status = if (result.replaced) RestResponse.Status.OK else RestResponse.Status.CREATED
         return ResponseBuilder.create(status, dto).build()

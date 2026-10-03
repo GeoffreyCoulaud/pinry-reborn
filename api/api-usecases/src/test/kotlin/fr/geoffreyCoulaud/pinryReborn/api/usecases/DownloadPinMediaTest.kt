@@ -60,8 +60,8 @@ class DownloadPinMediaTest {
 
     private val subject =
         DownloadPinMedia(
-            pins, mediaRepository, downloads, store, MediaIngestion(store, probe), fetcher, runner, clock,
-            renditionCache,
+            pins, mediaRepository, downloads, store, MediaIngestion(store, probe, MediaBounds(100, 100)), fetcher,
+            runner, clock, renditionCache,
         )
 
     init {
@@ -94,14 +94,14 @@ class DownloadPinMediaTest {
     @Test
     fun `Given no PENDING download row, Then it is a no-op`() {
         every { downloads.findByPinId(pinId) } returns null
-        subject.download(pinId, ctx(), 100, 100)
+        subject.download(pinId, ctx())
         verify(exactly = 0) { fetcher.openStream(any()) }
     }
 
     @Test
     fun `Given a FAILED download row, Then it is a no-op`() {
         every { downloads.findByPinId(pinId) } returns failedRow()
-        subject.download(pinId, ctx(), 100, 100)
+        subject.download(pinId, ctx())
         verify(exactly = 0) { fetcher.openStream(any()) }
     }
 
@@ -109,7 +109,7 @@ class DownloadPinMediaTest {
     fun `Given the pin is gone, Then it is a no-op`() {
         every { downloads.findByPinId(pinId) } returns pendingRow()
         every { pins.findPinById(pinId) } returns null
-        subject.download(pinId, ctx(), 100, 100)
+        subject.download(pinId, ctx())
         verify(exactly = 0) { fetcher.openStream(any()) }
     }
 
@@ -117,7 +117,7 @@ class DownloadPinMediaTest {
     fun `Given a disallowed URL, Then it marks FAILED URL_NOT_ALLOWED and throws Permanent`() {
         stubUntilFetch()
         every { fetcher.openStream(any()) } throws UrlNotAllowedException("blocked")
-        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx(), 100, 100) }
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.URL_NOT_ALLOWED, now) }
     }
 
@@ -125,7 +125,7 @@ class DownloadPinMediaTest {
     fun `Given a 403 bounce, Then it marks FAILED ACCESS_DENIED and throws Permanent`() {
         stubUntilFetch()
         every { fetcher.openStream(any()) } throws FetchAccessDeniedException("403")
-        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx(), 100, 100) }
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.ACCESS_DENIED, now) }
     }
 
@@ -133,7 +133,7 @@ class DownloadPinMediaTest {
     fun `Given a 404 origin, Then it marks FAILED NOT_FOUND and throws Permanent`() {
         stubUntilFetch()
         every { fetcher.openStream(any()) } throws FetchNotFoundException("404")
-        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx(), 100, 100) }
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.NOT_FOUND, now) }
     }
 
@@ -141,7 +141,7 @@ class DownloadPinMediaTest {
     fun `Given the fetch body is too large, Then it marks FAILED TOO_LARGE and throws Permanent`() {
         stubUntilFetch()
         every { fetcher.openStream(any()) } throws FetchTooLargeException("body too big")
-        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx(), 100, 100) }
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.TOO_LARGE, now) }
     }
 
@@ -149,7 +149,7 @@ class DownloadPinMediaTest {
     fun `Given too many redirects, Then it marks FAILED FETCH_FAILED and throws Permanent`() {
         stubUntilFetch()
         every { fetcher.openStream(any()) } throws TooManyRedirectsException("loop")
-        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx(), 100, 100) }
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.FETCH_FAILED, now) }
     }
 
@@ -157,7 +157,7 @@ class DownloadPinMediaTest {
     fun `Given a generic fetch failure, Then it marks FAILED FETCH_FAILED and throws Permanent`() {
         stubUntilFetch()
         every { fetcher.openStream(any()) } throws FetchFailedException("unexpected 418")
-        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx(), 100, 100) }
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.FETCH_FAILED, now) }
     }
 
@@ -166,7 +166,7 @@ class DownloadPinMediaTest {
         stubUntilFetch()
         every { fetcher.openStream(any()) } throws FetchUnreachableException("timeout")
         assertThrows(FetchUnreachableException::class.java) {
-            subject.download(pinId, ctx(attempt = 1, max = 3), 100, 100)
+            subject.download(pinId, ctx(attempt = 1, max = 3))
         }
         verify { downloads.recordLastError(pinId, "timeout", now) }
     }
@@ -176,7 +176,7 @@ class DownloadPinMediaTest {
         stubUntilFetch()
         every { fetcher.openStream(any()) } throws FetchUnreachableException("timeout")
         assertThrows(PermanentTaskException::class.java) {
-            subject.download(pinId, ctx(attempt = 3, max = 3), 100, 100)
+            subject.download(pinId, ctx(attempt = 3, max = 3))
         }
         verify { downloads.markFailed(pinId, DownloadReason.UNREACHABLE, now) }
     }
@@ -186,7 +186,7 @@ class DownloadPinMediaTest {
         stubUntilFetch()
         every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1))
         every { store.stage(any(), any()) } throws MediaTooLargeException("too big")
-        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx(), 100, 100) }
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.TOO_LARGE, now) }
     }
 
@@ -196,7 +196,7 @@ class DownloadPinMediaTest {
         every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1))
         every { store.stage(any(), any()) } throws IOException("connection reset")
         assertThrows(IOException::class.java) {
-            subject.download(pinId, ctx(attempt = 1, max = 3), 100, 100)
+            subject.download(pinId, ctx(attempt = 1, max = 3))
         }
         verify { downloads.recordLastError(pinId, "connection reset", now) }
     }
@@ -207,7 +207,7 @@ class DownloadPinMediaTest {
         every { fetcher.openStream(any()) } returns ByteArrayInputStream(byteArrayOf(1))
         every { store.stage(any(), any()) } throws IOException("connection reset")
         assertThrows(PermanentTaskException::class.java) {
-            subject.download(pinId, ctx(attempt = 3, max = 3), 100, 100)
+            subject.download(pinId, ctx(attempt = 3, max = 3))
         }
         verify { downloads.markFailed(pinId, DownloadReason.UNREACHABLE, now) }
     }
@@ -216,7 +216,7 @@ class DownloadPinMediaTest {
     fun `Given an undecodable image, Then it discards and marks FAILED INVALID_MEDIA and throws Permanent`() {
         stubUntilStage()
         every { probe.probe(any(), any()) } throws UndecodableImageException("garbage")
-        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx(), 100, 100) }
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { store.discard(staged()) }
         verify { downloads.markFailed(pinId, DownloadReason.INVALID_MEDIA, now) }
     }
@@ -225,7 +225,7 @@ class DownloadPinMediaTest {
     fun `Given an unsupported image format, Then it discards and marks FAILED INVALID_MEDIA and throws Permanent`() {
         stubUntilStage()
         every { probe.probe(any(), any()) } throws UnsupportedImageFormatException("tiff")
-        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx(), 100, 100) }
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { store.discard(staged()) }
         verify { downloads.markFailed(pinId, DownloadReason.INVALID_MEDIA, now) }
     }
@@ -234,7 +234,7 @@ class DownloadPinMediaTest {
     fun `Given too many pixels, Then it discards and marks FAILED TOO_MANY_PIXELS and throws Permanent`() {
         stubUntilStage()
         every { probe.probe(any(), any()) } throws ImageTooManyPixelsException("decompression bomb")
-        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx(), 100, 100) }
+        assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { store.discard(staged()) }
         verify { downloads.markFailed(pinId, DownloadReason.TOO_MANY_PIXELS, now) }
     }
@@ -243,7 +243,7 @@ class DownloadPinMediaTest {
     fun `Given a generic probe failure below the attempt limit, Then it discards and records a retryable error`() {
         stubUntilStage()
         every { probe.probe(any(), any()) } throws RuntimeException("boom")
-        assertThrows(RuntimeException::class.java) { subject.download(pinId, ctx(attempt = 1, max = 3), 100, 100) }
+        assertThrows(RuntimeException::class.java) { subject.download(pinId, ctx(attempt = 1, max = 3)) }
         verify { store.discard(staged()) }
         verify { downloads.recordLastError(pinId, "boom", now) }
     }
@@ -255,7 +255,7 @@ class DownloadPinMediaTest {
         every { mediaRepository.findByPinId(pinId) } returns null
         every { downloads.deleteIfPending(pinId) } returns 1
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
-        subject.download(pinId, ctx(), 100, 100)
+        subject.download(pinId, ctx())
         verify { store.promote(staged(), any()) }
         verify { mediaRepository.save(any()) }
         // First-time download: no superseded image, so nothing is deleted.
@@ -272,7 +272,7 @@ class DownloadPinMediaTest {
             Media(randomUUID(), pinId, "image/png", 1, 1, false, 3, "oldhash", supersededKey, now)
         every { downloads.deleteIfPending(pinId) } returns 1
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
-        subject.download(pinId, ctx(), 100, 100)
+        subject.download(pinId, ctx())
         verify { mediaRepository.save(any()) }
         // Only the superseded file is deleted; the freshly promoted new file is kept.
         verify(exactly = 1) { store.delete(supersededKey) }
@@ -288,7 +288,7 @@ class DownloadPinMediaTest {
         every { mediaRepository.findByPinId(pinId) } returns superseded
         every { downloads.deleteIfPending(pinId) } returns 1
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
-        subject.download(pinId, ctx(), 100, 100)
+        subject.download(pinId, ctx())
         verify { renditionCache.evictMedia(superseded.id) }
     }
 
@@ -302,7 +302,7 @@ class DownloadPinMediaTest {
         every { downloads.deleteIfPending(pinId) } returns 1
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
         every { renditionCache.evictMedia(any()) } throws RuntimeException("io")
-        subject.download(pinId, ctx(), 100, 100)
+        subject.download(pinId, ctx())
         verify { mediaRepository.save(any()) }
     }
 
@@ -312,7 +312,7 @@ class DownloadPinMediaTest {
         every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
         every { downloads.deleteIfPending(pinId) } returns 0
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
-        subject.download(pinId, ctx(), 100, 100)
+        subject.download(pinId, ctx())
         verify { store.delete(any()) }
         verify(exactly = 0) { mediaRepository.save(any()) }
         // A no-op swap keeps the old image; its rendition cache must not be touched.
@@ -324,7 +324,7 @@ class DownloadPinMediaTest {
         stubUntilStage()
         every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
         every { store.promote(any(), any()) } throws RuntimeException()
-        assertThrows(RuntimeException::class.java) { subject.download(pinId, ctx(attempt = 1, max = 3), 100, 100) }
+        assertThrows(RuntimeException::class.java) { subject.download(pinId, ctx(attempt = 1, max = 3)) }
         verify { store.discard(staged()) }
         verify { store.delete(any()) }
         verify { downloads.recordLastError(pinId, "INTERNAL_ERROR", now) }
@@ -341,7 +341,7 @@ class DownloadPinMediaTest {
         every { store.delete(any()) } throws RuntimeException("cleanup boom")
 
         val thrown = assertThrows(RuntimeException::class.java) {
-            subject.download(pinId, ctx(attempt = 1, max = 3), 100, 100)
+            subject.download(pinId, ctx(attempt = 1, max = 3))
         }
 
         // The cleanup exception must not mask the original promote failure; the retry policy
@@ -359,7 +359,7 @@ class DownloadPinMediaTest {
         every { store.discard(staged()) } throws RuntimeException("discard boom")
 
         val thrown = assertThrows(RuntimeException::class.java) {
-            subject.download(pinId, ctx(attempt = 1, max = 3), 100, 100)
+            subject.download(pinId, ctx(attempt = 1, max = 3))
         }
 
         // The staged-temp discard failure must not mask the original promote failure; the retry
@@ -376,7 +376,7 @@ class DownloadPinMediaTest {
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
         every { store.delete(any()) } throws RuntimeException("cleanup boom")
 
-        assertDoesNotThrow { subject.download(pinId, ctx(), 100, 100) }
+        assertDoesNotThrow { subject.download(pinId, ctx()) }
 
         // A no-op swap is a success; the cleanup failure must not turn it into a retryable failure.
         verify(exactly = 0) { downloads.markFailed(any(), any(), any()) }

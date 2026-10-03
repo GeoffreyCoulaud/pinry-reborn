@@ -45,8 +45,8 @@ class SetPinMediaTest : BaseTest() {
     private val clock = mockk<Clock>()
     private val clearPinDownload = mockk<ClearPinDownload>(relaxed = true)
     private val renditionCache = mockk<RenditionCache>()
-    private val useCase =
-        SetPinMedia(pins, mediaRepository, store, MediaIngestion(store, probe), clock, clearPinDownload, renditionCache)
+    private val ingestion = MediaIngestion(store, probe, MediaBounds(maxImageBytes = 30, maxPixels = 50))
+    private val useCase = SetPinMedia(pins, mediaRepository, store, ingestion, clock, clearPinDownload, renditionCache)
 
     private val owner = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
     private fun pin(author: User = owner) = Pin(randomUUID(), author, "https://c", null, "d", emptyList(), emptyList(),
@@ -65,7 +65,7 @@ class SetPinMediaTest : BaseTest() {
         every { clock.now() } returns Instant.parse("2026-07-08T00:00:00Z")
         every { mediaRepository.save(any()) } answers { firstArg() }
 
-        val result = useCase.set(p.id, owner, upload(), maxBytes = 30, maxPixels = 50)
+        val result = useCase.set(p.id, owner, upload())
 
         assertEquals(p.id, result.media.pinId)
         assertEquals("image/png", result.media.mimeType)
@@ -88,7 +88,7 @@ class SetPinMediaTest : BaseTest() {
         every { clock.now() } returns Instant.EPOCH
         every { mediaRepository.save(any()) } answers { firstArg() }
 
-        val result = useCase.set(p.id, owner, upload(), 30, 50)
+        val result = useCase.set(p.id, owner, upload())
 
         assertTrue(result.replaced)
         verify { store.delete("originals/o/old.png") }
@@ -104,7 +104,7 @@ class SetPinMediaTest : BaseTest() {
         every { clock.now() } returns Instant.EPOCH
         every { mediaRepository.save(any()) } answers { firstArg() }
 
-        useCase.set(p.id, owner, upload(), 30, 50)
+        useCase.set(p.id, owner, upload())
 
         verify { renditionCache.evictMedia(old.id) }
     }
@@ -120,7 +120,7 @@ class SetPinMediaTest : BaseTest() {
         every { mediaRepository.save(any()) } answers { firstArg() }
         every { renditionCache.evictMedia(any()) } throws RuntimeException("io")
 
-        val result = useCase.set(p.id, owner, upload(), 30, 50)
+        val result = useCase.set(p.id, owner, upload())
 
         assertTrue(result.replaced)
         verify { mediaRepository.save(result.media) }
@@ -128,20 +128,20 @@ class SetPinMediaTest : BaseTest() {
 
     @Test fun `Given a missing pin, Then it throws MediaPinDoesNotExistError`() {
         every { pins.findPinById(any()) } returns null
-        assertThrows(MediaPinDoesNotExistError::class.java) { useCase.set(randomUUID(), owner, upload(), 30, 50) }
+        assertThrows(MediaPinDoesNotExistError::class.java) { useCase.set(randomUUID(), owner, upload()) }
     }
 
     @Test fun `Given a non-owner, Then it throws MediaPermissionError`() {
         val p = pin(author = User(randomUUID(), createRandomString(), createdAt = TestTime.now))
         every { pins.findPinById(p.id) } returns p
-        assertThrows(MediaPermissionError::class.java) { useCase.set(p.id, owner, upload(), 30, 50) }
+        assertThrows(MediaPermissionError::class.java) { useCase.set(p.id, owner, upload()) }
     }
 
     @Test fun `Given an oversize upload, Then it throws MediaTooLargeError`() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } throws MediaTooLargeException("too big")
-        assertThrows(MediaTooLargeError::class.java) { useCase.set(p.id, owner, upload(), 30, 50) }
+        assertThrows(MediaTooLargeError::class.java) { useCase.set(p.id, owner, upload()) }
     }
 
     @Test fun `Given an undecodable upload, Then it discards the temp and throws MediaInvalidError`() {
@@ -150,7 +150,7 @@ class SetPinMediaTest : BaseTest() {
         every { store.stage(any(), 30) } returns staged
         every { probe.probe(staged, 50) } throws UndecodableImageException("nope")
         every { clock.now() } returns Instant.EPOCH
-        assertThrows(MediaInvalidError::class.java) { useCase.set(p.id, owner, upload(), 30, 50) }
+        assertThrows(MediaInvalidError::class.java) { useCase.set(p.id, owner, upload()) }
         verify { store.discard(staged) }
     }
 
@@ -163,7 +163,7 @@ class SetPinMediaTest : BaseTest() {
         every { clock.now() } returns Instant.EPOCH
         every { store.promote(any(), any()) } throws RuntimeException("disk full")
 
-        assertThrows(RuntimeException::class.java) { useCase.set(p.id, owner, upload(), 30, 50) }
+        assertThrows(RuntimeException::class.java) { useCase.set(p.id, owner, upload()) }
         verify { store.discard(staged) }
         verify(exactly = 0) { mediaRepository.save(any()) }
     }
@@ -179,7 +179,7 @@ class SetPinMediaTest : BaseTest() {
         every { clock.now() } returns Instant.EPOCH
         every { store.promote(any(), any()) } throws IOException("disk full")
 
-        assertThrows(IOException::class.java) { useCase.set(p.id, owner, upload(), 30, 50) }
+        assertThrows(IOException::class.java) { useCase.set(p.id, owner, upload()) }
         verify { store.discard(staged) }
         verify(exactly = 0) { mediaRepository.save(any()) }
     }
@@ -195,7 +195,7 @@ class SetPinMediaTest : BaseTest() {
         every { store.promote(staged, capture(storageKeySlot)) } just runs
         every { mediaRepository.save(any()) } throws RuntimeException("db down")
 
-        assertThrows(RuntimeException::class.java) { useCase.set(p.id, owner, upload(), 30, 50) }
+        assertThrows(RuntimeException::class.java) { useCase.set(p.id, owner, upload()) }
 
         verify { store.discard(staged) }
         verify { store.delete(storageKeySlot.captured) }
@@ -212,7 +212,7 @@ class SetPinMediaTest : BaseTest() {
         every { mediaRepository.save(any()) } answers { firstArg() }
         every { store.delete("originals/o/old.png") } throws RuntimeException("locked")
 
-        val result = useCase.set(p.id, owner, upload(), 30, 50)
+        val result = useCase.set(p.id, owner, upload())
 
         assertTrue(result.replaced)
     }
@@ -228,7 +228,7 @@ class SetPinMediaTest : BaseTest() {
         every { store.promote(any(), any()) } throws promoteError
         every { store.delete(any()) } throws RuntimeException("cleanup boom")
 
-        val thrown = assertThrows(RuntimeException::class.java) { useCase.set(p.id, owner, upload(), 30, 50) }
+        val thrown = assertThrows(RuntimeException::class.java) { useCase.set(p.id, owner, upload()) }
 
         // The cleanup exception must not mask the original promote failure.
         assertEquals(promoteError, thrown)
@@ -246,7 +246,7 @@ class SetPinMediaTest : BaseTest() {
         every { store.promote(any(), any()) } throws promoteError
         every { store.discard(staged) } throws RuntimeException("discard boom")
 
-        val thrown = assertThrows(RuntimeException::class.java) { useCase.set(p.id, owner, upload(), 30, 50) }
+        val thrown = assertThrows(RuntimeException::class.java) { useCase.set(p.id, owner, upload()) }
 
         // The staged-temp discard failure must not mask the original promote error.
         assertEquals(promoteError, thrown)
