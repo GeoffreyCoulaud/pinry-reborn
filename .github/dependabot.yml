@@ -52,22 +52,11 @@ updates:
         patterns:
           - "*"
 
-  # Base images of `api/Dockerfile`, the runtime and deno, pinned by tag and digest: one grouped weekly PR.
-  - package-ecosystem: "docker"
-    directory: "/api"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore(docker)"
-    groups:
-      docker:
-        patterns:
-          - "*"
-
-  # The web application and the pipeline's environments (any file whose name holds "dockerfile"):
-  # grouped by name across both, so one pull request moves the two Node digests together.
+  # Every Dockerfile (any file whose name holds "dockerfile"), grouped by name across the three directories:
+  # one pull request per base image, so deno, Temurin or Node moves everywhere at once.
   - package-ecosystem: "docker"
     directories:
+      - "/api"
       - "/.dagger"
       - "/clients/apps/webapp"
     schedule:
@@ -75,7 +64,7 @@ updates:
     commit-message:
       prefix: "chore(docker)"
     groups:
-      webapp-and-pipeline-docker:
+      docker:
         group-by: dependency-name
 
   - package-ecosystem: "docker-compose"
