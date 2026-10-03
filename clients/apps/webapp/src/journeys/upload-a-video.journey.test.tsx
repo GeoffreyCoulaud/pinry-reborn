@@ -40,7 +40,7 @@ async function dropOnTheDialog(file: File) {
 	renderApp("/");
 	await user.click(await screen.findByRole("button", { name: m.create_pin() }));
 	const dialog = await screen.findByRole("dialog", { name: m.create_pin() });
-	fireEvent.drop(within(dialog).getByLabelText(m.drop_image()), dropOf([file]));
+	fireEvent.drop(within(dialog).getByLabelText(m.drop_media()), dropOf([file]));
 	return { user, dialog };
 }
 

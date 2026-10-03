@@ -11,7 +11,7 @@ const REASONS: Record<Known<"DownloadReasonDto">, () => string> = {
 	ACCESS_DENIED: m.reason_access_denied,
 	NOT_FOUND: m.reason_not_found,
 	TOO_LARGE: m.reason_too_large,
-	INVALID_MEDIA: m.reason_invalid_image,
+	INVALID_MEDIA: m.reason_invalid_media,
 	TOO_MANY_PIXELS: m.reason_too_many_pixels,
 	INTERNAL_ERROR: m.reason_internal_error,
 	FETCH_FAILED: m.reason_fetch_failed,

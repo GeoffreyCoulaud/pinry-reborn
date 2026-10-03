@@ -73,7 +73,7 @@ function OriginalMedia({
 			/>
 			{state === "loading" && slow ? (
 				<span className="absolute end-2 bottom-2 flex rounded-full bg-overlay p-1 shadow-surface">
-					<Spinner size="sm" aria-label={m.image_original_loading()} />
+					<Spinner size="sm" aria-label={m.media_original_loading()} />
 				</span>
 			) : null}
 		</div>
@@ -203,9 +203,9 @@ export function PinMedia({
 						{m.retry()}
 					</Button>
 				) : null}
-				{retry.isError ? <p role="alert">{m.image_refused()}</p> : null}
+				{retry.isError ? <p role="alert">{m.media_refused()}</p> : null}
 			</div>
 		);
 	}
-	return <p>{m.pin_no_image()}</p>;
+	return <p>{m.pin_no_media()}</p>;
 }
