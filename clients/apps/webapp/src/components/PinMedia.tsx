@@ -153,7 +153,8 @@ export function PinMedia({
 		if (isVideo(media.mimeType)) {
 			return (
 				<VideoMedia
-					key={media.url}
+					// The address survives a replacement, so the stored size and type tell the new video apart.
+					key={`${media.url}:${media.byteSize}:${media.mimeType}`}
 					url={media.url}
 					mimeType={media.mimeType}
 					width={media.width}
