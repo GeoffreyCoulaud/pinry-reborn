@@ -180,6 +180,7 @@ only; H.265, VP9 and AV1 unmeasured.
 - The web application's uses follow, `uploads.ts` and `uploads.test.ts` by its typecheck, and the two untyped
   handshake fixtures by name: `src/test/app.tsx` and `create-a-pin-by-uploading-a-file.journey.test.tsx`.
 - Removes the backlog item.
+  (Corrected: the item closes with the semaphore, which lands in block 46 after block 40's split.)
 
 ### Block 40
 
@@ -195,6 +196,10 @@ only; H.265, VP9 and AV1 unmeasured.
 - A render that fails answers 422 and calls the processor once over two requests; after `decoder_timeout` changes,
   and separately after `decoder_memory` changes, the next request renders again.
 - `proxy.conf`'s timeout.
+- (Corrected: past the budget, the block splits into three. 40 keeps `RenditionMode`, `renditionOf` and
+  `media.max_pixels_per_render`, whose caller arrives in 43. 43, `feat/a-rendition-is-served-as-judged`, the use
+  case's modes, the key, the ETag, the one-frame poster and the `422`. 46, `feat/renders-wait-their-turn`, the
+  semaphore, `media.render_concurrency`, the failure marker and `proxy.conf`.)
 
 ### Block 50
 

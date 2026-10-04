@@ -98,8 +98,6 @@ class GetPinMediaRendition(
         }
     }
 
-    private val Media.isVideo: Boolean get() = mimeType.startsWith("video/")
-
     private fun keyFor(effectivePx: Int, animated: Boolean): String =
         "$ENCODER_VERSION-$effectivePx-${if (animated) "a" else "s"}.webp"
 

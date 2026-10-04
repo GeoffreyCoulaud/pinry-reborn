@@ -21,6 +21,10 @@ interface MediaConfig {
     @WithDefault("50000000") // 50 megapixels
     fun maxPixelsPerFrame(): Long
 
+    /** The pixels one render may decode, about 8 s of decoding, measured in ADR 0050's specification. */
+    @WithDefault("8000000000")
+    fun maxPixelsPerRender(): Long
+
     /** How long one decoder run may take before it is destroyed. */
     @WithDefault("PT60S")
     fun decoderTimeout(): Duration
