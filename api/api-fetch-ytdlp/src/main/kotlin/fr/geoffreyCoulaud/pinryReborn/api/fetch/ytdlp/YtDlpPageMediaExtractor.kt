@@ -6,12 +6,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchedMedia
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaExtractor
 import fr.geoffreyCoulaud.pinryReborn.api.fetch.http.GuardingProxy
+import fr.geoffreyCoulaud.pinryReborn.api.utilities.ProcessOutcome
+import fr.geoffreyCoulaud.pinryReborn.api.utilities.ProcessRunner
 import java.io.FilterInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
-import java.util.concurrent.FutureTask
-import java.util.concurrent.TimeUnit
 
 /**
  * [PageMediaExtractor] running the `yt-dlp` on the `PATH` twice per page through its own [GuardingProxy], each run
@@ -21,9 +21,11 @@ class YtDlpPageMediaExtractor(
     private val stagingDirectory: Path,
     private val maxBytes: Long,
     private val maxDuration: Duration,
-    private val timeout: Duration,
+    timeout: Duration,
     private val openProxy: () -> GuardingProxy,
 ) : PageMediaExtractor {
+    private val runner = ProcessRunner(timeout)
+
     // The broad catch rethrows: any failure, a lost lease included, first deletes what the runs wrote.
     @Suppress("TooGenericExceptionCaught")
     override fun extract(pageUrl: String, heartbeat: () -> Unit): FetchedMedia {
@@ -54,36 +56,23 @@ class YtDlpPageMediaExtractor(
             return directory.resolve(run(listOf("--load-info-json", INFO_FILE, "-f", format) + DOWNLOAD).trim())
         }
 
-        private fun run(arguments: List<String>): String {
-            val command = listOf("yt-dlp") + options + arguments
-            val process = ProcessBuilder(command).directory(directory.toFile()).start()
-            try {
-                val output = FutureTask { process.inputStream.readAllBytes() }.also { Thread.ofVirtual().start(it) }
-                val errors = FutureTask { process.errorStream.readAllBytes() }.also { Thread.ofVirtual().start(it) }
-                watch(process)
-                if (process.exitValue() != 0) {
-                    val reason = errors.get().decodeToString().trim()
-                    throw proxy.refusal() ?: NoMediaFoundException("yt-dlp found no media: $reason")
-                }
-                return output.get().decodeToString()
-            } finally {
-                process.descendants().forEach { it.destroyForcibly() }
-                process.destroyForcibly().waitFor()
+        private fun run(arguments: List<String>): String =
+            when (val outcome = runner.run(listOf("yt-dlp") + options + arguments, directory, ::tick)) {
+                is ProcessOutcome.TimedOut ->
+                    throw FetchUnreachableException("yt-dlp ran past ${outcome.timeout} and was destroyed")
+                is ProcessOutcome.Exited ->
+                    if (outcome.code == 0) {
+                        outcome.output
+                    } else {
+                        val reason = outcome.errors.trim()
+                        throw proxy.refusal() ?: NoMediaFoundException("yt-dlp found no media: $reason")
+                    }
             }
-        }
 
-        private fun watch(process: Process) {
-            val deadline = System.nanoTime() + timeout.toNanos()
-            while (true) {
-                val exited = process.waitFor(TICK_MILLIS, TimeUnit.MILLISECONDS)
-                heartbeat()
-                if (directory.toFile().walk().sumOf { it.length() } > maxBytes) {
-                    throw FetchTooLargeException("yt-dlp wrote past $maxBytes bytes and was destroyed")
-                }
-                if (exited) return
-                if (System.nanoTime() > deadline) {
-                    throw FetchUnreachableException("yt-dlp ran past $timeout and was destroyed")
-                }
+        private fun tick() {
+            heartbeat()
+            if (directory.toFile().walk().sumOf { it.length() } > maxBytes) {
+                throw FetchTooLargeException("yt-dlp wrote past $maxBytes bytes and was destroyed")
             }
         }
     }
@@ -100,7 +89,6 @@ class YtDlpPageMediaExtractor(
     }
 
     internal companion object {
-        const val TICK_MILLIS = 100L
         const val DEMUXERS = "-nostdin -format_whitelist mov,matroska,mpegts -protocol_whitelist file"
 
         // ADR 0047 decision 3, mpegts added for the HLS fixup. A bare `ffmpeg_i` reaches no postprocessor.
