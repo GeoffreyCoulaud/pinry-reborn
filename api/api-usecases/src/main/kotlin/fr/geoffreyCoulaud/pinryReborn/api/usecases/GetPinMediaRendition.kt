@@ -66,7 +66,7 @@ class GetPinMediaRendition(
                 renderVideo(media, effectivePx, animated)
             } else {
                 mediaStore.openStream(media.storageKey).use { source ->
-                    imageTransformer.render(source, RenditionSpec(effectivePx, animated))
+                    imageTransformer.render(source, RenditionSpec(effectivePx, animated, media.width, media.height))
                 }
             }
         renditionCache.store(media.id, key, staged)
@@ -77,16 +77,22 @@ class GetPinMediaRendition(
     private fun renderVideo(media: Media, effectivePx: Int, animated: Boolean): StagedFile {
         val original = mediaStore.stageStored(media)
         try {
-            return if (animated) videoProcessor.preview(original, effectivePx) else drawPoster(original, effectivePx)
+            return if (animated) {
+                videoProcessor.preview(original, effectivePx)
+            } else {
+                drawPoster(media, original, effectivePx)
+            }
         } finally {
             mediaStore.discardQuietly(original)
         }
     }
 
-    private fun drawPoster(original: StagedFile, effectivePx: Int): StagedFile {
+    // The poster keeps the video's orientation, which is all the transformer reads of the frame's dimensions.
+    private fun drawPoster(media: Media, original: StagedFile, effectivePx: Int): StagedFile {
         val poster = videoProcessor.poster(original, effectivePx)
+        val spec = RenditionSpec(effectivePx, false, media.width, media.height)
         try {
-            return mediaStore.openStaged(poster).use { imageTransformer.render(it, RenditionSpec(effectivePx, false)) }
+            return mediaStore.openStaged(poster).use { imageTransformer.render(it, spec) }
         } finally {
             mediaStore.discardQuietly(poster)
         }
@@ -108,6 +114,6 @@ class GetPinMediaRendition(
          * client would refetch, hit the old bytes under the unchanged key, and get them stamped
          * with the new ETag, pinning the staleness permanently.
          */
-        const val ENCODER_VERSION = "v1"
+        const val ENCODER_VERSION = "v2"
     }
 }

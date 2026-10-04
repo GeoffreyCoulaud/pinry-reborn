@@ -30,10 +30,7 @@ subprojects {
         }
         // Toolchain and bytecode target are both JDK 25 (no split): detekt 2.0
         // runs and analyses on JDK 25, so the old Java-21 floor (forced by detekt
-        // 1.23.8's --jvm-target 22 cap) is gone. A 25 target is also required to
-        // consume vips-ffm, whose Gradle metadata declares org.gradle.jvm.version 22
-        // (a Java-21 consumer variant is rejected); vips-ffm additionally needs a
-        // JDK 23+ runtime, which the toolchain satisfies. Keep compileJava consistent
+        // 1.23.8's --jvm-target 22 cap) is gone. Keep compileJava consistent
         // with compileKotlin (Kotlin enforces matching JVM targets).
         sourceCompatibility = JavaVersion.VERSION_25
         targetCompatibility = JavaVersion.VERSION_25
@@ -61,35 +58,6 @@ subprojects {
         // written to enumerate their violations are worth nothing read that way.
         testLogging {
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-        }
-    }
-
-    // vips-ffm (api-imaging-vips, api-application) resolves libvips/glib/gobject via
-    // DYLD_LIBRARY_PATH on macOS, but SIP strips DYLD_* from the signed Adoptium JDK, so
-    // homebrew's libs are invisible to it. Point vips-ffm at the dylibs explicitly; a no-op
-    // on Linux (CI) where these paths do not exist.
-    //
-    // Applied in afterEvaluate because the plain tasks.withType<Test> block above does NOT
-    // reach the api-application (Quarkus) test JVM: verified for both the systemProperty and
-    // jvmArgs forms, the -D is absent from that JVM's command line and the imaging tests fail
-    // with UnsatisfiedLinkError. Set in afterEvaluate (after the Quarkus plugin configures the
-    // task) the -D is present and they pass. The precise Quarkus internal is not load-bearing
-    // for the fix; the observation is.
-    afterEvaluate {
-        if (System.getProperty("os.name").lowercase().contains("mac")) {
-            val homebrewLib = listOf("/opt/homebrew/lib", "/usr/local/lib")
-                .firstOrNull { java.io.File(it).isDirectory }
-            if (homebrewLib != null) {
-                tasks.withType<Test> {
-                    mapOf(
-                        "vips" to "libvips.dylib",
-                        "glib" to "libglib-2.0.dylib",
-                        "gobject" to "libgobject-2.0.dylib",
-                    ).forEach { (lib, name) ->
-                        jvmArgs("-Dvipsffm.libpath.$lib.override=$homebrewLib/$name")
-                    }
-                }
-            }
         }
     }
 
