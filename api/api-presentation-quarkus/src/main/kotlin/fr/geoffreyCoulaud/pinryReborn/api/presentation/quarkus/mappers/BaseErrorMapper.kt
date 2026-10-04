@@ -74,6 +74,8 @@ class BaseErrorMapper : ExceptionMapper<BaseError> {
             ErrorCode.MEDIA_SOURCE_URL_INVALID -> ProblemCode.MEDIA_SOURCE_URL_INVALID to BAD_REQUEST.statusCode
             ErrorCode.MEDIA_DOWNLOAD_IN_PROGRESS -> ProblemCode.MEDIA_DOWNLOAD_IN_PROGRESS to CONFLICT.statusCode
             ErrorCode.MEDIA_RENDITION_SIZE_INVALID -> ProblemCode.MEDIA_RENDITION_SIZE_INVALID to BAD_REQUEST.statusCode
+            ErrorCode.MEDIA_RENDITION_UNAVAILABLE ->
+                ProblemCode.MEDIA_RENDITION_UNAVAILABLE to UNPROCESSABLE_ENTITY_STATUS_CODE
             ErrorCode.BOARD_DOES_NOT_EXIST -> ProblemCode.BOARD_DOES_NOT_EXIST to NOT_FOUND.statusCode
             ErrorCode.BOARD_INSUFFICIENT_PERMISSIONS ->
                 ProblemCode.BOARD_INSUFFICIENT_PERMISSIONS to FORBIDDEN.statusCode

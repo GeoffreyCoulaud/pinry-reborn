@@ -142,6 +142,14 @@ class BaseErrorMapperTest {
     }
 
     @Test
+    fun `Given MEDIA_RENDITION_UNAVAILABLE, Then status is 422`() {
+        val response = mapper.toResponse(BaseError(message = "boom", code = ErrorCode.MEDIA_RENDITION_UNAVAILABLE))
+
+        assertEquals(422, response.status)
+        assertEquals("MEDIA_RENDITION_UNAVAILABLE", (response.entity as ProblemDetail).code)
+    }
+
+    @Test
     fun `Given BOARD_DOES_NOT_EXIST, Then status is NOT_FOUND`() {
         assertEquals(Response.Status.NOT_FOUND, statusFor(ErrorCode.BOARD_DOES_NOT_EXIST))
     }
