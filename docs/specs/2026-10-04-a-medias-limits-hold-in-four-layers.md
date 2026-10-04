@@ -8,6 +8,9 @@ Lot `0.46.0`. Branches: one stack, each block on the previous one: 10 `refactor/
 `refactor/libvips-runs-in-a-child-process`, 30 `feat/the-media-limits-decide`, 33 `feat/a-media-stores-its-frames`,
 36 `feat/the-handshake-publishes-pixels-per-frame`, 40 `feat/a-rendition-degrades`, 50
 `feat/the-webapp-measures-a-video`.
+(Corrected: the splits added 25 `refactor/vips-thumbnail-renders-in-a-child-process` above 20, 43
+`feat/a-rendition-is-served-as-judged` and 46 `feat/renders-wait-their-turn` above 40, and the closing block 60
+`fix/the-media-limits-close` tops the stack.)
 ADR: `docs/adr/0050-a-medias-limits-hold-in-four-layers.md`, written in block 10.
 
 ## 1. Goal
@@ -91,6 +94,9 @@ only; H.265, VP9 and AV1 unmeasured.
   answers `422` at once, one with other values is ignored and rendered over. A failed `store` or process start
   answers `500` and marks nothing. `evictMedia` and `ReapOrphanedStorage` work per media id and reclaim markers with
   the rest.
+  (Corrected: a marker older than 24 hours, read from its file's modification time, is ignored and rendered over, so
+  a failure the host caused, an out-of-memory kill, a full disk or a loaded machine, is replayed at most once a day.
+  24 hours is chosen, not measured. The failure's cause is logged at `warn` where the marker is written.)
 - **E. Configuration**, each key added in the block that reads it:
   - `media.video_timeout` becomes `media.decoder_timeout` (block 10), 60 s still: a render within the bounds takes
     about 8 s on the machine of section 3, GIF or H.264;
@@ -103,6 +109,7 @@ only; H.265, VP9 and AV1 unmeasured.
     on 12 cores (`cores12-cap2147483648-poster-8k60-480`); a one-frame poster reaches 1151 MiB, a preview 1127 MiB
     and vips 449 MiB. The LARGE 8K poster C draws from one frame reaches 1952 MiB
     (`cores12-cap2147483648-poster-8k60-960`). All 320 runs under 2 GiB passed on both core counts, so 2 GiB stays.)
+    (Corrected: the key is `media.decoder_memory_bytes`, carrying its unit like the other byte limits.)
   - `media.max_pixels` becomes `media.max_pixels_per_frame` (block 36), 50,000,000 still: a 48 to 50 MP phone
     photograph and an 8K video (33 MP) pass;
   - `media.max_pixels_per_render` (block 40), 8,000,000,000, about 8 s: the 8K 60 fps animated rendition (6 Gpx)
@@ -131,10 +138,13 @@ only; H.265, VP9 and AV1 unmeasured.
 |---|---|---|
 | 10 | `refactor/one-process-runner` | G (the runner), E (`decoder_*`) |
 | 20 | `refactor/libvips-runs-in-a-child-process` | G (libvips) |
+| 25 | `refactor/vips-thumbnail-renders-in-a-child-process` | (Corrected: added) G (libvips' renders) |
 | 30 | `feat/the-media-limits-decide` | B |
 | 33 | `feat/a-media-stores-its-frames` | F |
 | 36 | `feat/the-handshake-publishes-pixels-per-frame` | E (`max_pixels_per_frame`), I (API and fixtures) |
-| 40 | `feat/a-rendition-degrades` | C, D, D2 (API), E (the rest), H |
+| 40 | `feat/a-rendition-degrades` | C, D, D2 (API), E (the rest), H (Corrected: C, E (`max_pixels_per_render`)) |
+| 43 | `feat/a-rendition-is-served-as-judged` | (Corrected: added) C (the use case), D (API) |
+| 46 | `feat/renders-wait-their-turn` | (Corrected: added) D2, E (`render_concurrency`), H |
 | 50 | `feat/the-webapp-measures-a-video` | D, I (web application) |
 
 ### Block 10

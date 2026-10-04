@@ -12,6 +12,7 @@ Lot `0.46.0`, one stack of 10 code blocks: 10 `refactor/one-process-runner` (PR 
 `feat/a-rendition-is-served-as-judged` (#314), 46 `feat/renders-wait-their-turn` (#315), 50
 `feat/the-webapp-measures-a-video` (the pull request this file arrives in). Written in block 50 from the block reports
 collapsed in those pull requests; the closing block corrects it after the holistic review.
+(Corrected: the closing block is 60 `fix/the-media-limits-close`, stacked on 50.)
 
 ## Current state
 
@@ -20,6 +21,8 @@ collapsed in those pull requests; the closing block corrects it after the holist
   `media.decoder_timeout` (60 s, formerly `media.video_timeout`) and a `prlimit --as` cap of `media.decoder_memory`
   (2 GiB), with `MALLOC_ARENA_MAX=2` and `VIPS_CONCURRENCY=2`, ffmpeg with `-threads 2 -filter_threads 2`. vips-ffm
   left the build; the image carries `libvips-tools`. Renditions' keys are `v2-` (`ENCODER_VERSION`).
+  (Corrected: the key is `media.decoder_memory_bytes` (60). The runner waits for a child's output no longer than its
+  timeout, an orphaned descendant holding the pipes otherwise keeping the run alive (60).)
 - **`MediaLimits`** (`api-domain/.../domain/media`) holds every pixel and frame bound and decides: `refuseIfOver` at
   ingestion, `renditionOf` at render, returning `WHOLE`, `FIRST_FRAME`, `ONE_FRAME_POSTER` or `NONE`. It also carries
   `renderConcurrency`, `decoderTimeout` and `decoderMemory` (46). The probes return a sealed `MeasuredMedia`.
@@ -32,6 +35,8 @@ collapsed in those pull requests; the closing block corrects it after the holist
 - **Rendition misses wait behind one fair semaphore** of `media.render_concurrency` (2) permits. A decoder that times
   out or exits non-zero answers the same `422` and leaves an empty marker `<key>.failed-<timeout s>-<memory bytes>`,
   so the failure is not replayed until either bound changes. `proxy.conf` sets `proxy_read_timeout 180s` on `/api/`.
+  (Corrected: or until the marker is older than 24 hours, read from its file's modification time, a figure chosen
+  and not measured; the failure's cause is logged at `warn` where the marker is written (60).)
 - **The web application measures a video before sending it** (50): a detached `<video preload="metadata">` on an
   object URL reads `videoWidth x videoHeight`; `0 x 0`, `error` or 10 s without an answer leave the server to judge;
   the URL is revoked on every path. A video past `maxPixelsPerFrame` is refused `TOO_MANY_PIXELS` like an image.
@@ -84,13 +89,18 @@ collapsed in those pull requests; the closing block corrects it after the holist
   frame; React sets `src` as an attribute, so the players' `<video>` never meets the stub. user-event leaves from the
   element it last entered, even once it has left the tree (50).
 - **`pkill -f` with a pattern the shell's own command line holds kills that shell** (50).
+- **A media marked failed renders again only after 24 hours**: deleting `cache/<mediaId>/*.failed-*` under the data
+  directory renders it on the next request (60).
+- **A starved adapter test needs a cap below what the program needs to start**: 1 MiB stops vips and ffmpeg at the
+  dynamic loader, before any decoding (60).
 
 ## Departures from the specification
 
 - **20 into 20 and 25**, 31 files whole; **40 into 40, 43 and 46**, each estimate past 20 files. Both recorded in the
   specification's block table.
+  (Corrected: the table gained rows 25, 43 and 46, and the header their branches, in the closing block.)
 - `MeasuredMedia` carries no `kind`, the sealed type being the kind; a video's bytes come from ffprobe's `format.size`
-  (30). Defaults `frames = 1, duration = null` on `Media`, and `duration_millis` (33). A video's animated rendition
+  (30). (Corrected: from `staged.byteSize`, as an image's do, and "The file declares no size" is gone (60).) Defaults `frames = 1, duration = null` on `Media`, and `duration_millis` (33). A video's animated rendition
   degraded to its whole poster is `FIRST_FRAME`; a poster's held pixels are its hundred output frames alone (40).
   `ServedMedia.Rendition` drops `effectivePx` and `animated`, `ENCODER_VERSION` private to the use case (43).
   `MediaLimits` carries the concurrency and decoder bounds; `RenditionCache.mark` writes an empty entry (46). The
@@ -119,18 +129,34 @@ None in any block.
 ## The holistic review
 
 Not run yet: it reads the top of this stack at the head of Wrap, and the closing block records its findings here.
+(Corrected: it ran, `.reviews/0.46.0-holistic.md`, 0 CRITICAL, 2 MAJOR, 5 MINOR, every one fixed in block 60:
+
+- MAJOR, a decoder's failure reached no log: the cause is logged at `warn` where the marker is written.
+- MAJOR, a transient failure marked a healthy media unavailable for good: the operator's answer "R -> A", a marker
+  expiring after 24 hours, chosen and not measured; `GetPinMediaRenditionTest` pins 24 hours unavailable and one
+  millisecond more rendered, `FilesystemRenditionCacheTest` the marker's time.
+- MINOR, a video's bytes from ffprobe: from `staged.byteSize`; the "declares no size" refusal and its test are gone.
+- MINOR, `ProcessRunner` read the output with no deadline: it reads within the time left to the timeout.
+- MINOR, no test showed ffmpeg's and vips's renders under the cap: a 1 MiB starved case in each suite.
+- MINOR, the block table missed 25, 43 and 46: added, with their branches, as corrections.
+- MINOR, `media.decoder_memory` carried no unit: renamed `media.decoder_memory_bytes`.)
 
 ## The backlog
 
 "A video rendition miss has no single flight" is deleted (block 36), closed by block 46. Nothing was filed.
+(Corrected: reconciled in block 60; no item is adjacent to the lot's findings, none was filed or closed.)
 
 ## The lot's counts
 
 Fix-backs, cascaded rebases, runs re-triggered and the operator's reading of the bodies: filled in by the closing
 block.
+(Corrected: fix-backs 0, cascaded rebases 0, runs they re-triggered 0 so far; the operator's reading of the bodies:
+no remark.)
 
 ## Next step
 
 Wrap: the holistic review over `git diff lot/0.45.0-the-pin-holds-a-video..origin/feat/the-webapp-measures-a-video`,
 then the closing block, the operator's review of the stack, and the tag `lot/0.46.0-a-medias-limits-hold-in-four-layers`
 once it merges.
+(Corrected: the review and the closing block are done; what remains is the operator's review of the stack, its merge
+and the tag.)
