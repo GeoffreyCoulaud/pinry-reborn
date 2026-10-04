@@ -36,11 +36,10 @@ class MediaPortsTest {
             override fun forEachStorageKeyOnDisk(olderThan: Instant, block: (Sequence<String>) -> Unit) {}
         }
         val probe = object : ImageProbe {
-            override fun probe(staged: StagedFile, maxPixels: Long) =
-                ProbeResult(MediaFormat.PNG, 10, 20, frames = 1)
+            override fun probe(staged: StagedFile) = ProbeResult(MediaFormat.PNG, 10, 20, frames = 1, staged.byteSize)
         }
         val staged = store.stage(ByteArrayInputStream(byteArrayOf(1, 2, 3)), 100)
-        val result = probe.probe(staged, 1_000)
+        val result = probe.probe(staged)
         assertEquals(3, staged.byteSize)
         assertEquals(MediaFormat.PNG, result.format)
         assertEquals(20, result.height)
@@ -48,8 +47,8 @@ class MediaPortsTest {
 
     @Test
     fun `Given a probe result, Then it is animated from its second frame on`() {
-        assertFalse(ProbeResult(MediaFormat.GIF, 1, 1, frames = 1).animated)
-        assertTrue(ProbeResult(MediaFormat.GIF, 1, 1, frames = 2).animated)
+        assertFalse(ProbeResult(MediaFormat.GIF, 1, 1, frames = 1, bytes = 1).animated)
+        assertTrue(ProbeResult(MediaFormat.GIF, 1, 1, frames = 2, bytes = 1).animated)
     }
 
     @Test
