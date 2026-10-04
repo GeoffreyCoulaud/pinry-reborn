@@ -15,6 +15,7 @@ class MediaConfigTest {
             override fun maxVideoSeconds() = 120L
             override fun maxPixelsPerFrame() = 50_000_000L
             override fun maxPixelsPerRender() = 8_000_000_000L
+            override fun renderConcurrency() = 2
             override fun decoderTimeout() = Duration.ofSeconds(60)
             override fun decoderMemory() = 2_147_483_648L
         }
@@ -25,6 +26,7 @@ class MediaConfigTest {
         assertEquals(120L, config.maxVideoSeconds())
         assertEquals(50_000_000L, config.maxPixelsPerFrame())
         assertEquals(8_000_000_000L, config.maxPixelsPerRender())
+        assertEquals(2, config.renderConcurrency())
         assertEquals(Duration.ofSeconds(60), config.decoderTimeout())
         assertEquals(2_147_483_648L, config.decoderMemory())
     }

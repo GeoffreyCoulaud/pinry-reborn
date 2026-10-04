@@ -33,6 +33,9 @@ data class MediaLimits(
     val maxVideoDuration: Duration,
     val maxPixelsPerFrame: Long,
     val maxPixelsPerRender: Long,
+    val renderConcurrency: Int,
+    val decoderTimeout: Duration,
+    val decoderMemory: Long,
 ) {
     /** What a rendition [px] on its shortest side draws of [media], [animated] being already intersected with it. */
     fun renditionOf(media: Media, px: Int, animated: Boolean): RenditionMode {

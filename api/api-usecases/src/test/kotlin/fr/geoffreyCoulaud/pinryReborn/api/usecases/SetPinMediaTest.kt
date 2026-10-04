@@ -58,7 +58,7 @@ class SetPinMediaTest : BaseTest() {
     private val clock = mockk<Clock>()
     private val clearPinDownload = mockk<ClearPinDownload>(relaxed = true)
     private val renditionCache = mockk<RenditionCache>()
-    private val limits = MediaLimits(maxImageBytes = 30, maxVideoBytes = 0, Duration.ZERO, 50, maxPixelsPerRender = 50)
+    private val limits = MediaLimits(30, maxVideoBytes = 0, Duration.ZERO, 50, 50, 1, Duration.ZERO, 0)
     private val ingestion = MediaIngestion(store, probe, NoVideoProcessor, limits)
     private val useCase = SetPinMedia(pins, mediaRepository, store, ingestion, clock, clearPinDownload, renditionCache)
 

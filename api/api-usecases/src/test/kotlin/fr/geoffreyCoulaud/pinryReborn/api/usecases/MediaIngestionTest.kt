@@ -34,7 +34,7 @@ class MediaIngestionTest : BaseTest() {
     private val probe = mockk<ImageProbe>()
     private val video = mockk<VideoProcessor>()
     private val maxDuration = Duration.ofSeconds(120)
-    private val limits = MediaLimits(maxImageBytes = 30, maxVideoBytes = 40, maxDuration, 50, maxPixelsPerRender = 50)
+    private val limits = MediaLimits(30, maxVideoBytes = 40, maxDuration, 50, 50, 1, Duration.ZERO, 0)
     private val ingestion = MediaIngestion(store, probe, video, limits)
     private val aVideo = VideoProbeResult(
         VideoCodec.VP9, AudioCodec.OPUS, 4, 6, Duration.ofSeconds(1), frames = 25, bytes = 3, "vp09.00.10.08,opus",

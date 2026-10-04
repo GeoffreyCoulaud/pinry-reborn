@@ -18,6 +18,9 @@ interface RenditionCache {
      */
     fun store(mediaId: UUID, key: String, staged: StagedFile)
 
+    /** Leave an empty entry at (mediaId, key), its key being all it records. */
+    fun mark(mediaId: UUID, key: String)
+
     /** Delete the whole cache subtree for an image (idempotent; a no-op when absent). */
     fun evictMedia(mediaId: UUID)
 

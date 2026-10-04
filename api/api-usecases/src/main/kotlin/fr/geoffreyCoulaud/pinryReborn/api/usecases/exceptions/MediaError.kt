@@ -26,9 +26,9 @@ class MediaSourceUrlInvalidError(cause: Throwable? = null) :
 // the family, and a requester learns nothing about another account's rows.
 class MediaDownloadDoesNotExistError : MediaError("Pin has no media download", ErrorCode.MEDIA_DOES_NOT_EXIST)
 
-/** A frame past `media.max_pixels_per_frame`, stored before the bound was lowered (ADR 0050, decision 2). */
-class MediaRenditionUnavailableError :
-    MediaError("The media has no rendition", ErrorCode.MEDIA_RENDITION_UNAVAILABLE)
+/** A frame past `media.max_pixels_per_frame`, or a decoder that failed under its bounds (ADR 0050, decision 2). */
+class MediaRenditionUnavailableError(cause: Throwable? = null) :
+    MediaError("The media has no rendition", ErrorCode.MEDIA_RENDITION_UNAVAILABLE, cause)
 
 class MediaDownloadInProgressError :
     MediaError("The download is still running", ErrorCode.MEDIA_DOWNLOAD_IN_PROGRESS)

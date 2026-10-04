@@ -7,6 +7,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionSpec
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
@@ -19,10 +20,20 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.io.ByteArrayInputStream
+import java.io.IOException
+import java.io.InputStream
 import java.time.Duration
 import java.util.UUID
 import java.util.UUID.randomUUID
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.FutureTask
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class GetPinMediaRenditionTest {
     private val getPinMedia = mockk<GetPinMedia>()
@@ -32,7 +43,10 @@ class GetPinMediaRenditionTest {
     private val videoProcessor = mockk<VideoProcessor>()
 
     // Bounds every rendition below fits whole, unless a test tightens one.
-    private val roomy = MediaLimits(1, 1, Duration.ZERO, maxPixelsPerFrame = 1_000_000, maxPixelsPerRender = 1_000_000)
+    private val roomy = MediaLimits(
+        1, 1, Duration.ZERO, maxPixelsPerFrame = 1_000_000, maxPixelsPerRender = 1_000_000, renderConcurrency = 2,
+        decoderTimeout = Duration.ofSeconds(60), decoderMemory = 2_147_483_648,
+    )
 
     private fun useCase(limits: MediaLimits = roomy) =
         GetPinMediaRendition(getPinMedia, mediaStore, imageTransformer, renditionCache, videoProcessor, limits)
@@ -56,14 +70,15 @@ class GetPinMediaRenditionTest {
 
     // The strict store answers no openStream or stage: a video's original is staged in place, never copied.
     private fun stubVideoMiss(video: Media, key: String) {
-        every { renditionCache.openStream(video.id, key) } returns null
+        // The rendition and its failure marker alike
+        every { renditionCache.openStream(video.id, any()) } returns null
         every { mediaStore.stageStored(video) } returns original
         every { mediaStore.discard(any()) } returns Unit
         every { renditionCache.store(video.id, key, any()) } returns Unit
     }
 
     private fun stubMiss(img: Media, key: String) {
-        every { renditionCache.openStream(img.id, key) } returns null
+        every { renditionCache.openStream(img.id, any()) } returns null
         every { mediaStore.openStream(img.storageKey) } returns ByteArrayInputStream(byteArrayOf(1))
         every { imageTransformer.render(any(), any()) } returns StagedFile("/tmp/out.webp", 3, "hh")
         every { renditionCache.store(img.id, key, any()) } returns Unit
@@ -267,18 +282,20 @@ class GetPinMediaRenditionTest {
     }
 
     @Test
-    fun `Given a video whose preview fails, Then the failure propagates and the staged original is discarded`() {
+    fun `Given a video whose preview times out, Then it is unavailable, marked failed, and its original discarded`() {
         // Given
         val pinId = randomUUID()
         val video = video(pinId)
         every { getPinMedia.get(pinId, requester) } returns video
         stubVideoMiss(video, "v2-40-a.webp")
         every { videoProcessor.preview(original, 40) } throws VideoProcessorTimeoutException("slow")
+        every { renditionCache.mark(video.id, any()) } returns Unit
 
         // When / Then
-        assertThrows(VideoProcessorTimeoutException::class.java) {
+        assertThrows(MediaRenditionUnavailableError::class.java) {
             useCase.get(pinId, requester, requestedPx = 40, animated = true)
         }
+        verify { renditionCache.mark(video.id, "v2-40-a.webp.failed-60-2147483648") }
         verify { mediaStore.discard(original) }
     }
 
@@ -362,5 +379,183 @@ class GetPinMediaRenditionTest {
         assertThrows(MediaDoesNotExistError::class.java) {
             useCase.get(pinId, requester, requestedPx = 40, animated = true)
         }
+    }
+
+    // Below, requests meet: a cache that remembers and a transformer that holds each render until released.
+
+    private class MemoryCache : RenditionCache {
+        val entries: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+        override fun openStream(mediaId: UUID, key: String) =
+            if ("$mediaId/$key" in entries) ByteArrayInputStream(byteArrayOf()) else null
+
+        override fun store(mediaId: UUID, key: String, staged: StagedFile) {
+            entries += "$mediaId/$key"
+        }
+
+        override fun mark(mediaId: UUID, key: String) {
+            entries += "$mediaId/$key"
+        }
+
+        override fun evictMedia(mediaId: UUID) = error("unused")
+
+        override fun forEachMediaIdOnDisk(block: (Sequence<UUID>) -> Unit) = error("unused")
+    }
+
+    private class HeldTransformer : ImageTransformer {
+        val release = CountDownLatch(1)
+        val renders = AtomicInteger()
+        val failures = ConcurrentLinkedQueue<Exception>()
+
+        override fun render(source: InputStream, spec: RenditionSpec): StagedFile {
+            renders.incrementAndGet()
+            release.await()
+            failures.poll()?.let { throw it }
+            return StagedFile("/tmp/out.webp", 3, "hh")
+        }
+    }
+
+    private class Request(call: () -> ServedMedia) {
+        val result = FutureTask(call)
+        val thread = Thread(result).apply { start() }
+    }
+
+    private val cache = MemoryCache()
+    private val held = HeldTransformer()
+
+    private fun meeting(limits: MediaLimits = roomy.copy(renderConcurrency = 1)) =
+        GetPinMediaRendition(getPinMedia, mediaStore, held, cache, videoProcessor, limits)
+
+    private fun image(): Media {
+        val img = media(randomUUID(), 100, 80, animated = false)
+        every { getPinMedia.get(img.pinId, requester) } returns img
+        every { mediaStore.openStream(img.storageKey) } answers { ByteArrayInputStream(byteArrayOf(1)) }
+        return img
+    }
+
+    private fun GetPinMediaRendition.request(img: Media) = Request { get(img.pinId, requester, 40, null) }
+
+    // Parked on the transformer's latch or on a permit, no request can move until the latch opens.
+    private fun awaitParked(requests: List<Request>) {
+        val deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos()
+        while (requests.any { it.thread.state != Thread.State.WAITING }) {
+            check(System.nanoTime() < deadline) { "never parked: ${requests.map { it.thread.state }}" }
+            Thread.sleep(10)
+        }
+    }
+
+    @Test
+    fun `Given four cold misses under two permits, Then two render while two wait their turn`() {
+        // Given
+        val useCase = meeting(roomy.copy(renderConcurrency = 2))
+        val images = List(4) { image() }
+
+        // When
+        val requests = images.map { useCase.request(it) }
+        awaitParked(requests)
+
+        // Then
+        assertEquals(2, held.renders.get())
+        held.release.countDown()
+        requests.forEach { it.result.get(10, TimeUnit.SECONDS) }
+        assertEquals(4, held.renders.get())
+    }
+
+    @Test
+    fun `Given the only permit held by a render, Then a cached rendition is served without waiting`() {
+        // Given
+        val useCase = meeting()
+        val rendering = useCase.request(image())
+        awaitParked(listOf(rendering))
+        val hit = image()
+        cache.store(hit.id, "v2-40-s.webp", rendered)
+
+        // When
+        val served = assertTimeoutPreemptively(Duration.ofSeconds(5)) { useCase.get(hit.pinId, requester, 40, null) }
+
+        // Then
+        assertEquals(ServedMedia.Rendition(hit.id, "v2-40-s.webp"), served)
+        held.release.countDown()
+        rendering.result.get(10, TimeUnit.SECONDS)
+    }
+
+    @Test
+    fun `Given one permit and a render whose process cannot start, Then the next request renders`() {
+        // Given
+        val useCase = meeting()
+        val img = image()
+        held.release.countDown()
+        held.failures += IOException("cannot start vips")
+
+        // When
+        assertThrows(IOException::class.java) { useCase.get(img.pinId, requester, 40, null) }
+        val served = assertTimeoutPreemptively(Duration.ofSeconds(5)) { useCase.get(img.pinId, requester, 40, null) }
+
+        // Then
+        assertEquals(ServedMedia.Rendition(img.id, "v2-40-s.webp"), served)
+        assertEquals(2, held.renders.get())
+    }
+
+    @Test
+    fun `Given a waiter whose rendition lands while it waits, Then it serves it and renders nothing`() {
+        // Given: the second request takes its turn behind the first, for the same key
+        val useCase = meeting()
+        val img = image()
+        val first = useCase.request(img)
+        awaitParked(listOf(first))
+        val second = useCase.request(img)
+        awaitParked(listOf(first, second))
+
+        // When
+        held.release.countDown()
+
+        // Then
+        assertEquals(first.result.get(10, TimeUnit.SECONDS), second.result.get(10, TimeUnit.SECONDS))
+        assertEquals(1, held.renders.get())
+    }
+
+    @Test
+    fun `Given a waiter whose rendition fails while it waits, Then it is unavailable and renders nothing`() {
+        // Given
+        val useCase = meeting()
+        val img = image()
+        held.failures += UndecodableImageException("vips refused it")
+        val first = useCase.request(img)
+        awaitParked(listOf(first))
+        val second = useCase.request(img)
+        awaitParked(listOf(first, second))
+
+        // When
+        held.release.countDown()
+
+        // Then
+        for (request in listOf(first, second)) {
+            val thrown = assertThrows(ExecutionException::class.java) { request.result.get(10, TimeUnit.SECONDS) }
+            assertInstanceOf(MediaRenditionUnavailableError::class.java, thrown.cause)
+        }
+        assertEquals(1, held.renders.get())
+    }
+
+    @Test
+    fun `Given a decoder that failed, Then its media is unavailable at once until the timeout or the memory changes`() {
+        // Given: the first two renders fail, the third succeeds
+        val img = image()
+        held.release.countDown()
+        repeat(2) { held.failures += UndecodableImageException("vips ran past 60s and was destroyed") }
+        fun unavailable(limits: MediaLimits) = assertThrows(MediaRenditionUnavailableError::class.java) {
+            meeting(limits).get(img.pinId, requester, 40, null)
+        }
+
+        // When / Then: the failure is not replayed under the same bounds
+        unavailable(roomy)
+        unavailable(roomy)
+        assertEquals(1, held.renders.get())
+        // When / Then: a longer timeout renders again, and fails again
+        unavailable(roomy.copy(decoderTimeout = Duration.ofSeconds(120)))
+        assertEquals(2, held.renders.get())
+        // When / Then: more memory renders again, and succeeds
+        val served = meeting(roomy.copy(decoderMemory = 4_294_967_296)).get(img.pinId, requester, 40, null)
+        assertEquals(ServedMedia.Rendition(img.id, "v2-40-s.webp"), served)
+        assertEquals(3, held.renders.get())
     }
 }

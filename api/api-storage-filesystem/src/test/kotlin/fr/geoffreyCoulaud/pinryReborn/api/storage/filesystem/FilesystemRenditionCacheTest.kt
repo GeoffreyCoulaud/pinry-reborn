@@ -35,6 +35,18 @@ class FilesystemRenditionCacheTest {
     }
 
     @Test
+    fun `Given a marked key, Then openStream reads it back empty and evictMedia removes it`() {
+        val id = UUID.randomUUID()
+        cache().mark(id, "v2-4-a.webp.failed-60-2147483648")
+
+        val read = cache().openStream(id, "v2-4-a.webp.failed-60-2147483648")!!.use { it.readBytes() }
+        cache().evictMedia(id)
+
+        assertArrayEquals(byteArrayOf(), read)
+        assertNull(cache().openStream(id, "v2-4-a.webp.failed-60-2147483648"))
+    }
+
+    @Test
     fun `Given no rendition, Then openStream returns null`() {
         assertNull(cache().openStream(UUID.randomUUID(), "v1-4-a.webp"))
     }
