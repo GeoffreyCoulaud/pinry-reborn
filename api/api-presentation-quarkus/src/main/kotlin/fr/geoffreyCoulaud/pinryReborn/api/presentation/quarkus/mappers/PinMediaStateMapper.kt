@@ -17,7 +17,7 @@ object PinMediaStateMapper {
         val img = media
         return PinMediaStateDto(
             status = status.toDto(),
-            url = img?.let { "/api/v1/pins/$pinId/media" },
+            url = img?.let { mediaUrl(pinId) },
             mimeType = img?.mimeType,
             width = img?.width,
             height = img?.height,
@@ -27,6 +27,9 @@ object PinMediaStateMapper {
             replacement = replacement?.toDto(),
         )
     }
+
+    // Shared with BoardMapper: a board's cover is its pin's media, at the same address.
+    internal fun mediaUrl(pinId: UUID): String = "/api/v1/pins/$pinId/media"
 
     private fun PinMediaReplacement.toDto() =
         ReplacementDto(

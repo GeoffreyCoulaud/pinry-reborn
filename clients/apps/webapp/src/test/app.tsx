@@ -184,6 +184,7 @@ export function board(name: string, description = "", pinCount = 0): Board {
 		name,
 		description,
 		pinCount,
+		coverUrl: null,
 	};
 }
 

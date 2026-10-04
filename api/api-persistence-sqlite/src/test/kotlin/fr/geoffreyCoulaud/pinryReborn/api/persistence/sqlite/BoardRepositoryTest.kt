@@ -2,9 +2,11 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.BoardRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -15,12 +17,14 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.UUID
 import java.util.UUID.randomUUID
 
 class BoardRepositoryTest : RepositoryTest() {
     private val boardRepository = BoardRepository(persistor)
     private val pinRepository = PinRepository(persistor)
     private val userRepository = UserRepository(persistor)
+    private val mediaRepository = EbeanMediaRepository(persistor, transactionRunner)
 
     private fun createAndSaveUser(): User =
         userRepository.saveUser(
@@ -61,18 +65,28 @@ class BoardRepositoryTest : RepositoryTest() {
     private fun createAndSavePin(
         author: User,
         boards: List<Board> = emptyList(),
+        createdAt: Instant = storableNow(),
+        id: UUID = randomUUID(),
     ): Pin =
         pinRepository.savePin(
             Pin(
-                id = randomUUID(),
+                id = id,
                 author = author,
                 sourceContextUrl = "https://example.com",
                 sourceMediaUrl = "https://example.com/media.jpeg",
                 description = "Something",
                 tags = emptyList(),
                 boards = boards,
-                createdAt = storableNow(),
+                createdAt = createdAt,
                 updatedAt = storableNow(),
+            ),
+        )
+
+    private fun saveMediaFor(pin: Pin) =
+        mediaRepository.save(
+            Media(
+                id = randomUUID(), pinId = pin.id, mimeType = "image/png", width = 1, height = 1, animated = false,
+                byteSize = 1, contentHash = "h", storageKey = "originals/x/${pin.id}/i.png", createdAt = storableNow(),
             ),
         )
 
@@ -491,6 +505,68 @@ class BoardRepositoryTest : RepositoryTest() {
         // Then
         assertNotNull(found?.createdAt)
         assertNotNull(found?.updatedAt)
+    }
+
+    // --- Cover ---
+
+    @Test
+    fun `Given newer pins recycled, media-less or filed elsewhere, Then findCoverPinId skips them`() {
+        // Given
+        val user = createAndSaveUser()
+        val board = createAndSaveBoard("Board", user)
+        val elsewhere = createAndSaveBoard("Elsewhere", user)
+        val filedElsewhere = createAndSavePin(user, listOf(elsewhere), createdAt = Instant.parse("2026-01-04T00:00:00Z"))
+        val recycled = createAndSavePin(user, listOf(board), createdAt = Instant.parse("2026-01-03T00:00:00Z"))
+        createAndSavePin(user, listOf(board), createdAt = Instant.parse("2026-01-02T00:00:00Z"))
+        val cover = createAndSavePin(user, listOf(board), createdAt = Instant.parse("2026-01-01T00:00:00Z"))
+        listOf(filedElsewhere, recycled, cover).forEach { saveMediaFor(it) }
+        pinRepository.softDeletePin(recycled, storableNow())
+
+        // When
+        val coverPinId = boardRepository.findCoverPinId(board.id)
+
+        // Then
+        assertEquals(cover.id, coverPinId)
+    }
+
+    @Test
+    fun `Given two pins with a media sharing a createdAt, Then findCoverPinId answers the greater id`() {
+        // Given
+        val user = createAndSaveUser()
+        val board = createAndSaveBoard("Board", user)
+        val createdAt = Instant.parse("2026-01-01T00:00:00Z")
+        val lower = UUID.fromString("00000000-0000-0000-0000-000000000001")
+        val greater = UUID.fromString("00000000-0000-0000-0000-000000000002")
+        listOf(lower, greater).forEach { id ->
+            saveMediaFor(createAndSavePin(user, boards = listOf(board), createdAt = createdAt, id = id))
+        }
+
+        // When
+        val coverPinId = boardRepository.findCoverPinId(board.id)
+
+        // Then
+        assertEquals(greater, coverPinId)
+    }
+
+    @Test
+    fun `Given a board whose pins all lack a media, Then findCoverPinId answers null`() {
+        // Given
+        val user = createAndSaveUser()
+        val board = createAndSaveBoard("Board", user)
+        createAndSavePin(user, boards = listOf(board))
+
+        // When, Then
+        assertNull(boardRepository.findCoverPinId(board.id))
+    }
+
+    @Test
+    fun `Given an empty board, Then findCoverPinId answers null`() {
+        // Given
+        val user = createAndSaveUser()
+        val board = createAndSaveBoard("Board", user)
+
+        // When, Then
+        assertNull(boardRepository.findCoverPinId(board.id))
     }
 
     private companion object {

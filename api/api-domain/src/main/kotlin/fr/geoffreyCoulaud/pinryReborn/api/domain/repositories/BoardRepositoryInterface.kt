@@ -6,7 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import java.time.Instant
 import java.util.UUID
 
-// 12 methods trips detekt's default per-interface threshold. Suppressed rather than split,
+// 13 methods trips detekt's default per-interface threshold. Suppressed rather than split,
 // mirroring PinRepositoryInterface's precedent for the same rule.
 @Suppress("TooManyFunctions")
 interface BoardRepositoryInterface {
@@ -56,4 +56,7 @@ interface BoardRepositoryInterface {
 
     /** Count active (non soft-deleted) pins currently in the board. */
     fun countActivePinsInBoard(boardId: UUID): Int
+
+    /** The newest active pin in the board that holds a media, by `(createdAt, id)` descending, or null. */
+    fun findCoverPinId(boardId: UUID): UUID?
 }
