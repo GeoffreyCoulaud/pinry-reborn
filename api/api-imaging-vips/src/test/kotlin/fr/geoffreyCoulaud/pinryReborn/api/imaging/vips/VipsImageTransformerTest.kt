@@ -101,6 +101,14 @@ class VipsImageTransformerTest {
         assertEquals(0, ProcessHandle.current().children().count())
     }
 
+    @Test
+    fun `Given an address space vips cannot start in, Then the render is reported undecodable`() {
+        val starved = VipsImageTransformer(quality = 80, Duration.ofSeconds(60), maxAddressSpace = 1024 * 1024)
+        assertThrows(UndecodableImageException::class.java) {
+            Files.newInputStream(fixture("sample.png")).use { starved.render(it, square(4, false)) }
+        }
+    }
+
     private companion object {
         const val DECODER_MEMORY = 2L * 1024 * 1024 * 1024
     }

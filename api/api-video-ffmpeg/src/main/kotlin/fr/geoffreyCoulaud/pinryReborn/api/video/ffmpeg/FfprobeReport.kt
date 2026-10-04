@@ -18,16 +18,14 @@ internal object FfprobeReport {
     private const val HALF_TURN = 180
     private const val QUARTER_TURN = 90
 
-    fun read(json: String, maxDuration: Duration): VideoProbeResult {
+    /** [bytes] is the file's size as the store measured it, as an image's probe reports it. */
+    fun read(json: String, maxDuration: Duration, bytes: Long): VideoProbeResult {
         val report = mapper.readTree(json)
         val streams = report.path("streams").toList()
         val video = videoTrackOf(streams)
         val videoCodec = videoCodecOf(video)
         val audio = streams.firstOrNull { it.path("codec_type").asText() == "audio" }?.let { audioCodecOf(it) to it }
         val duration = durationOf(report.path("format"), maxDuration)
-        val bytes =
-            report.path("format").path("size").asText().toLongOrNull()
-                ?: throw UndecodableVideoException("The file declares no size")
         val frames = video.path("nb_read_packets").asInt()
         if (frames < 2) throw UndecodableVideoException("The video track holds a single frame")
         val codecs =

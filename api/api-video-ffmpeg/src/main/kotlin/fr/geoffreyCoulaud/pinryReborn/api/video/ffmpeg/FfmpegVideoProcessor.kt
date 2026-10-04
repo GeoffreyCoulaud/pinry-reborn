@@ -25,7 +25,7 @@ class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val
     private val runner = ProcessRunner(timeout, maxAddressSpace)
 
     override fun probe(staged: StagedFile, maxDuration: Duration): VideoProbeResult {
-        return FfprobeReport.read(run(PROBE + staged.path), maxDuration)
+        return FfprobeReport.read(run(PROBE + staged.path), maxDuration, staged.byteSize)
     }
 
     override fun repackage(staged: StagedFile, video: VideoProbeResult): StagedFile {
