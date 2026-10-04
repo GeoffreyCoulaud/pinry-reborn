@@ -515,10 +515,11 @@ class BoardRepositoryTest : RepositoryTest() {
         val user = createAndSaveUser()
         val board = createAndSaveBoard("Board", user)
         val elsewhere = createAndSaveBoard("Elsewhere", user)
-        val filedElsewhere = createAndSavePin(user, listOf(elsewhere), createdAt = Instant.parse("2026-01-04T00:00:00Z"))
-        val recycled = createAndSavePin(user, listOf(board), createdAt = Instant.parse("2026-01-03T00:00:00Z"))
-        createAndSavePin(user, listOf(board), createdAt = Instant.parse("2026-01-02T00:00:00Z"))
-        val cover = createAndSavePin(user, listOf(board), createdAt = Instant.parse("2026-01-01T00:00:00Z"))
+        val oldest = Instant.parse("2026-01-01T00:00:00Z")
+        val filedElsewhere = createAndSavePin(user, listOf(elsewhere), createdAt = oldest.plusSeconds(3))
+        val recycled = createAndSavePin(user, listOf(board), createdAt = oldest.plusSeconds(2))
+        createAndSavePin(user, listOf(board), createdAt = oldest.plusSeconds(1))
+        val cover = createAndSavePin(user, listOf(board), createdAt = oldest)
         listOf(filedElsewhere, recycled, cover).forEach { saveMediaFor(it) }
         pinRepository.softDeletePin(recycled, storableNow())
 
