@@ -5,6 +5,7 @@ import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * Runs a command as a child process, destroyed with its descendants on every exit path or past [timeout]; under
@@ -24,7 +25,7 @@ class ProcessRunner(private val timeout: Duration, private val maxAddressSpace: 
                 val wait = (deadline - System.nanoTime()).coerceIn(0, TICK_NANOS)
                 val exited = process.waitFor(wait, TimeUnit.NANOSECONDS)
                 onTick()
-                if (exited) return ProcessOutcome.Exited(process.exitValue(), output.get(), errors.get())
+                if (exited) return exitedBy(deadline, process.exitValue(), output, errors)
                 if (System.nanoTime() >= deadline) return ProcessOutcome.TimedOut(timeout)
             }
         } finally {
@@ -32,6 +33,16 @@ class ProcessRunner(private val timeout: Duration, private val maxAddressSpace: 
             process.destroyForcibly().waitFor()
         }
     }
+
+    // An orphaned descendant can hold the pipes past the child's exit, beyond reach of descendants().
+    private fun exitedBy(deadline: Long, code: Int, output: FutureTask<String>, errors: FutureTask<String>) =
+        try {
+            val left = { (deadline - System.nanoTime()).coerceAtLeast(0) }
+            val read = { stream: FutureTask<String> -> stream.get(left(), TimeUnit.NANOSECONDS) }
+            ProcessOutcome.Exited(code, read(output), read(errors))
+        } catch (_: TimeoutException) {
+            ProcessOutcome.TimedOut(timeout)
+        }
 
     private fun capped(command: List<String>) =
         if (maxAddressSpace == null) command else listOf("prlimit", "--as=$maxAddressSpace", "--") + command
