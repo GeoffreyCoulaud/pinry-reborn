@@ -21,7 +21,7 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
 | `api-persistence-sqlite`   | Ebean/SQLite: models, mappers, repositories, migrations (`dbmigration/`). |
 | `api-presentation-quarkus` | Jakarta REST: controllers, DTOs, mappers, security, OpenAPI.              |
 | `api-storage-filesystem`   | Media store, rendition cache, export archives.                            |
-| `api-imaging-vips`         | libvips adapter (vips-ffm).                                               |
+| `api-imaging-vips`         | libvips adapter: vipsheader as a process, rendering through vips-ffm.     |
 | `api-video-ffmpeg`         | ffprobe and ffmpeg adapter, run as processes.                             |
 | `api-fetch-http`           | Remote media fetch through a guarding proxy per download.                 |
 | `api-fetch-ytdlp`          | A page's video extracted by yt-dlp, run as a process behind that proxy.   |
@@ -35,6 +35,7 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
 
 - Native libvips: `brew install vips` (macOS) or `libvips42t64` (Ubuntu 24.04), otherwise
   `api-imaging-vips` and image-touching integration tests cannot load the library.
+- `vipsheader` on the `PATH` (`brew install vips`, or `libvips-tools` from apt), which `api-imaging-vips` runs.
 - `ffmpeg` on the `PATH` (`brew install ffmpeg`, or `ffmpeg` from apt), which brings the `ffprobe` and `ffmpeg`
   that `api-video-ffmpeg` runs. The workstation's version may differ from the images': tests assert behaviour.
 - `prlimit` on the `PATH`, from util-linux, which caps every decoder's address space (ADR 0050): Linux only, and

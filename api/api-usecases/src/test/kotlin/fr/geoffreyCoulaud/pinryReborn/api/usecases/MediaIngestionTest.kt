@@ -67,7 +67,7 @@ class MediaIngestionTest : BaseTest() {
     @Test fun `Given an image past its own byte bound but under the video's, Then it is discarded and refused`() {
         // Given
         val heavy = StagedFile("/tmp/heavy", 35, "hash")
-        every { probe.probe(heavy, maxPixels) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+        every { probe.probe(heavy, maxPixels) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1)
 
         // When
         assertThrows(MediaTooLargeException::class.java) { ingestion.ingest(heavy, ownerId, pinId, createdAt) }
@@ -78,7 +78,7 @@ class MediaIngestionTest : BaseTest() {
 
     @Test fun `Given a decodable file, Then the row carries the probe's answer under its owner's and pin's key`() {
         // Given
-        every { probe.probe(staged, maxPixels) } returns ProbeResult(MediaFormat.WEBP, 4, 5, animated = true)
+        every { probe.probe(staged, maxPixels) } returns ProbeResult(MediaFormat.WEBP, 4, 5, frames = 3)
 
         // When
         val media = ingestion.ingest(staged, ownerId, pinId, createdAt).media
@@ -250,7 +250,7 @@ class MediaIngestionTest : BaseTest() {
 
     @Test fun `Given an ingested media, Then promote moves it to its key and discard removes both copies`() {
         // Given
-        every { probe.probe(staged, maxPixels) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+        every { probe.probe(staged, maxPixels) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1)
         val ingested = ingestion.ingest(staged, ownerId, pinId, createdAt)
 
         // When

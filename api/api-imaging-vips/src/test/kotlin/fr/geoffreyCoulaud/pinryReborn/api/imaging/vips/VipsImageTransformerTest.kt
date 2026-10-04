@@ -10,16 +10,18 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Duration
 
 class VipsImageTransformerTest {
     private val transformer = VipsImageTransformer(quality = 80)
+    private val probe = VipsImageProbe(Duration.ofSeconds(60), maxAddressSpace = 2L * 1024 * 1024 * 1024)
 
     private fun renderAndProbe(fixture: String, spec: RenditionSpec): ProbeResult {
         val staged = Files.newInputStream(Path.of("src/test/resources/fixtures", fixture)).use {
             transformer.render(it, spec)
         }
         return try {
-            VipsImageProbe().probe(StagedFile(staged.path, 0, ""), maxPixels = 1_000_000)
+            probe.probe(StagedFile(staged.path, 0, ""), maxPixels = 1_000_000)
         } finally {
             Files.deleteIfExists(Path.of(staged.path))
         }

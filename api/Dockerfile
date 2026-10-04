@@ -14,12 +14,13 @@ FROM eclipse-temurin:25-jre@sha256:bb036ed6cfdc57e3da7c22634d15f1b840d2caf761838
 
 # curl is used only by the HEALTHCHECK below. libvips42t64 is the native
 # library vips-ffm loads for api-imaging-vips (eclipse-temurin:25-jre is
-# Ubuntu-based, post 64-bit-time_t transition, hence the t64 suffix). ffmpeg
+# Ubuntu-based, post 64-bit-time_t transition, hence the t64 suffix), and
+# libvips-tools the vipsheader it runs (ADR 0050). ffmpeg
 # brings the ffprobe and ffmpeg processes api-video-ffmpeg runs (ADR 0047).
 # python3 and python3-venv carry yt-dlp (ADR 0048).
 # Install them minimally and drop the apt lists to keep the layer small.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl libvips42t64 ffmpeg python3 python3-venv \
+    && apt-get install -y --no-install-recommends curl libvips42t64 libvips-tools ffmpeg python3 python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 # yt-dlp in a venv, Ubuntu's python3 refusing a system-wide install (PEP 668); deno is the

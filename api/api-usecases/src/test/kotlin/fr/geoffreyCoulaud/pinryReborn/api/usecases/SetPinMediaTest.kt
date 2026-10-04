@@ -73,7 +73,7 @@ class SetPinMediaTest : BaseTest() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
-        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1)
         every { mediaRepository.findByPinId(p.id) } returns null
         every { clock.now() } returns Instant.parse("2026-07-08T00:00:00Z")
         every { mediaRepository.save(any()) } answers { firstArg() }
@@ -96,7 +96,7 @@ class SetPinMediaTest : BaseTest() {
         val old = Media(randomUUID(), p.id, "image/png", 1, 1, false, 1, "old", "originals/o/old.png", Instant.EPOCH)
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
-        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.WEBP, 2, 2, animated = false)
+        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.WEBP, 2, 2, frames = 1)
         every { mediaRepository.findByPinId(p.id) } returns old
         every { clock.now() } returns Instant.EPOCH
         every { mediaRepository.save(any()) } answers { firstArg() }
@@ -112,7 +112,7 @@ class SetPinMediaTest : BaseTest() {
         val old = Media(randomUUID(), p.id, "image/png", 1, 1, false, 1, "old", "originals/o/old.png", Instant.EPOCH)
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
-        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.WEBP, 2, 2, animated = false)
+        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.WEBP, 2, 2, frames = 1)
         every { mediaRepository.findByPinId(p.id) } returns old
         every { clock.now() } returns Instant.EPOCH
         every { mediaRepository.save(any()) } answers { firstArg() }
@@ -127,7 +127,7 @@ class SetPinMediaTest : BaseTest() {
         val old = Media(randomUUID(), p.id, "image/png", 1, 1, false, 1, "old", "originals/o/old.png", Instant.EPOCH)
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
-        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.WEBP, 2, 2, animated = false)
+        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.WEBP, 2, 2, frames = 1)
         every { mediaRepository.findByPinId(p.id) } returns old
         every { clock.now() } returns Instant.EPOCH
         every { mediaRepository.save(any()) } answers { firstArg() }
@@ -161,7 +161,7 @@ class SetPinMediaTest : BaseTest() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns StagedFile("/tmp/s", 31, "hash")
-        every { probe.probe(any(), 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+        every { probe.probe(any(), 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1)
         every { clock.now() } returns Instant.EPOCH
         assertThrows(MediaTooLargeError::class.java) { useCase.set(p.id, owner, upload()) }
     }
@@ -265,7 +265,7 @@ class SetPinMediaTest : BaseTest() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
-        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1)
         every { mediaRepository.findByPinId(p.id) } returns null
         every { clock.now() } returns Instant.EPOCH
         every { store.promote(any(), any()) } throws RuntimeException("disk full")
@@ -281,7 +281,7 @@ class SetPinMediaTest : BaseTest() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
-        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1)
         every { mediaRepository.findByPinId(p.id) } returns null
         every { clock.now() } returns Instant.EPOCH
         every { store.promote(any(), any()) } throws IOException("disk full")
@@ -296,7 +296,7 @@ class SetPinMediaTest : BaseTest() {
         val storageKeySlot = slot<String>()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
-        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1)
         every { mediaRepository.findByPinId(p.id) } returns null
         every { clock.now() } returns Instant.EPOCH
         every { store.promote(staged, capture(storageKeySlot)) } just runs
@@ -313,7 +313,7 @@ class SetPinMediaTest : BaseTest() {
         val old = Media(randomUUID(), p.id, "image/png", 1, 1, false, 1, "old", "originals/o/old.png", Instant.EPOCH)
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
-        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.WEBP, 2, 2, animated = false)
+        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.WEBP, 2, 2, frames = 1)
         every { mediaRepository.findByPinId(p.id) } returns old
         every { clock.now() } returns Instant.EPOCH
         every { mediaRepository.save(any()) } answers { firstArg() }
@@ -329,7 +329,7 @@ class SetPinMediaTest : BaseTest() {
         val promoteError = RuntimeException("disk full")
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
-        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1)
         every { mediaRepository.findByPinId(p.id) } returns null
         every { clock.now() } returns Instant.EPOCH
         every { store.promote(any(), any()) } throws promoteError
@@ -347,7 +347,7 @@ class SetPinMediaTest : BaseTest() {
         val promoteError = RuntimeException("disk full")
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
-        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, animated = false)
+        every { probe.probe(staged, 50) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1)
         every { mediaRepository.findByPinId(p.id) } returns null
         every { clock.now() } returns Instant.EPOCH
         every { store.promote(any(), any()) } throws promoteError

@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.imaging.vips.VipsImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
@@ -58,6 +58,9 @@ class RenditionsIntegrationTest : IntegrationTest() {
     @Inject
     lateinit var mediaConfig: MediaConfig
 
+    @Inject
+    lateinit var imageProbe: ImageProbe
+
     private fun fixture(name: String) = File("src/test/resources/fixtures/$name")
 
     private fun createPinFor(auth: AuthenticatedUser): UUID {
@@ -90,7 +93,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         val tmp = Files.createTempFile("resp-", ".bin")
         Files.write(tmp, bytes)
         return try {
-            VipsImageProbe().probe(StagedFile(tmp.toString(), 0, ""), maxPixels = 1_000_000)
+            imageProbe.probe(StagedFile(tmp.toString(), 0, ""), maxPixels = 1_000_000)
         } finally {
             Files.deleteIfExists(tmp)
         }
