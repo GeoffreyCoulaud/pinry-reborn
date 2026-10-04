@@ -37,6 +37,8 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
   `api-imaging-vips` and image-touching integration tests cannot load the library.
 - `ffmpeg` on the `PATH` (`brew install ffmpeg`, or `ffmpeg` from apt), which brings the `ffprobe` and `ffmpeg`
   that `api-video-ffmpeg` runs. The workstation's version may differ from the images': tests assert behaviour.
+- `prlimit` on the `PATH`, from util-linux, which caps every decoder's address space (ADR 0050): Linux only, and
+  already in the images' Ubuntu base.
 - `yt-dlp` and `deno` on the `PATH`, the images installing yt-dlp from `api/tools/yt-dlp/requirements.txt`
   (`pip install --require-hashes -r` in a venv) and copying deno from `denoland/deno:bin`. That file is
   `pip-compile`'s output: edit `requirements.in` and recompile with the command its comment names, not the one in

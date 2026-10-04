@@ -25,7 +25,7 @@ import java.util.HexFormat
 import javax.imageio.ImageIO
 
 class FfmpegVideoProcessorTest {
-    private val processor = FfmpegVideoProcessor(Duration.ofSeconds(60), webpQuality = 75)
+    private val processor = FfmpegVideoProcessor(Duration.ofSeconds(60), DECODER_MEMORY, webpQuality = 75)
     private val maxDuration = Duration.ofSeconds(120)
 
     @TempDir
@@ -183,10 +183,11 @@ class FfmpegVideoProcessorTest {
     }
 
     @Test
-    fun `Given a poster or a preview, Then its decoder is bounded to two threads, as an input option before -i`() {
+    fun `Given a poster or a preview, Then its decoder and its filters are bounded to two threads, before -i`() {
         val command = processor.renderCommand("in.mkv", listOf("-frames:v", "1"), "out.png")
         val inputOptions = command.subList(0, command.indexOf("-i"))
         assertEquals(listOf("-threads", "2"), inputOptions.takeLast(2), command.toString())
+        assertTrue(listOf("-filter_threads", "2") in inputOptions.windowed(2), command.toString())
     }
 
     @Test
@@ -303,12 +304,16 @@ class FfmpegVideoProcessorTest {
     @Test
     fun `Given a timeout ffprobe cannot meet, Then the process is destroyed and reported`() {
         // Given
-        val impatient = FfmpegVideoProcessor(Duration.ZERO, webpQuality = 75)
+        val impatient = FfmpegVideoProcessor(Duration.ZERO, DECODER_MEMORY, webpQuality = 75)
         // When
         assertThrows(VideoProcessorTimeoutException::class.java) {
             impatient.probe(staged("h264-aac.mkv"), maxDuration)
         }
         // Then
         assertEquals(0, ProcessHandle.current().children().count())
+    }
+
+    private companion object {
+        const val DECODER_MEMORY = 2L * 1024 * 1024 * 1024
     }
 }

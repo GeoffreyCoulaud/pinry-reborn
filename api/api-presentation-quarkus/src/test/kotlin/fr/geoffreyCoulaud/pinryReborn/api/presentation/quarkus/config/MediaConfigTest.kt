@@ -14,7 +14,8 @@ class MediaConfigTest {
             override fun maxVideoBytes() = 52_428_800L
             override fun maxVideoSeconds() = 120L
             override fun maxPixels() = 50_000_000L
-            override fun videoTimeout() = Duration.ofSeconds(60)
+            override fun decoderTimeout() = Duration.ofSeconds(60)
+            override fun decoderMemory() = 2_147_483_648L
         }
         // Then
         assertEquals("/var/lib/pinry", config.dataDir())
@@ -22,6 +23,7 @@ class MediaConfigTest {
         assertEquals(52_428_800L, config.maxVideoBytes())
         assertEquals(120L, config.maxVideoSeconds())
         assertEquals(50_000_000L, config.maxPixels())
-        assertEquals(Duration.ofSeconds(60), config.videoTimeout())
+        assertEquals(Duration.ofSeconds(60), config.decoderTimeout())
+        assertEquals(2_147_483_648L, config.decoderMemory())
     }
 }

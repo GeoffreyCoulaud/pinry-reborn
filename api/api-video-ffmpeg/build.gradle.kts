@@ -3,6 +3,7 @@ plugins {
 }
 dependencies {
     implementation(project(":api-domain"))
+    implementation(project(":api-utilities"))
     // Jackson is provided at runtime by api-application's Quarkus runtime.
     compileOnly(platform(libs.quarkus.bom))
     compileOnly(libs.jackson.databind)

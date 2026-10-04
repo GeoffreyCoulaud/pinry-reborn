@@ -149,7 +149,7 @@ class YtDlpPageMediaExtractorTest {
     }
 
     private fun probe(file: Path) =
-        FfmpegVideoProcessor(Duration.ofSeconds(30), WEBP_QUALITY)
+        FfmpegVideoProcessor(Duration.ofSeconds(30), DECODER_MEMORY, WEBP_QUALITY)
             .probe(StagedFile(file.toString(), Files.size(file), "unused"), maxDuration)
 
     @Test
@@ -408,5 +408,6 @@ class YtDlpPageMediaExtractorTest {
         const val CHUNK_INTERVAL_MILLIS = 20L
         const val ENDLESS_BYTES = 4 * 1024 * 1024
         const val WEBP_QUALITY = 75
+        const val DECODER_MEMORY = 2L * 1024 * 1024 * 1024
     }
 }
