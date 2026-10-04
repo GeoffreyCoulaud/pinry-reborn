@@ -11,6 +11,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaRenditionUnavailableError
 import io.mockk.every
@@ -25,6 +26,7 @@ import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
 import java.util.concurrent.ConcurrentHashMap
@@ -48,8 +50,14 @@ class GetPinMediaRenditionTest {
         decoderTimeout = Duration.ofSeconds(60), decoderMemory = 2_147_483_648,
     )
 
+    // Moved forward by the tests that age a failure marker.
+    private var now = Instant.parse("2026-10-04T12:00:00Z")
+    private val clock = object : Clock {
+        override fun now() = this@GetPinMediaRenditionTest.now
+    }
+
     private fun useCase(limits: MediaLimits = roomy) =
-        GetPinMediaRendition(getPinMedia, mediaStore, imageTransformer, renditionCache, videoProcessor, limits)
+        GetPinMediaRendition(getPinMedia, mediaStore, imageTransformer, renditionCache, videoProcessor, limits, clock)
 
     private val useCase = useCase()
 
@@ -70,8 +78,8 @@ class GetPinMediaRenditionTest {
 
     // The strict store answers no openStream or stage: a video's original is staged in place, never copied.
     private fun stubVideoMiss(video: Media, key: String) {
-        // The rendition and its failure marker alike
         every { renditionCache.openStream(video.id, any()) } returns null
+        every { renditionCache.markedAt(video.id, any()) } returns null
         every { mediaStore.stageStored(video) } returns original
         every { mediaStore.discard(any()) } returns Unit
         every { renditionCache.store(video.id, key, any()) } returns Unit
@@ -79,6 +87,7 @@ class GetPinMediaRenditionTest {
 
     private fun stubMiss(img: Media, key: String) {
         every { renditionCache.openStream(img.id, any()) } returns null
+        every { renditionCache.markedAt(img.id, any()) } returns null
         every { mediaStore.openStream(img.storageKey) } returns ByteArrayInputStream(byteArrayOf(1))
         every { imageTransformer.render(any(), any()) } returns StagedFile("/tmp/out.webp", 3, "hh")
         every { renditionCache.store(img.id, key, any()) } returns Unit
@@ -383,8 +392,9 @@ class GetPinMediaRenditionTest {
 
     // Below, requests meet: a cache that remembers and a transformer that holds each render until released.
 
-    private class MemoryCache : RenditionCache {
+    private inner class MemoryCache : RenditionCache {
         val entries: MutableSet<String> = ConcurrentHashMap.newKeySet()
+        val marks = ConcurrentHashMap<String, Instant>()
 
         override fun openStream(mediaId: UUID, key: String) =
             if ("$mediaId/$key" in entries) ByteArrayInputStream(byteArrayOf()) else null
@@ -394,8 +404,10 @@ class GetPinMediaRenditionTest {
         }
 
         override fun mark(mediaId: UUID, key: String) {
-            entries += "$mediaId/$key"
+            marks["$mediaId/$key"] = now
         }
+
+        override fun markedAt(mediaId: UUID, key: String) = marks["$mediaId/$key"]
 
         override fun evictMedia(mediaId: UUID) = error("unused")
 
@@ -424,7 +436,7 @@ class GetPinMediaRenditionTest {
     private val held = HeldTransformer()
 
     private fun meeting(limits: MediaLimits = roomy.copy(renderConcurrency = 1)) =
-        GetPinMediaRendition(getPinMedia, mediaStore, held, cache, videoProcessor, limits)
+        GetPinMediaRendition(getPinMedia, mediaStore, held, cache, videoProcessor, limits, clock)
 
     private fun image(): Media {
         val img = media(randomUUID(), 100, 80, animated = false)
@@ -537,7 +549,7 @@ class GetPinMediaRenditionTest {
     }
 
     @Test
-    fun `Given a decoder that failed, Then its media is unavailable at once until the timeout or the memory changes`() {
+    fun `Given a decoder that failed, Then its media is unavailable, and a new timeout or memory renders it again`() {
         // Given: the first two renders fail, the third succeeds
         val img = image()
         held.release.countDown()
@@ -557,5 +569,25 @@ class GetPinMediaRenditionTest {
         val served = meeting(roomy.copy(decoderMemory = 4_294_967_296)).get(img.pinId, requester, 40, null)
         assertEquals(ServedMedia.Rendition(img.id, "v2-40-s.webp"), served)
         assertEquals(3, held.renders.get())
+    }
+
+    @Test
+    fun `Given a decoder that failed, Then its media stays unavailable for 24 hours and renders again past them`() {
+        // Given: the first render fails, the second succeeds
+        val useCase = meeting()
+        val img = image()
+        held.release.countDown()
+        held.failures += UndecodableImageException("vips was killed")
+        assertThrows(MediaRenditionUnavailableError::class.java) { useCase.get(img.pinId, requester, 40, null) }
+
+        // When / Then: a marker 24 hours old still holds
+        now += Duration.ofHours(24)
+        assertThrows(MediaRenditionUnavailableError::class.java) { useCase.get(img.pinId, requester, 40, null) }
+        assertEquals(1, held.renders.get())
+
+        // When / Then: an older one is rendered over
+        now += Duration.ofMillis(1)
+        assertEquals(ServedMedia.Rendition(img.id, "v2-40-s.webp"), useCase.get(img.pinId, requester, 40, null))
+        assertEquals(2, held.renders.get())
     }
 }

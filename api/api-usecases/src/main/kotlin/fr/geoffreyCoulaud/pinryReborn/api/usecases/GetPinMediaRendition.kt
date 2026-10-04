@@ -12,8 +12,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaRenditionUnavailableError
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.enterprise.context.ApplicationScoped
+import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.Semaphore
 
@@ -24,6 +27,7 @@ sealed interface ServedMedia {
 }
 
 @ApplicationScoped
+@Suppress("LongParameterList") // CDI-injected: every parameter is a collaborator provided by the container.
 class GetPinMediaRendition(
     private val getPinMedia: GetPinMedia,
     private val mediaStore: MediaStore,
@@ -31,6 +35,7 @@ class GetPinMediaRendition(
     private val renditionCache: RenditionCache,
     private val videoProcessor: VideoProcessor,
     private val limits: MediaLimits,
+    private val clock: Clock,
 ) {
     private val renders = Semaphore(limits.renderConcurrency, true)
 
@@ -88,18 +93,18 @@ class GetPinMediaRendition(
     // Every miss waits its turn, without a time limit; the rendition or its failure may land meanwhile (ADR 0050).
     private fun renderMiss(mediaId: UUID, key: String, render: () -> StagedFile) {
         val failure = "$key.failed-${limits.decoderTimeout.seconds}-${limits.decoderMemory}"
-        if (isCached(mediaId, failure)) throw MediaRenditionUnavailableError()
+        if (failedRecently(mediaId, failure)) throw MediaRenditionUnavailableError()
         renders.acquire()
         try {
             if (isCached(mediaId, key)) return
-            if (isCached(mediaId, failure)) throw MediaRenditionUnavailableError()
+            if (failedRecently(mediaId, failure)) throw MediaRenditionUnavailableError()
             renditionCache.store(mediaId, key, decode(mediaId, failure, render))
         } finally {
             renders.release()
         }
     }
 
-    // A decoder's refusal or timeout is marked so it is not replayed; a process that cannot start marks nothing.
+    // A decoder's refusal or timeout is marked, not replayed for a day; a process that cannot start marks nothing.
     private fun decode(mediaId: UUID, failure: String, render: () -> StagedFile): StagedFile =
         try {
             render()
@@ -110,8 +115,15 @@ class GetPinMediaRendition(
         }
 
     private fun markFailed(mediaId: UUID, failure: String, cause: Exception): MediaRenditionUnavailableError {
+        logger.warn(cause) { "media $mediaId: rendition unavailable, marked $failure" }
         renditionCache.mark(mediaId, failure)
         return MediaRenditionUnavailableError(cause)
+    }
+
+    // The host may be the cause (an out-of-memory kill, a full disk, a loaded machine), so a marker expires.
+    private fun failedRecently(mediaId: UUID, failure: String): Boolean {
+        val markedAt = renditionCache.markedAt(mediaId, failure) ?: return false
+        return !markedAt.isBefore(clock.now() - FAILURE_LIFETIME)
     }
 
     private fun isCached(mediaId: UUID, key: String): Boolean =
@@ -151,5 +163,10 @@ class GetPinMediaRendition(
     private companion object {
         /** Bumped whenever the rendition encoding changes, which orphans every cached file and its ETag. */
         const val ENCODER_VERSION = "v2"
+
+        /** Chosen, not measured: a failure is replayed at most once a day (specification decision D2). */
+        val FAILURE_LIFETIME: Duration = Duration.ofHours(24)
+
+        val logger = KotlinLogging.logger {}
     }
 }
