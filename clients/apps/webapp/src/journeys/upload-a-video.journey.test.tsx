@@ -72,8 +72,29 @@ describe("upload a video", () => {
 		await submit(user, dialog);
 
 		await waitFor(() => expect(sent).toBe(true));
-		// A browser decodes no video into a bitmap, so measuring one would refuse every video.
+		// A video's frame is read from its header, never decoded into a bitmap.
 		expect(decode).not.toHaveBeenCalled();
+	});
+
+	it("Given a video whose frame is past the per-frame bound, Then no request leaves", async () => {
+		let sent = false;
+		routes(() => {
+			sent = true;
+			return stored();
+		});
+		vi.spyOn(HTMLVideoElement.prototype, "videoWidth", "get").mockReturnValue(
+			10_000,
+		);
+		vi.spyOn(HTMLVideoElement.prototype, "videoHeight", "get").mockReturnValue(
+			10_000,
+		);
+
+		await dropOnTheDialog(new File(["ok"], "cat.mp4", { type: "video/mp4" }));
+
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			m.file_too_large(),
+		);
+		expect(sent).toBe(false);
 	});
 
 	it("Given a video heavier than the video bound, Then no request leaves", async () => {

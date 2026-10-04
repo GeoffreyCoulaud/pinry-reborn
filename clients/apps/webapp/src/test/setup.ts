@@ -41,6 +41,23 @@ globalThis.ResizeObserver = class {
 globalThis.createImageBitmap = () =>
 	Promise.resolve({ width: 100, height: 100, close: () => {} } as ImageBitmap);
 
+// jsdom loads no video, so a source set fires neither `loadedmetadata` nor `error`: the stub reads a
+// small frame from any source, as `createImageBitmap`'s does.
+Object.defineProperties(HTMLVideoElement.prototype, {
+	src: {
+		configurable: true,
+		get(this: HTMLVideoElement) {
+			return this.getAttribute("src") ?? "";
+		},
+		set(this: HTMLVideoElement, url: string) {
+			this.setAttribute("src", url);
+			queueMicrotask(() => this.dispatchEvent(new Event("loadedmetadata")));
+		},
+	},
+	videoWidth: { configurable: true, get: () => 100 },
+	videoHeight: { configurable: true, get: () => 100 },
+});
+
 // jsdom implements no `decode`, and loads no image to decode: an original never arrives unless a test says so.
 HTMLImageElement.prototype.decode = () => new Promise(() => {});
 

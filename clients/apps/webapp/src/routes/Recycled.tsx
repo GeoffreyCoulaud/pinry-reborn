@@ -18,6 +18,7 @@ import {
 import { AppHeader } from "../components/AppHeader";
 import { AppNav } from "../components/AppNav";
 import { IconButton } from "../components/IconButton";
+import { RenditionImage } from "../components/RenditionImage";
 import { SelectionBar, SelectionTick } from "../components/SelectionBar";
 import { SortSelect } from "../components/SortSelect";
 import { RECYCLED_PIN_SORTS, type RecycledPinSort } from "../lib/sorts";
@@ -197,7 +198,7 @@ function RecycledPins({ sort }: { sort: RecycledPinSort }) {
 								<SelectionTick shown={selection.ids.length > 0} />
 								{/* Decorative: the description beside it is the row's own name. */}
 								{pin.media?.url ? (
-									<img
+									<RenditionImage
 										src={tileMediaSource(pin.media.url, "SMALL")}
 										alt=""
 										className="size-12 shrink-0 rounded object-cover"

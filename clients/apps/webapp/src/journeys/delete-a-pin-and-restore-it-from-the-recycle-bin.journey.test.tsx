@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
@@ -103,6 +103,33 @@ describe("delete a pin and restore it from the recycle bin", () => {
 
 		expect(record.restored).toEqual([{ pinIds: [gone.id] }]);
 		expect(await screen.findByRole("status")).toHaveTextContent(m.bin_empty());
+	});
+
+	it("Given a pin in the bin whose rendition the server cannot draw, Then its row says the preview is unavailable", async () => {
+		const gone = readyPin("a harbour at dusk");
+		server.use(
+			sessionRoute(() => true),
+			http.get("/api/v1/pins/recycled", () =>
+				HttpResponse.json({
+					pins: [gone],
+					pagination: { previousCursor: null, nextCursor: null },
+				}),
+			),
+			downloadsRoute(),
+			handshakeRoute(),
+		);
+		renderApp("/recycled");
+		const row = await screen.findByRole("row", { name: gone.description });
+		const thumbnail = row.querySelector("img");
+		if (thumbnail === null) {
+			throw new Error("No thumbnail was drawn.");
+		}
+
+		fireEvent.error(thumbnail);
+
+		expect(
+			within(row).getByRole("img", { name: m.preview_unavailable() }),
+		).toBeVisible();
 	});
 
 	it("Given the API refuses the delete, Then the tile stays and the refusal is said", async () => {

@@ -25,14 +25,43 @@ const REFUSALS: Record<DropRefusal, () => string> = {
 
 const READING_DELAY_MS = 300;
 
+/** How long a video's header may take to read before the server is left to judge its frame. */
+const VIDEO_HEADER_TIMEOUT_MS = 10_000;
+
 /** An element refused speaks where the gesture happened, and the gesture owns no form. */
 export function refuse(refusal: DropRefusal) {
 	toast.danger(REFUSALS[refusal]());
 }
 
+/** A video's frame read from its header alone, `null` where the browser cannot tell. */
+function videoPixels(file: File): Promise<number | null> {
+	const source = URL.createObjectURL(file);
+	const video = document.createElement("video");
+	let timeout: ReturnType<typeof setTimeout> | undefined;
+	return new Promise<number | null>((resolve) => {
+		timeout = setTimeout(() => resolve(null), VIDEO_HEADER_TIMEOUT_MS);
+		// A file with no video track reads as 0 x 0.
+		video.onloadedmetadata = () =>
+			resolve(video.videoWidth * video.videoHeight || null);
+		video.onerror = () => resolve(null);
+		video.preload = "metadata";
+		video.src = source;
+	}).finally(() => {
+		clearTimeout(timeout);
+		URL.revokeObjectURL(source);
+	});
+}
+
 /** The pixel count a limit is read against, which nothing short of a decoder knows. */
 async function measured(file: File): Promise<MeasuredUpload> {
-	// `createImageBitmap` refuses a video, and a file with no type is the server's to judge.
+	if (file.type.startsWith("video/")) {
+		return {
+			size: file.size,
+			type: file.type,
+			pixels: await videoPixels(file),
+		};
+	}
+	// A file with no type is the server's to judge.
 	if (!file.type.startsWith("image/")) {
 		return { size: file.size, type: file.type, pixels: null };
 	}
