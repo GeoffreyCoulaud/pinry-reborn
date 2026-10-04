@@ -29,6 +29,8 @@ class MediaModel(
     var contentHash: String,
     var storageKey: String,
     var createdAt: Instant,
+    @DbDefault("1") var frames: Int,
+    var durationMillis: Long?,
 ) : BaseModel(id) {
     /**
      * The pin [pinId] names, so a query about it is a join rather than raw SQL. No index of its own:

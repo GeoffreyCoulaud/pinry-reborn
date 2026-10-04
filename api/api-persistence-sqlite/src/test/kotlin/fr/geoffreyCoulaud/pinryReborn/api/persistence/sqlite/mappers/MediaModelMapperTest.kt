@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.MediaModelM
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
 
@@ -35,5 +36,19 @@ class MediaModelMapperTest {
         val back = media.toModel().toDomain()
         // Then
         assertTrue(back.animated)
+    }
+
+    @Test
+    fun `Given a video, Then its frames and duration round-trip through the model`() {
+        // Given
+        val media = Media(
+            randomUUID(), randomUUID(), "video/webm", 4, 6, animated = true, byteSize = 1, contentHash = "h",
+            storageKey = "originals/x/y/z.webm", createdAt = Instant.EPOCH, frames = 25,
+            duration = Duration.ofMillis(1_023),
+        )
+        // When
+        val back = media.toModel().toDomain()
+        // Then
+        assertEquals(25 to Duration.ofMillis(1_023), back.frames to back.duration)
     }
 }

@@ -69,9 +69,10 @@ class MediaIngestion(
         val storageKey = "${StorageLayout.ORIGINALS_DIRECTORY}/$ownerId/$pinId/$mediaId.${found.extension}"
         val media =
             Media(
-                id = mediaId, pinId = pinId, mimeType = found.mimeType, width = found.width,
-                height = found.height, animated = found.animated, byteSize = found.stored.byteSize,
+                id = mediaId, pinId = pinId, mimeType = found.mimeType, width = found.measured.width,
+                height = found.measured.height, animated = found.animated, byteSize = found.stored.byteSize,
                 contentHash = found.stored.contentHash, storageKey = storageKey, createdAt = createdAt,
+                frames = found.measured.frames, duration = found.measured.duration,
             )
         return IngestedMedia(media, found.stored)
     }
@@ -82,7 +83,7 @@ class MediaIngestion(
         return when (measured) {
             is ProbeResult -> {
                 val format = measured.format
-                Found(format.mimeType, format.extension, measured.width, measured.height, measured.animated, staged)
+                Found(format.mimeType, format.extension, measured, measured.animated, staged)
             }
             is VideoProbeResult -> video(staged, measured, keepArchivedMp4)
         }
@@ -120,7 +121,7 @@ class MediaIngestion(
                 videoProcessor.repackage(staged, video).also { mediaStore.discardQuietly(staged) }
             }
         val mimeType = "${container.mimeType}; codecs=\"${video.codecs}\""
-        return Found(mimeType, container.extension, video.width, video.height, animated = true, stored)
+        return Found(mimeType, container.extension, video, animated = true, stored)
     }
 
     fun promote(ingested: IngestedMedia) = mediaStore.promote(ingested.staged, ingested.media.storageKey)
@@ -135,8 +136,7 @@ class MediaIngestion(
     private class Found(
         val mimeType: String,
         val extension: String,
-        val width: Int,
-        val height: Int,
+        val measured: MeasuredMedia,
         val animated: Boolean,
         val stored: StagedFile,
     )
