@@ -11,9 +11,11 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
+import java.time.Duration
 
+/** Runs the `vipsheader` on the `PATH`. */
 class VipsImageProbeTest {
-    private val probe = VipsImageProbe()
+    private val probe = VipsImageProbe(Duration.ofSeconds(60), DECODER_MEMORY)
 
     private fun staged(name: String) =
         StagedFile(path = Path.of("src/test/resources/fixtures", name).toString(), byteSize = 0, contentHash = "")
@@ -97,5 +99,39 @@ class VipsImageProbeTest {
         val result = probe.probe(staged("sample.webp"), maxPixels = 1_000_000)
         // Then
         assertFalse(result.animated)
+    }
+
+    @Test
+    fun `Given an animated GIF, Then probe counts its three frames`() {
+        assertEquals(3, probe.probe(staged("animated.gif"), maxPixels = 1_000_000).frames)
+    }
+
+    @Test
+    fun `Given a still JPEG, Then probe counts one frame`() {
+        assertEquals(1, probe.probe(staged("sample.jpg"), maxPixels = 1_000_000).frames)
+    }
+
+    @Test
+    fun `Given a timeout vipsheader cannot meet, Then the process is destroyed and the image reported undecodable`() {
+        // Given
+        val impatient = VipsImageProbe(Duration.ZERO, DECODER_MEMORY)
+        // When
+        assertThrows(UndecodableImageException::class.java) {
+            impatient.probe(staged("sample.png"), maxPixels = 1_000_000)
+        }
+        // Then
+        assertEquals(0, ProcessHandle.current().children().count())
+    }
+
+    @Test
+    fun `Given an address space vipsheader cannot start in, Then the image is reported undecodable`() {
+        val starved = VipsImageProbe(Duration.ofSeconds(60), maxAddressSpace = 1024 * 1024)
+        assertThrows(UndecodableImageException::class.java) {
+            starved.probe(staged("sample.png"), maxPixels = 1_000_000)
+        }
+    }
+
+    private companion object {
+        const val DECODER_MEMORY = 2L * 1024 * 1024 * 1024
     }
 }

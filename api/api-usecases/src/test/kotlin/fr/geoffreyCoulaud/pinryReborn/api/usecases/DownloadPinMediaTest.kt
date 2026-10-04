@@ -211,7 +211,7 @@ class DownloadPinMediaTest {
         stubUntilFetch()
         every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1)), null)
         every { store.stage(any(), any()) } returns StagedFile("tmp/x", 101, "hash")
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
         assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.TOO_LARGE, now) }
     }
@@ -431,7 +431,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given a successful fetch and a still-PENDING row, Then it promotes and swaps`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
         every { mediaRepository.findByPinId(pinId) } returns null
         every { downloads.deleteIfPending(pinId) } returns 1
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
@@ -446,7 +446,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given a still-PENDING row over an existing image, Then it swaps and deletes the superseded file`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
         val supersededKey = "originals/x/$pinId/old.png"
         every { mediaRepository.findByPinId(pinId) } returns
             Media(randomUUID(), pinId, "image/png", 1, 1, false, 3, "oldhash", supersededKey, now)
@@ -462,7 +462,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given a still-PENDING row over an existing image, Then it evicts the superseded image's rendition cache`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
         val supersededKey = "originals/x/$pinId/old.png"
         val superseded = Media(randomUUID(), pinId, "image/png", 1, 1, false, 3, "oldhash", supersededKey, now)
         every { mediaRepository.findByPinId(pinId) } returns superseded
@@ -475,7 +475,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the rendition cache eviction fails during a real swap, Then the download still succeeds`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
         val supersededKey = "originals/x/$pinId/old.png"
         val superseded = Media(randomUUID(), pinId, "image/png", 1, 1, false, 3, "oldhash", supersededKey, now)
         every { mediaRepository.findByPinId(pinId) } returns superseded
@@ -489,7 +489,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the row was superseded before the swap, Then it deletes the promoted file and does not save`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
         every { downloads.deleteIfPending(pinId) } returns 0
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
         subject.download(pinId, ctx())
@@ -502,7 +502,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given promote fails below the attempt limit, Then it cleans up and records a retryable INTERNAL_ERROR`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
         every { store.promote(any(), any()) } throws RuntimeException()
         assertThrows(RuntimeException::class.java) { subject.download(pinId, ctx(attempt = 1, max = 3)) }
         verify { store.discard(staged()) }
@@ -515,7 +515,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the rollback delete throws, Then the task fails with the original cause`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
         val promoteError = RuntimeException("disk full")
         every { store.promote(any(), any()) } throws promoteError
         every { store.delete(any()) } throws RuntimeException("cleanup boom")
@@ -533,7 +533,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the rollback discard throws, Then the task fails with the original cause`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
         val promoteError = RuntimeException("disk full")
         every { store.promote(any(), any()) } throws promoteError
         every { store.discard(staged()) } throws RuntimeException("discard boom")
@@ -551,7 +551,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the no-op-swap delete throws, Then the task still succeeds`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, animated = false)
+        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
         every { downloads.deleteIfPending(pinId) } returns 0
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
         every { store.delete(any()) } throws RuntimeException("cleanup boom")

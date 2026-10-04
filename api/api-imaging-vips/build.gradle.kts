@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.jandex)
 }
 dependencies {
     implementation(project(":api-domain"))
+    implementation(project(":api-utilities"))
     implementation(libs.vips.ffm.core)
-    compileOnly(libs.jakarta.cdi.api)
     testImplementation(testFixtures(project(":api-utilities")))
     testImplementation(libs.bundles.testing)
     testRuntimeOnly(libs.bundles.testing.runtime)

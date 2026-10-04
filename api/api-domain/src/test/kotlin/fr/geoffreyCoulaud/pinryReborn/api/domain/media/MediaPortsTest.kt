@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
@@ -36,13 +37,19 @@ class MediaPortsTest {
         }
         val probe = object : ImageProbe {
             override fun probe(staged: StagedFile, maxPixels: Long) =
-                ProbeResult(MediaFormat.PNG, 10, 20, animated = false)
+                ProbeResult(MediaFormat.PNG, 10, 20, frames = 1)
         }
         val staged = store.stage(ByteArrayInputStream(byteArrayOf(1, 2, 3)), 100)
         val result = probe.probe(staged, 1_000)
         assertEquals(3, staged.byteSize)
         assertEquals(MediaFormat.PNG, result.format)
         assertEquals(20, result.height)
+    }
+
+    @Test
+    fun `Given a probe result, Then it is animated from its second frame on`() {
+        assertFalse(ProbeResult(MediaFormat.GIF, 1, 1, frames = 1).animated)
+        assertTrue(ProbeResult(MediaFormat.GIF, 1, 1, frames = 2).animated)
     }
 
     @Test

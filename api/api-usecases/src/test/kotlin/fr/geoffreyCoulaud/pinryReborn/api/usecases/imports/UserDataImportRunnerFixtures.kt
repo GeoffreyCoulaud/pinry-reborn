@@ -421,7 +421,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
 
     protected fun stubProbe() {
         every { imageProbe.probe(any(), MAX_PIXELS) } returns
-            ProbeResult(format = MediaFormat.PNG, width = WIDTH, height = HEIGHT, animated = false)
+            ProbeResult(format = MediaFormat.PNG, width = WIDTH, height = HEIGHT, frames = 1)
     }
 
     protected fun stubPinWrites() {

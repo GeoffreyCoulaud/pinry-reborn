@@ -1,9 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
+import fr.geoffreyCoulaud.pinryReborn.api.imaging.vips.VipsImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.imaging.vips.VipsImageTransformer
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.RenditionsConfig
@@ -49,6 +51,10 @@ class MediaAdapterProducers {
     @ApplicationScoped
     fun videoProcessor(config: MediaConfig, renditions: RenditionsConfig): VideoProcessor =
         FfmpegVideoProcessor(config.decoderTimeout(), config.decoderMemory(), renditions.webpQuality())
+
+    @Produces
+    @ApplicationScoped
+    fun imageProbe(config: MediaConfig): ImageProbe = VipsImageProbe(config.decoderTimeout(), config.decoderMemory())
 
     @Produces
     @ApplicationScoped
