@@ -96,6 +96,9 @@ collapsed in those pull requests; the closing block corrects it after the holist
   directory renders it on the next request (60).
 - **A starved adapter test needs a cap below what the program needs to start**: 1 MiB stops vips and ffmpeg at the
   dynamic loader, before any decoding (60).
+- **The JDK drains and closes a child's pipe that no thread is reading yet when the child exits**
+  (`ProcessImpl.processExited`), so an orphan holds the output only once the reader blocks. A test of that case keeps
+  the child alive past the readers' start: run 37231350181 was red on CI's slower start, green locally (60).
 
 ## Departures from the specification
 
@@ -153,8 +156,8 @@ Not run yet: it reads the top of this stack at the head of Wrap, and the closing
 
 Fix-backs, cascaded rebases, runs re-triggered and the operator's reading of the bodies: filled in by the closing
 block.
-(Corrected: fix-backs 0, cascaded rebases 0, runs they re-triggered 0 so far; the operator's reading of the bodies:
-no remark.)
+(Corrected: fix-backs 1, block 60's own red run 37231350181; cascaded rebases 0; runs they re-triggered 1 so far;
+the operator's reading of the bodies: no remark.)
 
 ## Next step
 
