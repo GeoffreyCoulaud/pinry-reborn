@@ -18,4 +18,6 @@ data class Media(
     // A still image's values, which a rendition's cost is judged on (ADR 0050, decision 2).
     val frames: Int = 1,
     val duration: Duration? = null,
-) : Identifiable
+) : Identifiable {
+    val isVideo: Boolean get() = mimeType.startsWith("video/")
+}
