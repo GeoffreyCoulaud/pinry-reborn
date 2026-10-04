@@ -37,7 +37,7 @@ export function RenditionImage({
 			aria-label={m.preview_unavailable()}
 			title={m.preview_unavailable()}
 			style={style}
-			className={`${className} flex flex-col items-center justify-center gap-2 bg-surface p-2 text-center text-muted text-sm`}
+			className={`${className} flex flex-col items-center justify-center gap-2 rounded bg-surface p-2 shadow-surface text-center text-muted text-sm`}
 		>
 			<ImageOff aria-hidden className="size-6 shrink-0" />
 			{/* A decorative thumbnail is too small for the sentence, and its row already names the pin. */}
