@@ -322,6 +322,22 @@ class FfmpegVideoProcessorTest {
         assertEquals(0, ProcessHandle.current().children().count())
     }
 
+    @Test
+    fun `Given an address space ffmpeg cannot start in, Then the poster is reported undecodable`() {
+        val starved = FfmpegVideoProcessor(Duration.ofSeconds(60), maxAddressSpace = 1024 * 1024, webpQuality = 75)
+        assertThrows(UndecodableVideoException::class.java) {
+            starved.poster(copied("h264-aac.mkv"), shortestSide = 60, fromOneFrame = true)
+        }
+    }
+
+    @Test
+    fun `Given a staged video, Then probe reports its size as the store measured it`() {
+        // Given: the bounds are MediaLimits' to compare, so the staged size is reported as it is
+        val staged = staged("h264-aac.mkv").copy(byteSize = Long.MAX_VALUE)
+        // When / Then
+        assertEquals(Long.MAX_VALUE, processor.probe(staged, maxDuration).bytes)
+    }
+
     private companion object {
         const val DECODER_MEMORY = 2L * 1024 * 1024 * 1024
     }

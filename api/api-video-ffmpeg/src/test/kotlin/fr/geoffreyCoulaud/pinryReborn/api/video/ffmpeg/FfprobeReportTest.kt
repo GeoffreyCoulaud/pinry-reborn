@@ -26,10 +26,12 @@ class FfprobeReportTest {
 
     private fun report(vararg tracks: Map<String, Any>) =
         mapper.writeValueAsString(
-            mapOf("streams" to tracks.toList(), "format" to mapOf("duration" to "1.000000", "size" to "2048")),
+            mapOf("streams" to tracks.toList(), "format" to mapOf("duration" to "1.000000")),
         )
 
-    private fun codecsOf(vararg tracks: Map<String, Any>) = FfprobeReport.read(report(*tracks), maxDuration).codecs
+    private fun read(json: String) = FfprobeReport.read(json, maxDuration, bytes = 2048)
+
+    private fun codecsOf(vararg tracks: Map<String, Any>) = read(report(*tracks)).codecs
 
     private fun lasting(format: Map<String, String>) =
         mapper.writeValueAsString(mapOf("streams" to listOf(h264()), "format" to format))
@@ -46,37 +48,30 @@ class FfprobeReportTest {
     @Test
     fun `Given no duration, Then read refuses the file`() {
         assertThrows(UndecodableVideoException::class.java) {
-            FfprobeReport.read(lasting(emptyMap()), maxDuration)
+            read(lasting(emptyMap()))
         }
     }
 
     @Test
-    fun `Given no size, Then read refuses the file`() {
-        assertThrows(UndecodableVideoException::class.java) {
-            FfprobeReport.read(lasting(mapOf("duration" to "1.000000")), maxDuration)
-        }
-    }
-
-    @Test
-    fun `Given a video track and a file size, Then read counts a frame per video packet and the file's bytes`() {
+    fun `Given a video track and an audio track, Then read counts a frame per video packet`() {
         // Given: the audio track's packets are not frames
         val tracks = arrayOf(h264("nb_read_packets" to "25"), track("audio", "opus", "nb_read_packets" to "48"))
         // When
-        val result = FfprobeReport.read(report(*tracks), maxDuration)
+        val result = read(report(*tracks))
         // Then
-        assertEquals(25 to 2048L, result.frames to result.bytes)
+        assertEquals(25, result.frames)
     }
 
     @Test
     fun `Given a duration past the bound, Then read refuses it as too long`() {
         assertThrows(VideoTooLongException::class.java) {
-            FfprobeReport.read(lasting(mapOf("duration" to "121.000000")), maxDuration)
+            read(lasting(mapOf("duration" to "121.000000")))
         }
     }
 
     private fun dimensionsTurned(degrees: Int): Pair<Int, Int> {
         val turn = mapOf("side_data_type" to "Display Matrix", "rotation" to degrees)
-        val result = FfprobeReport.read(report(h264("side_data_list" to listOf(turn))), maxDuration)
+        val result = read(report(h264("side_data_list" to listOf(turn))))
         return result.width to result.height
     }
 
@@ -97,7 +92,7 @@ class FfprobeReportTest {
     @Test
     fun `Given no video track, Then read refuses the file`() {
         assertThrows(UndecodableVideoException::class.java) {
-            FfprobeReport.read(report(track("audio", "aac")), maxDuration)
+            read(report(track("audio", "aac")))
         }
     }
 
@@ -105,7 +100,7 @@ class FfprobeReportTest {
     fun `Given an unlisted video codec, Then read refuses it naming the codec`() {
         val exception =
             assertThrows(VideoCodecUnsupportedException::class.java) {
-                FfprobeReport.read(report(track("video", "mpeg4")), maxDuration)
+                read(report(track("video", "mpeg4")))
             }
         assertEquals("The video codec mpeg4 is not accepted", exception.message)
     }
@@ -113,20 +108,20 @@ class FfprobeReportTest {
     @Test
     fun `Given a video track of one frame, Then read refuses it`() {
         assertThrows(UndecodableVideoException::class.java) {
-            FfprobeReport.read(report(h264("nb_read_packets" to "1")), maxDuration)
+            read(report(h264("nb_read_packets" to "1")))
         }
     }
 
     @Test
     fun `Given no codec configuration, Then read refuses the track`() {
         assertThrows(UndecodableVideoException::class.java) {
-            FfprobeReport.read(report(h264("extradata" to "\n")), maxDuration)
+            read(report(h264("extradata" to "\n")))
         }
     }
 
     @Test
     fun `Given a pixel aspect ratio of 2 to 1, Then the width displayed is doubled, and square otherwise`() {
-        val width = { fields: Array<Pair<String, Any>> -> FfprobeReport.read(report(h264(*fields)), maxDuration).width }
+        val width = { fields: Array<Pair<String, Any>> -> read(report(h264(*fields))).width }
         assertEquals(320, width(arrayOf("sample_aspect_ratio" to "2:1")))
         assertEquals(160, width(arrayOf("sample_aspect_ratio" to "0:1")))
         assertEquals(160, width(emptyArray()))
@@ -165,7 +160,7 @@ class FfprobeReportTest {
     }
 
     private fun alreadyRepackaged(vararg tracks: Map<String, Any>) =
-        FfprobeReport.read(report(*tracks), maxDuration).alreadyRepackaged
+        read(report(*tracks)).alreadyRepackaged
 
     @Test
     fun `Given the kept tracks alone, tagged as their parameter names them, Then the file is already repackaged`() {
