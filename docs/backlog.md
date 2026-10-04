@@ -55,9 +55,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   `1.22.sql` spent a table rebuild on a constraint nothing checks, and turning the pragma on would make
   `ON DELETE RESTRICT` refuse the hard delete of a pin whose download failed.
   See `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
-- **A video rendition miss has no single flight**: a grid's first load draws each video tile's poster at once, about
-  330 MB of ffmpeg for a 4K video, and `media.max_pixels` at its default refuses no video.
-  See `docs/handoffs/2026-10-03 - handoff - the-pin-holds-a-video.md`, The real check. New 2026-10-04.
 - **`.dagger/` is neither linted nor formatted**, the clients' Biome stopping at `clients/`.
   See `docs/specs/2026-09-28-knip-and-biome-keep-the-clients-clean.md`, decision F. New 2026-09-29.
 

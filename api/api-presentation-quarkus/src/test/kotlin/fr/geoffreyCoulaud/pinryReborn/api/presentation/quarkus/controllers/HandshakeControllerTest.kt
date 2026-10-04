@@ -23,7 +23,7 @@ class HandshakeControllerTest {
         every { mediaConfig.maxImageBytes() } returns MAX_IMAGE_BYTES
         every { mediaConfig.maxVideoBytes() } returns MAX_VIDEO_BYTES
         every { mediaConfig.maxVideoSeconds() } returns MAX_VIDEO_SECONDS
-        every { mediaConfig.maxPixels() } returns MAX_PIXELS
+        every { mediaConfig.maxPixelsPerFrame() } returns MAX_PIXELS_PER_FRAME
         every { renditionsConfig.tiny() } returns TINY
         every { renditionsConfig.small() } returns SMALL
         every { renditionsConfig.medium() } returns MEDIUM
@@ -38,7 +38,7 @@ class HandshakeControllerTest {
         assertEquals(MAX_IMAGE_BYTES, dto.limits.maxImageBytes)
         assertEquals(MAX_VIDEO_BYTES, dto.limits.maxVideoBytes)
         assertEquals(MAX_VIDEO_SECONDS, dto.limits.maxVideoSeconds)
-        assertEquals(MAX_PIXELS, dto.limits.maxPixels)
+        assertEquals(MAX_PIXELS_PER_FRAME, dto.limits.maxPixelsPerFrame)
         assertEquals(MAX_IMPORT_CHUNK_BYTES, dto.limits.maxImportChunkBytes)
         assertEquals(MAX_IMPORT_ARCHIVE_BYTES, dto.limits.maxImportArchiveBytes)
         assertEquals(TINY, dto.renditionSizes.tiny)
@@ -53,7 +53,7 @@ class HandshakeControllerTest {
         every { mediaConfig.maxImageBytes() } returns MAX_IMAGE_BYTES
         every { mediaConfig.maxVideoBytes() } returns MAX_VIDEO_BYTES
         every { mediaConfig.maxVideoSeconds() } returns MAX_VIDEO_SECONDS
-        every { mediaConfig.maxPixels() } returns MAX_PIXELS
+        every { mediaConfig.maxPixelsPerFrame() } returns MAX_PIXELS_PER_FRAME
         every { renditionsConfig.tiny() } returns TINY
         every { renditionsConfig.small() } returns SMALL
         every { renditionsConfig.medium() } returns MEDIUM
@@ -79,7 +79,7 @@ class HandshakeControllerTest {
         const val MAX_IMAGE_BYTES = 1_234_567L
         const val MAX_VIDEO_BYTES = 3_456_789L
         const val MAX_VIDEO_SECONDS = 99L
-        const val MAX_PIXELS = 7_654_321L
+        const val MAX_PIXELS_PER_FRAME = 7_654_321L
         const val MAX_IMPORT_CHUNK_BYTES = 2_345_678L
         const val MAX_IMPORT_ARCHIVE_BYTES = 98_765_432_109L
         const val TINY = 11

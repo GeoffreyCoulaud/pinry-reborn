@@ -13,7 +13,7 @@ class MediaConfigTest {
             override fun maxImageBytes() = 31_457_280L
             override fun maxVideoBytes() = 52_428_800L
             override fun maxVideoSeconds() = 120L
-            override fun maxPixels() = 50_000_000L
+            override fun maxPixelsPerFrame() = 50_000_000L
             override fun decoderTimeout() = Duration.ofSeconds(60)
             override fun decoderMemory() = 2_147_483_648L
         }
@@ -22,7 +22,7 @@ class MediaConfigTest {
         assertEquals(31_457_280L, config.maxImageBytes())
         assertEquals(52_428_800L, config.maxVideoBytes())
         assertEquals(120L, config.maxVideoSeconds())
-        assertEquals(50_000_000L, config.maxPixels())
+        assertEquals(50_000_000L, config.maxPixelsPerFrame())
         assertEquals(Duration.ofSeconds(60), config.decoderTimeout())
         assertEquals(2_147_483_648L, config.decoderMemory())
     }

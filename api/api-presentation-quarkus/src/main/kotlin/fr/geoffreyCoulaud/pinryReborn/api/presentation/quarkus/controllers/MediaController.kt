@@ -105,7 +105,7 @@ class MediaController(
                 enumeration = ["UNSUPPORTED_MEDIA_TYPE", "MEDIA_CODEC_UNSUPPORTED"])]))])
     @APIResponse(responseCode = "422",
         description = "MEDIA_INVALID: the upload is neither an image nor a video the server reads, or it is past " +
-            "media.max_pixels. MEDIA_TOO_LONG: the video lasts longer than media.max_video_seconds",
+            "media.max_pixels_per_frame. MEDIA_TOO_LONG: the video lasts longer than media.max_video_seconds",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_INVALID", "MEDIA_TOO_LONG"])]))])
     fun setMedia(pinId: UUID, @RestForm("file") @NotNull file: FileUpload): RestResponse<MediaOutputDto> {

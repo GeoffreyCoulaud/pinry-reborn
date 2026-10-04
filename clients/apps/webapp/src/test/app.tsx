@@ -354,7 +354,7 @@ export function handshakeRoute({
 				maxImageBytes,
 				maxVideoBytes,
 				maxVideoSeconds: 120,
-				maxPixels: 50_000_000,
+				maxPixelsPerFrame: 50_000_000,
 				mediaTypes: MEDIA_TYPES,
 				maxImportChunkBytes,
 				maxImportArchiveBytes,

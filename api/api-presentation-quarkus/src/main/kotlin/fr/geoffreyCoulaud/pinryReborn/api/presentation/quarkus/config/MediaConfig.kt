@@ -19,7 +19,7 @@ interface MediaConfig {
     fun maxVideoSeconds(): Long
 
     @WithDefault("50000000") // 50 megapixels
-    fun maxPixels(): Long
+    fun maxPixelsPerFrame(): Long
 
     /** How long one decoder run may take before it is destroyed. */
     @WithDefault("PT60S")
