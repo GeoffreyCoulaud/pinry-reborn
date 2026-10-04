@@ -3,20 +3,34 @@ package fr.geoffreyCoulaud.pinryReborn.api.fetch.http
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
-import java.io.BufferedInputStream
-import java.io.ByteArrayOutputStream
-import java.io.IOException
-import java.io.InputStream
+import org.eclipse.jetty.client.Destination
+import org.eclipse.jetty.client.HttpClient
+import org.eclipse.jetty.client.transport.HttpClientTransportDynamic
+import org.eclipse.jetty.http.HttpHeader
+import org.eclipse.jetty.http.HttpHeaderValue
+import org.eclipse.jetty.http.HttpStatus
+import org.eclipse.jetty.http.UriCompliance
+import org.eclipse.jetty.io.ClientConnector
+import org.eclipse.jetty.proxy.ProxyHandler
+import org.eclipse.jetty.server.HttpConfiguration
+import org.eclipse.jetty.server.HttpConnectionFactory
+import org.eclipse.jetty.server.Request
+import org.eclipse.jetty.server.Response
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.server.ServerConnector
+import org.eclipse.jetty.server.handler.ConnectHandler
+import org.eclipse.jetty.util.Callback
+import org.eclipse.jetty.util.SocketAddressResolver
+import org.eclipse.jetty.util.thread.VirtualThreadPool
 import java.net.InetAddress
 import java.net.InetSocketAddress
-import java.net.ServerSocket
-import java.net.Socket
-import java.net.SocketException
-import java.net.URI
+import java.net.SocketAddress
 import java.net.UnknownHostException
+import java.nio.channels.SelectableChannel
 import java.time.Duration
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import org.eclipse.jetty.client.Request as UpstreamRequest
+import org.eclipse.jetty.client.Response as UpstreamResponse
 
 /** One download's loopback HTTP proxy, which dials only addresses [addressPolicy] allows (ADR 0048, decision 2). */
 class GuardingProxy(
@@ -24,12 +38,18 @@ class GuardingProxy(
     private val connectTimeout: Duration,
     private val resolve: (String) -> InetAddress = InetAddress::getByName,
 ) : AutoCloseable {
-    private val server = ServerSocket(0, 0, InetAddress.getByName(LOOPBACK))
-    private val sockets: MutableSet<Socket> = ConcurrentHashMap.newKeySet()
     private val refused = CopyOnWriteArrayList<InetAddress>()
     private val unreachable = CopyOnWriteArrayList<String>()
+    private val server = Server(VirtualThreadPool())
+    private val connector = ServerConnector(server, HttpConnectionFactory(boundedHeads())).apply { host = LOOPBACK }
 
-    val address = InetSocketAddress(server.inetAddress, server.localPort)
+    init {
+        server.addConnector(connector)
+        server.handler = Tunnels().apply { handler = Forwards() }
+        server.start()
+    }
+
+    val address = InetSocketAddress(LOOPBACK, connector.localPort)
 
     /** The addresses the policy refused, which make a failed download `URL_NOT_ALLOWED`. */
     val refusedAddresses: List<InetAddress> get() = refused.toList()
@@ -38,7 +58,7 @@ class GuardingProxy(
     val unreachableHosts: List<String> get() = unreachable.toList()
 
     /** Whether the proxy has stopped listening. */
-    internal val isClosed: Boolean get() = server.isClosed
+    internal val isClosed: Boolean get() = server.isStopped
 
     /** The reason the record gives a failed download, if any: a refusal reaches neither client as such. */
     fun refusal(cause: Throwable? = null): FetchException? =
@@ -48,187 +68,120 @@ class GuardingProxy(
             else -> null
         }
 
-    init {
-        Thread.ofVirtual().start(::acceptAll)
-    }
+    override fun close() = server.stop()
 
-    override fun close() {
-        server.close()
-        sockets.forEach(Socket::close)
-    }
-
-    private fun acceptAll() {
-        while (true) {
-            val client =
-                try {
-                    server.accept()
-                } catch (_: SocketException) {
-                    return
-                }
-            Thread.ofVirtual().start { serve(client) }
-        }
-    }
-
-    private fun serve(client: Socket) =
-        tracked(client) {
-            val input = BufferedInputStream(client.getInputStream())
-            val head = (readHead(input) ?: return@tracked).split(CRLF)
-            val requestLine = head.first().split(' ')
-            try {
-                val target = targetOf(requestLine) ?: throw Refusal(BAD_REQUEST)
-                tracked(dial(target)) { upstream ->
-                    if (requestLine.first() == CONNECT) {
-                        tunnel(client, input, upstream)
-                    } else {
-                        forward(requestLine, head.drop(1), target, client, input, upstream)
-                    }
-                }
-            } catch (refusal: Refusal) {
-                client.getOutputStream().write(headOf(listOf("HTTP/1.1 ${refusal.status}", "Content-Length: 0")))
-            }
-        }
-
-    private fun dial(target: URI): Socket {
-        val address = resolveOnce(target.host)
-        val upstream = Socket()
-        try {
-            upstream.connect(InetSocketAddress(address, portOf(target)), connectTimeout.toMillis().toInt())
-        } catch (e: IOException) {
-            upstream.close()
-            unreachable += target.host
-            throw Refusal(BAD_GATEWAY, e)
-        }
-        return upstream
-    }
-
-    // The one resolution of this connection: the address checked is the address dialled.
-    private fun resolveOnce(host: String): InetAddress {
+    // The one resolution of a connection, shared by both paths: the address checked is the address dialled.
+    private fun checkedAddress(host: String): InetAddress {
         val address =
             try {
                 resolve(host)
             } catch (e: UnknownHostException) {
                 unreachable += host
-                throw Refusal(BAD_GATEWAY, e)
+                throw Refusal(HttpStatus.BAD_GATEWAY_502, e)
             }
         if (!addressPolicy.isAllowed(address)) {
             refused += address
-            throw Refusal(FORBIDDEN)
+            throw Refusal(HttpStatus.FORBIDDEN_403)
         }
         return address
     }
 
-    private fun tunnel(
-        client: Socket,
-        clientInput: InputStream,
-        upstream: Socket,
-    ) {
-        client.getOutputStream().write(headOf(listOf("HTTP/1.1 200 Connection Established")))
-        pumpToUpstream(clientInput, upstream)
-        upstream.getInputStream().transferTo(client.getOutputStream())
+    // HTTPS: a CONNECT tunnel to the checked address.
+    private inner class Tunnels : ConnectHandler() {
+        init {
+            connectTimeout = this@GuardingProxy.connectTimeout.toMillis()
+        }
+
+        override fun newConnectAddress(host: String, port: Int) = InetSocketAddress(checkedAddress(host), port)
+
+        // Reached by a refusal, recorded already, and by a dial that fails; Jetty's parser answers a bad authority.
+        override fun onConnectFailure(request: Request, response: Response, callback: Callback, failure: Throwable) {
+            val status =
+                if (failure is Refusal) {
+                    failure.status
+                } else {
+                    unreachable += request.httpURI.host
+                    HttpStatus.BAD_GATEWAY_502
+                }
+            response.headers.put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE)
+            Response.writeError(request, response, callback, status)
+        }
     }
 
-    // Both heads say close, so a client that keeps its connection alive cannot send another host down it.
-    @Suppress("LongParameterList")
-    private fun forward(
-        requestLine: List<String>,
-        headers: List<String>,
-        target: URI,
-        client: Socket,
-        clientInput: InputStream,
-        upstream: Socket,
-    ) {
-        val (method, _, version) = requestLine
-        val path = target.rawPath.ifEmpty { "/" } + target.rawQuery?.let { "?$it" }.orEmpty()
-        upstream.getOutputStream().write(headOf(listOf("$method $path $version") + closing(headers)))
-        pumpToUpstream(clientInput, upstream)
-        val upstreamInput = BufferedInputStream(upstream.getInputStream())
-        val response = (readHead(upstreamInput) ?: return).split(CRLF)
-        client.getOutputStream().write(headOf(listOf(response.first()) + closing(response.drop(1))))
-        upstreamInput.transferTo(client.getOutputStream())
-    }
+    // Plain HTTP: each request forwarded on its own, through a client that resolves through the guard.
+    private inner class Forwards : ProxyHandler.Forward() {
+        init {
+            isUseServerThreadPool = true
+        }
 
-    // The client's half-close reaches the origin; the origin's end returns, which closes both sockets.
-    private fun pumpToUpstream(
-        clientInput: InputStream,
-        upstream: Socket,
-    ) {
-        Thread.ofVirtual().start {
-            quietly {
-                clientInput.transferTo(upstream.getOutputStream())
-                upstream.shutdownOutput()
+        override fun newHttpClient() =
+            HttpClient(HttpClientTransportDynamic(DialRecorder())).apply {
+                socketAddressResolver = SocketAddressResolver { host, port, _, promise ->
+                    runCatching { InetSocketAddress(checkedAddress(host), port) }
+                        .fold({ promise.succeeded(listOf(it)) }, promise::failed)
+                }
+                maxRequestHeadersSize = MAX_HEAD_BYTES
+                maxResponseHeadersSize = MAX_HEAD_BYTES
+            }
+
+        // The origin sees what a direct fetch would send: no Via, no Forwarded.
+        override fun addProxyHeaders(clientToProxyRequest: Request, proxyToServerRequest: UpstreamRequest) = Unit
+
+        override fun onServerToProxyResponseFailure(
+            clientToProxyRequest: Request,
+            proxyToServerRequest: UpstreamRequest,
+            serverToProxyResponse: UpstreamResponse,
+            proxyToClientResponse: Response,
+            proxyToClientCallback: Callback,
+            failure: Throwable,
+        ) {
+            if (failure is Refusal) {
+                Response.writeError(clientToProxyRequest, proxyToClientResponse, proxyToClientCallback, failure.status)
+            } else {
+                super.onServerToProxyResponseFailure(
+                    clientToProxyRequest,
+                    proxyToServerRequest,
+                    serverToProxyResponse,
+                    proxyToClientResponse,
+                    proxyToClientCallback,
+                    failure,
+                )
             }
         }
     }
 
-    private inline fun tracked(
-        socket: Socket,
-        block: (Socket) -> Unit,
-    ) {
-        // ponytail: a socket accepted during close() escapes it, and ends when its download's client closes.
-        sockets += socket
-        try {
-            quietly { socket.use(block) }
-        } finally {
-            sockets -= socket
+    // Jetty's client reports a failed dial here alone, with the destination it was for.
+    private inner class DialRecorder : ClientConnector() {
+        init {
+            connectTimeout = this@GuardingProxy.connectTimeout
         }
-    }
 
-    // A socket closed under a transfer, by the peer or by close(), ends that connection and nothing else.
-    private inline fun quietly(block: () -> Unit) {
-        try {
-            block()
-        } catch (_: IOException) {
-            return
+        override fun connectFailed(
+            channel: SelectableChannel?,
+            address: SocketAddress?,
+            failure: Throwable,
+            context: Map<String, Any>,
+        ) {
+            unreachable += (context.getValue(Destination.CONTEXT_KEY) as Destination).origin.address.host
+            super.connectFailed(channel, address, failure, context)
         }
     }
 
     private class Refusal(
-        val status: String,
+        val status: Int,
         cause: Throwable? = null,
-    ) : Exception(status, cause)
+    ) : Exception(HttpStatus.getMessage(status), cause)
 
     private companion object {
         const val LOOPBACK = "127.0.0.1"
-        const val CONNECT = "CONNECT"
-        const val CRLF = "\r\n"
-        const val CRLF_CRLF = 0x0D0A0D0A
-        const val REQUEST_LINE_PARTS = 3
         const val MAX_HEAD_BYTES = 65_536
-        const val HTTP_PORT = 80
-        const val BAD_REQUEST = "400 Bad Request"
-        const val FORBIDDEN = "403 Forbidden"
-        const val BAD_GATEWAY = "502 Bad Gateway"
 
-        // A CONNECT names an authority, any other method an absolute http URI; both reduce to a host and a port.
-        fun targetOf(requestLine: List<String>): URI? {
-            if (requestLine.size != REQUEST_LINE_PARTS) return null
-            val (method, target) = requestLine
-            val uri = runCatching { URI(if (method == CONNECT) "http://$target" else target) }.getOrNull()
-            return uri?.takeIf { it.scheme == "http" && it.host != null }
-        }
-
-        fun portOf(target: URI): Int = if (target.port == -1) HTTP_PORT else target.port
-
-        fun closing(headers: List<String>): List<String> = headers.filterNot(::isHopByHop) + "Connection: close"
-
-        fun isHopByHop(header: String): Boolean {
-            val name = header.substringBefore(':').trim().lowercase()
-            return name == "connection" || name == "keep-alive" || name.startsWith("proxy-")
-        }
-
-        fun readHead(input: InputStream): String? {
-            val head = ByteArrayOutputStream()
-            var lastFour = 0
-            while (lastFour != CRLF_CRLF) {
-                val byte = input.read()
-                if (byte == -1 || head.size() == MAX_HEAD_BYTES) return null
-                head.write(byte)
-                lastFour = (lastFour shl Byte.SIZE_BITS) or byte
+        // The proxy never reads a path, so it forwards any path an origin may accept, `%2F` and `//` included.
+        fun boundedHeads() =
+            HttpConfiguration().apply {
+                requestHeaderSize = MAX_HEAD_BYTES
+                responseHeaderSize = MAX_HEAD_BYTES
+                uriCompliance = UriCompliance.UNSAFE
             }
-            return head.toString(Charsets.ISO_8859_1).removeSuffix(CRLF + CRLF)
-        }
-
-        fun headOf(lines: List<String>): ByteArray =
-            lines.joinToString(separator = CRLF, postfix = CRLF + CRLF).toByteArray(Charsets.ISO_8859_1)
     }
 }

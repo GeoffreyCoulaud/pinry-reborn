@@ -164,10 +164,11 @@ class HttpMediaFetcherTest {
     }
 
     @Test
-    fun `Given a chunked body that stalls, Then a read throws FetchUnreachable at the body timeout`() {
-        // Given headers, then no byte of the body
+    fun `Given a chunked body stalling after a byte, Then a read throws FetchUnreachable at the body timeout`() {
+        // Given headers and one byte, then nothing: the proxy forwards a head with the body's first bytes
         server.createContext("/stall") { exchange ->
             exchange.sendResponseHeaders(200, 0)
+            exchange.responseBody.write(FIRST_BYTE)
             exchange.responseBody.flush()
             stalled.await()
             exchange.close()
@@ -177,19 +178,21 @@ class HttpMediaFetcherTest {
         // When / Then
         assertTimeoutPreemptively(Duration.ofSeconds(STALL_TEST_DEADLINE_SECONDS)) {
             slowFetcher.openStream("${base()}/stall").use {
+                assertEquals(FIRST_BYTE, it.stream.read())
                 assertThrows(FetchUnreachableException::class.java) { it.stream.read() }
             }
         }
     }
 
     @Test
-    fun `Given a close-delimited body that stalls, Then a read throws FetchUnreachable at the body timeout`() {
-        // Given headers, then no byte of a body whose end would be the close the timeout itself causes
+    fun `Given a close-delimited body stalling after a byte, Then a read throws FetchUnreachable at its timeout`() {
+        // Given headers and one byte of a body whose end would be the close the timeout itself causes
         val stalling = ServerSocket(0, 0, loopback)
         Thread.ofVirtual().start {
             runCatching {
                 stalling.accept().use { socket ->
                     socket.getOutputStream().write("HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n".toByteArray())
+                    socket.getOutputStream().write(FIRST_BYTE)
                     stalled.await()
                 }
             }
@@ -200,9 +203,26 @@ class HttpMediaFetcherTest {
         stalling.use {
             assertTimeoutPreemptively(Duration.ofSeconds(STALL_TEST_DEADLINE_SECONDS)) {
                 slowFetcher.openStream("http://127.0.0.1:${it.localPort}/stall").use { fetched ->
+                    assertEquals(FIRST_BYTE, fetched.stream.read())
                     assertThrows(FetchUnreachableException::class.java) { fetched.stream.read() }
                 }
             }
+        }
+    }
+
+    @Test
+    fun `Given an origin that sends its headers and then nothing, Then openStream throws FetchUnreachable`() {
+        // Given headers, then no byte of the body: the proxy holds the head until a body byte arrives
+        server.createContext("/mute-body") { exchange ->
+            exchange.sendResponseHeaders(200, 0)
+            exchange.responseBody.flush()
+            stalled.await()
+            exchange.close()
+        }
+
+        // When / Then
+        assertTimeoutPreemptively(Duration.ofSeconds(STALL_TEST_DEADLINE_SECONDS)) {
+            assertThrows(FetchUnreachableException::class.java) { fetcher.openStream("${base()}/mute-body") }
         }
     }
 
@@ -433,5 +453,6 @@ class HttpMediaFetcherTest {
         const val TRICKLE_BYTES = 50
         const val TRICKLE_INTERVAL_MILLIS = 200L
         const val STALL_TEST_DEADLINE_SECONDS = 5L
+        const val FIRST_BYTE = 'x'.code
     }
 }

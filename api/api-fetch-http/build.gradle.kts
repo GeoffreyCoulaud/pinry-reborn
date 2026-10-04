@@ -4,6 +4,7 @@ plugins {
 }
 dependencies {
     implementation(project(":api-domain"))
+    implementation(libs.jetty.proxy)
     compileOnly(libs.jakarta.cdi.api)
     testImplementation(testFixtures(project(":api-utilities")))
     testImplementation(libs.bundles.testing)
