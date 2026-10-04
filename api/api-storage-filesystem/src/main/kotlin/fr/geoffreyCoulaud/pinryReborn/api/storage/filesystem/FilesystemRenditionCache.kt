@@ -6,6 +6,7 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
+import java.time.Instant
 import java.util.UUID
 import kotlin.streams.asSequence
 
@@ -57,6 +58,15 @@ class FilesystemRenditionCache(dataDir: String) : RenditionCache {
         val dest = keyPath(mediaId, key)
         Files.createDirectories(dest.parent)
         Files.write(dest, ByteArray(0))
+    }
+
+    override fun markedAt(mediaId: UUID, key: String): Instant? {
+        val path = keyPath(mediaId, key)
+        return try {
+            Files.getLastModifiedTime(path).toInstant()
+        } catch (_: NoSuchFileException) {
+            null
+        }
     }
 
     override fun evictMedia(mediaId: UUID) {

@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import java.io.InputStream
+import java.time.Instant
 import java.util.UUID
 
 /** Disposable, regenerable cache of image renditions, keyed by (canonical image id, key). */
@@ -20,6 +21,9 @@ interface RenditionCache {
 
     /** Leave an empty entry at (mediaId, key), its key being all it records. */
     fun mark(mediaId: UUID, key: String)
+
+    /** When the entry [mark] left at (mediaId, key) was last written, or null when there is none. */
+    fun markedAt(mediaId: UUID, key: String): Instant?
 
     /** Delete the whole cache subtree for an image (idempotent; a no-op when absent). */
     fun evictMedia(mediaId: UUID)

@@ -13,6 +13,8 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.FileTime
+import java.time.Instant
 import java.util.UUID
 
 class FilesystemRenditionCacheTest {
@@ -44,6 +46,26 @@ class FilesystemRenditionCacheTest {
 
         assertArrayEquals(byteArrayOf(), read)
         assertNull(cache().openStream(id, "v2-4-a.webp.failed-60-2147483648"))
+    }
+
+    @Test
+    fun `Given a marker written again, Then markedAt moves from its old time to the new one`() {
+        // Given
+        val id = UUID.randomUUID()
+        val key = "v2-4-a.webp.failed-60-2147483648"
+        cache().mark(id, key)
+        Files.setLastModifiedTime(dataDir.resolve("cache/$id/$key"), FileTime.from(Instant.EPOCH))
+        val old = cache().markedAt(id, key)
+        // When
+        cache().mark(id, key)
+        // Then
+        assertEquals(Instant.EPOCH, old)
+        assertTrue(Instant.EPOCH < cache().markedAt(id, key))
+    }
+
+    @Test
+    fun `Given no marker, Then markedAt returns null`() {
+        assertNull(cache().markedAt(UUID.randomUUID(), "v2-4-a.webp.failed-60-2147483648"))
     }
 
     @Test
