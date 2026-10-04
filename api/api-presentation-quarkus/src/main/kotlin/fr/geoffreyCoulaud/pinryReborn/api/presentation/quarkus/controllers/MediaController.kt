@@ -129,7 +129,7 @@ class MediaController(
     @APIResponse(responseCode = "416", ref = SharedRefusalsFilter.RANGE_NOT_SATISFIABLE)
     @APIResponse(responseCode = "422",
         description = "The media's frame is past media.max_pixels_per_frame, lowered since it was stored, or its " +
-            "decoder failed under media.decoder_timeout and media.decoder_memory",
+            "decoder failed under media.decoder_timeout and media.decoder_memory_bytes in the last 24 hours",
         content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
             properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_RENDITION_UNAVAILABLE"])]))])
     fun getMedia(
