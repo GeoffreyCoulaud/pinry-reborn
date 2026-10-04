@@ -127,6 +127,11 @@ Dated events. No session starts these early.
   On some of these sites, a post may contain multiple media. We're not changing our semantic 1 pin = 1 media rule.
   Can be either a one-time import, or to sync a local pinry board with a remote source periodically, as the user
   chooses.
+
+  Lead: gallery-dl, delegated to as yt-dlp is (ADR 0048), covers every candidate above and carries tags, author and
+  source. Reading favourites or saved posts needs the user's credentials whatever the tool (pixiv OAuth, Instagram
+  cookie), so the spec decides how they are stored, and weighs the ban risk of a periodic sync. A by-product: a public
+  post's address yields its image as a single pin, a fallback after yt-dlp. New 2026-10-04.
 - **RBAC and quota system** : Allow admins to toggle features and define quotas per-role, from the API
 - **Audience mechanics (public / private).** Until this lands everything stays `@Authenticated` and owner-scoped (
   non-owner → 403); no anonymous browsing, no public gallery, no shareable links. It will interact with boards (public /
