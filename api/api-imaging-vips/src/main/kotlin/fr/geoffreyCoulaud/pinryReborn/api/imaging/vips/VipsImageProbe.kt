@@ -2,7 +2,6 @@ package fr.geoffreyCoulaud.pinryReborn.api.imaging.vips
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
@@ -18,17 +17,10 @@ import java.time.Duration
 class VipsImageProbe(timeout: Duration, maxAddressSpace: Long) : ImageProbe {
     private val runner = ProcessRunner(timeout, maxAddressSpace)
 
-    override fun probe(staged: StagedFile, maxPixels: Long): ProbeResult {
+    override fun probe(staged: StagedFile): ProbeResult {
         val fields = header(staged)
-        val format = formatOf(fields[0])
-        val width = fields[1].toInt()
-        val height = fields[2].toInt()
-        if (width.toLong() * height.toLong() > maxPixels) {
-            throw ImageTooManyPixelsException(
-                "Image at ${staged.path} has $width x $height pixels, exceeding the $maxPixels limit",
-            )
-        }
-        return ProbeResult(format, width, height, frames = fields.getOrNull(STILL_FIELDS)?.toInt() ?: 1)
+        val frames = fields.getOrNull(STILL_FIELDS)?.toInt() ?: 1
+        return ProbeResult(formatOf(fields[0]), fields[1].toInt(), fields[2].toInt(), frames, staged.byteSize)
     }
 
     // Fields libvips sets itself, never `-a`, where a file's own comment can forge a line.

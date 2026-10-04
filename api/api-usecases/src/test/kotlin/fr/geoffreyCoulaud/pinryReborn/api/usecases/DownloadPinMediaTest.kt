@@ -17,7 +17,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaFetcher
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaExtractor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaTooLongException
@@ -76,7 +76,7 @@ class DownloadPinMediaTest {
     private val subject =
         DownloadPinMedia(
             pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, NoVideoProcessor,MediaBounds(100, 0, Duration.ZERO, 100)), fetcher,
+            MediaIngestion(store, probe, NoVideoProcessor, MediaLimits(100, 0, Duration.ZERO, 100)), fetcher,
             pageExtractor, runner, clock, renditionCache,
         )
 
@@ -211,7 +211,7 @@ class DownloadPinMediaTest {
         stubUntilFetch()
         every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1)), null)
         every { store.stage(any(), any()) } returns StagedFile("tmp/x", 101, "hash")
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 101)
         assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { downloads.markFailed(pinId, DownloadReason.TOO_LARGE, now) }
     }
@@ -247,7 +247,7 @@ class DownloadPinMediaTest {
             firstArg<InputStream>().run { read(); readAllBytes() }
             staged()
         }
-        every { probe.probe(any(), any()) } throws UndecodableImageException("garbage")
+        every { probe.probe(any()) } throws UndecodableImageException("garbage")
         var renewals = 0
         val context = ctx().apply { renewLeaseIfDue = { renewals++ } }
 
@@ -277,7 +277,7 @@ class DownloadPinMediaTest {
                 stagedBytes = firstArg<InputStream>().readAllBytes()
                 staged()
             }
-            every { probe.probe(any(), any()) } throws UndecodableImageException("judged by ingestion")
+            every { probe.probe(any()) } throws UndecodableImageException("judged by ingestion")
 
             // When
             assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
@@ -294,7 +294,7 @@ class DownloadPinMediaTest {
             // Given
             stubUntilStage()
             every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1)), fileType)
-            every { probe.probe(any(), any()) } throws UndecodableImageException("judged by ingestion")
+            every { probe.probe(any()) } throws UndecodableImageException("judged by ingestion")
 
             // When
             assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
@@ -346,7 +346,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given an undecodable image, Then it discards and marks FAILED INVALID_MEDIA and throws Permanent`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } throws UndecodableImageException("garbage")
+        every { probe.probe(any()) } throws UndecodableImageException("garbage")
         assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { store.discard(staged()) }
         verify { downloads.markFailed(pinId, DownloadReason.INVALID_MEDIA, now) }
@@ -355,7 +355,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given an unsupported image format, Then it discards and marks FAILED UNSUPPORTED_CODEC`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } throws UnsupportedImageFormatException("tiff")
+        every { probe.probe(any()) } throws UnsupportedImageFormatException("tiff")
         assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { store.discard(staged()) }
         verify { downloads.markFailed(pinId, DownloadReason.UNSUPPORTED_CODEC, now) }
@@ -367,11 +367,11 @@ class DownloadPinMediaTest {
         val video = mockk<VideoProcessor>()
         val withVideo = DownloadPinMedia(
             pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, video, MediaBounds(100, 100, Duration.ofSeconds(1), 100)), fetcher,
+            MediaIngestion(store, probe, video, MediaLimits(100, 100, Duration.ofSeconds(1), 100)), fetcher,
             pageExtractor, runner, clock, renditionCache,
         )
         stubUntilStage()
-        every { probe.probe(any(), any()) } throws UndecodableImageException("not an image")
+        every { probe.probe(any()) } throws UndecodableImageException("not an image")
         val reasons = mapOf(
             VideoTooLongException("121 s") to DownloadReason.TOO_LONG,
             VideoCodecUnsupportedException("ac3") to DownloadReason.UNSUPPORTED_CODEC,
@@ -380,8 +380,8 @@ class DownloadPinMediaTest {
         for ((refusal, reason) in reasons) {
             every { video.probe(any(), any()) } returns
                 VideoProbeResult(
-                    VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4,
-                    alreadyRepackaged = true,
+                    VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), frames = 25, bytes = 3, "avc1.640015",
+                    VideoContainer.MP4, alreadyRepackaged = true,
                 )
             every { video.repackage(any(), any()) } throws refusal
             // When / Then
@@ -396,11 +396,11 @@ class DownloadPinMediaTest {
         val video = mockk<VideoProcessor>()
         val withVideo = DownloadPinMedia(
             pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, video, MediaBounds(100, 100, Duration.ofSeconds(1), 100)), fetcher,
+            MediaIngestion(store, probe, video, MediaLimits(100, 100, Duration.ofSeconds(1), 100)), fetcher,
             pageExtractor, runner, clock, renditionCache,
         )
         stubUntilStage()
-        every { probe.probe(any(), any()) } throws UndecodableImageException("not an image")
+        every { probe.probe(any()) } throws UndecodableImageException("not an image")
         every { video.probe(any(), any()) } throws VideoProcessorTimeoutException("ffprobe ran past PT1S")
 
         // When / Then
@@ -413,7 +413,8 @@ class DownloadPinMediaTest {
     @Test
     fun `Given too many pixels, Then it discards and marks FAILED TOO_MANY_PIXELS and throws Permanent`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } throws ImageTooManyPixelsException("decompression bomb")
+        // 11 by 10 is past the bound of 100 pixels
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 11, 10, frames = 1, bytes = 3)
         assertThrows(PermanentTaskException::class.java) { subject.download(pinId, ctx()) }
         verify { store.discard(staged()) }
         verify { downloads.markFailed(pinId, DownloadReason.TOO_MANY_PIXELS, now) }
@@ -422,7 +423,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given a generic probe failure below the attempt limit, Then it discards and records a retryable error`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } throws RuntimeException("boom")
+        every { probe.probe(any()) } throws RuntimeException("boom")
         assertThrows(RuntimeException::class.java) { subject.download(pinId, ctx(attempt = 1, max = 3)) }
         verify { store.discard(staged()) }
         verify { downloads.recordLastError(pinId, "boom", now) }
@@ -431,7 +432,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given a successful fetch and a still-PENDING row, Then it promotes and swaps`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         every { mediaRepository.findByPinId(pinId) } returns null
         every { downloads.deleteIfPending(pinId) } returns 1
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
@@ -446,7 +447,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given a still-PENDING row over an existing image, Then it swaps and deletes the superseded file`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         val supersededKey = "originals/x/$pinId/old.png"
         every { mediaRepository.findByPinId(pinId) } returns
             Media(randomUUID(), pinId, "image/png", 1, 1, false, 3, "oldhash", supersededKey, now)
@@ -462,7 +463,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given a still-PENDING row over an existing image, Then it evicts the superseded image's rendition cache`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         val supersededKey = "originals/x/$pinId/old.png"
         val superseded = Media(randomUUID(), pinId, "image/png", 1, 1, false, 3, "oldhash", supersededKey, now)
         every { mediaRepository.findByPinId(pinId) } returns superseded
@@ -475,7 +476,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the rendition cache eviction fails during a real swap, Then the download still succeeds`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         val supersededKey = "originals/x/$pinId/old.png"
         val superseded = Media(randomUUID(), pinId, "image/png", 1, 1, false, 3, "oldhash", supersededKey, now)
         every { mediaRepository.findByPinId(pinId) } returns superseded
@@ -489,7 +490,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the row was superseded before the swap, Then it deletes the promoted file and does not save`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         every { downloads.deleteIfPending(pinId) } returns 0
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
         subject.download(pinId, ctx())
@@ -502,7 +503,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given promote fails below the attempt limit, Then it cleans up and records a retryable INTERNAL_ERROR`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         every { store.promote(any(), any()) } throws RuntimeException()
         assertThrows(RuntimeException::class.java) { subject.download(pinId, ctx(attempt = 1, max = 3)) }
         verify { store.discard(staged()) }
@@ -515,7 +516,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the rollback delete throws, Then the task fails with the original cause`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         val promoteError = RuntimeException("disk full")
         every { store.promote(any(), any()) } throws promoteError
         every { store.delete(any()) } throws RuntimeException("cleanup boom")
@@ -533,7 +534,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the rollback discard throws, Then the task fails with the original cause`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         val promoteError = RuntimeException("disk full")
         every { store.promote(any(), any()) } throws promoteError
         every { store.discard(staged()) } throws RuntimeException("discard boom")
@@ -551,7 +552,7 @@ class DownloadPinMediaTest {
     @Test
     fun `Given the no-op-swap delete throws, Then the task still succeeds`() {
         stubUntilStage()
-        every { probe.probe(any(), any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1)
+        every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         every { downloads.deleteIfPending(pinId) } returns 0
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
         every { store.delete(any()) } throws RuntimeException("cleanup boom")

@@ -6,7 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
@@ -410,7 +410,8 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         stubStage()
         stubDiscard()
         stubIssues()
-        every { imageProbe.probe(any(), MAX_PIXELS) } throws ImageTooManyPixelsException("too many pixels")
+        every { imageProbe.probe(any()) } returns
+            ProbeResult(MediaFormat.PNG, width = MAX_PIXELS.toInt() + 1, height = 1, frames = 1, bytes = 1)
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)
@@ -432,7 +433,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         stubStage()
         stubDiscard()
         stubIssues()
-        every { imageProbe.probe(any(), MAX_PIXELS) } throws UndecodableImageException("not an image")
+        every { imageProbe.probe(any()) } throws UndecodableImageException("not an image")
         every { videoProcessor.probe(any(), any()) } throws UndecodableVideoException("not a video")
 
         // When
@@ -454,7 +455,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         stubStage()
         stubDiscard()
         stubIssues()
-        every { imageProbe.probe(any(), MAX_PIXELS) } throws UndecodableImageException("not an image")
+        every { imageProbe.probe(any()) } throws UndecodableImageException("not an image")
         every { videoProcessor.probe(any(), any()) } throws VideoTooLongException("121 s")
 
         // When
@@ -475,7 +476,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         stubHashLookup()
         stubStage()
         stubDiscard()
-        every { imageProbe.probe(any(), MAX_PIXELS) } throws UndecodableImageException("not an image")
+        every { imageProbe.probe(any()) } throws UndecodableImageException("not an image")
         every { videoProcessor.probe(any(), any()) } throws VideoProcessorTimeoutException("ffprobe ran past 60 s")
 
         // When / Then
@@ -498,11 +499,11 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         stubStage()
         stubPromote()
         stubPinWrites()
-        every { imageProbe.probe(any(), MAX_PIXELS) } throws UndecodableImageException("not an image")
+        every { imageProbe.probe(any()) } throws UndecodableImageException("not an image")
         every { videoProcessor.probe(any(), any()) } returns
             VideoProbeResult(
-                VideoCodec.H264, null, 4, 6, Duration.ofSeconds(1), "avc1.640015", VideoContainer.MP4,
-                alreadyRepackaged = true,
+                VideoCodec.H264, null, 4, 6, Duration.ofSeconds(1), frames = 25, bytes = 1, "avc1.640015",
+                VideoContainer.MP4, alreadyRepackaged = true,
             )
 
         // When

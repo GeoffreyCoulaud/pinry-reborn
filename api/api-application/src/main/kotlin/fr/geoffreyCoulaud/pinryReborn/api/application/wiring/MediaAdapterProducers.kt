@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.imaging.vips.VipsImageProbe
@@ -11,7 +12,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfi
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.RenditionsConfig
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemMediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemRenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaBounds
 import fr.geoffreyCoulaud.pinryReborn.api.video.ffmpeg.FfmpegVideoProcessor
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
@@ -41,8 +41,8 @@ class MediaAdapterProducers {
 
     @Produces
     @ApplicationScoped
-    fun mediaBounds(config: MediaConfig): MediaBounds =
-        MediaBounds(
+    fun mediaLimits(config: MediaConfig): MediaLimits =
+        MediaLimits(
             config.maxImageBytes(), config.maxVideoBytes(), Duration.ofSeconds(config.maxVideoSeconds()),
             config.maxPixels(),
         )

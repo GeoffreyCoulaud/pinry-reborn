@@ -25,7 +25,9 @@ class FfprobeReportTest {
         track("video", "h264", "extradata" to dump("0164000a"), *fields)
 
     private fun report(vararg tracks: Map<String, Any>) =
-        mapper.writeValueAsString(mapOf("streams" to tracks.toList(), "format" to mapOf("duration" to "1.000000")))
+        mapper.writeValueAsString(
+            mapOf("streams" to tracks.toList(), "format" to mapOf("duration" to "1.000000", "size" to "2048")),
+        )
 
     private fun codecsOf(vararg tracks: Map<String, Any>) = FfprobeReport.read(report(*tracks), maxDuration).codecs
 
@@ -46,6 +48,23 @@ class FfprobeReportTest {
         assertThrows(UndecodableVideoException::class.java) {
             FfprobeReport.read(lasting(emptyMap()), maxDuration)
         }
+    }
+
+    @Test
+    fun `Given no size, Then read refuses the file`() {
+        assertThrows(UndecodableVideoException::class.java) {
+            FfprobeReport.read(lasting(mapOf("duration" to "1.000000")), maxDuration)
+        }
+    }
+
+    @Test
+    fun `Given a video track and a file size, Then read counts a frame per video packet and the file's bytes`() {
+        // Given: the audio track's packets are not frames
+        val tracks = arrayOf(h264("nb_read_packets" to "25"), track("audio", "opus", "nb_read_packets" to "48"))
+        // When
+        val result = FfprobeReport.read(report(*tracks), maxDuration)
+        // Then
+        assertEquals(25 to 2048L, result.frames to result.bytes)
     }
 
     @Test

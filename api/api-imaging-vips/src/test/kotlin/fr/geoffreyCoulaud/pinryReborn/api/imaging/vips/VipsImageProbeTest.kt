@@ -1,7 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.imaging.vips
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
@@ -22,57 +21,60 @@ class VipsImageProbeTest {
 
     @Test
     fun `Given a PNG, Then probe returns PNG with its dimensions`() {
-        val result = probe.probe(staged("sample.png"), maxPixels = 1_000_000)
+        val result = probe.probe(staged("sample.png"))
         assertEquals(MediaFormat.PNG, result.format)
         assertEquals(10, result.width)
         assertEquals(10, result.height)
     }
 
     @Test
+    fun `Given a PNG far larger than any bound, Then probe measures it and refuses nothing`() {
+        // Given: the bounds are MediaLimits' to compare, so the staged size is reported as the store measured it
+        val staged = staged("sample.png").copy(byteSize = Long.MAX_VALUE)
+        // When
+        val result = probe.probe(staged)
+        // Then
+        assertEquals(Long.MAX_VALUE, result.bytes)
+    }
+
+    @Test
     fun `Given a JPEG, Then probe returns JPEG`() {
-        assertEquals(MediaFormat.JPEG, probe.probe(staged("sample.jpg"), 1_000_000).format)
+        assertEquals(MediaFormat.JPEG, probe.probe(staged("sample.jpg")).format)
     }
 
     @Test
     fun `Given a WebP, Then probe returns WEBP`() {
-        assertEquals(MediaFormat.WEBP, probe.probe(staged("sample.webp"), 1_000_000).format)
+        assertEquals(MediaFormat.WEBP, probe.probe(staged("sample.webp")).format)
     }
 
     @Test
     fun `Given an animated WebP, Then probe accepts it as WEBP`() {
-        assertEquals(MediaFormat.WEBP, probe.probe(staged("animated.webp"), 1_000_000).format)
+        assertEquals(MediaFormat.WEBP, probe.probe(staged("animated.webp")).format)
     }
 
     @Test
     fun `Given an animated GIF, Then probe accepts it as GIF`() {
-        assertEquals(MediaFormat.GIF, probe.probe(staged("animated.gif"), 1_000_000).format)
+        assertEquals(MediaFormat.GIF, probe.probe(staged("animated.gif")).format)
     }
 
     @Test
     fun `Given a non-image, Then probe throws UndecodableImageException`() {
         assertThrows(UndecodableImageException::class.java) {
-            probe.probe(staged("not-an-image.txt"), 1_000_000)
-        }
-    }
-
-    @Test
-    fun `Given an image over the pixel limit, Then probe throws ImageTooManyPixelsException`() {
-        assertThrows(ImageTooManyPixelsException::class.java) {
-            probe.probe(staged("sample.png"), maxPixels = 1)
+            probe.probe(staged("not-an-image.txt"))
         }
     }
 
     @Test
     fun `Given a TIFF, Then probe throws UnsupportedImageFormatException`() {
         assertThrows(UnsupportedImageFormatException::class.java) {
-            probe.probe(staged("sample.tiff"), 1_000_000)
+            probe.probe(staged("sample.tiff"))
         }
     }
 
     @Test
     fun `Given a static PNG, Then probe reports animated = false`() {
         // Given / When
-        val result = probe.probe(staged("sample.png"), maxPixels = 1_000_000)
+        val result = probe.probe(staged("sample.png"))
         // Then
         assertFalse(result.animated)
     }
@@ -80,7 +82,7 @@ class VipsImageProbeTest {
     @Test
     fun `Given an animated GIF, Then probe reports animated = true`() {
         // Given / When
-        val result = probe.probe(staged("animated.gif"), maxPixels = 1_000_000)
+        val result = probe.probe(staged("animated.gif"))
         // Then
         assertTrue(result.animated)
     }
@@ -88,7 +90,7 @@ class VipsImageProbeTest {
     @Test
     fun `Given an animated WebP, Then probe reports animated = true`() {
         // Given / When
-        val result = probe.probe(staged("animated.webp"), maxPixels = 1_000_000)
+        val result = probe.probe(staged("animated.webp"))
         // Then
         assertTrue(result.animated)
     }
@@ -96,19 +98,19 @@ class VipsImageProbeTest {
     @Test
     fun `Given a static WebP, Then probe reports animated = false`() {
         // Given / When
-        val result = probe.probe(staged("sample.webp"), maxPixels = 1_000_000)
+        val result = probe.probe(staged("sample.webp"))
         // Then
         assertFalse(result.animated)
     }
 
     @Test
     fun `Given an animated GIF, Then probe counts its three frames`() {
-        assertEquals(3, probe.probe(staged("animated.gif"), maxPixels = 1_000_000).frames)
+        assertEquals(3, probe.probe(staged("animated.gif")).frames)
     }
 
     @Test
     fun `Given a still JPEG, Then probe counts one frame`() {
-        assertEquals(1, probe.probe(staged("sample.jpg"), maxPixels = 1_000_000).frames)
+        assertEquals(1, probe.probe(staged("sample.jpg")).frames)
     }
 
     @Test
@@ -117,7 +119,7 @@ class VipsImageProbeTest {
         val impatient = VipsImageProbe(Duration.ZERO, DECODER_MEMORY)
         // When
         assertThrows(UndecodableImageException::class.java) {
-            impatient.probe(staged("sample.png"), maxPixels = 1_000_000)
+            impatient.probe(staged("sample.png"))
         }
         // Then
         assertEquals(0, ProcessHandle.current().children().count())
@@ -127,7 +129,7 @@ class VipsImageProbeTest {
     fun `Given an address space vipsheader cannot start in, Then the image is reported undecodable`() {
         val starved = VipsImageProbe(Duration.ofSeconds(60), maxAddressSpace = 1024 * 1024)
         assertThrows(UndecodableImageException::class.java) {
-            starved.probe(staged("sample.png"), maxPixels = 1_000_000)
+            starved.probe(staged("sample.png"))
         }
     }
 

@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImportIssue
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
@@ -27,7 +28,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepo
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaBounds
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
@@ -200,7 +200,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             mediaIngestion =
                 MediaIngestion(
                     mediaStore, imageProbe, videoProcessor,
-                    MediaBounds(MAX_MEDIA_BYTES, MAX_MEDIA_BYTES, Duration.ZERO, MAX_PIXELS),
+                    MediaLimits(MAX_MEDIA_BYTES, MAX_MEDIA_BYTES, Duration.ZERO, MAX_PIXELS),
                 ),
             // The real one over the same fake repository: the boundary it owns is what the walk needs.
             tagCreator = TagCreator(tagRepository, transactions, clock),
@@ -420,8 +420,9 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
     }
 
     protected fun stubProbe() {
-        every { imageProbe.probe(any(), MAX_PIXELS) } returns
-            ProbeResult(format = MediaFormat.PNG, width = WIDTH, height = HEIGHT, frames = 1)
+        every { imageProbe.probe(any()) } answers {
+            ProbeResult(MediaFormat.PNG, WIDTH, HEIGHT, frames = 1, bytes = firstArg<StagedFile>().byteSize)
+        }
     }
 
     protected fun stubPinWrites() {

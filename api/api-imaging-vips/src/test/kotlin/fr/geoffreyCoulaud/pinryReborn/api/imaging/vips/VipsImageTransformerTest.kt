@@ -24,7 +24,7 @@ class VipsImageTransformerTest {
     private fun renderAndProbe(fixture: String, spec: RenditionSpec): ProbeResult {
         val staged = Files.newInputStream(fixture(fixture)).use { transformer.render(it, spec) }
         return try {
-            probe.probe(StagedFile(staged.path, 0, ""), maxPixels = 1_000_000)
+            probe.probe(StagedFile(staged.path, 0, ""))
         } finally {
             Files.deleteIfExists(Path.of(staged.path))
         }

@@ -93,7 +93,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         val tmp = Files.createTempFile("resp-", ".bin")
         Files.write(tmp, bytes)
         return try {
-            imageProbe.probe(StagedFile(tmp.toString(), 0, ""), maxPixels = 1_000_000)
+            imageProbe.probe(StagedFile(tmp.toString(), 0, ""))
         } finally {
             Files.deleteIfExists(tmp)
         }

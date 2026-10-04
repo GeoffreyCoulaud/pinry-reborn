@@ -14,14 +14,17 @@ enum class AudioCodec { AAC, OPUS, MP3 }
 data class VideoProbeResult(
     val videoCodec: VideoCodec,
     val audioCodec: AudioCodec?,
-    val width: Int,
-    val height: Int,
-    val duration: Duration,
+    override val width: Int,
+    override val height: Int,
+    override val duration: Duration,
+    // The video track's packets, one per frame.
+    override val frames: Int,
+    override val bytes: Long,
     val codecs: String,
     val demuxedAs: VideoContainer,
     // Those two tracks alone, the video tagged as [codecs] names it: what [VideoProcessor.repackage] writes.
     val alreadyRepackaged: Boolean,
-)
+) : MeasuredMedia
 
 interface VideoProcessor {
     /**
