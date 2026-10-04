@@ -59,14 +59,15 @@ class ProcessRunnerTest {
 
     @Test
     fun `Given a command that exits leaving a child on its output, Then the run still ends at its timeout`() {
-        // Given: the orphaned sleep holds the output pipe open after the shell has exited
-        val impatient = ProcessRunner(Duration.ofSeconds(1))
+        // Given: the orphaned sleep holds the output open; the shell lives until the readers block, or the JDK's
+        // reaper drains and closes a pipe nobody reads yet when its process exits (ProcessImpl.processExited).
+        val impatient = ProcessRunner(Duration.ofSeconds(2))
         // When
         val outcome = assertTimeoutPreemptively(Duration.ofSeconds(10)) {
-            impatient.run(listOf("sh", "-c", "sleep 20 & exit 0"))
+            impatient.run(listOf("sh", "-c", "sleep 20 & sleep 0.5"))
         }
         // Then
-        assertEquals(ProcessOutcome.TimedOut(Duration.ofSeconds(1)), outcome)
+        assertEquals(ProcessOutcome.TimedOut(Duration.ofSeconds(2)), outcome)
     }
 
     @Test
