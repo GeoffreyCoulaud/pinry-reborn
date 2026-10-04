@@ -31,6 +31,12 @@ Behind a proxy, a refusal reaches neither client as such: the JDK reports a refu
    direct fetcher with a `ProxySelector`, and neither checks an address itself. The record, not a status or a
    message, is what names `URL_NOT_ALLOWED` or `UNREACHABLE`. Written with the JDK's `ServerSocket` and virtual
    threads: the fetch module depends on no framework.
+   (Corrected: since block 140 the proxy runs on Jetty 12.1, the hand-rolled one being hard to read for
+   security-critical code, the operator's answer to question AI on 2026-10-04: `ConnectHandler` serves `CONNECT`
+   and dials the address `newConnectAddress` returns; `ProxyHandler.Forward` serves plain HTTP through a Jetty
+   `HttpClient` whose `SocketAddressResolver` returns the same checked address. One guard serves both, so the address
+   checked is still the address dialled. Each request on a kept-alive connection is forwarded and checked on its
+   own, where the hand-rolled proxy forced one request per connection.)
 
    **Fails if** any connection of either path reaches a private address under `AddressPolicy.Standard`, the proxy
    resolves a host twice for one connection, or a refused download ends with another reason than `URL_NOT_ALLOWED`.
