@@ -64,6 +64,9 @@ collapsed in those pull requests; the closing block corrects it after the holist
   `--rerun`s; `nginx -t` accepted `proxy.conf`.
 - Block 50: budget 306 lines, 16 files against `feat/renders-wait-their-turn`; gate in its pull request. A one-off
   mutation (the revocation removed) turned the 5 cases of `src/test/drops.test.ts` red.
+- (Corrected: block 60: `dagger call gate` green at `166be58e`, log `gate-60.log`; budget 182 lines, 16 files against
+  `feat/the-webapp-measures-a-video`. Under `prlimit --as=1048576`, `ffmpeg -version` and `vips --version` both fail
+  with "failed to map segment from shared object".)
 - Continuous integration green on #306 to #315 (`gh pr view <n> --json statusCheckRollup`, 2026-10-04).
 - Read headless in Firefox 156.0.1 over WebDriver BiDi at 1280x800, light and dark, against a throwaway stub API
   answering `422` for some renditions, with `maxPixelsPerFrame` at 100,000 (50): a 640x360 MP4 picked was refused
