@@ -45,20 +45,21 @@ class MediaAdapterProducers {
         MediaLimits(
             config.maxImageBytes(), config.maxVideoBytes(), Duration.ofSeconds(config.maxVideoSeconds()),
             config.maxPixelsPerFrame(), config.maxPixelsPerRender(), config.renderConcurrency(),
-            config.decoderTimeout(), config.decoderMemory(),
+            config.decoderTimeout(), config.decoderMemoryBytes(),
         )
 
     @Produces
     @ApplicationScoped
     fun videoProcessor(config: MediaConfig, renditions: RenditionsConfig): VideoProcessor =
-        FfmpegVideoProcessor(config.decoderTimeout(), config.decoderMemory(), renditions.webpQuality())
+        FfmpegVideoProcessor(config.decoderTimeout(), config.decoderMemoryBytes(), renditions.webpQuality())
 
     @Produces
     @ApplicationScoped
-    fun imageProbe(config: MediaConfig): ImageProbe = VipsImageProbe(config.decoderTimeout(), config.decoderMemory())
+    fun imageProbe(config: MediaConfig): ImageProbe =
+        VipsImageProbe(config.decoderTimeout(), config.decoderMemoryBytes())
 
     @Produces
     @ApplicationScoped
     fun imageTransformer(config: MediaConfig, renditions: RenditionsConfig): ImageTransformer =
-        VipsImageTransformer(renditions.webpQuality(), config.decoderTimeout(), config.decoderMemory())
+        VipsImageTransformer(renditions.webpQuality(), config.decoderTimeout(), config.decoderMemoryBytes())
 }

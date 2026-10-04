@@ -17,7 +17,7 @@ class MediaConfigTest {
             override fun maxPixelsPerRender() = 8_000_000_000L
             override fun renderConcurrency() = 2
             override fun decoderTimeout() = Duration.ofSeconds(60)
-            override fun decoderMemory() = 2_147_483_648L
+            override fun decoderMemoryBytes() = 2_147_483_648L
         }
         // Then
         assertEquals("/var/lib/pinry", config.dataDir())
@@ -28,6 +28,6 @@ class MediaConfigTest {
         assertEquals(8_000_000_000L, config.maxPixelsPerRender())
         assertEquals(2, config.renderConcurrency())
         assertEquals(Duration.ofSeconds(60), config.decoderTimeout())
-        assertEquals(2_147_483_648L, config.decoderMemory())
+        assertEquals(2_147_483_648L, config.decoderMemoryBytes())
     }
 }

@@ -3733,7 +3733,7 @@
             "$ref" : "#/components/responses/RangeNotSatisfiable"
           },
           "422" : {
-            "description" : "The media's frame is past media.max_pixels_per_frame, lowered since it was stored, or its decoder failed under media.decoder_timeout and media.decoder_memory",
+            "description" : "The media's frame is past media.max_pixels_per_frame, lowered since it was stored, or its decoder failed under media.decoder_timeout and media.decoder_memory_bytes in the last 24 hours",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
