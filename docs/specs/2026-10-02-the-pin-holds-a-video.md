@@ -92,7 +92,8 @@ header included, goes down the direct path, where the probe judges. ADR 0048.
 each host once, checks the address with `AddressPolicy`, connects to that address, and records what it refused
 or failed to reach. yt-dlp is given it with `--proxy`, the direct fetcher with a `ProxySelector`; the fetcher
 loses its own guard. Written with the JDK alone (`ServerSocket`, virtual threads), not Vert.x as Discuss first
-said: `api-fetch-http` depends on no framework. The proxy's record, not an HTTP status or yt-dlp's stderr, is what
+said: `api-fetch-http` depends on no framework. (Corrected: since block 140 it runs on Jetty 12.1, `ConnectHandler`
+and `ProxyHandler.Forward`, the operator's answer to question AI on 2026-10-04.) The proxy's record, not an HTTP status or yt-dlp's stderr, is what
 turns a failure into `URL_NOT_ALLOWED` or `UNREACHABLE`: through a tunnel, the JDK reports a refusal as
 `IOException: Tunnel failed, got: 403` (measured by the review). ADR 0048.
 
@@ -285,6 +286,7 @@ The lead adds four decisions, submitted with this document:
 | 103 | `feat/the-extraction-holds-its-bounds` | The extraction's duration, size and live refusals |
 | 104 | `feat/the-extractor-is-wired` | The extraction timeout, its boot check, the producer |
 | 110 | `feat/a-page-address-yields-its-video` | The worker's dispatch on `Content-Type` |
+| 140 | `refactor/the-guarding-proxy-runs-on-jetty` | The proxy on Jetty 12.1 (Corrected: added on 2026-10-04) |
 
 (Corrected: block 53 was "the video branch, the bounds, the refusals, the handshake"; an inventory of about 45 files
 split it into four blocks, the operator's answer of 2026-10-03. Block 54 then measured 26 files and gave the handshake
@@ -605,6 +607,20 @@ merges whole.
   image; an HTML page with no video ends `FAILED` with `NO_MEDIA_FOUND`, which the client maps to a sentence in the
   same block.
 - Deletes the backlog's **Video support** item.
+
+### 140, the proxy on Jetty
+
+(Corrected: added on 2026-10-04. The operator, reviewing the stack, found the hand-rolled `GuardingProxy` hard to read
+for security-critical code and chose Jetty 12.1 over LittleProxy, a coroutine rewrite and Smokescreen, question AI,
+"reco ok".)
+
+- `GuardingProxy` keeps its public surface and runs on Jetty 12.1: `ConnectHandler` for `CONNECT`,
+  `ProxyHandler.Forward` for plain HTTP, both resolving through one guard that checks `AddressPolicy` and keeps the
+  record, so the address checked is the address dialled.
+- `GuardingProxyTest` passes, adapted only where it asserted the hand-rolled mechanics: Jetty's own statuses for a
+  malformed or oversized head, a `502` for an origin that closes unanswered, and a kept-alive connection whose second
+  request to a refused host is checked and refused in place of the forced `Connection: close`.
+- `dependencyInsight` on `api-application` resolves Jetty at 12.1.x under the Quarkus platform.
 
 ## 6. Adjacent backlog items
 

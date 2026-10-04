@@ -22,7 +22,8 @@ the holistic review. (Corrected: #292 is block 110. The closing blocks are 120 `
 `fix/the-api-says-media` (#296), 128 `fix/a-stalled-download-is-abandoned` (#297), 130 `docs/the-records-match-the-code`
 (#298), 132 `fix/the-webapp-says-media-everywhere` (#299) and 134 `docs/the-lot-closes`, the pull request these
 corrections arrive in. Two blocks the operator added on 2026-10-04 follow it: 136, the grid hovers on the animated
-rendition, and 138, the request log redacts credentials.)
+rendition, and 138, the request log redacts credentials.) (Corrected: three blocks. 140
+`refactor/the-guarding-proxy-runs-on-jetty`, the proxy on Jetty, the operator asked for while reviewing the stack.)
 
 ## Current state
 
@@ -51,7 +52,9 @@ rendition, and 138, the request log redacts credentials.)
   (Corrected: longer than twice it, one per yt-dlp run, since block 124.)
 - **Every remote fetch goes through one `GuardingProxy` per download** (`api-fetch-http`), bound to the loopback, which
   resolves each host once, checks it with `AddressPolicy`, serves `CONNECT` and plain HTTP one request per connection,
-  and keeps the record that names `URL_NOT_ALLOWED` or `UNREACHABLE` (ADR 0048).
+  and keeps the record that names `URL_NOT_ALLOWED` or `UNREACHABLE` (ADR 0048). (Corrected: since block 140 it runs
+  on Jetty 12.1, `ConnectHandler` and `ProxyHandler.Forward` resolving through one guard, and each request on a
+  kept-alive connection is forwarded and checked on its own.)
 - **A page address yields its video through yt-dlp.** The download reads the fetched response's `Content-Type`:
   `text/html` and `application/xhtml+xml` go to `PageMediaExtractor` (`api-fetch-ytdlp`), anything else, a missing
   header included, down the direct path. yt-dlp runs twice behind the proxy, a `--dump-single-json` that refuses a live
@@ -226,6 +229,16 @@ block 134's teammate's scratchpad, under the name given.
   tests over `POST /users`, `POST /sessions` and a request authenticated each way hold that the log carries neither
   the password, nor the bearer token, nor the session cookie. **A log written before block 138 may hold them in clear**: nothing is deployed (`git tag -l 'v*'` is empty),
   but a workstation's compose logs may, and are to be deleted.
+- **Jetty's forward proxy sends the response head with the body's first bytes** (`ProxyHandler`'s listener writes
+  in `onContent`), so an origin that sends headers and then nothing fails the fetch at `request_timeout`, never at
+  the body's deadline; the fetcher's stall tests stall after one byte (140).
+- **Jetty answers `400` to a request without `Host`, or whose `Host` differs from its absolute-form authority**, a
+  `CONNECT` included. The JDK client and yt-dlp send a matching one; a hand-written test request must too (140).
+- **Jetty's defaults would refuse real traffic**: 8 KiB heads both ways, and `UriCompliance.DEFAULT` refuses `%2F`
+  and `//` in a path. The proxy sets 64 KiB on the server and on its client, and `UriCompliance.UNSAFE`, the proxy
+  never reading a path (140).
+- **Each proxy is a Jetty server that logs five lines at INFO** as it starts and stops;
+  `quarkus.log.category."org.eclipse.jetty".level=WARN` silences them (140).
 - **Firefox's BiDi refuses commands on the initial context** without `-remote-allow-system-access`: create a tab with
   `browsingContext.create` (132).
 - **An Edit whose `new_string` ends in a space can lose it**: three renamed JSON keys lost theirs (132).
@@ -290,6 +303,9 @@ The closing blocks' departures from the review's suggestions, as each report det
 - **132**: the bare `image` catalogue key was renamed with the `image_*` keys.
 - **134**: two code fixes the real check found, each a tier-2 question: the playlist report (AF) and the decoder's
   threads (AH).
+- **140**: a request Jetty refuses gets Jetty's status (`400`, `431` past the head bound) where the hand-rolled proxy
+  closed unanswered, an `ftp` target `502` from Jetty's client, an origin closing unanswered `502`; the origin gets
+  no `Via` or `Forwarded`, which Jetty adds by default.
 
 ## Tier-2 questions
 
@@ -308,6 +324,9 @@ The closing blocks' departures from the review's suggestions, as each report det
 - Block 134, the credentials in the request log, proposed for the backlog as tier 3: fixed in this lot by block 138
   instead, the operator's decision relayed by the lead on 2026-10-04.
 - Blocks 120 to 132: none.
+- Block 140, the proxy on Jetty (AI): the operator found the hand-rolled `GuardingProxy` hard to read and maintain
+  for security-critical code; of Jetty 12.1, LittleProxy, a coroutine rewrite and Stripe's Smokescreen, the operator
+  took the recommendation, Jetty, "reco ok", 2026-10-04.
 
 ## The operator's decisions of 2026-10-03
 
@@ -365,6 +384,8 @@ The closing blocks' departures from the review's suggestions, as each report det
   330 MB each for a 4K video at MEDIUM. And `media.max_pixels`, at its 50 MP default, refuses no video (8K is 33 MP).
   Filed in the backlog.
 - LARGE (960) is asked for by no client; a 4K poster at that size still peaks at 747 MB (134).
+- The proxy on Jetty against a real site: block 134's real check ran the hand-rolled proxy, and block 140 did not
+  run it again. Neither proxy has a test of its connect timeout (140).
 
 ## The holistic review
 
@@ -429,6 +450,8 @@ block 134:)
 - **Runs re-triggered: 2**, both reruns rather than cascades: #287, an engine image pull failure, and #295, the flaky
   proxy test block 128 then fixed.
 - **The operator's reading of the bodies: no remark.**
+- (Corrected, block 140: the operator's review of the stack asked for one change, the proxy on Jetty, stacked above
+  as block 140 rather than fixed back into 90 and 92; no cascaded rebase.)
 
 ## Next step
 
@@ -436,4 +459,5 @@ Wrap: the holistic review over `git diff lot/0.44.0-knip-and-biome-keep-the-clie
 then the closing block, then the operator's review of the stack, and the tag `lot/0.45.0-the-pin-holds-a-video` once
 it merges. (Corrected: the review and blocks 120 to 134 are done. Next, block 136, the grid hovers on the animated
 rendition, and block 138, the request log redacts credentials, each stacked above. Then the operator's review of the
-whole stack, the merge, and the tag `lot/0.45.0-the-pin-holds-a-video`.)
+whole stack, the merge, and the tag `lot/0.45.0-the-pin-holds-a-video`.) (Corrected: block 140, the proxy on Jetty,
+is stacked above 138; then the operator's review resumes.)
