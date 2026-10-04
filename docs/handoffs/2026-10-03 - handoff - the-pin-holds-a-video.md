@@ -184,6 +184,23 @@ block 134's teammate's scratchpad, under the name given.
   (the review measured 348 MB and 1,264 MB) and 149 MB and 182 MB at MEDIUM after it. What block 120 left was the
   decoder, one thread per core each holding its frames, and the two threads are block 134's (`d4bdf4d3`), the
   operator's answer AH.
+- **Block 140 ran it again on the proxy on Jetty**, on 2026-10-04, through `compose.yml`'s `api` service built from
+  `refactor/the-guarding-proxy-runs-on-jetty` (`92e92084`), its volume reset, with block 134's `api-check.py`. Each
+  log is under `/tmp/`, under the name given.
+  - The YouTube Short, through `CONNECT`: `READY` after 4 s, `video/mp4; codecs="avc1.4D400C,Opus"`, 320x240, 687,900
+    bytes, the same bytes as block 134; the original, the still (12,576 bytes) and the animated rendition (436,750
+    bytes) each `200` (`real-check-140-youtube.log`).
+  - The w3schools page: `READY` after 2 s, `video/mp4; codecs="avc1.4D400C,mp4a.40.2"`, 320x176, 585,930 bytes, its
+    renditions `200` (`real-check-140-plain-video.log`).
+  - A direct file over plain `http://`, `http://httpbin.org/image/png`, through the forward path: `READY` after 1 s,
+    `image/png`, 100x100, 8,090 bytes, its renditions `200` (`real-check-140-plain-http.log`).
+  - Three addresses resolving to a private address, `http://` and `https://10.0.0.1.nip.io/video.mp4` (10.0.0.1)
+    and `http://localtest.me:8080/q/health` (127.0.0.1): each `FAILED` with `URL_NOT_ALLOWED` after 1 s
+    (`real-check-140-private.log`).
+  - The `api` container's log over those six downloads holds no line from `org.eclipse.jetty`
+    (`real-check-140-api.log`). The same image started with `QUARKUS_LOG_CATEGORY__ORG_ECLIPSE_JETTY__LEVEL=INFO`
+    wrote five INFO lines for one download, the version, two `Started` and two `Stopped`
+    (`real-check-140-jetty-info.log`): the WARN level is what silences them.
 
 ## Pitfalls
 
@@ -387,8 +404,7 @@ The closing blocks' departures from the review's suggestions, as each report det
   330 MB each for a 4K video at MEDIUM. And `media.max_pixels`, at its 50 MP default, refuses no video (8K is 33 MP).
   Filed in the backlog.
 - LARGE (960) is asked for by no client; a 4K poster at that size still peaks at 747 MB (134).
-- The proxy on Jetty against a real site: block 134's real check ran the hand-rolled proxy, and block 140 did not
-  run it again. Neither proxy has a test of its connect timeout (140).
+- Neither proxy has a test of its connect timeout (140). The proxy on Jetty met real sites in "The real check".
 
 ## The holistic review
 
