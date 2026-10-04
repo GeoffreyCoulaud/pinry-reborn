@@ -1,12 +1,6 @@
 import { EmptyState, Modal, Spinner } from "@heroui/react";
 import { Play } from "lucide-react";
-import {
-	type RefObject,
-	useEffect,
-	useLayoutEffect,
-	useRef,
-	useState,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Collection,
 	GridList,
@@ -17,6 +11,7 @@ import {
 	WaterfallLayout,
 } from "react-aria-components";
 import { preload } from "react-dom";
+import { useColumnWidth } from "../columnWidth";
 import { downloadReason } from "../downloadReasons";
 import { isVideo } from "../lib/media";
 import type { PinSort } from "../lib/sorts";
@@ -50,18 +45,6 @@ const LAYOUT = {
 	maxHorizontalSpace: 16,
 	maxColumns: 8,
 };
-
-/** The column's width, which the layout gives the item and only a browser can measure. */
-function useColumnWidth(ref: RefObject<HTMLElement | null>): number {
-	const [width, setWidth] = useState(0);
-	useLayoutEffect(() => {
-		const measured = ref.current?.clientWidth ?? 0;
-		if (measured !== width) {
-			setWidth(measured);
-		}
-	});
-	return width;
-}
 
 /**
  * The tile carries its ratio so the layout measures it at its true height on the first pass and

@@ -106,9 +106,6 @@ Dated events. No session starts these early.
 - **Search matches by substring and tolerates no typo**, similarity matching having left the
   product; restoring it wants an engine that can index for it, which is a standalone Postgres.
   See `docs/specs/2026-09-21-the-header-searches-and-wears-the-name.md`, decision G and section 6.
-- **A board has no cover**, so `/boards` is a list of words: a tile grid needs either a cover field on
-  `BoardOutputDto` or one request per board.
-  See `docs/specs/2026-09-20-the-pin-is-editable-and-the-boards-arrive.md`, decision N.
 - **Perceptual `ImageHash` (pHash)** for pin deduplication / merging. Computed at ingestion, a few microseconds
   per image, and depending on nothing in the visual-understanding section below: it warns "you have already
   pinned this" before the pin is written. Flagship of the sequenced **user-segmented base**.

@@ -42,6 +42,11 @@ export function tileAnimatedSource(url: string, rendition: Rendition): string {
 	return `${tileMediaSource(url, rendition)}&animated=true`;
 }
 
+/** An image's still frame or a video's poster, never moving (specification 2026-10-05, decision F). */
+export function tileStillSource(url: string, rendition: Rendition): string {
+	return `${tileMediaSource(url, rendition)}&animated=false`;
+}
+
 /** The one test of what the grid places, which the viewer's order shares (decision F). */
 function isPlaceable(pin: {
 	media?: { status: Schemas["PinMediaStateDto"]["status"] } | null;

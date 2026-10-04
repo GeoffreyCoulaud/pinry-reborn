@@ -25,7 +25,7 @@ function account(boards: Parameters<typeof boardRoutes>[0]) {
 	);
 }
 
-/** The row a board holds, where its rename and delete live (specification 2026-09-20, decision O). */
+/** The tile a board holds, where its rename and delete live (specification 2026-09-20, decision O). */
 function row(name: string) {
 	return screen.getByRole("row", { name: new RegExp(name) });
 }
@@ -53,7 +53,6 @@ describe("create a board and rename it", () => {
 
 		// The screen passes no title of its own now, so its list is what names it.
 		expect(await screen.findByRole("grid", { name: "Boards" })).toBeVisible();
-		// The list carries what the contract serves and nothing else: no cover, so no tile.
 		expect(
 			within(row("Harbours")).getByText("Where the boats are"),
 		).toBeVisible();

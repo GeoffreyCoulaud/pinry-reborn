@@ -8,6 +8,7 @@ import {
 	tileAnimatedSource,
 	tileAspectRatio,
 	tileMediaSource,
+	tileStillSource,
 } from "./tiles";
 
 describe("a tile's ratio", () => {
@@ -55,6 +56,12 @@ describe("a tile's source", () => {
 	it("Given the relative URL the API gave, Then the animated rendition adds its flag to the size", () => {
 		expect(tileAnimatedSource("/api/v1/pins/7/media", "SMALL")).toBe(
 			"/api/v1/pins/7/media?size=SMALL&animated=true",
+		);
+	});
+
+	it("Given the relative URL the API gave, Then the still rendition refuses the animation by its flag", () => {
+		expect(tileStillSource("/api/v1/pins/7/media", "SMALL")).toBe(
+			"/api/v1/pins/7/media?size=SMALL&animated=false",
 		);
 	});
 });
