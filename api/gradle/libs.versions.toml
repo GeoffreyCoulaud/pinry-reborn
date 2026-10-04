@@ -21,7 +21,6 @@ rest-assured = "6.0.0"
 detekt = "2.0.0-alpha.5"
 kover = "0.9.8"
 konsist = "0.17.3"
-vips-ffm = "1.9.8"
 jetty = "12.1.13"
 
 [libraries]
@@ -89,8 +88,6 @@ sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
 
 jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
-
-vips-ffm-core = { module = "app.photofox.vips-ffm:vips-ffm-core", version.ref = "vips-ffm" }
 
 jetty-proxy = { module = "org.eclipse.jetty:jetty-proxy", version.ref = "jetty" }
 

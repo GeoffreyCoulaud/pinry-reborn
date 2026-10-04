@@ -242,8 +242,8 @@ class MediaControllerTest {
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
         every { getPinMediaRendition.get(pinId, user, 240, null) } returns
-            ServedMedia.Rendition(mediaId, "v1-240-a.webp", 240, animated = true)
-        every { renditionCache.openStream(mediaId, "v1-240-a.webp") } returns ByteArrayInputStream(byteArrayOf(7, 7))
+            ServedMedia.Rendition(mediaId, "v2-240-a.webp", 240, animated = true)
+        every { renditionCache.openStream(mediaId, "v2-240-a.webp") } returns ByteArrayInputStream(byteArrayOf(7, 7))
 
         // When
         val response =
@@ -252,7 +252,7 @@ class MediaControllerTest {
         // Then
         assertEquals(200, response.status)
         assertEquals("image/webp", response.getHeaderString("Content-Type"))
-        assertEquals("\"v1-$mediaId-240-a\"", response.getHeaderString("ETag"))
+        assertEquals("\"v2-$mediaId-240-a\"", response.getHeaderString("ETag"))
         assertEquals("private, must-revalidate", response.getHeaderString("Cache-Control"))
         val streamingOutput = response.entity as StreamingOutput
         val out = ByteArrayOutputStream()
@@ -269,8 +269,8 @@ class MediaControllerTest {
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
         every { getPinMediaRendition.get(pinId, user, 240, false) } returns
-            ServedMedia.Rendition(mediaId, "v1-240-s.webp", 240, animated = false)
-        every { renditionCache.openStream(mediaId, "v1-240-s.webp") } returns ByteArrayInputStream(byteArrayOf(4))
+            ServedMedia.Rendition(mediaId, "v2-240-s.webp", 240, animated = false)
+        every { renditionCache.openStream(mediaId, "v2-240-s.webp") } returns ByteArrayInputStream(byteArrayOf(4))
 
         // When
         val response =
@@ -290,8 +290,8 @@ class MediaControllerTest {
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
         every { getPinMediaRendition.get(pinId, user, 240, null) } returns
-            ServedMedia.Rendition(mediaId, "v1-240-s.webp", 240, animated = false)
-        every { renditionCache.openStream(mediaId, "v1-240-s.webp") } returns ByteArrayInputStream(byteArrayOf(3))
+            ServedMedia.Rendition(mediaId, "v2-240-s.webp", 240, animated = false)
+        every { renditionCache.openStream(mediaId, "v2-240-s.webp") } returns ByteArrayInputStream(byteArrayOf(3))
 
         // When
         val response =
@@ -299,7 +299,7 @@ class MediaControllerTest {
 
         // Then
         assertEquals(200, response.status)
-        assertEquals("\"v1-$mediaId-240-s\"", response.getHeaderString("ETag"))
+        assertEquals("\"v2-$mediaId-240-s\"", response.getHeaderString("ETag"))
         val streamingOutput = response.entity as StreamingOutput
         val out = ByteArrayOutputStream()
         streamingOutput.write(out)
@@ -315,14 +315,14 @@ class MediaControllerTest {
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
         every { getPinMediaRendition.get(pinId, user, 240, null) } returns
-            ServedMedia.Rendition(mediaId, "v1-240-a.webp", 240, animated = true)
+            ServedMedia.Rendition(mediaId, "v2-240-a.webp", 240, animated = true)
 
         // When
         val response = controller.getMedia(
             pinId,
             size = "small",
             animated = null,
-            ifNoneMatch = "\"v1-$mediaId-240-a\"",
+            ifNoneMatch = "\"v2-$mediaId-240-a\"",
             rangeHeader = null,
         )
 
@@ -353,8 +353,8 @@ class MediaControllerTest {
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
         every { getPinMediaRendition.get(pinId, user, 240, null) } returns
-            ServedMedia.Rendition(mediaId, "v1-240-a.webp", 240, animated = true)
-        every { renditionCache.openStream(mediaId, "v1-240-a.webp") } returns null
+            ServedMedia.Rendition(mediaId, "v2-240-a.webp", 240, animated = true)
+        every { renditionCache.openStream(mediaId, "v2-240-a.webp") } returns null
 
         // When
         val response =

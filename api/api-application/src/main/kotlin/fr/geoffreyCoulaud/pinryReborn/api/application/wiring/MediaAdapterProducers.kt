@@ -58,5 +58,6 @@ class MediaAdapterProducers {
 
     @Produces
     @ApplicationScoped
-    fun imageTransformer(config: RenditionsConfig): ImageTransformer = VipsImageTransformer(config.webpQuality())
+    fun imageTransformer(config: MediaConfig, renditions: RenditionsConfig): ImageTransformer =
+        VipsImageTransformer(renditions.webpQuality(), config.decoderTimeout(), config.decoderMemory())
 }

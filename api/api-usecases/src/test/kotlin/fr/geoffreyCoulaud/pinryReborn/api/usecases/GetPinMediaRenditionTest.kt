@@ -90,16 +90,16 @@ class GetPinMediaRenditionTest {
         val img = media(pinId, 100, 80, animated = false)
         every { getPinMedia.get(pinId, requester) } returns img
         // A static source renders statically whatever was requested: the flag is intersected away.
-        stubMiss(img, "v1-40-s.webp")
+        stubMiss(img, "v2-40-s.webp")
 
         val served = useCase.get(pinId, requester, requestedPx = 40, animated = true)
 
         val rendition = assertInstanceOf(ServedMedia.Rendition::class.java, served)
-        assertEquals("v1-40-s.webp", rendition.key)
+        assertEquals("v2-40-s.webp", rendition.key)
         assertEquals(40, rendition.effectivePx)
         assertFalse(rendition.animated)
-        verify { imageTransformer.render(any(), RenditionSpec(40, false)) }
-        verify { renditionCache.store(img.id, "v1-40-s.webp", any()) }
+        verify { imageTransformer.render(any(), RenditionSpec(40, false, 100, 80)) }
+        verify { renditionCache.store(img.id, "v2-40-s.webp", any()) }
     }
 
     @Test
@@ -108,16 +108,16 @@ class GetPinMediaRenditionTest {
         val pinId = randomUUID()
         val img = media(pinId, 100, 80, animated = false)
         every { getPinMedia.get(pinId, requester) } returns img
-        stubMiss(img, "v1-40-s.webp")
+        stubMiss(img, "v2-40-s.webp")
 
         // When
         val served = useCase.get(pinId, requester, requestedPx = 40, animated = false)
 
         // Then: identical bytes dedup onto one cache entry and one ETag, whatever the client asked
         val rendition = assertInstanceOf(ServedMedia.Rendition::class.java, served)
-        assertEquals("v1-40-s.webp", rendition.key)
+        assertEquals("v2-40-s.webp", rendition.key)
         assertFalse(rendition.animated)
-        verify { imageTransformer.render(any(), RenditionSpec(40, false)) }
+        verify { imageTransformer.render(any(), RenditionSpec(40, false, 100, 80)) }
     }
 
     @Test
@@ -126,16 +126,16 @@ class GetPinMediaRenditionTest {
         val pinId = randomUUID()
         val img = media(pinId, 100, 80, animated = true)
         every { getPinMedia.get(pinId, requester) } returns img
-        stubMiss(img, "v1-40-a.webp")
+        stubMiss(img, "v2-40-a.webp")
 
         // When
         val served = useCase.get(pinId, requester, requestedPx = 40, animated = true)
 
         // Then: an animated source is the only case that reaches the transformer with animated=true
         val rendition = assertInstanceOf(ServedMedia.Rendition::class.java, served)
-        assertEquals("v1-40-a.webp", rendition.key)
+        assertEquals("v2-40-a.webp", rendition.key)
         assertTrue(rendition.animated)
-        verify { imageTransformer.render(any(), RenditionSpec(40, true)) }
+        verify { imageTransformer.render(any(), RenditionSpec(40, true, 100, 80)) }
     }
 
     @Test
@@ -143,7 +143,7 @@ class GetPinMediaRenditionTest {
         val pinId = randomUUID()
         val img = media(pinId, 100, 80, animated = false)
         every { getPinMedia.get(pinId, requester) } returns img
-        every { renditionCache.openStream(img.id, "v1-40-s.webp") } returns ByteArrayInputStream(byteArrayOf(9))
+        every { renditionCache.openStream(img.id, "v2-40-s.webp") } returns ByteArrayInputStream(byteArrayOf(9))
 
         val served = useCase.get(pinId, requester, requestedPx = 40, animated = true)
 
@@ -157,14 +157,14 @@ class GetPinMediaRenditionTest {
         val pinId = randomUUID()
         val img = media(pinId, 10, 20, animated = true)
         every { getPinMedia.get(pinId, requester) } returns img
-        stubMiss(img, "v1-10-s.webp")
+        stubMiss(img, "v2-10-s.webp")
 
         val served = useCase.get(pinId, requester, requestedPx = 40, animated = false)
 
         val rendition = assertInstanceOf(ServedMedia.Rendition::class.java, served)
-        assertEquals("v1-10-s.webp", rendition.key)
+        assertEquals("v2-10-s.webp", rendition.key)
         assertEquals(10, rendition.effectivePx)
-        verify { imageTransformer.render(any(), RenditionSpec(10, false)) }
+        verify { imageTransformer.render(any(), RenditionSpec(10, false, 10, 20)) }
     }
 
     @Test
@@ -184,7 +184,7 @@ class GetPinMediaRenditionTest {
         val pinId = randomUUID()
         val img = media(pinId, 100, 80, animated = true)
         every { getPinMedia.get(pinId, requester) } returns img
-        stubMiss(img, "v1-40-a.webp")
+        stubMiss(img, "v2-40-a.webp")
 
         // When
         val served = useCase.get(pinId, requester, requestedPx = 40, animated = null)
@@ -213,19 +213,19 @@ class GetPinMediaRenditionTest {
         val pinId = randomUUID()
         val video = video(pinId)
         every { getPinMedia.get(pinId, requester) } returns video
-        stubVideoMiss(video, "v1-40-s.webp")
+        stubVideoMiss(video, "v2-40-s.webp")
         every { videoProcessor.poster(original, 40) } returns poster
         every { mediaStore.openStaged(poster) } returns ByteArrayInputStream(byteArrayOf(2))
-        every { imageTransformer.render(any(), RenditionSpec(40, false)) } returns rendered
+        every { imageTransformer.render(any(), RenditionSpec(40, false, 160, 120)) } returns rendered
 
         // When
         val served = useCase.get(pinId, requester, requestedPx = 40, animated = null)
 
         // Then
         val rendition = assertInstanceOf(ServedMedia.Rendition::class.java, served)
-        assertEquals("v1-40-s.webp", rendition.key)
+        assertEquals("v2-40-s.webp", rendition.key)
         assertFalse(rendition.animated)
-        verify { renditionCache.store(video.id, "v1-40-s.webp", rendered) }
+        verify { renditionCache.store(video.id, "v2-40-s.webp", rendered) }
         verify { mediaStore.discard(poster) }
         verify { mediaStore.discard(original) }
     }
@@ -236,7 +236,7 @@ class GetPinMediaRenditionTest {
         val pinId = randomUUID()
         val video = video(pinId)
         every { getPinMedia.get(pinId, requester) } returns video
-        stubVideoMiss(video, "v1-40-a.webp")
+        stubVideoMiss(video, "v2-40-a.webp")
         every { videoProcessor.preview(original, 40) } returns rendered
 
         // When
@@ -244,7 +244,7 @@ class GetPinMediaRenditionTest {
 
         // Then
         assertTrue(assertInstanceOf(ServedMedia.Rendition::class.java, served).animated)
-        verify { renditionCache.store(video.id, "v1-40-a.webp", rendered) }
+        verify { renditionCache.store(video.id, "v2-40-a.webp", rendered) }
         verify { mediaStore.discard(original) }
         verify(exactly = 0) { imageTransformer.render(any(), any()) }
     }
@@ -255,7 +255,7 @@ class GetPinMediaRenditionTest {
         val pinId = randomUUID()
         val video = video(pinId)
         every { getPinMedia.get(pinId, requester) } returns video
-        stubVideoMiss(video, "v1-120-a.webp")
+        stubVideoMiss(video, "v2-120-a.webp")
         every { videoProcessor.preview(original, 120) } returns rendered
 
         // When
@@ -271,7 +271,7 @@ class GetPinMediaRenditionTest {
         val pinId = randomUUID()
         val video = video(pinId)
         every { getPinMedia.get(pinId, requester) } returns video
-        stubVideoMiss(video, "v1-40-a.webp")
+        stubVideoMiss(video, "v2-40-a.webp")
         every { videoProcessor.preview(original, 40) } throws VideoProcessorTimeoutException("slow")
 
         // When / Then

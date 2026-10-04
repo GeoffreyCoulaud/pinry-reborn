@@ -231,7 +231,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         val probe = probeBytes(bytes)
         assertFalse(probe.animated)
         assertEquals(6, minOf(probe.width, probe.height))
-        val cached = Path.of(mediaConfig.dataDir()).resolve("cache/$mediaId/v1-6-s.webp")
+        val cached = Path.of(mediaConfig.dataDir()).resolve("cache/$mediaId/v2-6-s.webp")
         val firstWrite = Files.getLastModifiedTime(cached)
         assertArrayEquals(bytes, getWebp(auth, pinId, "size=small"))
         assertEquals(firstWrite, Files.getLastModifiedTime(cached), "the second GET should be a cache hit")
@@ -252,7 +252,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         // Then
         assertTrue(probeBytes(bytes).animated)
         val cache = Path.of(mediaConfig.dataDir()).resolve("cache/$mediaId")
-        assertTrue(Files.exists(cache.resolve("v1-6-s.webp")) && Files.exists(cache.resolve("v1-6-a.webp")))
+        assertTrue(Files.exists(cache.resolve("v2-6-s.webp")) && Files.exists(cache.resolve("v2-6-a.webp")))
     }
 
     @Test

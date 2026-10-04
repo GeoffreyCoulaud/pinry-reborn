@@ -12,15 +12,13 @@ FROM denoland/deno:bin-2.9.7@sha256:bc5aa4466e21b6d3021226a85ba2e1911f7c386254d9
 
 FROM eclipse-temurin:25-jre@sha256:bb036ed6cfdc57e3da7c22634d15f1b840d2caf76183861c80e81ca4b5104abb
 
-# curl is used only by the HEALTHCHECK below. libvips42t64 is the native
-# library vips-ffm loads for api-imaging-vips (eclipse-temurin:25-jre is
-# Ubuntu-based, post 64-bit-time_t transition, hence the t64 suffix), and
-# libvips-tools the vipsheader it runs (ADR 0050). ffmpeg
+# curl is used only by the HEALTHCHECK below. libvips-tools brings the
+# vipsheader and vips processes api-imaging-vips runs (ADR 0050). ffmpeg
 # brings the ffprobe and ffmpeg processes api-video-ffmpeg runs (ADR 0047).
 # python3 and python3-venv carry yt-dlp (ADR 0048).
 # Install them minimally and drop the apt lists to keep the layer small.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl libvips42t64 libvips-tools ffmpeg python3 python3-venv \
+    && apt-get install -y --no-install-recommends curl libvips-tools ffmpeg python3 python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 # yt-dlp in a venv, Ubuntu's python3 refusing a system-wide install (PEP 668); deno is the
@@ -88,5 +86,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --start-interval=1s -
 
 # --enable-native-access: sqlite-jdbc loads its native library via the restricted
 # System::load, which JDK 25 warns about and will block in a future release unless
-# native access is granted. (vips-ffm, added later, needs the same grant.)
+# native access is granted.
 ENTRYPOINT ["java", "--enable-native-access=ALL-UNNAMED", "-jar", "quarkus-run.jar"]
