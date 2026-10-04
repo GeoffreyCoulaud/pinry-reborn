@@ -128,6 +128,9 @@ same `<img>`, and back when the pointer leaves; a touch swaps nothing. No `<vide
 - Block 130: green at `3cee7951`, log `gate-130.log`; budget 29 lines, 5 files (#298).
 - Block 132: green at `7d411814`, log `gate-132.log`; budget 212 lines, 17 files (#299).
 - Block 134: see "The real check" below for its measurements; gate and budget in its pull request.
+- Block 140: green at `70128463`, log `/tmp/gate-140.log`; budget 475 lines, 6 files against
+  `fix/the-request-log-redacts-credentials`. The adapted `GuardingProxyTest` failed 5 of 22 against the hand-rolled
+  proxy (`95a6ceef`'s message). `dependencyInsight` on `api-application` resolves Jetty 12.1.13 and slf4j-api 2.0.18.
 - Continuous integration green on #265 to #290 (`gh pr view <n> --json statusCheckRollup`, 2026-10-03); #291 was
   running when this file was written. (Corrected: green on every pull request from #265 to #299 on 2026-10-04, read
   the same way; #287 and #295 each needed one rerun, counted below.)
