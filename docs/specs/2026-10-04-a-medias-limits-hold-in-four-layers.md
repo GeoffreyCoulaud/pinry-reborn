@@ -210,6 +210,7 @@ only; H.265, VP9 and AV1 unmeasured.
   oversized video and reads the refusal; the existing video journeys pass, and the comment "measuring one would
   refuse every video" (`upload-a-video.journey.test.tsx`) is rewritten.
 - An `<img>` error on each view of decision D shows "preview unavailable".
+  (Corrected: the video's poster is the fallback's `<img>`; a `<video poster>` that fails raises no event.)
 - Read headless in Firefox before the push.
 
 ## 6. Out of scope
