@@ -100,6 +100,8 @@ class MediaIngestionTest : BaseTest() {
         assertEquals(4, media.width)
         assertEquals(5, media.height)
         assertEquals(true, media.animated)
+        assertEquals(3, media.frames)
+        assertEquals(null, media.duration)
         assertEquals(staged.byteSize, media.byteSize)
         assertEquals(staged.contentHash, media.contentHash)
         assertEquals(pinId, media.pinId)
@@ -156,6 +158,8 @@ class MediaIngestionTest : BaseTest() {
         assertEquals(4, media.width)
         assertEquals(6, media.height)
         assertEquals(true, media.animated)
+        assertEquals(25, media.frames)
+        assertEquals(Duration.ofSeconds(1), media.duration)
         assertEquals(7, media.byteSize)
         assertEquals("repackaged", media.contentHash)
         verify { store.discard(staged) }

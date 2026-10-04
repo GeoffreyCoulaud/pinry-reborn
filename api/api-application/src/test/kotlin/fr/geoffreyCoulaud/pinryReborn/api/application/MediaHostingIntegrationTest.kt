@@ -13,12 +13,14 @@ import org.hamcrest.CoreMatchers.not
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.Matchers.matchesPattern
 import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Duration
 import java.util.UUID
 
 /**
@@ -337,6 +339,31 @@ class MediaHostingIntegrationTest : IntegrationTest() {
                 .then()
                 .statusCode(refusal.first)
                 .body("code", equalTo(refusal.second))
+        }
+    }
+
+    @Test
+    fun `Given a still, an animated GIF and a video, Then each stored media carries its frames and duration`() {
+        // Given: what each file holds, the video's as ffprobe counts and reads it
+        val expected = mapOf(
+            fixture("sample.png") to (1 to null),
+            fixture("animated.gif") to (3 to null),
+            videoFixture("vp9-opus.webm") to (10 to Duration.ofMillis(1_008)),
+        )
+        for ((file, framesAndDuration) in expected) {
+            val (auth, pinId) = createPinForNewUser()
+
+            // When
+            given()
+                .authenticatedAs(auth)
+                .multiPart("file", file, "application/octet-stream")
+                .`when`().put("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(201)
+
+            // Then
+            val media = requireNotNull(mediaRepository.findByPinId(pinId)) { "${file.name} should be stored" }
+            assertEquals(framesAndDuration, media.frames to media.duration, file.name)
         }
     }
 

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.entities
 
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -14,4 +15,7 @@ data class Media(
     val contentHash: String,
     val storageKey: String,
     val createdAt: Instant,
+    // A still image's values, which a rendition's cost is judged on (ADR 0050, decision 2).
+    val frames: Int = 1,
+    val duration: Duration? = null,
 ) : Identifiable

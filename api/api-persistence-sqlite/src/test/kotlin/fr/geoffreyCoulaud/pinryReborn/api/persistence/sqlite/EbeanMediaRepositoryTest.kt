@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
@@ -49,6 +50,14 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
         val saved = repository.save(mediaFor(pin.id, animated = true))
         assertTrue(saved.animated)
         assertEquals(true, repository.findByPinId(pin.id)?.animated)
+    }
+
+    @Test
+    fun `Given a video, Then findByPinId reads back its frames and duration`() {
+        val pin = savedPin()
+        repository.save(mediaFor(pin.id).copy(frames = 25, duration = Duration.ofMillis(1_023)))
+        val found = repository.findByPinId(pin.id)
+        assertEquals(25 to Duration.ofMillis(1_023), found?.frames to found?.duration)
     }
 
     @Test
