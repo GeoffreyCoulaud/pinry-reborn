@@ -7,6 +7,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.Recyc
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.RecycledBoardListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardRecycleBin
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardSummary
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
@@ -64,7 +65,7 @@ class BoardRecycleBinControllerTest {
         val board = aBoard(user)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardRecycleBin.restore(boardId = board.id, user = user) } returns board
-        every { boardGetter.countActivePinsForUserBoard(board.id, user) } returns 4
+        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(4, null)
 
         // When
         val response = controller.restoreBoard(board.id)

@@ -53,8 +53,7 @@ class BoardRecycleBinController(
     fun restoreBoard(boardId: UUID): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
         val board = boardRecycleBin.restore(boardId = boardId, user = user)
-        val count = boardGetter.countActivePinsForUserBoard(board.id, user)
-        return RestResponse.ok(board.toDto(pinCount = count))
+        return RestResponse.ok(board.toDto(boardGetter.summarizeActiveBoardForUser(board.id, user)))
     }
 
     @POST

@@ -77,7 +77,7 @@ class BoardController(
         val board = boardCreator.create(user, dto.name, dto.description, dto.pinIds)
         return ResponseBuilder
             .created<BoardOutputDto>(URI("/api/v1/boards/${board.id}"))
-            .entity(board.toDto(pinCount = boardGetter.countActivePinsForUserBoard(board.id, user)))
+            .entity(board.toDto(boardGetter.summarizeActiveBoardForUser(board.id, user)))
             .build()
     }
 
@@ -91,7 +91,7 @@ class BoardController(
     fun listBoards(): RestResponse<BoardListOutputDto> {
         val user = securityIdentity.getUser()
         val boards = boardGetter.listActiveBoardsForUser(user).map { board ->
-            board.toDto(pinCount = boardGetter.countActivePinsForUserBoard(board.id, user))
+            board.toDto(boardGetter.summarizeActiveBoardForUser(board.id, user))
         }
         return RestResponse.ok(BoardListOutputDto(boards = boards))
     }
@@ -106,8 +106,7 @@ class BoardController(
     fun getBoard(boardId: UUID): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
         val board = boardGetter.getActiveBoardForUser(boardId = boardId, reader = user)
-        val count = boardGetter.countActivePinsForUserBoard(boardId, user)
-        return RestResponse.ok(board.toDto(pinCount = count))
+        return RestResponse.ok(board.toDto(boardGetter.summarizeActiveBoardForUser(boardId, user)))
     }
 
     @PUT
@@ -125,8 +124,7 @@ class BoardController(
     fun updateBoard(boardId: UUID, @Valid @NotNull dto: BoardInputDto): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
         val board = boardUpdater.update(boardId = boardId, name = dto.name, description = dto.description, user = user)
-        val count = boardGetter.countActivePinsForUserBoard(boardId, user)
-        return RestResponse.ok(board.toDto(pinCount = count))
+        return RestResponse.ok(board.toDto(boardGetter.summarizeActiveBoardForUser(boardId, user)))
     }
 
     @DELETE

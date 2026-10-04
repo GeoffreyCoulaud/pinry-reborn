@@ -71,7 +71,7 @@
       },
       "BoardOutputDto" : {
         "type" : "object",
-        "required" : [ "id", "name", "description", "pinCount" ],
+        "required" : [ "id", "name", "description", "pinCount", "coverUrl" ],
         "properties" : {
           "id" : {
             "$ref" : "#/components/schemas/UUID"
@@ -85,6 +85,9 @@
           "pinCount" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "coverUrl" : {
+            "type" : [ "string", "null" ]
           }
         }
       },
@@ -4101,7 +4104,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "22.0.0"
+    "version" : "22.1.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

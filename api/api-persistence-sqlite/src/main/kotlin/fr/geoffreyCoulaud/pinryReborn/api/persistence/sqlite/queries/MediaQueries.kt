@@ -7,3 +7,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMedia
 
 /** Images whose pin is in any state. The caller states that it means it. */
 fun QMediaModel.withPinInAnyState(): QMediaModel = this
+
+/** Images whose pin is not in the recycle bin. */
+fun QMediaModel.withActivePin(): QMediaModel = pin.softDeletedAt.isNull

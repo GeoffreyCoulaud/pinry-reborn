@@ -1,14 +1,21 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import jakarta.inject.Inject
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
+import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.Matchers.contains
+import org.hamcrest.Matchers.hasKey
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import java.util.UUID
 
 @QuarkusTest
@@ -16,6 +23,12 @@ class BoardsIntegrationTest : IntegrationTest() {
 
     @Inject
     lateinit var boardCreator: BoardCreator
+
+    @Inject
+    lateinit var pinCreator: PinCreator
+
+    @Inject
+    lateinit var mediaRepository: MediaRepositoryInterface
 
     // --- Create ---
 
@@ -264,5 +277,114 @@ class BoardsIntegrationTest : IntegrationTest() {
             .delete("/api/v1/boards/${UUID.randomUUID()}")
             .then()
             .statusCode(404)
+    }
+
+    // --- Cover ---
+
+    /** A pin holding a media, all a cover asks of it. */
+    private fun imagedPin(auth: AuthenticatedUser): Pin {
+        val pin = pinCreator.createPin(auth.user, "https://example.com", null, "Pin", emptyList())
+        mediaRepository.save(
+            Media(
+                id = UUID.randomUUID(), pinId = pin.id, mimeType = "image/png", width = 1, height = 1,
+                animated = false, byteSize = 1, contentHash = "hash-${pin.id}",
+                storageKey = "originals/x/${pin.id}/i.png", createdAt = Instant.EPOCH,
+            ),
+        )
+        return pin
+    }
+
+    private fun mediaUrlOf(pin: Pin) = "/api/v1/pins/${pin.id}/media"
+
+    @Test
+    fun `Given an imaged pin in the body, Then creating a board answers its media as coverUrl`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = imagedPin(auth)
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .body(mapOf("name" to "Trip", "description" to "", "pinIds" to listOf(pin.id.toString())))
+            .`when`()
+            .post("/api/v1/boards")
+            .then()
+            .statusCode(201)
+            .body("coverUrl", equalTo(mediaUrlOf(pin)))
+    }
+
+    @Test
+    fun `Given a board holding an imaged pin, Then GET by id answers its media as coverUrl`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = imagedPin(auth)
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "", pinIds = listOf(pin.id))
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/boards/${board.id}")
+            .then()
+            .statusCode(200)
+            .body("coverUrl", equalTo(mediaUrlOf(pin)))
+    }
+
+    @Test
+    fun `Given a board holding an imaged pin, Then updating it answers its media as coverUrl`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = imagedPin(auth)
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "", pinIds = listOf(pin.id))
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .body("""{"name": "Journey", "description": ""}""")
+            .`when`()
+            .put("/api/v1/boards/${board.id}")
+            .then()
+            .statusCode(200)
+            .body("coverUrl", equalTo(mediaUrlOf(pin)))
+    }
+
+    @Test
+    fun `Given a covered board and an empty one, Then listing answers the cover and a present null coverUrl`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = imagedPin(auth)
+        boardCreator.create(author = auth.user, name = "Covered", description = "", pinIds = listOf(pin.id))
+        boardCreator.create(author = auth.user, name = "Empty", description = "")
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/boards")
+            .then()
+            .statusCode(200)
+            .body("boards.find { it.name == 'Covered' }.coverUrl", equalTo(mediaUrlOf(pin)))
+            .body("boards.find { it.name == 'Empty' }", hasKey("coverUrl"))
+            .body("boards.find { it.name == 'Empty' }.coverUrl", nullValue())
+    }
+
+    @Test
+    fun `Given a recycled board holding an imaged pin, Then restoring it answers its media as coverUrl`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = imagedPin(auth)
+        val board = boardCreator.create(author = auth.user, name = "Trip", description = "", pinIds = listOf(pin.id))
+        given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}").then().statusCode(204)
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .post("/api/v1/boards/recycled/${board.id}/restore")
+            .then()
+            .statusCode(200)
+            .body("coverUrl", equalTo(mediaUrlOf(pin)))
     }
 }

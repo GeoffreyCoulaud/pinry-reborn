@@ -7,4 +7,6 @@ data class BoardOutputDto(
     val name: String,
     val description: String,
     val pinCount: Int,
+    /** The media of the board's newest active pin holding one, or null when no pin does. */
+    val coverUrl: String?,
 )

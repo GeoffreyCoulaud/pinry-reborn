@@ -18,6 +18,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardPinLister
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardRecycleBin
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardSummary
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardUpdater
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinBoardSetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
@@ -70,7 +71,7 @@ class BoardControllerTest {
             createdAt = TestTime.now, updatedAt = TestTime.now)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardCreator.create(user, dto.name, dto.description, emptyList()) } returns board
-        every { boardGetter.countActivePinsForUserBoard(board.id, user) } returns 0
+        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(0, null)
 
         // When
         val response = controller.createBoard(dto)
@@ -94,7 +95,7 @@ class BoardControllerTest {
         val dto = BoardCreationInputDto(name = board.name, description = board.description, pinIds = pinIds)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardCreator.create(user, board.name, board.description, pinIds) } returns board
-        every { boardGetter.countActivePinsForUserBoard(board.id, user) } returns 2
+        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(2, null)
 
         // When
         val response = controller.createBoard(dto)
@@ -104,15 +105,16 @@ class BoardControllerTest {
     }
 
     @Test
-    fun `Given active boards for the user, Then listBoards returns each with its own pin count`() {
+    fun `Given active boards for the user, Then listBoards returns each with its own pin count and cover`() {
         // Given
         val user = aUser()
         val boardA = aBoard(user)
         val boardB = aBoard(user)
+        val coverPinId = randomUUID()
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardGetter.listActiveBoardsForUser(user) } returns listOf(boardA, boardB)
-        every { boardGetter.countActivePinsForUserBoard(boardA.id, user) } returns 3
-        every { boardGetter.countActivePinsForUserBoard(boardB.id, user) } returns 0
+        every { boardGetter.summarizeActiveBoardForUser(boardA.id, user) } returns BoardSummary(3, coverPinId)
+        every { boardGetter.summarizeActiveBoardForUser(boardB.id, user) } returns BoardSummary(0, null)
 
         // When
         val response = controller.listBoards()
@@ -122,8 +124,10 @@ class BoardControllerTest {
         val body = response.entity as BoardListOutputDto
         assertEquals(
             listOf(
-                BoardOutputDto(id = boardA.id, name = boardA.name, description = boardA.description, pinCount = 3),
-                BoardOutputDto(id = boardB.id, name = boardB.name, description = boardB.description, pinCount = 0),
+                BoardOutputDto(id = boardA.id, name = boardA.name, description = boardA.description, pinCount = 3,
+                    coverUrl = "/api/v1/pins/$coverPinId/media"),
+                BoardOutputDto(id = boardB.id, name = boardB.name, description = boardB.description, pinCount = 0,
+                    coverUrl = null),
             ),
             body.boards,
         )
@@ -136,7 +140,7 @@ class BoardControllerTest {
         val board = aBoard(user)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardGetter.getActiveBoardForUser(boardId = board.id, reader = user) } returns board
-        every { boardGetter.countActivePinsForUserBoard(board.id, user) } returns 5
+        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(5, null)
 
         // When
         val response = controller.getBoard(board.id)
@@ -160,7 +164,7 @@ class BoardControllerTest {
         every {
             boardUpdater.update(boardId = boardId, name = dto.name, description = dto.description, user = user)
         } returns updated
-        every { boardGetter.countActivePinsForUserBoard(boardId, user) } returns 2
+        every { boardGetter.summarizeActiveBoardForUser(boardId, user) } returns BoardSummary(2, null)
 
         // When
         val response = controller.updateBoard(boardId, dto)

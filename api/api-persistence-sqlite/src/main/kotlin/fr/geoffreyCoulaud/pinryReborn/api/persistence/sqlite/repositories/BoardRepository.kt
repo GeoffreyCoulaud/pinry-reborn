@@ -8,6 +8,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelM
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.BoardModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinBoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.BoardQueries
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActivePin
@@ -17,7 +18,7 @@ import java.time.Instant
 import java.util.UUID
 
 @ApplicationScoped
-// BoardRepositoryInterface's surface (12 methods) plus the private sortedForListing helper trips
+// BoardRepositoryInterface's surface (13 methods) plus the private sortedForListing helper trips
 // detekt's default per-class threshold. Suppressed rather than split, since splitting would
 // fragment one cohesive adapter across artificial classes for no readability gain (mirrors
 // PinRepository's precedent for the same rule).
@@ -110,4 +111,15 @@ class BoardRepository(
 
     override fun countActivePinsInBoard(boardId: UUID): Int =
         QPinBoardModel().board.id.equalTo(boardId).withActivePin().findCount()
+
+    override fun findCoverPinId(boardId: UUID): UUID? {
+        val filed = QPinBoardModel().board.id.equalTo(boardId).select("pin.id")
+        return QMediaModel()
+            .withActivePin()
+            .pinId.isIn(filed.query())
+            .orderBy().pin.createdAt.desc().pinId.desc()
+            .setMaxRows(1)
+            .select("pinId")
+            .findSingleAttribute<UUID>()
+    }
 }

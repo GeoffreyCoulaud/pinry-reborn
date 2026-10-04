@@ -98,7 +98,7 @@ class BoardGetterTest {
     }
 
     @Test
-    fun `Given an owned active board, Then countActivePinsForUserBoard returns the repository count`() {
+    fun `Given an owned active board, Then summarizeActiveBoardForUser returns its count and cover`() {
         // Given
         val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         val board = Board(
@@ -109,14 +109,36 @@ class BoardGetterTest {
             createdAt = TestTime.now,
             updatedAt = TestTime.now,
         )
+        val coverPinId = randomUUID()
         every { boardRepository.findActiveBoardById(board.id) } returns board
         every { boardRepository.countActivePinsInBoard(board.id) } returns 42
+        every { boardRepository.findCoverPinId(board.id) } returns coverPinId
 
         // When
-        val count = useCase.countActivePinsForUserBoard(boardId = board.id, reader = reader)
+        val summary = useCase.summarizeActiveBoardForUser(boardId = board.id, reader = reader)
 
         // Then
-        assertEquals(42, count)
-        verify { boardRepository.countActivePinsInBoard(board.id) }
+        assertEquals(BoardSummary(pinCount = 42, coverPinId = coverPinId), summary)
+    }
+
+    @Test
+    fun `Given a board owned by another user, Then summarizeActiveBoardForUser throws BoardRetrievalPermissionError`() {
+        // Given
+        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val board = Board(
+            id = randomUUID(),
+            author = author,
+            name = createRandomString(),
+            description = createRandomString(),
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
+        every { boardRepository.findActiveBoardById(board.id) } returns board
+
+        // When, Then
+        assertThrows<BoardRetrievalPermissionError> {
+            useCase.summarizeActiveBoardForUser(boardId = board.id, reader = reader)
+        }
     }
 }
