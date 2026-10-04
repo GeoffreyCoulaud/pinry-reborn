@@ -286,7 +286,8 @@ internal object NoVideoProcessor : VideoProcessor {
 
     override fun repackage(staged: StagedFile, video: VideoProbeResult): StagedFile = error("never probed")
 
-    override fun poster(staged: StagedFile, shortestSide: Int): StagedFile = error("never probed")
+    override fun poster(staged: StagedFile, shortestSide: Int, fromOneFrame: Boolean): StagedFile =
+        error("never probed")
 
     override fun preview(staged: StagedFile, shortestSide: Int): StagedFile = error("never probed")
 }

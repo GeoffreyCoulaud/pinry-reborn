@@ -3732,6 +3732,23 @@
           "416" : {
             "$ref" : "#/components/responses/RangeNotSatisfiable"
           },
+          "422" : {
+            "description" : "The media's frame is past media.max_pixels_per_frame, lowered since it was stored",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "MEDIA_RENDITION_UNAVAILABLE" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
           }

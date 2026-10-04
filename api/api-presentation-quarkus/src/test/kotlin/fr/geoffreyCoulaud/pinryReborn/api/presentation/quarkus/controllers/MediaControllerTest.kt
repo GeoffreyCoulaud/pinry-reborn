@@ -242,7 +242,7 @@ class MediaControllerTest {
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
         every { getPinMediaRendition.get(pinId, user, 240, null) } returns
-            ServedMedia.Rendition(mediaId, "v2-240-a.webp", 240, animated = true)
+            ServedMedia.Rendition(mediaId, "v2-240-a.webp")
         every { renditionCache.openStream(mediaId, "v2-240-a.webp") } returns ByteArrayInputStream(byteArrayOf(7, 7))
 
         // When
@@ -252,7 +252,7 @@ class MediaControllerTest {
         // Then
         assertEquals(200, response.status)
         assertEquals("image/webp", response.getHeaderString("Content-Type"))
-        assertEquals("\"v2-$mediaId-240-a\"", response.getHeaderString("ETag"))
+        assertEquals("\"$mediaId-v2-240-a.webp\"", response.getHeaderString("ETag"))
         assertEquals("private, must-revalidate", response.getHeaderString("Cache-Control"))
         val streamingOutput = response.entity as StreamingOutput
         val out = ByteArrayOutputStream()
@@ -269,7 +269,7 @@ class MediaControllerTest {
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
         every { getPinMediaRendition.get(pinId, user, 240, false) } returns
-            ServedMedia.Rendition(mediaId, "v2-240-s.webp", 240, animated = false)
+            ServedMedia.Rendition(mediaId, "v2-240-s.webp")
         every { renditionCache.openStream(mediaId, "v2-240-s.webp") } returns ByteArrayInputStream(byteArrayOf(4))
 
         // When
@@ -282,28 +282,25 @@ class MediaControllerTest {
     }
 
     @Test
-    fun `Given a static rendition, Then the synthetic ETag ends with s instead of a`() {
-        // Given
+    fun `Given a degraded and a whole rendition of one animated request, Then their ETags differ`() {
+        // Given: the same request, served the static key under a tighter bound, then the animated one
         val pinId = randomUUID()
         val mediaId = randomUUID()
         val user = aUser()
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
-        every { getPinMediaRendition.get(pinId, user, 240, null) } returns
-            ServedMedia.Rendition(mediaId, "v2-240-s.webp", 240, animated = false)
-        every { renditionCache.openStream(mediaId, "v2-240-s.webp") } returns ByteArrayInputStream(byteArrayOf(3))
+        every { getPinMediaRendition.get(pinId, user, 240, true) } returnsMany listOf(
+            ServedMedia.Rendition(mediaId, "v2-240-s.webp"),
+            ServedMedia.Rendition(mediaId, "v2-240-a.webp"),
+        )
 
         // When
-        val response =
-            controller.getMedia(pinId, size = "small", animated = null, ifNoneMatch = null, rangeHeader = null)
+        val degraded = controller.getMedia(pinId, "small", animated = true, ifNoneMatch = null, rangeHeader = null)
+        val whole = controller.getMedia(pinId, "small", animated = true, ifNoneMatch = null, rangeHeader = null)
 
         // Then
-        assertEquals(200, response.status)
-        assertEquals("\"v2-$mediaId-240-s\"", response.getHeaderString("ETag"))
-        val streamingOutput = response.entity as StreamingOutput
-        val out = ByteArrayOutputStream()
-        streamingOutput.write(out)
-        assertArrayEquals(byteArrayOf(3), out.toByteArray())
+        assertEquals("\"$mediaId-v2-240-s.webp\"", degraded.getHeaderString("ETag"))
+        assertEquals("\"$mediaId-v2-240-a.webp\"", whole.getHeaderString("ETag"))
     }
 
     @Test
@@ -315,14 +312,14 @@ class MediaControllerTest {
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
         every { getPinMediaRendition.get(pinId, user, 240, null) } returns
-            ServedMedia.Rendition(mediaId, "v2-240-a.webp", 240, animated = true)
+            ServedMedia.Rendition(mediaId, "v2-240-a.webp")
 
         // When
         val response = controller.getMedia(
             pinId,
             size = "small",
             animated = null,
-            ifNoneMatch = "\"v2-$mediaId-240-a\"",
+            ifNoneMatch = "\"$mediaId-v2-240-a.webp\"",
             rangeHeader = null,
         )
 
@@ -353,7 +350,7 @@ class MediaControllerTest {
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
         every { getPinMediaRendition.get(pinId, user, 240, null) } returns
-            ServedMedia.Rendition(mediaId, "v2-240-a.webp", 240, animated = true)
+            ServedMedia.Rendition(mediaId, "v2-240-a.webp")
         every { renditionCache.openStream(mediaId, "v2-240-a.webp") } returns null
 
         // When

@@ -17,7 +17,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRef
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.DeletePinMedia
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.GetPinMediaRendition
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.GetPinMediaRendition.Companion.ENCODER_VERSION
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMediaStatus
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.RequestPinMediaDownload
@@ -128,6 +127,10 @@ class MediaController(
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.MEDIA_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.MEDIA_NOT_FOUND)
     @APIResponse(responseCode = "416", ref = SharedRefusalsFilter.RANGE_NOT_SATISFIABLE)
+    @APIResponse(responseCode = "422",
+        description = "The media's frame is past media.max_pixels_per_frame, lowered since it was stored",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_RENDITION_UNAVAILABLE"])]))])
     fun getMedia(
         pinId: UUID,
         @QueryParam("size") size: String?,
@@ -178,10 +181,8 @@ class MediaController(
             .build()
     }
 
-    // The encoder version is imported from the use case that builds the cache key rather than
-    // duplicated here, so a bump invalidates the cached bytes and their validator together.
-    private fun renditionEtag(rendition: ServedMedia.Rendition): String =
-        "\"$ENCODER_VERSION-${rendition.mediaId}-${rendition.effectivePx}-${if (rendition.animated) "a" else "s"}\""
+    // The key names what was rendered, so a degraded rendition and its whole one never share a validator.
+    private fun renditionEtag(rendition: ServedMedia.Rendition): String = "\"${rendition.mediaId}-${rendition.key}\""
 
     @DELETE
     @Path("/{pinId}/media")

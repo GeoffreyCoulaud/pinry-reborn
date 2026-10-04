@@ -4,17 +4,20 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionMode
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionSpec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaRenditionUnavailableError
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 /** Descriptor of what to serve for a `GET .../media[?size=...]`: the original bytes, or a rendition. */
 sealed interface ServedMedia {
     data class Original(val media: Media) : ServedMedia
-    data class Rendition(val mediaId: UUID, val key: String, val effectivePx: Int, val animated: Boolean) : ServedMedia
+    data class Rendition(val mediaId: UUID, val key: String) : ServedMedia
 }
 
 @ApplicationScoped
@@ -24,6 +27,7 @@ class GetPinMediaRendition(
     private val imageTransformer: ImageTransformer,
     private val renditionCache: RenditionCache,
     private val videoProcessor: VideoProcessor,
+    private val limits: MediaLimits,
 ) {
     fun get(pinId: UUID, requester: User, requestedPx: Int?, animated: Boolean?): ServedMedia {
         // Reuse 2a's load + owner/not-found guards verbatim (403/404 behaviour unchanged).
@@ -54,33 +58,39 @@ class GetPinMediaRendition(
         return if (media.isVideo || needsDownscale || needsFlatten) minOf(requestedPx, srcShort) else null
     }
 
+    // What is rendered is what MediaLimits judges, so the key names that rather than what was asked (ADR 0050).
     private fun serveRendition(media: Media, effectivePx: Int, animated: Boolean): ServedMedia.Rendition {
-        val key = keyFor(effectivePx, animated)
+        val mode = limits.renditionOf(media, effectivePx, animated)
+        if (mode == RenditionMode.NONE) throw MediaRenditionUnavailableError()
+        val rendersAnimated = animated && mode == RenditionMode.WHOLE
+        val fromOneFrame = mode == RenditionMode.ONE_FRAME_POSTER
+        val key = keyFor(effectivePx, rendersAnimated, fromOneFrame)
         val cached = renditionCache.openStream(media.id, key)
         if (cached != null) {
             cached.close()
-            return ServedMedia.Rendition(media.id, key, effectivePx, animated)
+            return ServedMedia.Rendition(media.id, key)
         }
         val staged =
             if (media.isVideo) {
-                renderVideo(media, effectivePx, animated)
+                renderVideo(media, effectivePx, rendersAnimated, fromOneFrame)
             } else {
                 mediaStore.openStream(media.storageKey).use { source ->
-                    imageTransformer.render(source, RenditionSpec(effectivePx, animated, media.width, media.height))
+                    val spec = RenditionSpec(effectivePx, rendersAnimated, media.width, media.height)
+                    imageTransformer.render(source, spec)
                 }
             }
         renditionCache.store(media.id, key, staged)
-        return ServedMedia.Rendition(media.id, key, effectivePx, animated)
+        return ServedMedia.Rendition(media.id, key)
     }
 
     // The processor reads a file, so the original is staged for the time of one rendition.
-    private fun renderVideo(media: Media, effectivePx: Int, animated: Boolean): StagedFile {
+    private fun renderVideo(media: Media, effectivePx: Int, animated: Boolean, fromOneFrame: Boolean): StagedFile {
         val original = mediaStore.stageStored(media)
         try {
             return if (animated) {
                 videoProcessor.preview(original, effectivePx)
             } else {
-                drawPoster(media, original, effectivePx)
+                drawPoster(media, original, effectivePx, fromOneFrame)
             }
         } finally {
             mediaStore.discardQuietly(original)
@@ -88,8 +98,8 @@ class GetPinMediaRendition(
     }
 
     // The poster keeps the video's orientation, which is all the transformer reads of the frame's dimensions.
-    private fun drawPoster(media: Media, original: StagedFile, effectivePx: Int): StagedFile {
-        val poster = videoProcessor.poster(original, effectivePx)
+    private fun drawPoster(media: Media, original: StagedFile, effectivePx: Int, fromOneFrame: Boolean): StagedFile {
+        val poster = videoProcessor.poster(original, effectivePx, fromOneFrame)
         val spec = RenditionSpec(effectivePx, false, media.width, media.height)
         try {
             return mediaStore.openStaged(poster).use { imageTransformer.render(it, spec) }
@@ -98,20 +108,14 @@ class GetPinMediaRendition(
         }
     }
 
-    private fun keyFor(effectivePx: Int, animated: Boolean): String =
-        "$ENCODER_VERSION-$effectivePx-${if (animated) "a" else "s"}.webp"
+    // The controller's ETag is built from the key, so one key names one set of bytes and one validator.
+    private fun keyFor(effectivePx: Int, animated: Boolean, fromOneFrame: Boolean): String {
+        val frames = if (animated) "a" else if (fromOneFrame) "s1" else "s"
+        return "$ENCODER_VERSION-$effectivePx-$frames.webp"
+    }
 
-    companion object {
-        /**
-         * Bumped whenever the rendition encoding changes, to invalidate previously generated
-         * renditions cleanly (spec section 9).
-         *
-         * It is deliberately part of BOTH the cache key (here) and the ETag the controller derives
-         * from this same constant, so one bump orphans every cached file AND mints fresh
-         * validators. Versioning only the ETag would be worse than not versioning it at all: the
-         * client would refetch, hit the old bytes under the unchanged key, and get them stamped
-         * with the new ETag, pinning the staleness permanently.
-         */
+    private companion object {
+        /** Bumped whenever the rendition encoding changes, which orphans every cached file and its ETag. */
         const val ENCODER_VERSION = "v2"
     }
 }

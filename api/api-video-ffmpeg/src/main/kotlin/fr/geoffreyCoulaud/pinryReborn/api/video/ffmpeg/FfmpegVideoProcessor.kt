@@ -42,13 +42,17 @@ class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val
         return write(staged, copy + tag + container, ::copyCommand)
     }
 
-    override fun poster(staged: StagedFile, shortestSide: Int): StagedFile {
-        val options = listOf("-vf", posterFilters(shortestSide), "-frames:v", "1", "-c:v", "png", "-f", "image2")
+    override fun poster(staged: StagedFile, shortestSide: Int, fromOneFrame: Boolean): StagedFile {
+        val filters = posterFilters(shortestSide, fromOneFrame)
+        val options = listOf("-vf", filters, "-frames:v", "1", "-c:v", "png", "-f", "image2")
         return write(staged, options, ::renderCommand)
     }
 
     // Scaled first: thumbnail holds the hundred frames it chooses among, so their size is its memory.
-    internal fun posterFilters(shortestSide: Int) = "$SQUARE_PIXELS,${scaleTo(shortestSide)},thumbnail=n=100"
+    internal fun posterFilters(shortestSide: Int, fromOneFrame: Boolean): String {
+        val scaled = "$SQUARE_PIXELS,${scaleTo(shortestSide)}"
+        return if (fromOneFrame) scaled else "$scaled,thumbnail=n=100"
+    }
 
     override fun preview(staged: StagedFile, shortestSide: Int): StagedFile {
         val filters = listOf("-t", "3", "-vf", "$SQUARE_PIXELS,fps=12,${scaleTo(shortestSide)}")

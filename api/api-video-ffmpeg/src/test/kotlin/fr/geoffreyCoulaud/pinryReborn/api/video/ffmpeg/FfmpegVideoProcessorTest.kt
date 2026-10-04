@@ -9,6 +9,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutExce
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -162,7 +163,7 @@ class FfmpegVideoProcessorTest {
             val source = copied(name)
             val video = processor.probe(source, maxDuration)
             // When
-            val image = ImageIO.read(File(processor.poster(source, shortestSide = 60).path))
+            val image = ImageIO.read(File(processor.poster(source, shortestSide = 60, fromOneFrame = false).path))
             // Then
             assertEquals(60, minOf(image.width, image.height), name)
             assertEquals(video.width * image.height, video.height * image.width, name)
@@ -171,15 +172,23 @@ class FfmpegVideoProcessorTest {
 
     @Test
     fun `Given pixels twice as wide as tall, Then poster is twice as wide as the coded frame`() {
-        val image = ImageIO.read(File(processor.poster(copied("anamorphic.mkv"), shortestSide = 120).path))
+        val poster = processor.poster(copied("anamorphic.mkv"), shortestSide = 120, fromOneFrame = false)
+        val image = ImageIO.read(File(poster.path))
         assertEquals(320 to 120, image.width to image.height)
     }
 
     @Test
     fun `Given a poster, Then its frames are scaled to the requested side before thumbnail holds them`() {
         // At 3840x2160, 1264 MB against 79 MB without thumbnail (lot 0.45.0's holistic review, peak RSS).
-        val filters = processor.posterFilters(shortestSide = 60)
+        val filters = processor.posterFilters(shortestSide = 60, fromOneFrame = false)
         assertTrue(filters.indexOf("scale=60:60") in 0..<filters.indexOf("thumbnail"), filters)
+    }
+
+    @Test
+    fun `Given a poster from one frame, Then it holds no thumbnail and is drawn at the requested shortest side`() {
+        assertFalse("thumbnail" in processor.posterFilters(shortestSide = 60, fromOneFrame = true))
+        val image = ImageIO.read(File(processor.poster(copied("h264-aac.mkv"), 60, fromOneFrame = true).path))
+        assertEquals(80 to 60, image.width to image.height)
     }
 
     @Test
@@ -217,7 +226,7 @@ class FfmpegVideoProcessorTest {
         for (refused in listOf(segment, playlist)) {
             // Then
             assertThrows(UndecodableVideoException::class.java) { processor.repackage(refused, video) }
-            assertThrows(UndecodableVideoException::class.java) { processor.poster(refused, 24) }
+            assertThrows(UndecodableVideoException::class.java) { processor.poster(refused, 24, fromOneFrame = false) }
             assertThrows(UndecodableVideoException::class.java) { processor.preview(refused, 24) }
         }
         val left = Files.list(directory).use { files -> files.map(Path::toString).toList() }
