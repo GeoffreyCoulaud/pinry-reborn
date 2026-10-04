@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertTimeoutPreemptively
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
@@ -54,6 +55,18 @@ class ProcessRunnerTest {
         val child = ProcessHandle.of(Files.readString(directory.resolve("child")).trim().toLong())
         child.ifPresent { it.onExit().get(5, TimeUnit.SECONDS) }
         assertFalse(child.map(ProcessHandle::isAlive).orElse(false))
+    }
+
+    @Test
+    fun `Given a command that exits leaving a child on its output, Then the run still ends at its timeout`() {
+        // Given: the orphaned sleep holds the output pipe open after the shell has exited
+        val impatient = ProcessRunner(Duration.ofSeconds(1))
+        // When
+        val outcome = assertTimeoutPreemptively(Duration.ofSeconds(10)) {
+            impatient.run(listOf("sh", "-c", "sleep 20 & exit 0"))
+        }
+        // Then
+        assertEquals(ProcessOutcome.TimedOut(Duration.ofSeconds(1)), outcome)
     }
 
     @Test
