@@ -301,7 +301,7 @@ describe("create a pin by uploading a file", () => {
 					contractVersion: "4.0.0",
 					limits: {
 						maxImageBytes: 4,
-						maxPixels: 50_000_000,
+						maxPixelsPerFrame: 50_000_000,
 						mediaTypes: MEDIA_TYPES,
 					},
 					renditionSizes: { tiny: 80, small: 240, medium: 640, large: 1600 },

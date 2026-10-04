@@ -33,7 +33,7 @@ export function uploadRefusal(
 	}
 	return (
 		byteRefusal(upload, limits) ??
-		((upload.pixels ?? 0) > limits.maxPixels ? "TOO_MANY_PIXELS" : null)
+		((upload.pixels ?? 0) > limits.maxPixelsPerFrame ? "TOO_MANY_PIXELS" : null)
 	);
 }
 

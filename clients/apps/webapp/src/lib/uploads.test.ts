@@ -10,7 +10,7 @@ const LIMITS = {
 	maxImageBytes: 1000,
 	maxVideoBytes: 2000,
 	maxVideoSeconds: 120,
-	maxPixels: 10_000,
+	maxPixelsPerFrame: 10_000,
 	mediaTypes: [
 		"image/png",
 		"image/jpeg",

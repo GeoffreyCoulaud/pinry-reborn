@@ -14,7 +14,7 @@ data class HandshakeOutputDto(
         val maxImageBytes: Long,
         val maxVideoBytes: Long,
         val maxVideoSeconds: Long,
-        val maxPixels: Long,
+        val maxPixelsPerFrame: Long,
         /** The media types an upload may carry; the probe still refuses a codec the storage does not keep. */
         val mediaTypes: List<String>,
         /** The size an import's archive is sent in, one `PUT` per chunk. */

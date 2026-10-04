@@ -25,7 +25,7 @@ class HandshakeController(
             maxImageBytes = mediaConfig.maxImageBytes(),
             maxVideoBytes = mediaConfig.maxVideoBytes(),
             maxVideoSeconds = mediaConfig.maxVideoSeconds(),
-            maxPixels = mediaConfig.maxPixels(),
+            maxPixelsPerFrame = mediaConfig.maxPixelsPerFrame(),
             mediaTypes = MediaFormat.entries.map { it.mimeType } + VIDEO_UPLOAD_TYPES,
             maxImportChunkBytes = importBounds.maxChunkBytes,
             maxImportArchiveBytes = importBounds.maxArchiveBytes,

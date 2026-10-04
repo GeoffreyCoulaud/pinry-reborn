@@ -18,7 +18,7 @@ class HandshakeTestProfile : QuarkusTestProfile {
         "media.max_image_bytes" to "$MAX_IMAGE_BYTES",
         "media.max_video_bytes" to "$MAX_VIDEO_BYTES",
         "media.max_video_seconds" to "$MAX_VIDEO_SECONDS",
-        "media.max_pixels" to "$MAX_PIXELS",
+        "media.max_pixels_per_frame" to "$MAX_PIXELS_PER_FRAME",
         "media.renditions.tiny" to "$TINY",
         "media.renditions.small" to "$SMALL",
         "media.renditions.medium" to "$MEDIUM",
@@ -31,7 +31,7 @@ class HandshakeTestProfile : QuarkusTestProfile {
         const val MAX_IMAGE_BYTES = 1_234_567L
         const val MAX_VIDEO_BYTES = 3_456_789L
         const val MAX_VIDEO_SECONDS = 99L
-        const val MAX_PIXELS = 7_654_321L
+        const val MAX_PIXELS_PER_FRAME = 7_654_321L
         const val MAX_IMPORT_CHUNK_BYTES = 2_345_678L
         const val MAX_IMPORT_ARCHIVE_BYTES = 98_765_432_109L
         const val TINY = 11
@@ -69,7 +69,7 @@ class HandshakeIntegrationTest {
         assertEquals(HandshakeTestProfile.MAX_IMAGE_BYTES, body.getLong("limits.maxImageBytes"))
         assertEquals(HandshakeTestProfile.MAX_VIDEO_BYTES, body.getLong("limits.maxVideoBytes"))
         assertEquals(HandshakeTestProfile.MAX_VIDEO_SECONDS, body.getLong("limits.maxVideoSeconds"))
-        assertEquals(HandshakeTestProfile.MAX_PIXELS, body.getLong("limits.maxPixels"))
+        assertEquals(HandshakeTestProfile.MAX_PIXELS_PER_FRAME, body.getLong("limits.maxPixelsPerFrame"))
         assertEquals(HandshakeTestProfile.MAX_IMPORT_CHUNK_BYTES, body.getLong("limits.maxImportChunkBytes"))
         assertEquals(HandshakeTestProfile.MAX_IMPORT_ARCHIVE_BYTES, body.getLong("limits.maxImportArchiveBytes"))
         assertEquals(HandshakeTestProfile.TINY, body.getInt("renditionSizes.tiny"))
