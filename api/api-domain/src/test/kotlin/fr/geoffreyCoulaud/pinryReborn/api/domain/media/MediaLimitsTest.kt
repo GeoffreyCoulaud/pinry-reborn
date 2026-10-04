@@ -13,7 +13,7 @@ class MediaLimitsTest {
     private val limits =
         MediaLimits(
             maxImageBytes = 30, maxVideoBytes = 40, Duration.ofSeconds(120), maxPixelsPerFrame = 50,
-            maxPixelsPerRender = 50,
+            maxPixelsPerRender = 50, renderConcurrency = 1, Duration.ofSeconds(60), decoderMemory = 1,
         )
 
     // Three frames, so a bound that counted every frame would refuse the image one pixel under it.

@@ -73,10 +73,13 @@ class DownloadPinMediaTest {
     private val pinId = randomUUID()
     private val user = User(randomUUID(), "u", createdAt = TestTime.now)
 
+    private val imageLimits = MediaLimits(100, 0, Duration.ZERO, 100, 100, 1, Duration.ZERO, 0)
+    private val videoLimits = imageLimits.copy(maxVideoBytes = 100, maxVideoDuration = Duration.ofSeconds(1))
+
     private val subject =
         DownloadPinMedia(
             pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, NoVideoProcessor, MediaLimits(100, 0, Duration.ZERO, 100, 100)), fetcher,
+            MediaIngestion(store, probe, NoVideoProcessor, imageLimits), fetcher,
             pageExtractor, runner, clock, renditionCache,
         )
 
@@ -367,7 +370,7 @@ class DownloadPinMediaTest {
         val video = mockk<VideoProcessor>()
         val withVideo = DownloadPinMedia(
             pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, video, MediaLimits(100, 100, Duration.ofSeconds(1), 100, 100)), fetcher,
+            MediaIngestion(store, probe, video, videoLimits), fetcher,
             pageExtractor, runner, clock, renditionCache,
         )
         stubUntilStage()
@@ -396,7 +399,7 @@ class DownloadPinMediaTest {
         val video = mockk<VideoProcessor>()
         val withVideo = DownloadPinMedia(
             pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, video, MediaLimits(100, 100, Duration.ofSeconds(1), 100, 100)), fetcher,
+            MediaIngestion(store, probe, video, videoLimits), fetcher,
             pageExtractor, runner, clock, renditionCache,
         )
         stubUntilStage()

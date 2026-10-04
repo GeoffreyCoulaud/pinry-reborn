@@ -200,7 +200,9 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             mediaIngestion =
                 MediaIngestion(
                     mediaStore, imageProbe, videoProcessor,
-                    MediaLimits(MAX_MEDIA_BYTES, MAX_MEDIA_BYTES, Duration.ZERO, MAX_PIXELS, MAX_PIXELS),
+                    MediaLimits(
+                        MAX_MEDIA_BYTES, MAX_MEDIA_BYTES, Duration.ZERO, MAX_PIXELS, MAX_PIXELS, 1, Duration.ZERO, 0,
+                    ),
                 ),
             // The real one over the same fake repository: the boundary it owns is what the walk needs.
             tagCreator = TagCreator(tagRepository, transactions, clock),

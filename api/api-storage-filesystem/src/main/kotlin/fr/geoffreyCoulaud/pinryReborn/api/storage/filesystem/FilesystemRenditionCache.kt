@@ -53,6 +53,12 @@ class FilesystemRenditionCache(dataDir: String) : RenditionCache {
         }
     }
 
+    override fun mark(mediaId: UUID, key: String) {
+        val dest = keyPath(mediaId, key)
+        Files.createDirectories(dest.parent)
+        Files.write(dest, ByteArray(0))
+    }
+
     override fun evictMedia(mediaId: UUID) {
         val dir = paths.resolveWithinRoot("cache/$mediaId")
         try {

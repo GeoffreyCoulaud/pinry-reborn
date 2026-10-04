@@ -8,11 +8,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionMode
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionSpec
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaRenditionUnavailableError
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
+import java.util.concurrent.Semaphore
 
 /** Descriptor of what to serve for a `GET .../media[?size=...]`: the original bytes, or a rendition. */
 sealed interface ServedMedia {
@@ -29,6 +32,8 @@ class GetPinMediaRendition(
     private val videoProcessor: VideoProcessor,
     private val limits: MediaLimits,
 ) {
+    private val renders = Semaphore(limits.renderConcurrency, true)
+
     fun get(pinId: UUID, requester: User, requestedPx: Int?, animated: Boolean?): ServedMedia {
         // Reuse 2a's load + owner/not-found guards verbatim (403/404 behaviour unchanged).
         val media = getPinMedia.get(pinId, requester)
@@ -65,23 +70,52 @@ class GetPinMediaRendition(
         val rendersAnimated = animated && mode == RenditionMode.WHOLE
         val fromOneFrame = mode == RenditionMode.ONE_FRAME_POSTER
         val key = keyFor(effectivePx, rendersAnimated, fromOneFrame)
-        val cached = renditionCache.openStream(media.id, key)
-        if (cached != null) {
-            cached.close()
-            return ServedMedia.Rendition(media.id, key)
-        }
-        val staged =
-            if (media.isVideo) {
-                renderVideo(media, effectivePx, rendersAnimated, fromOneFrame)
-            } else {
-                mediaStore.openStream(media.storageKey).use { source ->
-                    val spec = RenditionSpec(effectivePx, rendersAnimated, media.width, media.height)
-                    imageTransformer.render(source, spec)
+        if (!isCached(media.id, key)) {
+            renderMiss(media.id, key) {
+                if (media.isVideo) {
+                    renderVideo(media, effectivePx, rendersAnimated, fromOneFrame)
+                } else {
+                    mediaStore.openStream(media.storageKey).use { source ->
+                        val spec = RenditionSpec(effectivePx, rendersAnimated, media.width, media.height)
+                        imageTransformer.render(source, spec)
+                    }
                 }
             }
-        renditionCache.store(media.id, key, staged)
+        }
         return ServedMedia.Rendition(media.id, key)
     }
+
+    // Every miss waits its turn, without a time limit; the rendition or its failure may land meanwhile (ADR 0050).
+    private fun renderMiss(mediaId: UUID, key: String, render: () -> StagedFile) {
+        val failure = "$key.failed-${limits.decoderTimeout.seconds}-${limits.decoderMemory}"
+        if (isCached(mediaId, failure)) throw MediaRenditionUnavailableError()
+        renders.acquire()
+        try {
+            if (isCached(mediaId, key)) return
+            if (isCached(mediaId, failure)) throw MediaRenditionUnavailableError()
+            renditionCache.store(mediaId, key, decode(mediaId, failure, render))
+        } finally {
+            renders.release()
+        }
+    }
+
+    // A decoder's refusal or timeout is marked so it is not replayed; a process that cannot start marks nothing.
+    private fun decode(mediaId: UUID, failure: String, render: () -> StagedFile): StagedFile =
+        try {
+            render()
+        } catch (refused: UndecodableImageException) {
+            throw markFailed(mediaId, failure, refused)
+        } catch (refused: VideoProcessorException) {
+            throw markFailed(mediaId, failure, refused)
+        }
+
+    private fun markFailed(mediaId: UUID, failure: String, cause: Exception): MediaRenditionUnavailableError {
+        renditionCache.mark(mediaId, failure)
+        return MediaRenditionUnavailableError(cause)
+    }
+
+    private fun isCached(mediaId: UUID, key: String): Boolean =
+        renditionCache.openStream(mediaId, key)?.use { true } ?: false
 
     // The processor reads a file, so the original is staged for the time of one rendition.
     private fun renderVideo(media: Media, effectivePx: Int, animated: Boolean, fromOneFrame: Boolean): StagedFile {

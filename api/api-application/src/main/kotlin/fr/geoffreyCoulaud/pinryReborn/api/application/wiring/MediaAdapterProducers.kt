@@ -44,7 +44,8 @@ class MediaAdapterProducers {
     fun mediaLimits(config: MediaConfig): MediaLimits =
         MediaLimits(
             config.maxImageBytes(), config.maxVideoBytes(), Duration.ofSeconds(config.maxVideoSeconds()),
-            config.maxPixelsPerFrame(), config.maxPixelsPerRender(),
+            config.maxPixelsPerFrame(), config.maxPixelsPerRender(), config.renderConcurrency(),
+            config.decoderTimeout(), config.decoderMemory(),
         )
 
     @Produces

@@ -25,6 +25,10 @@ interface MediaConfig {
     @WithDefault("8000000000")
     fun maxPixelsPerRender(): Long
 
+    /** How many renditions render at once: two of the largest measured, about 1.5 GiB (ADR 0050). */
+    @WithDefault("2")
+    fun renderConcurrency(): Int
+
     /** How long one decoder run may take before it is destroyed. */
     @WithDefault("PT60S")
     fun decoderTimeout(): Duration
