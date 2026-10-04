@@ -97,6 +97,12 @@ only; H.265, VP9 and AV1 unmeasured.
   - `media.decoder_memory` (block 10), 2 GiB: the largest address space measured with G's settings is 1154 MiB at
     MEDIUM, 1716 MiB for the LARGE 8K poster with arenas alone, which C now draws from one frame. Block 10 measures
     the four sizes on 2 and 12 cores under G's settings and corrects this default before it merges;
+    (Corrected: block 10 measured them, the 8K 60 fps and 50 MP clips and the 50 MP PNG and 100-frame bomb of
+    section 3, at 112, 240, 480 and 960, 3 runs uncapped then 5 under 2 GiB, logs `block10/logs/<case>.log` in the
+    lot's scratchpad. The highest address space of what C keeps whole is 1181 MiB, the MEDIUM poster of the 8K clip
+    on 12 cores (`cores12-cap2147483648-poster-8k60-480`); a one-frame poster reaches 1151 MiB, a preview 1127 MiB
+    and vips 449 MiB. The LARGE 8K poster C draws from one frame reaches 1952 MiB
+    (`cores12-cap2147483648-poster-8k60-960`). All 320 runs under 2 GiB passed on both core counts, so 2 GiB stays.)
   - `media.max_pixels` becomes `media.max_pixels_per_frame` (block 36), 50,000,000 still: a 48 to 50 MP phone
     photograph and an 8K video (33 MP) pass;
   - `media.max_pixels_per_render` (block 40), 8,000,000,000, about 8 s: the 8K 60 fps animated rendition (6 Gpx)
