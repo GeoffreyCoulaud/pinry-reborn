@@ -159,6 +159,9 @@ only; H.265, VP9 and AV1 unmeasured.
 - `api-imaging-vips` no longer depends on vips-ffm; `api/Dockerfile` and the gate's container install
   `libvips-tools`. `dagger call smoke` and one real render through the running image, in the pull request.
 - Past the budget, the probe and the transformer split into 20 and 25.
+  (Corrected: they split, the transformer alone bringing 16 files: 20 keeps the probe, `ProbeResult`'s frames and
+  `libvips-tools`, 160 lines and 15 files; 25, `refactor/vips-thumbnail-renders-in-a-child-process`, the transformer,
+  `RenditionSpec`'s frame dimensions, `ENCODER_VERSION` and vips-ffm's removal, 216 lines and 16 files.)
 
 ### Block 30
 
