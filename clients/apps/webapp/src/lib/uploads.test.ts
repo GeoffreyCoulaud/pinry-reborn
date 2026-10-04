@@ -44,7 +44,13 @@ describe("the upload a deployment refuses", () => {
 		);
 	});
 
-	it("Given a video, Then its bytes alone are judged, the server decoding it", () => {
+	it("Given a video measured past the per-frame bound, Then it is refused for its size", () => {
+		expect(uploadRefusal({ size: 1, type: MP4, pixels: 10_001 }, LIMITS)).toBe(
+			"TOO_MANY_PIXELS",
+		);
+	});
+
+	it("Given a video the browser could not measure, Then its bytes alone are judged", () => {
 		expect(
 			uploadRefusal({ size: 2000, type: MP4, pixels: null }, LIMITS),
 		).toBeNull();

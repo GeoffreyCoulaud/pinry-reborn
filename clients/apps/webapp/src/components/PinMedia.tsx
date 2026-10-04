@@ -6,6 +6,7 @@ import { type Rendition, tileMediaSource } from "../lib/tiles";
 import { useSetPinMedia } from "../media";
 import { m } from "../paraglide/messages.js";
 import type { Pin } from "../pins";
+import { RenditionImage } from "./RenditionImage";
 
 /** How long the original may take before a spinner says it is coming, as long as a drop's reading. */
 const SPINNER_DELAY_MS = 300;
@@ -111,7 +112,7 @@ function VideoMedia({
 	if (failed) {
 		return (
 			<div className="flex w-full flex-col items-center gap-3 text-center">
-				<img src={poster} alt={alt} style={box} />
+				<RenditionImage src={poster} alt={alt} style={box} />
 				<p>{m.video_unplayable()}</p>
 				<a
 					href={url}

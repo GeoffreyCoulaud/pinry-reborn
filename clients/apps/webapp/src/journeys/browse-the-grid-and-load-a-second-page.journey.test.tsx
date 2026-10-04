@@ -1,5 +1,6 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { m } from "../paraglide/messages.js";
 import {
 	downloadsRoute,
 	handshakeRoute,
@@ -117,6 +118,27 @@ describe("browse the grid and load a second page", () => {
 			"src",
 			`/api/v1/pins/${wide.id}/media?size=SMALL`,
 		);
+	});
+
+	it("Given a rendition the server cannot draw, Then its tile says the preview is unavailable", async () => {
+		const ready = readyPin("a harbour at dusk", 800, 600);
+		server.use(
+			sessionRoute(() => true),
+			pinsRoute([[ready]]),
+			downloadsRoute(),
+			handshakeRoute(),
+		);
+		renderApp("/");
+
+		fireEvent.error(
+			await screen.findByRole("img", { name: ready.description }),
+		);
+
+		const unavailable = screen.getByRole("img", {
+			name: m.preview_unavailable(),
+		});
+		expect(unavailable).toHaveTextContent(m.preview_unavailable());
+		expect(unavailable).toHaveStyle({ aspectRatio: "800 / 600" });
 	});
 
 	it("Given a download the server is still running, Then no tile stands for the pin", async () => {

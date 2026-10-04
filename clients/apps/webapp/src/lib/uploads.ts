@@ -11,7 +11,7 @@ export type UploadRefusal =
 /** The limits the handshake publishes, read from the contract rather than retyped (4.3). */
 export type UploadLimits = Schemas["HandshakeOutputDto"]["limits"];
 
-/** What a file would cost the server: a picture's pixels, which the browser decodes, and no video's. */
+/** What a file would cost the server: one frame's pixels, `null` where the browser cannot tell. */
 export interface MeasuredUpload {
 	size: number;
 	type: string;

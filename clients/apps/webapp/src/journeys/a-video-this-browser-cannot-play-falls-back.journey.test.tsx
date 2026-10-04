@@ -75,6 +75,21 @@ describe("a video this browser cannot play falls back", () => {
 		await expectTheFallback(dialog, opened);
 	});
 
+	it("Given a poster the server cannot draw, Then the fallback says the preview is unavailable", async () => {
+		const opened = videoPin("a drone over the bay");
+		vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockReturnValue("");
+		const dialog = await openThe(opened);
+
+		fireEvent.error(
+			await within(dialog).findByRole("img", { name: opened.description }),
+		);
+
+		expect(
+			within(dialog).getByRole("img", { name: m.preview_unavailable() }),
+		).toBeVisible();
+		expect(within(dialog).getByText(m.video_unplayable())).toBeVisible();
+	});
+
 	it("Given the video replaced by a playable one while its pin is open, Then the new one gets a player", async () => {
 		const opened = videoPin(
 			"a drone over the bay",

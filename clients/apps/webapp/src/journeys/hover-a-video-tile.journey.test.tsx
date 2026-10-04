@@ -56,6 +56,37 @@ describe("hover a video tile", () => {
 		expect(media).toHaveAttribute("src", `${url}?size=SMALL`);
 	});
 
+	it("Given an animated rendition the server cannot draw, Then the tile says so and leaving brings the still back", async () => {
+		const hovered = videoPin("waves on the pier");
+		server.use(
+			sessionRoute(() => true),
+			pinsRoute([[hovered]]),
+			downloadsRoute(),
+			handshakeRoute(),
+		);
+		renderApp("/");
+		const tile = await screen.findByRole("row", { name: hovered.description });
+		const user = userEvent.setup();
+
+		await user.hover(
+			within(tile).getByRole("img", { name: hovered.description }),
+		);
+		fireEvent.error(
+			within(tile).getByRole("img", { name: hovered.description }),
+		);
+
+		const unavailable = within(tile).getByRole("img", {
+			name: m.preview_unavailable(),
+		});
+		expect(unavailable).toBeVisible();
+		// user-event leaves from the image it last entered, which has left the tree since.
+		await user.hover(unavailable);
+		await user.unhover(unavailable);
+		expect(
+			within(tile).getByRole("img", { name: hovered.description }),
+		).toHaveAttribute("src", `${String(hovered.media?.url)}?size=SMALL`);
+	});
+
 	it("Given an image tile, Then hovering keeps its still", async () => {
 		const hovered = readyPin("a cat asleep");
 		server.use(

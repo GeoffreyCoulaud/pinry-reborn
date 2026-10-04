@@ -35,6 +35,7 @@ import { type Pin, usePins } from "../pins";
 import { useSelection } from "../selection";
 import { PinDialog } from "./PinDialog";
 import { PinGestures } from "./PinGestures";
+import { RenditionImage } from "./RenditionImage";
 import { SelectionBar, SelectionTick } from "./SelectionBar";
 
 /**
@@ -99,7 +100,7 @@ function Tile({
 		>
 			{media?.url ? (
 				<>
-					<img
+					<RenditionImage
 						src={
 							video && hovered
 								? tileAnimatedSource(media.url, rendition)
