@@ -27,12 +27,13 @@ class PinDuplicateModel(
     var rejectedAt: Instant?,
 ) : BaseModel(id) {
     // No constraints: the orphan sweep deletes a gone pin's pairs, so a pin's delete never waits on them.
-    @ManyToOne
+    // Not optional, so a read joins them inner and a gone pin's pair is dropped with a recycled one's.
+    @ManyToOne(optional = false)
     @DbForeignKey(noConstraint = true)
     @JoinColumn(name = "first_pin_id", insertable = false, updatable = false)
     lateinit var firstPin: PinModel
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @DbForeignKey(noConstraint = true)
     @JoinColumn(name = "second_pin_id", insertable = false, updatable = false)
     lateinit var secondPin: PinModel
