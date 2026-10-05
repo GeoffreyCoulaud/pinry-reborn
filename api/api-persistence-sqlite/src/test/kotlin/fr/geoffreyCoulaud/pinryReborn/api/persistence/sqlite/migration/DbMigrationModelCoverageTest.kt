@@ -71,7 +71,7 @@ class DbMigrationModelCoverageTest {
                     ModelIndex(
                         version = version,
                         name = indexNameAttribute.find(element.value)?.groupValues?.get(1).orEmpty(),
-                        definition = definitionAttribute.find(element.value)?.groupValues?.get(1),
+                        definition = definitionAttribute.find(element.value)?.groupValues?.get(1)?.let(::xmlUnescaped),
                         tableName = tableNameAttribute.find(element.value)?.groupValues?.get(1).orEmpty(),
                         columns = columnsAttribute.find(element.value)?.groupValues?.get(1).orEmpty(),
                         unique = uniqueAttribute.containsMatchIn(element.value),
@@ -215,6 +215,10 @@ class DbMigrationModelCoverageTest {
      */
     private fun normalised(statement: String): String =
         statement.replace(whitespaceRun, " ").trim().removeSuffix(";").trim()
+
+    // The model escapes the expression index's `>` and `&`; `&amp;` goes last so an escaped entity is not read twice.
+    private fun xmlUnescaped(attribute: String): String =
+        attribute.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&amp;", "&")
 
     /** The statement a `<createIndex>` claims through its column list alone, which is all Ebean renders from it. */
     private fun columnListStatement(index: ModelIndex): String =
