@@ -130,6 +130,10 @@
         "type" : "string",
         "enum" : [ "PENDING", "FAILED" ]
       },
+      "DuplicateDecisionInputEnum" : {
+        "type" : "string",
+        "enum" : [ "KEEP", "MERGE", "REJECT" ]
+      },
       "ExistingSessionOutputDto" : {
         "type" : "object",
         "required" : [ "expiresAt", "renewAfter", "persistent" ],
@@ -350,6 +354,19 @@
           },
           "rejected" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "PinDuplicateResolutionInputDto" : {
+        "type" : "object",
+        "required" : [ "decisions" ],
+        "properties" : {
+          "decisions" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/DuplicateDecisionInputEnum"
+            },
+            "maxProperties" : 10000
           }
         }
       },
@@ -3692,6 +3709,97 @@
         } ]
       }
     },
+    "/api/v1/pins/{pinId}/duplicates/resolutions" : {
+      "post" : {
+        "summary" : "Apply a decision to every version of the pin's group of duplicates, all or nothing",
+        "description" : "A rejected pin's pairs with the kept and merged pins are rejected first. The kept pin gains the merged pins' boards and tags, and fills a blank description or page address from the oldest that has one; they go to the recycle bin. A duplicate the body does not name is left as is.",
+        "parameters" : [ {
+          "name" : "pinId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PinDuplicateResolutionInputDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "The kept pin",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PinOutputDto"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "The body is not JSON, a key is not a pin id, a value is not a decision, there are too many entries, not exactly one pin is kept, the open pin is not named or is rejected, or no other pin is named",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "VALIDATION_ERROR", "MALFORMED_BODY" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "description" : "The pin does not exist, a named pin is not among its listed duplicates, or a path value could not be read",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "PIN_DOES_NOT_EXIST", "DUPLICATE_DOES_NOT_EXIST", "UNKNOWN_ROUTE" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409" : {
+            "$ref" : "#/components/responses/PinAlreadyRecycled"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "413" : {
+            "$ref" : "#/components/responses/BodyTooLarge"
+          }
+        },
+        "tags" : [ "Pin Duplicate Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      }
+    },
     "/api/v1/pins/{pinId}/duplicates/{otherPinId}" : {
       "put" : {
         "summary" : "Reject a likely duplicate, or take the rejection back",
@@ -4368,7 +4476,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "22.4.0"
+    "version" : "22.5.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

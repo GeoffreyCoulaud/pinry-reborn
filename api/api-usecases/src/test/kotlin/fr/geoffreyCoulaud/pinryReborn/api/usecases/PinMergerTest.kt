@@ -22,7 +22,9 @@ import java.util.UUID.randomUUID
 class PinMergerTest {
     private val pinRepository = mockk<PinRepositoryInterface>()
     private val clock = mockk<Clock> { every { now() } returns TestTime.now }
-    private val useCase = PinMerger(pinRepository, clock, PassthroughTransactionRunner())
+    private val transactionRunner = PassthroughTransactionRunner()
+    private val duplicateResolver = DuplicateResolver(pinRepository, mockk(), clock, transactionRunner)
+    private val useCase = PinMerger(pinRepository, duplicateResolver, clock, transactionRunner)
 
     private val earlier = TestTime.now.minusSeconds(60)
     private val user = User(randomUUID(), "John Doe", createdAt = TestTime.now)

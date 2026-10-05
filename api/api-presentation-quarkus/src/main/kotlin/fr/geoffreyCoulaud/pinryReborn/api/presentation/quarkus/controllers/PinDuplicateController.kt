@@ -1,15 +1,18 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinDuplicateResolutionInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinDuplicateUpdateInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinMergeInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinDuplicateListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinDuplicateOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.DuplicateDecisionMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.DuplicateResolver
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicates
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMerger
 import io.quarkus.security.Authenticated
@@ -34,6 +37,7 @@ import java.util.UUID
 class PinDuplicateController(
     private val pinDuplicates: PinDuplicates,
     private val pinMerger: PinMerger,
+    private val duplicateResolver: DuplicateResolver,
     private val securityIdentity: SecurityIdentity,
     private val pinResponses: PinResponses,
 ) {
@@ -77,6 +81,41 @@ class PinDuplicateController(
         // Never null here: validation refused a missing one.
         val duplicate = pinDuplicates.setRejected(pinId, otherPinId, rejected = dto.rejected == true, user)
         return RestResponse.ok(pinResponses.duplicate(duplicate))
+    }
+
+    @POST
+    @Authenticated
+    @Path("/{pinId}/duplicates/resolutions")
+    @Operation(
+        summary = "Apply a decision to every version of the pin's group of duplicates, all or nothing",
+        description = "A rejected pin's pairs with the kept and merged pins are rejected first. The kept pin " +
+            "gains the merged pins' boards and tags, and fills a blank description or page address from the " +
+            "oldest that has one; they go to the recycle bin. A duplicate the body does not name is left as is.",
+    )
+    @APIResponse(responseCode = "200", description = "The kept pin",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))])
+    @APIResponse(responseCode = "400",
+        description = "The body is not JSON, a key is not a pin id, a value is not a decision, there are too " +
+            "many entries, not exactly one pin is kept, the open pin is not named or is rejected, or no other " +
+            "pin is named",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code", enumeration = ["VALIDATION_ERROR", "MALFORMED_BODY"])]))])
+    @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
+    @APIResponse(responseCode = "404",
+        description = "The pin does not exist, a named pin is not among its listed duplicates, or a path value " +
+            "could not be read",
+        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
+            properties = [SchemaProperty(name = "code",
+                enumeration = ["PIN_DOES_NOT_EXIST", "DUPLICATE_DOES_NOT_EXIST", "UNKNOWN_ROUTE"])]))])
+    @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.PIN_ALREADY_RECYCLED)
+    @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
+    fun resolveDuplicates(
+        pinId: UUID,
+        @Valid @NotNull dto: PinDuplicateResolutionInputDto,
+    ): RestResponse<PinOutputDto> {
+        val user = securityIdentity.getUser()
+        val decisions = dto.decisions.mapValues { (_, decision) -> decision.toDomain() }
+        return RestResponse.ok(pinResponses.pin(duplicateResolver.resolve(pinId, decisions, user)))
     }
 
     @POST
