@@ -3,11 +3,13 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActivePins
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanPinDuplicateRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
@@ -77,6 +79,22 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
         assertEquals(mapOf(pending to false, rejected to true), shown)
         assertEquals(mapOf(pin to false), shownFromTheOtherSide)
         assertEquals(emptyMap<UUID, Boolean>(), repository.findShownFor(recycled))
+    }
+
+    @Test
+    fun `Given a pin's shown pairs as Ebean builds them, Then its plan finds each pin by key and lists no pin`() {
+        // Given
+        val pin = randomUUID()
+        val query = QPinDuplicateModel().firstPinId.equalTo(pin).withActivePins()
+        query.findList()
+        val explain = database.sqlQuery("explain query plan ${query.query().generatedSql}").setParameter(1, pin)
+
+        // When
+        val plan = explain.findList().map { "${it["detail"]}" }
+
+        // Then: each pin by its primary key, rather than a list of every active pin
+        assertEquals(2, plan.count { it.startsWith("SEARCH") && it.contains("(id=?)") }, "$plan")
+        assertFalse(plan.any { it.contains("LIST SUBQUERY") || it.startsWith("SCAN") }, "$plan")
     }
 
     @Test
