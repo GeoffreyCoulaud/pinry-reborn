@@ -91,13 +91,14 @@ merged.
   holding one has no bar and no slider; a video beside it keeps its own controls. No library stands in (A).
 
 **E. A media records its rates and its sound** (E, and the operator's addition of the video's rate on 2026-10-06).
-`media` gains `video_bit_rate`, `audio_channels` and `audio_bit_rate`, read from the video track's `bit_rate` and the
-first audio track's `channels` and `bit_rate` by the probe of the source, before repackaging; a track that states no
-rate leaves it null, which the stored file may state where the source did not. The codecs and whether there is
-sound are read from `mimeType`'s `codecs` parameter, which every video already carries. The column shows the format
-as the type's short name, the video codec and its rate, "MP4 · H.264 · 4.2 Mb/s"; where the track states none, the
-whole file's rate from its weight and duration, marked as such, "WebM · VP9 · about 3.9 Mb/s in all". Then the sound:
-"AAC stereo, 128 kb/s", "No sound", or the codec and channels alone when the rate is unknown.
+`media` gains `video_bit_rate`, `audio_channels` and `audio_bit_rate`. A rate is measured, never read from a header:
+the sum of the track's packet sizes over the media's duration, from the `ffprobe` run that already reads every packet
+(`-count_packets`). WebM states no rate per track (`bit_rate=N/A` on a VP9 and Opus file made with `ffmpeg -f lavfi`,
+2026-10-06, whose packets sum to 213 682 and 74 486 b/s), and a measure is the same on the source and on the
+repackaged file. The channels are the first audio track's `channels`. The codecs and whether there is sound are read
+from `mimeType`'s `codecs` parameter, which every video already carries. The column shows the format as the type's
+short name, the video codec and its rate, "MP4 · H.264 · 4.2 Mb/s", then the sound, "AAC stereo, 128 kb/s" or "No
+sound".
 
 **F. No back-fill** (F). Media stored before this lot keep null rates and channels, and those stored before lot
 `0.46.0` a null duration and one frame. The alpha runs on development data, which an export, a reset and an import
@@ -146,8 +147,8 @@ Block 40 is the likeliest to pass a bound; it splits at a number between 40 and 
 - Migration `1.32`: the three columns of decision E, nullable. `Media` gains them, `FfprobeReport` reads them,
   `MediaIngestion` stores them.
 - An ingestion test per case: an H.264 MP4 with AAC stereo stores a video rate, 2 channels and an audio rate; a VP9
-  WebM without sound stores null audio; a WebM whose tracks state no `bit_rate` stores null rates and its channels; a
-  GIF stores three nulls.
+  WebM with Opus, whose tracks state no `bit_rate`, stores both rates within 1 % of its packets' sums; a VP9 WebM
+  without sound stores null audio; a GIF stores three nulls.
 - Carries this specification, ADR 0052 and ADR 0051's status line. Its consumer is block 20.
 
 ### Block 20
@@ -179,8 +180,7 @@ Block 40 is the likeliest to pass a bound; it splits at a number between 40 and 
   row and the comparator.
 - Unit tests: the default kept version, a tie going to the oldest, a larger rejected candidate under *Review* left
   as rejected; the submit's label and state, a pending candidate opening enabled and an all-rejected group opening
-  disabled; the zoom kept under the pointer and clamped to 100 % and 800 %; the codecs read from a `mimeType`; the format line with a track's
-  rate, and with the whole file's when the track states none.
+  disabled; the zoom kept under the pointer and clamped to 100 % and 800 %; the codecs read from a `mimeType`; the format and sound lines.
 - Journeys: "merge a group of duplicates" through the comparator, the open pin merged into a larger candidate;
   "reject a duplicate", then *Review* shows it faded and merges it; a refused submit shows its message and the list
   read again. "open a duplicate" is deleted.
