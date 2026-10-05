@@ -23,7 +23,8 @@ class MediaLimitsTest {
     private fun video(width: Int, height: Int, bytes: Long = 40) =
         VideoProbeResult(
             VideoCodec.H264, null, width, height, Duration.ofSeconds(1), frames = 25, bytes, "avc1.640015",
-            VideoContainer.MP4, alreadyRepackaged = true,
+            VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = bytes * 8, audioChannels = null,
+            audioBitRate = null,
         )
 
     @Test

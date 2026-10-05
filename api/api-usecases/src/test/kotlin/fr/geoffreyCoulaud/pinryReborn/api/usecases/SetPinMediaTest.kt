@@ -212,7 +212,8 @@ class SetPinMediaTest : BaseTest() {
         every { video.probe(staged, Duration.ofSeconds(1)) } returns
             VideoProbeResult(
                 VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), frames = 25, bytes = 3, "avc1.640015",
-                VideoContainer.MP4, alreadyRepackaged = true,
+                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, audioChannels = null,
+                audioBitRate = null,
             )
         every { video.repackage(staged, any()) } throws UndecodableVideoException("refused")
 
@@ -251,7 +252,8 @@ class SetPinMediaTest : BaseTest() {
         every { video.probe(staged, Duration.ofSeconds(1)) } returns
             VideoProbeResult(
                 VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), frames = 25, bytes = 3, "avc1.640015",
-                VideoContainer.MP4, alreadyRepackaged = true,
+                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, audioChannels = null,
+                audioBitRate = null,
             )
         every { video.repackage(staged, any()) } throws UndecodableVideoException("refused")
         assertThrows(MediaInvalidError::class.java) { withVideo.set(p.id, owner, upload()) }

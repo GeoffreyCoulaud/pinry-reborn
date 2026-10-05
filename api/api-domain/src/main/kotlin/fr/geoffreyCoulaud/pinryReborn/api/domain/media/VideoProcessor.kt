@@ -24,6 +24,10 @@ data class VideoProbeResult(
     val demuxedAs: VideoContainer,
     // Those two tracks alone, the video tagged as [codecs] names it: what [VideoProcessor.repackage] writes.
     val alreadyRepackaged: Boolean,
+    // In bits per second, summed from the packets: WebM states no rate per track.
+    val videoBitRate: Long,
+    val audioChannels: Int?,
+    val audioBitRate: Long?,
 ) : MeasuredMedia
 
 interface VideoProcessor {

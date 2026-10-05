@@ -8,7 +8,9 @@ V=(-f lavfi -i testsrc2=size=160x120:rate=10:duration=1)
 A=(-f lavfi -i sine=frequency=440:duration=1)
 ffmpeg -y "${V[@]}" "${A[@]}" -c:v libx264 -c:a aac h264-aac.mkv
 ffmpeg -y "${V[@]}" "${A[@]}" -c:v libx265 -tag:v hev1 -c:a aac h265-hev1-aac.mov
+ffmpeg -y "${V[@]}" "${A[@]}" -c:v libx264 -c:a aac -ac 2 h264-aac-stereo.mp4
 ffmpeg -y "${V[@]}" "${A[@]}" -c:v libvpx-vp9 -c:a libopus vp9-opus.webm
+ffmpeg -y "${V[@]}" -c:v libvpx-vp9 vp9.webm
 ffmpeg -y "${V[@]}" -c:v libsvtav1 av1.mp4
 ffmpeg -y "${V[@]}" "${A[@]}" -c:v libx264 -c:a ac3 h264-ac3.mkv
 ffmpeg -y -f lavfi -i testsrc2=size=64x48:rate=1:duration=121 -c:v libx264 too-long.mkv

@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
@@ -15,6 +16,7 @@ import org.hamcrest.Matchers.matchesPattern
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -364,6 +366,40 @@ class MediaHostingIntegrationTest : IntegrationTest() {
             // Then
             val media = requireNotNull(mediaRepository.findByPinId(pinId)) { "${file.name} should be stored" }
             assertEquals(framesAndDuration, media.frames to media.duration, file.name)
+        }
+    }
+
+    @Test
+    fun `Given videos with and without sound and a GIF, Then each stored media carries its rates and channels`() {
+        // Given: each track's packet bits as ffprobe sums them over the file's duration, then the channels
+        val expected = mapOf(
+            videoFixture("h264-aac-stereo.mp4") to listOf(11_652 * 8 / 1.0, 2.0, 16_347 * 8 / 1.0),
+            videoFixture("vp9-opus.webm") to listOf(10_013 * 8 / 1.008, 1.0, 9_276 * 8 / 1.008),
+            videoFixture("vp9.webm") to listOf(10_013 * 8 / 1.0, null, null),
+            fixture("animated.gif") to listOf(null, null, null),
+        )
+        for ((file, tracks) in expected) {
+            val (auth, pinId) = createPinForNewUser()
+
+            // When
+            given()
+                .authenticatedAs(auth)
+                .multiPart("file", file, "application/octet-stream")
+                .`when`().put("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(201)
+
+            // Then: within 1 %
+            val media = requireNotNull(mediaRepository.findByPinId(pinId)) { "${file.name} should be stored" }
+            val stored = listOf(media.videoBitRate, media.audioChannels, media.audioBitRate)
+            for ((want, got) in tracks.zip(stored)) {
+                if (want == null) {
+                    assertNull(got, file.name)
+                } else {
+                    assertEquals(want, requireNotNull(got) { file.name }.toDouble(), want / 100, file.name)
+                }
+            }
+            assertEquals(MediaIngestion.PROBE_VERSION, media.probeVersion, file.name)
         }
     }
 

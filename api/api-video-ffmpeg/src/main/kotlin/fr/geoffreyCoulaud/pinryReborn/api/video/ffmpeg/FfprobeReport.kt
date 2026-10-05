@@ -9,14 +9,21 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedExce
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoContainer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Duration
 import kotlin.math.abs
 
-/** Reads the JSON of `ffprobe -of json -show_streams -show_format -show_data -count_packets`. */
+/**
+ * Reads the JSON of `ffprobe -of json -show_streams -show_format -show_data -count_packets` with each packet's
+ * `stream_index` and `size`.
+ */
 internal object FfprobeReport {
     private val mapper = ObjectMapper()
     private const val HALF_TURN = 180
     private const val QUARTER_TURN = 90
+    private const val BITS_PER_BYTE = 8
+    private const val NANOS_SCALE = 9
 
     /** [bytes] is the file's size as the store measured it, as an image's probe reports it. */
     fun read(json: String, maxDuration: Duration, bytes: Long): VideoProbeResult {
@@ -24,8 +31,10 @@ internal object FfprobeReport {
         val streams = report.path("streams").toList()
         val video = videoTrackOf(streams)
         val videoCodec = videoCodecOf(video)
-        val audio = streams.firstOrNull { it.path("codec_type").asText() == "audio" }?.let { audioCodecOf(it) to it }
+        val audioTrack = streams.firstOrNull { it.path("codec_type").asText() == "audio" }
+        val audio = audioTrack?.let { audioCodecOf(it) to it }
         val duration = durationOf(report.path("format"), maxDuration)
+        val rateOf = rates(report.path("packets"), duration)
         val frames = video.path("nb_read_packets").asInt()
         if (frames < 2) throw UndecodableVideoException("The video track holds a single frame")
         val codecs =
@@ -46,8 +55,18 @@ internal object FfprobeReport {
         val alreadyRepackaged = streams.size == codecs.size && videoTag == codecs.first().substringBefore('.')
         return VideoProbeResult(
             videoCodec, audio?.first, width, height, duration, frames, bytes, codecsParameter, demuxedAs,
-            alreadyRepackaged,
+            alreadyRepackaged, rateOf(video), audioTrack?.let { it.path("channels").asInt() }, audioTrack?.let(rateOf),
         )
+    }
+
+    // A track's packet bits over the file's duration, which repackaging leaves as they are.
+    private fun rates(packets: JsonNode, duration: Duration): (JsonNode) -> Long {
+        val bytes = packets.groupBy({ it.path("stream_index").asInt() }, { it.path("size").asLong() })
+        val seconds = BigDecimal.valueOf(duration.toNanos(), NANOS_SCALE)
+        return { track ->
+            val bits = bytes[track.path("index").asInt()].orEmpty().sum() * BITS_PER_BYTE
+            BigDecimal.valueOf(bits).divide(seconds, RoundingMode.HALF_UP).toLong()
+        }
     }
 
     private fun videoTrackOf(streams: List<JsonNode>): JsonNode =
@@ -73,7 +92,7 @@ internal object FfprobeReport {
 
     private fun durationOf(format: JsonNode, maxDuration: Duration): Duration {
         val seconds =
-            format.path("duration").asText().toBigDecimalOrNull()
+            format.path("duration").asText().toBigDecimalOrNull()?.takeIf { it.signum() > 0 }
                 ?: throw UndecodableVideoException("The file declares no duration")
         val duration = Duration.ofNanos(seconds.movePointRight(9).toLong())
         if (duration > maxDuration) throw VideoTooLongException("The video lasts $duration, past $maxDuration")
