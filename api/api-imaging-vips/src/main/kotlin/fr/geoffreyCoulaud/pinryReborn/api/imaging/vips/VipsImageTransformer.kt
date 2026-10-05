@@ -27,7 +27,7 @@ class VipsImageTransformer(private val quality: Int, timeout: Duration, maxAddre
     FrameSampler {
     private val runner = ProcessRunner(timeout, maxAddressSpace)
 
-    // One page decoded at a time into one file beside the input, its alpha flattened on white.
+    // ponytail: one process per sampled page, each decoding the pages before it; one pass if long GIFs ever matter.
     override fun sample(media: Media, staged: StagedFile, onFrame: (LumaFrame) -> Unit) {
         val pages = if (media.animated) FrameSampler.pages(delays(staged)).map { "[page=$it]" } else listOf("")
         val frame = Files.createTempFile(Path.of(staged.path).toAbsolutePath().parent, "frame-", ".ppm")
