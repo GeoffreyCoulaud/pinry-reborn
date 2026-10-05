@@ -21,7 +21,8 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
     private val userRepository = UserRepository(persistor)
     private val pinRepository = PinRepository(persistor)
 
-    private fun savedUser() = userRepository.saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
+    private fun savedUser() =
+        userRepository.saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
 
     private fun savedPin(user: User = savedUser()): Pin {
         return pinRepository.savePin(
@@ -137,7 +138,7 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
     // --- fingerprints (ADR 0051) ---
 
     @Test
-    fun `Given media unhashed, hashed at an older version and at the current one, Then the newest outdated comes first`() {
+    fun `Given media unhashed, hashed at an older and at the current version, Then the newest outdated is first`() {
         // Given: the newest is current, so it is skipped for the next newest
         val unhashed = repository.save(mediaFor(savedPin().id).copy(createdAt = Instant.parse("2026-01-01T00:00:00Z")))
         val older = repository.save(mediaFor(savedPin().id).copy(createdAt = Instant.parse("2026-01-02T00:00:00Z")))
@@ -157,7 +158,7 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given candidates of every kind, Then only another pin of the author at its motion level and version compares`() {
+    fun `Given candidates of every kind, Then only the author's other pins at its motion level and version compare`() {
         // Given
         val author = savedUser()
         val media = repository.save(mediaFor(savedPin(author).id))

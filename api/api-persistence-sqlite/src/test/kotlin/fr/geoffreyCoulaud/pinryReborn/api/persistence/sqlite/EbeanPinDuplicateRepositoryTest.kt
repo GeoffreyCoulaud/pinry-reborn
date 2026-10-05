@@ -21,9 +21,10 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given a pin's pending and rejected pairs, Then deleting its pending pairs keeps the rejected and the others'`() {
+    fun `Given a pin's pending and rejected pairs, Then deleting the pending keeps the rejected and others'`() {
         // Given
-        val (pin, pending, rejected, other) = List(4) { randomUUID() }
+        val (pin, pending, rejected) = List(3) { randomUUID() }
+        val other = randomUUID()
         repository.addMissing(pin, listOf(pending, rejected))
         repository.addMissing(other, listOf(pending))
         reject(pin, rejected)
@@ -38,7 +39,8 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     @Test
     fun `Given pairs already held from either side, Then only the missing ones are added and a rejection stays`() {
         // Given: the held pairs name the pin first and second, whichever order its id sorts in
-        val (pin, heldFirst, heldRejected, added) = List(4) { randomUUID() }
+        val (heldFirst, heldRejected, added) = List(3) { randomUUID() }
+        val pin = randomUUID()
         repository.addMissing(heldFirst, listOf(pin))
         repository.addMissing(pin, listOf(heldRejected))
         reject(pin, heldRejected)
