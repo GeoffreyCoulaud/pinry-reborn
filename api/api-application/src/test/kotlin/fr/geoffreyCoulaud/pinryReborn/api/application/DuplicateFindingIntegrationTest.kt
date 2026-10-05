@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMedia
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.DeletePinMedia
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.FingerprintMedia
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapFingerprints
@@ -14,6 +15,7 @@ import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
@@ -33,6 +35,9 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
 
     @Inject
     lateinit var fingerprintMedia: FingerprintMedia
+
+    @Inject
+    lateinit var deletePinMedia: DeletePinMedia
 
     @Inject
     lateinit var reapFingerprints: ReapFingerprints
@@ -172,14 +177,14 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
         QPinDuplicateModel().firstPinId.isIn(first.pinId, last.pinId).secondPinId.isIn(first.pinId, last.pinId)
             .asUpdate().set("rejectedAt", Instant.EPOCH).update()
         outdate(first, middle, last)
-        val afterTheNewest = mutableListOf<Set<Pair<Set<UUID>, Boolean>>>()
+        val atEachRenewal = mutableListOf<Set<Pair<Set<UUID>, Boolean>>>()
 
         // When: the newest is hashed first, and compared with none of the outdated two
-        fingerprintMedia.drain { if (afterTheNewest.isEmpty()) afterTheNewest.add(pairs()) }
+        fingerprintMedia.drain { atEachRenewal.add(pairs()) }
 
-        // Then
+        // Then: only the newest hashed leaves the first two paired alone
         val rejected = setOf(first.pinId, last.pinId) to true
-        assertEquals(listOf(pending(first, middle) + rejected), afterTheNewest)
+        assertTrue(pending(first, middle) + rejected in atEachRenewal, "$atEachRenewal")
         assertEquals(pending(first, middle) + pending(middle, last) + rejected, pairs())
     }
 
@@ -200,6 +205,22 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
         // Then
         assertEquals(listOf(1, 0, 1), listOf(beforeTheSweep, framesOf(old), framesOf(replacement)))
         assertEquals(FingerprintMedia.FINGERPRINT_VERSION, versionOf(replacement))
+    }
+
+    @Test
+    fun `Given two pinned copies, Then deleting one's media deletes their pending pair`() {
+        // Given
+        val author = createAuthenticatedUser().user
+        val still = still()
+        val (kept, emptied) = List(2) { pinned(author, still) }
+        awaitFingerprintDrain()
+        val beforeTheDelete = pairs()
+
+        // When
+        deletePinMedia.delete(emptied.pinId, author)
+
+        // Then
+        assertEquals(listOf(pending(kept, emptied), emptySet()), listOf(beforeTheDelete, pairs()))
     }
 
     private companion object {

@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPermissionError
@@ -30,7 +31,8 @@ class DeletePinMediaTest : BaseTest() {
     private val store = mockk<MediaStore>(relaxed = true)
     private val clearPinDownload = mockk<ClearPinDownload>(relaxed = true)
     private val renditionCache = mockk<RenditionCache>()
-    private val useCase = DeletePinMedia(pins, mediaRepository, store, clearPinDownload, renditionCache)
+    private val duplicates = mockk<PinDuplicateRepositoryInterface>(relaxed = true)
+    private val useCase = DeletePinMedia(pins, mediaRepository, duplicates, store, clearPinDownload, renditionCache)
 
     init { every { renditionCache.evictMedia(any()) } returns Unit }
 
@@ -52,6 +54,7 @@ class DeletePinMediaTest : BaseTest() {
 
         verifyOrder {
             mediaRepository.deleteByPinId(p.id)
+            duplicates.deletePending(p.id)
             store.delete(img.storageKey)
             clearPinDownload.clear(p.id)
         }
