@@ -4,7 +4,8 @@ Date: 2026-10-05
 Tier: Spec. Specification `docs/specs/2026-10-05-the-pin-knows-its-duplicates.md`; ADR
 `docs/adr/0051-duplicates-are-found-by-frame-hashes-in-bands.md`. Discussion with the operator on 2026-10-05,
 specification review `.reviews/the-pin-knows-its-duplicates-spec.md`.
-Lot `0.48.0`, one stack of 10 code blocks *(corrected in the closing block: 11, then the closing block's two)*: 10 `feat/a-media-yields-its-frames` (#323), 20 `feat/pdq-hashes-a-frame`
+Lot `0.48.0`, one stack of 10 code blocks *(corrected in the closing block: 11, then the closing block's two)*:
+10 `feat/a-media-yields-its-frames` (#323), 20 `feat/pdq-hashes-a-frame`
 (#324), 30 `feat/frame-hashes-are-stored-in-bands` (#326), 40 `feat/the-worker-finds-duplicates` (#327), 43
 `feat/the-worker-hashes-media` (#328), 46 `feat/the-worker-sweeps-fingerprints` (#329), 50
 `feat/the-api-serves-duplicates` (#330), 53 `feat/the-api-lists-duplicates` (#331), 60 `feat/pins-merge` (#332), 70
@@ -81,7 +82,9 @@ the holistic review.
   Twenty screenshots in the session's scratchpad, `shots80/{phone,desktop}-{light,dark}-{1-grid,2-group,3-chosen,4-merged,5-grid-after}.png`.
 - Continuous integration: one red run, on #332, below.
 - Closing block, split in two (below): `./gradlew gate` green on `fix/the-duplicates-lot-closes` at `f309b35e`,
-  then at `1ad1fbf0` with the sweep; budget 213 lines, 19 files against `feat/the-dialog-merges-a-group`. The
+  then at `1ad1fbf0` with the sweep, and `dagger call gate` green at `0c78bffd` after the fix-back that keeps a
+  rejected pair in the sweep's integration case; budget 214 lines, 19 files against
+  `feat/the-dialog-merges-a-group`. The
   clients' typecheck, lint, Knip and Vitest (69 files, 359 tests) green on `fix/the-duplicates-lot-closes-the-webapp`,
   and `dagger call gate` green at its `3d635be7`, the whole stack's top before the sweep; budget 121 lines, 4 files
   against `fix/the-duplicates-lot-closes`. Mutations, each failing the case named: `DeletePinMedia` without
@@ -158,8 +161,9 @@ sampling (closing block).
 - Discuss settled questions A to N with the operator; O, excerpts leaving the lot and filed in the backlog, came from
   block 20's measurement ("3, et on note ça au backlog pour plus tard. C'est une feature supplémentaire la détection
   d'extraits, on veut la détection de doublons dans ce lot.").
-- P is pending: whether headless screenshots go in a pull request. *(Corrected in the closing block: still
-  unanswered.)*
+- P is pending: whether headless screenshots go in a pull request. *(Corrected in the closing block: answered "2",
+  no screenshots in a pull request; the lead reads them in the session's scratchpad and the operator reads the
+  application at review.)*
 - The third holistic MAJOR, put to the operator by the lead in the closing block: delete at the site, or sweep
   pending pairs naming a pin with no media. Answer: "le balayage périodique est quand même nécessaire pour éviter
   les éléments morts suite à une coupure inattendue." Both were done.
@@ -233,4 +237,4 @@ having started.)*
 
 Wrap: the holistic review over the diff above, then the closing block, the operator's review of the stack, and the
 tag `lot/0.48.0-the-pin-knows-its-duplicates` once it merges. *(Corrected in the closing block: the review and the
-closing block are done; the operator's review of the stack, question P, the merge and the tag remain.)*
+closing block are done; the operator's review of the stack, the merge and the tag remain.)*
