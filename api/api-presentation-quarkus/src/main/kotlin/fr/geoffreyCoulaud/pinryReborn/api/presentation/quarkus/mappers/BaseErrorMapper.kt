@@ -59,6 +59,7 @@ class BaseErrorMapper : ExceptionMapper<BaseError> {
             ErrorCode.PIN_INSUFFICIENT_PERMISSIONS -> ProblemCode.PIN_INSUFFICIENT_PERMISSIONS to FORBIDDEN.statusCode
             ErrorCode.PIN_NOT_SOFT_DELETED -> ProblemCode.PIN_NOT_SOFT_DELETED to CONFLICT.statusCode
             ErrorCode.PIN_ALREADY_SOFT_DELETED -> ProblemCode.PIN_ALREADY_SOFT_DELETED to CONFLICT.statusCode
+            ErrorCode.DUPLICATE_DOES_NOT_EXIST -> ProblemCode.DUPLICATE_DOES_NOT_EXIST to NOT_FOUND.statusCode
             ErrorCode.SEARCH_EMPTY_QUERY -> ProblemCode.SEARCH_EMPTY_QUERY to BAD_REQUEST.statusCode
             // SessionController answers both as AUTHENTICATION_FAILED, never telling a username that exists apart.
             ErrorCode.USER_DOES_NOT_EXIST -> ProblemCode.AUTHENTICATION_FAILED to UNAUTHORIZED.statusCode

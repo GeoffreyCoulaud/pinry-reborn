@@ -160,6 +160,11 @@ class BaseErrorMapperTest {
     }
 
     @Test
+    fun `Given DUPLICATE_DOES_NOT_EXIST, Then status is NOT_FOUND`() {
+        assertEquals(Response.Status.NOT_FOUND, statusFor(ErrorCode.DUPLICATE_DOES_NOT_EXIST))
+    }
+
+    @Test
     fun `Given BOARD_NOT_SOFT_DELETED, Then status is CONFLICT`() {
         assertEquals(Response.Status.CONFLICT, statusFor(ErrorCode.BOARD_NOT_SOFT_DELETED))
     }

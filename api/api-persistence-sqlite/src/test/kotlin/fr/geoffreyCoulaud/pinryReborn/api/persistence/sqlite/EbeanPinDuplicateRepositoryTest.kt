@@ -62,6 +62,41 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun `Given a pin's pairs with active, recycled and gone pins, Then only the pairs of two active pins are shown`() {
+        // Given
+        val (pin, pending, rejected) = storedPins(3).map { it.id }
+        val (recycled) = storedPins(1, recycled = 1).map { it.id }
+        repository.addMissing(pin, listOf(pending, rejected, recycled, randomUUID()))
+        reject(pin, rejected)
+
+        // When
+        val shown = repository.findShownFor(pin)
+
+        // Then
+        assertEquals(mapOf(pending to false, rejected to true), shown)
+        assertEquals(emptyMap<UUID, Boolean>(), repository.findShownFor(recycled))
+    }
+
+    @Test
+    fun `Given a shown pair and a hidden one, Then a rejection and a restoration reach the shown one alone`() {
+        // Given
+        val (pin, other, recycled) = storedPins(3, recycled = 1).map { it.id }
+        repository.addMissing(pin, listOf(other, recycled))
+
+        // When: rejected from one side, restored from the other
+        val rejected = repository.setRejected(pin, other, storableNow())
+        val afterTheRejection = pairs()
+        val restored = repository.setRejected(other, pin, rejectedAt = null)
+        val hidden = repository.setRejected(pin, recycled, storableNow())
+        val absent = repository.setRejected(pin, randomUUID(), storableNow())
+
+        // Then
+        assertEquals(listOf(true, true, false, false), listOf(rejected, restored, hidden, absent))
+        assertTrue(setOf(pin, other) to true in afterTheRejection)
+        assertEquals(setOf(setOf(pin, other) to false, setOf(pin, recycled) to false), pairs())
+    }
+
+    @Test
     fun `Given pairs of stored, recycled and gone pins, Then the orphan sweep deletes those naming a gone pin`() {
         // Given: a gone pin on either side, since its id sorts first or second
         val (stored, recycled) = storedPins(2, recycled = 1)
