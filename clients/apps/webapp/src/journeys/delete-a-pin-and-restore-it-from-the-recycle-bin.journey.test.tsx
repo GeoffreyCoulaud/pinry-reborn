@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
@@ -7,6 +7,7 @@ import type { Pin } from "../pins";
 import {
 	downloadsRoute,
 	handshakeRoute,
+	onePinPage,
 	pinsRoute,
 	readyPin,
 	renderApp,
@@ -103,6 +104,45 @@ describe("delete a pin and restore it from the recycle bin", () => {
 
 		expect(record.restored).toEqual([{ pinIds: [gone.id] }]);
 		expect(await screen.findByRole("status")).toHaveTextContent(m.bin_empty());
+	});
+
+	it("Given a pin and its duplicate, When the pin is deleted, Then the catalogue is read again and the duplicate loses its marker", async () => {
+		const gone = {
+			...readyPin("a harbour at dusk"),
+			hasPendingDuplicates: true,
+		};
+		const partner = {
+			...readyPin("a harbour at dawn"),
+			hasPendingDuplicates: true,
+		};
+		let catalogue: Pin[] = [gone, partner];
+		server.use(
+			sessionRoute(() => true),
+			onePinPage(() => catalogue),
+			// A recycled pin's pair is hidden (specification 2026-10-05, decision J).
+			http.delete("/api/v1/pins", () => {
+				catalogue = [{ ...partner, hasPendingDuplicates: false }];
+				return new HttpResponse(null, { status: 204 });
+			}),
+			downloadsRoute(),
+			handshakeRoute(),
+		);
+		renderApp("/");
+		const user = userEvent.setup();
+
+		const dialog = await openThePin(user, gone.description);
+		await user.click(
+			within(dialog).getByRole("button", { name: m.delete_pin() }),
+		);
+
+		await waitFor(() =>
+			expect(
+				screen.queryAllByRole("img", { name: m.duplicates_badge() }),
+			).toHaveLength(0),
+		);
+		expect(
+			screen.getByRole("img", { name: partner.description }),
+		).toBeVisible();
 	});
 
 	it("Given a pin in the bin whose rendition the server cannot draw, Then its row says the preview is unavailable", async () => {
