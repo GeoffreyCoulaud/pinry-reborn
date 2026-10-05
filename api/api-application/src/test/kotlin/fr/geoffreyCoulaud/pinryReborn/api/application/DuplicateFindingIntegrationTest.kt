@@ -224,20 +224,21 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given two pinned copies and one's media row deleted alone, Then the sweep deletes their pending pair`() {
-        // Given: a crash between `DeletePinMedia`'s media delete and its pairs' delete
+    fun `Given a copy's media row deleted alone, Then the sweep deletes its pending pair and keeps its rejected one`() {
+        // Given: three copies, the first and the emptied one rejected; then a crash between `DeletePinMedia`'s deletes
         val author = createAuthenticatedUser().user
         val still = still()
-        val (kept, emptied) = List(2) { pinned(author, still) }
+        val (first, second, emptied) = List(3) { pinned(author, still) }
         awaitFingerprintDrain()
-        val beforeTheSweep = pairs()
+        QPinDuplicateModel().firstPinId.isIn(first.pinId, emptied.pinId).secondPinId.isIn(first.pinId, emptied.pinId)
+            .asUpdate().set("rejectedAt", Instant.EPOCH).update()
         QMediaModel().id.equalTo(emptied.id).delete()
 
         // When
         reapFingerprints.reap()
 
         // Then
-        assertEquals(listOf(pending(kept, emptied), emptySet()), listOf(beforeTheSweep, pairs()))
+        assertEquals(pending(first, second) + (setOf(first.pinId, emptied.pinId) to true), pairs())
     }
 
     private companion object {
