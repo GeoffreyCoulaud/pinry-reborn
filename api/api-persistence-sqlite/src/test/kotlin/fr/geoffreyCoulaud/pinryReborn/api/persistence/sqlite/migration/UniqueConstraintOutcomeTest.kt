@@ -69,6 +69,10 @@ class UniqueConstraintOutcomeTest {
                 "No translation, deliberately: PinRepository.savePin reads the pin's tags and inserts the " +
                 "missing ones, each once, so the index fires only when two writes of one pin interleave " +
                 "outside a transaction, and 500 is the answer then.",
+            "ux_pin_duplicate_pins" to
+                "No translation, deliberately: one fingerprint drain runs at a time, its task having one dedup " +
+                "key, and it inserts only the pairs its pin does not hold; a rejection or a restore updates an " +
+                "existing row. So the index fires only on a broken invariant, and 500 is the answer then.",
         )
 
     // Uniqueness has two spellings: a standalone `create unique index`, and an inline constraint at table creation.

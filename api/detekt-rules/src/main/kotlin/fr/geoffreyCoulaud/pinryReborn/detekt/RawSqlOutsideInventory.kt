@@ -60,6 +60,12 @@ class RawSqlOutsideInventory(
                 "root clause, where eight of these sit inside an and() nested in an or(), so the " +
                 "predicate would leave the junction and the cursor would be wrong in silence."
 
+        private const val FRAME_HASH_BAND =
+            "SQLite uses an expression index only where the query spells the expression it indexes, and the " +
+                "query beans have no bit shift or bitwise and to spell ((hash_k >> s) & 65535) with. One band per " +
+                "expression, because Ebean expands a collection bound to ?1 by substring replacement, which would " +
+                "also rewrite a ?10 (ADR 0051, decision 4)."
+
         /** Each fragment production may pass to `raw(`, against the reason the query beans cannot express it. */
         internal val INVENTORY =
             mapOf(
@@ -75,6 +81,22 @@ class RawSqlOutsideInventory(
                     "is found by an upper-case search and not the reverse; toLowerCase() also takes no " +
                     "locale. And lower(name) is not the indexed expression, so a find-or-create could " +
                     "miss a row the constraint then refuses.",
+                "((hash_0 >> 48) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_0 >> 32) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_0 >> 16) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_0 >> 0) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_1 >> 48) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_1 >> 32) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_1 >> 16) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_1 >> 0) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_2 >> 48) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_2 >> 32) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_2 >> 16) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_2 >> 0) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_3 >> 48) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_3 >> 32) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_3 >> 16) & 65535) in (?1)" to FRAME_HASH_BAND,
+                "((hash_3 >> 0) & 65535) in (?1)" to FRAME_HASH_BAND,
             )
     }
 }
