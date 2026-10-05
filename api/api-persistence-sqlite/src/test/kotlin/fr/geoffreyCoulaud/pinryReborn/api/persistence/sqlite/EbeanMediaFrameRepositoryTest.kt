@@ -1,9 +1,16 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaFrame
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PdqHash
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaFrameRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.FrameHashBands
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
+import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -90,6 +97,32 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
         // Then
         assertEquals(setOf(MediaFrame(kept, stored.words), MediaFrame(kept, another.words)), found.toSet())
         assertEquals(listOf(MediaFrame(other, stored.words)), repository.findByMediaIds(listOf(other)))
+    }
+
+    @Test
+    fun `Given frames of a stored media and of a gone one, Then the orphan sweep deletes the gone one's alone`() {
+        // Given
+        val user =
+            UserRepository(persistor).saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
+        val pin = PinRepository(persistor).savePin(
+            Pin(
+                randomUUID(), user, null, null, "", emptyList(), emptyList(),
+                createdAt = storableNow(), updatedAt = storableNow(),
+            ),
+        )
+        val media = EbeanMediaRepository(persistor, transactionRunner).save(
+            Media(randomUUID(), pin.id, "image/png", 1, 1, false, 1, "", "originals/x", storableNow()),
+        )
+        val gone = randomUUID()
+        repository.save(media.id, listOf(stored))
+        repository.save(gone, listOf(stored, storedFlipping(mapOf(0 to 1))))
+
+        // When
+        val deleted = repository.deleteOrphans()
+
+        // Then
+        assertEquals(2, deleted)
+        assertEquals(listOf(MediaFrame(media.id, stored.words)), repository.findByMediaIds(listOf(media.id, gone)))
     }
 
     @Test

@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.worker
 
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapExpiredSessionTokens
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapFingerprints
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapOrphanedStorage
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapStaleMediaDownloads
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapTombstonedAccounts
@@ -13,10 +14,10 @@ import jakarta.enterprise.event.Observes
 import java.util.concurrent.TimeUnit
 
 /**
- * Drives the periodic garbage collection lifecycle: runs the five `Reap*` sweeps on application
+ * Drives the periodic garbage collection lifecycle: runs the `Reap*` sweeps on application
  * startup, keeps sweeping on a fixed delay so inert rows and orphaned files do not accumulate, and
  * stops the scheduler on shutdown. Mirrors [ExportRetentionLifecycle]; the only structural
- * difference is five sweeps instead of one, each isolated in its own try/catch inside [safeAll] so
+ * difference is several sweeps instead of one, each isolated in its own try/catch inside [safeAll] so
  * one throwing sweep is logged and does not stop the others (spec
  * docs/specs/2026-07-27-periodic-gc.md, D4). The scheduler is a [PeriodicScheduler] wired as a
  * `@Dependent` producer (one instance per lifecycle injection, so one thread per role), so the
@@ -33,6 +34,7 @@ class GarbageCollectionLifecycle(
     private val reapTombstonedAccounts: ReapTombstonedAccounts,
     private val reapTerminalTasks: ReapTerminalTasks,
     private val reapStaleMediaDownloads: ReapStaleMediaDownloads,
+    private val reapFingerprints: ReapFingerprints,
     private val executor: PeriodicScheduler,
     private val config: GarbageCollectionConfig,
 ) {
@@ -82,6 +84,11 @@ class GarbageCollectionLifecycle(
             reapStaleMediaDownloads.reap()
         } catch (e: Exception) {
             logger.error(e) { "stale media download sweep failed" }
+        }
+        try {
+            reapFingerprints.reap()
+        } catch (e: Exception) {
+            logger.error(e) { "fingerprint sweep failed" }
         }
     }
 

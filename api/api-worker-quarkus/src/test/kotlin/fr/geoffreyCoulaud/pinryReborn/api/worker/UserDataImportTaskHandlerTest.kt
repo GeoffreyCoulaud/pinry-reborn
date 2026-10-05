@@ -1,11 +1,14 @@
 package fr.geoffreyCoulaud.pinryReborn.api.worker
 
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportRunner
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.TaskContext
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.UserDataImportTask
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -14,7 +17,8 @@ import java.util.UUID
 class UserDataImportTaskHandlerTest {
     private val runner: UserDataImportRunner = mockk(relaxed = true)
     private val config: ImportsConfig = mockk()
-    private val handler = UserDataImportTaskHandler(runner, config)
+    private val enqueueTask: EnqueueTask = mockk(relaxed = true)
+    private val handler = UserDataImportTaskHandler(runner, config, enqueueTask)
 
     @Test
     fun `Given the kind the completer enqueues, Then this handler answers it`() {
@@ -41,6 +45,18 @@ class UserDataImportTaskHandlerTest {
 
         // Then
         verify { runner.run(importId, isLastAttempt = true, renewLeaseIfDue = any()) }
+    }
+
+    @Test
+    fun `Given a run that returns, Then the media fingerprint drain is enqueued after it`() {
+        // When
+        handler.handle(UUID.randomUUID().toString(), TaskContext(attempt = 1, maxAttempts = 5))
+
+        // Then
+        verifyOrder {
+            runner.run(any(), any(), any())
+            enqueueTask.enqueue(MediaFingerprintTask.KIND, "", any(), any(), any(), MediaFingerprintTask.KIND)
+        }
     }
 
     @Test

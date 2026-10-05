@@ -9,4 +9,7 @@ interface PinDuplicateRepositoryInterface {
 
     /** Pair [pinId] with each of [otherPinIds] it is not paired with yet, rejected pairs included. */
     fun addMissing(pinId: UUID, otherPinIds: Collection<UUID>)
+
+    /** Delete every pair one of whose pins is gone, recycled pins being kept; returns how many. */
+    fun deleteOrphans(): Int
 }

@@ -32,6 +32,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInt
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.TaskContext
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.PermanentTaskException
 import jakarta.enterprise.context.ApplicationScoped
@@ -52,6 +54,7 @@ class DownloadPinMedia(
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
     private val renditionCache: RenditionCache,
+    private val enqueueTask: EnqueueTask,
 ) {
     fun download(pinId: UUID, context: TaskContext) {
         val downloadRow = mediaDownloadRepository.findByPinId(pinId)
@@ -125,6 +128,7 @@ class DownloadPinMedia(
                 transactionRunner.inTransaction {
                     if (mediaDownloadRepository.deleteIfPending(pinId) > 0) {
                         mediaRepository.save(media)
+                        MediaFingerprintTask.enqueueOn(enqueueTask)
                         true
                     } else {
                         false
