@@ -27,7 +27,7 @@ class VipsImageTransformer(private val quality: Int, timeout: Duration, maxAddre
     FrameSampler {
     private val runner = ProcessRunner(timeout, maxAddressSpace)
 
-    // ponytail: one process per sampled page, each decoding the pages before it; one pass if long GIFs ever matter.
+    // ponytail: a process per sampled page, 120 at most, each decoding the pages before it; one pass if that matters.
     override fun sample(media: Media, staged: StagedFile, onFrame: (LumaFrame) -> Unit) {
         val pages = if (media.animated) FrameSampler.pages(delays(staged)).map { "[page=$it]" } else listOf("")
         val frame = Files.createTempFile(Path.of(staged.path).toAbsolutePath().parent, "frame-", ".ppm")
@@ -43,7 +43,14 @@ class VipsImageTransformer(private val quality: Int, timeout: Duration, maxAddre
     }
 
     private fun delays(staged: StagedFile): List<Duration> =
-        run(listOf("vipsheader", "-f", "delay", staged.path)).trim().split(' ').map { Duration.ofMillis(it.toLong()) }
+        delaysOf(run(listOf("vipsheader", "-f", "delay", staged.path)))
+
+    /** A refusal rather than a parse error, so the fingerprint drain stamps the media rather than failing on it. */
+    internal fun delaysOf(header: String): List<Duration> =
+        header.trim().split(' ').map { delay ->
+            val millis = delay.toLongOrNull() ?: throw UndecodableImageException("vipsheader read a delay of $delay")
+            Duration.ofMillis(millis)
+        }
 
     private companion object {
         private val HEX = HexFormat.of()

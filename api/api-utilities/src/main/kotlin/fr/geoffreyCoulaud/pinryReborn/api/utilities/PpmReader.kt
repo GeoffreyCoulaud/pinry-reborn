@@ -15,6 +15,7 @@ class Raster(val width: Int, val height: Int, val rgb: IntArray)
  */
 object PpmReader {
     private const val MAX_BYTE = 255
+    private const val MAX_SAMPLE = 65535
     private const val RGB = 3
 
     fun read(path: Path, maxSide: Int): Raster =
@@ -25,6 +26,7 @@ object PpmReader {
             val width = number(input)
             val height = number(input)
             val maxValue = number(input)
+            refuseUnless(width > 0 && height > 0 && maxValue in 1..MAX_SAMPLE) { "No raster: ${width}x$height" }
             refuseUnless(maxOf(width, height) <= maxSide) { "${width}x$height is past $maxSide pixels a side" }
             val bytesPerSample = if (maxValue > MAX_BYTE) 2 else 1
             val length = width * height * channels * bytesPerSample

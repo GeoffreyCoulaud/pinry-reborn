@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -85,6 +87,25 @@ class VipsFrameSamplingTest {
         assertEquals(listOf(512 to 384), frames.map { it.width to it.height })
         assertTrue(frames.single().luma.all { it > 254.5f })
         assertEquals(listOf(png), Files.list(directory).use { it.toList() })
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["", "[bitdepth=16]"])
+    fun `Given a white grey PNG of either depth, Then its one frame reads white`(depth: String) {
+        // Given: one band, inverted from black
+        val black = directory.resolve("black.png")
+        val white = directory.resolve("white.png")
+        assertEquals(0, ProcessBuilder("vips", "black", "$black", "64", "48").start().waitFor())
+        assertEquals(0, ProcessBuilder("vips", "invert", "$black", "$white$depth").start().waitFor())
+        // When
+        val frames = framesOf(white, animated = false)
+        // Then
+        assertTrue(frames.single().luma.all { it > 254.5f })
+    }
+
+    @Test
+    fun `Given a delay vipsheader cannot have written, Then the sampling is reported undecodable`() {
+        assertThrows(UndecodableImageException::class.java) { sampler.delaysOf("100 -") }
     }
 
     @Test
