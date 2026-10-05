@@ -9,7 +9,7 @@ Branches: one stack: 10 `feat/a-media-records-its-tracks`, 20 `feat/the-api-desc
 50 `feat/the-comparator-plays-both-versions` on 40, 60 `refactor/the-merge-and-reject-routes-go` on 50.
 ADR: `docs/adr/0052-duplicates-are-resolved-in-one-call.md`, written in block 10, records decisions B and C and the
 refusals of section 4. Decision D needs none: it is confined to one component and a library can replace it there.
-Decision E needs none: two descriptive columns read at ingestion, as `frames` and `duration_millis` were.
+Decision E needs none: three descriptive columns read at ingestion, as `frames` and `duration_millis` were.
 The design is prototype v10, validated by the operator on 2026-10-05 (https://claude.ai/artifact/37v6yVtYkCvurge9RatRdy).
 
 ## 1. Goal
@@ -90,14 +90,16 @@ merged.
 - Where `ImageDecoder` is missing, an animated image plays on its own as an `<img>` and shows no duration, and a pair
   holding one has no bar and no slider; a video beside it keeps its own controls. No library stands in (A).
 
-**E. A media records its sound** (E). `media` gains `audio_channels` and `audio_bit_rate`, read from the first audio
-track's `channels` and `bit_rate` by the probe of the source, before repackaging; a source that states no rate
-leaves it null, which the stored file may state where the source did not. The codecs and whether there is sound
-are read from `mimeType`'s `codecs` parameter, which every video already carries. The column shows "AAC stereo,
-128 kb/s", "No sound", or the codec alone when the rate is unknown, and the format as the type's short name and the
-video codec, "MP4 · H.264".
+**E. A media records its rates and its sound** (E, and the operator's addition of the video's rate on 2026-10-06).
+`media` gains `video_bit_rate`, `audio_channels` and `audio_bit_rate`, read from the video track's `bit_rate` and the
+first audio track's `channels` and `bit_rate` by the probe of the source, before repackaging; a track that states no
+rate leaves it null, which the stored file may state where the source did not. The codecs and whether there is
+sound are read from `mimeType`'s `codecs` parameter, which every video already carries. The column shows the format
+as the type's short name, the video codec and its rate, "MP4 · H.264 · 4.2 Mb/s"; where the track states none, the
+whole file's rate from its weight and duration, marked as such, "WebM · VP9 · about 3.9 Mb/s in all". Then the sound:
+"AAC stereo, 128 kb/s", "No sound", or the codec and channels alone when the rate is unknown.
 
-**F. No back-fill** (F). Media stored before this lot keep null channels and rate, and those stored before lot
+**F. No back-fill** (F). Media stored before this lot keep null rates and channels, and those stored before lot
 `0.46.0` a null duration and one frame. The alpha runs on development data, which an export, a reset and an import
 refill through `MediaIngestion`; that refill also drops every rejection, the export carrying no pair, and the worker
 finds the pairs again as pending. The handoff says so.
@@ -108,7 +110,7 @@ finds the pairs again as pending. The handoff says so.
 |---|---|
 | `PinOutputDto.createdAt` | required instant |
 | `PinMediaStateDto.durationMillis` | integer or null; a video's, null for an image and for a video stored before lot `0.46.0` |
-| `PinMediaStateDto.audioChannels`, `.audioBitRate` | integer or null each; `audioBitRate` in bits per second |
+| `PinMediaStateDto.videoBitRate`, `.audioChannels`, `.audioBitRate` | integer or null each; the rates in bits per second |
 | `POST /api/v1/pins/{pinId}/duplicates/resolutions` | body `{decisions: {<pinId>: KEEP / MERGE / REJECT}}`, at most `PinIdsInputDto.MAX_IDENTIFIERS` entries; 200 the kept pin's `PinOutputDto` |
 | `POST /api/v1/pins/merges`, `PUT /api/v1/pins/{pinId}/duplicates/{otherPinId}` | removed |
 
@@ -141,18 +143,18 @@ Block 40 is the likeliest to pass a bound; it splits at a number between 40 and 
 
 ### Block 10
 
-- Migration `1.32`: the two columns of decision E, nullable. `Media` gains them, `FfprobeReport` reads them,
+- Migration `1.32`: the three columns of decision E, nullable. `Media` gains them, `FfprobeReport` reads them,
   `MediaIngestion` stores them.
-- An ingestion test per case: an H.264 MP4 with AAC stereo stores 2 channels and a rate; a VP9 WebM without sound
-  stores two nulls; a WebM whose Opus track states no `bit_rate` stores its channels and a null rate; a GIF stores
-  two nulls.
+- An ingestion test per case: an H.264 MP4 with AAC stereo stores a video rate, 2 channels and an audio rate; a VP9
+  WebM without sound stores null audio; a WebM whose tracks state no `bit_rate` stores null rates and its channels; a
+  GIF stores three nulls.
 - Carries this specification, ADR 0052 and ADR 0051's status line. Its consumer is block 20.
 
 ### Block 20
 
 - The fields of section 4. `ResolvePinMediaState.statesFor` already reads each `Media` row and the pin is already
   loaded, so no read is added.
-- `oasdiff changelog` against `main` lists the four properties, each for every operation that answers a pin, at
+- `oasdiff changelog` against `main` lists the five properties, each for every operation that answers a pin, at
   info level, and no error; `info.version` is `22.4.0`.
 - The web application's fixtures answer the new fields; their consumer is block 40.
 
@@ -177,7 +179,8 @@ Block 40 is the likeliest to pass a bound; it splits at a number between 40 and 
   row and the comparator.
 - Unit tests: the default kept version, a tie going to the oldest, a larger rejected candidate under *Review* left
   as rejected; the submit's label and state, a pending candidate opening enabled and an all-rejected group opening
-  disabled; the zoom kept under the pointer and clamped to 100 % and 800 %; the codecs read from a `mimeType`.
+  disabled; the zoom kept under the pointer and clamped to 100 % and 800 %; the codecs read from a `mimeType`; the format line with a track's
+  rate, and with the whole file's when the track states none.
 - Journeys: "merge a group of duplicates" through the comparator, the open pin merged into a larger candidate;
   "reject a duplicate", then *Review* shows it faded and merges it; a refused submit shows its message and the list
   read again. "open a duplicate" is deleted.
