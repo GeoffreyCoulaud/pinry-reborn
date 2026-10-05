@@ -109,6 +109,8 @@ Dated events. No session starts these early.
 - **Perceptual `ImageHash` (pHash)** for pin deduplication / merging. Computed at ingestion, a few microseconds
   per image, and depending on nothing in the visual-understanding section below: it warns "you have already
   pinned this" before the pin is written. Flagship of the sequenced **user-segmented base**.
+- **A video's excerpt is not found as such**: frames sampled a quarter second apart are too far for PDQ. See
+  `docs/specs/2026-10-05-the-pin-knows-its-duplicates.md`, decision E. New 2026-10-05.
 - **Advanced pin / tag / board management** : Features that make the data model genuinely user-segmented and pleasant to
   use. To be explored.
 - **Import from 3rd party sites**

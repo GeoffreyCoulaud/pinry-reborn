@@ -29,7 +29,9 @@ approximate, and the store is SQLite.
    hash on the same pixels, and within 10 bits through our own decoding.
 3. **Two media are compared only at the same motion level**, still against still, and animated image or video
    against either. They are a pair when 80 % or more of the unique frames of either find a frame of the other within
-   31 bits: a duplicate both ways, an excerpt one way.
+   31 bits: a duplicate both ways, an excerpt one way. *(Corrected on 2026-10-05 in block 20: a pair is 80 % both
+   ways. A frame a quarter second off its source's whole seconds measured 32 to 36 bits from its nearest source
+   frame, so excerpts leave this decision for the backlog; specification, decision E.)*
 4. **The lookup is exact multi-index hashing.** A hash is four 64-bit columns, and sixteen expression indexes each
    index one 16-bit band. Two hashes within 31 bits share a band within 1 bit, by pigeonhole, so a lookup asks
    seventeen values per band, 272 in all, and checks the true distance of what comes back. The table carries the
@@ -38,7 +40,7 @@ approximate, and the store is SQLite.
 6. **A media records the version of the algorithm that hashed it.** Raising the version in the code hashes every
    media again, and compares only hashes of the same version. A media that cannot be decoded is stamped with no
    frames.
-7. **A pair belongs to two pins**, with its relation and whether the user rejected it. It is shown only while both
+7. **A pair belongs to two pins**, with its relation *(corrected: no relation, decision 3)* and whether the user rejected it. It is shown only while both
    pins are active. Rows left by a deleted media or pin are swept, not deleted where the media or pin is, and carry
    no foreign key constraint.
 8. **Merging keeps one pin whole**: its media, description and sources stay, it gains the absorbed pins' boards and
