@@ -18,11 +18,13 @@ function PinDetails({
 	close,
 	edit,
 	openDuplicate,
+	merged,
 }: {
 	pin: Pin;
 	close: () => void;
 	edit: () => void;
 	openDuplicate: (pinId: string) => void;
+	merged: (kept: Pin) => void;
 }) {
 	const recycle = useRecyclePins();
 	const source = pin.sourceContextUrl;
@@ -100,7 +102,7 @@ function PinDetails({
 					</div>
 				) : null}
 			</dl>
-			<PinDuplicates pinId={pin.id} open={openDuplicate} />
+			<PinDuplicates pinId={pin.id} open={openDuplicate} merged={merged} />
 		</>
 	);
 }
@@ -175,6 +177,7 @@ export function PinDialog({
 	previous,
 	next,
 	openDuplicate,
+	merged,
 }: {
 	pin: Pin;
 	close: () => void;
@@ -182,6 +185,7 @@ export function PinDialog({
 	previous?: () => void;
 	next?: () => void;
 	openDuplicate: (pinId: string) => void;
+	merged: (kept: Pin) => void;
 }) {
 	const [editing, setEditing] = useState(false);
 	const swipe = useSwipe(previous, next);
@@ -229,6 +233,7 @@ export function PinDialog({
 					close={close}
 					edit={() => setEditing(true)}
 					openDuplicate={openDuplicate}
+					merged={merged}
 				/>
 			}
 		/>
