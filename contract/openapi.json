@@ -358,7 +358,7 @@
         "required" : [ "rejected" ],
         "properties" : {
           "rejected" : {
-            "type" : [ "boolean", "null" ]
+            "type" : "boolean"
           }
         }
       },
