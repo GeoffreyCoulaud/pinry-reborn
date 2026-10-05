@@ -84,9 +84,12 @@ data class MediaLimits(
         if (measured.bytes > maxBytes) throw MediaTooLargeException("${measured.bytes} bytes, past $maxBytes")
     }
 
-    private companion object {
+    companion object {
+        /** The longer side a sampled frame is decoded at, at most (ADR 0051). */
+        const val MAX_FRAME_SIDE = 512
+
         // ffmpeg's `-t 3` for a preview and `thumbnail=n=100` for a poster.
-        val PREVIEW: Duration = Duration.ofSeconds(3)
-        const val POSTER_FRAMES = 100
+        private val PREVIEW: Duration = Duration.ofSeconds(3)
+        private const val POSTER_FRAMES = 100
     }
 }
