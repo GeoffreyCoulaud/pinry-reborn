@@ -90,7 +90,7 @@ export function PinDuplicates({
 }) {
 	const duplicates = useDuplicates(pinId).data ?? [];
 	const reject = useRejectDuplicate(pinId);
-	const merge = useMergePins();
+	const merge = useMergePins(merged);
 	const [keep, setKeep] = useState(pinId);
 	const [excluded, setExcluded] = useState<ReadonlySet<string>>(new Set());
 	const heading = useId();
@@ -196,10 +196,7 @@ export function PinDuplicates({
 									keptPinId: kept,
 									absorbedPinIds: group.filter((id) => id !== kept),
 								},
-								{
-									onSuccess: merged,
-									onError: () => toast.danger(m.merge_refused()),
-								},
+								{ onError: () => toast.danger(m.merge_refused()) },
 							)
 						}
 					>

@@ -181,7 +181,7 @@ export function useRejectDuplicate(pinId: string) {
  * Merges a group into the pin it keeps, which the API answers with (specification 2026-10-05,
  * decision H). The absorbed pins leave every catalogue and the kept one is written in, unreloaded.
  */
-export function useMergePins() {
+export function useMergePins(merged: (kept: Pin) => void) {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: async (body: PinMerge) => {
@@ -189,6 +189,8 @@ export function useMergePins() {
 				await auth.client.POST("/api/v1/pins/merges", { body }),
 				"the merge",
 			);
+			// Before the open pin leaves the cache, in the same render: a dialog left with no pin closes.
+			merged(kept);
 			queryClient.setQueriesData<InfiniteData<PinPage>>(
 				{ queryKey: PINS },
 				(catalogue) =>
@@ -204,7 +206,6 @@ export function useMergePins() {
 			// The kept pin gained the absorbed pins' boards, whose counts lost them.
 			await queryClient.invalidateQueries({ queryKey: BOARDS });
 			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
-			return kept;
 		},
 	});
 }
