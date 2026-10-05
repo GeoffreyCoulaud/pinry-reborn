@@ -107,7 +107,6 @@ class MediaIngestionTest : BaseTest() {
         assertEquals(pinId, media.pinId)
         assertEquals(createdAt, media.createdAt)
         assertEquals(Triple(null, null, null), Triple(media.videoBitRate, media.audioChannels, media.audioBitRate))
-        assertEquals(MediaIngestion.PROBE_VERSION, media.probeVersion)
     }
 
     @Test fun `Given a file neither probe reads, Then the staged file is discarded and the image refusal rethrown`() {
@@ -163,7 +162,6 @@ class MediaIngestionTest : BaseTest() {
         assertEquals(25, media.frames)
         assertEquals(Duration.ofSeconds(1), media.duration)
         assertEquals(Triple(80_000L, 2, 64_000L), Triple(media.videoBitRate, media.audioChannels, media.audioBitRate))
-        assertEquals(MediaIngestion.PROBE_VERSION, media.probeVersion)
         assertEquals(7, media.byteSize)
         assertEquals("repackaged", media.contentHash)
         verify { store.discard(staged) }

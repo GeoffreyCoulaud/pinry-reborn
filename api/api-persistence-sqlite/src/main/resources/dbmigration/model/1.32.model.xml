@@ -4,8 +4,6 @@
         <addColumn tableName="media">
             <column name="video_bit_rate" type="bigint"/>
             <column name="audio_channels" type="integer"/>
-            <column name="audio_bit_rate" type="bigint"/>
-            <column name="probe_version" type="integer"/>
-        </addColumn>
+            <column name="audio_bit_rate" type="bigint"/>        </addColumn>
     </changeSet>
 </migration>

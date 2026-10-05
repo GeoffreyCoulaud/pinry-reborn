@@ -2,7 +2,6 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
@@ -398,9 +397,7 @@ class MediaHostingIntegrationTest : IntegrationTest() {
                 } else {
                     assertEquals(want, requireNotNull(got) { file.name }.toDouble(), want / 100, file.name)
                 }
-            }
-            assertEquals(MediaIngestion.PROBE_VERSION, media.probeVersion, file.name)
-        }
+            }        }
     }
 
     // The probe's own fixtures, generated once in the module that reads them (its README holds the commands).
