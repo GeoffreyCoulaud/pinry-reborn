@@ -2,9 +2,15 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DuplicateDecision.KEEP
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DuplicateDecision.MERGE
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DuplicateDecision.REJECT
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.DuplicateDecisionInputEnum
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinDuplicateResolutionInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinDuplicateUpdateInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinMergeInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.DuplicateResolver
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicate
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicates
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMerger
@@ -30,9 +36,11 @@ class PinDuplicateControllerTest {
         every { it.statesFor(any()) } returns emptyMap()
     }
     private val pinMerger = mockk<PinMerger>()
+    private val duplicateResolver = mockk<DuplicateResolver>()
     private val controller = PinDuplicateController(
         pinDuplicates = pinDuplicates,
         pinMerger = pinMerger,
+        duplicateResolver = duplicateResolver,
         securityIdentity = securityIdentity,
         pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
     )
@@ -74,6 +82,21 @@ class PinDuplicateControllerTest {
 
         // When
         val answered = controller.mergePins(PinMergeInputDto(kept.id, listOf(absorbed.id))).entity
+
+        // Then
+        assertEquals(kept.id, answered.id)
+    }
+
+    @Test
+    fun `Given a resolution, Then each decision reaches the resolver and the kept pin is answered`() {
+        // Given
+        val (open, kept, rejected) = List(3) { pin() }
+        val decisions = mapOf(open.id to MERGE, kept.id to KEEP, rejected.id to REJECT)
+        every { duplicateResolver.resolve(open.id, decisions, user) } returns kept
+        val wire = decisions.mapValues { DuplicateDecisionInputEnum.valueOf(it.value.name) }
+
+        // When
+        val answered = controller.resolveDuplicates(open.id, PinDuplicateResolutionInputDto(wire)).entity
 
         // Then
         assertEquals(kept.id, answered.id)

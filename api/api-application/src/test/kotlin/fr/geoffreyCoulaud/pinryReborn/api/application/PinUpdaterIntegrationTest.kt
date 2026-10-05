@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBin
@@ -354,5 +355,144 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
 
         // Then
         assertEquals(before, bodiesOf(auth to kept, auth to absorbed, auth to recycled))
+    }
+
+    // ==================== Resolution ====================
+
+    private fun resolve(auth: AuthenticatedUser, open: UUID, decisions: Map<String, String?>): ValidatableResponse =
+        given().authenticatedAs(auth).contentType(ContentType.JSON).body(mapOf("decisions" to decisions))
+            .post("/api/v1/pins/$open/duplicates/resolutions").then()
+
+    // The open pin first, paired with each of the others.
+    private fun group(auth: AuthenticatedUser, size: Int): List<Pin> {
+        val pins = List(size) { createPin(auth) }
+        duplicateRepository.addMissing(pins.first().id, pins.drop(1).map { it.id })
+        return pins
+    }
+
+    // Each pin as its owner reads it, and every pair with its rejection.
+    private fun stateOf(vararg pins: Pair<AuthenticatedUser, Pin>): List<Any> =
+        bodiesOf(*pins) + QPinDuplicateModel().findList().map { setOf(it.firstPinId, it.secondPinId) to it.rejectedAt }
+
+    // A set: pins created within one clock tick tie on the list's order.
+    private fun duplicatesOf(auth: AuthenticatedUser, pin: Pin): Set<Pair<String, Boolean>> {
+        val body = given().authenticatedAs(auth).get("/api/v1/pins/${pin.id}/duplicates")
+            .then().statusCode(200).extract().jsonPath()
+        return body.getList<String>("duplicates.pin.id").zip(body.getList<Boolean>("duplicates.rejected")).toSet()
+    }
+
+    @Test
+    fun `Given an unreadable or an invalid decision, Then the resolution returns 400 and changes nothing`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pins = group(auth, 3).map { auth to it }.toTypedArray()
+        val (open, other, third) = pins.map { "${it.second.id}" }
+        val before = stateOf(*pins)
+        val malformed = listOf(
+            mapOf("not-a-pin" to "KEEP", other to "MERGE"),
+            mapOf(open to "KEEP", other to "DROP"),
+            mapOf(open to "KEEP", other to null),
+        )
+        val invalid = listOf(
+            mapOf(open to "MERGE", other to "MERGE"),
+            mapOf(open to "KEEP", other to "KEEP"),
+            mapOf(other to "KEEP", third to "MERGE"),
+            mapOf(open to "REJECT", other to "KEEP"),
+            mapOf(open to "KEEP"),
+            List(PinIdsInputDto.MAX_IDENTIFIERS) { "${UUID.randomUUID()}" to "MERGE" }.toMap() + (open to "KEEP"),
+        )
+
+        // When, Then
+        val pinId = UUID.fromString(open)
+        malformed.forEach { resolve(auth, pinId, it).statusCode(400).body("code", equalTo("MALFORMED_BODY")) }
+        invalid.forEach { resolve(auth, pinId, it).statusCode(400).body("code", equalTo("VALIDATION_ERROR")) }
+        assertEquals(before, stateOf(*pins))
+    }
+
+    @Test
+    fun `Given a foreign, an unknown or a recycled open pin, Then the resolution refuses each and changes nothing`() {
+        // Given: each open pin paired with a candidate of its owner's
+        val auth = createAuthenticatedUser()
+        val foreignAuth = createAuthenticatedUser()
+        val (foreign, foreignCandidate) = group(foreignAuth, 2)
+        val (recycled, candidate) = group(auth, 2)
+        pinRecycleBin.softDelete(recycled.id, auth.user)
+        val pins = arrayOf(foreignAuth to foreign, foreignAuth to foreignCandidate, auth to recycled, auth to candidate)
+        val before = stateOf(*pins)
+        val refuse = { id: UUID, other: Pin -> resolve(auth, id, mapOf("$id" to "KEEP", "${other.id}" to "MERGE")) }
+
+        // When, Then
+        refuse(foreign.id, foreignCandidate).statusCode(403).body("code", equalTo("PIN_INSUFFICIENT_PERMISSIONS"))
+        refuse(UUID.randomUUID(), candidate).statusCode(404).body("code", equalTo("PIN_DOES_NOT_EXIST"))
+        refuse(recycled.id, candidate).statusCode(409).body("code", equalTo("PIN_ALREADY_SOFT_DELETED"))
+        assertEquals(before, stateOf(*pins))
+    }
+
+    @Test
+    fun `Given a named pin unpaired, unknown, foreign or recycled, Then the resolution refuses it, changing nothing`() {
+        // Given: the recycled candidate is paired with the open pin, which hides the pair
+        val auth = createAuthenticatedUser()
+        val foreignAuth = createAuthenticatedUser()
+        val (open, candidate, recycled) = group(auth, 3)
+        pinRecycleBin.softDelete(recycled.id, auth.user)
+        val unpaired = createPin(auth)
+        val foreign = createPin(foreignAuth)
+        val pins = arrayOf(auth to open, auth to candidate, auth to recycled, auth to unpaired, foreignAuth to foreign)
+        val before = stateOf(*pins)
+
+        // When, Then
+        listOf(unpaired.id, UUID.randomUUID(), foreign.id, recycled.id).forEach {
+            resolve(auth, open.id, mapOf("${open.id}" to "KEEP", "${candidate.id}" to "MERGE", "$it" to "REJECT"))
+                .statusCode(404).body("code", equalTo("DUPLICATE_DOES_NOT_EXIST"))
+        }
+        assertEquals(before, stateOf(*pins))
+    }
+
+    @Test
+    fun `Given the open pin merged into a candidate with a third, Then a fourth stays rejected against the kept pin`() {
+        // Given: the open pin paired with the three others, and the rejected one with the kept one too
+        val auth = createAuthenticatedUser()
+        val (openBoard, mergedBoard) = listOf("Open", "Merged")
+            .map { boardCreator.create(author = auth.user, name = it, description = "") }
+        val pins = group(auth, 4)
+        val (open, kept, merged) = pins
+        val rejected = pins.last()
+        replacePin(auth, open, tags = listOf("open"), boardIds = listOf(openBoard.id))
+        replacePin(auth, kept, tags = listOf("kept"))
+        replacePin(auth, merged, tags = listOf("merged"), boardIds = listOf(mergedBoard.id))
+        duplicateRepository.addMissing(rejected.id, listOf(kept.id))
+        val decisions = mapOf(open to "MERGE", kept to "KEEP", merged to "MERGE", rejected to "REJECT")
+
+        // When
+        val answered = resolve(auth, open.id, decisions.mapKeys { "${it.key.id}" })
+            .statusCode(200).extract().jsonPath()
+        val recycledAt = listOf(open, merged).map { readPin(auth, it).extract().path<String?>("softDeletedAt") }
+        val keptDuplicates = duplicatesOf(auth, kept)
+        pinRecycleBin.restore(open.id, auth.user)
+
+        // Then
+        assertEquals("${kept.id}", answered.getString("id"))
+        assertEquals(setOf("open", "kept", "merged"), answered.getList<String>("tags.name").toSet())
+        assertEquals(setOf("${openBoard.id}", "${mergedBoard.id}"), answered.getList<String>("boards.id").toSet())
+        assertNotNull(recycledAt.first())
+        assertEquals(recycledAt.first(), recycledAt.last())
+        assertEquals(setOf("${rejected.id}" to true), keptDuplicates)
+        assertEquals(setOf("${kept.id}" to false, "${rejected.id}" to true), duplicatesOf(auth, open))
+    }
+
+    @Test
+    fun `Given one of two candidates rejected alone, Then its pair is rejected, the other's pending, none recycled`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val (open, rejected, unnamed) = group(auth, 3)
+
+        // When
+        val answered = resolve(auth, open.id, mapOf("${open.id}" to "KEEP", "${rejected.id}" to "REJECT"))
+            .statusCode(200).extract().path<String>("id")
+
+        // Then
+        assertEquals("${open.id}", answered)
+        assertEquals(setOf("${rejected.id}" to true, "${unnamed.id}" to false), duplicatesOf(auth, open))
+        listOf(open, rejected, unnamed).forEach { readPin(auth, it).body("softDeletedAt", nullValue()) }
     }
 }

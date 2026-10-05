@@ -15,6 +15,7 @@ import java.util.UUID
 @ApplicationScoped
 class PinMerger(
     private val pinRepository: PinRepositoryInterface,
+    private val duplicateResolver: DuplicateResolver,
     private val clock: Clock,
     private val transactionRunner: TransactionRunner,
 ) {
@@ -23,21 +24,7 @@ class PinMerger(
         val found = pinRepository.findPinsByIds(listOf(keptPinId) + absorbedPinIds).associateBy { it.id }
         val kept = accepted(found[keptPinId], user)
         val absorbed = absorbedPinIds.map { accepted(found[it], user) }
-        val now = clock.now()
-        val merged = pinRepository.savePin(
-            kept.copy(
-                description = kept.description.ifBlank {
-                    absorbed.map { it.description }.firstOrNull { it.isNotBlank() } ?: kept.description
-                },
-                sourceContextUrl = kept.sourceContextUrl ?: absorbed.firstNotNullOfOrNull { it.sourceContextUrl },
-                tags = (kept.tags + absorbed.flatMap { it.tags }).distinct(),
-                boards = (kept.boards + absorbed.flatMap { it.boards }).distinct(),
-                updatedAt = now,
-            ),
-        )
-        // Their pairs stay theirs, hidden while they are recycled: the kept media was not measured against them.
-        pinRepository.softDeletePins(pinIds = absorbedPinIds, at = now)
-        merged
+        duplicateResolver.absorb(kept, absorbed, clock.now())
     }
 
     @Suppress("ThrowsCount") // The three refusals a pin earns, wherever it was named.

@@ -165,6 +165,11 @@ class BaseErrorMapperTest {
     }
 
     @Test
+    fun `Given DUPLICATE_RESOLUTION_INVALID, Then the wire reads VALIDATION_ERROR with BAD_REQUEST`() {
+        assertEquals(ProblemCode.VALIDATION_ERROR to 400, mapper.problemFor(ErrorCode.DUPLICATE_RESOLUTION_INVALID))
+    }
+
+    @Test
     fun `Given BOARD_NOT_SOFT_DELETED, Then status is CONFLICT`() {
         assertEquals(Response.Status.CONFLICT, statusFor(ErrorCode.BOARD_NOT_SOFT_DELETED))
     }
