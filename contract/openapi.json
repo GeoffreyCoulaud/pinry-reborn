@@ -451,6 +451,25 @@
         "type" : "string",
         "enum" : [ "NONE", "PENDING", "READY", "FAILED" ]
       },
+      "PinMergeInputDto" : {
+        "type" : "object",
+        "required" : [ "keptPinId", "absorbedPinIds" ],
+        "properties" : {
+          "keptPinId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "absorbedPinIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid",
+              "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+            },
+            "maxItems" : 10000,
+            "minItems" : 1
+          }
+        }
+      },
       "PinOutputDto" : {
         "type" : "object",
         "required" : [ "id", "authorId", "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boards", "hasPendingDuplicates" ],
@@ -3178,6 +3197,75 @@
         } ]
       }
     },
+    "/api/v1/pins/merges" : {
+      "post" : {
+        "summary" : "Merge pins into the kept one, all or nothing",
+        "description" : "The kept pin keeps its media, its description and its sources, and gains every board and tag of the absorbed pins. A blank description and a missing page address are filled from the first absorbed pin, in the list's order, that has one. The absorbed pins go to the recycle bin, and their likely duplicates are not carried over.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PinMergeInputDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "The kept pin, merged",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PinOutputDto"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "The body is missing, or the absorbed list is empty, too long, names a pin twice or names the kept pin",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "VALIDATION_ERROR", "MALFORMED_BODY" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/PinInBodyNotFound"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/PinAlreadyRecycled"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "413" : {
+            "$ref" : "#/components/responses/BodyTooLarge"
+          }
+        },
+        "tags" : [ "Pin Duplicate Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      }
+    },
     "/api/v1/pins/recycled" : {
       "get" : {
         "parameters" : [ {
@@ -4261,7 +4349,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "22.2.0"
+    "version" : "22.3.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",
