@@ -1,5 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.video.ffmpeg
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FrameSampler
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.LumaFrame
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits.Companion.MAX_FRAME_SIDE
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoContainer
@@ -7,6 +11,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import fr.geoffreyCoulaud.pinryReborn.api.utilities.PpmReader
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.ProcessOutcome
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.ProcessRunner
 import java.io.OutputStream
@@ -16,12 +21,15 @@ import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.time.Duration
 import java.util.HexFormat
+import java.util.Locale
 
 /**
- * [VideoProcessor] running the `ffprobe` and `ffmpeg` on the `PATH`, each destroyed past [timeout] (ADR 0047) and
- * capped at [maxAddressSpace] bytes (ADR 0050), its previews encoded at [webpQuality].
+ * [VideoProcessor] and a video's [FrameSampler] running the `ffprobe` and `ffmpeg` on the `PATH`, each destroyed past
+ * [timeout] (ADR 0047) and capped at [maxAddressSpace] bytes (ADR 0050), its previews encoded at [webpQuality].
  */
-class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val webpQuality: Int) : VideoProcessor {
+class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val webpQuality: Int) :
+    VideoProcessor,
+    FrameSampler {
     private val runner = ProcessRunner(timeout, maxAddressSpace)
 
     override fun probe(staged: StagedFile, maxDuration: Duration): VideoProbeResult {
@@ -58,6 +66,25 @@ class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val
         val filters = listOf("-t", "3", "-vf", "$SQUARE_PIXELS,fps=12,${scaleTo(shortestSide)}")
         val encoder = listOf("-c:v", "libwebp_anim", "-quality", "$webpQuality", "-loop", "0", "-f", "webp")
         return write(staged, filters + encoder, ::renderCommand)
+    }
+
+    // One pass writes a PPM per frame beside the input, each read and deleted before the next is handed over.
+    override fun sample(media: Media, staged: StagedFile, onFrame: (LumaFrame) -> Unit) {
+        val directory = Files.createTempDirectory(Path.of(staged.path).toAbsolutePath().parent, "frames-")
+        try {
+            val instants = FrameSampler.instants(media.duration ?: Duration.ZERO)
+            val select = instants.joinToString("+", transform = ::firstFrameAt)
+            val filters = listOf("-map", "0:v:0", "-vf", "select='$select',$SQUARE_PIXELS,$BOUNDED_FRAME")
+            val frames = listOf("-fps_mode", "passthrough", "-pix_fmt", "rgb24", "-f", "image2")
+            run(renderCommand(staged.path, filters + frames, directory.resolve("%06d.ppm").toString()))
+            for (frame in Files.list(directory).use { it.sorted().toList() }) {
+                val raster = PpmReader.read(frame, MAX_FRAME_SIDE)
+                Files.delete(frame)
+                onFrame(LumaFrame.ofRgb(raster.width, raster.height, raster.rgb))
+            }
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
     }
 
     private fun copyCommand(input: String, options: List<String>, output: String) =
@@ -114,6 +141,17 @@ class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val
         // An anamorphic source's pixels made square, so a rendition keeps the proportions the video displays at.
         const val SQUARE_PIXELS = "scale=iw*sar:ih,setsar=1"
 
+        // Downscaled to fit the bound, never upscaled.
+        const val BOUNDED_FRAME =
+            "scale='min($MAX_FRAME_SIDE,iw)':'min($MAX_FRAME_SIDE,ih)':force_original_aspect_ratio=decrease"
+        const val MILLIS_PER_SECOND = 1000.0
+
         fun scaleTo(shortestSide: Int) = "scale=$shortestSide:$shortestSide:force_original_aspect_ratio=increase"
+
+        // Selects the first frame at or after [instant].
+        fun firstFrameAt(instant: Duration): String {
+            val seconds = "%.3f".format(Locale.ROOT, instant.toMillis() / MILLIS_PER_SECOND)
+            return "gte(t,$seconds)*not(gte(prev_t,$seconds))"
+        }
     }
 }
