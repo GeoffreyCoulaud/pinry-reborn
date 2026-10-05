@@ -1,11 +1,15 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FrameSampler
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.LumaFrame
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.imaging.vips.VipsImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.imaging.vips.VipsImageTransformer
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
@@ -62,4 +66,16 @@ class MediaAdapterProducers {
     @ApplicationScoped
     fun imageTransformer(config: MediaConfig, renditions: RenditionsConfig): ImageTransformer =
         VipsImageTransformer(renditions.webpQuality(), config.decoderTimeout(), config.decoderMemoryBytes())
+
+    /** A video's frames from ffmpeg, an image's from vips: both adapters implement the port. */
+    @Produces
+    @ApplicationScoped
+    fun frameSampler(config: MediaConfig, renditions: RenditionsConfig): FrameSampler {
+        val video = FfmpegVideoProcessor(config.decoderTimeout(), config.decoderMemoryBytes(), renditions.webpQuality())
+        val image = VipsImageTransformer(renditions.webpQuality(), config.decoderTimeout(), config.decoderMemoryBytes())
+        return object : FrameSampler {
+            override fun sample(media: Media, staged: StagedFile, onFrame: (LumaFrame) -> Unit) =
+                (if (media.isVideo) video else image).sample(media, staged, onFrame)
+        }
+    }
 }
