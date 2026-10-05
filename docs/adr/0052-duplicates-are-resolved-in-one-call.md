@@ -3,8 +3,8 @@
 Status: Accepted
 Date: 2026-10-05
 Specification: `docs/specs/2026-10-05-the-duplicates-are-compared.md`, decisions B and C.
-Supersedes the merge and rejection routes of `docs/adr/0051-duplicates-are-found-by-frame-hashes-in-bands.md`,
-decisions 8 and 9, which keep their effects.
+Supersedes the rejection and merge operations of `docs/adr/0051-duplicates-are-found-by-frame-hashes-in-bands.md`,
+decision 9, and decision 8's fill order; decision 8's effects stand.
 Written in block 10.
 
 ## Context
@@ -20,16 +20,22 @@ and leave the screen and the server disagreeing.
    (`docs/adr/0039-a-batch-route-is-all-or-nothing.md`). It replaces `POST /api/v1/pins/merges` and
    `PUT /api/v1/pins/{pinId}/duplicates/{otherPinId}`, which leave the contract.
 2. **The path names the open pin, and the body the kept one.** Similarity is not transitive: a candidate pairs with
-   the open pin, not always with the pin the user keeps, so only the open pin's list holds the whole group.
+   the open pin, not always with the pin the user keeps, so only the open pin's list holds the whole group. A pin the
+   body names is judged as a member of that list: one that is not, whether absent, recycled or another user's,
+   answers 404 `DUPLICATE_DOES_NOT_EXIST`, in place of the 403, 404 and 409 ADR 0039 gives a named pin. The path's
+   pin keeps ADR 0039's three.
 3. **The body gives each named pin one decision**, `{"decisions": {"<pinId>": "KEEP" | "MERGE" | "REJECT"}}`. An
-   object keyed by pin cannot name a pin twice, and one `KEEP` among its values says which pin survives.
+   object keyed by pin cannot name a pin twice, and one `KEEP` among its values says which pin survives. An object
+   has no order, so the kept pin's blank description and missing page address fill from the absorbed pins oldest
+   first.
 4. **The answer is the kept pin**, which is why the call is a `POST` that creates a resolution rather than a change
-   to the list. A `PATCH` answers with its own target's new state, and the open pin's list can vanish with the open
-   pin itself when it is merged. JSON Patch (RFC 6902) cannot express a merge: its result must be what the next `GET`
-   returns, and no field of the list says which pin was kept. A `DELETE` misnames a rejection, which the list still
-   shows.
+   to the list. A `PATCH` is expected to answer with its own target's new state, and the open pin's list vanishes
+   with the open pin when it is merged. JSON Patch (RFC 6902) cannot express a merge: its result must be what the
+   next `GET` returns, and no field of the list says which pin was kept. A `DELETE` misnames a rejection, which the
+   list still shows.
 5. **A rejection holds against the whole group**: the rejected pin's pair with every kept or merged pin it pairs
-   with is rejected, so it does not come back as the kept pin's candidate once the open pin is merged.
+   with is rejected, before any pin is recycled, so it does not come back as the kept pin's candidate once the open
+   pin is merged.
 
    **Fails if** a gesture of the web application writes a duplicate's state through another route.
 
