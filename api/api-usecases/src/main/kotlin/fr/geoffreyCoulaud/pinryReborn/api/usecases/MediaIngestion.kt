@@ -75,7 +75,7 @@ class MediaIngestion(
                 contentHash = found.stored.contentHash, storageKey = storageKey, createdAt = createdAt,
                 frames = found.measured.frames, duration = found.measured.duration,
                 videoBitRate = video?.videoBitRate, audioChannels = video?.audioChannels,
-                audioBitRate = video?.audioBitRate, probeVersion = PROBE_VERSION,
+                audioBitRate = video?.audioBitRate,
             )
         return IngestedMedia(media, found.stored)
     }
@@ -143,9 +143,4 @@ class MediaIngestion(
         val animated: Boolean,
         val stored: StagedFile,
     )
-
-    companion object {
-        /** The version of what the probe measures, stamped on every row ingestion builds. */
-        const val PROBE_VERSION = 1
-    }
 }

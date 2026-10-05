@@ -22,8 +22,6 @@ data class Media(
     val videoBitRate: Long? = null,
     val audioChannels: Int? = null,
     val audioBitRate: Long? = null,
-    // The probe that measured the row, null before lot 0.49.0.
-    val probeVersion: Int? = null,
 ) : Identifiable {
     val isVideo: Boolean get() = mimeType.startsWith("video/")
 }
