@@ -42,6 +42,10 @@ first reason false and reopened it with the operator, who kept it. The closing b
   square at 165x165 at both widths, `?size=SMALL&animated=false` asked, both images cropped to the centre, the
   failed cover showing the "preview unavailable" icon, the empty board its placeholder. The reading found one
   defect, a tile with no description lifting its foot above its row's, fixed before the push (`mt-auto`).
+- (Corrected: closing block, `dagger call gate` green at `45c53bf`; budget 67 lines, 6 files against
+  `feat/the-boards-are-a-grid`. Read headless again the same way after its fixes: every cover `loading="lazy"`, the
+  long description on 2 lines at both widths, the failed cover's stand-in `aria-hidden` with no `role`, the link's
+  text the board's name alone.)
 
 ## Pitfalls
 
@@ -124,4 +128,5 @@ not yet given.)
 
 Wrap: the holistic review over `git diff lot/0.46.0-a-medias-limits-hold-in-four-layers..origin/feat/the-boards-are-a-grid`,
 then the closing block, the operator's review of the stack, and the tag `lot/0.47.0-the-boards-wear-their-cover`
-once it merges.
+once it merges. (Corrected: the review and the closing block are done; what remains is the operator's review of the
+stack, its merge, and the tag.)
