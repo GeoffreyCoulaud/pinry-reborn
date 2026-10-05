@@ -25,6 +25,7 @@ object PinMapper {
         description = description,
         tags = tags.map { it.toDto() },
         boards = boards.map { it.toRefDto() },
+        createdAt = createdAt,
         softDeletedAt = softDeletedAt,
         media = mediaStates[id]?.toDto(id),
         hasPendingDuplicates = id in pendingDuplicates,

@@ -428,6 +428,22 @@
             "type" : [ "integer", "null" ],
             "format" : "int64"
           },
+          "durationMillis" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          },
+          "videoBitRate" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          },
+          "audioChannels" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "audioBitRate" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          },
           "reasonCode" : {
             "anyOf" : [ {
               "$ref" : "#/components/schemas/DownloadReasonDto"
@@ -472,7 +488,7 @@
       },
       "PinOutputDto" : {
         "type" : "object",
-        "required" : [ "id", "authorId", "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boards", "hasPendingDuplicates" ],
+        "required" : [ "id", "authorId", "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boards", "createdAt", "hasPendingDuplicates" ],
         "properties" : {
           "id" : {
             "$ref" : "#/components/schemas/UUID"
@@ -500,6 +516,9 @@
             "items" : {
               "$ref" : "#/components/schemas/BoardRefDto"
             }
+          },
+          "createdAt" : {
+            "$ref" : "#/components/schemas/Instant"
           },
           "softDeletedAt" : {
             "anyOf" : [ {
@@ -4349,7 +4368,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "22.3.0"
+    "version" : "22.4.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

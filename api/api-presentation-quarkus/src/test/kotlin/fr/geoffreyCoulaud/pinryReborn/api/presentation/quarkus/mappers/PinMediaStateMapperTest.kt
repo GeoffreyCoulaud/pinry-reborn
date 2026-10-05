@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
 
@@ -27,6 +28,19 @@ class PinMediaStateMapperTest {
         assertEquals(PinMediaStatusDto.READY, dto.status)
         assertEquals("/api/v1/pins/$pinId/media", dto.url)
         assertEquals(4, dto.width)
+    }
+
+    @Test fun `Given a READY video, Then the dto carries its duration, rates and channels`() {
+        val video = Media(
+            randomUUID(), pinId, "video/mp4", 4, 5, true, 6, "h", "originals/x/$pinId/v.mp4", Instant.EPOCH,
+            frames = 30, duration = Duration.ofMillis(1_500),
+            videoBitRate = 4_200_000, audioChannels = 2, audioBitRate = 128_000,
+        )
+        val dto = PinMediaState(PinMediaStatus.READY, video, null, null).toDto(pinId)
+        assertEquals(1_500L, dto.durationMillis)
+        assertEquals(4_200_000L, dto.videoBitRate)
+        assertEquals(2, dto.audioChannels)
+        assertEquals(128_000L, dto.audioBitRate)
     }
 
     @Test fun `Given FAILED, Then the dto carries the reason code and a message`() {
@@ -59,6 +73,10 @@ class PinMediaStateMapperTest {
         assertNull(dto.width)
         assertNull(dto.height)
         assertNull(dto.byteSize)
+        assertNull(dto.durationMillis)
+        assertNull(dto.videoBitRate)
+        assertNull(dto.audioChannels)
+        assertNull(dto.audioBitRate)
         assertNull(dto.reasonCode)
         assertNull(dto.message)
         assertNull(dto.replacement)
