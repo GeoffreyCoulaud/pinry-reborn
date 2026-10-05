@@ -156,6 +156,10 @@ write and writes nothing on a refusal (ADR 0039).
 | 80 | `feat/the-dialog-merges-a-group` | Decision B's merge. |
 
 Blocks 30 and 40 are the likeliest to pass a bound; one that does splits at a number between its own and the next.
+*(Corrected on 2026-10-05 in block 40: its drain alone measured 836 lines, so it splits in three on one stack. 40
+keeps the ports and SQLite adapters the drain asks; 43 `feat/the-worker-hashes-media`, on 40, holds `FingerprintMedia`,
+its task, its handler and the enqueue after an upload; 46 `feat/the-worker-sweeps-fingerprints`, on 43, holds the
+other enqueues, the orphan sweep and the integration test of block 40's cases below. 50 stacks on 46.)*
 
 ### Block 10
 
