@@ -1,9 +1,14 @@
 package fr.geoffreyCoulaud.pinryReborn.api.imaging.vips
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FrameSampler
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.LumaFrame
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits.Companion.MAX_FRAME_SIDE
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionSpec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import fr.geoffreyCoulaud.pinryReborn.api.utilities.PpmReader
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.ProcessOutcome
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.ProcessRunner
 import java.io.InputStream
@@ -14,14 +19,31 @@ import java.time.Duration
 import java.util.HexFormat
 
 /**
- * [ImageTransformer] running `vips thumbnail` from the `PATH`, destroyed past [timeout] and capped at
- * [maxAddressSpace] bytes (ADR 0050), its WebP encoded at [quality].
- *
- * Not `@ApplicationScoped`: ARC cannot resolve its plain constructor parameters, so a producer in
- * the composition root builds it (mirrors `FilesystemMediaStore`).
+ * [ImageTransformer] to WebP at [quality] and an image's [FrameSampler], running `vips` destroyed past [timeout] and
+ * capped at [maxAddressSpace] bytes (ADR 0050). Not `@ApplicationScoped`: ARC cannot resolve its plain parameters.
  */
-class VipsImageTransformer(private val quality: Int, timeout: Duration, maxAddressSpace: Long) : ImageTransformer {
+class VipsImageTransformer(private val quality: Int, timeout: Duration, maxAddressSpace: Long) :
+    ImageTransformer,
+    FrameSampler {
     private val runner = ProcessRunner(timeout, maxAddressSpace)
+
+    // One page decoded at a time into one file beside the input, its alpha flattened on white.
+    override fun sample(media: Media, staged: StagedFile, onFrame: (LumaFrame) -> Unit) {
+        val pages = if (media.animated) FrameSampler.pages(delays(staged)).map { "[page=$it]" } else listOf("")
+        val frame = Files.createTempFile(Path.of(staged.path).toAbsolutePath().parent, "frame-", ".ppm")
+        try {
+            for (page in pages) {
+                run(listOf("vips", "thumbnail", staged.path + page, "$frame[background=255]", "$MAX_FRAME_SIDE"))
+                val raster = PpmReader.read(frame, MAX_FRAME_SIDE)
+                onFrame(LumaFrame.ofRgb(raster.width, raster.height, raster.rgb))
+            }
+        } finally {
+            Files.deleteIfExists(frame)
+        }
+    }
+
+    private fun delays(staged: StagedFile): List<Duration> =
+        run(listOf("vipsheader", "-f", "delay", staged.path)).trim().split(' ').map { Duration.ofMillis(it.toLong()) }
 
     private companion object {
         private val HEX = HexFormat.of()
@@ -59,12 +81,15 @@ class VipsImageTransformer(private val quality: Int, timeout: Duration, maxAddre
             listOf("--height", "$height", "--size", "down", "--no-rotate")
     }
 
-    private fun run(command: List<String>) {
+    private fun run(command: List<String>): String =
         when (val outcome = runner.run(command)) {
             is ProcessOutcome.TimedOut ->
-                throw UndecodableImageException("vips ran past ${outcome.timeout} and was destroyed")
-            is ProcessOutcome.Exited ->
-                if (outcome.code != 0) throw UndecodableImageException("vips refused it: ${outcome.errors.trim()}")
+                throw UndecodableImageException("${command.first()} ran past ${outcome.timeout} and was destroyed")
+            is ProcessOutcome.Exited -> {
+                if (outcome.code != 0) {
+                    throw UndecodableImageException("${command.first()} refused it: ${outcome.errors.trim()}")
+                }
+                outcome.output
+            }
         }
-    }
 }
