@@ -63,7 +63,8 @@ first and learns its duplicates once the worker has hashed its media.
 **B. A duplicate is shown, then merged by group** (B, L). The dialog lists the pin's candidates. One choice, *to
 keep*, covers the open pin and every pending candidate; each candidate has an *include* check, checked by default.
 *Merge* acts on the kept pin and the included candidates in one call. The tile carries one marker, "has duplicates",
-while its pin has a pending candidate; only the dialog names the relation. A pin opened from the list has no previous
+while its pin has a pending candidate; only the dialog names the relation *(corrected: there is no relation to
+name, decision E)*. A pin opened from the list has no previous
 or next: those belong to the grid.
 
 **C. A false match is rejected per pair, remembered and reversible** (C, D). *Not a duplicate* hides the candidate
@@ -79,7 +80,10 @@ random rows: `MULTI-INDEX OR` over the sixteen indexes, no `SCAN`, 410 candidate
 
 **E. A media is a bag of frames, after vPDQ** (G, I). Two media are a pair when 80 % or more of the unique frames of
 either find a frame of the other within 31 bits. Both ways is `DUPLICATE`; one way only makes the media whose frames
-were found an excerpt of the other.
+were found an excerpt of the other. *(Corrected on 2026-10-05 in block 20: a pair is 80 % both ways, always a
+duplicate, and excerpts leave the lot. Block 20 measured a frame a quarter second off its source's whole seconds at
+32 to 36 bits from its nearest source frame, so an excerpt was found only when it started on a whole second. The
+operator moved excerpt detection to the backlog as a feature of its own.)*
 
 **F. Two motion levels** (F). A media is compared only with media whose `animated` is equal: still with still,
 animated image or video with animated image or video.
@@ -107,7 +111,7 @@ the absorbed pin's partners. A recycled pin's pairs are hidden (decision J) and 
   only with media at the current version.
 
 **J. Pairs belong to pins, and the search includes the recycle bin** (K). A pair row holds the two pin ids in
-ascending order, its relation and `rejected_at`. A pair is shown, and counts for the marker, only when both pins are
+ascending order, its relation and `rejected_at` *(corrected: no relation, decision E)*. A pair is shown, and counts for the marker, only when both pins are
 active; a hidden pair does not exist for the API. Restoring a pin shows its pairs again with nothing recomputed.
 Frame rows whose media is gone and pair rows whose pin is gone are deleted by one sweep in
 `GarbageCollectionLifecycle`, not at the five deletion sites; until then the joins of every read drop them. Both
@@ -124,7 +128,8 @@ which guards requests.
 
 **L. The contract** (B, C, L). `relation` reads from the path's pin and is an `x-extensible-enum` (ADR 0044):
 `DUPLICATE`, `EXCERPT` (the candidate is an excerpt of this pin), `SOURCE` (this pin is an excerpt of the
-candidate). `pin` is the candidate's `PinOutputDto`, so the dialog can show and open a pin the grid has not loaded.
+candidate). *(Corrected: `relation` is dropped, decision E; an item is `{pin, rejected}`.)* `pin` is the
+candidate's `PinOutputDto`, so the dialog can show and open a pin the grid has not loaded.
 Block 50 makes it `22.2.0`, block 60 `22.3.0`.
 
 | Operation | Body | Answer | Refusals |
@@ -180,7 +185,8 @@ Blocks 30 and 40 are the likeliest to pass a bound; one that does splits at a nu
 - A uniform frame's quality is 49 or less.
 - Measured and reported, not asserted: the share of a 3-second cut's frames matched in its 10-second source when the
   cut starts on a whole second and half a second later, on `ffmpeg -f lavfi -i mandelbrot`. A half-second offset
-  that falls under 80 % is a limit the pull request records.
+  that falls under 80 % is a limit the pull request records. *(Corrected: the measurement moved excerpts to the
+  backlog, decision E; the pull request reports it as that item's evidence.)*
 
 ### Block 30
 
@@ -205,7 +211,8 @@ Blocks 30 and 40 are the likeliest to pass a bound; one that does splits at a nu
   and the still stores one frame. The same picture pinned by another user makes nothing. A still and a video whose
   every frame is that still make nothing.
 - A 10-second `mandelbrot` video and its 3-second cut starting on a whole second make the cut an excerpt; the video
-  and itself re-encoded make a `DUPLICATE`.
+  and itself re-encoded make a `DUPLICATE`. *(Corrected, decision E: the video and itself re-encoded make a pair,
+  and its 3-second cut makes none.)*
 - A black video's frames are all dropped; it gets its version and makes no pair.
 - A corrupt media between two good ones: both good ones are hashed, the corrupt one is stamped with no frames.
 - Raising the version: after the first media of a pair is hashed again and before the second, the pending pair is
@@ -217,7 +224,7 @@ Blocks 30 and 40 are the likeliest to pass a bound; one that does splits at a nu
 - `hasPendingDuplicates` is true for both pins of a pending pair, false once rejected, false once either is
   recycled. `PinResponses` asks for a page's flags in one repository call over the page's pin ids, as it asks
   `ResolvePinMediaState.statesFor`; a unit test with a fake counts one call.
-- `GET` lists both relations from either side, and answers an empty list for a recycled pin; the refusals of
+- `GET` lists both relations from either side *(corrected: lists the pair from either side, decision E)*, and answers an empty list for a recycled pin; the refusals of
   decision L.
 - `PUT` rejects and restores; a pair hidden by a recycled pin is 404 `DUPLICATE_DOES_NOT_EXIST`.
 - `oasdiff changelog` against `main` lists the new field and the two operations; `info.version` is `22.2.0`.
@@ -234,7 +241,8 @@ Blocks 30 and 40 are the likeliest to pass a bound; one that does splits at a nu
 ### Block 70
 
 - The marker in a bottom corner of the tile, with an accessible name, when `hasPendingDuplicates`.
-- The dialog lists pending candidates with their thumbnail, dimensions or duration, and relation; *Not a duplicate*
+- The dialog lists pending candidates with their thumbnail, dimensions or duration, and relation *(corrected: no
+  relation, decision E)*; *Not a duplicate*
   folds one under "Rejected (n)", *Restore* brings it back. Opening a candidate shows it in the dialog whether or not
   the grid has loaded it, with no previous or next.
 - Journeys "reject a duplicate" and "open a duplicate".
@@ -269,3 +277,5 @@ Blocks 30 and 40 are the likeliest to pass a bound; one that does splits at a nu
 - **Duplicates across users.** Observed in block 40's test of the same picture pinned by another user.
 - **Rotated or mirrored copies** (ADR 0051, consequences). Observed as a still storing one frame in block 40.
 - **Carrying pairs at a merge** (decision H). Observed in block 60's merge test.
+- **Excerpts** *(added on 2026-10-05 in block 20, decision E)*. Observed in block 40's test of the 3-second cut,
+  which makes no pair. Filed in the backlog under Features.
