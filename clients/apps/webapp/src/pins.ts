@@ -9,13 +9,14 @@ import {
 } from "@tanstack/react-query";
 import { auth, bodyOf } from "./api";
 import type { PinSort } from "./lib/sorts";
-import { removePins } from "./lib/tiles";
+import { removePins, replacePins } from "./lib/tiles";
 import { rereadSettledPins } from "./media";
 
 export type Pin = Schemas["PinOutputDto"];
 export type PinPage = Schemas["PinListOutputDto"];
 export type PinUpdate = Schemas["PinUpdateInputDto"];
 export type Duplicate = Schemas["PinDuplicateOutputDto"];
+export type PinMerge = Schemas["PinMergeInputDto"];
 
 const PAGE_SIZE = 40;
 
@@ -172,6 +173,38 @@ export function useRejectDuplicate(pinId: string) {
 			await rereadSettledPins(queryClient, [pinId, otherPinId]).catch(() =>
 				queryClient.invalidateQueries({ queryKey: PINS }),
 			);
+		},
+	});
+}
+
+/**
+ * Merges a group into the pin it keeps, which the API answers with (specification 2026-10-05,
+ * decision H). The absorbed pins leave every catalogue and the kept one is written in, unreloaded.
+ */
+export function useMergePins() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (body: PinMerge) => {
+			const kept = bodyOf(
+				await auth.client.POST("/api/v1/pins/merges", { body }),
+				"the merge",
+			);
+			queryClient.setQueriesData<InfiniteData<PinPage>>(
+				{ queryKey: PINS },
+				(catalogue) =>
+					catalogue === undefined
+						? catalogue
+						: {
+								...catalogue,
+								pages: removePins(catalogue.pages, body.absorbedPinIds).map(
+									(page) => ({ ...page, pins: replacePins(page.pins, [kept]) }),
+								),
+							},
+			);
+			// The kept pin gained the absorbed pins' boards, whose counts lost them.
+			await queryClient.invalidateQueries({ queryKey: BOARDS });
+			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
+			return kept;
 		},
 	});
 }

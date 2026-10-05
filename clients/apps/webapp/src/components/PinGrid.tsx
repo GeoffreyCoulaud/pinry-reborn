@@ -130,21 +130,28 @@ function preloadNeighbours(around: (Pin | undefined)[], rendition: Rendition) {
 	}
 }
 
-/** The open pin. One opened from another's duplicates may lie past the loaded pages, and steps nowhere (decision B). */
+/**
+ * The open pin. One opened from another's duplicates, or kept by a merge, may lie past the loaded
+ * pages, and steps nowhere (decision B).
+ */
 function useOpened(loaded: Pin[]) {
-	const [shown, setShown] = useState<{ id: string; listedBy?: string } | null>(
-		null,
-	);
+	const [shown, setShown] = useState<{
+		id: string;
+		listedBy?: string;
+		kept?: Pin;
+	} | null>(null);
 	const openedId = shown?.id ?? null;
 	const listing = useDuplicates(shown?.listedBy).data;
 	// Among every loaded pin, so a retried download that turns it `PENDING` keeps it open (decision E).
+	const inGrid = loaded.find((pin) => pin.id === openedId);
 	const opened =
-		loaded.find((pin) => pin.id === openedId) ??
-		listing?.find((one) => one.pin.id === openedId)?.pin;
+		inGrid ??
+		listing?.find((one) => one.pin.id === openedId)?.pin ??
+		shown?.kept;
 	return {
 		openedId,
 		opened,
-		fromList: shown?.listedBy !== undefined,
+		fromList: shown?.listedBy !== undefined || inGrid === undefined,
 		setShown,
 	};
 }
@@ -309,6 +316,7 @@ export function PinGrid({
 								previous={stepToPrevious}
 								next={stepToNext}
 								openDuplicate={(id) => setShown({ id, listedBy: opened.id })}
+								merged={(kept) => setShown({ id: kept.id, kept })}
 							/>
 						) : null}
 					</Modal.Dialog>

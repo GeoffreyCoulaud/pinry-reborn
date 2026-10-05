@@ -9,6 +9,7 @@ import {
 	downloadsRoute,
 	duplicateRoutes,
 	handshakeRoute,
+	onePinPage,
 	type Pair,
 	readyPin,
 	renderApp,
@@ -20,15 +21,18 @@ import { server } from "../test/server";
 const image = (description: string) =>
 	screen.queryByRole("img", { name: description, hidden: true });
 
+const marked = (description: string) => ({
+	...readyPin(description),
+	hasPendingDuplicates: true,
+});
+
 describe("merge a group of duplicates", () => {
 	it("Given a pin with three duplicates, When the third is kept and the fourth left out, Then the dialog shows the kept pin, the absorbed ones leave the grid, and the boards are read again", async () => {
 		const harbours = board("Harbours", "", 4);
-		const [open, smaller, kept, noon] = [
-			readyPin("a harbour at dusk"),
-			readyPin("the same harbour, smaller"),
-			readyPin("the same harbour, cropped"),
-			readyPin("the same harbour at noon"),
-		].map((one) => ({ ...one, hasPendingDuplicates: true }));
+		const open = marked("a harbour at dusk");
+		const smaller = marked("the same harbour, smaller");
+		const kept = marked("the same harbour, cropped");
+		const noon = marked("the same harbour at noon");
 		const pairs: Pair[] = [smaller, kept, noon].map((other) => ({
 			pins: [open, other],
 			rejected: false,
@@ -92,5 +96,38 @@ describe("merge a group of duplicates", () => {
 		expect(image(smaller.description)).toBeNull();
 		expect(image(noon.description)).not.toBeNull();
 		await waitFor(() => expect(boardReads).toBeGreaterThan(readsBefore));
+	});
+
+	it("Given a duplicate the grid has not loaded, When it is kept, Then the dialog shows it, and it steps nowhere", async () => {
+		const open = marked("a harbour at dusk");
+		const far = marked("the same harbour, far down the catalogue");
+		server.use(
+			sessionRoute(() => true),
+			onePinPage(() => [open, readyPin("a cat asleep")]),
+			...duplicateRoutes([{ pins: [open, far], rejected: false }]),
+			http.post("/api/v1/pins/merges", () => HttpResponse.json(far)),
+			downloadsRoute(),
+			handshakeRoute(),
+		);
+		renderApp("/");
+		const user = userEvent.setup();
+
+		await user.click(
+			await screen.findByRole("img", { name: open.description }),
+		);
+		const dialog = await screen.findByRole("dialog");
+		await user.click(
+			await within(dialog).findByRole("radio", {
+				name: m.merge_keep_pin({ description: far.description }),
+			}),
+		);
+		await user.click(
+			within(dialog).getByRole("button", { name: m.merge({ count: 2 }) }),
+		);
+
+		const shown = await screen.findByRole("dialog", { name: far.description });
+		for (const name of [m.pin_previous(), m.pin_next()]) {
+			expect(within(shown).getByRole("button", { name })).toBeDisabled();
+		}
 	});
 });
