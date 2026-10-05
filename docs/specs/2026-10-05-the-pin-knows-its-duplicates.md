@@ -135,7 +135,7 @@ Block 50 makes it `22.2.0`, block 60 `22.3.0`.
 | Operation | Body | Answer | Refusals |
 |---|---|---|---|
 | `PinOutputDto.hasPendingDuplicates` | | required boolean on every pin | |
-| `GET /api/v1/pins/{pinId}/duplicates` | | 200 `{duplicates: [{pin, relation, rejected}]}`, empty for a recycled pin | 403 `PIN_INSUFFICIENT_PERMISSIONS`, 404 `PIN_DOES_NOT_EXIST` |
+| `GET /api/v1/pins/{pinId}/duplicates` | | 200 `{duplicates: [{pin, relation, rejected}]}` *(corrected: `{pin, rejected}`, no relation, decision E)*, empty for a recycled pin | 403 `PIN_INSUFFICIENT_PERMISSIONS`, 404 `PIN_DOES_NOT_EXIST` |
 | `PUT /api/v1/pins/{pinId}/duplicates/{otherPinId}` | `{rejected: boolean}` | 200 the same item | 403 `PIN_INSUFFICIENT_PERMISSIONS`, 404 `PIN_DOES_NOT_EXIST`, 404 `DUPLICATE_DOES_NOT_EXIST` (no pair, or a hidden one) |
 | `POST /api/v1/pins/merges` | `{keptPinId, absorbedPinIds}` | 200 the kept pin's `PinOutputDto` | 400 `VALIDATION_ERROR` (empty list, a repeated id, the kept pin among the absorbed), 403 `PIN_INSUFFICIENT_PERMISSIONS`, 404 `PIN_DOES_NOT_EXIST`, 409 `PIN_ALREADY_SOFT_DELETED` |
 
