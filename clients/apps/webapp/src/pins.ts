@@ -1,6 +1,7 @@
 import type { Schemas } from "@pinry-reborn/auth";
 import {
 	type InfiniteData,
+	type QueryClient,
 	skipToken,
 	useInfiniteQuery,
 	useMutation,
@@ -27,6 +28,23 @@ const PINS = ["pins"];
 const BOARDS = ["boards"];
 // Not under `PINS`, whose writers read every entry there as a catalogue.
 const DUPLICATES = ["duplicates"];
+const PIN = ["pin"];
+
+/**
+ * Whether any of the pins carried the marker in a cached catalogue. Its partners then carry it too,
+ * and lose it once the pin leaves, the pair being hidden (specification 2026-10-05, decision J).
+ */
+function anyMarked(queryClient: QueryClient, pinIds: readonly string[]) {
+	return queryClient
+		.getQueriesData<InfiniteData<PinPage>>({ queryKey: PINS })
+		.some(([, catalogue]) =>
+			catalogue?.pages.some((page) =>
+				page.pins.some(
+					(pin) => pinIds.includes(pin.id) && pin.hasPendingDuplicates,
+				),
+			),
+		);
+}
 
 /**
  * The catalogue, one page at a time, in the order the API sorts it, or one board's share of it:
@@ -97,8 +115,9 @@ export function useUpdatePin() {
 			);
 			// The counts a board carries are what the memberships just moved.
 			await queryClient.invalidateQueries({ queryKey: BOARDS });
-			// A duplicate opened from a list may be a pin no catalogue holds, and the list is what shows it.
+			// A duplicate opened from a list, or a pin kept by a merge, may be a pin no catalogue holds.
 			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
+			await queryClient.invalidateQueries({ queryKey: PIN });
 		},
 	});
 }
@@ -119,6 +138,7 @@ export function useRecyclePins() {
 			if (!response.ok) {
 				throw new Error(`The API kept the pins: ${response.status}.`);
 			}
+			const partnersMarked = anyMarked(queryClient, pinIds);
 			queryClient.setQueriesData<InfiniteData<PinPage>>(
 				{ queryKey: PINS },
 				(catalogue) =>
@@ -130,6 +150,9 @@ export function useRecyclePins() {
 			await queryClient.invalidateQueries({ queryKey: BOARDS });
 			// A recycled pin's pairs are hidden (specification 2026-10-05, decision J).
 			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
+			if (partnersMarked) {
+				await queryClient.invalidateQueries({ queryKey: PINS });
+			}
 		},
 	});
 }
@@ -179,7 +202,7 @@ export function useRejectDuplicate(pinId: string) {
 
 /**
  * Merges a group into the pin it keeps, which the API answers with (specification 2026-10-05,
- * decision H). The absorbed pins leave every catalogue and the kept one is written in, unreloaded.
+ * decision H). The absorbed pins leave every catalogue at once and the kept one is written in.
  */
 export function useMergePins(merged: (kept: Pin) => void) {
 	const queryClient = useQueryClient();
@@ -190,6 +213,7 @@ export function useMergePins(merged: (kept: Pin) => void) {
 				"the merge",
 			);
 			// Before the open pin leaves the cache, in the same render: a dialog left with no pin closes.
+			queryClient.setQueryData([...PIN, kept.id], kept);
 			merged(kept);
 			queryClient.setQueriesData<InfiniteData<PinPage>>(
 				{ queryKey: PINS },
@@ -206,7 +230,26 @@ export function useMergePins(merged: (kept: Pin) => void) {
 			// The kept pin gained the absorbed pins' boards, whose counts lost them.
 			await queryClient.invalidateQueries({ queryKey: BOARDS });
 			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
+			// Every absorbed pin held a pending pair, whose other pin may now have none.
+			await queryClient.invalidateQueries({ queryKey: PINS });
 		},
+	});
+}
+
+/** One pin read on its own, for a pin the dialog shows that no catalogue or list holds. */
+export function usePin(pinId: string | undefined) {
+	return useQuery({
+		queryKey: [...PIN, pinId],
+		queryFn:
+			pinId === undefined
+				? skipToken
+				: async () =>
+						bodyOf(
+							await auth.client.GET("/api/v1/pins/{pinId}", {
+								params: { path: { pinId } },
+							}),
+							"the pin",
+						),
 	});
 }
 
