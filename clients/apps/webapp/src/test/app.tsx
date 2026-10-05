@@ -176,6 +176,46 @@ export function onePinPage(pins: () => Pin[]) {
 	);
 }
 
+/** A pair of likely duplicates, which a `PUT` rejects or restores in place. */
+export interface Pair {
+	pins: [Pin, Pin];
+	rejected: boolean;
+}
+
+/** The pairs the journey holds, listed from either pin, so what a write leaves behind is what the next read answers. */
+export function duplicateRoutes(pairs: Pair[]) {
+	const listed = (pair: Pair, pinId: unknown) => ({
+		pin: pair.pins[0].id === pinId ? pair.pins[1] : pair.pins[0],
+		rejected: pair.rejected,
+	});
+	const holding = (pinId: unknown) =>
+		pairs.filter((pair) => pair.pins.some((one) => one.id === pinId));
+	return [
+		http.get("/api/v1/pins/:pinId/duplicates", ({ params }) =>
+			HttpResponse.json({
+				duplicates: holding(params.pinId).map((pair) =>
+					listed(pair, params.pinId),
+				),
+			}),
+		),
+		http.put(
+			"/api/v1/pins/:pinId/duplicates/:otherPinId",
+			async ({ request, params }) => {
+				const pair = holding(params.pinId).find((held) =>
+					held.pins.some((one) => one.id === params.otherPinId),
+				);
+				if (pair === undefined) {
+					return refused(404, "DUPLICATE_DOES_NOT_EXIST");
+				}
+				pair.rejected = (
+					(await request.json()) as { rejected: boolean }
+				).rejected;
+				return HttpResponse.json(listed(pair, params.pinId));
+			},
+		),
+	];
+}
+
 let boardCount = 0;
 
 /** A board the journey names, as `GET /api/v1/boards` answers one. */
