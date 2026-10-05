@@ -26,7 +26,7 @@ import {
 } from "../lib/tiles";
 import { useHandshake } from "../media";
 import { m } from "../paraglide/messages.js";
-import { type Pin, useDuplicates, usePins } from "../pins";
+import { type Pin, useDuplicates, usePin, usePins } from "../pins";
 import { useSelection } from "../selection";
 import { PinDialog } from "./PinDialog";
 import { PinGestures } from "./PinGestures";
@@ -132,22 +132,21 @@ function preloadNeighbours(around: (Pin | undefined)[], rendition: Rendition) {
 
 /**
  * The open pin. One opened from another's duplicates, or kept by a merge, may lie past the loaded
- * pages, and steps nowhere (decision B).
+ * pages, and steps nowhere (specification 2026-10-05, decision B).
  */
 function useOpened(loaded: Pin[]) {
 	const [shown, setShown] = useState<{
 		id: string;
 		listedBy?: string;
-		kept?: Pin;
+		kept?: true;
 	} | null>(null);
 	const openedId = shown?.id ?? null;
 	const listing = useDuplicates(shown?.listedBy).data;
+	const kept = usePin(shown?.kept ? shown.id : undefined).data;
 	// Among every loaded pin, so a retried download that turns it `PENDING` keeps it open (decision E).
 	const inGrid = loaded.find((pin) => pin.id === openedId);
 	const opened =
-		inGrid ??
-		listing?.find((one) => one.pin.id === openedId)?.pin ??
-		shown?.kept;
+		inGrid ?? listing?.find((one) => one.pin.id === openedId)?.pin ?? kept;
 	return {
 		openedId,
 		opened,
@@ -316,7 +315,7 @@ export function PinGrid({
 								previous={stepToPrevious}
 								next={stepToNext}
 								openDuplicate={(id) => setShown({ id, listedBy: opened.id })}
-								merged={(kept) => setShown({ id: kept.id, kept })}
+								merged={(kept) => setShown({ id: kept.id, kept: true })}
 							/>
 						) : null}
 					</Modal.Dialog>

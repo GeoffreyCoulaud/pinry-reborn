@@ -37,7 +37,12 @@ describe("merge a group of duplicates", () => {
 			pins: [open, other],
 			rejected: false,
 		}));
-		const merged = { ...kept, tags: [{ name: "boats" }] };
+		const merged = {
+			...kept,
+			tags: [{ name: "boats" }],
+			hasPendingDuplicates: false,
+		};
+		const catalogue = [open, smaller, kept, noon];
 		let merges: unknown[] = [];
 		let boardReads = 0;
 		server.use(
@@ -46,12 +51,17 @@ describe("merge a group of duplicates", () => {
 				boardReads++;
 				return HttpResponse.json({ boards: [harbours] });
 			}),
-			boardPinsRoute({ [harbours.id]: [[open, smaller, kept, noon]] }),
+			boardPinsRoute({ [harbours.id]: [catalogue] }),
 			...duplicateRoutes(pairs),
 			http.post("/api/v1/pins/merges", async ({ request }) => {
 				merges = [...merges, await request.json()];
-				// The absorbed pins are recycled, which hides their pairs (decision J).
+				// The absorbed pins are recycled, which hides their pairs and so the noon pin's marker
+				// (specification 2026-10-05, decision J).
 				pairs.splice(0, pairs.length);
+				catalogue.splice(0, catalogue.length, merged, {
+					...noon,
+					hasPendingDuplicates: false,
+				});
 				return HttpResponse.json(merged);
 			}),
 			downloadsRoute(),
@@ -96,16 +106,26 @@ describe("merge a group of duplicates", () => {
 		expect(image(smaller.description)).toBeNull();
 		expect(image(noon.description)).not.toBeNull();
 		await waitFor(() => expect(boardReads).toBeGreaterThan(readsBefore));
+		await waitFor(() =>
+			expect(
+				screen.queryAllByRole("img", {
+					name: m.duplicates_badge(),
+					hidden: true,
+				}),
+			).toHaveLength(0),
+		);
 	});
 
-	it("Given a duplicate the grid has not loaded, When it is kept, Then the dialog shows it, and it steps nowhere", async () => {
+	it("Given a duplicate the grid has not loaded, When it is kept, Then the dialog shows it as the API reads it now, and it steps nowhere", async () => {
 		const open = marked("a harbour at dusk");
 		const far = marked("the same harbour, far down the catalogue");
+		const edited = { ...far, description: "the same harbour, edited since" };
 		server.use(
 			sessionRoute(() => true),
 			onePinPage(() => [open, readyPin("a cat asleep")]),
 			...duplicateRoutes([{ pins: [open, far], rejected: false }]),
 			http.post("/api/v1/pins/merges", () => HttpResponse.json(far)),
+			http.get(`/api/v1/pins/${far.id}`, () => HttpResponse.json(edited)),
 			downloadsRoute(),
 			handshakeRoute(),
 		);
@@ -125,7 +145,9 @@ describe("merge a group of duplicates", () => {
 			within(dialog).getByRole("button", { name: m.merge({ count: 2 }) }),
 		);
 
-		const shown = await screen.findByRole("dialog", { name: far.description });
+		const shown = await screen.findByRole("dialog", {
+			name: edited.description,
+		});
 		for (const name of [m.pin_previous(), m.pin_next()]) {
 			expect(within(shown).getByRole("button", { name })).toBeDisabled();
 		}
