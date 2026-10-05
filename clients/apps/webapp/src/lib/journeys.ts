@@ -43,6 +43,8 @@ export const REQUIRED_JOURNEYS = [
 	"hover a video tile",
 	"upload a video",
 	"the boards screen shows each board's cover",
+	"reject a duplicate",
+	"open a duplicate",
 ];
 
 /** The file under `src/journeys/` that holds a journey's test. */

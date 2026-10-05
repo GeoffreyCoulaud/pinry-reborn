@@ -1,5 +1,5 @@
 import { EmptyState, Modal, Spinner } from "@heroui/react";
-import { Play } from "lucide-react";
+import { Copy, Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
 	Collection,
@@ -26,7 +26,7 @@ import {
 } from "../lib/tiles";
 import { useHandshake } from "../media";
 import { m } from "../paraglide/messages.js";
-import { type Pin, usePins } from "../pins";
+import { type Pin, useDuplicates, usePins } from "../pins";
 import { useSelection } from "../selection";
 import { PinDialog } from "./PinDialog";
 import { PinGestures } from "./PinGestures";
@@ -110,6 +110,13 @@ function Tile({
 					{downloadReason(media?.reasonCode, media?.message) ?? pin.description}
 				</p>
 			)}
+			{pin.hasPendingDuplicates ? (
+				<Copy
+					role="img"
+					aria-label={m.duplicates_badge()}
+					className="absolute end-2 bottom-2 size-6 rounded-full bg-black/60 p-1 text-white"
+				/>
+			) : null}
 		</div>
 	);
 }
@@ -121,6 +128,25 @@ function preloadNeighbours(around: (Pin | undefined)[], rendition: Rendition) {
 			preload(tileMediaSource(neighbour.media.url, rendition), { as: "image" });
 		}
 	}
+}
+
+/** The open pin. One opened from another's duplicates may lie past the loaded pages, and steps nowhere (decision B). */
+function useOpened(loaded: Pin[]) {
+	const [shown, setShown] = useState<{ id: string; listedBy?: string } | null>(
+		null,
+	);
+	const openedId = shown?.id ?? null;
+	const listing = useDuplicates(shown?.listedBy).data;
+	// Among every loaded pin, so a retried download that turns it `PENDING` keeps it open (decision E).
+	const opened =
+		loaded.find((pin) => pin.id === openedId) ??
+		listing?.find((one) => one.pin.id === openedId)?.pin;
+	return {
+		openedId,
+		opened,
+		fromList: shown?.listedBy !== undefined,
+		setShown,
+	};
 }
 
 /**
@@ -142,13 +168,13 @@ export function PinGrid({
 	// The breakpoint a tile picks its rendition on is the deployment's, not a constant: `small`
 	// lowered in the configuration would otherwise upscale every tile (specification 4.3).
 	const renditionSizes = useHandshake().data?.renditionSizes;
-	const [openedId, setOpenedId] = useState<string | null>(null);
 	const [rendition, setRendition] = useState<Rendition>("SMALL");
 	const loaded = pins.data?.pages.flatMap((page) => page.pins) ?? [];
 	const tiles = placeableTiles(loaded);
-	// Among every loaded pin, so a retried download that turns it `PENDING` keeps it open (decision E).
-	const opened = loaded.find((pin) => pin.id === openedId);
-	const { previous, next } = neighbours(loaded, openedId);
+	const { openedId, opened, fromList, setShown } = useOpened(loaded);
+	const setOpenedId = (id: string | null) =>
+		setShown(id === null ? null : { id });
+	const { previous, next } = neighbours(fromList ? [] : loaded, openedId);
 	const selection = useSelection(tiles);
 	const selecting = selection.ids.length > 0;
 
@@ -162,12 +188,14 @@ export function PinGrid({
 		).next;
 		// Only from the pin it left, so a viewer closed meanwhile stays closed.
 		if (arrived) {
-			setOpenedId((current) => (current === from ? arrived.id : current));
+			setShown((current) =>
+				current?.id === from ? { id: arrived.id } : current,
+			);
 		}
 	};
 	preloadNeighbours(opened ? [previous, next] : [], rendition);
 	const stepToPrevious = previous ? () => setOpenedId(previous.id) : undefined;
-	const canFetch = pins.hasNextPage && !pins.isFetchingNextPage;
+	const canFetch = !fromList && pins.hasNextPage && !pins.isFetchingNextPage;
 	const fetchStep = canFetch ? () => void fetchThenStep() : undefined;
 	const stepToNext = next ? () => setOpenedId(next.id) : fetchStep;
 
@@ -280,6 +308,7 @@ export function PinGrid({
 								placeholder={rendition}
 								previous={stepToPrevious}
 								next={stepToNext}
+								openDuplicate={(id) => setShown({ id, listedBy: opened.id })}
 							/>
 						) : null}
 					</Modal.Dialog>

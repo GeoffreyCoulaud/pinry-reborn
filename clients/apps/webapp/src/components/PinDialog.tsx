@@ -7,6 +7,7 @@ import type { Rendition } from "../lib/tiles";
 import { m } from "../paraglide/messages.js";
 import { type Pin, useRecyclePins } from "../pins";
 import { IconButton } from "./IconButton";
+import { PinDuplicates } from "./PinDuplicates";
 import { PinEditForm } from "./PinEditForm";
 import { PinMedia } from "./PinMedia";
 import { PinSides } from "./PinSides";
@@ -16,10 +17,12 @@ function PinDetails({
 	pin,
 	close,
 	edit,
+	openDuplicate,
 }: {
 	pin: Pin;
 	close: () => void;
 	edit: () => void;
+	openDuplicate: (pinId: string) => void;
 }) {
 	const recycle = useRecyclePins();
 	const source = pin.sourceContextUrl;
@@ -97,6 +100,7 @@ function PinDetails({
 					</div>
 				) : null}
 			</dl>
+			<PinDuplicates pinId={pin.id} open={openDuplicate} />
 		</>
 	);
 }
@@ -170,12 +174,14 @@ export function PinDialog({
 	placeholder,
 	previous,
 	next,
+	openDuplicate,
 }: {
 	pin: Pin;
 	close: () => void;
 	placeholder: Rendition;
 	previous?: () => void;
 	next?: () => void;
+	openDuplicate: (pinId: string) => void;
 }) {
 	const [editing, setEditing] = useState(false);
 	const swipe = useSwipe(previous, next);
@@ -222,6 +228,7 @@ export function PinDialog({
 					pin={pin}
 					close={close}
 					edit={() => setEditing(true)}
+					openDuplicate={openDuplicate}
 				/>
 			}
 		/>

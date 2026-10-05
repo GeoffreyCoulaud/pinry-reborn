@@ -1,6 +1,7 @@
 import type { Schemas } from "@pinry-reborn/auth";
 import {
 	type InfiniteData,
+	skipToken,
 	useInfiniteQuery,
 	useMutation,
 	useQuery,
@@ -14,6 +15,7 @@ import { rereadSettledPins } from "./media";
 export type Pin = Schemas["PinOutputDto"];
 export type PinPage = Schemas["PinListOutputDto"];
 export type PinUpdate = Schemas["PinUpdateInputDto"];
+export type Duplicate = Schemas["PinDuplicateOutputDto"];
 
 const PAGE_SIZE = 40;
 
@@ -22,6 +24,8 @@ const TAG_SUGGESTIONS = 8;
 
 const PINS = ["pins"];
 const BOARDS = ["boards"];
+// Not under `PINS`, whose writers read every entry there as a catalogue.
+const DUPLICATES = ["duplicates"];
 
 /**
  * The catalogue, one page at a time, in the order the API sorts it, or one board's share of it:
@@ -92,6 +96,8 @@ export function useUpdatePin() {
 			);
 			// The counts a board carries are what the memberships just moved.
 			await queryClient.invalidateQueries({ queryKey: BOARDS });
+			// A duplicate opened from a list may be a pin no catalogue holds, and the list is what shows it.
+			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
 		},
 	});
 }
@@ -121,6 +127,51 @@ export function useRecyclePins() {
 			);
 			// A board counts the pins it holds that are still active, so a recycled one moves it.
 			await queryClient.invalidateQueries({ queryKey: BOARDS });
+			// A recycled pin's pairs are hidden (specification 2026-10-05, decision J).
+			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
+		},
+	});
+}
+
+/** A pin's likely duplicates, the rejected ones included, or nothing asked for no pin. */
+export function useDuplicates(pinId: string | undefined) {
+	return useQuery({
+		queryKey: [...DUPLICATES, pinId],
+		queryFn:
+			pinId === undefined
+				? skipToken
+				: async () =>
+						bodyOf(
+							await auth.client.GET("/api/v1/pins/{pinId}/duplicates", {
+								params: { path: { pinId } },
+							}),
+							"the duplicates",
+						).duplicates,
+	});
+}
+
+/** Rejects a duplicate or restores it. Both pins' markers move with it, so both are read again. */
+export function useRejectDuplicate(pinId: string) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async ({
+			otherPinId,
+			rejected,
+		}: {
+			otherPinId: string;
+			rejected: boolean;
+		}) => {
+			bodyOf(
+				await auth.client.PUT("/api/v1/pins/{pinId}/duplicates/{otherPinId}", {
+					params: { path: { pinId, otherPinId } },
+					body: { rejected },
+				}),
+				"the duplicate",
+			);
+			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
+			await rereadSettledPins(queryClient, [pinId, otherPinId]).catch(() =>
+				queryClient.invalidateQueries({ queryKey: PINS }),
+			);
 		},
 	});
 }
