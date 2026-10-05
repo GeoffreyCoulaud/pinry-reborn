@@ -1,7 +1,7 @@
 # The duplicates are compared
 
 Date: 2026-10-05
-Status: Draft. One specification review ran, `.reviews/the-duplicates-are-compared-spec.md`, its 1 CRITICAL, 5 MAJOR
+Status: Accepted by the operator on 2026-10-06. One specification review ran, `.reviews/the-duplicates-are-compared-spec.md`, its 1 CRITICAL, 5 MAJOR
 and 21 MINOR closed in this document. Frozen when the lot's last block merges.
 Lot: `0.49.0`.
 Branches: one stack: 10 `feat/a-media-records-its-tracks`, 15 `feat/the-worker-probes-stored-media` on 10,
