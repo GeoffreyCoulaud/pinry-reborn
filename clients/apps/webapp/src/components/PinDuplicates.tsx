@@ -101,15 +101,13 @@ export function PinDuplicates({
 			{rejected.length > 0 ? (
 				<Disclosure>
 					<Disclosure.Heading>
-						<Disclosure.Trigger className="text-sm text-muted">
+						<Disclosure.Trigger className="inline-flex items-center gap-1 text-sm text-muted">
 							{m.duplicates_rejected({ count: rejected.length })}
 							<Disclosure.Indicator />
 						</Disclosure.Trigger>
 					</Disclosure.Heading>
 					<Disclosure.Content>
-						<Disclosure.Body>
-							<ul className="flex flex-col gap-2 pt-2">{rejected.map(row)}</ul>
-						</Disclosure.Body>
+						<ul className="flex flex-col gap-2 pt-2">{rejected.map(row)}</ul>
 					</Disclosure.Content>
 				</Disclosure>
 			) : null}
