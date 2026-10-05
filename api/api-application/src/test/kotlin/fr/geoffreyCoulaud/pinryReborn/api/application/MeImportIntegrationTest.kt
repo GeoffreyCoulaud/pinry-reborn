@@ -603,6 +603,7 @@ class MeImportIntegrationTest : IntegrationTest() {
             uploadMedia(auth, createPin(auth, slug).id, "sample.png", "image/png")
         }
         val storedBefore = storedObjectCount(auth.user.id)
+        awaitFingerprintDrain()
         // Scoped like the count above: `media.data_dir` outlives a case and is shared with the sweep
         // suite, which runs on this profile too, so emptiness would be another suite's business.
         val stagedBefore = stagedFiles()

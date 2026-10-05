@@ -2,8 +2,11 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QTaskModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.LoggingRequestResponseFilter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.UserCreator
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.ebean.DB
 import io.ebean.Database
@@ -107,6 +110,16 @@ abstract class IntegrationTest {
      */
     protected fun waitForTheClockToTick() = Thread.sleep(CLOCK_RESOLUTION_MILLIS)
 
+    /** Waits for the worker to hash every media, which stages files of its own while it runs. */
+    protected fun awaitFingerprintDrain() {
+        repeat(DRAIN_POLL_ATTEMPTS) {
+            val draining = QTaskModel().kind.equalTo(MediaFingerprintTask.KIND).state.isIn("PENDING", "RUNNING")
+            if (!draining.exists() && !QMediaModel().fingerprintVersion.isNull.exists()) return
+            Thread.sleep(DRAIN_POLL_INTERVAL_MILLIS)
+        }
+        error("The fingerprint drain never settled")
+    }
+
     /** slf4j binds to the JBoss LogManager, which is the JUL one, so a plain JUL handler sees the line. */
     protected fun capturingLogsOf(loggerName: String, action: () -> Unit): List<LogRecord> {
         val records = mutableListOf<LogRecord>()
@@ -141,5 +154,8 @@ abstract class IntegrationTest {
 
         /** Long enough to cross a millisecond boundary, the resolution stamped instants keep. */
         private const val CLOCK_RESOLUTION_MILLIS = 2L
+
+        private const val DRAIN_POLL_ATTEMPTS = 100
+        private const val DRAIN_POLL_INTERVAL_MILLIS = 200L
     }
 }
