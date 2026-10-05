@@ -27,7 +27,7 @@ class EbeanMediaFrameRepository(
         nearQuery(hash)
             .findList()
             .map { it.toDomain() }
-            .filter { distance(it.words, hash.words) <= PdqHasher.MATCH_DISTANCE }
+            .filter { PdqHash.distance(it.words, hash.words) <= PdqHasher.MATCH_DISTANCE }
 
     override fun findByMediaIds(mediaIds: Collection<UUID>): List<MediaFrame> =
         QMediaFrameModel().mediaId.isIn(mediaIds).findList().map { it.toDomain() }
@@ -40,9 +40,6 @@ class EbeanMediaFrameRepository(
         QMediaFrameModel().mediaId.notIn(QMediaModel().select("id").query()).delete()
 
     private fun MediaFrameModel.toDomain() = MediaFrame(mediaId, listOf(hash0, hash1, hash2, hash3))
-
-    private fun distance(stored: List<Long>, probe: List<Long>) =
-        stored.zip(probe).sumOf { (mine, theirs) -> java.lang.Long.bitCount(mine xor theirs) }
 
     /**
      * Every frame sharing a band with [hash] within one bit: one `in` per band, each its own raw expression,

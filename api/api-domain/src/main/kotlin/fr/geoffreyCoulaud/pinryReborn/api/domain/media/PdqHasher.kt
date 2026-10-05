@@ -2,7 +2,13 @@ package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
 /** A frame's PDQ hash, its 256 bits in four words from the most significant, and its quality from 0 to 100. */
 data class PdqHash(val words: List<Long>, val quality: Int) {
-    fun distanceTo(other: PdqHash) = words.zip(other.words).sumOf { (mine, theirs) -> (mine xor theirs).countOneBits() }
+    fun distanceTo(other: PdqHash) = distance(words, other.words)
+
+    companion object {
+        /** The Hamming distance between two hashes' words. */
+        fun distance(first: List<Long>, second: List<Long>) =
+            first.zip(second).sumOf { (mine, theirs) -> (mine xor theirs).countOneBits() }
+    }
 }
 
 /**
