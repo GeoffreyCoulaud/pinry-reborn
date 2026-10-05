@@ -37,7 +37,9 @@ Each is the operator's answer of 2026-10-05 in Discuss.
 
 **A. The cover is derived, never chosen.** It is the board's newest pin, by `(createdAt, id)` descending, the web
 grid's default order, among the pins filed under that board that are not in the recycle bin and have a media. No pin
-qualifies: no cover. One image, not a mosaic of four: the same rule with four times the bytes, unreadable at a tile's
+qualifies: no cover. *(Corrected: a media over `MediaLimits`, which the server will not draw, still wins and shows
+"preview unavailable" while its pin stays newest. The operator accepted it on 2026-10-05: filtering by the limits in
+the query would repeat configurable `MediaLimits` for a rare case. Found by the holistic review.)* One image, not a mosaic of four: the same rule with four times the bytes, unreadable at a tile's
 size.
 
 **B. Newest by the pin's creation, not by its filing under the board.** A filing date costs a column on

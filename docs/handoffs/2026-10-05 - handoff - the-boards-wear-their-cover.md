@@ -6,6 +6,8 @@ operator on 2026-10-05, specification review `.reviews/the-boards-wear-their-cov
 Lot `0.47.0`, one stack of 2 code blocks: 10 `feat/a-board-carries-its-cover` (PR #319), 20
 `feat/the-boards-are-a-grid` (the pull request this file arrives in). Written in block 20 from the block reports
 collapsed in those pull requests; the closing block corrects it after the holistic review.
+(Corrected: the specification review ran, its 1 CRITICAL, 5 MAJOR and 9 MINOR closed; the CRITICAL found decision B's
+first reason false and reopened it with the operator, who kept it. The closing block is `fix/the-boards-lot-closes`.)
 
 ## Current state
 
@@ -21,6 +23,8 @@ collapsed in those pull requests; the closing block corrects it after the holist
   the cover cropped to a square (`aspect-square`, `object-cover`) through `RenditionImage`, at the rendition its width
   needs, with `animated=false` (`tileStillSource`); a board with no cover shows an empty square with an icon. The
   cover and the name are one link to the board; the count, rename and delete sit at the tile's foot.
+  (Corrected: the cover loads lazily, the screen not being virtualised; the description wraps to two lines; a cover
+  that fails to load is hidden from screen readers, the link keeping the board's name alone.)
 - **`useColumnWidth`** moved from `PinGrid.tsx` to `src/columnWidth.ts`, the boards' tiles measuring their width the
   way the pins' do (20).
 
@@ -55,6 +59,9 @@ collapsed in those pull requests; the closing block corrects it after the holist
 - **Firefox's BiDi `browsingContext.setViewport` on the context `getTree` returns first** asks for
   `-remote-allow-system-access`; a tab made with `browsingContext.create` takes it. The theme is set by the profile's
   `layout.css.prefers-color-scheme.content-override` (0 dark, 1 light) (20).
+- (Corrected: **the evidence guard refuses a redirection into a path held in a variable**, `> "$S/x.log"`, and
+  `$TMPDIR` is unset in the agent's shell: a literal `/tmp/...` path passes, or a script written with the Write
+  tool and run with `bash` (closing block).)
 
 ## Departures from the specification
 
@@ -65,6 +72,8 @@ collapsed in those pull requests; the closing block corrects it after the holist
   journey's `SMALL` is what a width under the small rendition gets. The cover is decorative (`alt=""`), the link it
   sits in being named by the board, so the journey reads the `<img>` element rather than an `img` role. The four
   screenshots are not attached by `gh`, which has no upload for a pull request's images.
+- (Corrected: the closing block changes the recycle bin journey's failed thumbnail case, which read the stand-in as an
+  `img` role; it now reads it by its title, the row being named by the description.)
 
 Tier-1 fixes: the method counts in the `TooManyFunctions` suppression comments of `BoardRepositoryInterface` and
 `BoardRepository` go from 12 to 13 (10). A comment of the "create a board and rename it" journey said the list had
@@ -79,10 +88,26 @@ None in any block.
 - The list's added per-board query is not timed (10; decision D accepts it).
 - The tiles against the running API rather than a stub, and at a device pixel ratio above 1, where a 165 px tile
   asks for `MEDIUM` (20).
+- (Corrected: a board whose newest pin holds a media over `MediaLimits` shows "preview unavailable" as its cover,
+  even when an older pin could be drawn. Accepted by the operator on 2026-10-05, the specification's decision A.)
+- (Corrected: whether the lazy covers load as a long list scrolls; the reading's five boards all fit the viewport.)
 
 ## The holistic review
 
 Not run yet: it reads the top of this stack at the head of Wrap, and the closing block records its findings here.
+(Corrected: it ran, not waived, `.reviews/the-boards-wear-their-cover-holistic.md`, 0 CRITICAL, 1 MAJOR, 5 MINOR,
+each closed in the closing block `fix/the-boards-lot-closes`:
+
+- MAJOR, no case showed the cover is the *newest* pin, `.asc()` passing all 32 tests: a case with two pins holding a
+  media, the older carrying the greater fixed id; the `.asc()` mutation now fails it (commit message).
+- MINOR, `useBoards`'s comment said there was nothing to load lazily: rewritten.
+- MINOR, every cover requested at once on an unvirtualised screen: `RenditionImage` passes `loading="lazy"` through,
+  and the cover asks for it.
+- MINOR, a failed decorative cover's "preview unavailable" joined the board link's name: the stand-in of an `alt=""`
+  rendition is `aria-hidden`, without `role` or label. The recycle bin's thumbnail, also `alt=""`, follows.
+- MINOR, the description truncated to one line again: `line-clamp-2`.
+- MINOR, a media over `MediaLimits` still wins the cover and shows "preview unavailable": an accepted limit, the
+  operator's answer of 2026-10-05, recorded at the specification's decision A and below. Not in the backlog.)
 
 ## The backlog
 
@@ -92,6 +117,8 @@ Not run yet: it reads the top of this stack at the head of Wrap, and the closing
 
 Fix-backs, cascaded rebases, runs re-triggered and the operator's reading of the bodies: filled in by the closing
 block.
+(Corrected: fix-backs 0; cascaded rebases 0; runs they re-triggered 0 so far; the operator's reading of the bodies:
+not yet given.)
 
 ## Next step
 
