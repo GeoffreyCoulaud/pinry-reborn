@@ -1,10 +1,5 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
-import kotlin.math.PI
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.sqrt
-
 /** A frame's PDQ hash, its 256 bits in four words from the most significant, and its quality from 0 to 100. */
 data class PdqHash(val words: List<Long>, val quality: Int) {
     fun distanceTo(other: PdqHash) = words.zip(other.words).sumOf { (mine, theirs) -> (mine xor theirs).countOneBits() }
@@ -32,8 +27,8 @@ object PdqHasher {
 
     private val DCT = FloatArray(DCT_SIDE * SIDE) { index ->
         val (row, column) = index / SIDE to index % SIDE
-        val scale = sqrt(2.0 / SIDE).toFloat()
-        (scale * cos(PI / 2.0 / SIDE * (row + 1) * (2 * column + 1))).toFloat()
+        val scale = Math.sqrt(2.0 / SIDE).toFloat()
+        (scale * Math.cos(Math.PI / 2.0 / SIDE * (row + 1) * (2 * column + 1))).toFloat()
     }
 
     fun hash(frame: LumaFrame): PdqHash {
@@ -98,7 +93,7 @@ object PdqHasher {
 
     // The sum of the significant gradients between neighbours, each truncated to a percent of the range.
     private fun quality(image: FloatArray): Int {
-        fun step(from: Int, to: Int) = abs(((image[from] - image[to]) * PERCENT / LUMA_RANGE).toInt())
+        fun step(from: Int, to: Int) = Math.abs(((image[from] - image[to]) * PERCENT / LUMA_RANGE).toInt())
         var sum = 0
         for (row in 0 until SIDE - 1) for (column in 0 until SIDE) {
             sum += step(row * SIDE + column, (row + 1) * SIDE + column)
