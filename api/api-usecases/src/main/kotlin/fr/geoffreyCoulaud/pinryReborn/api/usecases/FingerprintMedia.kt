@@ -30,22 +30,24 @@ class FingerprintMedia(
     /** Newest first, reading again until none is left, so a media saved meanwhile is drained too. */
     fun drain(renewLease: () -> Unit) {
         generateSequence { mediaRepository.findNewestNotFingerprinted(FINGERPRINT_VERSION) }.forEach { media ->
-            val hashes = hashesOf(media)
+            renewLease()
+            val hashes = hashesOf(media, renewLease)
+            // Outside the transaction, so the band lookups never hold the write lock; its own pin is not compared.
+            val duplicates = duplicatesOf(media, hashes)
             transactionRunner.inTransaction {
                 frameRepository.deleteByMediaId(media.id)
                 duplicateRepository.deletePending(media.pinId)
                 frameRepository.save(media.id, hashes)
-                duplicateRepository.addMissing(media.pinId, duplicatesOf(media, hashes))
+                duplicateRepository.addMissing(media.pinId, duplicates)
                 mediaRepository.markFingerprinted(media.id, FINGERPRINT_VERSION)
             }
-            renewLease()
         }
     }
 
     // An undecodable media is stamped with no frames, so it never holds the drain back.
-    private fun hashesOf(media: Media): List<PdqHash> =
+    private fun hashesOf(media: Media, renewLease: () -> Unit): List<PdqHash> =
         try {
-            sampled(media).filter { it.quality > PdqHasher.DISCARDED_QUALITY }.distinctBy { it.words }
+            sampled(media, renewLease).filter { it.quality > PdqHasher.DISCARDED_QUALITY }.distinctBy { it.words }
         } catch (refused: ImageProbeException) {
             undecodable(media, refused)
         } catch (refused: VideoProcessorException) {
@@ -54,11 +56,15 @@ class FingerprintMedia(
             undecodable(media, refused)
         }
 
-    private fun sampled(media: Media): List<PdqHash> {
+    // Renewed per frame, each frame being a decoder run that may last the whole lease.
+    private fun sampled(media: Media, renewLease: () -> Unit): List<PdqHash> {
         val staged = mediaStore.stageStored(media)
         try {
             val hashes = mutableListOf<PdqHash>()
-            frameSampler.sample(media, staged) { hashes += PdqHasher.hash(it) }
+            frameSampler.sample(media, staged) { frame ->
+                hashes += PdqHasher.hash(frame)
+                renewLease()
+            }
             return hashes
         } finally {
             mediaStore.discardQuietly(staged)
@@ -82,12 +88,9 @@ class FingerprintMedia(
         foundEnough(own, among = other) && foundEnough(other, among = own)
 
     private fun foundEnough(frames: List<List<Long>>, among: List<List<Long>>): Boolean {
-        val found = frames.count { frame -> among.any { distance(frame, it) <= PdqHasher.MATCH_DISTANCE } }
+        val found = frames.count { frame -> among.any { PdqHash.distance(frame, it) <= PdqHasher.MATCH_DISTANCE } }
         return found * PERCENT >= frames.size * PAIR_PERCENT
     }
-
-    private fun distance(first: List<Long>, second: List<Long>) =
-        first.zip(second).sumOf { (mine, theirs) -> (mine xor theirs).countOneBits() }
 
     companion object {
         /** Raising it hashes every media again (ADR 0051, decision 6). */

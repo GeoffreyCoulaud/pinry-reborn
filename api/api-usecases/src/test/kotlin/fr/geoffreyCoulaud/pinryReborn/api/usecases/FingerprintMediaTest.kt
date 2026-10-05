@@ -75,20 +75,21 @@ class FingerprintMediaTest : BaseTest() {
     }
 
     @Test
-    fun `Given two outdated media, Then each is hashed and stamped and the lease renewed after each`() {
-        // Given
-        val (first, second) = List(2) { media(listOf(noise(it))) }
+    fun `Given two outdated media, Then each is hashed and stamped and the lease renewed before each and per frame`() {
+        // Given: one frame and three
+        val first = media(listOf(noise(1)))
+        val second = media(listOf(noise(2), noise(3), noise(4)))
         var renewals = 0
 
         // When
         drain(first, second) { renewals++ }
 
         // Then
-        assertEquals(1 to 1, frames.of(first.id).size to frames.of(second.id).size)
+        assertEquals(1 to 3, frames.of(first.id).size to frames.of(second.id).size)
         verify { mediaRepository.markFingerprinted(first.id, VERSION) }
         verify { mediaRepository.markFingerprinted(second.id, VERSION) }
         verify(exactly = 2) { store.discard(staged) }
-        assertEquals(2, renewals)
+        assertEquals(1 + 1 + 1 + 3, renewals)
     }
 
     @Test
@@ -114,6 +115,19 @@ class FingerprintMediaTest : BaseTest() {
 
         // Then
         assertEquals(setOf(setOf(media.pinId, other.pinId)), duplicates.pending)
+    }
+
+    @Test
+    fun `Given a media three quarters of whose frames are found in another's and back, Then nothing is paired`() {
+        // Given: one frame of four unmatched each way, under the 80 percent bound
+        hashed(1, 2, 3, 9)
+        val media = media(listOf(noise(1), noise(2), noise(3), noise(4)))
+
+        // When
+        drain(media)
+
+        // Then
+        assertEquals(emptySet<Set<UUID>>(), duplicates.pending)
     }
 
     @Test

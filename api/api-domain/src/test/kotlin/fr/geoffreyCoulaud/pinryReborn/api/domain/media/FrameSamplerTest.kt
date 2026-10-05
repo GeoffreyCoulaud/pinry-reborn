@@ -15,6 +15,11 @@ class FrameSamplerTest {
     }
 
     @Test
+    fun `Given an hour, Then the instants are its first hundred and twenty seconds`() {
+        assertEquals((0L..119L).map(Duration::ofSeconds), FrameSampler.instants(Duration.ofHours(1)))
+    }
+
+    @Test
     fun `Given one and a half seconds, Then its two whole seconds are completed to four by the first quarters`() {
         assertEquals(millis(0, 375, 750, 1000), FrameSampler.instants(Duration.ofMillis(1500)))
     }

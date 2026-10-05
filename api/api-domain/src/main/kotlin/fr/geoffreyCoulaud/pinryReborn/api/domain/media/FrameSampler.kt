@@ -32,11 +32,15 @@ interface FrameSampler {
 
     companion object {
         private const val MIN_FRAMES = 4
+
+        // The longest video's seconds (ADR 0047), so an animated image of any length costs no more decoder runs.
+        private const val MAX_FRAMES = 120L
         private val SECOND: Duration = Duration.ofSeconds(1)
 
-        /** Each whole second before [length]; under four seconds, evenly spaced instants too, up to four in all. */
+        /** Each whole second before [length], 120 at most; under four seconds, evenly spaced ones up to four. */
         fun instants(length: Duration): List<Duration> {
-            val whole = (0 until Math.ceilDiv(length.toMillis(), SECOND.toMillis())).map { SECOND.multipliedBy(it) }
+            val seconds = Math.ceilDiv(length.toMillis(), SECOND.toMillis()).coerceAtMost(MAX_FRAMES)
+            val whole = (0 until seconds).map { SECOND.multipliedBy(it) }
             val evenlySpaced = (0L until MIN_FRAMES).map { length.multipliedBy(it).dividedBy(MIN_FRAMES.toLong()) }
             val added = (evenlySpaced - whole.toSet()).distinct().take((MIN_FRAMES - whole.size).coerceAtLeast(0))
             return (whole + added).sorted()
