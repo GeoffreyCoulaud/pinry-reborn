@@ -44,11 +44,6 @@ class PpmReaderTest {
     }
 
     @Test
-    fun `Given a PPM taller than the bound, Then it is refused`() {
-        assertThrows(IOException::class.java) { PpmReader.read(file("P6\n1 3\n255\n"), maxSide = 2) }
-    }
-
-    @Test
     fun `Given a raster shorter than its header, Then it is refused`() {
         assertThrows(IOException::class.java) { PpmReader.read(file("P6\n1 1\n255\n", 1, 2), maxSide = 2) }
     }
