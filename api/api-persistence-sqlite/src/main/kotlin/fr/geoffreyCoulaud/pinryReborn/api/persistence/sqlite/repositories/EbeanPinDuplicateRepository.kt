@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinDuplicateModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.PinQueries
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActivePins
@@ -29,7 +30,11 @@ class EbeanPinDuplicateRepository(
 
     override fun deleteOrphans(): Int {
         val pins = PinQueries.any().select("id").query()
-        return QPinDuplicateModel().or().firstPinId.notIn(pins).secondPinId.notIn(pins).endOr().delete()
+        val gone = QPinDuplicateModel().or().firstPinId.notIn(pins).secondPinId.notIn(pins).endOr().delete()
+        // What a crash between `DeletePinMedia`'s two deletes would leave: a pin with no media is never hashed again.
+        val withMedia = QMediaModel().select("pinId").query()
+        return gone + QPinDuplicateModel().rejectedAt.isNull
+            .or().firstPinId.notIn(withMedia).secondPinId.notIn(withMedia).endOr().delete()
     }
 
     override fun findShownFor(pinId: UUID): Map<UUID, Boolean> =
