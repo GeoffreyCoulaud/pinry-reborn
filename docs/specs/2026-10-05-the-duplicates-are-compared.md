@@ -5,7 +5,7 @@ Status: Accepted by the operator on 2026-10-06. One specification review ran, `.
 and 21 MINOR closed in this document. Frozen when the lot's last block merges.
 Lot: `0.49.0`.
 Branches: one stack: 10 `feat/a-media-records-its-tracks`, 15 `feat/the-worker-probes-stored-media` on 10,
-20 `feat/the-api-describes-a-media` on 15,
+20 `feat/the-api-describes-a-media` on 15 *(corrected: 15 dropped, 20 on 10)*,
 30 `feat/the-api-resolves-duplicates` on 20, 40 `feat/the-dialog-compares-duplicates` on 30,
 50 `feat/the-comparator-plays-both-versions` on 40, 60 `refactor/the-merge-and-reject-routes-go` on 50.
 ADR: `docs/adr/0052-duplicates-are-resolved-in-one-call.md`, written in block 10, records decisions B and C and the
@@ -116,6 +116,11 @@ everything; a row stored before this lot has none.
 An export, a reset and an import is no refill: the import creates new pins, skips a media the account holds, drops
 every rejection and clamps every date to the new account's creation (`ImportInstantClamp`).
 
+*(Corrected on 2026-10-06, while block 15 was being written: the operator holds development data disposable, so no
+instance keeps a row this lot did not measure, and decision F is dropped with block 15 and `probe_version`. The
+development database is reset after this lot merges. A back-fill waits for the first real deployment, which the
+backlog item "Flatten the migration history" already prepares.)*
+
 ## 4. The contract
 
 | Operation | Change |
@@ -145,7 +150,7 @@ Block 20 makes the contract `22.4.0`, block 30 `22.5.0`, block 60 `23.0.0`.
 | Block | Branch | What its tests have to fail on |
 |---|---|---|
 | 10 | `feat/a-media-records-its-tracks` | Decision E's columns. |
-| 15 | `feat/the-worker-probes-stored-media` | Decision F. |
+| 15 | `feat/the-worker-probes-stored-media` | Decision F. *(Corrected: dropped with decision F; the number stays free.)* |
 | 20 | `feat/the-api-describes-a-media` | Section 4's fields. |
 | 30 | `feat/the-api-resolves-duplicates` | Decisions B and C. |
 | 40 | `feat/the-dialog-compares-duplicates` | Decision A. |
@@ -157,13 +162,16 @@ Block 40 is the likeliest to pass a bound; it splits at a number between 40 and 
 ### Block 10
 
 - Migration `1.32`: the three columns of decision E and decision F's `probe_version`, nullable. `Media` gains them,
-  `FfprobeReport` reads them, `MediaIngestion` stores them and stamps the version.
+  `FfprobeReport` reads them, `MediaIngestion` stores them and stamps the version. *(Corrected: no
+  `probe_version`, decision F being dropped.)*
 - An ingestion test per case: an H.264 MP4 with AAC stereo stores a video rate, 2 channels and an audio rate; a VP9
   WebM with Opus, whose tracks state no `bit_rate`, stores both rates within 1 % of its packets' sums; a VP9 WebM
   without sound stores null audio; a GIF stores three nulls.
-- Carries this specification, ADR 0052 and ADR 0051's status line. Its consumers are blocks 15 and 20.
+- Carries this specification, ADR 0052 and ADR 0051's status line. Its consumers are blocks 15 and 20. *(Corrected: block 20 alone.)*
 
 ### Block 15
+
+*(Corrected: dropped with decision F.)*
 
 - `ProbeMedia` in `api-usecases`, its task and handler, and the enqueue in `GarbageCollectionLifecycle`, after
   `FingerprintMedia`'s pattern.
