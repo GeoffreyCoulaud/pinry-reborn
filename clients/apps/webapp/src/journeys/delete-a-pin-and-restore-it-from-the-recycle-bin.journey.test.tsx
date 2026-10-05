@@ -127,9 +127,9 @@ describe("delete a pin and restore it from the recycle bin", () => {
 
 		fireEvent.error(thumbnail);
 
-		expect(
-			within(row).getByRole("img", { name: m.preview_unavailable() }),
-		).toBeVisible();
+		// Decorative like the thumbnail it stands for: the description names the row.
+		expect(within(row).getByTitle(m.preview_unavailable())).toBeVisible();
+		expect(within(row).queryByRole("img")).toBeNull();
 	});
 
 	it("Given the API refuses the delete, Then the tile stays and the refusal is said", async () => {

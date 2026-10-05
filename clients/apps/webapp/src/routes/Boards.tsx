@@ -35,10 +35,11 @@ function Cover({ url }: { url: string | null }) {
 					<Images aria-hidden className="size-8" />
 				</span>
 			) : (
-				// Decorative: the link it sits in is named by the board.
+				// Decorative: the link it sits in is named by the board. Lazy: the screen is not virtualised.
 				<RenditionImage
 					src={tileStillSource(url, rendition)}
 					alt=""
+					loading="lazy"
 					className="aspect-square w-full rounded object-cover"
 				/>
 			)}
@@ -66,7 +67,9 @@ function BoardTile({ board, rename }: { board: Board; rename: () => void }) {
 				<Cover url={board.coverUrl} />
 				<span className="truncate">{board.name}</span>
 			</Link>
-			<span className="truncate text-muted text-sm">{board.description}</span>
+			<span className="line-clamp-2 text-muted text-sm">
+				{board.description}
+			</span>
 			{/* At the foot, so a tile with no description keeps its row's line. */}
 			<div className="mt-auto flex items-center">
 				<span className="flex-1 text-sm text-muted">

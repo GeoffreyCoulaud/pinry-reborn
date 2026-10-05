@@ -11,11 +11,13 @@ export function RenditionImage({
 	alt,
 	className = "",
 	style,
+	loading,
 }: {
 	src: string;
 	alt: string;
 	className?: string;
 	style?: CSSProperties;
+	loading?: "lazy";
 }) {
 	const [failed, setFailed] = useState<string | null>(null);
 
@@ -27,14 +29,19 @@ export function RenditionImage({
 				alt={alt}
 				className={className}
 				style={style}
+				loading={loading}
 				onError={() => setFailed(src)}
 			/>
 		);
 	}
+	// A decorative image's stand-in is decorative too, or it joins the name of the link around it.
+	const named =
+		alt === ""
+			? { "aria-hidden": true }
+			: { role: "img", "aria-label": m.preview_unavailable() };
 	return (
 		<span
-			role="img"
-			aria-label={m.preview_unavailable()}
+			{...named}
 			title={m.preview_unavailable()}
 			style={style}
 			className={`${className} flex flex-col items-center justify-center gap-2 rounded bg-surface p-2 shadow-surface text-center text-muted text-sm`}
