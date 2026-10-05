@@ -30,6 +30,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPermissionErr
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPinDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLargeError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLongError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -60,7 +62,9 @@ class SetPinMediaTest : BaseTest() {
     private val renditionCache = mockk<RenditionCache>()
     private val limits = MediaLimits(30, maxVideoBytes = 0, Duration.ZERO, 50, 50, 1, Duration.ZERO, 0)
     private val ingestion = MediaIngestion(store, probe, NoVideoProcessor, limits)
-    private val useCase = SetPinMedia(pins, mediaRepository, store, ingestion, clock, clearPinDownload, renditionCache)
+    private val enqueueTask = mockk<EnqueueTask>(relaxed = true)
+    private val useCase =
+        SetPinMedia(pins, mediaRepository, store, ingestion, clock, clearPinDownload, renditionCache, enqueueTask)
 
     private val owner = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
     private fun pin(author: User = owner) = Pin(randomUUID(), author, "https://c", null, "d", emptyList(), emptyList(),
@@ -88,6 +92,7 @@ class SetPinMediaTest : BaseTest() {
         verify { store.promote(staged, result.media.storageKey) }
         verify { mediaRepository.save(result.media) }
         verify { clearPinDownload.clear(p.id) }
+        verify { enqueueTask.enqueue(MediaFingerprintTask.KIND, "", any(), any(), any(), MediaFingerprintTask.KIND) }
         // A first-time upload has no superseded image, so nothing is evicted.
         verify(exactly = 0) { renditionCache.evictMedia(any()) }
     }
@@ -198,7 +203,7 @@ class SetPinMediaTest : BaseTest() {
         val videoLimits = limits.copy(maxVideoBytes = 30, maxVideoDuration = Duration.ofSeconds(1))
         val withVideo = SetPinMedia(
             pins, mediaRepository, store, MediaIngestion(store, probe, video, videoLimits), clock, clearPinDownload,
-            renditionCache,
+            renditionCache, enqueueTask,
         )
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
@@ -226,7 +231,7 @@ class SetPinMediaTest : BaseTest() {
         val videoLimits = limits.copy(maxVideoBytes = 30, maxVideoDuration = Duration.ofSeconds(1))
         val withVideo = SetPinMedia(
             pins, mediaRepository, store, MediaIngestion(store, probe, video, videoLimits), clock, clearPinDownload,
-            renditionCache,
+            renditionCache, enqueueTask,
         )
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged

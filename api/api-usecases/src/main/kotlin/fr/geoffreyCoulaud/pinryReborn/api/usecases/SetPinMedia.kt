@@ -21,6 +21,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPermissionErr
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPinDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLargeError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLongError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
 import jakarta.enterprise.context.ApplicationScoped
 import java.io.InputStream
 import java.util.UUID
@@ -41,6 +43,7 @@ class SetPinMedia(
     private val clock: Clock,
     private val clearPinDownload: ClearPinDownload,
     private val renditionCache: RenditionCache,
+    private val enqueueTask: EnqueueTask,
 ) {
     fun set(pinId: UUID, requester: User, upload: InputStream): SetPinMediaResult {
         val pin = pinRepository.findPinById(pinId) ?: throw MediaPinDoesNotExistError()
@@ -92,6 +95,7 @@ class SetPinMedia(
             renditionCache.evictMediaQuietly(old.id)
         }
         clearPinDownload.clear(pinId)
+        MediaFingerprintTask.enqueueOn(enqueueTask)
         return SetPinMediaResult(media = saved, replaced = existing != null)
     }
 
