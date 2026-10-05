@@ -69,11 +69,13 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
         repository.addMissing(pin, listOf(pending, rejected, recycled, randomUUID()))
         reject(pin, rejected)
 
-        // When
+        // When: one pair read from both sides, so each pin is the lower id once
         val shown = repository.findShownFor(pin)
+        val shownFromTheOtherSide = repository.findShownFor(pending)
 
         // Then
         assertEquals(mapOf(pending to false, rejected to true), shown)
+        assertEquals(mapOf(pin to false), shownFromTheOtherSide)
         assertEquals(emptyMap<UUID, Boolean>(), repository.findShownFor(recycled))
     }
 
