@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -41,6 +43,12 @@ class PpmReaderTest {
         val path = file("P6\n3 1\n255\n")
         val error = assertThrows(IOException::class.java) { PpmReader.read(path, maxSide = 2) }
         assertEquals("3x1 is past 2 pixels a side", error.message)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["P6\n0 1\n255\n", "P6\n1 0\n255\n", "P6\n1 1\n0\n", "P6\n1 1\n65536\n"])
+    fun `Given a header with no side or a sample range PPM does not have, Then it is refused`(header: String) {
+        assertThrows(IOException::class.java) { PpmReader.read(file(header, 1, 2, 3, 4, 5, 6), maxSide = 2) }
     }
 
     @Test
