@@ -46,7 +46,8 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     @Test
     fun `Given pending, rejected and hidden pairs, Then the pins asked that hold a shown pending pair are found`() {
         // Given: the pending pair's second pin is not asked; a recycled or a gone pin hides a pair
-        val (pending, unasked, rejectedFirst, rejectedSecond) = storedPins(4).map { it.id }
+        val (pending, unasked) = storedPins(2).map { it.id }
+        val (rejectedFirst, rejectedSecond) = storedPins(2).map { it.id }
         val (active, recycled) = storedPins(2, recycled = 1).map { it.id }
         repository.addMissing(pending, listOf(unasked))
         repository.addMissing(rejectedFirst, listOf(rejectedSecond))
