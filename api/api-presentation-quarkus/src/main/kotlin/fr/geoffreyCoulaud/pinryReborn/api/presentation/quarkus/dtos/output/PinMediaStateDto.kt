@@ -7,6 +7,12 @@ data class PinMediaStateDto(
     val width: Int? = null,
     val height: Int? = null,
     val byteSize: Long? = null,
+    /** A video's, null for an image. */
+    val durationMillis: Long? = null,
+    /** The rates in bits per second, each null for an image or a video without that track. */
+    val videoBitRate: Long? = null,
+    val audioChannels: Int? = null,
+    val audioBitRate: Long? = null,
     val reasonCode: DownloadReasonDto? = null,
     val message: String? = null,
     val replacement: ReplacementDto? = null,

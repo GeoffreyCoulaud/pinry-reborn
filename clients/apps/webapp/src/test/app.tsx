@@ -55,7 +55,8 @@ let pinsMade = 0;
 
 /** A pin the journey names by its description, which the tile reads as the image's text. */
 export function pin(description: string, media: Pin["media"] = null): Pin {
-	const id = `${AUTHOR_ID.slice(0, -2)}${(pinsMade++).toString().padStart(2, "0")}`;
+	const made = pinsMade++;
+	const id = `${AUTHOR_ID.slice(0, -2)}${made.toString().padStart(2, "0")}`;
 	return {
 		id,
 		authorId: AUTHOR_ID,
@@ -64,6 +65,8 @@ export function pin(description: string, media: Pin["media"] = null): Pin {
 		description,
 		tags: [],
 		boards: [],
+		// Each pin a second younger than the one made before it.
+		createdAt: new Date(Date.UTC(2026, 0, 1, 0, 0, made)).toISOString(),
 		media,
 		hasPendingDuplicates: false,
 	};
@@ -83,9 +86,21 @@ export function videoPin(
 ): Pin {
 	const bare = pin(description);
 	const url = `/api/v1/pins/${bare.id}/media`;
+	// The API lists the audio track's codec second, when there is one.
+	const sound = mimeType.includes(",");
 	return {
 		...bare,
-		media: { status: "READY", url, mimeType, width: 640, height: 360 },
+		media: {
+			status: "READY",
+			url,
+			mimeType,
+			width: 640,
+			height: 360,
+			durationMillis: 4_000,
+			videoBitRate: 1_200_000,
+			audioChannels: sound ? 2 : null,
+			audioBitRate: sound ? 128_000 : null,
+		},
 	};
 }
 

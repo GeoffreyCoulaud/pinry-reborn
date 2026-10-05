@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import java.util.UUID.randomUUID
 
 class PinMapperTest {
@@ -58,6 +59,18 @@ class PinMapperTest {
         // Then
         assertNotNull(result.pagination.previousCursor)
         assertNotNull(result.pagination.nextCursor)
+    }
+
+    @Test
+    fun `Given a pin, Then toDto carries its creation instant`() {
+        // Given
+        val pin = createPin().copy(createdAt = Instant.parse("2026-01-02T03:04:05Z"))
+
+        // When
+        val result = pin.toDto(emptyMap(), emptySet())
+
+        // Then
+        assertEquals(pin.createdAt, result.createdAt)
     }
 
     @Test

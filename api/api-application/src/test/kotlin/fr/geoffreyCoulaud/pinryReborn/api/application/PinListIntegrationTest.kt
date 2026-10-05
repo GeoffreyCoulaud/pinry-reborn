@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
@@ -20,8 +21,10 @@ import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertNotNull
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import kotlin.io.encoding.Base64
@@ -39,6 +42,9 @@ class PinListIntegrationTest : IntegrationTest() {
 
     @Inject
     lateinit var mediaDownloadRepository: MediaDownloadRepositoryInterface
+
+    @Inject
+    lateinit var pinRepository: PinRepositoryInterface
 
     // ==================== Helpers ====================
 
@@ -103,6 +109,38 @@ class PinListIntegrationTest : IntegrationTest() {
             .body("pins[1].media.width", nullValue())
             .body("pins[1].media.height", nullValue())
             .body("pins[2].media", nullValue())
+    }
+
+    @Test
+    fun `Given a video, Then the pin carries its creation instant and the video's duration, rates and channels`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pinId = createPinsForUser(auth.user, 1).single()
+        mediaRepository.save(
+            Media(
+                id = UUID.randomUUID(), pinId = pinId, mimeType = "video/mp4", width = 800, height = 600,
+                animated = true, byteSize = 1024, contentHash = "hash-$pinId",
+                storageKey = "originals/x/$pinId/v.mp4", createdAt = FIXED_INSTANT,
+                frames = 30, duration = Duration.ofMillis(1_500),
+                videoBitRate = 4_200_000, audioChannels = 2, audioBitRate = 128_000,
+            ),
+        )
+
+        // When
+        val response = given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/pins")
+            .then()
+            .statusCode(200)
+            .body("pins[0].media.durationMillis", equalTo(1_500))
+            .body("pins[0].media.videoBitRate", equalTo(4_200_000))
+            .body("pins[0].media.audioChannels", equalTo(2))
+            .body("pins[0].media.audioBitRate", equalTo(128_000))
+
+        // Then
+        val createdAt = Instant.parse(response.extract().path<String>("pins[0].createdAt"))
+        assertEquals(pinRepository.findPinById(pinId)?.createdAt, createdAt)
     }
 
     @Test
