@@ -4,7 +4,8 @@ Date: 2026-10-05
 Status: Draft. One specification review ran, `.reviews/the-duplicates-are-compared-spec.md`, its 1 CRITICAL, 5 MAJOR
 and 21 MINOR closed in this document. Frozen when the lot's last block merges.
 Lot: `0.49.0`.
-Branches: one stack: 10 `feat/a-media-records-its-tracks`, 20 `feat/the-api-describes-a-media` on 10,
+Branches: one stack: 10 `feat/a-media-records-its-tracks`, 15 `feat/the-worker-probes-stored-media` on 10,
+20 `feat/the-api-describes-a-media` on 15,
 30 `feat/the-api-resolves-duplicates` on 20, 40 `feat/the-dialog-compares-duplicates` on 30,
 50 `feat/the-comparator-plays-both-versions` on 40, 60 `refactor/the-merge-and-reject-routes-go` on 50.
 ADR: `docs/adr/0052-duplicates-are-resolved-in-one-call.md`, written in block 10, records decisions B and C and the
@@ -100,17 +101,27 @@ from `mimeType`'s `codecs` parameter, which every video already carries. The col
 short name, the video codec and its rate, "MP4 · H.264 · 4.2 Mb/s", then the sound, "AAC stereo, 128 kb/s" or "No
 sound".
 
-**F. No back-fill** (F). Media stored before this lot keep null rates and channels, and those stored before lot
-`0.46.0` a null duration and one frame. The alpha runs on development data, which an export, a reset and an import
-refill through `MediaIngestion`; that refill also drops every rejection, the export carrying no pair, and the worker
-finds the pairs again as pending. The handoff says so.
+**F. The worker probes stored media again** (F, reopened on 2026-10-06). A video without its rates is an error,
+where a still image without them is the normal case, so the gap is healed as the fingerprints are (ADR 0051,
+decision 6). `media` gains `probe_version`, which ingestion stamps with `PROBE_VERSION = 1` since it measured
+everything; a row stored before this lot has none.
+- One task kind, `media.probe`, with one dedup key, drains every media below the version, newest first, renewing its
+  lease after each. It measures the stored file again and writes `frames`, `duration_millis` and decision E's three
+  columns; nothing else of the row changes. Media stored before lot `0.46.0` regain their frame counts and
+  durations with it.
+- It is enqueued by `GarbageCollectionLifecycle` at startup and on each sweep. A media row is written only after its
+  probe (`MediaIngestion.ingest`), so a stop mid-ingestion leaves no row to heal: only a raised version does.
+- A media that cannot be probed is logged and stamped, so it never holds the drain.
+
+An export, a reset and an import is no refill: the import creates new pins, skips a media the account holds, drops
+every rejection and clamps every date to the new account's creation (`ImportInstantClamp`).
 
 ## 4. The contract
 
 | Operation | Change |
 |---|---|
 | `PinOutputDto.createdAt` | required instant |
-| `PinMediaStateDto.durationMillis` | integer or null; a video's, null for an image and for a video stored before lot `0.46.0` |
+| `PinMediaStateDto.durationMillis` | integer or null; a video's, null for an image |
 | `PinMediaStateDto.videoBitRate`, `.audioChannels`, `.audioBitRate` | integer or null each; the rates in bits per second |
 | `POST /api/v1/pins/{pinId}/duplicates/resolutions` | body `{decisions: {<pinId>: KEEP / MERGE / REJECT}}`, at most `PinIdsInputDto.MAX_IDENTIFIERS` entries; 200 the kept pin's `PinOutputDto` |
 | `POST /api/v1/pins/merges`, `PUT /api/v1/pins/{pinId}/duplicates/{otherPinId}` | removed |
@@ -134,6 +145,7 @@ Block 20 makes the contract `22.4.0`, block 30 `22.5.0`, block 60 `23.0.0`.
 | Block | Branch | What its tests have to fail on |
 |---|---|---|
 | 10 | `feat/a-media-records-its-tracks` | Decision E's columns. |
+| 15 | `feat/the-worker-probes-stored-media` | Decision F. |
 | 20 | `feat/the-api-describes-a-media` | Section 4's fields. |
 | 30 | `feat/the-api-resolves-duplicates` | Decisions B and C. |
 | 40 | `feat/the-dialog-compares-duplicates` | Decision A. |
@@ -144,12 +156,22 @@ Block 40 is the likeliest to pass a bound; it splits at a number between 40 and 
 
 ### Block 10
 
-- Migration `1.32`: the three columns of decision E, nullable. `Media` gains them, `FfprobeReport` reads them,
-  `MediaIngestion` stores them.
+- Migration `1.32`: the three columns of decision E and decision F's `probe_version`, nullable. `Media` gains them,
+  `FfprobeReport` reads them, `MediaIngestion` stores them and stamps the version.
 - An ingestion test per case: an H.264 MP4 with AAC stereo stores a video rate, 2 channels and an audio rate; a VP9
   WebM with Opus, whose tracks state no `bit_rate`, stores both rates within 1 % of its packets' sums; a VP9 WebM
   without sound stores null audio; a GIF stores three nulls.
-- Carries this specification, ADR 0052 and ADR 0051's status line. Its consumer is block 20.
+- Carries this specification, ADR 0052 and ADR 0051's status line. Its consumers are blocks 15 and 20.
+
+### Block 15
+
+- `ProbeMedia` in `api-usecases`, its task and handler, and the enqueue in `GarbageCollectionLifecycle`, after
+  `FingerprintMedia`'s pattern.
+- A video and an animated GIF stored with a null version, null rates, no duration and one frame: after the drain
+  the video holds its rates, channels, duration and frame count, the GIF its frame count and a null duration, and
+  both the version. A media stamped at the version is not probed again.
+- A corrupt media between two good ones: both good ones are probed, the corrupt one is stamped.
+- The newest media is probed first.
 
 ### Block 20
 
@@ -208,8 +230,6 @@ None. "A video's excerpt is not found as such" is about finding duplicates, whic
 ## 7. Out of scope
 
 - **In-step play without `ImageDecoder`** (decision D). Observed in block 50's tests without it.
-- **Back-filling stored media** (decision F). Observed as no migration or worker code writing the new columns of an
-  existing row.
 - **Restoring a rejected candidate to pending** (ADR 0052, consequences). Observed as no `PENDING` among the
   decision's values.
 - **Opening a candidate from the dialog** (decision A). Observed as "open a duplicate" deleted in block 40.
