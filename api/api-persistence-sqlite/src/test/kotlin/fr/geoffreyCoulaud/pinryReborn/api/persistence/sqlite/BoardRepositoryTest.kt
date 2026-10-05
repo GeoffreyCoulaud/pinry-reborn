@@ -531,6 +531,24 @@ class BoardRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun `Given two pins with a media, the older with the greater id, Then findCoverPinId answers the newer`() {
+        // Given
+        val user = createAndSaveUser()
+        val board = createAndSaveBoard("Board", user)
+        val older = Instant.parse("2026-01-01T00:00:00Z")
+        val newerId = UUID.fromString("00000000-0000-0000-0000-000000000001")
+        val olderId = UUID.fromString("00000000-0000-0000-0000-000000000002")
+        saveMediaFor(createAndSavePin(user, boards = listOf(board), createdAt = older.plusSeconds(1), id = newerId))
+        saveMediaFor(createAndSavePin(user, boards = listOf(board), createdAt = older, id = olderId))
+
+        // When
+        val coverPinId = boardRepository.findCoverPinId(board.id)
+
+        // Then
+        assertEquals(newerId, coverPinId)
+    }
+
+    @Test
     fun `Given two pins with a media sharing a createdAt, Then findCoverPinId answers the greater id`() {
         // Given
         val user = createAndSaveUser()
