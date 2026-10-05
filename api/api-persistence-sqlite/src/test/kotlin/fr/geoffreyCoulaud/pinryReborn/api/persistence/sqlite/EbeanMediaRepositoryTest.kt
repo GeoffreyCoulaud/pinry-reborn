@@ -21,8 +21,9 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
     private val userRepository = UserRepository(persistor)
     private val pinRepository = PinRepository(persistor)
 
-    private fun savedPin(): Pin {
-        val user = userRepository.saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
+    private fun savedUser() = userRepository.saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
+
+    private fun savedPin(user: User = savedUser()): Pin {
         return pinRepository.savePin(
             Pin(
                 randomUUID(), user, "https://ctx", null, "desc", emptyList(), emptyList(),
@@ -133,6 +134,50 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
         assertEquals(mapOf(imaged.id to media), found)
     }
 
+    // --- fingerprints (ADR 0051) ---
+
+    @Test
+    fun `Given media unhashed, hashed at an older version and at the current one, Then the newest outdated comes first`() {
+        // Given: the newest is current, so it is skipped for the next newest
+        val unhashed = repository.save(mediaFor(savedPin().id).copy(createdAt = Instant.parse("2026-01-01T00:00:00Z")))
+        val older = repository.save(mediaFor(savedPin().id).copy(createdAt = Instant.parse("2026-01-02T00:00:00Z")))
+        val current = repository.save(mediaFor(savedPin().id).copy(createdAt = Instant.parse("2026-01-03T00:00:00Z")))
+        repository.markFingerprinted(older.id, VERSION - 1)
+        repository.markFingerprinted(current.id, VERSION)
+
+        // When
+        val first = repository.findNewestNotFingerprinted(VERSION)
+        repository.markFingerprinted(older.id, VERSION)
+        val second = repository.findNewestNotFingerprinted(VERSION)
+        repository.markFingerprinted(unhashed.id, VERSION)
+        val none = repository.findNewestNotFingerprinted(VERSION)
+
+        // Then
+        assertEquals(listOf(older, unhashed, null), listOf(first, second, none))
+    }
+
+    @Test
+    fun `Given candidates of every kind, Then only another pin of the author at its motion level and version compares`() {
+        // Given
+        val author = savedUser()
+        val media = repository.save(mediaFor(savedPin(author).id))
+        val comparable = repository.save(mediaFor(savedPin(author).id))
+        val recycledPin = savedPin(author)
+        val recycled = repository.save(mediaFor(recycledPin.id))
+        pinRepository.softDeletePin(recycledPin, storableNow())
+        val otherAuthor = repository.save(mediaFor(savedPin().id))
+        val animated = repository.save(mediaFor(savedPin(author).id, animated = true))
+        val outdated = repository.save(mediaFor(savedPin(author).id))
+        val candidates = listOf(media, comparable, recycled, otherAuthor, animated, outdated)
+        candidates.filter { it != outdated }.forEach { repository.markFingerprinted(it.id, VERSION) }
+
+        // When
+        val found = repository.findComparable(media, candidates.map { it.id }, VERSION)
+
+        // Then
+        assertEquals(setOf(comparable, recycled), found.toSet())
+    }
+
     @Test
     fun `Given no pin ids, Then findByPinIds returns an empty map`() {
         // Given
@@ -144,5 +189,9 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
 
         // Then
         assertTrue(found.isEmpty())
+    }
+
+    private companion object {
+        const val VERSION = 2
     }
 }

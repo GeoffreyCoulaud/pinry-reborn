@@ -31,4 +31,13 @@ interface MediaRepositoryInterface {
      * call is bounded by the size of [candidates] (the orphan sweep chunks it).
      */
     fun findMissingMediaIds(candidates: Collection<UUID>): Set<UUID>
+
+    /** The newest media whose frames were not hashed at [version], whatever its pin's state. */
+    fun findNewestNotFingerprinted(version: Int): Media?
+
+    /** Records that [mediaId]'s frames were hashed at [version]. */
+    fun markFingerprinted(mediaId: UUID, version: Int)
+
+    /** Among [candidates], the media hashed at [version] on another pin of [media]'s author, at its motion level. */
+    fun findComparable(media: Media, candidates: Collection<UUID>, version: Int): List<Media>
 }

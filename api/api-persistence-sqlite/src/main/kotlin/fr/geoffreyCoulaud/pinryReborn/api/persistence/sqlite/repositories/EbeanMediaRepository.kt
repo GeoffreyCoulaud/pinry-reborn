@@ -7,6 +7,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.MediaModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.MediaModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.PinQueries
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withPinInAnyState
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
@@ -41,5 +43,34 @@ class EbeanMediaRepository(
         if (candidates.isEmpty()) return emptySet()
         val existing = QMediaModel().id.isIn(candidates).findIds<UUID>()
         return candidates.toSet() - existing.toSet()
+    }
+
+    override fun findNewestNotFingerprinted(version: Int): Media? =
+        QMediaModel()
+            .withPinInAnyState()
+            .or()
+            .fingerprintVersion.isNull
+            .fingerprintVersion.lessThan(version)
+            .endOr()
+            .orderBy().createdAt.desc().id.desc()
+            .setMaxRows(1)
+            .findOne()
+            ?.toDomain()
+
+    override fun markFingerprinted(mediaId: UUID, version: Int) {
+        QMediaModel().id.equalTo(mediaId).asUpdate().set("fingerprintVersion", version).update()
+    }
+
+    override fun findComparable(media: Media, candidates: Collection<UUID>, version: Int): List<Media> {
+        val author = PinQueries.any().id.equalTo(media.pinId).select("author.id")
+        return QMediaModel()
+            .withPinInAnyState()
+            .id.isIn(candidates)
+            .pinId.notEqualTo(media.pinId)
+            .animated.equalTo(media.animated)
+            .fingerprintVersion.equalTo(version)
+            .pin.author.id.isIn(author.query())
+            .findList()
+            .map { it.toDomain() }
     }
 }

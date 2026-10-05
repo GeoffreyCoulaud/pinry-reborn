@@ -141,6 +141,10 @@ class ResolvePinMediaStateTest {
         override fun findByPinId(pinId: UUID): Media? = error("not used")
         override fun deleteByPinId(pinId: UUID) = error("not used")
         override fun findMissingMediaIds(candidates: Collection<UUID>): Set<UUID> = error("not used")
+        override fun findNewestNotFingerprinted(version: Int): Media? = error("not used")
+        override fun markFingerprinted(mediaId: UUID, version: Int) = error("not used")
+        override fun findComparable(media: Media, candidates: Collection<UUID>, version: Int): List<Media> =
+            error("not used")
     }
 
     /** The download half of the same count. */
