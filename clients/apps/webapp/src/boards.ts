@@ -56,9 +56,8 @@ function saved(answer: {
 }
 
 /**
- * Every board the account holds, in one request: `GET /api/v1/boards` takes no cursor and a board
- * carries no cover, so there is no page to chase and nothing to load lazily (specification
- * 2026-09-20, 2.7).
+ * Every board the account holds, in one request: `GET /api/v1/boards` takes no cursor (specification
+ * 2026-09-20, 2.7). The covers load lazily instead, the grid not being virtualised.
  */
 export function useBoards() {
 	return useQuery({
