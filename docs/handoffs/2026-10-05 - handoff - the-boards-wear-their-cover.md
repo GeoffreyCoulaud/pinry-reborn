@@ -121,8 +121,8 @@ each closed in the closing block `fix/the-boards-lot-closes`:
 
 Fix-backs, cascaded rebases, runs re-triggered and the operator's reading of the bodies: filled in by the closing
 block.
-(Corrected: fix-backs 0; cascaded rebases 0; runs they re-triggered 0 so far; the operator's reading of the bodies:
-not yet given.)
+(Corrected: fix-backs 0; cascaded rebases 0; runs they re-triggered 0; the operator's reading of the bodies: no
+remark, the stack approved as "LGTM" on 2026-10-05.)
 
 ## Next step
 
