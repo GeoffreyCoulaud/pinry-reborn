@@ -34,7 +34,7 @@ the holistic review.
   one motion level pair when 80 % of either media's unique frames find a frame of the other within 31 bits, both
   ways. A media that cannot be decoded is stamped with no frames. `MediaAdapterProducers` routes a video to ffmpeg and
   anything else to vips. *(Corrected in the closing block: deleting a pin's media deletes that pin's pending pairs,
-  at `DeletePinMedia`.)*
+  at `DeletePinMedia`, and the sweep also deletes the pending pairs of a pin with no media.)*
 - **The API serves duplicates** (50, 53, 60), contract `22.3.0`: `PinOutputDto.hasPendingDuplicates` on every pin,
   read for a whole page in one repository call; `GET /api/v1/pins/{pinId}/duplicates` (`{pin, rejected}` items, empty
   for a recycled pin); `PUT .../duplicates/{otherPinId}` with `{rejected}`, refused with the new
@@ -80,11 +80,13 @@ the holistic review.
   form and dropped `mutate`'s success callback; fixed in `d8fa014d` by showing the kept pin first, in the same render.
   Twenty screenshots in the session's scratchpad, `shots80/{phone,desktop}-{light,dark}-{1-grid,2-group,3-chosen,4-merged,5-grid-after}.png`.
 - Continuous integration: one red run, on #332, below.
-- Closing block, split in two (below): `./gradlew gate` green on `fix/the-duplicates-lot-closes` at `f309b35e`;
-  budget 173 lines, 18 files against `feat/the-dialog-merges-a-group`. The clients' typecheck, lint, Knip and
-  Vitest (69 files, 359 tests) green on `fix/the-duplicates-lot-closes-the-webapp`, and `dagger call gate` green at
-  its `3d635be7`, the whole stack's top; budget 121 lines, 4 files against `fix/the-duplicates-lot-closes`. Mutations, each failing the case named: `DeletePinMedia` without
-  `deletePending`, the new `DuplicateFindingIntegrationTest` case; the pair relations left optional, two
+- Closing block, split in two (below): `./gradlew gate` green on `fix/the-duplicates-lot-closes` at `f309b35e`,
+  then at `1ad1fbf0` with the sweep; budget 213 lines, 19 files against `feat/the-dialog-merges-a-group`. The
+  clients' typecheck, lint, Knip and Vitest (69 files, 359 tests) green on `fix/the-duplicates-lot-closes-the-webapp`,
+  and `dagger call gate` green at its `3d635be7`, the whole stack's top before the sweep; budget 121 lines, 4 files
+  against `fix/the-duplicates-lot-closes`. Mutations, each failing the case named: `DeletePinMedia` without
+  `deletePending`, the new `DuplicateFindingIntegrationTest` case; the sweep without its second delete, the new
+  repository and integration sweep cases; the pair relations left optional, two
   `EbeanPinDuplicateRepositoryTest` cases (a gone pin's pair shown); the merge without the catalogues' reread, the
   merge journey's marker assertion; the recycle without it, the new delete journey case; the kept pin left unread,
   the merge journey's second case.
@@ -137,12 +139,14 @@ the holistic review.
   again" is a request it counts. *Merge (n)* counts the whole group, kept pin included. A second case keeps a candidate
   the grid has not loaded: the dialog shows it, with no previous or next.
 
-- Closing block: split in two on another seam than the workflow's, the API findings alone touching 18 counted
-  files: `fix/the-duplicates-lot-closes` holds the API findings, `fix/the-duplicates-lot-closes-the-webapp` the web
-  application's, the specification's cell and this handoff. `main` was told the seam first. `DeletePinMedia` deleting
-  pending pairs departs from decision J's "sweep, not deletion sites": a pin with no media is never hashed again nor
-  swept, so its pairs would stay. The web application's two fixes change no layout and were not read headless; the
-  journeys hold both behaviours.
+- Closing block: split in two on another seam than the workflow's, which puts the code findings on one side and the
+  documents on the other; the API findings alone touch 19 counted files. `fix/the-duplicates-lot-closes` holds the API
+  findings, `fix/the-duplicates-lot-closes-the-webapp` the web application's, the specification's cell and this
+  handoff. `main` was told the seam first and did not object. `DeletePinMedia` deleting pending pairs departs from
+  decision J's "sweep, not deletion sites": a pin with no media is never hashed again, so its pairs would stay. The
+  sweep also deletes the pending pairs of a pin with no media, which is what keeps decision J: a stop between the
+  media's delete and the pairs' leaves nothing behind. The web application's two fixes change no layout and were not
+  read headless; the journeys hold both behaviours.
 
 Tier-1 fixes: `DbMigrationModelCoverageTest` decodes XML entities before comparing an index definition (30);
 `MeImportIntegrationTest` waits for the drain before counting staged files (43); the raised-version case of
@@ -155,7 +159,10 @@ sampling (closing block).
   block 20's measurement ("3, et on note ça au backlog pour plus tard. C'est une feature supplémentaire la détection
   d'extraits, on veut la détection de doublons dans ce lot.").
 - P is pending: whether headless screenshots go in a pull request. *(Corrected in the closing block: still
-  unanswered.)* The closing block asked none.
+  unanswered.)*
+- The third holistic MAJOR, put to the operator by the lead in the closing block: delete at the site, or sweep
+  pending pairs naming a pin with no media. Answer: "le balayage périodique est quand même nécessaire pour éviter
+  les éléments morts suite à une coupure inattendue." Both were done.
 
 ## What is not validated
 
@@ -187,8 +194,9 @@ its findings here. *(Corrected in the closing block: it ran, `.reviews/the-pin-k
   renews before a media's sampling and after each frame.
 - MAJOR, partners keep their marker after a recycle or a merge: the catalogues are read again after a merge, and
   after a recycle of a pin a cached catalogue showed marked.
-- MAJOR, `DeletePinMedia` left pending pairs: one `deletePending(pinId)` at that site, with an integration case
-  (departure above).
+- MAJOR, `DeletePinMedia` left pending pairs: one `deletePending(pinId)` at that site, and the sweep's
+  `deleteOrphans` deleting the pending pairs of a pin with no media, each with an integration case (departure and
+  the operator's answer above).
 - MINOR, only three exception types stamp a media: fixed at the adapters rather than by catching
   `RuntimeException`, which `agents/engineering.md` forbids and which would swallow the `TaskLeaseLostException` the
   per-frame renewal throws. vips reports an unreadable delay as undecodable; `PpmReader` refuses a header with no
