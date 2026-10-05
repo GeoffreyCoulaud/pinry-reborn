@@ -42,7 +42,6 @@ function DuplicateRow({
 					) : null}
 				</span>
 			</button>
-			{/* Outlined rather than flat: a button in a row of words is one nobody presses. */}
 			<Button
 				size="sm"
 				variant="outline"
