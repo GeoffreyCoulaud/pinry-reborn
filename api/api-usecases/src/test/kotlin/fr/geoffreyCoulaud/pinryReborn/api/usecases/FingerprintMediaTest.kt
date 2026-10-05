@@ -47,7 +47,10 @@ class FingerprintMediaTest : BaseTest() {
     private val staged = StagedFile("/tmp/stored", 1, "hash")
 
     // Noise is detailed enough to keep, and two draws are about 128 bits apart.
-    private fun noise(seed: Int) = LumaFrame(SIDE, SIDE, Random(seed).let { r -> FloatArray(SIDE * SIDE) { r.nextFloat() * 255 } })
+    private fun noise(seed: Int): LumaFrame {
+        val random = Random(seed)
+        return LumaFrame(SIDE, SIDE, FloatArray(SIDE * SIDE) { random.nextFloat() * 255 })
+    }
 
     private fun uniform() = LumaFrame(SIDE, SIDE, FloatArray(SIDE * SIDE) { 128f })
 
