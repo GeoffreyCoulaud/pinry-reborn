@@ -32,6 +32,9 @@ class MediaModel(
     @DbDefault("1") var frames: Int,
     var durationMillis: Long?,
 ) : BaseModel(id) {
+    /** The fingerprint algorithm's version that hashed this media's frames, null until hashed. */
+    var fingerprintVersion: Int? = null
+
     /**
      * The pin [pinId] names, so a query about it is a join rather than raw SQL. No index of its own:
      * `uq_media_pin_id` already covers the column.

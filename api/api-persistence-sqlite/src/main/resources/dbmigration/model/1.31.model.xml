@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<migration xmlns="http://ebean-orm.github.io/xml/ns/dbmigration">
+    <changeSet type="apply">
+        <createTable name="media_frame" identityType="external" pkName="pk_media_frame">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="media_id" type="uuid" notnull="true"/>
+            <column name="hash_0" type="bigint" notnull="true"/>
+            <column name="hash_1" type="bigint" notnull="true"/>
+            <column name="hash_2" type="bigint" notnull="true"/>
+            <column name="hash_3" type="bigint" notnull="true"/>
+        </createTable>
+        <addColumn tableName="media">
+            <column name="fingerprint_version" type="integer"/>
+        </addColumn>
+        <createTable name="pin_duplicate" identityType="external" pkName="pk_pin_duplicate">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="first_pin_id" type="uuid" notnull="true"/>
+            <column name="second_pin_id" type="uuid" notnull="true"/>
+            <column name="rejected_at" type="timestamp"/>
+        </createTable>
+        <createIndex indexName="ix_media_frame_media" tableName="media_frame" columns="media_id"/>
+        <createIndex indexName="ix_media_frame_band_0" tableName="media_frame" columns="" definition="create index ix_media_frame_band_0 on media_frame (((hash_0 &gt;&gt; 48) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_1" tableName="media_frame" columns="" definition="create index ix_media_frame_band_1 on media_frame (((hash_0 &gt;&gt; 32) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_2" tableName="media_frame" columns="" definition="create index ix_media_frame_band_2 on media_frame (((hash_0 &gt;&gt; 16) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_3" tableName="media_frame" columns="" definition="create index ix_media_frame_band_3 on media_frame (((hash_0 &gt;&gt; 0) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_4" tableName="media_frame" columns="" definition="create index ix_media_frame_band_4 on media_frame (((hash_1 &gt;&gt; 48) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_5" tableName="media_frame" columns="" definition="create index ix_media_frame_band_5 on media_frame (((hash_1 &gt;&gt; 32) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_6" tableName="media_frame" columns="" definition="create index ix_media_frame_band_6 on media_frame (((hash_1 &gt;&gt; 16) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_7" tableName="media_frame" columns="" definition="create index ix_media_frame_band_7 on media_frame (((hash_1 &gt;&gt; 0) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_8" tableName="media_frame" columns="" definition="create index ix_media_frame_band_8 on media_frame (((hash_2 &gt;&gt; 48) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_9" tableName="media_frame" columns="" definition="create index ix_media_frame_band_9 on media_frame (((hash_2 &gt;&gt; 32) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_10" tableName="media_frame" columns="" definition="create index ix_media_frame_band_10 on media_frame (((hash_2 &gt;&gt; 16) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_11" tableName="media_frame" columns="" definition="create index ix_media_frame_band_11 on media_frame (((hash_2 &gt;&gt; 0) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_12" tableName="media_frame" columns="" definition="create index ix_media_frame_band_12 on media_frame (((hash_3 &gt;&gt; 48) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_13" tableName="media_frame" columns="" definition="create index ix_media_frame_band_13 on media_frame (((hash_3 &gt;&gt; 32) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_14" tableName="media_frame" columns="" definition="create index ix_media_frame_band_14 on media_frame (((hash_3 &gt;&gt; 16) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_15" tableName="media_frame" columns="" definition="create index ix_media_frame_band_15 on media_frame (((hash_3 &gt;&gt; 0) &amp; 65535))"/>
+        <createIndex indexName="ux_pin_duplicate_pins" tableName="pin_duplicate" columns="" definition="create unique index ux_pin_duplicate_pins on pin_duplicate (first_pin_id, second_pin_id)"/>
+        <createIndex indexName="ix_pin_duplicate_second_pin" tableName="pin_duplicate" columns="second_pin_id"/>
+    </changeSet>
+</migration>
