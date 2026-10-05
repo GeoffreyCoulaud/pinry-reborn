@@ -329,6 +329,39 @@
           }
         }
       },
+      "PinDuplicateListOutputDto" : {
+        "type" : "object",
+        "required" : [ "duplicates" ],
+        "properties" : {
+          "duplicates" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PinDuplicateOutputDto"
+            }
+          }
+        }
+      },
+      "PinDuplicateOutputDto" : {
+        "type" : "object",
+        "required" : [ "pin", "rejected" ],
+        "properties" : {
+          "pin" : {
+            "$ref" : "#/components/schemas/PinOutputDto"
+          },
+          "rejected" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PinDuplicateUpdateInputDto" : {
+        "type" : "object",
+        "required" : [ "rejected" ],
+        "properties" : {
+          "rejected" : {
+            "type" : [ "boolean", "null" ]
+          }
+        }
+      },
       "PinIdsInputDto" : {
         "type" : "object",
         "required" : [ "pinIds" ],
@@ -3504,6 +3537,127 @@
         },
         "summary" : "Get Pin",
         "tags" : [ "Pin Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/pins/{pinId}/duplicates" : {
+      "get" : {
+        "summary" : "List the pin's likely duplicates",
+        "description" : "Those the user rejected included. A pair is listed while both pins are active, so a recycled pin lists none.",
+        "parameters" : [ {
+          "name" : "pinId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PinDuplicateListOutputDto"
+                }
+              }
+            }
+          },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/PinNotFound"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          }
+        },
+        "tags" : [ "Pin Duplicate Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/pins/{pinId}/duplicates/{otherPinId}" : {
+      "put" : {
+        "summary" : "Reject a likely duplicate, or take the rejection back",
+        "parameters" : [ {
+          "name" : "otherPinId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        }, {
+          "name" : "pinId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PinDuplicateUpdateInputDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PinDuplicateOutputDto"
+                }
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/InvalidBody"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/PinForbidden"
+          },
+          "404" : {
+            "description" : "The pin does not exist, the two pins are not a listed pair, or a path value could not be read",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/ProblemDetail"
+                  } ],
+                  "properties" : {
+                    "code" : {
+                      "enum" : [ "PIN_DOES_NOT_EXIST", "DUPLICATE_DOES_NOT_EXIST", "UNKNOWN_ROUTE" ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "413" : {
+            "$ref" : "#/components/responses/BodyTooLarge"
+          }
+        },
+        "tags" : [ "Pin Duplicate Controller" ],
         "security" : [ {
           "BearerScheme" : [ ]
         }, {

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.repositories
 
+import java.time.Instant
 import java.util.UUID
 
 /** Pairs of pins whose media look alike (ADR 0051, decision 7). */
@@ -13,6 +14,12 @@ interface PinDuplicateRepositoryInterface {
     /** Delete every pair one of whose pins is gone, recycled pins being kept; returns how many. */
     fun deleteOrphans(): Int
 
+    /** [pinId]'s shown pairs, both pins active, keyed by the other pin's id; true when the user rejected it. */
+    fun findShownFor(pinId: UUID): Map<UUID, Boolean>
+
     /** The pins among [pinIds] that hold a pair the user has not rejected, both pins active, in one query. */
     fun findPinIdsWithPending(pinIds: Collection<UUID>): Set<UUID>
+
+    /** Stamp the shown pair of [pinId] and [otherPinId] with [rejectedAt]; false when no such pair is shown. */
+    fun setRejected(pinId: UUID, otherPinId: UUID, rejectedAt: Instant?): Boolean
 }

@@ -215,7 +215,11 @@ class FingerprintMediaTest : BaseTest() {
 
         override fun deleteOrphans(): Int = error("not used")
 
+        override fun findShownFor(pinId: UUID): Map<UUID, Boolean> = error("not used")
+
         override fun findPinIdsWithPending(pinIds: Collection<UUID>): Set<UUID> = error("not used")
+
+        override fun setRejected(pinId: UUID, otherPinId: UUID, rejectedAt: Instant?): Boolean = error("not used")
     }
 
     private object PassthroughRunner : TransactionRunner {
