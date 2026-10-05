@@ -3,9 +3,11 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinDuplicateUpdateInputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinMergeInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicate
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicates
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMerger
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -27,8 +29,10 @@ class PinDuplicateControllerTest {
     private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
         every { it.statesFor(any()) } returns emptyMap()
     }
+    private val pinMerger = mockk<PinMerger>()
     private val controller = PinDuplicateController(
         pinDuplicates = pinDuplicates,
+        pinMerger = pinMerger,
         securityIdentity = securityIdentity,
         pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
     )
@@ -60,5 +64,31 @@ class PinDuplicateControllerTest {
 
         // Then
         assertEquals(other.id to true, answered.pin.id to answered.rejected)
+    }
+
+    @Test
+    fun `Given a merge, Then the kept pin is answered`() {
+        // Given
+        val (kept, absorbed) = List(2) { pin() }
+        every { pinMerger.merge(kept.id, listOf(absorbed.id), user) } returns kept
+
+        // When
+        val answered = controller.mergePins(PinMergeInputDto(kept.id, listOf(absorbed.id))).entity
+
+        // Then
+        assertEquals(kept.id, answered.id)
+    }
+
+    @Test
+    fun `Given a merge body, Then it is valid only when it names each pin once`() {
+        // Given
+        val (kept, absorbed) = List(2) { randomUUID() }
+
+        // When
+        val validity = listOf(listOf(absorbed), listOf(absorbed, absorbed), listOf(kept, absorbed))
+            .map { PinMergeInputDto(kept, it).isEachPinNamedOnce }
+
+        // Then
+        assertEquals(listOf(true, false, false), validity)
     }
 }
