@@ -1,9 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActivePins
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanPinDuplicateRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
@@ -43,6 +45,11 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
         }
         stored.takeLast(recycled).forEach { pins.softDeletePin(it, storableNow()) }
         return stored
+    }
+
+    private fun withMedia(pin: Pin) {
+        EbeanMediaRepository(persistor, transactionRunner)
+            .save(Media(randomUUID(), pin.id, "image/png", 1, 1, false, 1, "", "originals/x", storableNow()))
     }
 
     @Test
@@ -117,19 +124,22 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given pairs of stored, recycled and gone pins, Then the orphan sweep deletes those naming a gone pin`() {
-        // Given: a gone pin on either side, since its id sorts first or second
-        val (stored, recycled) = storedPins(2, recycled = 1)
+    fun `Given stored, recycled, emptied and gone pins' pairs, Then the sweep deletes gone ones and emptied pending`() {
+        // Given: a gone pin on either side, since its id sorts first or second; two pins with no media
+        val (stored, recycled) = storedPins(2, recycled = 1).onEach(::withMedia)
+        val (emptied, emptiedRejected) = storedPins(2)
         val (goneLow, goneHigh) = listOf("00000000-0000-0000-0000-000000000000", "ffffffff-ffff-ffff-ffff-ffffffffffff")
             .map(UUID::fromString)
-        repository.addMissing(stored.id, listOf(recycled.id, goneLow, goneHigh))
+        repository.addMissing(stored.id, listOf(recycled.id, goneLow, goneHigh, emptied.id, emptiedRejected.id))
+        reject(stored.id, emptiedRejected.id)
 
         // When
         val deleted = repository.deleteOrphans()
 
         // Then
-        assertEquals(2, deleted)
-        assertEquals(setOf(setOf(stored.id, recycled.id) to false), pairs())
+        assertEquals(3, deleted)
+        val kept = setOf(setOf(stored.id, recycled.id) to false, setOf(stored.id, emptiedRejected.id) to true)
+        assertEquals(kept, pairs())
     }
 
     @Test

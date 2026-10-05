@@ -223,6 +223,23 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
         assertEquals(listOf(pending(kept, emptied), emptySet()), listOf(beforeTheDelete, pairs()))
     }
 
+    @Test
+    fun `Given two pinned copies and one's media row deleted alone, Then the sweep deletes their pending pair`() {
+        // Given: a crash between `DeletePinMedia`'s media delete and its pairs' delete
+        val author = createAuthenticatedUser().user
+        val still = still()
+        val (kept, emptied) = List(2) { pinned(author, still) }
+        awaitFingerprintDrain()
+        val beforeTheSweep = pairs()
+        QMediaModel().id.equalTo(emptied.id).delete()
+
+        // When
+        reapFingerprints.reap()
+
+        // Then
+        assertEquals(listOf(pending(kept, emptied), emptySet()), listOf(beforeTheSweep, pairs()))
+    }
+
     private companion object {
         val H264 = arrayOf("-c:v", "libx264", "-pix_fmt", "yuv420p")
     }
