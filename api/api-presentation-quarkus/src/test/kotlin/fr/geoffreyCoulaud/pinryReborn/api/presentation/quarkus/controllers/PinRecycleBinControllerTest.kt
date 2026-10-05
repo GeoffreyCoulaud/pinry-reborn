@@ -8,6 +8,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.Curso
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinRecycleBinSortStrategyInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicates
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBinGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
@@ -27,11 +28,12 @@ class PinRecycleBinControllerTest {
     private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
         every { it.statesFor(any()) } returns emptyMap()
     }
+    private val pinDuplicates = mockk<PinDuplicates>().also { every { it.pendingAmong(any()) } returns emptySet() }
     private val controller = PinRecycleBinController(
         pinRecycleBin = mockk(),
         pinRecycleBinGetter = pinRecycleBinGetter,
         securityIdentity = securityIdentity,
-        pinResponses = PinResponses(resolvePinMediaState),
+        pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
     )
 
     @Test

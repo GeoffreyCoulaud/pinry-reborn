@@ -25,13 +25,13 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
             .asUpdate().set("rejectedAt", storableNow()).update()
     }
 
-    @Test
-    fun `Given pairs of stored, recycled and gone pins, Then the orphan sweep deletes those naming a gone pin`() {
-        // Given: a gone pin on either side, since its id sorts first or second
-        val pins = PinRepository(persistor)
+    private val pins = PinRepository(persistor)
+
+    // Active pins of one user, the last [recycled] of them in the recycle bin.
+    private fun storedPins(count: Int, recycled: Int = 0): List<Pin> {
         val user =
             UserRepository(persistor).saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
-        val (stored, recycled) = List(2) {
+        val stored = List(count) {
             pins.savePin(
                 Pin(
                     randomUUID(), user, null, null, "", emptyList(), emptyList(),
@@ -39,7 +39,31 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
                 ),
             )
         }
-        pins.softDeletePin(recycled, storableNow())
+        stored.takeLast(recycled).forEach { pins.softDeletePin(it, storableNow()) }
+        return stored
+    }
+
+    @Test
+    fun `Given pending, rejected and hidden pairs, Then the pins asked that hold a shown pending pair are found`() {
+        // Given: the pending pair's second pin is not asked; a recycled or a gone pin hides a pair
+        val (pending, unasked, rejectedFirst, rejectedSecond) = storedPins(4).map { it.id }
+        val (active, recycled) = storedPins(2, recycled = 1).map { it.id }
+        repository.addMissing(pending, listOf(unasked))
+        repository.addMissing(rejectedFirst, listOf(rejectedSecond))
+        reject(rejectedFirst, rejectedSecond)
+        repository.addMissing(active, listOf(recycled, randomUUID()))
+
+        // When
+        val found = repository.findPinIdsWithPending(listOf(pending, rejectedFirst, rejectedSecond, active, recycled))
+
+        // Then
+        assertEquals(setOf(pending), found)
+    }
+
+    @Test
+    fun `Given pairs of stored, recycled and gone pins, Then the orphan sweep deletes those naming a gone pin`() {
+        // Given: a gone pin on either side, since its id sorts first or second
+        val (stored, recycled) = storedPins(2, recycled = 1)
         val (goneLow, goneHigh) = listOf("00000000-0000-0000-0000-000000000000", "ffffffff-ffff-ffff-ffff-ffffffffffff")
             .map(UUID::fromString)
         repository.addMissing(stored.id, listOf(recycled.id, goneLow, goneHigh))

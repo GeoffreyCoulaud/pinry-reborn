@@ -420,7 +420,7 @@
       },
       "PinOutputDto" : {
         "type" : "object",
-        "required" : [ "id", "authorId", "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boards" ],
+        "required" : [ "id", "authorId", "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boards", "hasPendingDuplicates" ],
         "properties" : {
           "id" : {
             "$ref" : "#/components/schemas/UUID"
@@ -462,6 +462,9 @@
             }, {
               "type" : "null"
             } ]
+          },
+          "hasPendingDuplicates" : {
+            "type" : "boolean"
           }
         }
       },
@@ -4104,7 +4107,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "22.1.0"
+    "version" : "22.2.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

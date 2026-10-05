@@ -1,13 +1,19 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBin
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.Matchers.emptyIterable
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import java.util.UUID
 
 @QuarkusTest
@@ -252,5 +258,45 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
             .get("/api/v1/pins/not-a-valid-uuid")
             .then()
             .statusCode(404) // Invalid UUID format results in 404
+    }
+
+    // ==================== Duplicates ====================
+
+    @Inject
+    lateinit var duplicateRepository: PinDuplicateRepositoryInterface
+
+    @Inject
+    lateinit var pinRecycleBin: PinRecycleBin
+
+    private fun pinsOf(auth: AuthenticatedUser, count: Int): List<Pin> = List(count) {
+        pinCreator.createPin(
+            author = auth.user, sourceContextUrl = null, sourceMediaUrl = null, description = "", tags = emptyList(),
+        )
+    }
+
+    private fun flagOf(auth: AuthenticatedUser, pin: Pin): Boolean =
+        given().authenticatedAs(auth).get("/api/v1/pins/${pin.id}")
+            .then().statusCode(200).extract().path("hasPendingDuplicates")
+
+    @Test
+    fun `Given a pending pair, Then both pins flag it until it is rejected or either is recycled`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val (pin, other, unpaired) = pinsOf(auth, 3)
+        val (kept, recycled) = pinsOf(auth, 2)
+        duplicateRepository.addMissing(pin.id, listOf(other.id))
+        duplicateRepository.addMissing(kept.id, listOf(recycled.id))
+
+        // When
+        val page = given().authenticatedAs(auth).get("/api/v1/pins").then().statusCode(200).extract().jsonPath()
+        val pendingFlags = page.getList<String>("pins.id").zip(page.getList<Boolean>("pins.hasPendingDuplicates"))
+        QPinDuplicateModel().firstPinId.isIn(pin.id, other.id).asUpdate().set("rejectedAt", Instant.EPOCH).update()
+        pinRecycleBin.softDelete(recycled.id, auth.user)
+        val laterFlags = listOf(pin, other, kept, recycled).map { flagOf(auth, it) }
+
+        // Then
+        val expectedFlags = mapOf(pin to true, other to true, unpaired to false, kept to true, recycled to true)
+        assertEquals(expectedFlags.mapKeys { "${it.key.id}" }, pendingFlags.toMap())
+        assertEquals(listOf(false, false, false, false), laterFlags)
     }
 }

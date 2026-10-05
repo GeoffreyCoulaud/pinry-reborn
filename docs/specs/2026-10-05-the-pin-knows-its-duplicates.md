@@ -160,6 +160,9 @@ Blocks 30 and 40 are the likeliest to pass a bound; one that does splits at a nu
 keeps the ports and SQLite adapters the drain asks; 43 `feat/the-worker-hashes-media`, on 40, holds `FingerprintMedia`,
 its task, its handler and the enqueue after an upload; 46 `feat/the-worker-sweeps-fingerprints`, on 43, holds the
 other enqueues, the orphan sweep and the integration test of block 40's cases below. 50 stacks on 46.)*
+*(Corrected on 2026-10-05 in block 50: it measured 666 lines over 27 files, so it splits in two. 50 keeps
+`hasPendingDuplicates` and the web application's fixture; 53 `feat/the-api-lists-duplicates`, on 50, holds `GET` and
+`PUT` with `DUPLICATE_DOES_NOT_EXIST`, both at `22.2.0`. 60 stacks on 53.)*
 
 ### Block 10
 

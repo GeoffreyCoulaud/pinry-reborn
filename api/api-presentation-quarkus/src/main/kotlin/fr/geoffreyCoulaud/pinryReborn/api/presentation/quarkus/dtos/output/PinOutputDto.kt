@@ -14,4 +14,6 @@ data class PinOutputDto(
     val softDeletedAt: Instant? = null,
     /** The pin's image state, or null when the pin has neither an image nor a download. */
     val media: PinMediaStateDto? = null,
+    /** The pin has a likely duplicate the user has not rejected, both pins being active. */
+    val hasPendingDuplicates: Boolean,
 )

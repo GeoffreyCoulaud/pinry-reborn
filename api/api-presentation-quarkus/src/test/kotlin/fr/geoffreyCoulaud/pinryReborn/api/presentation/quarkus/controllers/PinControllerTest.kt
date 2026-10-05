@@ -11,6 +11,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSor
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicates
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
@@ -31,13 +32,14 @@ class PinControllerTest {
     private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
         every { it.statesFor(any()) } returns emptyMap()
     }
+    private val pinDuplicates = mockk<PinDuplicates>().also { every { it.pendingAmong(any()) } returns emptySet() }
     private val controller = PinController(
         pinCreator = pinCreator,
         pinGetter = pinGetter,
         pinRecycleBin = mockk(),
         pinUpdater = mockk(),
         securityIdentity = securityIdentity,
-        pinResponses = PinResponses(resolvePinMediaState),
+        pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
     )
 
     /** Creates a pin through the controller and answers what the created pin actually carries. */

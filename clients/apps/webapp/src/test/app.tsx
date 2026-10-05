@@ -65,6 +65,7 @@ export function pin(description: string, media: Pin["media"] = null): Pin {
 		tags: [],
 		boards: [],
 		media,
+		hasPendingDuplicates: false,
 	};
 }
 

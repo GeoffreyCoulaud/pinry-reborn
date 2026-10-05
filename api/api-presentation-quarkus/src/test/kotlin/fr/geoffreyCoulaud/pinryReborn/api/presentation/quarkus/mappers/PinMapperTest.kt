@@ -38,7 +38,7 @@ class PinMapperTest {
         val page = Page<Pin>(items = listOf(createPin()), previousCursor = null, nextCursor = null)
 
         // When
-        val result = page.toDto(emptyMap())
+        val result = page.toDto(emptyMap(), emptySet())
 
         // Then
         assertNull(result.pagination.previousCursor)
@@ -53,7 +53,7 @@ class PinMapperTest {
         val page = Page<Pin>(items = listOf(createPin()), previousCursor = previousCursor, nextCursor = nextCursor)
 
         // When
-        val result = page.toDto(emptyMap())
+        val result = page.toDto(emptyMap(), emptySet())
 
         // Then
         assertNotNull(result.pagination.previousCursor)
@@ -72,7 +72,7 @@ class PinMapperTest {
         val states = mapOf(pin.id to PinMediaState(PinMediaStatus.READY, media, null, null))
 
         // When
-        val result = pin.toDto(states)
+        val result = pin.toDto(states, emptySet())
 
         // Then
         assertEquals(PinMediaStatusDto.READY, result.media?.status)
@@ -88,7 +88,7 @@ class PinMapperTest {
         val states = mapOf(pin.id to PinMediaState(PinMediaStatus.PENDING, null, null, null))
 
         // When
-        val result = pin.toDto(states)
+        val result = pin.toDto(states, emptySet())
 
         // Then
         assertEquals(PinMediaStatusDto.PENDING, result.media?.status)
@@ -103,7 +103,7 @@ class PinMapperTest {
         val pin = createPin()
 
         // When
-        val result = pin.toDto(emptyMap())
+        val result = pin.toDto(emptyMap(), emptySet())
 
         // Then
         assertNull(result.media)

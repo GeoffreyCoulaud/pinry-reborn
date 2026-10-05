@@ -14,10 +14,10 @@ import java.util.UUID
 
 object PinMapper {
     /**
-     * [mediaStates] is what `ResolvePinMediaState.statesFor` returned for the pins being mapped: a
-     * parameter rather than a default, so the compiler names every response that forgot to resolve it.
+     * [mediaStates] and [pendingDuplicates] are what `statesFor` and `pendingAmong` returned for the pins being
+     * mapped: parameters rather than defaults, so the compiler names every response that forgot to resolve them.
      */
-    fun Pin.toDto(mediaStates: Map<UUID, PinMediaState>) = PinOutputDto(
+    fun Pin.toDto(mediaStates: Map<UUID, PinMediaState>, pendingDuplicates: Set<UUID>) = PinOutputDto(
         id = id,
         authorId = author.id,
         sourceContextUrl = sourceContextUrl,
@@ -27,10 +27,11 @@ object PinMapper {
         boards = boards.map { it.toRefDto() },
         softDeletedAt = softDeletedAt,
         media = mediaStates[id]?.toDto(id),
+        hasPendingDuplicates = id in pendingDuplicates,
     )
 
-    fun Page<Pin>.toDto(mediaStates: Map<UUID, PinMediaState>) = PinListOutputDto(
-        pins = this.items.map { it.toDto(mediaStates) },
+    fun Page<Pin>.toDto(mediaStates: Map<UUID, PinMediaState>, pendingDuplicates: Set<UUID>) = PinListOutputDto(
+        pins = this.items.map { it.toDto(mediaStates, pendingDuplicates) },
         pagination = PaginationOutputDto(
             previousCursor = this.previousCursor?.toDto(),
             nextCursor = this.nextCursor?.toDto(),

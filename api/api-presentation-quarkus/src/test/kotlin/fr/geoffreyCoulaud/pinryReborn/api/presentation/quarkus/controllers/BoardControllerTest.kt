@@ -21,6 +21,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardRecycleBin
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardSummary
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardUpdater
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinBoardSetter
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicates
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -44,7 +45,8 @@ class BoardControllerTest {
     private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
         every { it.statesFor(any()) } returns emptyMap()
     }
-    private val pinResponses = PinResponses(resolvePinMediaState)
+    private val pinDuplicates = mockk<PinDuplicates>().also { every { it.pendingAmong(any()) } returns emptySet() }
+    private val pinResponses = PinResponses(resolvePinMediaState, pinDuplicates)
     private val controller = BoardController(
         boardCreator = boardCreator,
         boardGetter = boardGetter,
