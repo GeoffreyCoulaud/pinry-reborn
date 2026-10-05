@@ -31,6 +31,10 @@ class MediaModel(
     var createdAt: Instant,
     @DbDefault("1") var frames: Int,
     var durationMillis: Long?,
+    var videoBitRate: Long?,
+    var audioChannels: Int?,
+    var audioBitRate: Long?,
+    var probeVersion: Int?,
 ) : BaseModel(id) {
     /** The fingerprint algorithm's version that hashed this media's frames, null until hashed. */
     var fingerprintVersion: Int? = null

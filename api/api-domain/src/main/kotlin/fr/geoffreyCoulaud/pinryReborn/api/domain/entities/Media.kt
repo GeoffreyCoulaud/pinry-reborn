@@ -18,6 +18,12 @@ data class Media(
     // A still image's values, which a rendition's cost is judged on (ADR 0050, decision 2).
     val frames: Int = 1,
     val duration: Duration? = null,
+    // A video's alone, in bits per second.
+    val videoBitRate: Long? = null,
+    val audioChannels: Int? = null,
+    val audioBitRate: Long? = null,
+    // The probe that measured the row, null before lot 0.49.0.
+    val probeVersion: Int? = null,
 ) : Identifiable {
     val isVideo: Boolean get() = mimeType.startsWith("video/")
 }

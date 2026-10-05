@@ -67,12 +67,15 @@ class MediaIngestion(
             }
         val mediaId = randomUUID()
         val storageKey = "${StorageLayout.ORIGINALS_DIRECTORY}/$ownerId/$pinId/$mediaId.${found.extension}"
+        val video = found.measured as? VideoProbeResult
         val media =
             Media(
                 id = mediaId, pinId = pinId, mimeType = found.mimeType, width = found.measured.width,
                 height = found.measured.height, animated = found.animated, byteSize = found.stored.byteSize,
                 contentHash = found.stored.contentHash, storageKey = storageKey, createdAt = createdAt,
                 frames = found.measured.frames, duration = found.measured.duration,
+                videoBitRate = video?.videoBitRate, audioChannels = video?.audioChannels,
+                audioBitRate = video?.audioBitRate, probeVersion = PROBE_VERSION,
             )
         return IngestedMedia(media, found.stored)
     }
@@ -140,4 +143,9 @@ class MediaIngestion(
         val animated: Boolean,
         val stored: StagedFile,
     )
+
+    companion object {
+        /** The version of what the probe measures, stamped on every row ingestion builds. */
+        const val PROBE_VERSION = 1
+    }
 }

@@ -38,7 +38,7 @@ class MediaIngestionTest : BaseTest() {
     private val ingestion = MediaIngestion(store, probe, video, limits)
     private val aVideo = VideoProbeResult(
         VideoCodec.VP9, AudioCodec.OPUS, 4, 6, Duration.ofSeconds(1), frames = 25, bytes = 3, "vp09.00.10.08,opus",
-        VideoContainer.WEBM, alreadyRepackaged = true,
+        VideoContainer.WEBM, alreadyRepackaged = true, videoBitRate = 80_000, audioChannels = 2, audioBitRate = 64_000,
     )
     private val anMp4 = aVideo.copy(
         videoCodec = VideoCodec.H264, audioCodec = null, codecs = "avc1.640015", demuxedAs = VideoContainer.MP4,
@@ -106,6 +106,8 @@ class MediaIngestionTest : BaseTest() {
         assertEquals(staged.contentHash, media.contentHash)
         assertEquals(pinId, media.pinId)
         assertEquals(createdAt, media.createdAt)
+        assertEquals(Triple(null, null, null), Triple(media.videoBitRate, media.audioChannels, media.audioBitRate))
+        assertEquals(MediaIngestion.PROBE_VERSION, media.probeVersion)
     }
 
     @Test fun `Given a file neither probe reads, Then the staged file is discarded and the image refusal rethrown`() {
@@ -160,6 +162,8 @@ class MediaIngestionTest : BaseTest() {
         assertEquals(true, media.animated)
         assertEquals(25, media.frames)
         assertEquals(Duration.ofSeconds(1), media.duration)
+        assertEquals(Triple(80_000L, 2, 64_000L), Triple(media.videoBitRate, media.audioChannels, media.audioBitRate))
+        assertEquals(MediaIngestion.PROBE_VERSION, media.probeVersion)
         assertEquals(7, media.byteSize)
         assertEquals("repackaged", media.contentHash)
         verify { store.discard(staged) }

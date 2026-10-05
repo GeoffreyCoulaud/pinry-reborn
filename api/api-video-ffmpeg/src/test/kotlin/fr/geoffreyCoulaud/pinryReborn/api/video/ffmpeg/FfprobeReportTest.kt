@@ -46,10 +46,34 @@ class FfprobeReportTest {
     }
 
     @Test
-    fun `Given no duration, Then read refuses the file`() {
+    fun `Given no duration or a duration of zero, Then read refuses the file`() {
         assertThrows(UndecodableVideoException::class.java) {
             read(lasting(emptyMap()))
         }
+        assertThrows(UndecodableVideoException::class.java) {
+            read(lasting(mapOf("duration" to "0.000000")))
+        }
+    }
+
+    @Test
+    fun `Given packets on two tracks over two seconds, Then each rate is its track's packet bits per second`() {
+        // Given: 1 500 bytes of video and 250 of stereo audio, interleaved
+        val tracks = listOf(h264("index" to 0), track("audio", "opus", "index" to 1, "channels" to 2))
+        val packets =
+            listOf(0 to "1000", 1 to "250", 0 to "500").map { (index, size) ->
+                mapOf("stream_index" to index, "size" to size)
+            }
+        val json = mapOf("packets" to packets, "streams" to tracks, "format" to mapOf("duration" to "2.000000"))
+        // When
+        val result = read(mapper.writeValueAsString(json))
+        // Then
+        assertEquals(Triple(6_000L, 2, 1_000L), Triple(result.videoBitRate, result.audioChannels, result.audioBitRate))
+    }
+
+    @Test
+    fun `Given no audio track, Then read returns no channels and no audio rate`() {
+        val result = read(report(h264()))
+        assertEquals(null to null, result.audioChannels to result.audioBitRate)
     }
 
     @Test

@@ -387,7 +387,8 @@ class DownloadPinMediaTest {
             every { video.probe(any(), any()) } returns
                 VideoProbeResult(
                     VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), frames = 25, bytes = 3, "avc1.640015",
-                    VideoContainer.MP4, alreadyRepackaged = true,
+                    VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, audioChannels = null,
+                    audioBitRate = null,
                 )
             every { video.repackage(any(), any()) } throws refusal
             // When / Then
