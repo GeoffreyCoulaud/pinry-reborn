@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPermissionError
@@ -15,6 +16,7 @@ import java.util.UUID
 class DeletePinMedia(
     private val pinRepository: PinRepositoryInterface,
     private val mediaRepository: MediaRepositoryInterface,
+    private val duplicateRepository: PinDuplicateRepositoryInterface,
     private val mediaStore: MediaStore,
     private val clearPinDownload: ClearPinDownload,
     private val renditionCache: RenditionCache,
@@ -25,6 +27,8 @@ class DeletePinMedia(
         val media = mediaRepository.findByPinId(pinId)
         if (media != null) {
             mediaRepository.deleteByPinId(pinId)
+            // A pin with no media is never hashed again, so nothing else would clear its pairs (ADR 0051).
+            duplicateRepository.deletePending(pinId)
             mediaStore.deleteQuietly(media.storageKey)
             renditionCache.evictMediaQuietly(media.id)
             clearPinDownload.clear(pinId)
