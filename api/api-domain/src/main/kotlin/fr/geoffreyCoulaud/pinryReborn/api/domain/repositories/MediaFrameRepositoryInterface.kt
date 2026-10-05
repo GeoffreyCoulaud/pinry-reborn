@@ -16,4 +16,7 @@ interface MediaFrameRepositoryInterface {
 
     /** Delete every frame of [mediaId]. */
     fun deleteByMediaId(mediaId: UUID)
+
+    /** Delete every frame whose media is gone; returns how many. */
+    fun deleteOrphans(): Int
 }

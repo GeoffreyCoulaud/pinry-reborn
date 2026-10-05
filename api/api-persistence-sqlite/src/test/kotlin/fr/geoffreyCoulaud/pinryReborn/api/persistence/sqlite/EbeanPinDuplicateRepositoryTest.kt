@@ -1,7 +1,12 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanPinDuplicateRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
+import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -18,6 +23,33 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     private fun reject(first: UUID, second: UUID) {
         QPinDuplicateModel().firstPinId.isIn(first, second).secondPinId.isIn(first, second)
             .asUpdate().set("rejectedAt", storableNow()).update()
+    }
+
+    @Test
+    fun `Given pairs of stored, recycled and gone pins, Then the orphan sweep deletes those naming a gone pin`() {
+        // Given: a gone pin on either side, since its id sorts first or second
+        val pins = PinRepository(persistor)
+        val user =
+            UserRepository(persistor).saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
+        val (stored, recycled) = List(2) {
+            pins.savePin(
+                Pin(
+                    randomUUID(), user, null, null, "", emptyList(), emptyList(),
+                    createdAt = storableNow(), updatedAt = storableNow(),
+                ),
+            )
+        }
+        pins.softDeletePin(recycled, storableNow())
+        val (goneLow, goneHigh) = listOf("00000000-0000-0000-0000-000000000000", "ffffffff-ffff-ffff-ffff-ffffffffffff")
+            .map(UUID::fromString)
+        repository.addMissing(stored.id, listOf(recycled.id, goneLow, goneHigh))
+
+        // When
+        val deleted = repository.deleteOrphans()
+
+        // Then
+        assertEquals(2, deleted)
+        assertEquals(setOf(setOf(stored.id, recycled.id) to false), pairs())
     }
 
     @Test

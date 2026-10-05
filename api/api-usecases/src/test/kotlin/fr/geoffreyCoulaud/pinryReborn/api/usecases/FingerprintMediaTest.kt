@@ -196,6 +196,8 @@ class FingerprintMediaTest : BaseTest() {
         override fun deleteByMediaId(mediaId: UUID) {
             stored.removeAll { it.mediaId == mediaId }
         }
+
+        override fun deleteOrphans(): Int = error("not used")
     }
 
     private class InMemoryDuplicates : PinDuplicateRepositoryInterface {
@@ -210,6 +212,8 @@ class FingerprintMediaTest : BaseTest() {
         override fun addMissing(pinId: UUID, otherPinIds: Collection<UUID>) {
             pairs += otherPinIds.map { setOf(pinId, it) }
         }
+
+        override fun deleteOrphans(): Int = error("not used")
     }
 
     private object PassthroughRunner : TransactionRunner {

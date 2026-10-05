@@ -7,6 +7,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaFrameReposito
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.MediaFrameModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaFrameModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 import java.util.UUID.randomUUID
@@ -34,6 +35,9 @@ class EbeanMediaFrameRepository(
     override fun deleteByMediaId(mediaId: UUID) {
         QMediaFrameModel().mediaId.equalTo(mediaId).delete()
     }
+
+    override fun deleteOrphans(): Int =
+        QMediaFrameModel().mediaId.notIn(QMediaModel().select("id").query()).delete()
 
     private fun MediaFrameModel.toDomain() = MediaFrame(mediaId, listOf(hash0, hash1, hash2, hash3))
 

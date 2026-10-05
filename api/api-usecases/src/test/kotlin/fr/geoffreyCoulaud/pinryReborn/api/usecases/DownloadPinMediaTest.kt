@@ -41,6 +41,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInt
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.TaskContext
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.PermanentTaskException
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
@@ -69,6 +71,7 @@ class DownloadPinMediaTest {
     private val runner: TransactionRunner = mockk()
     private val clock: Clock = mockk()
     private val renditionCache: RenditionCache = mockk()
+    private val enqueueTask: EnqueueTask = mockk(relaxed = true)
     private val now = Instant.parse("2026-07-10T00:00:00Z")
     private val pinId = randomUUID()
     private val user = User(randomUUID(), "u", createdAt = TestTime.now)
@@ -80,7 +83,7 @@ class DownloadPinMediaTest {
         DownloadPinMedia(
             pins, mediaRepository, downloads, store,
             MediaIngestion(store, probe, NoVideoProcessor, imageLimits), fetcher,
-            pageExtractor, runner, clock, renditionCache,
+            pageExtractor, runner, clock, renditionCache, enqueueTask,
         )
 
     init {
@@ -371,7 +374,7 @@ class DownloadPinMediaTest {
         val withVideo = DownloadPinMedia(
             pins, mediaRepository, downloads, store,
             MediaIngestion(store, probe, video, videoLimits), fetcher,
-            pageExtractor, runner, clock, renditionCache,
+            pageExtractor, runner, clock, renditionCache, enqueueTask,
         )
         stubUntilStage()
         every { probe.probe(any()) } throws UndecodableImageException("not an image")
@@ -400,7 +403,7 @@ class DownloadPinMediaTest {
         val withVideo = DownloadPinMedia(
             pins, mediaRepository, downloads, store,
             MediaIngestion(store, probe, video, videoLimits), fetcher,
-            pageExtractor, runner, clock, renditionCache,
+            pageExtractor, runner, clock, renditionCache, enqueueTask,
         )
         stubUntilStage()
         every { probe.probe(any()) } throws UndecodableImageException("not an image")
@@ -442,6 +445,7 @@ class DownloadPinMediaTest {
         subject.download(pinId, ctx())
         verify { store.promote(staged(), any()) }
         verify { mediaRepository.save(any()) }
+        verify { enqueueTask.enqueue(MediaFingerprintTask.KIND, "", any(), any(), any(), MediaFingerprintTask.KIND) }
         // First-time download: no superseded image, so nothing is deleted.
         verify(exactly = 0) { store.delete(any()) }
         verify(exactly = 0) { renditionCache.evictMedia(any()) }
@@ -499,6 +503,7 @@ class DownloadPinMediaTest {
         subject.download(pinId, ctx())
         verify { store.delete(any()) }
         verify(exactly = 0) { mediaRepository.save(any()) }
+        verify(exactly = 0) { enqueueTask.enqueue(any(), any(), any(), any(), any(), any()) }
         // A no-op swap keeps the old image; its rendition cache must not be touched.
         verify(exactly = 0) { renditionCache.evictMedia(any()) }
     }

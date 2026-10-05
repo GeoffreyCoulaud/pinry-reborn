@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateReposi
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.PinQueries
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 import java.util.UUID.randomUUID
@@ -22,6 +23,11 @@ class EbeanPinDuplicateRepository(
             val (first, second) = listOf(pinId, other).sortedBy { it.toString() }
             persistor.save(PinDuplicateModel(randomUUID(), first, second, rejectedAt = null))
         }
+    }
+
+    override fun deleteOrphans(): Int {
+        val pins = PinQueries.any().select("id").query()
+        return QPinDuplicateModel().or().firstPinId.notIn(pins).secondPinId.notIn(pins).endOr().delete()
     }
 
     private fun pairsOf(pinId: UUID) =
