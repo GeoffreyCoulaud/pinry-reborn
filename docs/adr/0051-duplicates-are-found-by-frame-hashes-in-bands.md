@@ -1,6 +1,7 @@
 # 0051. Duplicates are found by frame hashes in bands
 
-Status: Accepted
+Status: Partially superseded by `0052-duplicates-are-resolved-in-one-call.md` (decision 9's rejection and merge
+operations, and decision 8's fill order).
 Date: 2026-10-05
 Specification: `docs/specs/2026-10-05-the-pin-knows-its-duplicates.md`, decisions A and D to L.
 Written in block 10.
