@@ -10,4 +10,10 @@ interface MediaFrameRepositoryInterface {
 
     /** Every stored frame within `PdqHasher.MATCH_DISTANCE` bits of [hash], found through the band indexes. */
     fun findNear(hash: PdqHash): List<MediaFrame>
+
+    /** Every frame of [mediaIds]. */
+    fun findByMediaIds(mediaIds: Collection<UUID>): List<MediaFrame>
+
+    /** Delete every frame of [mediaId]. */
+    fun deleteByMediaId(mediaId: UUID)
 }

@@ -25,8 +25,17 @@ class EbeanMediaFrameRepository(
     override fun findNear(hash: PdqHash): List<MediaFrame> =
         nearQuery(hash)
             .findList()
-            .map { MediaFrame(it.mediaId, listOf(it.hash0, it.hash1, it.hash2, it.hash3)) }
+            .map { it.toDomain() }
             .filter { distance(it.words, hash.words) <= PdqHasher.MATCH_DISTANCE }
+
+    override fun findByMediaIds(mediaIds: Collection<UUID>): List<MediaFrame> =
+        QMediaFrameModel().mediaId.isIn(mediaIds).findList().map { it.toDomain() }
+
+    override fun deleteByMediaId(mediaId: UUID) {
+        QMediaFrameModel().mediaId.equalTo(mediaId).delete()
+    }
+
+    private fun MediaFrameModel.toDomain() = MediaFrame(mediaId, listOf(hash0, hash1, hash2, hash3))
 
     private fun distance(stored: List<Long>, probe: List<Long>) =
         stored.zip(probe).sumOf { (mine, theirs) -> java.lang.Long.bitCount(mine xor theirs) }

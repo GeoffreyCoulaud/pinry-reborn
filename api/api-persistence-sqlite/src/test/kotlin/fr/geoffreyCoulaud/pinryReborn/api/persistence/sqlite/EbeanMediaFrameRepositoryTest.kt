@@ -75,6 +75,24 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun `Given frames of three media, Then those of the asked media are read and those of one are deleted`() {
+        // Given
+        val (kept, deleted, other) = List(3) { randomUUID() }
+        val another = storedFlipping(mapOf(0 to 1))
+        repository.save(kept, listOf(stored, another))
+        repository.save(deleted, listOf(stored))
+        repository.save(other, listOf(stored))
+
+        // When
+        repository.deleteByMediaId(deleted)
+        val found = repository.findByMediaIds(listOf(kept, deleted))
+
+        // Then
+        assertEquals(setOf(MediaFrame(kept, stored.words), MediaFrame(kept, another.words)), found.toSet())
+        assertEquals(listOf(MediaFrame(other, stored.words)), repository.findByMediaIds(listOf(other)))
+    }
+
+    @Test
     fun `Given the lookup as Ebean builds it, Then its sixteen terms spell the band expressions in order`() {
         // Given: the raw literals cannot read FrameHashBands, the detekt inventory taking plain literals alone
         val query = repository.nearQuery(stored)
