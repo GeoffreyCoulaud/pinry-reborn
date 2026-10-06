@@ -21,29 +21,40 @@ import { server } from "../test/server";
 const image = (description: string) =>
 	screen.queryByRole("img", { name: description, hidden: true });
 
-const marked = (description: string) => ({
-	...readyPin(description),
+const marked = (description: string, width = 800, height = 600) => ({
+	...readyPin(description, width, height),
 	hasPendingDuplicates: true,
 });
 
+const pending = (pins: Pair["pins"]): Pair => ({ pins, rejected: false });
+
+/** The comparator, opened from the dialog's row of duplicates. */
+async function compare(user: ReturnType<typeof userEvent.setup>) {
+	const dialog = await screen.findByRole("dialog");
+	await user.click(
+		await within(dialog).findByRole("button", { name: m.compare() }),
+	);
+	await within(dialog).findByRole("heading", { name: m.compare_heading() });
+	return dialog;
+}
+
 describe("merge a group of duplicates", () => {
-	it("Given a pin with three duplicates, When the third is kept and the fourth left out, Then the dialog shows the kept pin, the absorbed ones leave the grid, and the boards are read again", async () => {
+	it("Given a pin with three duplicates, When it is merged into the larger one and the fourth rejected, Then the dialog shows the kept pin, the merged ones leave the grid, and the boards are read again", async () => {
 		const harbours = board("Harbours", "", 4);
 		const open = marked("a harbour at dusk");
-		const smaller = marked("the same harbour, smaller");
-		const kept = marked("the same harbour, cropped");
+		const smaller = marked("the same harbour, smaller", 400, 300);
+		const larger = marked("the same harbour, larger", 1600, 1200);
 		const noon = marked("the same harbour at noon");
-		const pairs: Pair[] = [smaller, kept, noon].map((other) => ({
-			pins: [open, other],
-			rejected: false,
-		}));
+		const pairs = [smaller, larger, noon].map((other) =>
+			pending([open, other]),
+		);
 		const merged = {
-			...kept,
+			...larger,
 			tags: [{ name: "boats" }],
 			hasPendingDuplicates: false,
 		};
-		const catalogue = [open, smaller, kept, noon];
-		let merges: unknown[] = [];
+		const catalogue = [open, smaller, larger, noon];
+		let resolutions: unknown[] = [];
 		let boardReads = 0;
 		server.use(
 			sessionRoute(() => true),
@@ -52,18 +63,20 @@ describe("merge a group of duplicates", () => {
 				return HttpResponse.json({ boards: [harbours] });
 			}),
 			boardPinsRoute({ [harbours.id]: [catalogue] }),
+			http.post(
+				`/api/v1/pins/${open.id}/duplicates/resolutions`,
+				async ({ request }) => {
+					resolutions = [...resolutions, await request.json()];
+					// The merged pins are recycled, which hides their pairs; noon's is rejected.
+					pairs.splice(0, pairs.length);
+					catalogue.splice(0, catalogue.length, merged, {
+						...noon,
+						hasPendingDuplicates: false,
+					});
+					return HttpResponse.json(merged);
+				},
+			),
 			...duplicateRoutes(pairs),
-			http.post("/api/v1/pins/merges", async ({ request }) => {
-				merges = [...merges, await request.json()];
-				// The absorbed pins are recycled, which hides their pairs and so the noon pin's marker
-				// (specification 2026-10-05, decision J).
-				pairs.splice(0, pairs.length);
-				catalogue.splice(0, catalogue.length, merged, {
-					...noon,
-					hasPendingDuplicates: false,
-				});
-				return HttpResponse.json(merged);
-			}),
 			downloadsRoute(),
 			handshakeRoute(),
 		);
@@ -73,33 +86,40 @@ describe("merge a group of duplicates", () => {
 		await user.click(
 			await screen.findByRole("img", { name: open.description }),
 		);
-		const dialog = await screen.findByRole("dialog");
+		const dialog = await compare(user);
 		expect(
-			await within(dialog).findByRole("radio", { name: m.merge_keep_this() }),
-		).toBeChecked();
-		expect(
-			within(dialog).getByRole("button", { name: m.merge({ count: 4 }) }),
-		).toBeEnabled();
-		await user.click(
-			within(dialog).getByRole("radio", {
-				name: m.merge_keep_pin({ description: kept.description }),
+			within(dialog).getByRole("button", {
+				name: m.compare_merge_count({ count: 4 }),
 			}),
+		).toBeEnabled();
+		const versions = within(dialog).getByRole("list", {
+			name: m.compare_versions(),
+		});
+		await user.click(
+			within(versions).getByRole("button", { name: noon.description }),
 		);
 		await user.click(
-			within(dialog).getByRole("checkbox", {
-				name: m.merge_include_pin({ description: noon.description }),
-			}),
+			within(dialog).getByRole("radio", { name: m.duplicate_reject() }),
 		);
 		const readsBefore = boardReads;
 		await user.click(
-			within(dialog).getByRole("button", { name: m.merge({ count: 3 }) }),
+			within(dialog).getByRole("button", {
+				name: m.compare_merge_count({ count: 3 }),
+			}),
 		);
 
 		expect(
-			await screen.findByRole("dialog", { name: kept.description }),
+			await screen.findByRole("dialog", { name: larger.description }),
 		).toBeVisible();
-		expect(merges).toEqual([
-			{ keptPinId: kept.id, absorbedPinIds: [open.id, smaller.id] },
+		expect(resolutions).toEqual([
+			{
+				decisions: {
+					[open.id]: "MERGE",
+					[smaller.id]: "MERGE",
+					[larger.id]: "KEEP",
+					[noon.id]: "REJECT",
+				},
+			},
 		]);
 		expect(within(screen.getByRole("dialog")).getByText("boats")).toBeVisible();
 		expect(image(open.description)).toBeNull();
@@ -116,15 +136,14 @@ describe("merge a group of duplicates", () => {
 		);
 	});
 
-	it("Given a duplicate the grid has not loaded, When it is kept, Then the dialog shows it as the API reads it now, and it steps nowhere", async () => {
+	it("Given a larger duplicate the grid has not loaded, When the group is merged, Then the dialog shows it as the API reads it now, and it steps nowhere", async () => {
 		const open = marked("a harbour at dusk");
-		const far = marked("the same harbour, far down the catalogue");
+		const far = marked("the same harbour, far down the catalogue", 1600, 1200);
 		const edited = { ...far, description: "the same harbour, edited since" };
 		server.use(
 			sessionRoute(() => true),
 			onePinPage(() => [open, readyPin("a cat asleep")]),
-			...duplicateRoutes([{ pins: [open, far], rejected: false }]),
-			http.post("/api/v1/pins/merges", () => HttpResponse.json(far)),
+			...duplicateRoutes([pending([open, far])]),
 			http.get(`/api/v1/pins/${far.id}`, () => HttpResponse.json(edited)),
 			downloadsRoute(),
 			handshakeRoute(),
@@ -135,14 +154,11 @@ describe("merge a group of duplicates", () => {
 		await user.click(
 			await screen.findByRole("img", { name: open.description }),
 		);
-		const dialog = await screen.findByRole("dialog");
+		const dialog = await compare(user);
 		await user.click(
-			await within(dialog).findByRole("radio", {
-				name: m.merge_keep_pin({ description: far.description }),
+			within(dialog).getByRole("button", {
+				name: m.compare_merge_count({ count: 2 }),
 			}),
-		);
-		await user.click(
-			within(dialog).getByRole("button", { name: m.merge({ count: 2 }) }),
 		);
 
 		const shown = await screen.findByRole("dialog", {

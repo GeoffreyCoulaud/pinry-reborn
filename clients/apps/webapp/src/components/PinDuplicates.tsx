@@ -83,10 +83,12 @@ export function PinDuplicates({
 	pinId,
 	open,
 	merged,
+	compare,
 }: {
 	pinId: string;
 	open: (pinId: string) => void;
 	merged: (kept: Pin) => void;
+	compare: () => void;
 }) {
 	const duplicates = useDuplicates(pinId).data ?? [];
 	const reject = useRejectDuplicate(pinId);
@@ -187,6 +189,9 @@ export function PinDuplicates({
 							{pending.map(pendingRow)}
 						</ul>
 					</RadioGroup>
+					<Button variant="secondary" className="self-start" onPress={compare}>
+						{m.compare()}
+					</Button>
 					<Button
 						className="self-start"
 						isDisabled={busy || group.length < 2}

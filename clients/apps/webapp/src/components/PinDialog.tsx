@@ -6,6 +6,7 @@ import { useMove } from "react-aria";
 import type { Rendition } from "../lib/tiles";
 import { m } from "../paraglide/messages.js";
 import { type Pin, useRecyclePins } from "../pins";
+import { DuplicateComparator } from "./DuplicateComparator";
 import { IconButton } from "./IconButton";
 import { PinDuplicates } from "./PinDuplicates";
 import { PinEditForm } from "./PinEditForm";
@@ -19,12 +20,14 @@ function PinDetails({
 	edit,
 	openDuplicate,
 	merged,
+	compare,
 }: {
 	pin: Pin;
 	close: () => void;
 	edit: () => void;
 	openDuplicate: (pinId: string) => void;
 	merged: (kept: Pin) => void;
+	compare: () => void;
 }) {
 	const recycle = useRecyclePins();
 	const source = pin.sourceContextUrl;
@@ -102,7 +105,12 @@ function PinDetails({
 					</div>
 				) : null}
 			</dl>
-			<PinDuplicates pinId={pin.id} open={openDuplicate} merged={merged} />
+			<PinDuplicates
+				pinId={pin.id}
+				open={openDuplicate}
+				merged={merged}
+				compare={compare}
+			/>
 		</>
 	);
 }
@@ -169,7 +177,7 @@ function useArrowKeys(previous?: () => void, next?: () => void) {
 	}, [previous, next]);
 }
 
-/** The pin read or edited beside its image; nothing steps while the form is open. */
+/** The pin read, edited or compared with its duplicates; nothing steps while either is open. */
 export function PinDialog({
 	pin,
 	close,
@@ -188,9 +196,20 @@ export function PinDialog({
 	merged: (kept: Pin) => void;
 }) {
 	const [editing, setEditing] = useState(false);
+	const [comparing, setComparing] = useState(false);
 	const swipe = useSwipe(previous, next);
-	useArrowKeys(editing ? undefined : previous, editing ? undefined : next);
+	const still = editing || comparing;
+	useArrowKeys(still ? undefined : previous, still ? undefined : next);
 
+	if (comparing) {
+		return (
+			<DuplicateComparator
+				pin={pin}
+				close={() => setComparing(false)}
+				merged={merged}
+			/>
+		);
+	}
 	if (editing) {
 		return (
 			<PinEditForm
@@ -234,6 +253,7 @@ export function PinDialog({
 					edit={() => setEditing(true)}
 					openDuplicate={openDuplicate}
 					merged={merged}
+					compare={() => setComparing(true)}
 				/>
 			}
 		/>

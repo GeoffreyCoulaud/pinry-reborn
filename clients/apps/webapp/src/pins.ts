@@ -240,7 +240,6 @@ export function useMergePins(merged: (kept: Pin) => void) {
 /**
  * Applies the comparator's decision to the open pin's group in one call, which answers with the
  * kept pin (ADR 0052). The merged pins leave every catalogue at once and the kept one is written in.
- * @internal until block 41's comparator reads it, with `lib/duplicates`.
  */
 export function useResolveDuplicates(
 	pinId: string,

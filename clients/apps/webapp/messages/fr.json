@@ -26,6 +26,25 @@
 	"change_password_note": "Le changer ferme toutes les sessions, celle-ci comprise. Vous devrez vous reconnecter.",
 	"clear_selection": "Annuler la sélection",
 	"close": "Fermer",
+	"compare": "Comparer",
+	"compare_back": "Retour à l’épingle",
+	"compare_decision": "Décision pour cette version",
+	"compare_heading": "Quelle version conserver ?",
+	"compare_merge": "Fusionner",
+	"compare_merge_count": "Fusionner {count} épingles en une",
+	"compare_nothing": "Rien à fusionner",
+	"compare_refused": "Ces doublons n’ont pas pu être traités.",
+	"compare_reject_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Écarter {count} doublon",
+				"countPlural=other": "Écarter {count} doublons"
+			}
+		}
+	],
+	"compare_versions": "Versions",
 	"create_board": "Ajouter un tableau",
 	"create_pin": "Ajouter une épingle",
 	"creation_refused": "Cette épingle n’a pas pu être ajoutée.",

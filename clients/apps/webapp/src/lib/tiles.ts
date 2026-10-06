@@ -1,7 +1,7 @@
 import type { Schemas } from "@pinry-reborn/auth";
 
-/** The two renditions a tile ever asks for, of the four the API serves. */
-export type Rendition = "SMALL" | "MEDIUM";
+/** The two renditions a tile ever asks for, and the comparator's, of the four the API serves. */
+export type Rendition = "SMALL" | "MEDIUM" | "LARGE";
 
 /**
  * The widest column, in device pixels, the small rendition covers without stretching. It is

@@ -1,6 +1,6 @@
 import type { Schemas } from "@pinry-reborn/auth";
 
-type Decision = Schemas["DuplicateDecisionInputEnum"];
+export type Decision = Schemas["DuplicateDecisionInputEnum"];
 export type Decisions = Readonly<Record<string, Decision>>;
 
 /** What the comparator reads of a version. */
@@ -18,7 +18,6 @@ function pixelsOf(version: Version): number {
 /**
  * The stored state as decisions: the most pixels among the open pin and the pending candidates
  * kept, the oldest on a tie; the other pending ones merged, the rejected ones rejected (decision A).
- * @internal
  */
 export function storedDecisions(
 	open: Version,
@@ -40,7 +39,7 @@ export function storedDecisions(
 	return decisions;
 }
 
-/** One version's decision; keeping it hands the previously kept one to the merge. @internal */
+/** One version's decision; keeping it hands the previously kept one to the merge. */
 export function decide(
 	decisions: Decisions,
 	id: string,
@@ -58,11 +57,11 @@ export function decide(
 }
 
 /** What the submit sends, by its label; `null` when it is disabled. */
-type Submit = { kind: "MERGE" | "REJECT"; count: number } | null;
+export type Submit = { kind: "MERGE" | "REJECT"; count: number } | null;
 
 /**
  * "Merge N pins into one" while N - 1 versions are merged, "Reject N duplicates" while none is and
- * N pending candidates are rejected, disabled otherwise (decision A). @internal
+ * N pending candidates are rejected, disabled otherwise (decision A).
  */
 export function submitOf(
 	decisions: Decisions,
