@@ -3,11 +3,10 @@ import { ChevronsLeftRight, Crown, Minus, Plus } from "lucide-react";
 import {
 	type PointerEvent,
 	type MouseEvent as ReactMouseEvent,
+	type ReactNode,
 	useEffect,
 	useRef,
 } from "react";
-import { isVideo } from "../lib/media";
-import { tileStillSource } from "../lib/tiles";
 import { MAX_ZOOM, type View, zoomAt } from "../lib/zoom";
 import { m } from "../paraglide/messages.js";
 import { getLocale } from "../paraglide/runtime.js";
@@ -22,14 +21,8 @@ const CLOSE_UP = 2.5;
 /** How far an arrow key moves the line, in percent of the stage. */
 const SPLIT_STEP = 5;
 
-/** A still image's original; a video's still rendition until block 50 plays it. */
-function stageSource(url: string, mimeType?: string | null) {
-	return isVideo(mimeType) ? tileStillSource(url, "LARGE") : url;
-}
-
 /** One version drawn under the shared zoom and pan. */
-function Layer({ version, view }: { version: Pin; view: View }) {
-	const url = version.media?.url;
+function Layer({ view, children }: { view: View; children: ReactNode }) {
 	return (
 		<div
 			className="absolute inset-4"
@@ -37,14 +30,7 @@ function Layer({ version, view }: { version: Pin; view: View }) {
 				transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})`,
 			}}
 		>
-			{url ? (
-				<img
-					src={stageSource(url, version.media?.mimeType)}
-					alt=""
-					draggable={false}
-					className="pointer-events-none size-full object-contain"
-				/>
-			) : null}
+			{children}
 		</div>
 	);
 }
@@ -69,6 +55,7 @@ export function DuplicateStage({
 	setView,
 	split,
 	setSplit,
+	media,
 }: {
 	under: Pin;
 	kept: Pin;
@@ -76,6 +63,8 @@ export function DuplicateStage({
 	setView: (change: (view: View) => View) => void;
 	split: number;
 	setSplit: (split: number) => void;
+	/** What a version shows on the stage. */
+	media: (version: Pin) => ReactNode;
 }) {
 	const stage = useRef<HTMLElement>(null);
 	const drag = useRef<{
@@ -163,12 +152,12 @@ export function DuplicateStage({
 		>
 			{paired ? (
 				<>
-					<Layer version={kept} view={view} />
+					<Layer view={view}>{media(kept)}</Layer>
 					<div
 						className="absolute inset-0"
 						style={{ clipPath: `inset(0 ${100 - split}% 0 0)` }}
 					>
-						<Layer version={under} view={view} />
+						<Layer view={view}>{media(under)}</Layer>
 					</div>
 					<div
 						className="absolute inset-y-0 w-0.5 -translate-x-px bg-white shadow-[0_0_4px_rgb(0_0_0/0.5)]"
@@ -209,7 +198,7 @@ export function DuplicateStage({
 					</Chip>
 				</>
 			) : (
-				<Layer version={under} view={view} />
+				<Layer view={view}>{media(under)}</Layer>
 			)}
 			<div
 				data-stage-control

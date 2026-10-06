@@ -27,7 +27,7 @@ import {
 	useDuplicates,
 	useResolveDuplicates,
 } from "../pins";
-import { DuplicateStage } from "./DuplicateStage";
+import { DuplicatePlayer } from "./DuplicatePlayer";
 import { IconButton } from "./IconButton";
 import { RenditionImage } from "./RenditionImage";
 import { useArrowKeys } from "./useArrowKeys";
@@ -147,6 +147,7 @@ function Comparison({
 	);
 	const [view, setView] = useState(UNZOOMED);
 	const [split, setSplit] = useState(50);
+	const [offsets, setOffsets] = useState<Record<string, number>>({});
 	const step = (by: number) =>
 		setIndex((current) => (current + by + versions.length) % versions.length);
 	useArrowKeys(
@@ -159,6 +160,7 @@ function Comparison({
 	const decision = decisions[under.id];
 	const most = Math.max(...versions.map(pixelsOf));
 	const submit = submitOf(decisions, duplicates);
+	const pair = `${under.id}:${kept.id}`;
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_minmax(0,1fr)_auto] lg:overflow-hidden">
@@ -173,13 +175,19 @@ function Comparison({
 			</header>
 			{/* From `lg` the stage takes what is left, so the decision, the strip and the footer stay in view. */}
 			<div className="flex min-w-0 flex-col gap-3 lg:min-h-0">
-				<DuplicateStage
+				{/* Remounted per pair, the clock starting again at 0. */}
+				<DuplicatePlayer
+					key={pair}
 					under={under}
 					kept={kept}
 					view={view}
 					setView={setView}
 					split={split}
 					setSplit={setSplit}
+					offset={offsets[pair] ?? 0}
+					setOffset={(offset) =>
+						setOffsets((current) => ({ ...current, [pair]: offset }))
+					}
 				/>
 				<ToggleButtonGroup
 					aria-label={m.compare_decision()}

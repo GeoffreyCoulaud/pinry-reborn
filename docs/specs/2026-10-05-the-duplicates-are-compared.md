@@ -169,6 +169,11 @@ duplicate" deleted, "reject a duplicate" through Review and the refused submit. 
 *(Corrected on 2026-10-06: written whole, block 48 measured 558 lines and 12 files, and splits in two.
 47 `refactor/the-dialog-opens-no-duplicate`, on 46: "open a duplicate" deleted, the list's thumbnail opening nothing.
 48 on 47: the rest of its row above.)*
+*(Corrected on 2026-10-06: written whole, block 50 measured 647 lines and 11 files, and splits in two.
+50 `feat/the-comparator-plays-both-versions`: two videos in step, every image playing on its own as it does without
+`ImageDecoder`, so a pair holding one has no bar. 55 `feat/the-comparator-plays-animated-images`, on 50:
+`ImageDecoder`, the canvas, the frames' durations and the animated image's duration in the facts column. 60 stacks
+on 55.)*
 
 ### Block 10
 
