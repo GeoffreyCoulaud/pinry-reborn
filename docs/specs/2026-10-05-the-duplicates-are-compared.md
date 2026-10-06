@@ -183,7 +183,9 @@ lot's handoff. The closing block stacks on 65.)*
 states as sealed types: 70 `feat/a-media-is-still-animated-or-video`, on 65. `Media` becomes a still image, an
 animated image or a video; a video always has its duration and video rate, and its sound, channels and rate together,
 is optional as a whole. The contract and the schema do not change: the persistence mapper refuses a video row missing
-one. The closing block stacks on 70.)*
+one. Written whole, it measured 361 lines and 45 files, and does not split: a type change compiles only with every
+constructor moving with it, and a seam would need a flat factory written to be deleted. The closing block stacks on
+70.)*
 
 ### Block 10
 
