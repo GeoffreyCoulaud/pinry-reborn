@@ -1,8 +1,9 @@
 # ktfmt formats the Kotlin code
 
 Date: 2026-10-06
-Status: Draft. One specification review ran, `.reviews/0.51.0-spec.md`, its 1 CRITICAL, 3 MAJOR and 7 MINOR closed in
-this document and ADR 0053. Frozen when the lot's last block merges.
+Status: Accepted by the operator on 2026-10-06. One specification review ran, `.reviews/0.51.0-spec.md`, its 1
+CRITICAL, 3 MAJOR and 7 MINOR closed in this document and ADR 0053; the split's own block is the operator's answer "a"
+to question H. Frozen when the lot's last block merges.
 Lot: `0.51.0`. Branches: one stack: 10 `refactor/the-import-integration-test-splits`, 20
 `chore/ktfmt-formats-the-kotlin-code` on 10, then the closing block.
 ADR: `docs/adr/0053-ktfmt-formats-the-kotlin-code.md`, written by the lead in Spec and carried by block 10. The
