@@ -124,7 +124,7 @@ function PlayerBar({
 	);
 }
 
-/** The stage with both versions played in step under one clock, the shorter moved by `offset` (decision D). */
+/** The stage with both versions played in step under one clock, the shorter moved by `offset`. */
 export function DuplicatePlayer({
 	offset,
 	setOffset,

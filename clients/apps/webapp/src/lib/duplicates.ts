@@ -17,7 +17,7 @@ export function pixelsOf(version: Version): number {
 
 /**
  * The stored state as decisions: the most pixels among the open pin and the pending candidates
- * kept, the oldest on a tie; the other pending ones merged, the rejected ones rejected (decision A).
+ * kept, the oldest on a tie; the other pending ones merged, the rejected ones rejected.
  */
 export function storedDecisions(
 	open: Version,
@@ -61,7 +61,7 @@ export type Submit = { kind: "MERGE" | "REJECT"; count: number } | null;
 
 /**
  * "Merge N pins into one" while N - 1 versions are merged, "Reject N duplicates" while none is and
- * N pending candidates are rejected, disabled otherwise (decision A).
+ * N pending candidates are rejected, disabled otherwise.
  */
 export function submitOf(
 	decisions: Decisions,

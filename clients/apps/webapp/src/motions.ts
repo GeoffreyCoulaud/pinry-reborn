@@ -1,7 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { type QueryClient, useQuery } from "@tanstack/react-query";
 import { frameMillis } from "./lib/clock";
 import { isVideo } from "./lib/media";
 import type { Pin } from "./pins";
+
+/** The stored image types that can move: libvips reads no APNG animation. */
+const ANIMATABLE = new Set(["image/gif", "image/webp"]);
+
+const ANIMATION = "animation";
 
 /** An animated image decoded from its original's bytes, its frames' durations in ms. */
 interface Animation {
@@ -41,18 +46,25 @@ async function decode(url: string, type: string): Promise<Animation | null> {
 	return { decoder, frames: frameMillis(micros) };
 }
 
-/** A video on its contract's duration; an image decoded frame by frame where `ImageDecoder` exists (decision D). */
+/** Closes an animated image's decoder, and frees its bytes, once the cache drops it. */
+export function closeDroppedAnimations(client: QueryClient): void {
+	client.getQueryCache().subscribe((event) => {
+		if (event.type === "removed" && event.query.queryKey[0] === ANIMATION) {
+			(event.query.state.data as Animation | null | undefined)?.decoder.close();
+		}
+	});
+}
+
+/** A video on its contract's duration; a GIF or WebP decoded frame by frame where `ImageDecoder` exists. */
 export function useMotion(version: Pin): Motion {
 	const media = version.media;
 	const url = media?.url;
 	const type = media?.mimeType;
+	const animatable = type != null && ANIMATABLE.has(type.toLowerCase());
 	const decodable =
-		url != null &&
-		type != null &&
-		!isVideo(type) &&
-		typeof ImageDecoder !== "undefined";
+		url != null && animatable && typeof ImageDecoder !== "undefined";
 	const animation = useQuery({
-		queryKey: ["animation", url, type],
+		queryKey: [ANIMATION, url, type],
 		queryFn: () => decode(String(url), String(type)),
 		enabled: decodable,
 		staleTime: Number.POSITIVE_INFINITY,
@@ -63,6 +75,9 @@ export function useMotion(version: Pin): Motion {
 		return media?.durationMillis == null
 			? { kind: "own" }
 			: { kind: "video", duration: media.durationMillis };
+	}
+	if (!animatable) {
+		return { kind: "still" };
 	}
 	if (!decodable || animation.isError) {
 		return { kind: "own" };

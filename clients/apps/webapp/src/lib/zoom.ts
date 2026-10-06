@@ -7,7 +7,7 @@ export interface View {
 
 export const UNZOOMED: View = { zoom: 1, x: 0, y: 0 };
 
-/** 800 %, past which a pixel fills more of the stage than any comparison needs (decision A). */
+/** 800 %, past which a pixel fills more of the stage than any comparison needs (specification 2026-10-05-the-duplicates-are-compared, decision A). */
 export const MAX_ZOOM = 8;
 
 /** Zoomed by `factor`, the detail under `point` (from the stage's centre) kept there; centred again at 100 %. */

@@ -47,7 +47,7 @@ function fromCentre(
 	};
 }
 
-/** The version under review left of a line and the kept one right of it, under one zoom (decision A). */
+/** The version under review left of a line and the kept one right of it, under one zoom. */
 export function DuplicateStage({
 	under,
 	kept,

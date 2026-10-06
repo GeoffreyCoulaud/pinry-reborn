@@ -49,6 +49,10 @@ describe("the shared clock", () => {
 		expect(frameMillis([50_000, null, 0])).toEqual([50, 100, 100]);
 	});
 
+	it("Given frames stating 10 ms and 20 ms, Then the first counts 100 ms, as the browsers play it, and the second 20 ms", () => {
+		expect(frameMillis([10_000, 20_000])).toEqual([100, 20]);
+	});
+
 	it("Given frames of 100, 200 and 100 ms, Then a time names the frame shown then, the last one past the end", () => {
 		const frames = [100, 200, 100];
 
