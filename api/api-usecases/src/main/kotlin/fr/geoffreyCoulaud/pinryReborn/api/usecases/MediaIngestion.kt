@@ -69,22 +69,25 @@ class MediaIngestion(
         val storageKey = "${StorageLayout.ORIGINALS_DIRECTORY}/$ownerId/$pinId/$mediaId.${found.extension}"
         val measured = found.measured
         val stored = found.stored
-        val (width, height) = measured.width to measured.height
         val media =
             when (measured) {
                 is VideoProbeResult -> Media.Video(
-                    mediaId, pinId, found.mimeType, width, height, stored.byteSize, stored.contentHash, storageKey,
-                    createdAt, measured.frames, measured.duration, measured.videoBitRate, measured.sound,
+                    id = mediaId, pinId = pinId, mimeType = found.mimeType, width = measured.width,
+                    height = measured.height, byteSize = stored.byteSize, contentHash = stored.contentHash,
+                    storageKey = storageKey, createdAt = createdAt, frames = measured.frames,
+                    duration = measured.duration, videoBitRate = measured.videoBitRate, sound = measured.sound,
                 )
                 is ProbeResult -> if (measured.animated) {
                     Media.AnimatedImage(
-                        mediaId, pinId, found.mimeType, width, height, stored.byteSize, stored.contentHash,
-                        storageKey, createdAt, measured.frames,
+                        id = mediaId, pinId = pinId, mimeType = found.mimeType, width = measured.width,
+                        height = measured.height, byteSize = stored.byteSize, contentHash = stored.contentHash,
+                        storageKey = storageKey, createdAt = createdAt, frames = measured.frames,
                     )
                 } else {
                     Media.StillImage(
-                        mediaId, pinId, found.mimeType, width, height, stored.byteSize, stored.contentHash,
-                        storageKey, createdAt,
+                        id = mediaId, pinId = pinId, mimeType = found.mimeType, width = measured.width,
+                        height = measured.height, byteSize = stored.byteSize, contentHash = stored.contentHash,
+                        storageKey = storageKey, createdAt = createdAt,
                     )
                 }
             }

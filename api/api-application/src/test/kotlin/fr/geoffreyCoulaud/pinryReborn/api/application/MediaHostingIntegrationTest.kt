@@ -345,14 +345,14 @@ class MediaHostingIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given a still, an animated GIF and a video, Then each stored media carries its frames and duration`() {
+    fun `Given a still, an animated GIF and a video, Then each stored media carries its kind, frames and duration`() {
         // Given: what each file holds, the video's as ffprobe counts and reads it
         val expected = mapOf(
-            fixture("sample.png") to (1 to null),
-            fixture("animated.gif") to (3 to null),
-            videoFixture("vp9-opus.webm") to (10 to Duration.ofMillis(1_008)),
+            fixture("sample.png") to Triple(Media.StillImage::class, 1, null),
+            fixture("animated.gif") to Triple(Media.AnimatedImage::class, 3, null),
+            videoFixture("vp9-opus.webm") to Triple(Media.Video::class, 10, Duration.ofMillis(1_008)),
         )
-        for ((file, framesAndDuration) in expected) {
+        for ((file, want) in expected) {
             val (auth, pinId) = createPinForNewUser()
 
             // When
@@ -365,7 +365,7 @@ class MediaHostingIntegrationTest : IntegrationTest() {
 
             // Then
             val media = requireNotNull(mediaRepository.findByPinId(pinId)) { "${file.name} should be stored" }
-            assertEquals(framesAndDuration, media.frames to (media as? Media.Video)?.duration, file.name)
+            assertEquals(want, Triple(media::class, media.frames, (media as? Media.Video)?.duration), file.name)
         }
     }
 

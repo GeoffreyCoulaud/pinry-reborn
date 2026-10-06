@@ -67,7 +67,7 @@ class MediaAdapterProducers {
     fun imageTransformer(config: MediaConfig, renditions: RenditionsConfig): ImageTransformer =
         VipsImageTransformer(renditions.webpQuality(), config.decoderTimeout(), config.decoderMemoryBytes())
 
-    /** A video's frames from ffmpeg, an image's from vips: both adapters implement the port. */
+    /** A video's frames from ffmpeg, an image's from vips. */
     @Produces
     @ApplicationScoped
     fun frameSampler(config: MediaConfig, renditions: RenditionsConfig): FrameSampler {
@@ -75,7 +75,10 @@ class MediaAdapterProducers {
         val image = VipsImageTransformer(renditions.webpQuality(), config.decoderTimeout(), config.decoderMemoryBytes())
         return object : FrameSampler {
             override fun sample(media: Media, staged: StagedFile, onFrame: (LumaFrame) -> Unit) =
-                (if (media is Media.Video) video else image).sample(media, staged, onFrame)
+                when (media) {
+                    is Media.Video -> video.sample(media, staged, onFrame)
+                    else -> image.sample(media, staged, onFrame)
+                }
         }
     }
 }

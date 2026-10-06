@@ -24,12 +24,10 @@ import java.util.HexFormat
 import java.util.Locale
 
 /**
- * [VideoProcessor] and a video's [FrameSampler] running the `ffprobe` and `ffmpeg` on the `PATH`, each destroyed past
+ * [VideoProcessor] and a video's frame sampler running the `ffprobe` and `ffmpeg` on the `PATH`, each destroyed past
  * [timeout] (ADR 0047) and capped at [maxAddressSpace] bytes (ADR 0050), its previews encoded at [webpQuality].
  */
-class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val webpQuality: Int) :
-    VideoProcessor,
-    FrameSampler {
+class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val webpQuality: Int) : VideoProcessor {
     private val runner = ProcessRunner(timeout, maxAddressSpace)
 
     override fun probe(staged: StagedFile, maxDuration: Duration): VideoProbeResult {
@@ -68,11 +66,11 @@ class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val
         return write(staged, filters + encoder, ::renderCommand)
     }
 
-    // One pass writes a PPM per frame beside the input, each read and deleted before the next is handed over.
-    override fun sample(media: Media, staged: StagedFile, onFrame: (LumaFrame) -> Unit) {
+    /** [FrameSampler.sample] for a video: one pass writes a PPM per frame beside the input, each read and deleted. */
+    fun sample(media: Media.Video, staged: StagedFile, onFrame: (LumaFrame) -> Unit) {
         val directory = Files.createTempDirectory(Path.of(staged.path).toAbsolutePath().parent, "frames-")
         try {
-            val instants = FrameSampler.instants((media as Media.Video).duration)
+            val instants = FrameSampler.instants(media.duration)
             val select = instants.joinToString("+", transform = ::firstFrameAt)
             val filters = listOf("-map", "0:v:0", "-vf", "select='$select',$SQUARE_PIXELS,$BOUNDED_FRAME")
             val frames = listOf("-fps_mode", "passthrough", "-pix_fmt", "rgb24", "-f", "image2")
