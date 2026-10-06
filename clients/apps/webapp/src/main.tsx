@@ -4,6 +4,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { I18nProvider } from "react-aria-components";
 import { createRoot } from "react-dom/client";
+import { closeDroppedAnimations } from "./motions";
 import { getLocale } from "./paraglide/runtime.js";
 import { createAppRouter } from "./router";
 import "./styles.css";
@@ -18,11 +19,14 @@ if (!container) {
 
 paintStoredTheme();
 
+const queryClient = new QueryClient();
+closeDroppedAnimations(queryClient);
+
 createRoot(container).render(
 	<StrictMode>
 		{/* react-aria reads `navigator.language` otherwise, and the application is what paraglide says. */}
 		<I18nProvider locale={getLocale()}>
-			<QueryClientProvider client={new QueryClient()}>
+			<QueryClientProvider client={queryClient}>
 				<RouterProvider router={createAppRouter()} />
 				{/* Mounted once here so anything calling `toast()` needs no provider of its own (ADR 0037). */}
 				<Toast.Provider />

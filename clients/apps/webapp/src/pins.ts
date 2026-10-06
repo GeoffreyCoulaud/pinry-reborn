@@ -217,6 +217,7 @@ export function useResolveDuplicates(
 			// Every pin named held a pending pair or a rejected one, whose other pin's marker may move.
 			await queryClient.invalidateQueries({ queryKey: PINS });
 		},
+		// Returned, so the list is read again before the caller's `onError` remounts the comparator on it.
 		onError: () =>
 			queryClient.invalidateQueries({ queryKey: [...DUPLICATES, pinId] }),
 	});

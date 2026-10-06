@@ -9,7 +9,7 @@ const STACKED = 4;
 
 /**
  * The pin's group as one row: its candidates stacked, how many are pending, and the way into the
- * comparator; once every one is rejected, how many and the way to review them (decision A).
+ * comparator; once every one is rejected, how many and the way to review them.
  */
 export function PinDuplicates({
 	pinId,

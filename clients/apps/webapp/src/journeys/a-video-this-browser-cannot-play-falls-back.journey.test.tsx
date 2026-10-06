@@ -108,22 +108,22 @@ describe("a video this browser cannot play falls back", () => {
 		vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockImplementation(
 			(type) => (type.includes("hvc1") ? "" : "maybe"),
 		);
-		// The replacing download runs on the first poll and has settled by the next.
-		let polls = 0;
+		// The replacing download runs until the fallback has been seen, a slow runner's poll included.
+		const fallback: { seen: boolean } = { seen: false };
 		server.use(
 			http.get("/api/v1/pins/:pinId", () => HttpResponse.json(replaced)),
 		);
 
 		const dialog = await openThe(
 			opened,
-			http.get("/api/v1/me/media-downloads", () => {
-				polls += 1;
-				return HttpResponse.json(
-					downloadsPage(polls > 1 ? [] : [download(opened.id, "PENDING")]),
-				);
-			}),
+			http.get("/api/v1/me/media-downloads", () =>
+				HttpResponse.json(
+					downloadsPage(fallback.seen ? [] : [download(opened.id, "PENDING")]),
+				),
+			),
 		);
 		await expectTheFallback(dialog, opened);
+		fallback.seen = true;
 
 		await waitFor(
 			() =>

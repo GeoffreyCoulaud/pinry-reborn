@@ -1,8 +1,9 @@
-/** Two durations closer than this play together, with no offset to set (decision D). */
+/** Two durations closer than this play together (specification 2026-10-05-the-duplicates-are-compared, decision D). */
 const NO_SLIDER_UNDER_MS = 300;
 
-/** What the browsers play a frame stating no duration, or zero, for. */
+/** Firefox and Chromium play a frame stating no duration, or 10 ms or less, for 100 ms. */
 const UNSTATED_FRAME_MS = 100;
+const UNPLAYED_FRAME_MICROS = 10_000;
 
 /** How far the shorter version can be moved, in ms: the difference of durations, or 0 for no slider. */
 export function slackOf(durations: readonly number[]): number {
@@ -30,7 +31,11 @@ export function advance(time: number, elapsed: number, length: number): number {
 
 /** An animated image's frame durations in ms, from the microseconds its decoder states. */
 export function frameMillis(micros: readonly (number | null)[]): number[] {
-	return micros.map((one) => (one ? one / 1_000 : UNSTATED_FRAME_MS));
+	return micros.map((one) =>
+		one != null && one > UNPLAYED_FRAME_MICROS
+			? one / 1_000
+			: UNSTATED_FRAME_MS,
+	);
 }
 
 /** The index of the frame shown at `time`, the last one from the end on. */

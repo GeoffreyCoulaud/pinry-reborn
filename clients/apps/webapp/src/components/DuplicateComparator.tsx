@@ -42,7 +42,7 @@ function submitLabel(submit: Submit) {
 		: m.compare_reject_count({ count: submit.count });
 }
 
-/** The facts beside the stage, with no control among them (decision A). */
+/** The facts beside the stage, with no control among them. */
 function Facts({
 	version,
 	open,
@@ -124,7 +124,7 @@ function Facts({
 	);
 }
 
-/** The group on one stage, opened on its stored state, with a decision per version (decision A). */
+/** The group on one stage, opened on its stored state, with a decision per version. */
 function Comparison({
 	pin,
 	duplicates,

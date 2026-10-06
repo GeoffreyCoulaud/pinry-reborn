@@ -130,10 +130,7 @@ function preloadNeighbours(around: (Pin | undefined)[], rendition: Rendition) {
 	}
 }
 
-/**
- * The open pin. One kept by a merge may lie past the loaded pages, and steps nowhere
- * (specification 2026-10-05, decision B).
- */
+/** The open pin. One kept by a merge may lie past the loaded pages, and steps nowhere. */
 function useOpened(loaded: Pin[]) {
 	const [shown, setShown] = useState<{ id: string; kept?: true } | null>(null);
 	const openedId = shown?.id ?? null;
@@ -143,7 +140,7 @@ function useOpened(loaded: Pin[]) {
 	return {
 		openedId,
 		opened: inGrid ?? kept,
-		fromList: inGrid === undefined,
+		outsideGrid: inGrid === undefined,
 		setShown,
 	};
 }
@@ -170,10 +167,10 @@ export function PinGrid({
 	const [rendition, setRendition] = useState<Rendition>("SMALL");
 	const loaded = pins.data?.pages.flatMap((page) => page.pins) ?? [];
 	const tiles = placeableTiles(loaded);
-	const { openedId, opened, fromList, setShown } = useOpened(loaded);
+	const { openedId, opened, outsideGrid, setShown } = useOpened(loaded);
 	const setOpenedId = (id: string | null) =>
 		setShown(id === null ? null : { id });
-	const { previous, next } = neighbours(fromList ? [] : loaded, openedId);
+	const { previous, next } = neighbours(outsideGrid ? [] : loaded, openedId);
 	const selection = useSelection(tiles);
 	const selecting = selection.ids.length > 0;
 
@@ -194,7 +191,7 @@ export function PinGrid({
 	};
 	preloadNeighbours(opened ? [previous, next] : [], rendition);
 	const stepToPrevious = previous ? () => setOpenedId(previous.id) : undefined;
-	const canFetch = !fromList && pins.hasNextPage && !pins.isFetchingNextPage;
+	const canFetch = !outsideGrid && pins.hasNextPage && !pins.isFetchingNextPage;
 	const fetchStep = canFetch ? () => void fetchThenStep() : undefined;
 	const stepToNext = next ? () => setOpenedId(next.id) : fetchStep;
 
