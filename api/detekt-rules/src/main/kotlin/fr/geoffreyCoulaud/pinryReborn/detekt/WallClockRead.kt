@@ -14,38 +14,33 @@ import org.jetbrains.kotlin.psi.psiUtil.getStrictParentOfType
 /**
  * The wall clock is read in one place, the implementation of the `Clock` port.
  *
- * A hidden clock makes its caller untestable, and it bypasses the truncation that keeps a stamped
- * instant equal to itself across a save and a read. The exemption is structural rather than a list
- * of blessed files: a class that declares the port may read the clock, and that is what makes it
- * the port.
+ * A hidden clock makes its caller untestable, and it bypasses the truncation that keeps a stamped instant equal to
+ * itself across a save and a read. The exemption is structural rather than a list of blessed files: a class that
+ * declares the port may read the clock, and that is what makes it the port.
  *
- * Reading the syntax tree rather than the file text is what separates a call from a sentence about
- * one: the port's own KDoc contains `Instant.now()` and is not a violation.
+ * Reading the syntax tree rather than the file text is what separates a call from a sentence about one: the port's own
+ * KDoc contains `Instant.now()` and is not a violation.
  *
  * ## Reach
  *
- * Four reads are reported by default, each written on its receiver: `Instant.now()`,
- * `LocalDate.now()`, `LocalDateTime.now()` and `System.currentTimeMillis()`. That shape is the only
- * one seen, since the rule visits dot-qualified expressions and nothing else. Three boundaries
- * follow, all deliberate.
+ * Four reads are reported by default, each written on its receiver: `Instant.now()`, `LocalDate.now()`,
+ * `LocalDateTime.now()` and `System.currentTimeMillis()`. That shape is the only one seen, since the rule visits
+ * dot-qualified expressions and nothing else. Three boundaries follow, all deliberate.
  *
- * A bare `now()`, reached through a static import, is not a dot-qualified expression and is never
- * visited. Telling it from a local method of the same name takes the declaration it resolves to,
- * and this rule set runs without type resolution, so covering that form would mean reporting every
- * `now()` written anywhere.
+ * A bare `now()`, reached through a static import, is not a dot-qualified expression and is never visited. Telling it
+ * from a local method of the same name takes the declaration it resolves to, and this rule set runs without type
+ * resolution, so covering that form would mean reporting every `now()` written anywhere.
  *
- * The four names are the whole default list, and it is closed rather than exhaustive: it covers the
- * ways this project writes the read. `ZonedDateTime`, `OffsetDateTime`, `LocalTime`,
- * `System.nanoTime()`, `java.util.Date()` and `Calendar.getInstance()` reach the same clock by other
- * routes and go unreported until `wallClockReads` names them.
+ * The four names are the whole default list, and it is closed rather than exhaustive: it covers the ways this project
+ * writes the read. `ZonedDateTime`, `OffsetDateTime`, `LocalTime`, `System.nanoTime()`, `java.util.Date()` and
+ * `Calendar.getInstance()` reach the same clock by other routes and go unreported until `wallClockReads` names them.
  *
- * The scope is production and test sources in every module but the one declaring this rule, which
- * cannot carry itself as a detekt plugin. Test sources take the fixed TestTime instant rather than
- * reading the clock; only the testFixtures source set is excluded, because it hosts that seam.
+ * The scope is production and test sources in every module but the one declaring this rule, which cannot carry itself
+ * as a detekt plugin. Test sources take the fixed TestTime instant rather than reading the clock; only the testFixtures
+ * source set is excluded, because it hosts that seam.
  */
-class WallClockRead(
-    config: Config,
-) : Rule(
+class WallClockRead(config: Config) :
+    Rule(
         config,
         "Reading the wall clock outside the Clock port hides a dependency the caller cannot control.",
     ) {
@@ -62,7 +57,7 @@ class WallClockRead(
             Finding(
                 Entity.from(expression),
                 "$receiver reads the wall clock. Take the instant from the Clock port instead.",
-            ),
+            )
         )
     }
 

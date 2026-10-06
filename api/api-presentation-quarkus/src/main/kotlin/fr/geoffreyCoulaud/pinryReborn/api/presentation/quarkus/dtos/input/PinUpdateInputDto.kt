@@ -11,8 +11,7 @@ import java.util.UUID
 data class PinUpdateInputDto(
     val sourceContextUrl: String?,
     val sourceMediaUrl: String?,
-    @field:Size(max = 2000)
-    val description: String,
+    @field:Size(max = 2000) val description: String,
     val tags: List<@NotBlank String>,
     val boardIds: List<UUID>,
 )

@@ -25,8 +25,7 @@ class ImportChunkOffsetMismatchError(val currentLength: Long, cause: Throwable) 
     )
 
 /** No chunk ever arrived, so there is no file to close: the store would open a path that is not there. */
-class ImportArchiveEmptyError :
-    UserDataImportError("Import received no archive bytes", ErrorCode.IMPORT_ARCHIVE_EMPTY)
+class ImportArchiveEmptyError : UserDataImportError("Import received no archive bytes", ErrorCode.IMPORT_ARCHIVE_EMPTY)
 
 class ImportArchiveTooLargeError(cause: Throwable) :
     UserDataImportError("Archive is larger than this instance accepts", ErrorCode.IMPORT_ARCHIVE_TOO_LARGE, cause)

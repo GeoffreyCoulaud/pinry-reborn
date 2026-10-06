@@ -7,13 +7,13 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
 /**
  * The states a partial unique index selects, spelled as the column stores them.
  *
- * The index constrains those rows and no others, so a query that means the same rows names the same set or the
- * two answer different questions. `PartialUniqueIndexStatesTest` reads each set against the `where` clause of
- * the migration that created the index.
+ * The index constrains those rows and no others, so a query that means the same rows names the same set or the two
+ * answer different questions. `PartialUniqueIndexStatesTest` reads each set against the `where` clause of the migration
+ * that created the index.
  *
- * The same literals are spelled again in the `@Index(definition = ...)` of `TaskModel`,
- * `UserDataExportModel` and `UserDataImportModel`, which cannot read this set because an annotation argument is
- * a compile-time constant, so nothing binds those three until someone runs `generateDbMigration`.
+ * The same literals are spelled again in the `@Index(definition = ...)` of `TaskModel`, `UserDataExportModel` and
+ * `UserDataImportModel`, which cannot read this set because an annotation argument is a compile-time constant, so
+ * nothing binds those three until someone runs `generateDbMigration`.
  */
 internal object PartialUniqueIndexStates {
     /** `ux_tasks_dedup` (`1.3.sql:27`): a dedup key is unique among the tasks in these states. */
@@ -23,6 +23,5 @@ internal object PartialUniqueIndexStates {
     val pendingExportStates: Set<String> = setOf(UserDataExportState.PENDING.name)
 
     /** `uq_user_data_imports_active` (`1.21.sql:46`): a user has at most one import in these states. */
-    val activeImportStates: Set<String> =
-        UserDataImportState.entries.filter { it.isActive }.map { it.name }.toSet()
+    val activeImportStates: Set<String> = UserDataImportState.entries.filter { it.isActive }.map { it.name }.toSet()
 }

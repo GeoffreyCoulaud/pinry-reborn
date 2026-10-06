@@ -11,12 +11,11 @@ import org.jetbrains.kotlin.psi.KtValueArgumentName
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 
 /**
- * In a function declaring a `pageSize` parameter, every mention of it is what `coerceIn` is called
- * on. Names, not resolved members, like the rest of this rule set; `detekt.yml` sets the scope.
+ * In a function declaring a `pageSize` parameter, every mention of it is what `coerceIn` is called on. Names, not
+ * resolved members, like the rest of this rule set; `detekt.yml` sets the scope.
  */
-class PageSizeForwardedUnclamped(
-    config: Config,
-) : Rule(
+class PageSizeForwardedUnclamped(config: Config) :
+    Rule(
         config,
         "A page size that reaches the query unclamped lets a request ask for no rows, or for every row.",
     ) {

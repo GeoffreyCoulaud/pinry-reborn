@@ -9,9 +9,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class NotFoundExceptionMapperTest {
-    private val mapper = NotFoundExceptionMapper().apply {
-        uriInfo = mockk<UriInfo> { every { path } returns "/api/v1/nowhere" }
-    }
+    private val mapper =
+        NotFoundExceptionMapper().apply {
+            uriInfo = mockk<UriInfo> { every { path } returns "/api/v1/nowhere" }
+        }
 
     @Test
     fun `Given no resource at the path, Then it maps to 404 UNKNOWN_ROUTE naming the path as unserved`() {

@@ -11,11 +11,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.FrameH
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 /** The band lookup of ADR 0051, decision 4: found however the bits are spread, refused past 31 bits. */
 class EbeanMediaFrameRepositoryTest : RepositoryTest() {
@@ -104,15 +104,24 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
         // Given
         val user =
             UserRepository(persistor).saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
-        val pin = PinRepository(persistor).savePin(
-            Pin(
-                randomUUID(), user, null, null, "", emptyList(), emptyList(),
-                createdAt = storableNow(), updatedAt = storableNow(),
-            ),
-        )
-        val media = EbeanMediaRepository(persistor, transactionRunner).save(
-            Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1,"", "originals/x", storableNow()),
-        )
+        val pin =
+            PinRepository(persistor)
+                .savePin(
+                    Pin(
+                        randomUUID(),
+                        user,
+                        null,
+                        null,
+                        "",
+                        emptyList(),
+                        emptyList(),
+                        createdAt = storableNow(),
+                        updatedAt = storableNow(),
+                    )
+                )
+        val media =
+            EbeanMediaRepository(persistor, transactionRunner)
+                .save(Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1, "", "originals/x", storableNow()))
         val gone = randomUUID()
         repository.save(media.id, listOf(stored))
         repository.save(gone, listOf(stored, storedFlipping(mapOf(0 to 1))))

@@ -14,16 +14,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.fetch.http.AddressPolicy
 import fr.geoffreyCoulaud.pinryReborn.api.fetch.http.GuardingProxy
 import fr.geoffreyCoulaud.pinryReborn.api.video.ffmpeg.FfmpegVideoProcessor
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertArrayEquals
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.io.IOException
 import java.lang.ProcessBuilder.Redirect.DISCARD
 import java.net.InetAddress
@@ -38,11 +28,20 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 /** Runs the `yt-dlp` on the `PATH` against a local origin, through a [GuardingProxy]. */
 class YtDlpPageMediaExtractorTest {
-    @TempDir
-    lateinit var staging: Path
+    @TempDir lateinit var staging: Path
 
     private lateinit var server: HttpServer
     private val routes = ConcurrentHashMap<String, (HttpExchange) -> Unit>()
@@ -60,11 +59,13 @@ class YtDlpPageMediaExtractorTest {
         maxBytes: Long = 10_000_000,
         timeout: Duration = Duration.ofSeconds(60),
         resolve: (String) -> InetAddress = InetAddress::getByName,
-    ) = YtDlpPageMediaExtractor(staging, maxBytes, maxDuration, timeout) {
-        GuardingProxy(policy, Duration.ofSeconds(2), resolve)
-    }
+    ) =
+        YtDlpPageMediaExtractor(staging, maxBytes, maxDuration, timeout) {
+            GuardingProxy(policy, Duration.ofSeconds(2), resolve)
+        }
 
-    @BeforeEach fun start() {
+    @BeforeEach
+    fun start() {
         server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
         server.executor = Executors.newVirtualThreadPerTaskExecutor()
         server.createContext("/") { exchange ->
@@ -75,7 +76,8 @@ class YtDlpPageMediaExtractorTest {
         server.start()
     }
 
-    @AfterEach fun stop() {
+    @AfterEach
+    fun stop() {
         released.countDown()
         server.stop(0)
     }
@@ -265,8 +267,9 @@ class YtDlpPageMediaExtractorTest {
     fun `Given a report whose stream needs re-extracting, Then the second run fails without fetching the page`() {
         // Given: yt-dlp re-extracts a DASH format whose fragments were a generator, from the info's page address
         page("/page.html", """<video src="/clip.mkv"></video>""")
-        val format = mapOf("format_id" to "dash", "url" to url("/clip.mpd"), "protocol" to "http_dash_segments") +
-            mapOf("ext" to "mp4", "fragments" to "<generator>")
+        val format =
+            mapOf("format_id" to "dash", "url" to url("/clip.mpd"), "protocol" to "http_dash_segments") +
+                mapOf("ext" to "mp4", "fragments" to "<generator>")
         val info = Files.writeString(staging.resolve("info.json"), YtDlpReport.infoOf(infoJson(format)))
         val secondRun =
             listOf("yt-dlp") + YtDlpPageMediaExtractor.OPTIONS + listOf("--load-info-json", "$info", "-f", "dash")
@@ -317,9 +320,10 @@ class YtDlpPageMediaExtractorTest {
         val leaseLost = IllegalStateException("lease lost")
 
         // When
-        val thrown = assertThrows(IllegalStateException::class.java) {
-            extractor().extract(url("/page.html")) { throw leaseLost }
-        }
+        val thrown =
+            assertThrows(IllegalStateException::class.java) {
+                extractor().extract(url("/page.html")) { throw leaseLost }
+            }
 
         // Then
         assertEquals(leaseLost, thrown)

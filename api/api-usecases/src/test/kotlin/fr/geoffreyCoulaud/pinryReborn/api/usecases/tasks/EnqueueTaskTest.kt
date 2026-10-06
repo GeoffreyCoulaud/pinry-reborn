@@ -8,11 +8,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class EnqueueTaskTest {
     private val taskQueue: TaskQueueInterface = mockk()
@@ -29,21 +29,22 @@ class EnqueueTaskTest {
         val delay = Duration.ofSeconds(30)
         val priority = 1
         val dedupKey = "unique-key"
-        val expectedTask = Task(
-            id = randomUUID(),
-            kind = kind,
-            payload = payload,
-            state = TaskState.PENDING,
-            priority = priority,
-            availableAt = now.plus(delay),
-            attempts = 0,
-            maxAttempts = maxAttempts,
-            leaseId = null,
-            leaseExpiresAt = null,
-            cancelRequested = false,
-            dedupKey = dedupKey,
-            lastError = null,
-        )
+        val expectedTask =
+            Task(
+                id = randomUUID(),
+                kind = kind,
+                payload = payload,
+                state = TaskState.PENDING,
+                priority = priority,
+                availableAt = now.plus(delay),
+                attempts = 0,
+                maxAttempts = maxAttempts,
+                leaseId = null,
+                leaseExpiresAt = null,
+                cancelRequested = false,
+                dedupKey = dedupKey,
+                lastError = null,
+            )
         every { clock.now() } returns now
         val newTaskSlot = slot<NewTask>()
         every { taskQueue.enqueue(capture(newTaskSlot)) } returns expectedTask
@@ -67,21 +68,22 @@ class EnqueueTaskTest {
         val kind = "process-media"
         val payload = "{\"url\": \"https://example.com/media.jpg\"}"
         val maxAttempts = 2
-        val expectedTask = Task(
-            id = randomUUID(),
-            kind = kind,
-            payload = payload,
-            state = TaskState.PENDING,
-            priority = 0,
-            availableAt = now,
-            attempts = 0,
-            maxAttempts = maxAttempts,
-            leaseId = null,
-            leaseExpiresAt = null,
-            cancelRequested = false,
-            dedupKey = null,
-            lastError = null,
-        )
+        val expectedTask =
+            Task(
+                id = randomUUID(),
+                kind = kind,
+                payload = payload,
+                state = TaskState.PENDING,
+                priority = 0,
+                availableAt = now,
+                attempts = 0,
+                maxAttempts = maxAttempts,
+                leaseId = null,
+                leaseExpiresAt = null,
+                cancelRequested = false,
+                dedupKey = null,
+                lastError = null,
+            )
         every { clock.now() } returns now
         val newTaskSlot = slot<NewTask>()
         every { taskQueue.enqueue(capture(newTaskSlot)) } returns expectedTask

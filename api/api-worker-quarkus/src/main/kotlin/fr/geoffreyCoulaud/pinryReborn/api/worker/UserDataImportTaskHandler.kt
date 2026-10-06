@@ -20,7 +20,8 @@ class UserDataImportTaskHandler(
     override val kind = UserDataImportTask.KIND
 
     /** Not stamped at enqueue: the floor is read from configuration when the task settles. */
-    override val retryFloor: Duration get() = config.retryFloor()
+    override val retryFloor: Duration
+        get() = config.retryFloor()
 
     // Once per run rather than per imported media, the drain reading every outdated media anyway.
     override fun handle(payload: String, context: TaskContext) {

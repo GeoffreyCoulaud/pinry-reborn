@@ -15,13 +15,13 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class SessionCreatorTest {
     private val userAuthenticator = mockk<UserAuthenticator>()
@@ -41,7 +41,9 @@ class SessionCreatorTest {
     @BeforeEach
     fun stubTransactionRunnerPassthrough() {
         every { transactionRunner.inTransaction<IssuedSession>(any()) } answers
-            { firstArg<() -> IssuedSession>().invoke() }
+            {
+                firstArg<() -> IssuedSession>().invoke()
+            }
     }
 
     @Test

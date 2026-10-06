@@ -21,10 +21,10 @@ import io.mockk.slot
 import io.mockk.verify
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
 
 class PasswordChangerTest : BaseTest() {
     private val passwords = mockk<UserPasswordHashRepositoryInterface>()
@@ -123,8 +123,7 @@ class PasswordChangerTest : BaseTest() {
     @Test
     fun `Given a fraction of a second left on the interval, Then the retry delay rounds up`() {
         // Given: 30 s interval, 9.5 s elapsed -> 20.5 s remaining
-        val recent =
-            HashedPassword("h", PasswordHashAlgorithm.BCRYPT, createdAt = now.minusSeconds(10).plusMillis(500))
+        val recent = HashedPassword("h", PasswordHashAlgorithm.BCRYPT, createdAt = now.minusSeconds(10).plusMillis(500))
         every { passwords.findCurrentPasswordHash(user) } returns recent
         every { hasher.matches("old", recent) } returns true
         every { clock.now() } returns now

@@ -28,8 +28,8 @@ import java.io.InputStream
 import java.util.UUID
 
 /**
- * Result of [SetPinMedia.set]: the persisted canonical image, plus whether it replaced a
- * pre-existing image for the pin (used by the controller to pick 201 vs 200).
+ * Result of [SetPinMedia.set]: the persisted canonical image, plus whether it replaced a pre-existing image for the pin
+ * (used by the controller to pick 201 vs 200).
  */
 data class SetPinMediaResult(val media: Media, val replaced: Boolean)
 
@@ -49,23 +49,25 @@ class SetPinMedia(
         val pin = pinRepository.findPinById(pinId) ?: throw MediaPinDoesNotExistError()
         if (pin.author.id != requester.id) throw MediaPermissionError()
 
-        val staged = try {
-            mediaIngestion.stage(upload)
-        } catch (e: MediaTooLargeException) {
-            throw MediaTooLargeError(e)
-        }
+        val staged =
+            try {
+                mediaIngestion.stage(upload)
+            } catch (e: MediaTooLargeException) {
+                throw MediaTooLargeError(e)
+            }
 
-        val ingested = try {
-            mediaIngestion.ingest(staged, requester.id, pinId, clock.now())
-        } catch (e: MediaTooLargeException) {
-            throw MediaTooLargeError(e)
-        } catch (e: UnsupportedImageFormatException) {
-            throw MediaCodecUnsupportedError("The image format is not accepted", e)
-        } catch (e: VideoProcessorException) {
-            throw refusalOf(e)
-        } catch (e: ImageProbeException) {
-            throw MediaInvalidError(e)
-        }
+        val ingested =
+            try {
+                mediaIngestion.ingest(staged, requester.id, pinId, clock.now())
+            } catch (e: MediaTooLargeException) {
+                throw MediaTooLargeError(e)
+            } catch (e: UnsupportedImageFormatException) {
+                throw MediaCodecUnsupportedError("The image format is not accepted", e)
+            } catch (e: VideoProcessorException) {
+                throw refusalOf(e)
+            } catch (e: ImageProbeException) {
+                throw MediaInvalidError(e)
+            }
 
         val existing = mediaRepository.findByPinId(pinId)
         // Promote/save can fail for many reasons: an I/O failure during promote (disk full,
@@ -78,15 +80,16 @@ class SetPinMedia(
         // RowMergedOutsideTransaction: an insert of the row `MediaIngestion` just built, which the rule
         // cannot see through the property.
         @Suppress("TooGenericExceptionCaught", "RowMergedOutsideTransaction")
-        val saved = try {
-            mediaIngestion.promote(ingested)
-            mediaRepository.save(ingested.media)
-        } catch (e: Exception) {
-            // Best-effort: a cleanup failure here must not mask `e`, which is the cause the caller
-            // needs to see. The orphan (if any) is reclaimed by the periodic garbage collection.
-            mediaIngestion.discard(ingested)
-            throw e
-        }
+        val saved =
+            try {
+                mediaIngestion.promote(ingested)
+                mediaRepository.save(ingested.media)
+            } catch (e: Exception) {
+                // Best-effort: a cleanup failure here must not mask `e`, which is the cause the caller
+                // needs to see. The orphan (if any) is reclaimed by the periodic garbage collection.
+                mediaIngestion.discard(ingested)
+                throw e
+            }
         // Deleting the superseded file (and evicting its cached renditions) is best-effort only:
         // the new row is already committed, so a failure here (old file already gone, transient
         // I/O error, ...) must not turn a successful upload into a 500.

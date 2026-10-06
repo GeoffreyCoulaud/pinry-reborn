@@ -5,7 +5,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 
-enum class PinMediaStatus { NONE, PENDING, READY, FAILED }
+enum class PinMediaStatus {
+    NONE,
+    PENDING,
+    READY,
+    FAILED,
+}
 
 data class PinMediaReplacement(val status: DownloadStatus, val reasonCode: DownloadReason?)
 

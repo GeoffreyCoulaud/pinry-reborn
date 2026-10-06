@@ -64,13 +64,14 @@ data class MediaLimits(
     }
 
     /** Staging precedes the probe, so it admits the larger bound and [refuseIfOver] applies each kind's own. */
-    val maxStagedBytes: Long get() = maxOf(maxImageBytes, maxVideoBytes)
+    val maxStagedBytes: Long
+        get() = maxOf(maxImageBytes, maxVideoBytes)
 
     fun refuseIfOver(measured: MeasuredMedia) {
         // The image's refusal for a video too, so each caller answers a video's pixels as it answers an image's.
         if (measured.width.toLong() * measured.height > maxPixelsPerFrame) {
             throw ImageTooManyPixelsException(
-                "${measured.width}x${measured.height}, past $maxPixelsPerFrame pixels per frame",
+                "${measured.width}x${measured.height}, past $maxPixelsPerFrame pixels per frame"
             )
         }
         val maxBytes =

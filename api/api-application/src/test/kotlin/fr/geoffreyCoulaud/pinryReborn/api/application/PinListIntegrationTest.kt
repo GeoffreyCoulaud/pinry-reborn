@@ -15,6 +15,10 @@ import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.specification.RequestSpecification
 import jakarta.inject.Inject
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
+import kotlin.io.encoding.Base64
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.emptyIterable
 import org.hamcrest.Matchers.equalTo
@@ -24,27 +28,18 @@ import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertNotNull
-import java.time.Duration
-import java.time.Instant
-import java.util.UUID
-import kotlin.io.encoding.Base64
 
 @QuarkusTest
 class PinListIntegrationTest : IntegrationTest() {
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var objectMapper: ObjectMapper
+    @Inject lateinit var objectMapper: ObjectMapper
 
-    @Inject
-    lateinit var mediaRepository: MediaRepositoryInterface
+    @Inject lateinit var mediaRepository: MediaRepositoryInterface
 
-    @Inject
-    lateinit var mediaDownloadRepository: MediaDownloadRepositoryInterface
+    @Inject lateinit var mediaDownloadRepository: MediaDownloadRepositoryInterface
 
-    @Inject
-    lateinit var pinRepository: PinRepositoryInterface
+    @Inject lateinit var pinRepository: PinRepositoryInterface
 
     // ==================== Helpers ====================
 
@@ -62,19 +57,21 @@ class PinListIntegrationTest : IntegrationTest() {
                     sourceMediaUrl = "https://example.com/media$i.jpg",
                     description = "Pin $i",
                     tags = emptyList(),
-                ).id
+                )
+                .id
         }
 
     private fun RequestSpecification.withCursor(
         pivotId: UUID,
-        direction: CursorDirection = CursorDirection.FORWARD
-    ): RequestSpecification = queryParam(
-        "cursor",
-        CursorDto(pivotId = pivotId, direction = direction.toDto())
-            .let { objectMapper.writeValueAsString(it) }
-            .toByteArray()
-            .let { Base64.encode(it) }
-    )
+        direction: CursorDirection = CursorDirection.FORWARD,
+    ): RequestSpecification =
+        queryParam(
+            "cursor",
+            CursorDto(pivotId = pivotId, direction = direction.toDto())
+                .let { objectMapper.writeValueAsString(it) }
+                .toByteArray()
+                .let { Base64.encode(it) },
+        )
 
     @Test
     fun `Given a ready image, a pending download and neither, Then each pin carries its own image state`() {
@@ -83,14 +80,22 @@ class PinListIntegrationTest : IntegrationTest() {
         val (imaged, downloading, _) = createPinsForUser(auth.user, 3)
         mediaRepository.save(
             Media.StillImage(
-                id = UUID.randomUUID(), pinId = imaged, mimeType = "image/png", width = 800, height = 600,
-                byteSize = 1024, contentHash = "hash-$imaged",
-                storageKey = "originals/x/$imaged/i.png", createdAt = FIXED_INSTANT,
-            ),
+                id = UUID.randomUUID(),
+                pinId = imaged,
+                mimeType = "image/png",
+                width = 800,
+                height = 600,
+                byteSize = 1024,
+                contentHash = "hash-$imaged",
+                storageKey = "originals/x/$imaged/i.png",
+                createdAt = FIXED_INSTANT,
+            )
         )
         mediaDownloadRepository.upsertPending(
-            pinId = downloading, sourceUrl = "https://example.com/i.png",
-            taskId = UUID.randomUUID(), now = FIXED_INSTANT,
+            pinId = downloading,
+            sourceUrl = "https://example.com/i.png",
+            taskId = UUID.randomUUID(),
+            now = FIXED_INSTANT,
         )
 
         // When / Then
@@ -118,25 +123,34 @@ class PinListIntegrationTest : IntegrationTest() {
         val pinId = createPinsForUser(auth.user, 1).single()
         mediaRepository.save(
             Media.Video(
-                id = UUID.randomUUID(), pinId = pinId, mimeType = "video/mp4", width = 800, height = 600,
-                byteSize = 1024, contentHash = "hash-$pinId",
-                storageKey = "originals/x/$pinId/v.mp4", createdAt = FIXED_INSTANT,
-                frames = 30, duration = Duration.ofMillis(1_500),
-                videoBitRate = 4_200_000, sound = Media.Sound(2, 128_000),
-            ),
+                id = UUID.randomUUID(),
+                pinId = pinId,
+                mimeType = "video/mp4",
+                width = 800,
+                height = 600,
+                byteSize = 1024,
+                contentHash = "hash-$pinId",
+                storageKey = "originals/x/$pinId/v.mp4",
+                createdAt = FIXED_INSTANT,
+                frames = 30,
+                duration = Duration.ofMillis(1_500),
+                videoBitRate = 4_200_000,
+                sound = Media.Sound(2, 128_000),
+            )
         )
 
         // When
-        val response = given()
-            .authenticatedAs(auth)
-            .`when`()
-            .get("/api/v1/pins")
-            .then()
-            .statusCode(200)
-            .body("pins[0].media.durationMillis", equalTo(1_500))
-            .body("pins[0].media.videoBitRate", equalTo(4_200_000))
-            .body("pins[0].media.audioChannels", equalTo(2))
-            .body("pins[0].media.audioBitRate", equalTo(128_000))
+        val response =
+            given()
+                .authenticatedAs(auth)
+                .`when`()
+                .get("/api/v1/pins")
+                .then()
+                .statusCode(200)
+                .body("pins[0].media.durationMillis", equalTo(1_500))
+                .body("pins[0].media.videoBitRate", equalTo(4_200_000))
+                .body("pins[0].media.audioChannels", equalTo(2))
+                .body("pins[0].media.audioBitRate", equalTo(128_000))
 
         // Then
         val createdAt = Instant.parse(response.extract().path<String>("pins[0].createdAt"))
@@ -327,15 +341,16 @@ class PinListIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         createPinsForUser(auth.user, 3)
 
-        val response = given()
-            .authenticatedAs(auth)
-            .queryParam("pageSize", 2)
-            .`when`()
-            .get("/api/v1/pins")
-            .then()
-            .statusCode(200)
-            .extract()
-            .response()
+        val response =
+            given()
+                .authenticatedAs(auth)
+                .queryParam("pageSize", 2)
+                .`when`()
+                .get("/api/v1/pins")
+                .then()
+                .statusCode(200)
+                .extract()
+                .response()
 
         val nextCursor = response.jsonPath().getString("pagination.nextCursor")
         val previousCursor = response.jsonPath().getString("pagination.previousCursor")
@@ -361,38 +376,37 @@ class PinListIntegrationTest : IntegrationTest() {
         createPinsForUser(auth1.user, 2)
         createPinsForUser(auth2.user, 1)
 
-        given()
-            .authenticatedAs(auth1)
-            .`when`()
-            .get("/api/v1/pins")
-            .then()
-            .statusCode(200)
-            .body("pins", hasSize<Any>(2))
+        given().authenticatedAs(auth1).`when`().get("/api/v1/pins").then().statusCode(200).body("pins", hasSize<Any>(2))
 
-        given()
-            .authenticatedAs(auth2)
-            .`when`()
-            .get("/api/v1/pins")
-            .then()
-            .statusCode(200)
-            .body("pins", hasSize<Any>(1))
+        given().authenticatedAs(auth2).`when`().get("/api/v1/pins").then().statusCode(200).body("pins", hasSize<Any>(1))
     }
 
     @Test
     fun `Given a term, Then the page holds the pins whose description or tag matches and no other`() {
         // Given
         val auth = createAuthenticatedUser()
-        val described = pinCreator.createPin(
-            author = auth.user, sourceContextUrl = null, sourceMediaUrl = null,
-            description = "A cat on a wall", tags = emptyList(),
-        )
-        val tagged = pinCreator.createPin(
-            author = auth.user, sourceContextUrl = null, sourceMediaUrl = null,
-            description = "A photograph", tags = listOf("cat"),
-        )
+        val described =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = null,
+                sourceMediaUrl = null,
+                description = "A cat on a wall",
+                tags = emptyList(),
+            )
+        val tagged =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = null,
+                sourceMediaUrl = null,
+                description = "A photograph",
+                tags = listOf("cat"),
+            )
         pinCreator.createPin(
-            author = auth.user, sourceContextUrl = null, sourceMediaUrl = null,
-            description = "A dog", tags = listOf("puppy"),
+            author = auth.user,
+            sourceContextUrl = null,
+            sourceMediaUrl = null,
+            description = "A dog",
+            tags = listOf("puppy"),
         )
 
         // When / Then

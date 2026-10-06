@@ -7,19 +7,16 @@ import java.time.Duration
 
 /**
  * Reclaim soft-deleted account tombstones whose delete task is no longer in flight: re-drives
- * [AccountDeletionCleaner.deleteAccountData] on each, which finishes any partial delete and
- * hard-deletes the tombstone. The grace avoids re-driving an account whose delete task is still
- * running.
+ * [AccountDeletionCleaner.deleteAccountData] on each, which finishes any partial delete and hard-deletes the tombstone.
+ * The grace avoids re-driving an account whose delete task is still running.
  *
- * Not `@ApplicationScoped`: [tombstoneGrace] is a primitive ARC cannot resolve, so the bean is
- * produced in wiring (`GarbageCollectionProducers`), mirroring `ExportProducers` for
- * `ReapUserDataExports`.
+ * Not `@ApplicationScoped`: [tombstoneGrace] is a primitive ARC cannot resolve, so the bean is produced in wiring
+ * (`GarbageCollectionProducers`), mirroring `ExportProducers` for `ReapUserDataExports`.
  *
- * The second logger in `api-usecases`: the cleaner's DB transaction can still throw (its disk half
- * is best-effort after Sequence 1), so each re-drive is isolated in its own try/catch and a failure
- * is logged at WARN rather than aborting the batch. One bad tombstone must not block the rest
- * (docs/adr/0003-periodic-gc-and-best-effort-cleanup.md, consequence of the periodic garbage
- * collection design).
+ * The second logger in `api-usecases`: the cleaner's DB transaction can still throw (its disk half is best-effort after
+ * Sequence 1), so each re-drive is isolated in its own try/catch and a failure is logged at WARN rather than aborting
+ * the batch. One bad tombstone must not block the rest (docs/adr/0003-periodic-gc-and-best-effort-cleanup.md,
+ * consequence of the periodic garbage collection design).
  */
 class ReapTombstonedAccounts(
     private val userRepository: UserRepositoryInterface,
@@ -28,10 +25,9 @@ class ReapTombstonedAccounts(
     private val tombstoneGrace: Duration,
 ) {
     /**
-     * Re-drive the cleaner on every tombstone older than [tombstoneGrace]. Returns the number of
-     * tombstones identified as candidates, the same accounting [ReapOrphanedStorage] uses: a
-     * per-item re-drive is best-effort, so a throw is logged and the next tombstone is still
-     * processed.
+     * Re-drive the cleaner on every tombstone older than [tombstoneGrace]. Returns the number of tombstones identified
+     * as candidates, the same accounting [ReapOrphanedStorage] uses: a per-item re-drive is best-effort, so a throw is
+     * logged and the next tombstone is still processed.
      */
     // The cleaner's DB transaction can throw anything; item-level isolation is the point (class KDoc).
     @Suppress("TooGenericExceptionCaught")

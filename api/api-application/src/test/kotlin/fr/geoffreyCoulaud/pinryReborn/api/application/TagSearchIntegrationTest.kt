@@ -11,8 +11,7 @@ import org.junit.jupiter.api.Test
 @QuarkusTest
 class TagSearchIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var tagCreator: TagCreator
+    @Inject lateinit var tagCreator: TagCreator
 
     // The search reads the user's tags, not a pin's, so nothing here needs a pin to hang them on.
     private fun createTagsFor(auth: AuthenticatedUser, vararg tagNames: String) {
@@ -128,12 +127,7 @@ class TagSearchIntegrationTest : IntegrationTest() {
     @Test
     fun `Given unauthenticated request, Then returns 401`() {
         // When, Then
-        given()
-            .queryParam("q", "test")
-            .`when`()
-            .get("/api/v1/tags/search")
-            .then()
-            .statusCode(401)
+        given().queryParam("q", "test").`when`().get("/api/v1/tags/search").then().statusCode(401)
     }
 
     @Test

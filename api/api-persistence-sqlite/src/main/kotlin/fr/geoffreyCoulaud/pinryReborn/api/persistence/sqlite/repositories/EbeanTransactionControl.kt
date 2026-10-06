@@ -6,9 +6,8 @@ import io.ebean.Transaction
 import jakarta.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
-class EbeanTransactionControl(
-    private val database: Database,
-) : TransactionControl {
+class EbeanTransactionControl(private val database: Database) : TransactionControl {
     override fun beginTransaction(): Transaction = database.beginTransaction()
+
     override fun currentTransaction(): Transaction? = database.currentTransaction()
 }

@@ -4,16 +4,16 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import io.ebean.test.LoggedSql
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 /**
- * The bulk membership and recycle bin writes, and the bulk read that resolves their pins (spec 2026-09-27,
- * decision H). Split from `PinRepositoryTest` to keep it under detekt's `LargeClass` threshold.
+ * The bulk membership and recycle bin writes, and the bulk read that resolves their pins (spec 2026-09-27, decision H).
+ * Split from `PinRepositoryTest` to keep it under detekt's `LargeClass` threshold.
  */
 class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
     private val later: Instant = storableNow().plusSeconds(60)
@@ -77,9 +77,10 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
 
     @Test
     fun `Given one pin or ten, Then addPinsToBoard reads as often and batches its updates and inserts`() {
-        val ten = assertConstantReadsAndOneUpdateBatch(given = { user, _ -> createAndSavePin(user) }) { ids, board ->
-            repository.addPinsToBoard(ids, board, later)
-        }
+        val ten =
+            assertConstantReadsAndOneUpdateBatch(given = { user, _ -> createAndSavePin(user) }) { ids, board ->
+                repository.addPinsToBoard(ids, board, later)
+            }
 
         // Then: the join rows too, one INSERT sent once with ten rows bound
         val inserts = ten.sql().filter { "insert into pin_board_model" in it }
@@ -108,9 +109,10 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
 
     @Test
     fun `Given one pin or ten, Then removePinsFromBoard reads as often and deletes in one statement`() {
-        val ten = assertConstantReadsAndOneUpdateBatch(given = { user, board -> filedPin(user, board) }) { ids, board ->
-            repository.removePinsFromBoard(ids, board, later)
-        }
+        val ten =
+            assertConstantReadsAndOneUpdateBatch(given = { user, board -> filedPin(user, board) }) { ids, board ->
+                repository.removePinsFromBoard(ids, board, later)
+            }
 
         // Then
         assertEquals(1, ten.sql().count { it.startsWith("delete from") }, "ten ran $ten")
@@ -158,8 +160,8 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
         repository.savePin(createAndSavePin(user).copy(boards = listOf(board)))
 
     /**
-     * [given] saves one pin in the state [write] expects; [update] is the one UPDATE statement expected.
-     * Answers the statements of ten pins, for the caller's own assertions.
+     * [given] saves one pin in the state [write] expects; [update] is the one UPDATE statement expected. Answers the
+     * statements of ten pins, for the caller's own assertions.
      */
     private fun assertConstantReadsAndOneUpdateBatch(
         update: String = PIN_UPDATE,

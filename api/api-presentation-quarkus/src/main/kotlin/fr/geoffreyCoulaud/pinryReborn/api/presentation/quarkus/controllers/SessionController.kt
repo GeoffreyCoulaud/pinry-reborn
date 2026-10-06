@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.IssuedSession
+import fr.geoffreyCoulaud.pinryReborn.api.domain.security.SessionExpiryPolicy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.SessionTransportDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.SessionCreationInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.CreatedSessionOutputDto
@@ -17,10 +18,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionRenewer
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionRevoker
-import fr.geoffreyCoulaud.pinryReborn.api.domain.security.SessionExpiryPolicy
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.UserAuthenticationError
-import io.quarkus.security.AuthenticationFailedException
 import io.quarkus.security.Authenticated
+import io.quarkus.security.AuthenticationFailedException
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
@@ -48,23 +48,42 @@ class SessionController(
     // what tells the transports apart, so no field of either body is ever nullable.
     @POST
     @PermitAll
-    @APIResponse(responseCode = "201", description = BEARER_ANSWER,
-        content = [Content(mediaType = JSON, schema = Schema(implementation = CreatedSessionOutputDto::class))])
-    @APIResponse(responseCode = "200", description = COOKIE_ANSWER,
-        content = [Content(mediaType = JSON, schema = Schema(implementation = ExistingSessionOutputDto::class))])
+    @APIResponse(
+        responseCode = "201",
+        description = BEARER_ANSWER,
+        content = [Content(mediaType = JSON, schema = Schema(implementation = CreatedSessionOutputDto::class))],
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = COOKIE_ANSWER,
+        content = [Content(mediaType = JSON, schema = Schema(implementation = ExistingSessionOutputDto::class))],
+    )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
-    @APIResponse(responseCode = "401", description = AUTHENTICATION_FAILED,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["AUTHENTICATION_FAILED"])]))])
+    @APIResponse(
+        responseCode = "401",
+        description = AUTHENTICATION_FAILED,
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["AUTHENTICATION_FAILED"])],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     @APIResponse(responseCode = "429", ref = SharedRefusalsFilter.TOO_MANY_AUTHENTICATION_ATTEMPTS)
     fun createSession(@Valid @NotNull dto: SessionCreationInputDto): RestResponse<Any> {
         val persistent = dto.rememberMe ?: false
-        val issued = try {
-            sessionCreator.create(name = dto.name, password = dto.password, persistent = persistent)
-        } catch (e: UserAuthenticationError) {
-            throw AuthenticationFailedException("Authentication failed", e)
-        }
+        val issued =
+            try {
+                sessionCreator.create(name = dto.name, password = dto.password, persistent = persistent)
+            } catch (e: UserAuthenticationError) {
+                throw AuthenticationFailedException("Authentication failed", e)
+            }
         return sessionResponse(dto.transport, issued, persistent)
     }
 
@@ -79,10 +98,16 @@ class SessionController(
     @POST
     @Path("/current/renew")
     @Authenticated
-    @APIResponse(responseCode = "201", description = BEARER_ANSWER,
-        content = [Content(mediaType = JSON, schema = Schema(implementation = CreatedSessionOutputDto::class))])
-    @APIResponse(responseCode = "200", description = COOKIE_ANSWER,
-        content = [Content(mediaType = JSON, schema = Schema(implementation = ExistingSessionOutputDto::class))])
+    @APIResponse(
+        responseCode = "201",
+        description = BEARER_ANSWER,
+        content = [Content(mediaType = JSON, schema = Schema(implementation = CreatedSessionOutputDto::class))],
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = COOKIE_ANSWER,
+        content = [Content(mediaType = JSON, schema = Schema(implementation = ExistingSessionOutputDto::class))],
+    )
     fun renewSession(): RestResponse<Any> {
         val current = securityIdentity.getSessionToken()
         val renewed = sessionRenewer.renew(current)
@@ -112,15 +137,15 @@ class SessionController(
         issued: IssuedSession,
         persistent: Boolean,
     ): RestResponse<Any> {
-        val response = when (transport) {
-            SessionTransportDto.BEARER ->
-                RestResponse.ResponseBuilder.create<Any>(RestResponse.Status.CREATED, issued.toCreatedDto())
+        val response =
+            when (transport) {
+                SessionTransportDto.BEARER ->
+                    RestResponse.ResponseBuilder.create<Any>(RestResponse.Status.CREATED, issued.toCreatedDto())
 
-            SessionTransportDto.COOKIE ->
-                RestResponse.ResponseBuilder
-                    .create<Any>(RestResponse.Status.OK, issued.toExistingDto(persistent))
-                    .cookie(SessionCookie.issued(issued.token, issued.expiresAt, persistent))
-        }
+                SessionTransportDto.COOKIE ->
+                    RestResponse.ResponseBuilder.create<Any>(RestResponse.Status.OK, issued.toExistingDto(persistent))
+                        .cookie(SessionCookie.issued(issued.token, issued.expiresAt, persistent))
+            }
         return response.header(CACHE_CONTROL_HEADER, NO_STORE).build()
     }
 

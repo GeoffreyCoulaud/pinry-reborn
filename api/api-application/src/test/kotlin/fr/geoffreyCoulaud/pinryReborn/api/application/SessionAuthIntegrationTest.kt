@@ -6,6 +6,7 @@ import io.ebean.DB
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
+import java.time.Instant
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasKey
@@ -18,7 +19,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
 
 @QuarkusTest
 // The app under test runs the real SystemClock; these read the wall clock to keep fixture instants consistent with it.
@@ -32,11 +32,16 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         rememberMe: Boolean? = null,
         transport: String = "BEARER",
     ) =
-        given().contentType(ContentType.JSON)
-            .body(buildMap<String, Any> {
-                put("name", name); put("password", password); put("transport", transport)
-                if (rememberMe != null) put("rememberMe", rememberMe)
-            })
+        given()
+            .contentType(ContentType.JSON)
+            .body(
+                buildMap<String, Any> {
+                    put("name", name)
+                    put("password", password)
+                    put("transport", transport)
+                    if (rememberMe != null) put("rememberMe", rememberMe)
+                }
+            )
             .post("/api/v1/sessions")
 
     /** A user with a live cookie session, returning the cookie's value. */
@@ -44,7 +49,10 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         val name = createRandomString()
         userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
         return login(name, rememberMe = rememberMe, transport = "COOKIE")
-            .then().statusCode(200).extract().cookie(SESSION_COOKIE)
+            .then()
+            .statusCode(200)
+            .extract()
+            .cookie(SESSION_COOKIE)
     }
 
     @Test
@@ -52,7 +60,8 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         val name = createRandomString()
         userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
         login(name)
-            .then().statusCode(201)
+            .then()
+            .statusCode(201)
             .header("Cache-Control", "no-store")
             .body("token", notNullValue())
             .body("expiresAt", matchesPattern(iso8601Utc))
@@ -73,11 +82,13 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
 
         // When
-        val response = login(name, rememberMe = true, transport = "COOKIE")
-            .then().statusCode(200)
-            .body("$", not(hasKey("token")))
-            .body("persistent", equalTo(true))
-            .extract()
+        val response =
+            login(name, rememberMe = true, transport = "COOKIE")
+                .then()
+                .statusCode(200)
+                .body("$", not(hasKey("token")))
+                .body("persistent", equalTo(true))
+                .extract()
 
         // Then
         val cookie = response.detailedCookie(SESSION_COOKIE)
@@ -100,9 +111,13 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         val cookie = cookieSession()
 
         // When / Then
-        given().authenticatedAs(bearer).cookie(SESSION_COOKIE, cookie)
+        given()
+            .authenticatedAs(bearer)
+            .cookie(SESSION_COOKIE, cookie)
             .get("/api/v1/me")
-            .then().statusCode(200).body("name", equalTo(bearer.user.name))
+            .then()
+            .statusCode(200)
+            .body("name", equalTo(bearer.user.name))
     }
 
     @Test
@@ -111,9 +126,15 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         val cookie = cookieSession()
 
         // When
-        val renewed = given().cookie(SESSION_COOKIE, cookie).post("/api/v1/sessions/current/renew")
-            .then().statusCode(200).body("$", not(hasKey("token")))
-            .extract().cookie(SESSION_COOKIE)
+        val renewed =
+            given()
+                .cookie(SESSION_COOKIE, cookie)
+                .post("/api/v1/sessions/current/renew")
+                .then()
+                .statusCode(200)
+                .body("$", not(hasKey("token")))
+                .extract()
+                .cookie(SESSION_COOKIE)
 
         // Then
         given().cookie(SESSION_COOKIE, cookie).get("/api/v1/me").then().statusCode(401)
@@ -126,8 +147,14 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         val cookie = cookieSession()
 
         // When
-        val cleared = given().cookie(SESSION_COOKIE, cookie).delete("/api/v1/sessions/current")
-            .then().statusCode(204).extract().detailedCookie(SESSION_COOKIE)
+        val cleared =
+            given()
+                .cookie(SESSION_COOKIE, cookie)
+                .delete("/api/v1/sessions/current")
+                .then()
+                .statusCode(204)
+                .extract()
+                .detailedCookie(SESSION_COOKIE)
 
         // Then
         assertEquals(0, cleared.maxAge)
@@ -139,13 +166,17 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         val name = createRandomString()
         userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
         login(name, password = "wrong-password")
-            .then().statusCode(401).body("code", org.hamcrest.Matchers.equalTo("AUTHENTICATION_FAILED"))
+            .then()
+            .statusCode(401)
+            .body("code", org.hamcrest.Matchers.equalTo("AUTHENTICATION_FAILED"))
     }
 
     @Test
     fun `Given an unknown user, Then POST sessions returns 401 AUTHENTICATION_FAILED`() {
         login(createRandomString())
-            .then().statusCode(401).body("code", org.hamcrest.Matchers.equalTo("AUTHENTICATION_FAILED"))
+            .then()
+            .statusCode(401)
+            .body("code", org.hamcrest.Matchers.equalTo("AUTHENTICATION_FAILED"))
     }
 
     @Test
@@ -156,9 +187,12 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
 
         // When
-        val response = given().header("Authorization", "Bearer not-a-real-token").contentType(ContentType.JSON)
-            .body(mapOf("name" to name, "password" to DEFAULT_PASSWORD, "transport" to "BEARER"))
-            .post("/api/v1/sessions")
+        val response =
+            given()
+                .header("Authorization", "Bearer not-a-real-token")
+                .contentType(ContentType.JSON)
+                .body(mapOf("name" to name, "password" to DEFAULT_PASSWORD, "transport" to "BEARER"))
+                .post("/api/v1/sessions")
 
         // Then
         response.then().statusCode(201)
@@ -167,27 +201,37 @@ class SessionAuthIntegrationTest : IntegrationTest() {
     @Test
     fun `Given a valid token, Then GET me returns the caller`() {
         val auth = createAuthenticatedUser()
-        given().authenticatedAs(auth).get("/api/v1/me")
-            .then().statusCode(200).body("name", org.hamcrest.Matchers.equalTo(auth.user.name))
+        given()
+            .authenticatedAs(auth)
+            .get("/api/v1/me")
+            .then()
+            .statusCode(200)
+            .body("name", org.hamcrest.Matchers.equalTo(auth.user.name))
     }
 
     @Test
     fun `Given no token, Then GET me returns 401 with a Bearer challenge`() {
-        given().get("/api/v1/me")
-            .then().statusCode(401).header("WWW-Authenticate", "Bearer")
+        given().get("/api/v1/me").then().statusCode(401).header("WWW-Authenticate", "Bearer")
     }
 
     @Test
     fun `Given a garbage token, Then GET me returns 401 AUTHENTICATION_FAILED`() {
-        given().header("Authorization", "Bearer not-a-real-token").get("/api/v1/me")
-            .then().statusCode(401).body("code", org.hamcrest.Matchers.equalTo("AUTHENTICATION_FAILED"))
+        given()
+            .header("Authorization", "Bearer not-a-real-token")
+            .get("/api/v1/me")
+            .then()
+            .statusCode(401)
+            .body("code", org.hamcrest.Matchers.equalTo("AUTHENTICATION_FAILED"))
     }
 
     @Test
     fun `Given a token, Then GET sessions current returns expiry metadata without a token`() {
         val auth = createAuthenticatedUser(rememberMe = true)
-        given().authenticatedAs(auth).get("/api/v1/sessions/current")
-            .then().statusCode(200)
+        given()
+            .authenticatedAs(auth)
+            .get("/api/v1/sessions/current")
+            .then()
+            .statusCode(200)
             .body("expiresAt", matchesPattern(iso8601Utc))
             .body("renewAfter", matchesPattern(iso8601Utc))
             .body("persistent", org.hamcrest.Matchers.equalTo(true))
@@ -197,8 +241,15 @@ class SessionAuthIntegrationTest : IntegrationTest() {
     @Test
     fun `Given a token, Then renew returns a new token and the old one is rejected`() {
         val auth = createAuthenticatedUser()
-        val newToken = given().authenticatedAs(auth).post("/api/v1/sessions/current/renew")
-            .then().statusCode(201).header("Cache-Control", "no-store").extract().path<String>("token")
+        val newToken =
+            given()
+                .authenticatedAs(auth)
+                .post("/api/v1/sessions/current/renew")
+                .then()
+                .statusCode(201)
+                .header("Cache-Control", "no-store")
+                .extract()
+                .path<String>("token")
         assertNotNull(newToken)
         // Old token now rejected:
         given().authenticatedAs(auth).get("/api/v1/me").then().statusCode(401)
@@ -222,10 +273,18 @@ class SessionAuthIntegrationTest : IntegrationTest() {
 
         given().header("Authorization", "Bearer $first").delete("/api/v1/sessions").then().statusCode(204)
 
-        given().header("Authorization", "Bearer $first").get("/api/v1/me")
-            .then().statusCode(401).body("code", org.hamcrest.Matchers.equalTo("AUTHENTICATION_FAILED"))
-        given().header("Authorization", "Bearer $second").get("/api/v1/me")
-            .then().statusCode(401).body("code", org.hamcrest.Matchers.equalTo("AUTHENTICATION_FAILED"))
+        given()
+            .header("Authorization", "Bearer $first")
+            .get("/api/v1/me")
+            .then()
+            .statusCode(401)
+            .body("code", org.hamcrest.Matchers.equalTo("AUTHENTICATION_FAILED"))
+        given()
+            .header("Authorization", "Bearer $second")
+            .get("/api/v1/me")
+            .then()
+            .statusCode(401)
+            .body("code", org.hamcrest.Matchers.equalTo("AUTHENTICATION_FAILED"))
     }
 
     @Test
@@ -240,8 +299,12 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         model.expiresAt = Instant.now().minusSeconds(60)
         DB.getDefault().save(model)
 
-        given().authenticatedAs(auth).get("/api/v1/me")
-            .then().statusCode(401).body("code", org.hamcrest.Matchers.equalTo("SESSION_EXPIRED"))
+        given()
+            .authenticatedAs(auth)
+            .get("/api/v1/me")
+            .then()
+            .statusCode(401)
+            .body("code", org.hamcrest.Matchers.equalTo("SESSION_EXPIRED"))
     }
 
     // What the framework refuses before a use case runs shares the problem format: one case per row of
@@ -249,63 +312,105 @@ class SessionAuthIntegrationTest : IntegrationTest() {
 
     @Test
     fun `Given a body that is not JSON, Then POST sessions returns 400 MALFORMED_BODY`() {
-        given().contentType(ContentType.JSON).body("{not json").post("/api/v1/sessions")
-            .then().statusCode(400).contentType(PROBLEM_JSON).body("code", equalTo("MALFORMED_BODY"))
+        given()
+            .contentType(ContentType.JSON)
+            .body("{not json")
+            .post("/api/v1/sessions")
+            .then()
+            .statusCode(400)
+            .contentType(PROBLEM_JSON)
+            .body("code", equalTo("MALFORMED_BODY"))
     }
 
     @Test
     fun `Given a path no resource serves, Then the response is 404 UNKNOWN_ROUTE`() {
-        given().get("/api/v1/nowhere")
-            .then().statusCode(404).contentType(PROBLEM_JSON).body("code", equalTo("UNKNOWN_ROUTE"))
+        given()
+            .get("/api/v1/nowhere")
+            .then()
+            .statusCode(404)
+            .contentType(PROBLEM_JSON)
+            .body("code", equalTo("UNKNOWN_ROUTE"))
     }
 
     @Test
     fun `Given a path value the framework cannot read, Then the response is 404 UNKNOWN_ROUTE saying so`() {
         // Given: JAX-RS 3.2 makes a path parameter it cannot convert a NotFoundException carrying the cause
         val auth = createAuthenticatedUser()
-        given().authenticatedAs(auth).get("/api/v1/pins/not-a-uuid")
-            .then().statusCode(404).contentType(PROBLEM_JSON).body("code", equalTo("UNKNOWN_ROUTE"))
+        given()
+            .authenticatedAs(auth)
+            .get("/api/v1/pins/not-a-uuid")
+            .then()
+            .statusCode(404)
+            .contentType(PROBLEM_JSON)
+            .body("code", equalTo("UNKNOWN_ROUTE"))
             .body("detail", equalTo("A path or query value could not be read"))
     }
 
     @Test
     fun `Given a method the path does not serve, Then the response is 405 METHOD_NOT_ALLOWED`() {
         // PUT, the collection now serving GET, POST and DELETE alike.
-        given().put("/api/v1/pins")
-            .then().statusCode(405).contentType(PROBLEM_JSON).body("code", equalTo("METHOD_NOT_ALLOWED"))
+        given()
+            .put("/api/v1/pins")
+            .then()
+            .statusCode(405)
+            .contentType(PROBLEM_JSON)
+            .body("code", equalTo("METHOD_NOT_ALLOWED"))
     }
 
     @Test
     fun `Given a content type the route does not read, Then the response is 415 UNSUPPORTED_MEDIA_TYPE`() {
-        given().contentType(ContentType.TEXT).body("name=x").post("/api/v1/sessions")
-            .then().statusCode(415).contentType(PROBLEM_JSON).body("code", equalTo("UNSUPPORTED_MEDIA_TYPE"))
+        given()
+            .contentType(ContentType.TEXT)
+            .body("name=x")
+            .post("/api/v1/sessions")
+            .then()
+            .statusCode(415)
+            .contentType(PROBLEM_JSON)
+            .body("code", equalTo("UNSUPPORTED_MEDIA_TYPE"))
     }
 
     @Test
     fun `Given an Accept the route cannot produce, Then the response is 406 NOT_ACCEPTABLE`() {
-        given().accept(ContentType.TEXT).get("/test/failures/json-only")
-            .then().statusCode(406).contentType(PROBLEM_JSON).body("code", equalTo("NOT_ACCEPTABLE"))
+        given()
+            .accept(ContentType.TEXT)
+            .get("/test/failures/json-only")
+            .then()
+            .statusCode(406)
+            .contentType(PROBLEM_JSON)
+            .body("code", equalTo("NOT_ACCEPTABLE"))
     }
 
     @Test
     fun `Given a WebApplicationException no mapper names, Then the response keeps its status under HTTP_ERROR`() {
-        given().get("/test/failures/service-unavailable")
-            .then().statusCode(503).contentType(PROBLEM_JSON).body("code", equalTo("HTTP_ERROR"))
+        given()
+            .get("/test/failures/service-unavailable")
+            .then()
+            .statusCode(503)
+            .contentType(PROBLEM_JSON)
+            .body("code", equalTo("HTTP_ERROR"))
     }
 
     @Test
     fun `Given an unmapped exception, Then the response is 500 INTERNAL_ERROR and tells nothing of it`() {
-        given().get("/test/failures/illegal-state")
-            .then().statusCode(500).contentType(PROBLEM_JSON)
-            .body("code", equalTo("INTERNAL_ERROR")).body("detail", nullValue())
+        given()
+            .get("/test/failures/illegal-state")
+            .then()
+            .statusCode(500)
+            .contentType(PROBLEM_JSON)
+            .body("code", equalTo("INTERNAL_ERROR"))
+            .body("detail", nullValue())
             .body(not(containsString(TestFailuresResource.MARKER)))
     }
 
     @Test
     fun `Given an IOException, Then the response is 500 INTERNAL_ERROR and tells nothing of it`() {
-        given().get("/test/failures/io")
-            .then().statusCode(500).contentType(PROBLEM_JSON)
-            .body("code", equalTo("INTERNAL_ERROR")).body("detail", nullValue())
+        given()
+            .get("/test/failures/io")
+            .then()
+            .statusCode(500)
+            .contentType(PROBLEM_JSON)
+            .body("code", equalTo("INTERNAL_ERROR"))
+            .body("detail", nullValue())
             .body(not(containsString(TestFailuresResource.MARKER)))
     }
 

@@ -12,14 +12,15 @@ import org.eclipse.microprofile.openapi.models.Operation
 import org.eclipse.microprofile.openapi.models.responses.APIResponse
 
 /**
- * The refusals several operations declare identically, under `components.responses`, which a route
- * names with `@APIResponse(ref = ...)` (`docs/adr/0042-the-presentation-owns-the-refusal-codes.md`).
+ * The refusals several operations declare identically, under `components.responses`, which a route names with
+ * `@APIResponse(ref = ...)` (`docs/adr/0042-the-presentation-owns-the-refusal-codes.md`).
  */
 @OpenApiFilter(stages = [OpenApiFilter.RunStage.BUILD])
 class SharedRefusalsFilter : OASFilter {
     override fun filterOperation(operation: Operation): Operation {
         // SmallRye's own 403 on a protected operation carries no body, and no role check here refuses one.
-        operation.responses.getAPIResponse("403")
+        operation.responses
+            .getAPIResponse("403")
             ?.takeIf { it.description == SMALLRYE_FORBIDDEN && it.content == null && it.ref == null }
             ?.let { operation.responses.removeAPIResponse("403") }
         // Protected is what SmallRye stamped a requirement on, as SessionSecurityRequirementFilter reads it.
@@ -79,136 +80,164 @@ class SharedRefusalsFilter : OASFilter {
 
         private const val SMALLRYE_FORBIDDEN = "Not Allowed"
 
-        private val SHARED = mapOf(
-            UNAUTHENTICATED to refusal(
-                "No session, or its token is unknown, revoked or expired",
-                ProblemCode.AUTHENTICATION_REQUIRED,
-                ProblemCode.AUTHENTICATION_FAILED,
-                ProblemCode.SESSION_EXPIRED,
-            ),
-            INVALID_BODY to refusal(
-                "The body is not JSON, or a field breaks its constraint",
-                ProblemCode.VALIDATION_ERROR,
-                ProblemCode.MALFORMED_BODY,
-            ),
-            UNSUPPORTED_MEDIA_TYPE to refusal(
-                "The route does not read this Content-Type",
-                ProblemCode.UNSUPPORTED_MEDIA_TYPE,
-            ),
-            BODY_TOO_LARGE to refusal(
-                "The Content-Length is past quarkus.http.limits.max-body-size; a chunked body past it gets a 413 " +
-                    "with no body",
-                ProblemCode.BODY_TOO_LARGE,
-            ),
-            REAUTHENTICATION_HEADER_FAILED to refusal(
-                "The X-Reauthentication header is absent, or the password it carries is wrong",
-                ProblemCode.REAUTHENTICATION_FAILED,
-            ),
-            UNSUPPORTED_REAUTHENTICATION_FACTOR to refusal(
-                "The X-Reauthentication header is malformed, or names no factor the route accepts",
-                ProblemCode.UNSUPPORTED_REAUTHENTICATION_FACTOR,
-            ),
-            TOO_MANY_AUTHENTICATION_ATTEMPTS to refusal(
-                "The attempt limiter holds this account closed; Retry-After says for how long",
-                ProblemCode.TOO_MANY_AUTHENTICATION_ATTEMPTS,
-            ),
-            INVALID_BATCH_BODY to refusal(
-                BATCH_BODY_REFUSED,
-                ProblemCode.VALIDATION_ERROR,
-                ProblemCode.MALFORMED_BODY,
-            ),
-            BLANK_QUERY to refusal(BLANK_QUERY_REFUSED, ProblemCode.SEARCH_EMPTY_QUERY),
-            UNREADABLE_QUERY to refusal(
-                "A query value could not be read",
-                ProblemCode.UNKNOWN_ROUTE,
-            ),
-            PIN_FORBIDDEN to refusal(
-                "A pin the request names belongs to another account",
-                ProblemCode.PIN_INSUFFICIENT_PERMISSIONS,
-            ),
-            PIN_NOT_FOUND to refusal(
-                "A pin the request names does not exist, or a path or query value could not be read",
-                ProblemCode.PIN_DOES_NOT_EXIST,
-                ProblemCode.UNKNOWN_ROUTE,
-            ),
-            PIN_ALREADY_RECYCLED to refusal(
-                "The pin is in the recycle bin",
-                ProblemCode.PIN_ALREADY_SOFT_DELETED,
-            ),
-            PIN_IN_BODY_NOT_FOUND to refusal(
-                "A pin the body names does not exist",
-                ProblemCode.PIN_DOES_NOT_EXIST,
-            ),
-            PIN_NOT_RECYCLED to refusal(
-                "The pin is not in the recycle bin",
-                ProblemCode.PIN_NOT_SOFT_DELETED,
-            ),
-            BOARD_FORBIDDEN to refusal(
-                "A board the request names belongs to another account",
-                ProblemCode.BOARD_INSUFFICIENT_PERMISSIONS,
-            ),
-            BOARD_NOT_FOUND to refusal(
-                "The board does not exist, or a path or query value could not be read",
-                ProblemCode.BOARD_DOES_NOT_EXIST,
-                ProblemCode.UNKNOWN_ROUTE,
-            ),
-            BOARD_NOT_RECYCLED to refusal(
-                "The board is not in the recycle bin",
-                ProblemCode.BOARD_NOT_SOFT_DELETED,
-            ),
-            BOARD_OR_PIN_FORBIDDEN to refusal(
-                "The board, or a pin the body names, belongs to another account",
-                ProblemCode.BOARD_INSUFFICIENT_PERMISSIONS,
-                ProblemCode.PIN_INSUFFICIENT_PERMISSIONS,
-            ),
-            BOARD_OR_PIN_NOT_FOUND to refusal(
-                "The board, or a pin the body names, does not exist, or a path value could not be read",
-                ProblemCode.BOARD_DOES_NOT_EXIST,
-                ProblemCode.PIN_DOES_NOT_EXIST,
-                ProblemCode.UNKNOWN_ROUTE,
-            ),
-            MEDIA_FORBIDDEN to refusal(
-                "The pin belongs to another account",
-                ProblemCode.MEDIA_INSUFFICIENT_PERMISSIONS,
-            ),
-            MEDIA_NOT_FOUND to refusal(
-                "The pin, its media or its download does not exist, or a path or query value could not be read",
-                ProblemCode.MEDIA_DOES_NOT_EXIST,
-                ProblemCode.UNKNOWN_ROUTE,
-            ),
-            EXPORT_FORBIDDEN to refusal(
-                "The export belongs to another account",
-                ProblemCode.EXPORT_INSUFFICIENT_PERMISSIONS,
-            ),
-            EXPORT_NOT_FOUND to refusal(
-                "The export does not exist, or a path value could not be read",
-                ProblemCode.EXPORT_DOES_NOT_EXIST,
-                ProblemCode.UNKNOWN_ROUTE,
-            ),
-            IMPORT_FORBIDDEN to refusal(
-                "The import belongs to another account",
-                ProblemCode.IMPORT_INSUFFICIENT_PERMISSIONS,
-            ),
-            IMPORT_NOT_FOUND to refusal(
-                "The import does not exist, or a path or query value could not be read",
-                ProblemCode.IMPORT_DOES_NOT_EXIST,
-                ProblemCode.UNKNOWN_ROUTE,
-            ),
-            RANGE_NOT_SATISFIABLE to refusal(
-                "The Range header starts at or past the body's end; Content-Range names its size",
-                ProblemCode.RANGE_NOT_SATISFIABLE,
-            ),
-        )
+        private val SHARED =
+            mapOf(
+                UNAUTHENTICATED to
+                    refusal(
+                        "No session, or its token is unknown, revoked or expired",
+                        ProblemCode.AUTHENTICATION_REQUIRED,
+                        ProblemCode.AUTHENTICATION_FAILED,
+                        ProblemCode.SESSION_EXPIRED,
+                    ),
+                INVALID_BODY to
+                    refusal(
+                        "The body is not JSON, or a field breaks its constraint",
+                        ProblemCode.VALIDATION_ERROR,
+                        ProblemCode.MALFORMED_BODY,
+                    ),
+                UNSUPPORTED_MEDIA_TYPE to
+                    refusal(
+                        "The route does not read this Content-Type",
+                        ProblemCode.UNSUPPORTED_MEDIA_TYPE,
+                    ),
+                BODY_TOO_LARGE to
+                    refusal(
+                        "The Content-Length is past quarkus.http.limits.max-body-size; a chunked body past it gets a 413 " +
+                            "with no body",
+                        ProblemCode.BODY_TOO_LARGE,
+                    ),
+                REAUTHENTICATION_HEADER_FAILED to
+                    refusal(
+                        "The X-Reauthentication header is absent, or the password it carries is wrong",
+                        ProblemCode.REAUTHENTICATION_FAILED,
+                    ),
+                UNSUPPORTED_REAUTHENTICATION_FACTOR to
+                    refusal(
+                        "The X-Reauthentication header is malformed, or names no factor the route accepts",
+                        ProblemCode.UNSUPPORTED_REAUTHENTICATION_FACTOR,
+                    ),
+                TOO_MANY_AUTHENTICATION_ATTEMPTS to
+                    refusal(
+                        "The attempt limiter holds this account closed; Retry-After says for how long",
+                        ProblemCode.TOO_MANY_AUTHENTICATION_ATTEMPTS,
+                    ),
+                INVALID_BATCH_BODY to
+                    refusal(
+                        BATCH_BODY_REFUSED,
+                        ProblemCode.VALIDATION_ERROR,
+                        ProblemCode.MALFORMED_BODY,
+                    ),
+                BLANK_QUERY to refusal(BLANK_QUERY_REFUSED, ProblemCode.SEARCH_EMPTY_QUERY),
+                UNREADABLE_QUERY to
+                    refusal(
+                        "A query value could not be read",
+                        ProblemCode.UNKNOWN_ROUTE,
+                    ),
+                PIN_FORBIDDEN to
+                    refusal(
+                        "A pin the request names belongs to another account",
+                        ProblemCode.PIN_INSUFFICIENT_PERMISSIONS,
+                    ),
+                PIN_NOT_FOUND to
+                    refusal(
+                        "A pin the request names does not exist, or a path or query value could not be read",
+                        ProblemCode.PIN_DOES_NOT_EXIST,
+                        ProblemCode.UNKNOWN_ROUTE,
+                    ),
+                PIN_ALREADY_RECYCLED to
+                    refusal(
+                        "The pin is in the recycle bin",
+                        ProblemCode.PIN_ALREADY_SOFT_DELETED,
+                    ),
+                PIN_IN_BODY_NOT_FOUND to
+                    refusal(
+                        "A pin the body names does not exist",
+                        ProblemCode.PIN_DOES_NOT_EXIST,
+                    ),
+                PIN_NOT_RECYCLED to
+                    refusal(
+                        "The pin is not in the recycle bin",
+                        ProblemCode.PIN_NOT_SOFT_DELETED,
+                    ),
+                BOARD_FORBIDDEN to
+                    refusal(
+                        "A board the request names belongs to another account",
+                        ProblemCode.BOARD_INSUFFICIENT_PERMISSIONS,
+                    ),
+                BOARD_NOT_FOUND to
+                    refusal(
+                        "The board does not exist, or a path or query value could not be read",
+                        ProblemCode.BOARD_DOES_NOT_EXIST,
+                        ProblemCode.UNKNOWN_ROUTE,
+                    ),
+                BOARD_NOT_RECYCLED to
+                    refusal(
+                        "The board is not in the recycle bin",
+                        ProblemCode.BOARD_NOT_SOFT_DELETED,
+                    ),
+                BOARD_OR_PIN_FORBIDDEN to
+                    refusal(
+                        "The board, or a pin the body names, belongs to another account",
+                        ProblemCode.BOARD_INSUFFICIENT_PERMISSIONS,
+                        ProblemCode.PIN_INSUFFICIENT_PERMISSIONS,
+                    ),
+                BOARD_OR_PIN_NOT_FOUND to
+                    refusal(
+                        "The board, or a pin the body names, does not exist, or a path value could not be read",
+                        ProblemCode.BOARD_DOES_NOT_EXIST,
+                        ProblemCode.PIN_DOES_NOT_EXIST,
+                        ProblemCode.UNKNOWN_ROUTE,
+                    ),
+                MEDIA_FORBIDDEN to
+                    refusal(
+                        "The pin belongs to another account",
+                        ProblemCode.MEDIA_INSUFFICIENT_PERMISSIONS,
+                    ),
+                MEDIA_NOT_FOUND to
+                    refusal(
+                        "The pin, its media or its download does not exist, or a path or query value could not be read",
+                        ProblemCode.MEDIA_DOES_NOT_EXIST,
+                        ProblemCode.UNKNOWN_ROUTE,
+                    ),
+                EXPORT_FORBIDDEN to
+                    refusal(
+                        "The export belongs to another account",
+                        ProblemCode.EXPORT_INSUFFICIENT_PERMISSIONS,
+                    ),
+                EXPORT_NOT_FOUND to
+                    refusal(
+                        "The export does not exist, or a path value could not be read",
+                        ProblemCode.EXPORT_DOES_NOT_EXIST,
+                        ProblemCode.UNKNOWN_ROUTE,
+                    ),
+                IMPORT_FORBIDDEN to
+                    refusal(
+                        "The import belongs to another account",
+                        ProblemCode.IMPORT_INSUFFICIENT_PERMISSIONS,
+                    ),
+                IMPORT_NOT_FOUND to
+                    refusal(
+                        "The import does not exist, or a path or query value could not be read",
+                        ProblemCode.IMPORT_DOES_NOT_EXIST,
+                        ProblemCode.UNKNOWN_ROUTE,
+                    ),
+                RANGE_NOT_SATISFIABLE to
+                    refusal(
+                        "The Range header starts at or past the body's end; Content-Range names its size",
+                        ProblemCode.RANGE_NOT_SATISFIABLE,
+                    ),
+            )
 
         private fun refusal(description: String, vararg codes: ProblemCode): APIResponse {
-            val schema = OASFactory.createSchema()
-                .addAllOf(OASFactory.createSchema().ref("ProblemDetail"))
-                .addProperty("code", OASFactory.createSchema().enumeration(codes.map { it.name }))
+            val schema =
+                OASFactory.createSchema()
+                    .addAllOf(OASFactory.createSchema().ref("ProblemDetail"))
+                    .addProperty("code", OASFactory.createSchema().enumeration(codes.map { it.name }))
             return OASFactory.createAPIResponse()
                 .description(description)
                 .content(
                     OASFactory.createContent()
-                        .addMediaType(PROBLEM_JSON_MEDIA_TYPE, OASFactory.createMediaType().schema(schema)),
+                        .addMediaType(PROBLEM_JSON_MEDIA_TYPE, OASFactory.createMediaType().schema(schema))
                 )
         }
     }

@@ -11,8 +11,8 @@ import java.io.InputStream
 import java.time.Instant
 
 /**
- * A fake [ExportArchiveStore] holding what the disk holds, so a criterion about the canonical key is
- * asserted as state rather than as `verify(exactly = 0)` on the call the test itself configured.
+ * A fake [ExportArchiveStore] holding what the disk holds, so a criterion about the canonical key is asserted as state
+ * rather than as `verify(exactly = 0)` on the call the test itself configured.
  */
 internal class FakeExportArchiveStore(
     override val format: ArchiveFormat = ArchiveFormat("application/zip", "zip"),
@@ -77,23 +77,24 @@ internal class FakeExportArchiveStore(
 }
 
 /**
- * The fixtures over [FakeExportArchiveStore], for the cases whose criterion is what the disk holds
- * afterwards. Never a mock store here: [UserDataExportMockStoreFixtures] holds that one.
+ * The fixtures over [FakeExportArchiveStore], for the cases whose criterion is what the disk holds afterwards. Never a
+ * mock store here: [UserDataExportMockStoreFixtures] holds that one.
  */
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a fixture base, as the import suite has.
 internal abstract class UserDataExportFakeStoreFixtures : UserDataExportFixtures() {
     /** The store as a fake, for the cases whose criterion is what the disk holds afterwards. */
-    protected val fakeArchiveStore = FakeExportArchiveStore(
-        staged = stagedFile,
-        transactionOf = { transactions.current },
-    )
+    protected val fakeArchiveStore =
+        FakeExportArchiveStore(
+            staged = stagedFile,
+            transactionOf = { transactions.current },
+        )
 
     /** The builder over the fake store, so a case reads the disk instead of a store's calls. */
     protected val fakeStoreBuilder = builderOver(fakeArchiveStore)
 
     /**
-     * The other attempt of the same build, whole, between this one's staging and its completion. A
-     * rival landing inside the fence's own read instead is overwritten by a promote placed before it.
+     * The other attempt of the same build, whole, between this one's staging and its completion. A rival landing inside
+     * the fence's own read instead is overwritten by a promote placed before it.
      */
     protected fun rivalPublishes(rivalStaged: StagedFile) {
         fakeArchiveStore.afterStage = {
@@ -101,16 +102,18 @@ internal abstract class UserDataExportFakeStoreFixtures : UserDataExportFixtures
             val row = requireNotNull(stored()) { "the rival publishes over this attempt's own stamped row" }
             seedRow(
                 row.copy(
-                    state = UserDataExportState.READY, storageKey = storageKey,
-                    byteSize = rivalStaged.byteSize, sha256 = rivalStaged.contentHash,
-                ),
+                    state = UserDataExportState.READY,
+                    storageKey = storageKey,
+                    byteSize = rivalStaged.byteSize,
+                    sha256 = rivalStaged.contentHash,
+                )
             )
         }
     }
 
     /**
-     * The whole path for [fakeStoreBuilder]: the fake answers the free space, the format and the
-     * staging itself, so no mock store is stubbed and `checkUnnecessaryStub` stays satisfied.
+     * The whole path for [fakeStoreBuilder]: the fake answers the free space, the format and the staging itself, so no
+     * mock store is stubbed and `checkUnnecessaryStub` stays satisfied.
      */
     protected fun stubFakeStoreBuild(row: UserDataExport = anExport()) {
         stubRow(row)

@@ -8,31 +8,34 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDataExportDtoMapper.toDto
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
 
 class UserDataExportDtoMapperTest {
-    private fun pendingExport() = UserDataExport(
-        id = randomUUID(),
-        userId = randomUUID(),
-        state = UserDataExportState.PENDING,
-        formatVersion = 1,
-        requestedAt = Instant.parse("2026-07-22T10:00:00Z"),
-    )
+    private fun pendingExport() =
+        UserDataExport(
+            id = randomUUID(),
+            userId = randomUUID(),
+            state = UserDataExportState.PENDING,
+            formatVersion = 1,
+            requestedAt = Instant.parse("2026-07-22T10:00:00Z"),
+        )
 
-    private fun readyExport() = pendingExport().copy(
-        state = UserDataExportState.READY,
-        completedAt = Instant.parse("2026-07-22T10:05:00Z"),
-        expiresAt = Instant.parse("2026-07-29T10:05:00Z"),
-        byteSize = 4096L,
-        sha256 = "abcd",
-        mediaType = "application/zip",
-        fileExtension = "zip",
-    )
+    private fun readyExport() =
+        pendingExport()
+            .copy(
+                state = UserDataExportState.READY,
+                completedAt = Instant.parse("2026-07-22T10:05:00Z"),
+                expiresAt = Instant.parse("2026-07-29T10:05:00Z"),
+                byteSize = 4096L,
+                sha256 = "abcd",
+                mediaType = "application/zip",
+                fileExtension = "zip",
+            )
 
     @Test
     fun `Given a pending export, Then toDto carries the state and leaves READY fields null`() {
@@ -146,11 +149,12 @@ class UserDataExportDtoMapperTest {
         // Given
         val previousCursor = Cursor(pivotId = randomUUID(), direction = CursorDirection.BACKWARD)
         val nextCursor = Cursor(pivotId = randomUUID(), direction = CursorDirection.FORWARD)
-        val page = Page<UserDataExport>(
-            items = listOf(pendingExport()),
-            previousCursor = previousCursor,
-            nextCursor = nextCursor,
-        )
+        val page =
+            Page<UserDataExport>(
+                items = listOf(pendingExport()),
+                previousCursor = previousCursor,
+                nextCursor = nextCursor,
+            )
 
         // When
         val result = page.toDto()

@@ -16,7 +16,8 @@ class PageSizeForwardedUnclampedTest {
             class Getter(private val repository: Repository) {
                 fun list(cursor: Cursor?, pageSize: Int) = repository.findAll(cursor, pageSize)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -39,7 +40,8 @@ class PageSizeForwardedUnclampedTest {
                 fun list(cursor: Cursor?, pageSize: Int) =
                     repository.findAll(cursor, pageSize.coerceIn(1, MAX_PAGE_SIZE))
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -59,7 +61,8 @@ class PageSizeForwardedUnclampedTest {
                     return page.copy(requested = pageSize)
                 }
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -77,7 +80,8 @@ class PageSizeForwardedUnclampedTest {
                 fun list(cursor: Cursor?, pageSize: Int) =
                     repository.findAll(cursor = cursor, pageSize = pageSize.coerceIn(1, MAX_PAGE_SIZE))
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -97,7 +101,8 @@ class PageSizeForwardedUnclampedTest {
                     return getter.list(pageSize)
                 }
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -114,7 +119,8 @@ class PageSizeForwardedUnclampedTest {
             interface Repository {
                 fun findAll(cursor: Cursor?, pageSize: Int): Page
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -132,7 +138,8 @@ class PageSizeForwardedUnclampedTest {
                 fun list(requested: Int, pageSize: Int) =
                     repository.findAll(requested.coerceIn(1, pageSize))
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -149,7 +156,8 @@ class PageSizeForwardedUnclampedTest {
             class Getter(private val repository: Repository) {
                 fun list(pageSize: Int) = repository.findAll(pageSize.toString())
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)

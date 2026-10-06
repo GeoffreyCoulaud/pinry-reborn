@@ -22,14 +22,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertInstanceOf
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
 
 class MediaIngestionTest : BaseTest() {
     private val store = mockk<MediaStore>(relaxed = true)
@@ -38,20 +38,36 @@ class MediaIngestionTest : BaseTest() {
     private val maxDuration = Duration.ofSeconds(120)
     private val limits = MediaLimits(30, maxVideoBytes = 40, maxDuration, 50, 50, 1, Duration.ZERO, 0)
     private val ingestion = MediaIngestion(store, probe, video, limits)
-    private val aVideo = VideoProbeResult(
-        VideoCodec.VP9, AudioCodec.OPUS, 4, 6, Duration.ofSeconds(1), frames = 25, bytes = 3, "vp09.00.10.08,opus",
-        VideoContainer.WEBM, alreadyRepackaged = true, videoBitRate = 80_000, Media.Sound(2, 64_000),
-    )
-    private val anMp4 = aVideo.copy(
-        videoCodec = VideoCodec.H264, audioCodec = null, codecs = "avc1.640015", demuxedAs = VideoContainer.MP4,
-    )
+    private val aVideo =
+        VideoProbeResult(
+            VideoCodec.VP9,
+            AudioCodec.OPUS,
+            4,
+            6,
+            Duration.ofSeconds(1),
+            frames = 25,
+            bytes = 3,
+            "vp09.00.10.08,opus",
+            VideoContainer.WEBM,
+            alreadyRepackaged = true,
+            videoBitRate = 80_000,
+            Media.Sound(2, 64_000),
+        )
+    private val anMp4 =
+        aVideo.copy(
+            videoCodec = VideoCodec.H264,
+            audioCodec = null,
+            codecs = "avc1.640015",
+            demuxedAs = VideoContainer.MP4,
+        )
 
     private val ownerId = randomUUID()
     private val pinId = randomUUID()
     private val createdAt = Instant.parse("2026-10-03T00:00:00Z")
     private val staged = StagedFile("/tmp/s", 3, "hash")
 
-    @Test fun `Given a source, Then it is staged and digested under the larger byte bound`() {
+    @Test
+    fun `Given a source, Then it is staged and digested under the larger byte bound`() {
         // Given
         val source = ByteArrayInputStream(byteArrayOf(1))
         every { store.stage(source, 40) } returns staged
@@ -66,7 +82,8 @@ class MediaIngestionTest : BaseTest() {
         assertEquals("digest", digest)
     }
 
-    @Test fun `Given an image past its own byte bound but under the video's, Then it is discarded and refused`() {
+    @Test
+    fun `Given an image past its own byte bound but under the video's, Then it is discarded and refused`() {
         // Given
         val heavy = StagedFile("/tmp/heavy", 35, "hash")
         every { probe.probe(heavy) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1, heavy.byteSize)
@@ -78,7 +95,8 @@ class MediaIngestionTest : BaseTest() {
         verify { store.discard(heavy) }
     }
 
-    @Test fun `Given an image past the per-frame bound, Then it is discarded and refused`() {
+    @Test
+    fun `Given an image past the per-frame bound, Then it is discarded and refused`() {
         // Given: 10 by 6 is 60 pixels, past the bound of 50
         every { probe.probe(staged) } returns ProbeResult(MediaFormat.PNG, 10, 6, frames = 1, staged.byteSize)
 
@@ -89,7 +107,8 @@ class MediaIngestionTest : BaseTest() {
         verify { store.discard(staged) }
     }
 
-    @Test fun `Given a decodable file, Then the row carries the probe's answer under its owner's and pin's key`() {
+    @Test
+    fun `Given a decodable file, Then the row carries the probe's answer under its owner's and pin's key`() {
         // Given
         every { probe.probe(staged) } returns ProbeResult(MediaFormat.WEBP, 4, 5, frames = 3, staged.byteSize)
 
@@ -109,39 +128,44 @@ class MediaIngestionTest : BaseTest() {
         assertEquals(createdAt, media.createdAt)
     }
 
-    @Test fun `Given a file neither probe reads, Then the staged file is discarded and the image refusal rethrown`() {
+    @Test
+    fun `Given a file neither probe reads, Then the staged file is discarded and the image refusal rethrown`() {
         // Given
         val refusal = UndecodableImageException("nope")
         every { probe.probe(staged) } throws refusal
         every { video.probe(staged, maxDuration) } throws UndecodableVideoException("no video track")
 
         // When
-        val thrown = assertThrows(UndecodableImageException::class.java) {
-            ingestion.ingest(staged, ownerId, pinId, createdAt)
-        }
+        val thrown =
+            assertThrows(UndecodableImageException::class.java) {
+                ingestion.ingest(staged, ownerId, pinId, createdAt)
+            }
 
         // Then
         assertEquals(refusal, thrown)
         verify { store.discard(staged) }
     }
 
-    @Test fun `Given a format libvips reads and ffprobe refuses, Then libvips' refusal is rethrown`() {
+    @Test
+    fun `Given a format libvips reads and ffprobe refuses, Then libvips' refusal is rethrown`() {
         // Given: an AVIF, which libvips opens and the enum lacks, and which holds a single frame
         val refusal = UnsupportedImageFormatException("heifload")
         every { probe.probe(staged) } throws refusal
         every { video.probe(staged, maxDuration) } throws UndecodableVideoException("single frame")
 
         // When
-        val thrown = assertThrows(UnsupportedImageFormatException::class.java) {
-            ingestion.ingest(staged, ownerId, pinId, createdAt)
-        }
+        val thrown =
+            assertThrows(UnsupportedImageFormatException::class.java) {
+                ingestion.ingest(staged, ownerId, pinId, createdAt)
+            }
 
         // Then
         assertEquals(refusal, thrown)
         verify { store.discard(staged) }
     }
 
-    @Test fun `Given a video, Then the repackaged file is what the row and the key describe`() {
+    @Test
+    fun `Given a video, Then the repackaged file is what the row and the key describe`() {
         // Given
         val repackaged = StagedFile("/tmp/r", 7, "repackaged")
         every { probe.probe(staged) } throws UndecodableImageException("not an image")
@@ -166,7 +190,8 @@ class MediaIngestionTest : BaseTest() {
         verify { store.discard(staged) }
     }
 
-    @Test fun `Given an archived MP4 already repackaged, Then it is stored as the archive carries it`() {
+    @Test
+    fun `Given an archived MP4 already repackaged, Then it is stored as the archive carries it`() {
         // Given: repackaged again, an MP4 would not keep its bytes
         every { probe.probe(staged) } throws UndecodableImageException("not an image")
         every { video.probe(staged, maxDuration) } returns anMp4
@@ -181,7 +206,8 @@ class MediaIngestionTest : BaseTest() {
         verify(exactly = 0) { video.repackage(any(), any()) }
     }
 
-    @Test fun `Given an archived MP4 with a track or a tag repackaging drops, Then it is repackaged`() {
+    @Test
+    fun `Given an archived MP4 with a track or a tag repackaging drops, Then it is repackaged`() {
         // Given: an H.265 tagged hev1, say, which its stored type would call hvc1
         val handMade = anMp4.copy(alreadyRepackaged = false)
         val repackaged = StagedFile("/tmp/r", 7, "repackaged")
@@ -196,7 +222,8 @@ class MediaIngestionTest : BaseTest() {
         assertEquals(repackaged, ingested.staged)
     }
 
-    @Test fun `Given a video past the pixel bound, Then it is discarded and refused before repackaging`() {
+    @Test
+    fun `Given a video past the pixel bound, Then it is discarded and refused before repackaging`() {
         // Given: 10 by 6 is 60 pixels, past the bound of 50
         every { probe.probe(staged) } throws UndecodableImageException("not an image")
         every { video.probe(staged, maxDuration) } returns aVideo.copy(width = 10, height = 6)
@@ -209,7 +236,8 @@ class MediaIngestionTest : BaseTest() {
         verify(exactly = 0) { video.repackage(any(), any()) }
     }
 
-    @Test fun `Given an archived WebM, Then it is repackaged, which keeps a stored WebM's bytes`() {
+    @Test
+    fun `Given an archived WebM, Then it is repackaged, which keeps a stored WebM's bytes`() {
         // Given: one demuxer reads WebM and Matroska alike, so only a repackaging makes it a real WebM
         val repackaged = StagedFile("/tmp/r", 7, "repackaged")
         every { probe.probe(staged) } throws UndecodableImageException("not an image")
@@ -223,7 +251,8 @@ class MediaIngestionTest : BaseTest() {
         assertEquals(repackaged, ingested.staged)
     }
 
-    @Test fun `Given an archived video outside the container its codecs choose, Then it is repackaged`() {
+    @Test
+    fun `Given an archived video outside the container its codecs choose, Then it is repackaged`() {
         // Given: VP9 with Opus found in an MP4, where its codecs choose WebM
         val misplaced = aVideo.copy(demuxedAs = VideoContainer.MP4)
         val repackaged = StagedFile("/tmp/r", 7, "repackaged")
@@ -240,7 +269,8 @@ class MediaIngestionTest : BaseTest() {
         verify { store.discard(staged) }
     }
 
-    @Test fun `Given a video past its byte bound, Then it is discarded and refused before repackaging`() {
+    @Test
+    fun `Given a video past its byte bound, Then it is discarded and refused before repackaging`() {
         // Given
         val heavy = StagedFile("/tmp/heavy", 41, "hash")
         every { probe.probe(heavy) } throws UndecodableImageException("not an image")
@@ -254,7 +284,8 @@ class MediaIngestionTest : BaseTest() {
         verify(exactly = 0) { video.repackage(any(), any()) }
     }
 
-    @Test fun `Given a video the probe refuses on its merits, Then that refusal is rethrown`() {
+    @Test
+    fun `Given a video the probe refuses on its merits, Then that refusal is rethrown`() {
         // Given
         every { probe.probe(staged) } throws UndecodableImageException("not an image")
         every { video.probe(staged, maxDuration) } throws VideoTooLongException("121 s")
@@ -264,7 +295,8 @@ class MediaIngestionTest : BaseTest() {
         verify { store.discard(staged) }
     }
 
-    @Test fun `Given an ingested media, Then promote moves it to its key and discard removes both copies`() {
+    @Test
+    fun `Given an ingested media, Then promote moves it to its key and discard removes both copies`() {
         // Given
         every { probe.probe(staged) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1, staged.byteSize)
         val ingested = ingestion.ingest(staged, ownerId, pinId, createdAt)

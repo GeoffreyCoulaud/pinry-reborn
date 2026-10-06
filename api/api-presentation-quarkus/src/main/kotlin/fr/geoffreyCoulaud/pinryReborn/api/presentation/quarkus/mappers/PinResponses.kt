@@ -13,8 +13,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import jakarta.enterprise.context.ApplicationScoped
 
 /**
- * Every payload that carries a pin, built here so none forgets the image state or the duplicates
- * flag: a null `media` then means the pin has none, never that the response did not look.
+ * Every payload that carries a pin, built here so none forgets the image state or the duplicates flag: a null `media`
+ * then means the pin has none, never that the response did not look.
  */
 @ApplicationScoped
 class PinResponses(
@@ -29,7 +29,7 @@ class PinResponses(
     fun duplicates(duplicates: List<PinDuplicate>): PinDuplicateListOutputDto {
         val pins = mapped(duplicates.map { it.pin })
         return PinDuplicateListOutputDto(
-            duplicates.zip(pins) { duplicate, pin -> PinDuplicateOutputDto(pin, duplicate.rejected) },
+            duplicates.zip(pins) { duplicate, pin -> PinDuplicateOutputDto(pin, duplicate.rejected) }
         )
     }
 

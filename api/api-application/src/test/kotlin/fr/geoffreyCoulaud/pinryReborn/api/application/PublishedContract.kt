@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import java.io.File
 
 /**
- * `contract/openapi.json`, read from the working tree: the test resources blank
- * `store-schema-directory`, so a test run never rewrites the document it asserts on.
+ * `contract/openapi.json`, read from the working tree: the test resources blank `store-schema-directory`, so a test run
+ * never rewrites the document it asserts on.
  */
 object PublishedContract {
     val document: JsonNode = ObjectMapper().readTree(File("../../contract/openapi.json"))

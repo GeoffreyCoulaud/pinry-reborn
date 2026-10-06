@@ -14,13 +14,13 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifyOrder
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class SessionRenewerTest {
     private val repository = mockk<SessionTokenRepositoryInterface>(relaxed = true)
@@ -32,20 +32,23 @@ class SessionRenewerTest {
 
     private val now = Instant.parse("2026-07-21T00:00:00Z")
     private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
-    private val current = SessionToken(
-        randomUUID(),
-        user,
-        expiresAt = now.plusSeconds(10),
-        persistent = true,
-        createdAt = now,
-    )
+    private val current =
+        SessionToken(
+            randomUUID(),
+            user,
+            expiresAt = now.plusSeconds(10),
+            persistent = true,
+            createdAt = now,
+        )
 
     // Passthrough so the transactional block runs in the behavioral tests; overridden where a test
     // needs to prove the writes live inside the block.
     @BeforeEach
     fun stubTransactionRunnerPassthrough() {
         every { transactionRunner.inTransaction<IssuedSession>(any()) } answers
-            { firstArg<() -> IssuedSession>().invoke() }
+            {
+                firstArg<() -> IssuedSession>().invoke()
+            }
     }
 
     @Test
@@ -102,13 +105,14 @@ class SessionRenewerTest {
 
     @Test
     fun `Given an ephemeral current token, Then renew keeps persistent false and uses the ephemeral TTL`() {
-        val ephemeralCurrent = SessionToken(
-            randomUUID(),
-            user,
-            expiresAt = now.plusSeconds(5),
-            persistent = false,
-            createdAt = now,
-        )
+        val ephemeralCurrent =
+            SessionToken(
+                randomUUID(),
+                user,
+                expiresAt = now.plusSeconds(5),
+                persistent = false,
+                createdAt = now,
+            )
         every { tokenGenerator.generateToken() } returns "new-token"
         every { clock.now() } returns now
 

@@ -47,8 +47,10 @@ class ProcessRunner(private val timeout: Duration, private val maxAddressSpace: 
     private fun capped(command: List<String>) =
         if (maxAddressSpace == null) command else listOf("prlimit", "--as=$maxAddressSpace", "--") + command
 
-    private fun read(stream: InputStream) =
-        FutureTask { stream.readAllBytes().decodeToString() }.also { Thread.ofVirtual().start(it) }
+    private fun read(stream: InputStream) = FutureTask {
+        stream.readAllBytes().decodeToString()
+    }
+        .also { Thread.ofVirtual().start(it) }
 
     private companion object {
         val TICK_NANOS = TimeUnit.MILLISECONDS.toNanos(100)

@@ -11,23 +11,25 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class PinResponsesTest {
     private val user = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
-    private val pins = List(3) {
-        Pin(randomUUID(), user, null, null, "", emptyList(), emptyList(), TestTime.now, TestTime.now)
-    }
+    private val pins =
+        List(3) {
+            Pin(randomUUID(), user, null, null, "", emptyList(), emptyList(), TestTime.now, TestTime.now)
+        }
 
     // The second pin holds a pending duplicate.
     private val duplicates = CountingDuplicates(pending = setOf(pins[1].id))
-    private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
-        every { it.statesFor(any()) } returns emptyMap()
-    }
+    private val resolvePinMediaState =
+        mockk<ResolvePinMediaState>().also {
+            every { it.statesFor(any()) } returns emptyMap()
+        }
     private val responses = PinResponses(resolvePinMediaState, PinDuplicates(duplicates, mockk(), mockk()))
 
     @Test

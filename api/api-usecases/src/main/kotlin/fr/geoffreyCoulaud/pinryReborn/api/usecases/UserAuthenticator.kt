@@ -20,8 +20,8 @@ class UserAuthenticator(
     private val attemptLimiter: AuthenticationAttemptLimiter,
 ) {
     /**
-     * Precomputed once. Pays a constant hashing cost when the user does not exist or has no
-     * stored hash, to avoid a timing oracle (username enumeration).
+     * Precomputed once. Pays a constant hashing cost when the user does not exist or has no stored hash, to avoid a
+     * timing oracle (username enumeration).
      */
     // Never persisted and never read: a placeholder instant stands in for a Clock this class has no other use for.
     private val dummyHash: HashedPassword by lazy {

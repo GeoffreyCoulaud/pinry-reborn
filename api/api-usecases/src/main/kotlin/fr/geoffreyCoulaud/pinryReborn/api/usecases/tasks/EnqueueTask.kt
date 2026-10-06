@@ -6,7 +6,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.Task
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import jakarta.enterprise.context.ApplicationScoped
 import java.time.Duration
-import java.util.UUID
 
 @ApplicationScoped
 class EnqueueTask(private val taskQueue: TaskQueueInterface, private val clock: Clock) {
@@ -18,7 +17,5 @@ class EnqueueTask(private val taskQueue: TaskQueueInterface, private val clock: 
         delay: Duration = Duration.ZERO,
         priority: Int = 0,
         dedupKey: String? = null,
-    ): Task = taskQueue.enqueue(
-        NewTask(kind, payload, clock.now().plus(delay), priority, maxAttempts, dedupKey)
-    )
+    ): Task = taskQueue.enqueue(NewTask(kind, payload, clock.now().plus(delay), priority, maxAttempts, dedupKey))
 }

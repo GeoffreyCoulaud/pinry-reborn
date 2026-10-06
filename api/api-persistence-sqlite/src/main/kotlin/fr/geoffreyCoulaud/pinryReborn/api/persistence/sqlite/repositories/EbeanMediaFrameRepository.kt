@@ -13,9 +13,7 @@ import java.util.UUID
 import java.util.UUID.randomUUID
 
 @ApplicationScoped
-class EbeanMediaFrameRepository(
-    private val persistor: Persistor,
-) : MediaFrameRepositoryInterface {
+class EbeanMediaFrameRepository(private val persistor: Persistor) : MediaFrameRepositoryInterface {
     override fun save(mediaId: UUID, hashes: Collection<PdqHash>) {
         hashes.forEach { hash ->
             val word = hash.words.iterator()
@@ -36,14 +34,13 @@ class EbeanMediaFrameRepository(
         QMediaFrameModel().mediaId.equalTo(mediaId).delete()
     }
 
-    override fun deleteOrphans(): Int =
-        QMediaFrameModel().mediaId.notIn(QMediaModel().select("id").query()).delete()
+    override fun deleteOrphans(): Int = QMediaFrameModel().mediaId.notIn(QMediaModel().select("id").query()).delete()
 
     private fun MediaFrameModel.toDomain() = MediaFrame(mediaId, listOf(hash0, hash1, hash2, hash3))
 
     /**
-     * Every frame sharing a band with [hash] within one bit: one `in` per band, each its own raw expression,
-     * because Ebean expands `?1` by substring and would also rewrite a `?10`. `internal` so its tests read this SQL.
+     * Every frame sharing a band with [hash] within one bit: one `in` per band, each its own raw expression, because
+     * Ebean expands `?1` by substring and would also rewrite a `?10`. `internal` so its tests read this SQL.
      */
     internal fun nearQuery(hash: PdqHash): QMediaFrameModel {
         val band = FrameHashBands.valuesNear(hash).iterator()

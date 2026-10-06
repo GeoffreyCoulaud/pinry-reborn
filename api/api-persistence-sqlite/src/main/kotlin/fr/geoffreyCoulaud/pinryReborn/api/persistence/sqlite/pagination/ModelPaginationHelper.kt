@@ -6,8 +6,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseMo
 import io.ebean.typequery.QueryBean
 
 /**
- * Cursor pagination over any model, stateless, its two types read off the call site's arguments so
- * no caller has to name a query bean to reach it.
+ * Cursor pagination over any model, stateless, its two types read off the call site's arguments so no caller has to
+ * name a query bean to reach it.
  */
 object ModelPaginationHelper {
     fun <M : BaseModel, Q : QueryBean<M, Q>> getPage(

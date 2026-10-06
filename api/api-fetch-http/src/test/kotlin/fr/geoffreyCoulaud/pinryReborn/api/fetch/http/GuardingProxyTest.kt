@@ -1,12 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.fetch.http
 
 import com.sun.net.httpserver.HttpServer
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.InetAddress
@@ -22,6 +16,12 @@ import java.net.http.HttpResponse
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class GuardingProxyTest {
     private lateinit var origin: HttpServer
@@ -38,7 +38,8 @@ class GuardingProxyTest {
             override fun isAllowed(address: InetAddress): Boolean = address != otherLoopback
         }
 
-    @BeforeEach fun start() {
+    @BeforeEach
+    fun start() {
         origin = HttpServer.create(InetSocketAddress(loopback, 0), 0)
         origin.createContext("/") { exchange ->
             val headers = exchange.requestHeaders.entries.joinToString { "${it.key}=${it.value}" }
@@ -56,7 +57,8 @@ class GuardingProxyTest {
         origin.start()
     }
 
-    @AfterEach fun stop() {
+    @AfterEach
+    fun stop() {
         proxies.forEach { it.close() }
         origin.stop(0)
     }
@@ -66,8 +68,7 @@ class GuardingProxyTest {
     private fun proxy(
         policy: AddressPolicy,
         resolve: (String) -> InetAddress = InetAddress::getByName,
-    ): GuardingProxy =
-        GuardingProxy(policy, Duration.ofSeconds(1), resolve).also { proxies += it }
+    ): GuardingProxy = GuardingProxy(policy, Duration.ofSeconds(1), resolve).also { proxies += it }
 
     // A proxy whose resolver answers 127.0.0.1 for any host and counts its calls.
     private fun countingProxy(): GuardingProxy =
@@ -117,8 +118,7 @@ class GuardingProxyTest {
 
     private fun connect(authority: String): String = "CONNECT $authority HTTP/1.1\r\nHost: $authority\r\n\r\n"
 
-    private fun originGet(host: String): String =
-        "GET /page HTTP/1.1\r\nHost: $host\r\nConnection: close\r\n\r\n"
+    private fun originGet(host: String): String = "GET /page HTTP/1.1\r\nHost: $host\r\nConnection: close\r\n\r\n"
 
     private fun statusOf(response: String): String = response.substringBefore("\r\n")
 

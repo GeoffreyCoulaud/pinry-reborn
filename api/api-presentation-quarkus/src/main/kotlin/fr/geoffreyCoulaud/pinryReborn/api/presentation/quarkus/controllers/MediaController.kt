@@ -39,6 +39,8 @@ import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.HttpHeaders
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.StreamingOutput
+import java.nio.file.Files
+import java.util.UUID
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
@@ -48,8 +50,6 @@ import org.jboss.resteasy.reactive.RestForm
 import org.jboss.resteasy.reactive.RestResponse
 import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder
 import org.jboss.resteasy.reactive.multipart.FileUpload
-import java.nio.file.Files
-import java.util.UUID
 
 @Path("/api/v1/pins")
 @Authenticated
@@ -72,41 +72,103 @@ class MediaController(
     @APIResponse(
         responseCode = "201",
         description = "Media created",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = MediaOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = MediaOutputDto::class),
+                )
+            ],
     )
     @APIResponse(
         responseCode = "200",
         description = "Media replaced",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = MediaOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = MediaOutputDto::class),
+                )
+            ],
     )
-    @APIResponse(responseCode = "400", description = INVALID_REQUEST,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["MEDIA_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY"])]))])
+    @APIResponse(
+        responseCode = "400",
+        description = INVALID_REQUEST,
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration =
+                                            ["MEDIA_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.MEDIA_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.MEDIA_NOT_FOUND)
-    @APIResponse(responseCode = "413", description = TOO_LARGE,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_TOO_LARGE"])]))])
-    @APIResponse(responseCode = "415", description = UNSUPPORTED,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["UNSUPPORTED_MEDIA_TYPE", "MEDIA_CODEC_UNSUPPORTED"])]))])
-    @APIResponse(responseCode = "422",
-        description = "MEDIA_INVALID: the upload is neither an image nor a video the server reads, or it is past " +
-            "media.max_pixels_per_frame. MEDIA_TOO_LONG: the video lasts longer than media.max_video_seconds",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_INVALID", "MEDIA_TOO_LONG"])]))])
+    @APIResponse(
+        responseCode = "413",
+        description = TOO_LARGE,
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_TOO_LARGE"])],
+                        ),
+                )
+            ],
+    )
+    @APIResponse(
+        responseCode = "415",
+        description = UNSUPPORTED,
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration = ["UNSUPPORTED_MEDIA_TYPE", "MEDIA_CODEC_UNSUPPORTED"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
+    @APIResponse(
+        responseCode = "422",
+        description =
+            "MEDIA_INVALID: the upload is neither an image nor a video the server reads, or it is past " +
+                "media.max_pixels_per_frame. MEDIA_TOO_LONG: the video lasts longer than media.max_video_seconds",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [SchemaProperty(name = "code", enumeration = ["MEDIA_INVALID", "MEDIA_TOO_LONG"])],
+                        ),
+                )
+            ],
+    )
     fun setMedia(pinId: UUID, @RestForm("file") @NotNull file: FileUpload): RestResponse<MediaOutputDto> {
         val requester = securityIdentity.getUser()
         val result = Files.newInputStream(file.uploadedFile()).use { setPinMedia.set(pinId, requester, it) }
@@ -117,21 +179,52 @@ class MediaController(
 
     @GET
     @Path("/{pinId}/media")
-    @APIResponse(responseCode = "200", description = "The original, or a WebP rendition",
-        content = [Content(mediaType = "image/*"), Content(mediaType = "video/*")])
-    @APIResponse(responseCode = "206", description = "The requested byte range of the original, Content-Range set",
-        content = [Content(mediaType = "image/*"), Content(mediaType = "video/*")])
-    @APIResponse(responseCode = "400", description = "The size names no rendition",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_RENDITION_SIZE_INVALID"])]))])
+    @APIResponse(
+        responseCode = "200",
+        description = "The original, or a WebP rendition",
+        content = [Content(mediaType = "image/*"), Content(mediaType = "video/*")],
+    )
+    @APIResponse(
+        responseCode = "206",
+        description = "The requested byte range of the original, Content-Range set",
+        content = [Content(mediaType = "image/*"), Content(mediaType = "video/*")],
+    )
+    @APIResponse(
+        responseCode = "400",
+        description = "The size names no rendition",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [SchemaProperty(name = "code", enumeration = ["MEDIA_RENDITION_SIZE_INVALID"])],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.MEDIA_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.MEDIA_NOT_FOUND)
     @APIResponse(responseCode = "416", ref = SharedRefusalsFilter.RANGE_NOT_SATISFIABLE)
-    @APIResponse(responseCode = "422",
-        description = "The media's frame is past media.max_pixels_per_frame, lowered since it was stored, or its " +
-            "decoder failed under media.decoder_timeout and media.decoder_memory_bytes in the last 24 hours",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_RENDITION_UNAVAILABLE"])]))])
+    @APIResponse(
+        responseCode = "422",
+        description =
+            "The media's frame is past media.max_pixels_per_frame, lowered since it was stored, or its " +
+                "decoder failed under media.decoder_timeout and media.decoder_memory_bytes in the last 24 hours",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_RENDITION_UNAVAILABLE"])],
+                        ),
+                )
+            ],
+    )
     fun getMedia(
         pinId: UUID,
         @QueryParam("size") size: String?,
@@ -172,8 +265,9 @@ class MediaController(
         val streamingOutput = StreamingOutput { output ->
             // The use case just confirmed/stored this entry; a null here means a concurrent evict
             // removed it (rare race) -> treat as gone.
-            (renditionCache.openStream(rendition.mediaId, rendition.key) ?: throw MediaDoesNotExistError())
-                .use { it.copyTo(output) }
+            (renditionCache.openStream(rendition.mediaId, rendition.key) ?: throw MediaDoesNotExistError()).use {
+                it.copyTo(output)
+            }
         }
         return ResponseBuilder.ok(streamingOutput)
             .header("Content-Type", "image/webp")
@@ -203,26 +297,74 @@ class MediaController(
     @APIResponse(
         responseCode = "202",
         description = "Download accepted",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = PinMediaStateDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = PinMediaStateDto::class),
+                )
+            ],
     )
-    @APIResponse(responseCode = "400", description = INVALID_REQUEST,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["MEDIA_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY"])]))])
+    @APIResponse(
+        responseCode = "400",
+        description = INVALID_REQUEST,
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration =
+                                            ["MEDIA_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.MEDIA_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.MEDIA_NOT_FOUND)
-    @APIResponse(responseCode = "413", description = TOO_LARGE,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_TOO_LARGE"])]))])
-    @APIResponse(responseCode = "415", description = UNSUPPORTED,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["UNSUPPORTED_MEDIA_TYPE", "MEDIA_CODEC_UNSUPPORTED"])]))])
+    @APIResponse(
+        responseCode = "413",
+        description = TOO_LARGE,
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_TOO_LARGE"])],
+                        ),
+                )
+            ],
+    )
+    @APIResponse(
+        responseCode = "415",
+        description = UNSUPPORTED,
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration = ["UNSUPPORTED_MEDIA_TYPE", "MEDIA_CODEC_UNSUPPORTED"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
     fun requestMediaDownload(
         pinId: UUID,
         @Valid @NotNull body: PinMediaDownloadInputDto,
@@ -237,9 +379,17 @@ class MediaController(
 
     @GET
     @Path("/{pinId}/media/status")
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = MediaType.APPLICATION_JSON,
-            schema = Schema(implementation = PinMediaStateDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = PinMediaStateDto::class),
+                )
+            ],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.MEDIA_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.MEDIA_NOT_FOUND)
     fun getMediaStatus(pinId: UUID): RestResponse<PinMediaStateDto> {
@@ -252,17 +402,19 @@ class MediaController(
         // Shared by `setMedia` and `requestMediaDownload`: both are `PUT /{pinId}/media`, and
         // SmallRye OpenAPI merges the two `@Consumes`-differentiated methods into a single
         // Operation. Keeping the summary in one place avoids the two annotations drifting apart.
-        const val SET_MEDIA_OPERATION_SUMMARY =
-            "Set the pin's media (upload bytes, or request a server-side fetch)"
+        const val SET_MEDIA_OPERATION_SUMMARY = "Set the pin's media (upload bytes, or request a server-side fetch)"
 
         // Both arms declare these identically, SmallRye merging them (spec 2026-09-23, section 3).
-        const val TOO_LARGE = "MEDIA_TOO_LARGE: the upload is past media.max_image_bytes for an image, " +
-            "media.max_video_bytes for a video. BODY_TOO_LARGE: the Content-Length is past " +
-            "quarkus.http.limits.max-body-size, which is above both; a chunked body past it gets a 413 with no body"
-        const val UNSUPPORTED = "UNSUPPORTED_MEDIA_TYPE: the route does not read this Content-Type. " +
-            "MEDIA_CODEC_UNSUPPORTED: the upload is a format or a codec the server reads and does not store; " +
-            "for a video, the detail names the codec"
-        const val INVALID_REQUEST = "The upload has no file part, the body is not JSON or breaks a constraint, " +
-            "or the source URL is not an http or https address"
+        const val TOO_LARGE =
+            "MEDIA_TOO_LARGE: the upload is past media.max_image_bytes for an image, " +
+                "media.max_video_bytes for a video. BODY_TOO_LARGE: the Content-Length is past " +
+                "quarkus.http.limits.max-body-size, which is above both; a chunked body past it gets a 413 with no body"
+        const val UNSUPPORTED =
+            "UNSUPPORTED_MEDIA_TYPE: the route does not read this Content-Type. " +
+                "MEDIA_CODEC_UNSUPPORTED: the upload is a format or a codec the server reads and does not store; " +
+                "for a video, the detail names the codec"
+        const val INVALID_REQUEST =
+            "The upload has no file part, the body is not JSON or breaks a constraint, " +
+                "or the source URL is not an http or https address"
     }
 }

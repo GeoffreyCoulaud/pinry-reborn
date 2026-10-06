@@ -6,8 +6,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenReposi
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Test
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Test
 
 class SessionRevokerTest {
     private val repository = mockk<SessionTokenRepositoryInterface>(relaxed = true)

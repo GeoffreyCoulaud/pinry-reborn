@@ -10,13 +10,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserD
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDto
 
 object UserDataImportIssueDtoMapper {
-    fun UserDataImportIssue.toDto() = UserDataImportIssueOutputDto(
-        id = id,
-        kind = kind.toDto(),
-        line = line,
-        subject = subject,
-        detail = detail,
-    )
+    fun UserDataImportIssue.toDto() =
+        UserDataImportIssueOutputDto(
+            id = id,
+            kind = kind.toDto(),
+            line = line,
+            subject = subject,
+            detail = detail,
+        )
 
     private fun UserDataImportIssueKind.toDto(): UserDataImportIssueKindDto =
         when (this) {
@@ -34,11 +35,13 @@ object UserDataImportIssueDtoMapper {
             UserDataImportIssueKind.LINE_REJECTED -> UserDataImportIssueKindDto.LINE_REJECTED
         }
 
-    fun Page<UserDataImportIssue>.toDto() = UserDataImportIssueListOutputDto(
-        issues = items.map { it.toDto() },
-        pagination = PaginationOutputDto(
-            previousCursor = previousCursor?.toDto(),
-            nextCursor = nextCursor?.toDto(),
-        ),
-    )
+    fun Page<UserDataImportIssue>.toDto() =
+        UserDataImportIssueListOutputDto(
+            issues = items.map { it.toDto() },
+            pagination =
+                PaginationOutputDto(
+                    previousCursor = previousCursor?.toDto(),
+                    nextCursor = nextCursor?.toDto(),
+                ),
+        )
 }

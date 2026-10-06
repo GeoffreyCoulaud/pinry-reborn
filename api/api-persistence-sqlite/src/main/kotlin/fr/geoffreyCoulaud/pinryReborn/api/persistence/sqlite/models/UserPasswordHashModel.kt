@@ -15,14 +15,13 @@ import java.time.Instant
 @Table(name = "user_password_hashes")
 @Index(
     name = "ix_user_password_hashes_user_created",
-    definition = "create unique index ix_user_password_hashes_user_created " +
-        "on user_password_hashes (user_id, when_created)",
+    definition =
+        "create unique index ix_user_password_hashes_user_created " + "on user_password_hashes (user_id, when_created)",
 )
 class UserPasswordHashModel(
     @ManyToOne var user: UserModel,
     var hash: String,
-    @Enumerated(EnumType.STRING)
-    var algorithm: PasswordHashAlgorithm,
+    @Enumerated(EnumType.STRING) var algorithm: PasswordHashAlgorithm,
     // Reuses the historical `when_created` column: the property is now mapper-written from the
     // domain `createdAt` the use case stamps, no longer auto-stamped (D19).
     @Column(name = "when_created") var createdAt: Instant,

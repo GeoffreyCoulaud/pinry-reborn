@@ -7,11 +7,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.CancelTask
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID.randomUUID
 
 class ClearPinDownloadTest {
     private val downloads: MediaDownloadRepositoryInterface = mockk(relaxed = true)
@@ -19,7 +19,8 @@ class ClearPinDownloadTest {
     private val pinId = randomUUID()
     private val subject = ClearPinDownload(downloads, cancelTask)
 
-    @Test fun `Given a download row, Then it cancels the task and deletes the row`() {
+    @Test
+    fun `Given a download row, Then it cancels the task and deletes the row`() {
         val taskId = randomUUID()
         every { downloads.findByPinId(pinId) } returns
             MediaDownload(pinId, "https://x", DownloadStatus.PENDING, null, null, taskId, Instant.EPOCH, Instant.EPOCH)
@@ -29,7 +30,8 @@ class ClearPinDownloadTest {
         verify { downloads.deleteByPinId(pinId) }
     }
 
-    @Test fun `Given no download row, Then it does nothing`() {
+    @Test
+    fun `Given no download row, Then it does nothing`() {
         every { downloads.findByPinId(pinId) } returns null
         val result = subject.clear(pinId)
         assertFalse(result)

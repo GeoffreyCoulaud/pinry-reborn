@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.declaration.KoAnnotationDeclaration
 import com.lemonappdev.konsist.api.declaration.KoFunctionDeclaration
-import com.lemonappdev.konsist.api.ext.list.withAnnotationNamed
 import com.lemonappdev.konsist.api.ext.list.modifierprovider.withEnumModifier
+import com.lemonappdev.konsist.api.ext.list.withAnnotationNamed
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import com.lemonappdev.konsist.api.ext.list.withoutName
 import com.lemonappdev.konsist.api.verify.assertEmpty
@@ -16,8 +16,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.Downl
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinMediaStatusDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataExportStateDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportIssueKindDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BaseErrorMapper
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemCode
@@ -31,8 +31,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * The contract declares what the server emits: an opaque cursor, the values of a status filled
- * from an enum's name, the status code a route builds for itself, and the codes a refusal carries.
+ * The contract declares what the server emits: an opaque cursor, the values of a status filled from an enum's name, the
+ * status code a route builds for itself, and the codes a refusal carries.
  */
 class ContractSchemaDeclarationTest {
     private val nullableString = setOf("string", "null")
@@ -60,11 +60,12 @@ class ContractSchemaDeclarationTest {
     /** The enums a response carries whose unknown value has no correct default, so they stay closed. */
     private val closedCodes =
         listOf(
-            DownloadStatusDto::class,
-            PinMediaStatusDto::class,
-            UserDataExportStateDto::class,
-            UserDataImportStateDto::class,
-        ).map { it.java.simpleName }
+                DownloadStatusDto::class,
+                PinMediaStatusDto::class,
+                UserDataExportStateDto::class,
+                UserDataImportStateDto::class,
+            )
+            .map { it.java.simpleName }
 
     private val openCodePositions =
         listOf(
@@ -176,8 +177,9 @@ class ContractSchemaDeclarationTest {
         val closed = openCodes.keys.filter { PublishedContract.schema(it).has("enum") }
 
         // Then
-        val why = "A closed enum makes every new value a contract major, and ExtensibleEnumsFilter opens these " +
-            "(docs/adr/0044-a-response-code-declares-its-set.md). Regenerate: $regenerate"
+        val why =
+            "A closed enum makes every new value a contract major, and ExtensibleEnumsFilter opens these " +
+                "(docs/adr/0044-a-response-code-declares-its-set.md). Regenerate: $regenerate"
         assertEquals(openCodes, published, why)
         assertEquals(emptyList<String>(), closed, why)
     }
@@ -201,17 +203,18 @@ class ContractSchemaDeclarationTest {
         val declared = ExtensibleEnumsFilter.EXTENSIBLE + closedCodes
 
         // When
-        val undeclared = Konsist
-            .scopeFromProduction(moduleName = "api-presentation-quarkus")
-            .classes()
-            .withEnumModifier()
-            .withPackage("..dtos.output..")
-            .withoutName(declared)
+        val undeclared =
+            Konsist.scopeFromProduction(moduleName = "api-presentation-quarkus")
+                .classes()
+                .withEnumModifier()
+                .withPackage("..dtos.output..")
+                .withoutName(declared)
 
         // Then
         undeclared.assertEmpty(
-            additionalMessage = "List it in ExtensibleEnumsFilter.EXTENSIBLE if an unknown value has a correct " +
-                "default, in closedCodes otherwise (docs/adr/0044-a-response-code-declares-its-set.md).",
+            additionalMessage =
+                "List it in ExtensibleEnumsFilter.EXTENSIBLE if an unknown value has a correct " +
+                    "default, in closedCodes otherwise (docs/adr/0044-a-response-code-declares-its-set.md)."
         )
     }
 
@@ -286,13 +289,15 @@ class ContractSchemaDeclarationTest {
     fun `Given the published contract, Then every declared refusal code sits under the status it is answered with`() {
         // Given
         val mapper = BaseErrorMapper()
-        val statusOf = FRAMEWORK_STATUSES +
-            ErrorCode.entries.map { mapper.problemFor(it) }.associate { (code, status) -> code.name to "$status" }
+        val statusOf =
+            FRAMEWORK_STATUSES +
+                ErrorCode.entries.map { mapper.problemFor(it) }.associate { (code, status) -> code.name to "$status" }
 
         // When
-        val misplaced = declaredRefusalCodes().flatMap { (refusal, codes) ->
-            codes.filter { statusOf[it] != refusal.substringAfterLast(' ') }.map { "$refusal $it: ${statusOf[it]}" }
-        }
+        val misplaced =
+            declaredRefusalCodes().flatMap { (refusal, codes) ->
+                codes.filter { statusOf[it] != refusal.substringAfterLast(' ') }.map { "$refusal $it: ${statusOf[it]}" }
+            }
 
         // Then
         assertEquals(
@@ -309,10 +314,13 @@ class ContractSchemaDeclarationTest {
         val readingABody = operations().filterValues { it.has("requestBody") }
 
         // When
-        val missing = readingABody.filterValues { operation ->
-            val tooLarge = operation.path("responses").path("413")
-            tooLarge.isMissingNode || ProblemCode.BODY_TOO_LARGE.name !in refusalCodes(tooLarge)
-        }.keys
+        val missing =
+            readingABody
+                .filterValues { operation ->
+                    val tooLarge = operation.path("responses").path("413")
+                    tooLarge.isMissingNode || ProblemCode.BODY_TOO_LARGE.name !in refusalCodes(tooLarge)
+                }
+                .keys
 
         // Then
         assertTrue(readingABody.isNotEmpty(), "The contract declares no operation reading a body.")
@@ -330,10 +338,11 @@ class ContractSchemaDeclarationTest {
         val shared = "#/components/responses/${SharedRefusalsFilter.UNAUTHENTICATED}"
 
         // When
-        val wrong = operations()
-            .filterValues { !it.path("security").isEmpty }
-            .filterValues { it.path("responses").path("401").path("\$ref").asText() != shared }
-            .keys
+        val wrong =
+            operations()
+                .filterValues { !it.path("security").isEmpty }
+                .filterValues { it.path("responses").path("401").path("\$ref").asText() != shared }
+                .keys
 
         // Then
         assertEquals(
@@ -362,8 +371,8 @@ class ContractSchemaDeclarationTest {
     }
 
     /**
-     * The success codes each route builds, keyed as the contract's operation. SmallRye merges the
-     * two `@Consumes`-differentiated functions of `PUT /{pinId}/media`, so codes union per route.
+     * The success codes each route builds, keyed as the contract's operation. SmallRye merges the two
+     * `@Consumes`-differentiated functions of `PUT /{pinId}/media`, so codes union per route.
      */
     private fun successCodesBuiltPerRoute(): Map<String, Set<String>> =
         endpoints()
@@ -384,8 +393,8 @@ class ContractSchemaDeclarationTest {
             .toSet()
 
     /**
-     * The statuses a route builds, read from its own text and from the private functions it calls
-     * by name: `downloadExport` and `getMedia` both hand the building to one.
+     * The statuses a route builds, read from its own text and from the private functions it calls by name:
+     * `downloadExport` and `getMedia` both hand the building to one.
      */
     private fun statusesIn(endpoint: Endpoint): Set<String> {
         val delegated = endpoint.helpers.filter { endpoint.function.text.contains("${it.name}(") }
@@ -398,8 +407,7 @@ class ContractSchemaDeclarationTest {
 
     /** Every endpoint of every controller, named as the contract names its operation. */
     private fun endpoints(): List<Endpoint> =
-        Konsist
-            .scopeFromProduction(moduleName = "api-presentation-quarkus")
+        Konsist.scopeFromProduction(moduleName = "api-presentation-quarkus")
             .classes()
             .withAnnotationNamed(PATH)
             .flatMap { controller ->
@@ -412,8 +420,7 @@ class ContractSchemaDeclarationTest {
                 }
             }
 
-    private fun KoAnnotationDeclaration.pathValue(): String =
-        arguments.first().value?.trim('"').orEmpty()
+    private fun KoAnnotationDeclaration.pathValue(): String = arguments.first().value?.trim('"').orEmpty()
 
     /** A field of a published schema, and the open code's component it must reference. */
     private data class OpenCodePosition(val schema: String, val field: String, val component: String)
@@ -439,34 +446,36 @@ class ContractSchemaDeclarationTest {
         val HTTP_METHODS = setOf("GET", "POST", "PUT", "DELETE", "PATCH")
 
         /** The status of each code the framework mappers and the HTTP layer answer, `problemFor` owning the rest. */
-        val FRAMEWORK_STATUSES = mapOf(
-            ProblemCode.VALIDATION_ERROR.name to "400",
-            ProblemCode.MALFORMED_BODY.name to "400",
-            ProblemCode.AUTHENTICATION_REQUIRED.name to "401",
-            ProblemCode.AUTHENTICATION_FAILED.name to "401",
-            ProblemCode.SESSION_EXPIRED.name to "401",
-            ProblemCode.UNKNOWN_ROUTE.name to "404",
-            ProblemCode.BODY_TOO_LARGE.name to "413",
-            ProblemCode.UNSUPPORTED_MEDIA_TYPE.name to "415",
-            ProblemCode.RANGE_NOT_SATISFIABLE.name to "416",
-        )
+        val FRAMEWORK_STATUSES =
+            mapOf(
+                ProblemCode.VALIDATION_ERROR.name to "400",
+                ProblemCode.MALFORMED_BODY.name to "400",
+                ProblemCode.AUTHENTICATION_REQUIRED.name to "401",
+                ProblemCode.AUTHENTICATION_FAILED.name to "401",
+                ProblemCode.SESSION_EXPIRED.name to "401",
+                ProblemCode.UNKNOWN_ROUTE.name to "404",
+                ProblemCode.BODY_TOO_LARGE.name to "413",
+                ProblemCode.UNSUPPORTED_MEDIA_TYPE.name to "415",
+                ProblemCode.RANGE_NOT_SATISFIABLE.name to "416",
+            )
 
         /**
-         * What a route writes to name a status, and the status it names. `notModified` is left out:
-         * `304` is not a success, and SmallRye declares none of the routes that build it.
+         * What a route writes to name a status, and the status it names. `notModified` is left out: `304` is not a
+         * success, and SmallRye declares none of the routes that build it.
          */
-        val STATUS_BUILDERS = listOf(
-            ".created<" to "201",
-            "Status.CREATED" to "201",
-            "Status.ACCEPTED" to "202",
-            "Status.NO_CONTENT" to "204",
-            "noContent()" to "204",
-            "Status.PARTIAL_CONTENT" to "206",
-            "Status.OK" to "200",
-            ".ok(" to "200",
-            "ByteRangeResponse.builder(" to "200",
-            "ByteRangeResponse.builder(" to "206",
-        )
+        val STATUS_BUILDERS =
+            listOf(
+                ".created<" to "201",
+                "Status.CREATED" to "201",
+                "Status.ACCEPTED" to "202",
+                "Status.NO_CONTENT" to "204",
+                "noContent()" to "204",
+                "Status.PARTIAL_CONTENT" to "206",
+                "Status.OK" to "200",
+                ".ok(" to "200",
+                "ByteRangeResponse.builder(" to "200",
+                "ByteRangeResponse.builder(" to "206",
+            )
     }
 
     /** Every operation of the contract, keyed as `METHOD /path`. */
@@ -476,25 +485,31 @@ class ContractSchemaDeclarationTest {
             .properties()
             .flatMap { (path, operations) ->
                 operations.properties().map { (method, operation) -> "${method.uppercase()} $path" to operation }
-            }.toMap()
+            }
+            .toMap()
 
     /** The codes each refusal declares, keyed as `METHOD /path status`, a shared entry read through its `$ref`. */
     private fun declaredRefusalCodes(): Map<String, Set<String>> =
-        operations().flatMap { (name, operation) ->
-            operation.path("responses").properties()
-                .filterNot { (status, _) -> status.startsWith("2") }
-                .map { (status, response) -> "$name $status" to refusalCodes(response) }
-        }.toMap()
+        operations()
+            .flatMap { (name, operation) ->
+                operation
+                    .path("responses")
+                    .properties()
+                    .filterNot { (status, _) -> status.startsWith("2") }
+                    .map { (status, response) -> "$name $status" to refusalCodes(response) }
+            }
+            .toMap()
 
     private fun refusalCodes(response: JsonNode): Set<String> {
-        val resolved = if (response.has("\$ref")) {
-            PublishedContract.document.at(response.path("\$ref").asText().removePrefix("#"))
-        } else {
-            response
-        }
+        val resolved =
+            if (response.has("\$ref")) {
+                PublishedContract.document.at(response.path("\$ref").asText().removePrefix("#"))
+            } else {
+                response
+            }
         assertTrue(!resolved.isMissingNode, "The contract names ${response.path("\$ref")}, which it declares nowhere.")
         return enumeration(
-            resolved.path("content").path(PROBLEM_JSON_MEDIA_TYPE).path("schema").path("properties").path("code"),
+            resolved.path("content").path(PROBLEM_JSON_MEDIA_TYPE).path("schema").path("properties").path("code")
         )
     }
 
@@ -510,7 +525,8 @@ class ContractSchemaDeclarationTest {
                         .filter { it.path("name").asText() == "cursor" }
                         .map { "${method.uppercase()} $path" to effectiveTypes(it.path("schema")) }
                 }
-            }.toMap()
+            }
+            .toMap()
 
     private fun effectiveTypes(schema: JsonNode): Set<String> =
         resolve(schema) { node ->

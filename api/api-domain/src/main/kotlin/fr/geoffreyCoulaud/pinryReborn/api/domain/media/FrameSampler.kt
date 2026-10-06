@@ -9,12 +9,16 @@ class LumaFrame(val width: Int, val height: Int, val luma: FloatArray) {
     companion object {
         /** [rgb] holds three samples a pixel, weighted as PDQ weighs them (Meta's `pdq/cpp`, `downscaling`). */
         fun ofRgb(width: Int, height: Int, rgb: IntArray) =
-            LumaFrame(width, height, FloatArray(width * height) { pixel ->
-                val red = rgb[pixel * 3]
-                val green = rgb[pixel * 3 + 1]
-                val blue = rgb[pixel * 3 + 2]
-                LUMA_RED * red + LUMA_GREEN * green + LUMA_BLUE * blue
-            })
+            LumaFrame(
+                width,
+                height,
+                FloatArray(width * height) { pixel ->
+                    val red = rgb[pixel * 3]
+                    val green = rgb[pixel * 3 + 1]
+                    val blue = rgb[pixel * 3 + 2]
+                    LUMA_RED * red + LUMA_GREEN * green + LUMA_BLUE * blue
+                },
+            )
 
         private const val LUMA_RED = 0.299f
         private const val LUMA_GREEN = 0.587f

@@ -8,8 +8,8 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 
 /**
- * Builds [AuthenticationAttemptLimiter] from its configured policy, on the [PasswordChangerProducer]
- * shape: raw values keep `api-usecases` free of configuration. Scoped once, since it holds counters.
+ * Builds [AuthenticationAttemptLimiter] from its configured policy, on the [PasswordChangerProducer] shape: raw values
+ * keep `api-usecases` free of configuration. Scoped once, since it holds counters.
  */
 @ApplicationScoped
 class AuthenticationAttemptLimiterProducer {

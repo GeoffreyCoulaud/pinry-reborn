@@ -59,10 +59,16 @@ class UserDataExportDeleterTest : BaseTest() {
         state: UserDataExportState,
         taskId: UUID? = null,
         storageKey: String? = null,
-    ) = UserDataExport(
-        id = exportId, userId = user.id, state = state, formatVersion = 1, requestedAt = now,
-        taskId = taskId, storageKey = storageKey,
-    )
+    ) =
+        UserDataExport(
+            id = exportId,
+            userId = user.id,
+            state = state,
+            formatVersion = 1,
+            requestedAt = now,
+            taskId = taskId,
+            storageKey = storageKey,
+        )
 
     private fun stored(): UserDataExport? = rows[exportId]
 
@@ -72,27 +78,30 @@ class UserDataExportDeleterTest : BaseTest() {
 
     private fun stubRow(row: UserDataExport) {
         rows[row.id] = row
-        every { repository.findById(any()) } answers {
-            readInTransactions += transactions.current
-            rows[firstArg<UUID>()]
-        }
+        every { repository.findById(any()) } answers
+            {
+                readInTransactions += transactions.current
+                rows[firstArg<UUID>()]
+            }
     }
 
     /** The racing actor committing between the owner check and the fence, which only the fence sees. */
     private fun stubRacedRow(read: UserDataExport, raced: UserDataExport?) {
         rows[read.id] = read
-        every { repository.findById(any()) } answers {
-            if (!transactions.inside) return@answers read
-            if (raced == null) rows.remove(read.id) else rows[read.id] = raced
-            raced
-        }
+        every { repository.findById(any()) } answers
+            {
+                if (!transactions.inside) return@answers read
+                if (raced == null) rows.remove(read.id) else rows[read.id] = raced
+                raced
+            }
     }
 
     private fun stubRowWrites() {
-        every { repository.save(any()) } answers {
-            writtenInTransactions += transactions.current
-            firstArg<UserDataExport>().also { row -> rows[row.id] = row }
-        }
+        every { repository.save(any()) } answers
+            {
+                writtenInTransactions += transactions.current
+                firstArg<UserDataExport>().also { row -> rows[row.id] = row }
+            }
     }
 
     /** Read only where the key is derived rather than read off the row, which is the PENDING arm. */

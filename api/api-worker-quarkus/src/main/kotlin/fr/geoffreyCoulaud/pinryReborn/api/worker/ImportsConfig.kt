@@ -11,8 +11,7 @@ import java.time.Duration
 @Suppress("TooManyFunctions")
 @ConfigMapping(prefix = "imports", namingStrategy = ConfigMapping.NamingStrategy.SNAKE_CASE)
 interface ImportsConfig {
-    @WithDefault("/var/lib/pinry/imports")
-    fun dataDir(): String
+    @WithDefault("/var/lib/pinry/imports") fun dataDir(): String
 
     @WithDefault("21474836480") // 20 GiB
     fun maxArchiveBytes(): Long
@@ -23,8 +22,7 @@ interface ImportsConfig {
     @WithDefault("16777216") // 16 MiB
     fun maxChunkBytes(): Long
 
-    @WithDefault("200000")
-    fun maxEntries(): Int
+    @WithDefault("200000") fun maxEntries(): Int
 
     @WithDefault("16777216") // 16 MiB
     fun maxMetadataBytes(): Long
@@ -36,23 +34,17 @@ interface ImportsConfig {
     fun minimumFreeBytes(): Long
 
     /** Inactivity, not age: measured from creation it would abandon an upload still streaming. */
-    @WithDefault("PT24H")
-    fun uploadGrace(): Duration
+    @WithDefault("PT24H") fun uploadGrace(): Duration
 
-    @WithDefault("PT1H")
-    fun sweepInterval(): Duration
+    @WithDefault("PT1H") fun sweepInterval(): Duration
 
-    @WithDefault("PT48H")
-    fun stagedFileMaxAge(): Duration
+    @WithDefault("PT48H") fun stagedFileMaxAge(): Duration
 
     /** One page of a sweep selection, the export's figure: a key, so a large instance can raise it. */
-    @WithDefault("500")
-    fun sweepBatchSize(): Int
+    @WithDefault("500") fun sweepBatchSize(): Int
 
     /** The queue's default backoff spends five attempts in seconds, which no operator can use. */
-    @WithDefault("PT10M")
-    fun retryFloor(): Duration
+    @WithDefault("PT10M") fun retryFloor(): Duration
 
-    @WithDefault("500")
-    fun reportDetailLimit(): Int
+    @WithDefault("500") fun reportDetailLimit(): Int
 }

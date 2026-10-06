@@ -13,12 +13,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.time.Duration
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import java.time.Duration
-import java.util.UUID.randomUUID
 
 class ReauthenticatorTest : BaseTest() {
     private val passwords = mockk<UserPasswordHashRepositoryInterface>()

@@ -7,10 +7,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SearchEmptyQueryEr
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
 
 class TagSearcherTest {
     private val tagRepository = mockk<TagRepositoryInterface>()
@@ -18,8 +18,13 @@ class TagSearcherTest {
 
     private fun createUser() = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
 
-    private fun createTag(user: User, name: String) = Tag(id = randomUUID(), author = user, name = name,
-        createdAt = TestTime.now)
+    private fun createTag(user: User, name: String) =
+        Tag(
+            id = randomUUID(),
+            author = user,
+            name = name,
+            createdAt = TestTime.now,
+        )
 
     @Test
     fun `Given empty query, Then throws SearchEmptyQueryError`() {

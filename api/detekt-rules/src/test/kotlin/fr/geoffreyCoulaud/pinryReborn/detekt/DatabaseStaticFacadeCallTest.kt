@@ -16,7 +16,8 @@ class DatabaseStaticFacadeCallTest {
             class Repository {
                 fun find() = io.ebean.DB.find(Any::class.java)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -39,7 +40,8 @@ class DatabaseStaticFacadeCallTest {
             class Repository {
                 fun find() = io.ebean.Ebean.find(Any::class.java)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -66,7 +68,8 @@ class DatabaseStaticFacadeCallTest {
             class Repository {
                 fun find() = DB.find(Any::class.java)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -83,7 +86,8 @@ class DatabaseStaticFacadeCallTest {
             class Repository(private val database: Database) {
                 fun find() = database.find(Any::class.java)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -104,7 +108,8 @@ class DatabaseStaticFacadeCallTest {
             class Repository {
                 fun go() = DB.find()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -121,7 +126,8 @@ class DatabaseStaticFacadeCallTest {
             class Repository {
                 fun id() = java.util.UUID.randomUUID()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)

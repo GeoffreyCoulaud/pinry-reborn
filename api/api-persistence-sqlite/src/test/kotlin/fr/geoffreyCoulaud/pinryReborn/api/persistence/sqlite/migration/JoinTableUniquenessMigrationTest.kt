@@ -1,16 +1,16 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.migration
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 /**
- * `1.27.sql` on join tables that already repeat a pair, which the empty test database never holds: the
- * tables are created from the history's own statements on a private connection, seeded, then migrated.
+ * `1.27.sql` on join tables that already repeat a pair, which the empty test database never holds: the tables are
+ * created from the history's own statements on a private connection, seeded, then migrated.
  */
 class JoinTableUniquenessMigrationTest {
     @Test

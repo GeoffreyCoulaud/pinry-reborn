@@ -1,18 +1,17 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.UUID
 
 /**
- * Shared best-effort body for storage cleanup: a throw from [block] is logged at WARN and
- * swallowed, never propagated to the caller. A business operation that already succeeded must
- * not fail because of a file cleanup; the periodic garbage collection is the ultimate guarantor of
- * residue (see docs/adr/0003-periodic-gc-and-best-effort-cleanup.md).
+ * Shared best-effort body for storage cleanup: a throw from [block] is logged at WARN and swallowed, never propagated
+ * to the caller. A business operation that already succeeded must not fail because of a file cleanup; the periodic
+ * garbage collection is the ultimate guarantor of residue (see docs/adr/0003-periodic-gc-and-best-effort-cleanup.md).
  */
 object StorageCleanup {
     private val logger = KotlinLogging.logger {}
@@ -23,8 +22,7 @@ object StorageCleanup {
 }
 
 /** Best-effort [MediaStore.delete]: logs WARN and swallows on failure. */
-fun MediaStore.deleteQuietly(storageKey: String) =
-    StorageCleanup.runQuietly("image $storageKey") { delete(storageKey) }
+fun MediaStore.deleteQuietly(storageKey: String) = StorageCleanup.runQuietly("image $storageKey") { delete(storageKey) }
 
 /** Best-effort [MediaStore.discard]: logs WARN and swallows on failure. */
 fun MediaStore.discardQuietly(staged: StagedFile) =

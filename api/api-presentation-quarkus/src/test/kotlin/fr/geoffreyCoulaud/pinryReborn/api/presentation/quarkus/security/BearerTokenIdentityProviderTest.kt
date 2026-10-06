@@ -7,19 +7,19 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionTokenAuthenticator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SessionTokenExpiredError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SessionTokenInvalidError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
+import io.mockk.every
+import io.mockk.mockk
 import io.quarkus.security.AuthenticationFailedException
 import io.quarkus.security.credential.TokenCredential
 import io.quarkus.security.identity.AuthenticationRequestContext
 import io.quarkus.security.identity.SecurityIdentity
 import io.quarkus.security.identity.request.TokenAuthenticationRequest
-import io.mockk.every
-import io.mockk.mockk
 import io.smallrye.mutiny.Uni
+import java.util.UUID.randomUUID
+import java.util.function.Supplier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
-import java.util.function.Supplier
 
 class BearerTokenIdentityProviderTest {
     private val authenticator = mockk<SessionTokenAuthenticator>()
@@ -27,22 +27,25 @@ class BearerTokenIdentityProviderTest {
     private val user = User(randomUUID(), "alice", createdAt = TestTime.now)
 
     // Execute the runBlocking supplier synchronously.
-    private val context = mockk<AuthenticationRequestContext> {
-        every { runBlocking(any<Supplier<SecurityIdentity>>()) } answers {
-            Uni.createFrom().item(firstArg<Supplier<SecurityIdentity>>().get())
+    private val context =
+        mockk<AuthenticationRequestContext> {
+            every { runBlocking(any<Supplier<SecurityIdentity>>()) } answers
+                {
+                    Uni.createFrom().item(firstArg<Supplier<SecurityIdentity>>().get())
+                }
         }
-    }
 
     private fun request(token: String, transport: SessionTransportDto = SessionTransportDto.BEARER) =
         TokenAuthenticationRequest(TokenCredential(token, transport.credentialType))
 
-    private fun session() = SessionToken(
-        randomUUID(),
-        user,
-        TestTime.now.plusSeconds(60),
-        persistent = true,
-        createdAt = TestTime.now,
-    )
+    private fun session() =
+        SessionToken(
+            randomUUID(),
+            user,
+            TestTime.now.plusSeconds(60),
+            persistent = true,
+            createdAt = TestTime.now,
+        )
 
     @Test
     fun `Given a valid token, Then the identity carries the user, userId and sessionToken`() {
@@ -72,10 +75,8 @@ class BearerTokenIdentityProviderTest {
         // being the same row either way.
         every { authenticator.authenticate("good") } returns session()
 
-        val identity = provider
-            .authenticate(request("good", SessionTransportDto.COOKIE), context)
-            .await()
-            .indefinitely()
+        val identity =
+            provider.authenticate(request("good", SessionTransportDto.COOKIE), context).await().indefinitely()
 
         assertEquals(SessionTransportDto.COOKIE, identity.getSessionTransport())
     }
@@ -85,9 +86,10 @@ class BearerTokenIdentityProviderTest {
         val invalidError = SessionTokenInvalidError()
         every { authenticator.authenticate("bad") } throws invalidError
 
-        val exception = assertThrows<AuthenticationFailedException> {
-            provider.authenticate(request("bad"), context).await().indefinitely()
-        }
+        val exception =
+            assertThrows<AuthenticationFailedException> {
+                provider.authenticate(request("bad"), context).await().indefinitely()
+            }
 
         assertEquals(invalidError, exception.cause)
     }
@@ -101,9 +103,10 @@ class BearerTokenIdentityProviderTest {
         val expiredError = SessionTokenExpiredError()
         every { authenticator.authenticate("old") } throws expiredError
 
-        val exception = assertThrows<AuthenticationFailedException> {
-            provider.authenticate(request("old"), context).await().indefinitely()
-        }
+        val exception =
+            assertThrows<AuthenticationFailedException> {
+                provider.authenticate(request("old"), context).await().indefinitely()
+            }
 
         assertEquals(expiredError, exception.cause)
     }

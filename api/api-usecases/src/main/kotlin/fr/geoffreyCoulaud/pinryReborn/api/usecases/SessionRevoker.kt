@@ -6,9 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenReposi
 import jakarta.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
-class SessionRevoker(
-    private val sessionTokenRepository: SessionTokenRepositoryInterface,
-) {
+class SessionRevoker(private val sessionTokenRepository: SessionTokenRepositoryInterface) {
     fun revokeCurrent(current: SessionToken) = sessionTokenRepository.deleteById(current.id)
 
     fun revokeAll(user: User) = sessionTokenRepository.deleteAllForUser(user.id)

@@ -15,8 +15,8 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.core.Response
 
 /**
- * The same session token as [BearerAuthenticationMechanism], read from the `pinry_session` cookie.
- * Only the extraction forks: both build a [TokenAuthenticationRequest] for the one identity provider.
+ * The same session token as [BearerAuthenticationMechanism], read from the `pinry_session` cookie. Only the extraction
+ * forks: both build a [TokenAuthenticationRequest] for the one identity provider.
  */
 @ApplicationScoped
 class CookieAuthenticationMechanism : HttpAuthenticationMechanism {
@@ -29,7 +29,7 @@ class CookieAuthenticationMechanism : HttpAuthenticationMechanism {
             return Uni.createFrom().nullItem()
         }
         return identityProviderManager.authenticate(
-            TokenAuthenticationRequest(TokenCredential(token, SessionTransportDto.COOKIE.credentialType)),
+            TokenAuthenticationRequest(TokenCredential(token, SessionTransportDto.COOKIE.credentialType))
         )
     }
 
@@ -44,8 +44,8 @@ class CookieAuthenticationMechanism : HttpAuthenticationMechanism {
         Uni.createFrom().item(HttpCredentialTransport(HttpCredentialTransport.Type.COOKIE, SessionCookie.NAME))
 
     /**
-     * Below the header's, which stays at Quarkus's default: mechanisms are asked in descending
-     * priority, so a request carrying both credentials authenticates as the header's.
+     * Below the header's, which stays at Quarkus's default: mechanisms are asked in descending priority, so a request
+     * carrying both credentials authenticates as the header's.
      */
     override fun getPriority(): Int = HttpAuthenticationMechanism.DEFAULT_PRIORITY - 1
 }

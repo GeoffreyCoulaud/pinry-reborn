@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.system
 
+import java.time.Duration
+import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Duration
-import java.time.Instant
 
 // SystemClock is the clock adapter under test; its test compares against the real wall clock.
 @Suppress("WallClockRead")

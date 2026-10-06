@@ -26,16 +26,17 @@ class BoardCreator(
         return try {
             transactionRunner.inTransaction {
                 val pins = pinBoardSetter.resolvePins(pinIds = pinIds.distinct(), user = author)
-                val board = boardRepository.saveBoard(
-                    Board(
-                        id = randomUUID(),
-                        author = author,
-                        name = name,
-                        description = description,
-                        createdAt = now,
-                        updatedAt = now,
-                    ),
-                )
+                val board =
+                    boardRepository.saveBoard(
+                        Board(
+                            id = randomUUID(),
+                            author = author,
+                            name = name,
+                            description = description,
+                            createdAt = now,
+                            updatedAt = now,
+                        )
+                    )
                 pinRepository.addPinsToBoard(pinIds = pins.map { it.id }, board = board, at = now)
                 board
             }

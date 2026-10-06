@@ -18,11 +18,9 @@ import org.junit.jupiter.api.Test
 @QuarkusTest
 class UserCreationIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var userRepository: UserRepositoryInterface
+    @Inject lateinit var userRepository: UserRepositoryInterface
 
-    @Inject
-    lateinit var clock: Clock
+    @Inject lateinit var clock: Clock
 
     // ==================== Simple Scenarios ====================
 
@@ -242,11 +240,12 @@ class UserCreationIntegrationTest : IntegrationTest() {
         assertNotNull(userRepository.findUserByIdIncludingDeleted(user.id))
 
         // When
-        val response = given()
-            .contentType(ContentType.JSON)
-            .body("""{"name": "$name", "password": "$password"}""")
-            .`when`()
-            .post("/api/v1/users")
+        val response =
+            given()
+                .contentType(ContentType.JSON)
+                .body("""{"name": "$name", "password": "$password"}""")
+                .`when`()
+                .post("/api/v1/users")
 
         // Then
         response
@@ -287,21 +286,17 @@ class UserCreationIntegrationTest : IntegrationTest() {
             .then()
             .statusCode(200)
 
-        val token = given()
-            .contentType(ContentType.JSON)
-            .body("""{"name": "caselogin", "password": "$password", "transport": "BEARER"}""")
-            .`when`()
-            .post("/api/v1/sessions")
-            .then()
-            .statusCode(201)
-            .extract()
-            .path<String>("token")
+        val token =
+            given()
+                .contentType(ContentType.JSON)
+                .body("""{"name": "caselogin", "password": "$password", "transport": "BEARER"}""")
+                .`when`()
+                .post("/api/v1/sessions")
+                .then()
+                .statusCode(201)
+                .extract()
+                .path<String>("token")
 
-        given()
-            .header("Authorization", "Bearer $token")
-            .`when`()
-            .get("/api/v1/pins")
-            .then()
-            .statusCode(200)
+        given().header("Authorization", "Bearer $token").`when`().get("/api/v1/pins").then().statusCode(200)
     }
 }

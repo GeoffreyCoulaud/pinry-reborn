@@ -9,11 +9,10 @@ import jakarta.enterprise.event.Observes
 import java.util.concurrent.TimeUnit
 
 /**
- * Drives the task worker lifecycle: sweeps orphaned leases and starts the poll loop on
- * application startup, keeps sweeping expired leases periodically (at half the lease
- * duration) so tasks stuck behind a crashed/hung worker are recovered at runtime rather
- * than only at the next boot, and stops claiming new work and drains in-flight workers
- * on shutdown.
+ * Drives the task worker lifecycle: sweeps orphaned leases and starts the poll loop on application startup, keeps
+ * sweeping expired leases periodically (at half the lease duration) so tasks stuck behind a crashed/hung worker are
+ * recovered at runtime rather than only at the next boot, and stops claiming new work and drains in-flight workers on
+ * shutdown.
  */
 @ApplicationScoped
 class TaskWorkerLifecycle(
@@ -23,13 +22,9 @@ class TaskWorkerLifecycle(
     private val pollScheduler: PeriodicScheduler,
     private val config: TaskQueueConfig,
 ) {
-    fun onStart(
-        @Observes ignored: StartupEvent,
-    ) = start()
+    fun onStart(@Observes ignored: StartupEvent) = start()
 
-    fun onStop(
-        @Observes ignored: ShutdownEvent,
-    ) = stop()
+    fun onStop(@Observes ignored: ShutdownEvent) = stop()
 
     fun start() {
         reapExpiredTasks.reap()

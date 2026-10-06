@@ -5,9 +5,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -26,12 +26,12 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
-import org.junit.jupiter.api.Assertions.assertDoesNotThrow
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class AccountDeletionCleanerTest : BaseTest() {
     private val users = mockk<UserRepositoryInterface>(relaxed = true)
@@ -50,26 +50,54 @@ class AccountDeletionCleanerTest : BaseTest() {
     private val importIssues = mockk<UserDataImportIssueRepositoryInterface>(relaxed = true)
     private val importArchiveStore = mockk<ImportArchiveStore>(relaxed = true)
     private val tx = mockk<TransactionRunner>()
-    private val cleaner = AccountDeletionCleaner(
-        users, pins, boards, tags, mediaRepository, sessions, passwords, clearDownload, mediaStore, renditions,
-        exports, exportArchiveStore, imports, importIssues, importArchiveStore, tx,
-    )
+    private val cleaner =
+        AccountDeletionCleaner(
+            users,
+            pins,
+            boards,
+            tags,
+            mediaRepository,
+            sessions,
+            passwords,
+            clearDownload,
+            mediaStore,
+            renditions,
+            exports,
+            exportArchiveStore,
+            imports,
+            importIssues,
+            importArchiveStore,
+            tx,
+        )
 
     private val userId = randomUUID()
     private val user = User(id = userId, name = "u", softDeletedAt = TestTime.now, createdAt = TestTime.now)
 
-    private fun buildPin() = Pin(
-        id = randomUUID(), author = user, sourceContextUrl = "https://ctx",
-        sourceMediaUrl = null, description = "desc", tags = emptyList(), boards = emptyList(),
-        createdAt = TestTime.now,
-        updatedAt = TestTime.now,
-    )
+    private fun buildPin() =
+        Pin(
+            id = randomUUID(),
+            author = user,
+            sourceContextUrl = "https://ctx",
+            sourceMediaUrl = null,
+            description = "desc",
+            tags = emptyList(),
+            boards = emptyList(),
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
 
-    private fun buildMedia(pinId: UUID) = Media.StillImage(
-        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1,
-        byteSize = 1, contentHash = "h", storageKey = "originals/x/$pinId/i.png",
-        createdAt = Instant.parse("2026-07-10T00:00:00Z"),
-    )
+    private fun buildMedia(pinId: UUID) =
+        Media.StillImage(
+            id = randomUUID(),
+            pinId = pinId,
+            mimeType = "image/png",
+            width = 1,
+            height = 1,
+            byteSize = 1,
+            contentHash = "h",
+            storageKey = "originals/x/$pinId/i.png",
+            createdAt = Instant.parse("2026-07-10T00:00:00Z"),
+        )
 
     @Test
     fun `Given a tombstoned user with a pin+image, Then everything is erased in order and disk cleaned`() {
@@ -173,10 +201,11 @@ class AccountDeletionCleanerTest : BaseTest() {
         // Given: the transaction says where it is, so "after the commit" is asserted rather than named.
         // A disk pass held inside it keeps the one writer connection for the length of an unlink.
         var insideTransaction = false
-        every { tx.inTransaction(any<() -> Any?>()) } answers {
-            insideTransaction = true
-            (firstArg<() -> Any?>())().also { insideTransaction = false }
-        }
+        every { tx.inTransaction(any<() -> Any?>()) } answers
+            {
+                insideTransaction = true
+                (firstArg<() -> Any?>())().also { insideTransaction = false }
+            }
         every { users.findUserByIdIncludingDeleted(userId) } returns user
         every { pins.findAllPinIdsForUser(user) } returns emptyList()
         every { exports.findAllExportIdsForUser(userId) } returns emptyList()
@@ -185,9 +214,10 @@ class AccountDeletionCleanerTest : BaseTest() {
         var archiveDeletedInside: Boolean? = null
         every { importArchiveStore.delete(any()) } answers { archiveDeletedInside = insideTransaction }
         var uploadDiscardedInside: Boolean? = null
-        every { importArchiveStore.discardPartialUpload(any()) } answers {
-            uploadDiscardedInside = insideTransaction
-        }
+        every { importArchiveStore.discardPartialUpload(any()) } answers
+            {
+                uploadDiscardedInside = insideTransaction
+            }
 
         // When
         cleaner.deleteAccountData(userId)

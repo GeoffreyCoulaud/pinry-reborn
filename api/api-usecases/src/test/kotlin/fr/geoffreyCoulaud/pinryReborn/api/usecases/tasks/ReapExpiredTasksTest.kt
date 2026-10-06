@@ -6,10 +6,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class ReapExpiredTasksTest {
     private val taskQueue: TaskQueueInterface = mockk()
@@ -18,18 +18,21 @@ class ReapExpiredTasksTest {
     private val importFloor = Duration.ofMinutes(10)
     private val useCase = ReapExpiredTasks(taskQueue, registry(), clock)
 
-    private fun registry() = TaskHandlerRegistry(
-        listOf(
-            flooredHandler(UserDataImportTask.KIND, importFloor),
-            flooredHandler(PinDownloadTask.KIND, Duration.ZERO),
-        ),
-    )
+    private fun registry() =
+        TaskHandlerRegistry(
+            listOf(
+                flooredHandler(UserDataImportTask.KIND, importFloor),
+                flooredHandler(PinDownloadTask.KIND, Duration.ZERO),
+            )
+        )
 
-    private fun flooredHandler(k: String, floor: Duration) = object : TaskHandler {
-        override val kind = k
-        override val retryFloor = floor
-        override fun handle(payload: String, context: TaskContext) = Unit
-    }
+    private fun flooredHandler(k: String, floor: Duration) =
+        object : TaskHandler {
+            override val kind = k
+            override val retryFloor = floor
+
+            override fun handle(payload: String, context: TaskContext) = Unit
+        }
 
     @Test
     fun `Given expired running tasks, Then reap delegates to reapExpired with clock now`() {

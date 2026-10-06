@@ -12,15 +12,15 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanT
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.time.Duration
-import java.time.Instant
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 class EbeanTransactionRunnerTest : RepositoryTest() {
     private val runner = transactionRunner
@@ -33,23 +33,37 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
     private val pinRepository = PinRepository(persistor)
     private val now = Instant.parse("2026-07-10T00:00:00Z")
 
-    private fun newDownloadTask(pinId: UUID) =
-        NewTask("pin.download", pinId.toString(), now, maxAttempts = 5)
+    private fun newDownloadTask(pinId: UUID) = NewTask("pin.download", pinId.toString(), now, maxAttempts = 5)
 
     private fun savedPin(): Pin {
         val user = userRepository.saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
         return pinRepository.savePin(
             Pin(
-                randomUUID(), user, "https://ctx", null, "desc", emptyList(), emptyList(),
-                createdAt = storableNow(), updatedAt = storableNow(),
-            ),
+                randomUUID(),
+                user,
+                "https://ctx",
+                null,
+                "desc",
+                emptyList(),
+                emptyList(),
+                createdAt = storableNow(),
+                updatedAt = storableNow(),
+            )
         )
     }
 
-    private fun mediaFor(pinId: UUID) = Media.StillImage(
-        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1,
-        byteSize = 1, contentHash = "h", storageKey = "originals/x/$pinId/i.png", createdAt = now,
-    )
+    private fun mediaFor(pinId: UUID) =
+        Media.StillImage(
+            id = randomUUID(),
+            pinId = pinId,
+            mimeType = "image/png",
+            width = 1,
+            height = 1,
+            byteSize = 1,
+            contentHash = "h",
+            storageKey = "originals/x/$pinId/i.png",
+            createdAt = now,
+        )
 
     @Test
     fun `Given a committed transaction, Then the enqueued task and the download row both exist`() {

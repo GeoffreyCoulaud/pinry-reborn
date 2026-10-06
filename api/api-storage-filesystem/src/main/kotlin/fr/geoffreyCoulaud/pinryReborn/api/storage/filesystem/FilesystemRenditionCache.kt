@@ -13,8 +13,8 @@ import kotlin.streams.asSequence
 /**
  * [RenditionCache] adapter backed by the local filesystem, under `<dataDir>/cache/<mediaId>/`.
  *
- * Not `@ApplicationScoped` (a `String` ctor param is unresolvable by ARC); a producer in the
- * composition root builds it, mirroring `FilesystemMediaStore`.
+ * Not `@ApplicationScoped` (a `String` ctor param is unresolvable by ARC); a producer in the composition root builds
+ * it, mirroring `FilesystemMediaStore`.
  */
 class FilesystemRenditionCache(dataDir: String) : RenditionCache {
     private val paths = DataDirPaths(dataDir)
@@ -101,9 +101,10 @@ class FilesystemRenditionCache(dataDir: String) : RenditionCache {
         }
     }
 
-    private fun String.toUuidOrNull(): UUID? = try {
-        UUID.fromString(this)
-    } catch (_: IllegalArgumentException) {
-        null
-    }
+    private fun String.toUuidOrNull(): UUID? =
+        try {
+            UUID.fromString(this)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
 }

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
 }
+
 dependencies {
     implementation(project(":api-domain"))
     implementation(project(":api-fetch-http"))
@@ -14,5 +15,6 @@ dependencies {
     testImplementation(libs.bundles.testing)
     testRuntimeOnly(libs.bundles.testing.runtime)
 }
+
 // The video fixtures are api-video-ffmpeg's, served here as a page's media.
 sourceSets.test { resources.srcDir(project(":api-video-ffmpeg").file("src/test/resources")) }

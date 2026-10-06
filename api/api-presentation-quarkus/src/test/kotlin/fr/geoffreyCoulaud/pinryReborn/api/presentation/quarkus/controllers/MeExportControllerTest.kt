@@ -18,16 +18,16 @@ import io.mockk.every
 import io.mockk.mockk
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.ws.rs.core.StreamingOutput
-import org.junit.jupiter.api.Assertions.assertArrayEquals
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.time.Instant
 import java.util.Base64
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 class MeExportControllerTest {
     private val requester = mockk<UserDataExportRequester>()
@@ -35,23 +35,25 @@ class MeExportControllerTest {
     private val downloader = mockk<UserDataExportDownloader>()
     private val deleter = mockk<UserDataExportDeleter>()
     private val securityIdentity = mockk<SecurityIdentity>()
-    private val controller = MeExportController(
-        requester = requester,
-        getter = getter,
-        downloader = downloader,
-        deleter = deleter,
-        securityIdentity = securityIdentity,
-    )
+    private val controller =
+        MeExportController(
+            requester = requester,
+            getter = getter,
+            downloader = downloader,
+            deleter = deleter,
+            securityIdentity = securityIdentity,
+        )
 
     private fun aUser() = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
 
-    private fun pendingExport(userId: java.util.UUID) = UserDataExport(
-        id = randomUUID(),
-        userId = userId,
-        state = UserDataExportState.PENDING,
-        formatVersion = 1,
-        requestedAt = Instant.parse("2026-07-22T10:00:00Z"),
-    )
+    private fun pendingExport(userId: java.util.UUID) =
+        UserDataExport(
+            id = randomUUID(),
+            userId = userId,
+            state = UserDataExportState.PENDING,
+            formatVersion = 1,
+            requestedAt = Instant.parse("2026-07-22T10:00:00Z"),
+        )
 
     private fun anOpenedExport(id: java.util.UUID, bytes: ByteArray, totalByteSize: Long = bytes.size.toLong()) =
         OpenedExport(

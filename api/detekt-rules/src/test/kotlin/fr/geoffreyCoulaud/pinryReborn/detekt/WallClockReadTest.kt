@@ -19,7 +19,8 @@ class WallClockReadTest {
             class Repository {
                 fun stamp() = Instant.now()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -43,7 +44,8 @@ class WallClockReadTest {
 
                 fun c() = System.currentTimeMillis()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -70,7 +72,8 @@ class WallClockReadTest {
             import java.time.Instant
 
             fun stamp() = Instant.now()
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -89,7 +92,8 @@ class WallClockReadTest {
             class SystemClock : Clock {
                 override fun now(): Instant = Instant.now()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -108,7 +112,8 @@ class WallClockReadTest {
             class SystemClock : fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock {
                 override fun now(): Instant = Instant.now()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -128,7 +133,8 @@ class WallClockReadTest {
             class TruncatingClock(private val delegate: Clock) : Clock by delegate {
                 fun startOfSecond(): Instant = Instant.now()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -147,7 +153,8 @@ class WallClockReadTest {
             class Ticker : () -> Instant {
                 override fun invoke(): Instant = Instant.now()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -167,7 +174,8 @@ class WallClockReadTest {
                  */
                 fun stamp(at: java.time.Instant) = at
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -186,7 +194,8 @@ class WallClockReadTest {
             class Repository {
                 fun stamp() = ZonedDateTime.now()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -210,7 +219,8 @@ class WallClockReadTest {
 
                 fun b() = Instant.now()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = configuredRule.lint(code)
@@ -230,7 +240,8 @@ class WallClockReadTest {
             class Repository(private val clock: Clock) {
                 fun stamp() = clock.now()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)

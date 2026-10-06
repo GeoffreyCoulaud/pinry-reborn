@@ -6,15 +6,15 @@ import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import io.restassured.response.Response
+import java.util.Base64
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.matchesPattern
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.Base64
-import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 /** The tight policy the acceptance criteria are checked against. */
 class AuthAttemptLimitTestProfile : QuarkusTestProfile {
@@ -34,8 +34,8 @@ class AuthAttemptLimitTestProfile : QuarkusTestProfile {
 }
 
 /**
- * Acceptance criteria 1, 2, 3, 5 and 7 of `docs/specs/2026-08-13-auth-attempt-limiting.md`. The
- * counters live in process memory and no fixture clears them, so each case takes an identity of its own.
+ * Acceptance criteria 1, 2, 3, 5 and 7 of `docs/specs/2026-08-13-auth-attempt-limiting.md`. The counters live in
+ * process memory and no fixture clears them, so each case takes an identity of its own.
  */
 @QuarkusTest
 @TestProfile(AuthAttemptLimitTestProfile::class)
@@ -68,10 +68,7 @@ class AuthAttemptLimitIntegrationTest : IntegrationTest() {
         repeat(threshold) { attempt -> login(spelling(name, attempt)).then().statusCode(UNAUTHORIZED) }
 
         // Then: the counter folded the spellings together, so the next one is refused
-        login(spelling(name, threshold))
-            .then()
-            .statusCode(TOO_MANY_REQUESTS)
-            .body(CODE, equalTo(TOO_MANY_ATTEMPTS))
+        login(spelling(name, threshold)).then().statusCode(TOO_MANY_REQUESTS).body(CODE, equalTo(TOO_MANY_ATTEMPTS))
     }
 
     @Test
@@ -125,8 +122,8 @@ class AuthAttemptLimitIntegrationTest : IntegrationTest() {
     }
 
     /**
-     * The status of the first attempt the limiter lets through, or the last one refused at the timeout.
-     * Polling costs nothing to the block: a refused attempt is not a failure and records none.
+     * The status of the first attempt the limiter lets through, or the last one refused at the timeout. Polling costs
+     * nothing to the block: a refused attempt is not a failure and records none.
      */
     private fun statusOnceTheBlockLifts(name: String): Int {
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(BLOCK_LIFT_TIMEOUT_SECONDS)
@@ -144,17 +141,21 @@ class AuthAttemptLimitIntegrationTest : IntegrationTest() {
 
     /** Every request this class sends carries the wrong secret: being refused is the point. */
     private fun login(name: String): Response =
-        given().contentType(JSON)
+        given()
+            .contentType(JSON)
             .body("""{"name":"$name","password":"$WRONG_PASSWORD","transport":"BEARER"}""")
             .post("/api/v1/sessions")
 
     private fun changePassword(auth: AuthenticatedUser): Response =
-        given().authenticatedAs(auth).contentType(JSON)
+        given()
+            .authenticatedAs(auth)
+            .contentType(JSON)
             .body("""{"currentPassword":"$WRONG_PASSWORD","newPassword":"$NEW_PASSWORD"}""")
             .put("/api/v1/me/password")
 
     private fun deleteAccount(auth: AuthenticatedUser): Response =
-        given().authenticatedAs(auth)
+        given()
+            .authenticatedAs(auth)
             .header(
                 "X-Reauthentication",
                 "password " + Base64.getUrlEncoder().encodeToString(WRONG_PASSWORD.toByteArray()),

@@ -17,8 +17,7 @@ import org.junit.jupiter.api.Test
 @QuarkusTest
 class JsonBindingIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var mapper: ObjectMapper
+    @Inject lateinit var mapper: ObjectMapper
 
     @Test
     fun `Given the CDI mapper, Then it carries the Kotlin module and nothing beyond what Quarkus adds`() {
@@ -28,12 +27,13 @@ class JsonBindingIntegrationTest : IntegrationTest() {
         // When / Then
         assertEquals(
             listOf(
-                "VertxTypes",
-                "com.fasterxml.jackson.module.kotlin.KotlinModule",
-                "jackson-datatype-jsr310",
-                "com.fasterxml.jackson.datatype.jdk8.Jdk8Module",
-                "jackson-module-parameter-names",
-            ).sorted(),
+                    "VertxTypes",
+                    "com.fasterxml.jackson.module.kotlin.KotlinModule",
+                    "jackson-datatype-jsr310",
+                    "com.fasterxml.jackson.datatype.jdk8.Jdk8Module",
+                    "jackson-module-parameter-names",
+                )
+                .sorted(),
             ids.sorted(),
         )
     }

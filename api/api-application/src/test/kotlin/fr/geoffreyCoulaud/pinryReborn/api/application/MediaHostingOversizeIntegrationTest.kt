@@ -6,37 +6,35 @@ import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
-import org.hamcrest.Matchers.equalTo
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.file.Path
 import java.util.UUID
+import org.hamcrest.Matchers.equalTo
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 /**
- * Same isolated, writable data dir as [MediaHostingDataDirTestProfile], plus a tiny
- * `media.max_image_bytes` so a small real image fixture trips the use case's 413 though it is far under
- * `media.max_video_bytes`, left at its default. `quarkus.http.limits.max-body-size` is left at its
- * `application.properties` default too, so each 413 genuinely comes from
- * [fr.geoffreyCoulaud.pinryReborn.api.usecases.SetPinMedia], not RESTEasy Reactive rejecting the body outright.
+ * Same isolated, writable data dir as [MediaHostingDataDirTestProfile], plus a tiny `media.max_image_bytes` so a small
+ * real image fixture trips the use case's 413 though it is far under `media.max_video_bytes`, left at its default.
+ * `quarkus.http.limits.max-body-size` is left at its `application.properties` default too, so each 413 genuinely comes
+ * from [fr.geoffreyCoulaud.pinryReborn.api.usecases.SetPinMedia], not RESTEasy Reactive rejecting the body outright.
  */
 class MediaHostingTinyLimitTestProfile : QuarkusTestProfile {
-    override fun getConfigOverrides(): Map<String, String> = mapOf(
-        "media.data_dir" to "build/test-media-data/${UUID.randomUUID()}",
-        "media.max_image_bytes" to "100",
-    )
+    override fun getConfigOverrides(): Map<String, String> =
+        mapOf(
+            "media.data_dir" to "build/test-media-data/${UUID.randomUUID()}",
+            "media.max_image_bytes" to "100",
+        )
 }
 
 @QuarkusTest
 @TestProfile(MediaHostingTinyLimitTestProfile::class)
 class MediaHostingOversizeIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @TempDir
-    lateinit var tempDir: Path
+    @TempDir lateinit var tempDir: Path
 
     @Test
     fun `Given a tiny media_max_image_bytes limit, Then uploading a bigger image returns 413`() {
@@ -48,7 +46,8 @@ class MediaHostingOversizeIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", File("src/test/resources/fixtures/sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/${pin.id}/media")
+            .`when`()
+            .put("/api/v1/pins/${pin.id}/media")
             .then()
             .statusCode(413)
             .body("code", equalTo("MEDIA_TOO_LARGE"))
@@ -66,18 +65,20 @@ class MediaHostingOversizeIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", heavy, "video/mp4")
-            .`when`().put("/api/v1/pins/${pin.id}/media")
+            .`when`()
+            .put("/api/v1/pins/${pin.id}/media")
             .then()
             .statusCode(413)
             .contentType("application/problem+json")
             .body("code", equalTo("MEDIA_TOO_LARGE"))
     }
 
-    private fun aPin(auth: AuthenticatedUser) = pinCreator.createPin(
-        author = auth.user,
-        sourceContextUrl = "https://example.com",
-        sourceMediaUrl = "https://example.com/img.jpg",
-        description = "Oversize test pin",
-        tags = emptyList(),
-    )
+    private fun aPin(auth: AuthenticatedUser) =
+        pinCreator.createPin(
+            author = auth.user,
+            sourceContextUrl = "https://example.com",
+            sourceMediaUrl = "https://example.com/img.jpg",
+            description = "Oversize test pin",
+            tags = emptyList(),
+        )
 }

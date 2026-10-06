@@ -18,14 +18,14 @@ class PinDuplicates(
     private val pinGetter: PinGetter,
 ) {
     /** The pins among [pins] with a pending duplicate, in one read; no permission check, as `statesFor`. */
-    fun pendingAmong(pins: Collection<Pin>): Set<UUID> =
-        duplicateRepository.findPinIdsWithPending(pins.map { it.id })
+    fun pendingAmong(pins: Collection<Pin>): Set<UUID> = duplicateRepository.findPinIdsWithPending(pins.map { it.id })
 
     /** [pinId]'s duplicates, oldest first; none while the pin is recycled, which hides its pairs. */
     fun list(pinId: UUID, user: User): List<PinDuplicate> {
         pinGetter.getPinForUser(reader = user, pinId = pinId)
         val rejectedByPin = duplicateRepository.findShownFor(pinId)
-        return pinRepository.findPinsByIds(rejectedByPin.keys.toList())
+        return pinRepository
+            .findPinsByIds(rejectedByPin.keys.toList())
             .sortedBy { it.createdAt }
             .map { PinDuplicate(it, rejectedByPin.getValue(it.id)) }
     }

@@ -13,36 +13,39 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMap
 
 // The issues have their own mapper object: both pages erase to one `toDto(Page)` JVM signature.
 object UserDataImportDtoMapper {
-    fun UserDataImport.toDto() = UserDataImportOutputDto(
-        id = id,
-        state = state.toDto(),
-        requestedAt = requestedAt,
-        uploadedBytes = uploadedBytes,
-        byteSize = byteSize,
-        archiveCompletedAt = archiveCompletedAt,
-        startedAt = startedAt,
-        completedAt = completedAt,
-        formatVersion = formatVersion,
-        announcedPins = announcedPins,
-        processedPins = processedPins,
-        createdPins = createdPins,
-        skippedPins = skippedPins,
-        createdBoards = createdBoards,
-        skippedBoards = skippedBoards,
-        createdTags = createdTags,
-        skippedTags = skippedTags,
-        issueCount = issueCount,
-        issueDetailTruncated = issueDetailTruncated,
-        reasonCode = failureCode?.toDto(),
-    )
+    fun UserDataImport.toDto() =
+        UserDataImportOutputDto(
+            id = id,
+            state = state.toDto(),
+            requestedAt = requestedAt,
+            uploadedBytes = uploadedBytes,
+            byteSize = byteSize,
+            archiveCompletedAt = archiveCompletedAt,
+            startedAt = startedAt,
+            completedAt = completedAt,
+            formatVersion = formatVersion,
+            announcedPins = announcedPins,
+            processedPins = processedPins,
+            createdPins = createdPins,
+            skippedPins = skippedPins,
+            createdBoards = createdBoards,
+            skippedBoards = skippedBoards,
+            createdTags = createdTags,
+            skippedTags = skippedTags,
+            issueCount = issueCount,
+            issueDetailTruncated = issueDetailTruncated,
+            reasonCode = failureCode?.toDto(),
+        )
 
-    fun Page<UserDataImport>.toDto() = UserDataImportListOutputDto(
-        imports = items.map { it.toDto() },
-        pagination = PaginationOutputDto(
-            previousCursor = previousCursor?.toDto(),
-            nextCursor = nextCursor?.toDto(),
-        ),
-    )
+    fun Page<UserDataImport>.toDto() =
+        UserDataImportListOutputDto(
+            imports = items.map { it.toDto() },
+            pagination =
+                PaginationOutputDto(
+                    previousCursor = previousCursor?.toDto(),
+                    nextCursor = nextCursor?.toDto(),
+                ),
+        )
 
     private fun UserDataImportState.toDto(): UserDataImportStateDto =
         when (this) {

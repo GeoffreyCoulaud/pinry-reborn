@@ -31,11 +31,12 @@ object PdqHasher {
     private const val GRADIENTS_PER_POINT = 90
     private const val MAX_QUALITY = 100
 
-    private val DCT = FloatArray(DCT_SIDE * SIDE) { index ->
-        val (row, column) = index / SIDE to index % SIDE
-        val scale = Math.sqrt(2.0 / SIDE).toFloat()
-        (scale * Math.cos(Math.PI / 2.0 / SIDE * (row + 1) * (2 * column + 1))).toFloat()
-    }
+    private val DCT =
+        FloatArray(DCT_SIDE * SIDE) { index ->
+            val (row, column) = index / SIDE to index % SIDE
+            val scale = Math.sqrt(2.0 / SIDE).toFloat()
+            (scale * Math.cos(Math.PI / 2.0 / SIDE * (row + 1) * (2 * column + 1))).toFloat()
+        }
 
     fun hash(frame: LumaFrame): PdqHash {
         if (minOf(frame.width, frame.height) < MIN_SIDE) return PdqHash(List(WORDS) { 0L }, quality = 0)
@@ -112,12 +113,13 @@ object PdqHasher {
 
     // The 16 by 16 lowest frequencies but the constant one, as `D A Dᵗ`.
     private fun dct(image: FloatArray): FloatArray {
-        val partial = FloatArray(DCT_SIDE * SIDE) { index ->
-            val (row, column) = index / SIDE to index % SIDE
-            var sum = 0f
-            for (k in 0 until SIDE) sum += DCT[row * SIDE + k] * image[k * SIDE + column]
-            sum
-        }
+        val partial =
+            FloatArray(DCT_SIDE * SIDE) { index ->
+                val (row, column) = index / SIDE to index % SIDE
+                var sum = 0f
+                for (k in 0 until SIDE) sum += DCT[row * SIDE + k] * image[k * SIDE + column]
+                sum
+            }
         return FloatArray(DCT_SIDE * DCT_SIDE) { index ->
             val (row, column) = index / DCT_SIDE to index % DCT_SIDE
             var sum = 0f

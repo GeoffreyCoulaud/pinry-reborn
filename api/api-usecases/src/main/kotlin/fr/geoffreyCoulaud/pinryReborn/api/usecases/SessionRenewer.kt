@@ -19,21 +19,21 @@ class SessionRenewer(
     private val transactionRunner: TransactionRunner,
 ) {
     /** Atomic rotation: save the new token, then delete the old, in one transaction. */
-    fun renew(current: SessionToken): IssuedSession =
-        transactionRunner.inTransaction {
-            val token = tokenGenerator.generateToken()
-            val expiresAt = expiryPolicy.expiryFrom(clock.now(), current.persistent)
-            sessionTokenRepository.saveSessionToken(
-                sessionToken = SessionToken(
+    fun renew(current: SessionToken): IssuedSession = transactionRunner.inTransaction {
+        val token = tokenGenerator.generateToken()
+        val expiresAt = expiryPolicy.expiryFrom(clock.now(), current.persistent)
+        sessionTokenRepository.saveSessionToken(
+            sessionToken =
+                SessionToken(
                     id = randomUUID(),
                     user = current.user,
                     expiresAt = expiresAt,
                     persistent = current.persistent,
                     createdAt = clock.now(),
                 ),
-                tokenHash = TokenHasher.sha256(token),
-            )
-            sessionTokenRepository.deleteById(current.id)
-            IssuedSession(token, expiresAt, expiryPolicy.renewAfterFor(expiresAt, current.persistent))
-        }
+            tokenHash = TokenHasher.sha256(token),
+        )
+        sessionTokenRepository.deleteById(current.id)
+        IssuedSession(token, expiresAt, expiryPolicy.renewAfterFor(expiresAt, current.persistent))
+    }
 }

@@ -17,12 +17,12 @@ import io.mockk.every
 import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class PinBoardSetterTest {
     private val pinRepository = mockk<PinRepositoryInterface>()
@@ -201,8 +201,14 @@ class PinBoardSetterTest {
     }
 
     private fun board(author: User, name: String) =
-        Board(id = randomUUID(), author = author, name = name, description = "",
-            createdAt = TestTime.now, updatedAt = TestTime.now)
+        Board(
+            id = randomUUID(),
+            author = author,
+            name = name,
+            description = "",
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
 
     private fun pin(author: User) =
         Pin(

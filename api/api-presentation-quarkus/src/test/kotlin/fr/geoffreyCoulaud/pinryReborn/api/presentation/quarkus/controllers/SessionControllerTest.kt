@@ -14,18 +14,18 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionRenewer
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SessionRevoker
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.UserAuthenticationInvalidPasswordError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
-import io.quarkus.security.AuthenticationFailedException
-import io.quarkus.security.identity.SecurityIdentity
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.Test
+import io.quarkus.security.AuthenticationFailedException
+import io.quarkus.security.identity.SecurityIdentity
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class SessionControllerTest {
     private val creator = mockk<SessionCreator>()
@@ -36,11 +36,12 @@ class SessionControllerTest {
     private val controller = SessionController(creator, renewer, revoker, policy, identity)
 
     private val user = User(randomUUID(), "alice", createdAt = TestTime.now)
-    private val issued = IssuedSession(
-        "tok",
-        Instant.parse("2026-08-01T00:00:00Z"),
-        Instant.parse("2026-07-25T00:00:00Z"),
-    )
+    private val issued =
+        IssuedSession(
+            "tok",
+            Instant.parse("2026-08-01T00:00:00Z"),
+            Instant.parse("2026-07-25T00:00:00Z"),
+        )
 
     private fun credentials(
         transport: SessionTransportDto = SessionTransportDto.BEARER,
@@ -48,11 +49,10 @@ class SessionControllerTest {
     ) = SessionCreationInputDto("alice", "pw", transport = transport, rememberMe = rememberMe)
 
     private fun currentSession(persistent: Boolean = false, transport: SessionTransportDto) =
-        SessionToken(randomUUID(), user, TestTime.now, persistent = persistent, createdAt = TestTime.now)
-            .also {
-                every { identity.getAttribute<SessionToken>("sessionToken") } returns it
-                every { identity.getAttribute<SessionTransportDto>("sessionTransport") } returns transport
-            }
+        SessionToken(randomUUID(), user, TestTime.now, persistent = persistent, createdAt = TestTime.now).also {
+            every { identity.getAttribute<SessionToken>("sessionToken") } returns it
+            every { identity.getAttribute<SessionTransportDto>("sessionTransport") } returns transport
+        }
 
     @Test
     fun `Given rememberMe true, Then createSession passes persistent=true and returns the created dto`() {
@@ -109,13 +109,14 @@ class SessionControllerTest {
 
     @Test
     fun `Given a current session, Then getCurrentSession returns its metadata without a token`() {
-        val current = SessionToken(
-            randomUUID(),
-            user,
-            Instant.parse("2026-08-01T00:00:00Z"),
-            persistent = true,
-            createdAt = TestTime.now,
-        )
+        val current =
+            SessionToken(
+                randomUUID(),
+                user,
+                Instant.parse("2026-08-01T00:00:00Z"),
+                persistent = true,
+                createdAt = TestTime.now,
+            )
         every { identity.getAttribute<SessionToken>("sessionToken") } returns current
         val dto = controller.getCurrentSession()
         assertEquals(current.expiresAt, dto.expiresAt)

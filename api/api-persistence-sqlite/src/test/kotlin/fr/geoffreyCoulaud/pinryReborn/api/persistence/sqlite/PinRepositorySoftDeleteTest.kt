@@ -3,28 +3,30 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
+import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Instant
 
 /**
- * The recycle bin half of `PinRepository`: soft deletion, restoration, the reads that include or
- * exclude recycled pins, and permanent deletion. Split from `PinRepositoryTest` to keep it under
- * detekt's `LargeClass` threshold (mirrors `PinRepositoryPaginationTest`'s precedent).
+ * The recycle bin half of `PinRepository`: soft deletion, restoration, the reads that include or exclude recycled pins,
+ * and permanent deletion. Split from `PinRepositoryTest` to keep it under detekt's `LargeClass` threshold (mirrors
+ * `PinRepositoryPaginationTest`'s precedent).
  */
 class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
     /** The user's active pins, unpaginated in practice: no case here holds more than a handful. */
     private fun activePinsOf(user: User): List<Pin> =
-        repository.findPinsForUser(
-            reader = user,
-            cursor = null,
-            pageSize = 10,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-        ).items
+        repository
+            .findPinsForUser(
+                reader = user,
+                cursor = null,
+                pageSize = 10,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+            )
+            .items
 
     @Test
     fun `Given soft-deleted pin, Then findPinsForUser excludes it`() {
@@ -34,12 +36,13 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
         repository.softDeletePin(pin, storableNow())
 
         // When
-        val page = repository.findPinsForUser(
-            reader = user,
-            cursor = null,
-            pageSize = 10,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val page =
+            repository.findPinsForUser(
+                reader = user,
+                cursor = null,
+                pageSize = 10,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertTrue(page.items.isEmpty())
@@ -100,12 +103,13 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
         repository.softDeletePin(pin, storableNow())
 
         // When
-        val page = repository.findSoftDeletedPinsForUser(
-            reader = user,
-            cursor = null,
-            pageSize = 10,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val page =
+            repository.findSoftDeletedPinsForUser(
+                reader = user,
+                cursor = null,
+                pageSize = 10,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertEquals(1, page.items.size)
@@ -179,9 +183,10 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
         val absentPin = createPin()
 
         // When / Then
-        val exception = assertThrows<IllegalStateException> {
-            repository.softDeletePin(absentPin, storableNow())
-        }
+        val exception =
+            assertThrows<IllegalStateException> {
+                repository.softDeletePin(absentPin, storableNow())
+            }
         assertTrue(exception.message!!.contains(absentPin.id.toString()))
     }
 
@@ -191,9 +196,10 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
         val absentPin = createPin()
 
         // When / Then
-        val exception = assertThrows<IllegalStateException> {
-            repository.restorePin(absentPin, storableNow())
-        }
+        val exception =
+            assertThrows<IllegalStateException> {
+                repository.restorePin(absentPin, storableNow())
+            }
         assertTrue(exception.message!!.contains(absentPin.id.toString()))
     }
 

@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -21,9 +21,8 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 /**
- * Async worker erasure for a tombstoned account: loads the user, deletes all its rows in FK order
- * inside one transaction, then does best-effort on-disk cleanup (image bytes and export archives)
- * after the commit.
+ * Async worker erasure for a tombstoned account: loads the user, deletes all its rows in FK order inside one
+ * transaction, then does best-effort on-disk cleanup (image bytes and export archives) after the commit.
  */
 @Suppress("LongParameterList")
 @ApplicationScoped
@@ -78,7 +77,7 @@ class AccountDeletionCleaner(
         // archive promoted by a builder that died before writing its storageKey column.
         for (exportId in exportIds) {
             exportArchiveStore.deleteQuietly(
-                ExportArchiveKey.forExport(exportId, exportArchiveStore.format.fileExtension),
+                ExportArchiveKey.forExport(exportId, exportArchiveStore.format.fileExtension)
             )
         }
         // Both sides of the lifecycle: an archive already promoted, and an upload still under tmp/ that

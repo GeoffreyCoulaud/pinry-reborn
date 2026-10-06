@@ -13,10 +13,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
 
 class BoardPinListerTest {
     private val boardGetter: BoardGetter = mockk()
@@ -25,14 +25,15 @@ class BoardPinListerTest {
 
     private val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
     private val boardId = randomUUID()
-    private val board = Board(
-        id = boardId,
-        author = reader,
-        name = createRandomString(),
-        description = createRandomString(),
-        createdAt = TestTime.now,
-        updatedAt = TestTime.now,
-    )
+    private val board =
+        Board(
+            id = boardId,
+            author = reader,
+            name = createRandomString(),
+            description = createRandomString(),
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
     private val sort = PinSortStrategy.CREATED_AT_ASC
 
     @Test

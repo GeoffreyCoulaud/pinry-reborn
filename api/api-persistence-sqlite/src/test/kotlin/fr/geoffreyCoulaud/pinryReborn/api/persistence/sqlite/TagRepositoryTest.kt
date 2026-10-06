@@ -8,14 +8,13 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.TagRep
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import jakarta.persistence.PersistenceException
-import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
 
 class TagRepositoryTest : RepositoryTest() {
     private val repository = TagRepository(persistor)
@@ -23,9 +22,7 @@ class TagRepositoryTest : RepositoryTest() {
     private val pinRepository = PinRepository(persistor)
 
     private fun createAndSaveUser(): User =
-        userRepository.saveUser(
-            User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()),
-        )
+        userRepository.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
 
     private fun createPinWithTag(
         author: User,
@@ -42,7 +39,7 @@ class TagRepositoryTest : RepositoryTest() {
                 boards = emptyList(),
                 createdAt = storableNow(),
                 updatedAt = storableNow(),
-            ),
+            )
         )
 
     @Test
@@ -64,9 +61,7 @@ class TagRepositoryTest : RepositoryTest() {
         // Given
         val user = createAndSaveUser()
         val tag =
-            repository.saveTag(
-                Tag(id = randomUUID(), author = user, name = "landscape", createdAt = storableNow()),
-            )
+            repository.saveTag(Tag(id = randomUUID(), author = user, name = "landscape", createdAt = storableNow()))
 
         // When
         val found = repository.findUserTagByName(user = user, name = "landscape")

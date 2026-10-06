@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 
 /**
- * [MigrationDirectory.currentIndexes] cannot see a `drop table`, so a rebuild that loses one of its
- * table's indexes leaves it green. The migrated database is the only place that loss is observable.
+ * [MigrationDirectory.currentIndexes] cannot see a `drop table`, so a rebuild that loses one of its table's indexes
+ * leaves it green. The migrated database is the only place that loss is observable.
  */
 class MigratedSchemaIndexesTest : RepositoryTest() {
     @Test
@@ -40,10 +40,9 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         val namesByTable = MEDIA_TABLES.associateWith { constraintAndIndexNamesOf(it) }
 
         // When
-        val misnamed =
-            namesByTable.flatMap { (table, names) ->
-                names.filterNot { it.matches(Regex("""[a-z]+_${table}_\w+|pk_$table""")) }
-            }
+        val misnamed = namesByTable.flatMap { (table, names) ->
+            names.filterNot { it.matches(Regex("""[a-z]+_${table}_\w+|pk_$table""")) }
+        }
 
         // Then: the second assertion is the first one's non-empty guard.
         assertEquals(emptyList<String>(), misnamed)

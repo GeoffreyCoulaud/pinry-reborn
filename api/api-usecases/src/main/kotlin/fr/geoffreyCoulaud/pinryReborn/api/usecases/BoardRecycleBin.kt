@@ -51,9 +51,7 @@ class BoardRecycleBin(
     fun permanentlyDelete(boardId: UUID, user: User) =
         boardRepository.permanentlyDeleteBoard(recycledOrRefused(boardId, user))
 
-    fun emptyRecycleBin(user: User) =
-        boardRepository.permanentlyDeleteAllRecycledBoardsForUser(user)
+    fun emptyRecycleBin(user: User) = boardRepository.permanentlyDeleteAllRecycledBoardsForUser(user)
 
-    fun listRecycledBoardsForUser(user: User): List<Board> =
-        boardRepository.findRecycledBoardsForUser(user)
+    fun listRecycledBoardsForUser(user: User): List<Board> = boardRepository.findRecycledBoardsForUser(user)
 }

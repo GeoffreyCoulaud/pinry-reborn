@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.storage
 
 /**
- * The directory segments every data directory shares, so the stores, the keys derived without a
- * row, the orphan sweep and the boot check all resolve the same names.
+ * The directory segments every data directory shares, so the stores, the keys derived without a row, the orphan sweep
+ * and the boot check all resolve the same names.
  */
 object StorageLayout {
     /** Where a store stages a file before promoting it, under its own data directory. */

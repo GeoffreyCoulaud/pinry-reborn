@@ -35,6 +35,8 @@ import jakarta.ws.rs.PUT
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType.APPLICATION_JSON as JSON
+import java.net.URI
+import java.util.UUID
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
@@ -42,8 +44,6 @@ import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder
-import java.net.URI
-import java.util.UUID
 
 @Path("/api/v1/boards")
 @Suppress("LongParameterList") // CDI-injected: every parameter is a collaborator provided by the container.
@@ -61,46 +61,83 @@ class BoardController(
     @Authenticated
     // SmallRye reads the status off the return type, and a runtime ResponseBuilder carries none, so
     // the 201 is declared with the refusals the route answers (spec 2026-08-14 section 12).
-    @APIResponse(responseCode = "201", description = "Board created, with the pins the body names filed under it",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = BoardOutputDto::class))])
+    @APIResponse(
+        responseCode = "201",
+        description = "Board created, with the pins the body names filed under it",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = BoardOutputDto::class))],
+    )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_IN_BODY_NOT_FOUND)
-    @APIResponse(responseCode = "409",
+    @APIResponse(
+        responseCode = "409",
         description = "$NAME_TAKEN, or a pin the body names is in the recycle bin",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["BOARD_NAME_ALREADY_EXISTS", "PIN_ALREADY_SOFT_DELETED"])]))])
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration = ["BOARD_NAME_ALREADY_EXISTS", "PIN_ALREADY_SOFT_DELETED"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun createBoard(@Valid @NotNull dto: BoardCreationInputDto): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
         val board = boardCreator.create(user, dto.name, dto.description, dto.pinIds)
-        return ResponseBuilder
-            .created<BoardOutputDto>(URI("/api/v1/boards/${board.id}"))
+        return ResponseBuilder.created<BoardOutputDto>(URI("/api/v1/boards/${board.id}"))
             .entity(board.toDto(boardGetter.summarizeActiveBoardForUser(board.id, user)))
             .build()
     }
 
     @GET
     @Authenticated
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = BoardListOutputDto::class))])
-    @APIResponse(responseCode = "404", description = "A board left the list while it was being read",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["BOARD_DOES_NOT_EXIST"])]))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = BoardListOutputDto::class))],
+    )
+    @APIResponse(
+        responseCode = "404",
+        description = "A board left the list while it was being read",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["BOARD_DOES_NOT_EXIST"])],
+                        ),
+                )
+            ],
+    )
     fun listBoards(): RestResponse<BoardListOutputDto> {
         val user = securityIdentity.getUser()
-        val boards = boardGetter.listActiveBoardsForUser(user).map { board ->
-            board.toDto(boardGetter.summarizeActiveBoardForUser(board.id, user))
-        }
+        val boards =
+            boardGetter.listActiveBoardsForUser(user).map { board ->
+                board.toDto(boardGetter.summarizeActiveBoardForUser(board.id, user))
+            }
         return RestResponse.ok(BoardListOutputDto(boards = boards))
     }
 
     @GET
     @Authenticated
     @Path("/{boardId}")
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = BoardOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = BoardOutputDto::class))],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.BOARD_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.BOARD_NOT_FOUND)
     fun getBoard(boardId: UUID): RestResponse<BoardOutputDto> {
@@ -112,14 +149,29 @@ class BoardController(
     @PUT
     @Authenticated
     @Path("/{boardId}")
-    @APIResponse(responseCode = "200", description = "Board updated",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = BoardOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "Board updated",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = BoardOutputDto::class))],
+    )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.BOARD_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.BOARD_NOT_FOUND)
-    @APIResponse(responseCode = "409", description = NAME_TAKEN,
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["BOARD_NAME_ALREADY_EXISTS"])]))])
+    @APIResponse(
+        responseCode = "409",
+        description = NAME_TAKEN,
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["BOARD_NAME_ALREADY_EXISTS"])],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun updateBoard(boardId: UUID, @Valid @NotNull dto: BoardInputDto): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
@@ -133,9 +185,21 @@ class BoardController(
     @APIResponse(responseCode = "204", description = "No Content")
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.BOARD_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.BOARD_NOT_FOUND)
-    @APIResponse(responseCode = "409", description = "The board is in the recycle bin",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["BOARD_ALREADY_SOFT_DELETED"])]))])
+    @APIResponse(
+        responseCode = "409",
+        description = "The board is in the recycle bin",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["BOARD_ALREADY_SOFT_DELETED"])],
+                        ),
+                )
+            ],
+    )
     fun softDeleteBoard(boardId: UUID): RestResponse<Void> {
         val user = securityIdentity.getUser()
         boardRecycleBin.softDelete(boardId = boardId, user = user)
@@ -147,8 +211,11 @@ class BoardController(
     @Path("/{boardId}/pins")
     // SmallRye stops generating the success response as soon as an operation declares one of its own,
     // so the 200 is written out beside the refusals rather than dropped from the contract.
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = PinListOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = PinListOutputDto::class))],
+    )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.BLANK_QUERY)
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.BOARD_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.BOARD_NOT_FOUND)
@@ -209,7 +276,8 @@ class BoardController(
 
     companion object {
         const val DEFAULT_PAGE_SIZE = 20
-        private const val NAME_TAKEN = "This account already holds a board of that name, ASCII case folded, " +
-            "and a recycled board holds its name until the bin is emptied"
+        private const val NAME_TAKEN =
+            "This account already holds a board of that name, ASCII case folded, " +
+                "and a recycled board holds its name until the bin is emptied"
     }
 }

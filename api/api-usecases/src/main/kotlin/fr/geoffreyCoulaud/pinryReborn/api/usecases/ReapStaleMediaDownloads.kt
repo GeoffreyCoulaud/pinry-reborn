@@ -8,8 +8,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.ReapExpiredTasks
 import java.time.Duration
 
 /**
- * Bounds `media_download`, whose rows are otherwise immortal: a PENDING row whose task is terminal
- * or gone becomes FAILED, which stops the client's polling, and past [failedGrace] it is deleted.
+ * Bounds `media_download`, whose rows are otherwise immortal: a PENDING row whose task is terminal or gone becomes
+ * FAILED, which stops the client's polling, and past [failedGrace] it is deleted.
  */
 class ReapStaleMediaDownloads(
     private val mediaDownloadRepository: MediaDownloadRepositoryInterface,
@@ -23,14 +23,16 @@ class ReapStaleMediaDownloads(
         val pending = mediaDownloadRepository.findPending()
         // Chunked because findLiveIds spends one host parameter per id: past SQLite's ceiling the
         // statement throws, safeAll logs it, and the sweep that bounds this table stops bounding it.
-        val live = pending.chunked(LOOKUP_BATCH_SIZE).flatMapTo(mutableSetOf()) { batch ->
-            taskQueue.findLiveIds(batch.map { it.taskId })
-        }
+        val live =
+            pending.chunked(LOOKUP_BATCH_SIZE).flatMapTo(mutableSetOf()) { batch ->
+                taskQueue.findLiveIds(batch.map { it.taskId })
+            }
         // markFailed is a CAS on PENDING, so a row the worker settles between the read and this
         // write is refused rather than overwritten, and is not counted.
-        val settled = pending
-            .filterNot { it.taskId in live }
-            .count { mediaDownloadRepository.markFailed(it.pinId, DownloadReason.INTERNAL_ERROR, now) }
+        val settled =
+            pending
+                .filterNot { it.taskId in live }
+                .count { mediaDownloadRepository.markFailed(it.pinId, DownloadReason.INTERNAL_ERROR, now) }
         return settled + mediaDownloadRepository.deleteFailedBefore(now - failedGrace)
     }
 

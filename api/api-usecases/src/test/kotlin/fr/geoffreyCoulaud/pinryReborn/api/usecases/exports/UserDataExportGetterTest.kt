@@ -30,7 +30,11 @@ class UserDataExportGetterTest : BaseTest() {
 
     private fun exportFor(userId: UUID, state: UserDataExportState = UserDataExportState.PENDING) =
         UserDataExport(
-            id = randomUUID(), userId = userId, state = state, formatVersion = 1, requestedAt = now,
+            id = randomUUID(),
+            userId = userId,
+            state = state,
+            formatVersion = 1,
+            requestedAt = now,
         )
 
     @Test

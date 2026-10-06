@@ -274,9 +274,10 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { userRepository.findUserById(userId) } returns null
 
         // When / Then
-        val error = assertThrows(PermanentTaskException::class.java) {
-            builder.build(exportId, isLastAttempt = false, renewLease = {})
-        }
+        val error =
+            assertThrows(PermanentTaskException::class.java) {
+                builder.build(exportId, isLastAttempt = false, renewLease = {})
+            }
         assertEquals("user no longer exists", error.reason)
         assertEquals(UserDataExportState.FAILED, stored()?.state)
         assertEquals(UserDataExportFailure.USER_GONE, stored()?.failureCode)
@@ -292,9 +293,10 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { archiveStore.hasFreeSpace(minimumFreeBytes) } returns false
 
         // When / Then
-        val error = assertThrows(PermanentTaskException::class.java) {
-            builder.build(exportId, isLastAttempt = false, renewLease = {})
-        }
+        val error =
+            assertThrows(PermanentTaskException::class.java) {
+                builder.build(exportId, isLastAttempt = false, renewLease = {})
+            }
         assertEquals("not enough free space", error.reason)
         assertEquals(UserDataExportState.FAILED, stored()?.state)
         assertEquals(UserDataExportFailure.DISK_FULL, stored()?.failureCode)
@@ -369,16 +371,18 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         // user lookup answers nothing and the failure marking finds no row to write over.
         stubRow()
         var userRead = false
-        every { userRepository.findUserById(userId) } answers {
-            userRead = true
-            null
-        }
+        every { userRepository.findUserById(userId) } answers
+            {
+                userRead = true
+                null
+            }
         eraseWhen { userRead }
 
         // When / Then: the queue still gets the permanent failure, and nothing is re-inserted for it
-        val error = assertThrows(PermanentTaskException::class.java) {
-            builder.build(exportId, isLastAttempt = false, renewLease = {})
-        }
+        val error =
+            assertThrows(PermanentTaskException::class.java) {
+                builder.build(exportId, isLastAttempt = false, renewLease = {})
+            }
         assertEquals("user no longer exists", error.reason)
         assertNull(stored())
         verify(exactly = 0) { exportRepository.save(any()) }

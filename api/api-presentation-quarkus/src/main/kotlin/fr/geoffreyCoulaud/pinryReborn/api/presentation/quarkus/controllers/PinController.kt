@@ -32,6 +32,8 @@ import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.MediaType.APPLICATION_JSON as JSON
+import java.net.URI
+import java.util.UUID
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
@@ -39,8 +41,6 @@ import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder
-import java.net.URI
-import java.util.UUID
 
 @Path("/api/v1/pins")
 class PinController(
@@ -54,15 +54,16 @@ class PinController(
     @GET
     @Authenticated
     @Path("/{pinId}")
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_NOT_FOUND)
     fun getPin(pinId: UUID): RestResponse<PinOutputDto> {
         val user = securityIdentity.getUser()
-        return pinGetter
-            .getPinForUser(pinId = pinId, reader = user)
-            .let { RestResponse.ok(pinResponses.pin(it)) }
+        return pinGetter.getPinForUser(pinId = pinId, reader = user).let { RestResponse.ok(pinResponses.pin(it)) }
     }
 
     @POST
@@ -72,26 +73,27 @@ class PinController(
     @APIResponse(
         responseCode = "201",
         description = "Pin created",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = PinOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = PinOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun createPin(@Valid @NotNull creationDto: PinCreationInputDto): RestResponse<PinOutputDto> {
         val author = securityIdentity.getUser()
-        val pin = pinCreator.createPin(
-            author = author,
-            sourceContextUrl = creationDto.sourceContextUrl.blankAsNone(),
-            sourceMediaUrl = creationDto.sourceMediaUrl.blankAsNone(),
-            description = creationDto.description,
-            tags = emptyList(),
-        )
-        return ResponseBuilder
-            .created<PinOutputDto>(URI("/api/v1/pins/${pin.id}"))
+        val pin =
+            pinCreator.createPin(
+                author = author,
+                sourceContextUrl = creationDto.sourceContextUrl.blankAsNone(),
+                sourceMediaUrl = creationDto.sourceMediaUrl.blankAsNone(),
+                description = creationDto.description,
+                tags = emptyList(),
+            )
+        return ResponseBuilder.created<PinOutputDto>(URI("/api/v1/pins/${pin.id}"))
             .entity(pinResponses.pin(pin))
             .build()
     }
@@ -103,12 +105,13 @@ class PinController(
     @APIResponse(
         responseCode = "200",
         description = "OK",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = PinListOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = PinListOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.BLANK_QUERY)
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
@@ -162,22 +165,61 @@ class PinController(
     @Path("/{pinId}")
     @Operation(
         summary = "Replace the pin",
-        description = "Every field is replaced by what is sent, so an unchanged field is sent as it was " +
-            "read and an empty list clears. A tag name is an identity per author under an ASCII fold: " +
-            "`Landscape` and `landscape` are one tag, and the response carries the stored spelling, not " +
-            "the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags.",
+        description =
+            "Every field is replaced by what is sent, so an unchanged field is sent as it was " +
+                "read and an empty list clears. A tag name is an identity per author under an ASCII fold: " +
+                "`Landscape` and `landscape` are one tag, and the response carries the stored spelling, not " +
+                "the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags.",
     )
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))],
+    )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
-    @APIResponse(responseCode = "403", description = "The pin, or a board the body names, belongs to another account",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["PIN_INSUFFICIENT_PERMISSIONS", "BOARD_INSUFFICIENT_PERMISSIONS"])]))])
-    @APIResponse(responseCode = "404", description = "The pin, or a board the body names, does not exist",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["PIN_DOES_NOT_EXIST", "BOARD_DOES_NOT_EXIST", "UNKNOWN_ROUTE"])]))])
+    @APIResponse(
+        responseCode = "403",
+        description = "The pin, or a board the body names, belongs to another account",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration =
+                                            ["PIN_INSUFFICIENT_PERMISSIONS", "BOARD_INSUFFICIENT_PERMISSIONS"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
+    @APIResponse(
+        responseCode = "404",
+        description = "The pin, or a board the body names, does not exist",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration = ["PIN_DOES_NOT_EXIST", "BOARD_DOES_NOT_EXIST", "UNKNOWN_ROUTE"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.PIN_ALREADY_RECYCLED)
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun updatePin(pinId: UUID, @Valid @NotNull updateDto: PinUpdateInputDto): RestResponse<PinOutputDto> {

@@ -44,9 +44,10 @@ class AuthenticationAttemptLimiterTest : BaseTest() {
         backoffSteps: List<Duration> = this.backoffSteps,
         forgetAfter: Duration = this.forgetAfter,
         maxTrackedKeys: Int = 100,
-    ) = assertThrows<IllegalArgumentException> {
-        AuthenticationAttemptLimiter(clock, threshold, backoffSteps, forgetAfter, maxTrackedKeys)
-    }
+    ) =
+        assertThrows<IllegalArgumentException> {
+            AuthenticationAttemptLimiter(clock, threshold, backoffSteps, forgetAfter, maxTrackedKeys)
+        }
 
     private fun failTimes(limiter: AuthenticationAttemptLimiter, key: AuthenticationAttemptKey, count: Int) =
         repeat(count) { limiter.recordFailure(key) }

@@ -11,8 +11,8 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 /**
- * Opens an import and waits for its archive (spec `docs/specs/2026-08-14-user-data-import.md` §6).
- * No task yet: the walk is enqueued once the upload is complete.
+ * Opens an import and waits for its archive (spec `docs/specs/2026-08-14-user-data-import.md` §6). No task yet: the
+ * walk is enqueued once the upload is complete.
  */
 @ApplicationScoped
 class UserDataImportCreator(
@@ -20,8 +20,8 @@ class UserDataImportCreator(
     private val clock: Clock,
 ) {
     /**
-     * Inserts and lets the partial unique index refuse a second active import. No read answers that
-     * question first (ADR 0009 decision 2): unlike the export, this has no second refusal to order.
+     * Inserts and lets the partial unique index refuse a second active import. No read answers that question first (ADR
+     * 0009 decision 2): unlike the export, this has no second refusal to order.
      */
     fun create(user: User): UserDataImport {
         // One read for both columns: a second call is a second instant, and the grace would then
@@ -35,7 +35,7 @@ class UserDataImportCreator(
                     state = UserDataImportState.AWAITING_ARCHIVE,
                     requestedAt = requestedAt,
                     lastActivityAt = requestedAt,
-                ),
+                )
             )
         } catch (error: ImportAlreadyInProgressException) {
             throw ImportAlreadyInProgressError(error)

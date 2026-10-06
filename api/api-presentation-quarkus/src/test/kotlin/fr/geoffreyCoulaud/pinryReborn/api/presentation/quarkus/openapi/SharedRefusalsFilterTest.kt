@@ -11,12 +11,13 @@ class SharedRefusalsFilterTest {
     @Test
     fun `Given a protected operation, Then its 401 points at the shared entry`() {
         // Given: the bodyless 401 SmallRye adds beside its requirement
-        val operation = OASFactory.createOperation()
-            .addSecurityRequirement(OASFactory.createSecurityRequirement().addScheme("BearerScheme"))
-            .responses(
-                OASFactory.createAPIResponses()
-                    .addAPIResponse("401", OASFactory.createAPIResponse().description("Not Authorized")),
-            )
+        val operation =
+            OASFactory.createOperation()
+                .addSecurityRequirement(OASFactory.createSecurityRequirement().addScheme("BearerScheme"))
+                .responses(
+                    OASFactory.createAPIResponses()
+                        .addAPIResponse("401", OASFactory.createAPIResponse().description("Not Authorized"))
+                )
 
         // When
         val filtered = filter.filterOperation(operation)
@@ -35,18 +36,24 @@ class SharedRefusalsFilterTest {
         val declaredBodyless = OASFactory.createAPIResponse().description("Another account's pin")
         val referenced = OASFactory.createAPIResponse().ref(SharedRefusalsFilter.PIN_FORBIDDEN)
         val inline = OASFactory.createAPIResponse().content(OASFactory.createContent())
-        val namedLikeSmallRye = listOf(
-            OASFactory.createAPIResponse().description("Not Allowed").content(OASFactory.createContent()),
-            OASFactory.createAPIResponse().description("Not Allowed").ref(SharedRefusalsFilter.PIN_FORBIDDEN),
-        )
+        val namedLikeSmallRye =
+            listOf(
+                OASFactory.createAPIResponse().description("Not Allowed").content(OASFactory.createContent()),
+                OASFactory.createAPIResponse().description("Not Allowed").ref(SharedRefusalsFilter.PIN_FORBIDDEN),
+            )
         val declared = listOf(declaredBodyless, referenced, inline) + namedLikeSmallRye
 
         // When
-        val kept = (listOf(smallRye) + declared).map { response ->
-            filter.filterOperation(
-                OASFactory.createOperation().responses(OASFactory.createAPIResponses().addAPIResponse("403", response)),
-            ).responses.getAPIResponse("403")
-        }
+        val kept =
+            (listOf(smallRye) + declared).map { response ->
+                filter
+                    .filterOperation(
+                        OASFactory.createOperation()
+                            .responses(OASFactory.createAPIResponses().addAPIResponse("403", response))
+                    )
+                    .responses
+                    .getAPIResponse("403")
+            }
 
         // Then
         assertEquals(listOf(null) + declared, kept)
@@ -55,9 +62,10 @@ class SharedRefusalsFilterTest {
     @Test
     fun `Given an operation reading a body and declaring no 413, Then its 413 points at the shared entry`() {
         // Given
-        val operation = OASFactory.createOperation()
-            .requestBody(OASFactory.createRequestBody())
-            .responses(OASFactory.createAPIResponses())
+        val operation =
+            OASFactory.createOperation()
+                .requestBody(OASFactory.createRequestBody())
+                .responses(OASFactory.createAPIResponses())
 
         // When
         val filtered = filter.filterOperation(operation)
@@ -73,15 +81,19 @@ class SharedRefusalsFilterTest {
     fun `Given an operation reading a body with a 413 of its own, Then BODY_TOO_LARGE joins its codes once`() {
         // Given
         val code = OASFactory.createSchema().enumeration(listOf("MEDIA_TOO_LARGE"))
-        val own = OASFactory.createAPIResponse().content(
-            OASFactory.createContent().addMediaType(
-                "application/problem+json",
-                OASFactory.createMediaType().schema(OASFactory.createSchema().addProperty("code", code)),
-            ),
-        )
-        val operation = OASFactory.createOperation()
-            .requestBody(OASFactory.createRequestBody())
-            .responses(OASFactory.createAPIResponses().addAPIResponse("413", own))
+        val own =
+            OASFactory.createAPIResponse()
+                .content(
+                    OASFactory.createContent()
+                        .addMediaType(
+                            "application/problem+json",
+                            OASFactory.createMediaType().schema(OASFactory.createSchema().addProperty("code", code)),
+                        )
+                )
+        val operation =
+            OASFactory.createOperation()
+                .requestBody(OASFactory.createRequestBody())
+                .responses(OASFactory.createAPIResponses().addAPIResponse("413", own))
 
         // When
         filter.filterOperation(filter.filterOperation(operation))
@@ -117,9 +129,10 @@ class SharedRefusalsFilterTest {
         filter.filterOpenAPI(openApi)
 
         // Then
-        val schemas = openApi.components.responses.mapValues { (_, response) ->
-            response.content.getMediaType("application/problem+json").schema
-        }
+        val schemas =
+            openApi.components.responses.mapValues { (_, response) ->
+                response.content.getMediaType("application/problem+json").schema
+            }
         assertEquals(
             listOf("AUTHENTICATION_REQUIRED", "AUTHENTICATION_FAILED", "SESSION_EXPIRED"),
             schemas.getValue(SharedRefusalsFilter.UNAUTHENTICATED).properties.getValue("code").enumeration,
@@ -133,9 +146,9 @@ class SharedRefusalsFilterTest {
     @Test
     fun `Given a document already holding components, Then the shared entries join them`() {
         // Given
-        val openApi = OASFactory.createOpenAPI().components(
-            OASFactory.createComponents().addSchema("ProblemDetail", OASFactory.createSchema()),
-        )
+        val openApi =
+            OASFactory.createOpenAPI()
+                .components(OASFactory.createComponents().addSchema("ProblemDetail", OASFactory.createSchema()))
 
         // When
         filter.filterOpenAPI(openApi)

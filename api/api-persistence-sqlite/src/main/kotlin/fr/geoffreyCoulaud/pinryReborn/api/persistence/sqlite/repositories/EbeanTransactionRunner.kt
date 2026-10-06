@@ -5,9 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.TransactionControl
 import jakarta.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
-class EbeanTransactionRunner(
-    private val transactionControl: TransactionControl,
-) : TransactionRunner {
+class EbeanTransactionRunner(private val transactionControl: TransactionControl) : TransactionRunner {
     override fun <T> inTransaction(block: () -> T): T =
         transactionControl.beginTransaction().use { transaction ->
             val result = block()

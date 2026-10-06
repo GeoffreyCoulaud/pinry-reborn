@@ -14,10 +14,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
 
 class PinGetterTest {
     private val pinRepository = mockk<PinRepositoryInterface>()
@@ -41,17 +41,18 @@ class PinGetterTest {
         // Given
         val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val pin = Pin(
-            id = randomUUID(),
-            author = author,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "A pin",
-            tags = emptyList(),
-            boards = emptyList(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val pin =
+            Pin(
+                id = randomUUID(),
+                author = author,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "A pin",
+                tags = emptyList(),
+                boards = emptyList(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         every { pinRepository.findPinById(pin.id) } returns pin
 
         // When, Then
@@ -64,17 +65,18 @@ class PinGetterTest {
     fun `Given reader reading their own pin, Then getPinForUser succeeds`() {
         // Given
         val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val pin = Pin(
-            id = randomUUID(),
-            author = reader,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "A pin",
-            tags = emptyList(),
-            boards = emptyList(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val pin =
+            Pin(
+                id = randomUUID(),
+                author = reader,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "A pin",
+                tags = emptyList(),
+                boards = emptyList(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         every { pinRepository.findPinById(pin.id) } returns pin
 
         // When
@@ -99,12 +101,13 @@ class PinGetterTest {
         } returns expectedPage
 
         // When
-        val result = useCase.listPinsPaginatedForUser(
-            reader = reader,
-            cursor = null,
-            pageSize = 20,
-            sort = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val result =
+            useCase.listPinsPaginatedForUser(
+                reader = reader,
+                cursor = null,
+                pageSize = 20,
+                sort = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertEquals(expectedPage, result)
@@ -114,17 +117,18 @@ class PinGetterTest {
     fun `Given cursor pointing to reader's own pin, Then listPinsPaginatedForUser lists the next page`() {
         // Given
         val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val pin = Pin(
-            id = randomUUID(),
-            author = reader,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "A pin",
-            tags = emptyList(),
-            boards = emptyList(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val pin =
+            Pin(
+                id = randomUUID(),
+                author = reader,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "A pin",
+                tags = emptyList(),
+                boards = emptyList(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         val cursor = Cursor(pivotId = pin.id, direction = CursorDirection.FORWARD)
         val expectedPage = Page<Pin>(items = emptyList(), previousCursor = null, nextCursor = null)
         every { pinRepository.findPinById(pin.id) } returns pin
@@ -138,12 +142,13 @@ class PinGetterTest {
         } returns expectedPage
 
         // When
-        val result = useCase.listPinsPaginatedForUser(
-            reader = reader,
-            cursor = cursor,
-            pageSize = 20,
-            sort = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val result =
+            useCase.listPinsPaginatedForUser(
+                reader = reader,
+                cursor = cursor,
+                pageSize = 20,
+                sort = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertEquals(expectedPage, result)
@@ -165,13 +170,14 @@ class PinGetterTest {
         } returns expectedPage
 
         // When
-        val result = useCase.listPinsPaginatedForUser(
-            reader = reader,
-            cursor = null,
-            pageSize = 20,
-            sort = PinSortStrategy.CREATED_AT_ASC,
-            query = "cat",
-        )
+        val result =
+            useCase.listPinsPaginatedForUser(
+                reader = reader,
+                cursor = null,
+                pageSize = 20,
+                sort = PinSortStrategy.CREATED_AT_ASC,
+                query = "cat",
+            )
 
         // Then
         assertEquals(expectedPage, result)

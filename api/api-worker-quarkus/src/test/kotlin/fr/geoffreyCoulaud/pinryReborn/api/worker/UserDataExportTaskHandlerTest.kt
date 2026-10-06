@@ -4,8 +4,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.UserDataExportBuilder
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.TaskContext
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Test
 import java.util.UUID
+import org.junit.jupiter.api.Test
 
 class UserDataExportTaskHandlerTest {
     private val builder: UserDataExportBuilder = mockk(relaxed = true)

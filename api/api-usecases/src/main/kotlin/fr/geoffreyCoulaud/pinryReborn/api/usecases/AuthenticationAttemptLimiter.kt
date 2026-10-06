@@ -8,8 +8,8 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Refuses an attempt once a key has failed [threshold] times in a row, for a block that walks up
- * [backoffSteps]. In-process counters, behind no port (`docs/adr/0013-in-memory-authentication-attempt-limiting.md`).
+ * Refuses an attempt once a key has failed [threshold] times in a row, for a block that walks up [backoffSteps].
+ * In-process counters, behind no port (`docs/adr/0013-in-memory-authentication-attempt-limiting.md`).
  */
 class AuthenticationAttemptLimiter(
     private val clock: Clock,

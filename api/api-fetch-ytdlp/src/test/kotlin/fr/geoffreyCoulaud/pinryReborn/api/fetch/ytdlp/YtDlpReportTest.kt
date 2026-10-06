@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaTooLongException
+import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.time.Duration
 
 /** The cases no local page reaches, written as the JSON of `yt-dlp --dump-single-json`. */
 class YtDlpReportTest {

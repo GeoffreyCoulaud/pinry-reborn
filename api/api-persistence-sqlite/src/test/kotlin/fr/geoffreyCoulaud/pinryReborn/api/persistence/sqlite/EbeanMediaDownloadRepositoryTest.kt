@@ -11,14 +11,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRep
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.ebean.test.LoggedSql
+import java.time.Instant
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     private val repository = EbeanMediaDownloadRepository(persistor)
@@ -36,9 +36,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     }
 
     private fun savePin(author: User): Pin =
-        pins.savePin(
-            Pin(randomUUID(), author, "https://example.com", null, "d", emptyList(), emptyList(), now, now),
-        )
+        pins.savePin(Pin(randomUUID(), author, "https://example.com", null, "d", emptyList(), emptyList(), now, now))
 
     @Test
     fun `Given upsertPending, Then findByPinId returns a PENDING row`() {

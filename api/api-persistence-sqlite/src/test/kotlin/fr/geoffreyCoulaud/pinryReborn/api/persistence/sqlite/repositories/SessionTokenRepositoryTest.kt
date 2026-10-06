@@ -5,15 +5,15 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.RepositoryTest
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.exceptions.UserModelDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-import java.util.UUID.randomUUID
 
 class SessionTokenRepositoryTest : RepositoryTest() {
     private val repository = SessionTokenRepository(persistor = persistor)
@@ -27,13 +27,14 @@ class SessionTokenRepositoryTest : RepositoryTest() {
         persistent: Boolean = false,
         expiresAt: Instant = storableNow().plusSeconds(3600),
         createdAt: Instant = storableNow(),
-    ) = SessionToken(
-        id = randomUUID(),
-        user = user,
-        expiresAt = expiresAt,
-        persistent = persistent,
-        createdAt = createdAt,
-    )
+    ) =
+        SessionToken(
+            id = randomUUID(),
+            user = user,
+            expiresAt = expiresAt,
+            persistent = persistent,
+            createdAt = createdAt,
+        )
 
     @Test
     fun `Given a saved token, Then findByTokenHash returns it with its user and fields`() {

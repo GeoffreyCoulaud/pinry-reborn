@@ -23,8 +23,7 @@ import java.util.HexFormat
  * capped at [maxAddressSpace] bytes (ADR 0050). Not `@ApplicationScoped`: ARC cannot resolve its plain parameters.
  */
 class VipsImageTransformer(private val quality: Int, timeout: Duration, maxAddressSpace: Long) :
-    ImageTransformer,
-    FrameSampler {
+    ImageTransformer, FrameSampler {
     private val runner = ProcessRunner(timeout, maxAddressSpace)
 
     // ponytail: a process per sampled page, 120 at most, each decoding the pages before it; one pass if that matters.

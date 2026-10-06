@@ -18,15 +18,15 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
 import java.io.IOException
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
 import kotlin.random.Random
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class FingerprintMediaTest : BaseTest() {
     private val mediaRepository = mockk<MediaRepositoryInterface>(relaxed = true)
@@ -55,7 +55,7 @@ class FingerprintMediaTest : BaseTest() {
     private fun uniform() = LumaFrame(SIDE, SIDE, FloatArray(SIDE * SIDE) { 128f })
 
     private fun media(sampledFrames: List<LumaFrame>): Media {
-        val media = Media.StillImage(randomUUID(), randomUUID(), "image/png", 1, 1, 1,"", "", Instant.EPOCH)
+        val media = Media.StillImage(randomUUID(), randomUUID(), "image/png", 1, 1, 1, "", "", Instant.EPOCH)
         sampled[media.id] = sampledFrames
         return media
     }
@@ -177,11 +177,12 @@ class FingerprintMediaTest : BaseTest() {
     @ValueSource(strings = ["image", "video", "frame"])
     fun `Given a decoder that refuses the media after a frame, Then it is stamped with no frames`(decoder: String) {
         // Given
-        refusal = when (decoder) {
-            "image" -> UndecodableImageException("vips refused it")
-            "video" -> UndecodableVideoException("ffmpeg refused it")
-            else -> IOException("Truncated raster")
-        }
+        refusal =
+            when (decoder) {
+                "image" -> UndecodableImageException("vips refused it")
+                "video" -> UndecodableVideoException("ffmpeg refused it")
+                else -> IOException("Truncated raster")
+            }
         val media = media(listOf(noise(1)))
 
         // When
@@ -202,8 +203,9 @@ class FingerprintMediaTest : BaseTest() {
             stored += hashes.map { MediaFrame(mediaId, it.words) }
         }
 
-        override fun findNear(hash: PdqHash) =
-            stored.filter { hash.distanceTo(PdqHash(it.words, 0)) <= PdqHasher.MATCH_DISTANCE }
+        override fun findNear(hash: PdqHash) = stored.filter {
+            hash.distanceTo(PdqHash(it.words, 0)) <= PdqHasher.MATCH_DISTANCE
+        }
 
         override fun findByMediaIds(mediaIds: Collection<UUID>) = stored.filter { it.mediaId in mediaIds }
 
@@ -217,7 +219,8 @@ class FingerprintMediaTest : BaseTest() {
     private class InMemoryDuplicates : PinDuplicateRepositoryInterface {
         val pairs = mutableSetOf<Set<UUID>>()
         val rejected = mutableSetOf<Set<UUID>>()
-        val pending get() = pairs - rejected
+        val pending
+            get() = pairs - rejected
 
         override fun deletePending(pinId: UUID) {
             pairs.removeAll { pinId in it && it !in rejected }

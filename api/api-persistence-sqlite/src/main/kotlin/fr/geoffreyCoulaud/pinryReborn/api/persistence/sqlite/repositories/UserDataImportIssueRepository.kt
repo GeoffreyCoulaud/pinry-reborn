@@ -17,9 +17,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 @ApplicationScoped
-class UserDataImportIssueRepository(
-    private val persistor: Persistor,
-) : UserDataImportIssueRepositoryInterface {
+class UserDataImportIssueRepository(private val persistor: Persistor) : UserDataImportIssueRepositoryInterface {
     private val sqlRepository = ModelRepository<UserDataImportIssueModel>(persistor = persistor)
 
     // A reference, not a lookup: the walk writes one row per anomaly and never reads the import back.

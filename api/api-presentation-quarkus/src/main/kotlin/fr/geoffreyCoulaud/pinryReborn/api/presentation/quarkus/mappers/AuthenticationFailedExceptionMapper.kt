@@ -13,17 +13,18 @@ import jakarta.ws.rs.ext.Provider
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 class AuthenticationFailedExceptionMapper : ExceptionMapper<AuthenticationFailedException> {
-    @Context
-    lateinit var uriInfo: UriInfo
+    @Context lateinit var uriInfo: UriInfo
 
     override fun toResponse(exception: AuthenticationFailedException): Response {
         val (code, detail) = describe(exception)
         return ProblemResponses.problemResponse(
-            status = Response.Status.UNAUTHORIZED,
-            detail = detail,
-            code = code,
-            uriInfo = uriInfo,
-        ).header("WWW-Authenticate", ProblemResponses.WWW_AUTHENTICATE_BEARER).build()
+                status = Response.Status.UNAUTHORIZED,
+                detail = detail,
+                code = code,
+                uriInfo = uriInfo,
+            )
+            .header("WWW-Authenticate", ProblemResponses.WWW_AUTHENTICATE_BEARER)
+            .build()
     }
 
     // Cause-inspection lives here (not in a mapped subtype): a subtype of the final

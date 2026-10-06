@@ -20,18 +20,16 @@ import kotlin.streams.asSequence
 /**
  * [MediaStore] adapter backed by the local filesystem.
  *
- * Bytes are staged under `<dataDir>/tmp/`, measured (size + SHA-256) in a single streaming
- * pass, then promoted (moved) to their final `<dataDir>/<storageKey>` location.
+ * Bytes are staged under `<dataDir>/tmp/`, measured (size + SHA-256) in a single streaming pass, then promoted (moved)
+ * to their final `<dataDir>/<storageKey>` location.
  *
- * [dataDir] is a plain string (not injected) so this class stays framework-light and
- * unit-testable with a temp directory; CDI wiring of the actual data directory is done by
- * a producer elsewhere.
+ * [dataDir] is a plain string (not injected) so this class stays framework-light and unit-testable with a temp
+ * directory; CDI wiring of the actual data directory is done by a producer elsewhere.
  *
- * Deliberately NOT `@ApplicationScoped`: ARC cannot satisfy a plain `String` constructor
- * parameter on its own, so this class is instantiated exclusively by
- * `MediaAdapterProducers` (`api-presentation-quarkus`), which resolves `dataDir` from
- * `MediaConfig`. Adding `@ApplicationScoped` back here alongside that `@Produces` method
- * would create an ambiguous `MediaStore` bean resolution.
+ * Deliberately NOT `@ApplicationScoped`: ARC cannot satisfy a plain `String` constructor parameter on its own, so this
+ * class is instantiated exclusively by `MediaAdapterProducers` (`api-presentation-quarkus`), which resolves `dataDir`
+ * from `MediaConfig`. Adding `@ApplicationScoped` back here alongside that `@Produces` method would create an ambiguous
+ * `MediaStore` bean resolution.
  */
 // One override per MediaStore method plus its helpers: splitting would fragment one cohesive adapter.
 @Suppress("TooManyFunctions")
@@ -42,8 +40,12 @@ class FilesystemMediaStore(private val dataDir: String) : MediaStore {
         private val HEX = HexFormat.of()
     }
 
-    private val root: Path get() = Path.of(dataDir)
-    private val tmpDir: Path get() = root.resolve(StorageLayout.STAGING_DIRECTORY)
+    private val root: Path
+        get() = Path.of(dataDir)
+
+    private val tmpDir: Path
+        get() = root.resolve(StorageLayout.STAGING_DIRECTORY)
+
     private val paths = DataDirPaths(dataDir)
 
     // Cleanup-on-failure genuinely has to catch everything: the MediaTooLargeException guard,
@@ -78,8 +80,7 @@ class FilesystemMediaStore(private val dataDir: String) : MediaStore {
         paths.atomicMove(Path.of(staged.path), dest)
     }
 
-    override fun openStream(storageKey: String): InputStream =
-        Files.newInputStream(paths.resolveWithinRoot(storageKey))
+    override fun openStream(storageKey: String): InputStream = Files.newInputStream(paths.resolveWithinRoot(storageKey))
 
     // ponytail: a hard link, so tmp/ and originals/ share one filesystem; a copy fallback if a volume ever splits them.
     override fun stageStored(media: Media): StagedFile {
@@ -101,9 +102,10 @@ class FilesystemMediaStore(private val dataDir: String) : MediaStore {
 
     override fun discardOrphanedStagedFiles(olderThan: Instant): Int {
         if (!Files.isDirectory(tmpDir)) return 0
-        val stale = Files.list(tmpDir).use { stream ->
-            stream.filter { it.modifiedBefore(olderThan) && it.newestEntryBefore(olderThan) }.toList()
-        }
+        val stale =
+            Files.list(tmpDir).use { stream ->
+                stream.filter { it.modifiedBefore(olderThan) && it.newestEntryBefore(olderThan) }.toList()
+            }
         return stale.count { it.deleteTree() }
     }
 
@@ -126,9 +128,10 @@ class FilesystemMediaStore(private val dataDir: String) : MediaStore {
         }
         Files.walk(originals).use { stream ->
             block(
-                stream.asSequence()
+                stream
+                    .asSequence()
                     .filter { Files.isRegularFile(it) && it.modifiedBefore(olderThan) }
-                    .map { root.relativize(it).joinToString("/") },
+                    .map { root.relativize(it).joinToString("/") }
             )
         }
     }
@@ -142,10 +145,9 @@ class FilesystemMediaStore(private val dataDir: String) : MediaStore {
         }
 
     /**
-     * Streams [source] into [tempPath] while updating a SHA-256 digest and counting bytes,
-     * aborting with [MediaTooLargeException] as soon as the running count exceeds [maxBytes].
-     * Fsyncs the temp file before returning so a promote never observes a partially-flushed
-     * file.
+     * Streams [source] into [tempPath] while updating a SHA-256 digest and counting bytes, aborting with
+     * [MediaTooLargeException] as soon as the running count exceeds [maxBytes]. Fsyncs the temp file before returning
+     * so a promote never observes a partially-flushed file.
      */
     private fun writeAndDigest(source: InputStream, tempPath: Path, maxBytes: Long): Pair<Long, ByteArray> =
         FileOutputStream(tempPath.toFile()).use { out ->
@@ -156,8 +158,8 @@ class FilesystemMediaStore(private val dataDir: String) : MediaStore {
         }
 
     /**
-     * Reads [source] into [sink], hashing and counting, aborting with [MediaTooLargeException] as soon
-     * as the count passes [maxBytes]: tested per block, so an oversize stream is never read whole.
+     * Reads [source] into [sink], hashing and counting, aborting with [MediaTooLargeException] as soon as the count
+     * passes [maxBytes]: tested per block, so an oversize stream is never read whole.
      */
     private fun readAndDigest(source: InputStream, sink: OutputStream, maxBytes: Long): Pair<Long, ByteArray> {
         val digest = MessageDigest.getInstance("SHA-256")

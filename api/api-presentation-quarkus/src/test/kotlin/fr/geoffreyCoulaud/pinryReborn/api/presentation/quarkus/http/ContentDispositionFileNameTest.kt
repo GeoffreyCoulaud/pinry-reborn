@@ -79,8 +79,7 @@ class ContentDispositionFileNameTest {
     }
 
     private fun extractAscii(header: String): String {
-        val match = Regex("filename=\"([^\"]*)\"").find(header)
-            ?: error("no ASCII filename segment found in: $header")
+        val match = Regex("filename=\"([^\"]*)\"").find(header) ?: error("no ASCII filename segment found in: $header")
         return match.groupValues[1]
     }
 }

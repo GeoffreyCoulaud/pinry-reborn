@@ -4,8 +4,8 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * One entry of the task centre. `lastError` stays out: it is the worker's own transient note, and
- * `reasonCode` with `message` is what a client acts on, exactly as in [PinMediaStateDto].
+ * One entry of the task centre. `lastError` stays out: it is the worker's own transient note, and `reasonCode` with
+ * `message` is what a client acts on, exactly as in [PinMediaStateDto].
  */
 data class MediaDownloadOutputDto(
     val pinId: UUID,

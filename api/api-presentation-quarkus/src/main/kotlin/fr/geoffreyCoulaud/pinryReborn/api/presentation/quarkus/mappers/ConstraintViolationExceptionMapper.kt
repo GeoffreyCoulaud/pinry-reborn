@@ -9,14 +9,17 @@ import jakarta.ws.rs.ext.Provider
 
 @Provider
 class ConstraintViolationExceptionMapper : ExceptionMapper<ConstraintViolationException> {
-    @Context
-    lateinit var uriInfo: UriInfo
+    @Context lateinit var uriInfo: UriInfo
 
     override fun toResponse(exception: ConstraintViolationException): Response {
-        val detail = exception.constraintViolations
-            .joinToString(separator = "; ") { "${it.propertyPath}: ${it.message}" }
-        return ProblemResponses
-            .problemResponse(Response.Status.BAD_REQUEST, detail, ProblemCode.VALIDATION_ERROR, uriInfo)
+        val detail =
+            exception.constraintViolations.joinToString(separator = "; ") { "${it.propertyPath}: ${it.message}" }
+        return ProblemResponses.problemResponse(
+                Response.Status.BAD_REQUEST,
+                detail,
+                ProblemCode.VALIDATION_ERROR,
+                uriInfo,
+            )
             .build()
     }
 }

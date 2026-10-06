@@ -8,9 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 @ApplicationScoped
-class PinDownloadTaskHandler(
-    private val downloadPinMedia: DownloadPinMedia,
-) : TaskHandler {
+class PinDownloadTaskHandler(private val downloadPinMedia: DownloadPinMedia) : TaskHandler {
     override val kind = PinDownloadTask.KIND
 
     override fun handle(payload: String, context: TaskContext) {

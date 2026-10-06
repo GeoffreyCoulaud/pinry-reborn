@@ -4,8 +4,8 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * The import row as the client reads it (spec §7). The two pin counters ship raw, with no progress
- * ratio: a server-side one would add two degenerate branches and publish nothing the client cannot compute.
+ * The import row as the client reads it (spec §7). The two pin counters ship raw, with no progress ratio: a server-side
+ * one would add two degenerate branches and publish nothing the client cannot compute.
  */
 data class UserDataImportOutputDto(
     val id: UUID,

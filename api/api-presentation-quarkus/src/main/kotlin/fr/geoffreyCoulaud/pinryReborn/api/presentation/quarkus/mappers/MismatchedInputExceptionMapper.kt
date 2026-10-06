@@ -8,13 +8,12 @@ import jakarta.ws.rs.ext.ExceptionMapper
 import jakarta.ws.rs.ext.Provider
 
 /**
- * The one Jackson read failure the reader rethrows as itself. Quarkus's own mapper for it is disabled
- * in `application.properties`: resolution takes the exact class before any parent (docs/adr/0021).
+ * The one Jackson read failure the reader rethrows as itself. Quarkus's own mapper for it is disabled in
+ * `application.properties`: resolution takes the exact class before any parent (docs/adr/0021).
  */
 @Provider
 class MismatchedInputExceptionMapper : ExceptionMapper<MismatchedInputException> {
-    @Context
-    lateinit var uriInfo: UriInfo
+    @Context lateinit var uriInfo: UriInfo
 
     override fun toResponse(exception: MismatchedInputException): Response =
         ProblemResponses.malformedBody(exception, uriInfo).build()

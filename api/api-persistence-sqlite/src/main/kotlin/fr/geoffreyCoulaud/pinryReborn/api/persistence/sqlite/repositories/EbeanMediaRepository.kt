@@ -27,8 +27,7 @@ class EbeanMediaRepository(
         return model.toDomain()
     }
 
-    override fun findByPinId(pinId: UUID): Media? =
-        QMediaModel().pinId.equalTo(pinId).findOne()?.toDomain()
+    override fun findByPinId(pinId: UUID): Media? = QMediaModel().pinId.equalTo(pinId).findOne()?.toDomain()
 
     override fun findByPinIds(pinIds: Collection<UUID>): Map<UUID, Media> {
         if (pinIds.isEmpty()) return emptyMap()
@@ -49,10 +48,16 @@ class EbeanMediaRepository(
         QMediaModel()
             .withPinInAnyState()
             .or()
-            .fingerprintVersion.isNull
-            .fingerprintVersion.lessThan(version)
+            .fingerprintVersion
+            .isNull
+            .fingerprintVersion
+            .lessThan(version)
             .endOr()
-            .orderBy().createdAt.desc().id.desc()
+            .orderBy()
+            .createdAt
+            .desc()
+            .id
+            .desc()
             .setMaxRows(1)
             .findOne()
             ?.toDomain()
@@ -65,11 +70,18 @@ class EbeanMediaRepository(
         val author = PinQueries.any().id.equalTo(media.pinId).select("author.id")
         return QMediaModel()
             .withPinInAnyState()
-            .id.isIn(candidates)
-            .pinId.notEqualTo(media.pinId)
-            .animated.equalTo(media.animated)
-            .fingerprintVersion.equalTo(version)
-            .pin.author.id.isIn(author.query())
+            .id
+            .isIn(candidates)
+            .pinId
+            .notEqualTo(media.pinId)
+            .animated
+            .equalTo(media.animated)
+            .fingerprintVersion
+            .equalTo(version)
+            .pin
+            .author
+            .id
+            .isIn(author.query())
             .findList()
             .map { it.toDomain() }
     }

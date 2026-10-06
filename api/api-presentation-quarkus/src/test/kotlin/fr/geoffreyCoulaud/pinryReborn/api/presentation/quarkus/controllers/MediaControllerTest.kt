@@ -23,13 +23,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.ws.rs.core.StreamingOutput
-import org.jboss.resteasy.reactive.multipart.FileUpload
-import org.junit.jupiter.api.Assertions.assertArrayEquals
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
@@ -37,6 +30,13 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.jboss.resteasy.reactive.multipart.FileUpload
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 class MediaControllerTest {
     private val setPinMedia = mockk<SetPinMedia>()
@@ -48,32 +48,33 @@ class MediaControllerTest {
     private val renditionCache = mockk<RenditionCache>()
     private val renditionsConfig = mockk<RenditionsConfig>()
     private val securityIdentity = mockk<SecurityIdentity>()
-    private val controller = MediaController(
-        setPinMedia = setPinMedia,
-        getPinMediaRendition = getPinMediaRendition,
-        deletePinMedia = deletePinMedia,
-        requestPinMediaDownload = requestPinMediaDownload,
-        resolvePinMediaState = resolvePinMediaState,
-        mediaStore = mediaStore,
-        renditionCache = renditionCache,
-        renditionsConfig = renditionsConfig,
-        securityIdentity = securityIdentity,
-    )
+    private val controller =
+        MediaController(
+            setPinMedia = setPinMedia,
+            getPinMediaRendition = getPinMediaRendition,
+            deletePinMedia = deletePinMedia,
+            requestPinMediaDownload = requestPinMediaDownload,
+            resolvePinMediaState = resolvePinMediaState,
+            mediaStore = mediaStore,
+            renditionCache = renditionCache,
+            renditionsConfig = renditionsConfig,
+            securityIdentity = securityIdentity,
+        )
 
-    @TempDir
-    lateinit var tempDir: Path
+    @TempDir lateinit var tempDir: Path
 
-    private fun aMedia(pinId: UUID) = Media.StillImage(
-        id = randomUUID(),
-        pinId = pinId,
-        mimeType = "image/png",
-        width = 8,
-        height = 6,
-        byteSize = 4,
-        contentHash = createRandomString(),
-        storageKey = "originals/x/$pinId/y.png",
-        createdAt = Instant.EPOCH,
-    )
+    private fun aMedia(pinId: UUID) =
+        Media.StillImage(
+            id = randomUUID(),
+            pinId = pinId,
+            mimeType = "image/png",
+            width = 8,
+            height = 6,
+            byteSize = 4,
+            contentHash = createRandomString(),
+            storageKey = "originals/x/$pinId/y.png",
+            createdAt = Instant.EPOCH,
+        )
 
     private fun aUser() = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
 
@@ -132,13 +133,14 @@ class MediaControllerTest {
         every { getPinMediaRendition.get(pinId, user, null, null) } returns ServedMedia.Original(media)
 
         // When
-        val response = controller.getMedia(
-            pinId,
-            size = null,
-            animated = null,
-            ifNoneMatch = "\"${media.contentHash}\"",
-            rangeHeader = null,
-        )
+        val response =
+            controller.getMedia(
+                pinId,
+                size = null,
+                animated = null,
+                ifNoneMatch = "\"${media.contentHash}\"",
+                rangeHeader = null,
+            )
 
         // Then
         assertEquals(304, response.status)
@@ -288,10 +290,11 @@ class MediaControllerTest {
         val user = aUser()
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { renditionsConfig.small() } returns 240
-        every { getPinMediaRendition.get(pinId, user, 240, true) } returnsMany listOf(
-            ServedMedia.Rendition(mediaId, "v2-240-s.webp"),
-            ServedMedia.Rendition(mediaId, "v2-240-a.webp"),
-        )
+        every { getPinMediaRendition.get(pinId, user, 240, true) } returnsMany
+            listOf(
+                ServedMedia.Rendition(mediaId, "v2-240-s.webp"),
+                ServedMedia.Rendition(mediaId, "v2-240-a.webp"),
+            )
 
         // When
         val degraded = controller.getMedia(pinId, "small", animated = true, ifNoneMatch = null, rangeHeader = null)
@@ -314,13 +317,14 @@ class MediaControllerTest {
             ServedMedia.Rendition(mediaId, "v2-240-a.webp")
 
         // When
-        val response = controller.getMedia(
-            pinId,
-            size = "small",
-            animated = null,
-            ifNoneMatch = "\"$mediaId-v2-240-a.webp\"",
-            rangeHeader = null,
-        )
+        val response =
+            controller.getMedia(
+                pinId,
+                size = "small",
+                animated = null,
+                ifNoneMatch = "\"$mediaId-v2-240-a.webp\"",
+                rangeHeader = null,
+            )
 
         // Then
         assertEquals(304, response.status)

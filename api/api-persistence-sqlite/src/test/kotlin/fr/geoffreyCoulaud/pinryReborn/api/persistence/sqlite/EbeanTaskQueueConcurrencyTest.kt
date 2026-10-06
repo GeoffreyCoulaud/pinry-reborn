@@ -4,24 +4,23 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.ClaimedTask
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.ExponentialBackoffWithJitter
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.NewTask
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanTaskQueue
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 /**
  * Concurrency test for [EbeanTaskQueue.claimNext].
  *
- * The production and test datasources are both pinned to a SINGLE connection (option A), so claim
- * serialization comes from the connection pool itself rather than from any in-memory locking. This
- * test drives several threads at [EbeanTaskQueue.claimNext] concurrently to prove that guarantee:
- * every enqueued task is claimed exactly once, none lost, none double-claimed, and with ZERO
- * exceptions (in particular no [io.ebean.OptimisticLockException]): the atomic select+update
- * transaction in [EbeanTaskQueue.claimNext] serializes the claim on the single connection instead
- * of relying on optimistic-lock retries to paper over a lost race.
+ * The production and test datasources are both pinned to a SINGLE connection (option A), so claim serialization comes
+ * from the connection pool itself rather than from any in-memory locking. This test drives several threads at
+ * [EbeanTaskQueue.claimNext] concurrently to prove that guarantee: every enqueued task is claimed exactly once, none
+ * lost, none double-claimed, and with ZERO exceptions (in particular no [io.ebean.OptimisticLockException]): the atomic
+ * select+update transaction in [EbeanTaskQueue.claimNext] serializes the claim on the single connection instead of
+ * relying on optimistic-lock retries to paper over a lost race.
  */
 class EbeanTaskQueueConcurrencyTest : RepositoryTest() {
     // No case here reaps a lease, so the policy is only what the constructor asks for.
@@ -48,9 +47,10 @@ class EbeanTaskQueueConcurrencyTest : RepositoryTest() {
                         val task = queue.claimNext(now, Duration.ofMinutes(1)) ?: break
                         claimed.add(task)
                     }
-                }.apply {
-                    setUncaughtExceptionHandler { _, throwable -> failures.add(throwable) }
                 }
+                    .apply {
+                        setUncaughtExceptionHandler { _, throwable -> failures.add(throwable) }
+                    }
             }
 
         // When

@@ -7,11 +7,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class ReapTombstonedAccountsTest : BaseTest() {
     private val userRepository = mockk<UserRepositoryInterface>()
@@ -19,12 +19,13 @@ class ReapTombstonedAccountsTest : BaseTest() {
     private val clock = mockk<Clock>()
     private val tombstoneGrace = Duration.ofHours(24)
 
-    private val reap = ReapTombstonedAccounts(
-        userRepository = userRepository,
-        accountDeletionCleaner = accountDeletionCleaner,
-        clock = clock,
-        tombstoneGrace = tombstoneGrace,
-    )
+    private val reap =
+        ReapTombstonedAccounts(
+            userRepository = userRepository,
+            accountDeletionCleaner = accountDeletionCleaner,
+            clock = clock,
+            tombstoneGrace = tombstoneGrace,
+        )
 
     private val now = Instant.parse("2026-07-27T00:00:00Z")
     private val cutoff = now.minus(tombstoneGrace)
@@ -68,10 +69,11 @@ class ReapTombstonedAccountsTest : BaseTest() {
         assertEquals(3, count)
     }
 
-    private fun userTombstone() = User(
-        id = randomUUID(),
-        name = "tombstone",
-        softDeletedAt = cutoff,
-        createdAt = now,
-    )
+    private fun userTombstone() =
+        User(
+            id = randomUUID(),
+            name = "tombstone",
+            softDeletedAt = cutoff,
+            createdAt = now,
+        )
 }

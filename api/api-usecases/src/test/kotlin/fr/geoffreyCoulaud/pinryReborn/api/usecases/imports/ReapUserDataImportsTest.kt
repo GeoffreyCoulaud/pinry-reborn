@@ -13,15 +13,15 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
 import java.io.IOException
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
 
 class ReapUserDataImportsTest : BaseTest() {
     private val repository = mockk<UserDataImportRepositoryInterface>()
@@ -32,7 +32,11 @@ class ReapUserDataImportsTest : BaseTest() {
 
     private val sweep =
         ReapUserDataImports(
-            repository, archiveStore, taskQueue, clock, transactions,
+            repository,
+            archiveStore,
+            taskQueue,
+            clock,
+            transactions,
             uploadGrace = UPLOAD_GRACE,
             stagedFileMaxAge = STAGED_FILE_MAX_AGE,
             sweepBatchSize = SWEEP_BATCH_SIZE,
@@ -53,38 +57,57 @@ class ReapUserDataImportsTest : BaseTest() {
         state: UserDataImportState,
         storageKey: String? = null,
         taskId: UUID? = null,
-    ) = UserDataImport(
-        id = randomUUID(),
-        userId = userId,
-        state = state,
-        requestedAt = now.minus(Duration.ofDays(2)),
-        lastActivityAt = now.minus(Duration.ofDays(2)),
-        storageKey = storageKey,
-        taskId = taskId,
-    ).also { rows[it.id] = it }
+    ) =
+        UserDataImport(
+                id = randomUUID(),
+                userId = userId,
+                state = state,
+                requestedAt = now.minus(Duration.ofDays(2)),
+                lastActivityAt = now.minus(Duration.ofDays(2)),
+                storageKey = storageKey,
+                taskId = taskId,
+            )
+            .also { rows[it.id] = it }
 
     private fun aTask(state: TaskState) =
         Task(
-            id = randomUUID(), kind = "account.import", payload = "", state = state,
-            priority = -1, availableAt = now, attempts = 1, maxAttempts = 5, leaseId = null,
-            leaseExpiresAt = null, cancelRequested = false, dedupKey = null, lastError = null,
+            id = randomUUID(),
+            kind = "account.import",
+            payload = "",
+            state = state,
+            priority = -1,
+            availableAt = now,
+            attempts = 1,
+            maxAttempts = 5,
+            leaseId = null,
+            leaseExpiresAt = null,
+            cancelRequested = false,
+            dedupKey = null,
+            lastError = null,
         )
 
     /** What every run reads, whether or not it finds anything: the three selections and the tmp sweep. */
     private fun stubSweep() {
         every { clock.now() } returns now
-        every { repository.findAbandonableBefore(any(), any(), any()) } answers {
-            abandonCutoff = firstArg()
-            pageAfter(secondArg(), thirdArg()) { row -> row.state == UserDataImportState.AWAITING_ARCHIVE }
-        }
-        every { repository.findRunning(any(), any()) } answers {
-            pageAfter(firstArg(), secondArg()) { row -> row.state == UserDataImportState.RUNNING }
-        }
-        every { repository.findReclaimableTerminal(any(), any()) } answers {
-            reclaimPages++
-            pageAfter(firstArg(), secondArg()) { row -> row.state.isTerminal && row.storageKey != null }
-        }
-        every { archiveStore.discardOrphanedStagedFiles(any()) } answers { orphanCutoff = firstArg(); 0 }
+        every { repository.findAbandonableBefore(any(), any(), any()) } answers
+            {
+                abandonCutoff = firstArg()
+                pageAfter(secondArg(), thirdArg()) { row -> row.state == UserDataImportState.AWAITING_ARCHIVE }
+            }
+        every { repository.findRunning(any(), any()) } answers
+            {
+                pageAfter(firstArg(), secondArg()) { row -> row.state == UserDataImportState.RUNNING }
+            }
+        every { repository.findReclaimableTerminal(any(), any()) } answers
+            {
+                reclaimPages++
+                pageAfter(firstArg(), secondArg()) { row -> row.state.isTerminal && row.storageKey != null }
+            }
+        every { archiveStore.discardOrphanedStagedFiles(any()) } answers
+            {
+                orphanCutoff = firstArg()
+                0
+            }
     }
 
     /** One page by id, as the repository answers it: the rows past [afterId], the first [limit] of them. */
@@ -94,9 +117,10 @@ class ReapUserDataImportsTest : BaseTest() {
     /** Only the runs that act on a row reach these, and `BaseTest` fails a stub nothing reached. */
     private fun stubRowWrites() {
         every { repository.findById(any()) } answers { rows[firstArg<UUID>()] }
-        every { repository.save(any()) } answers {
-            firstArg<UserDataImport>().also { row -> rows[row.id] = row }
-        }
+        every { repository.save(any()) } answers
+            {
+                firstArg<UserDataImport>().also { row -> rows[row.id] = row }
+            }
     }
 
     private fun stubUploadDiscard() {
@@ -133,9 +157,10 @@ class ReapUserDataImportsTest : BaseTest() {
         // unlinking the upload then would pull a promoted archive's source out from under it
         stubSweep()
         val racing = anImport(UserDataImportState.AWAITING_ARCHIVE)
-        every { repository.findById(racing.id) } answers {
-            stored(racing.id).copy(state = UserDataImportState.PENDING)
-        }
+        every { repository.findById(racing.id) } answers
+            {
+                stored(racing.id).copy(state = UserDataImportState.PENDING)
+            }
 
         // When
         val reaped = sweep.reap()
@@ -174,8 +199,7 @@ class ReapUserDataImportsTest : BaseTest() {
         stubSweep()
         stubRowWrites()
         stubArchiveDeletion()
-        val cancelled =
-            anImport(UserDataImportState.CANCELLED, storageKey = "imports/reclaimable.zip")
+        val cancelled = anImport(UserDataImportState.CANCELLED, storageKey = "imports/reclaimable.zip")
 
         // When
         val first = sweep.reap()
@@ -208,15 +232,17 @@ class ReapUserDataImportsTest : BaseTest() {
         // Given: the export sweep's shape, since a refused delete holds its row in this selection too
         stubSweep()
         stubRowWrites()
-        val imports = List(SWEEP_BATCH_SIZE + 1) {
-            anImport(UserDataImportState.CANCELLED, storageKey = "imports/$it.zip")
-        }
+        val imports =
+            List(SWEEP_BATCH_SIZE + 1) {
+                anImport(UserDataImportState.CANCELLED, storageKey = "imports/$it.zip")
+            }
         val refused = imports.minBy { it.id }
-        every { archiveStore.delete(any()) } answers {
-            val key = firstArg<String>()
-            if (key == ImportArchiveKey.forImport(refused.id)) throw IOException("permission denied")
-            deletedArchives += key
-        }
+        every { archiveStore.delete(any()) } answers
+            {
+                val key = firstArg<String>()
+                if (key == ImportArchiveKey.forImport(refused.id)) throw IOException("permission denied")
+                deletedArchives += key
+            }
 
         // When
         val reaped = sweep.reap()
@@ -309,9 +335,10 @@ class ReapUserDataImportsTest : BaseTest() {
         val task = aTask(TaskState.DEAD)
         val running = anImport(UserDataImportState.RUNNING, taskId = task.id)
         every { taskQueue.findById(task.id) } returns task
-        every { repository.findById(running.id) } answers {
-            stored(running.id).copy(state = UserDataImportState.COMPLETED)
-        }
+        every { repository.findById(running.id) } answers
+            {
+                stored(running.id).copy(state = UserDataImportState.COMPLETED)
+            }
 
         // When
         val reaped = sweep.reap()

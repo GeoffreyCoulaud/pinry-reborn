@@ -9,11 +9,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserPa
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 class UserPasswordHashRepositoryTest : RepositoryTest() {
     private val users = UserRepository(persistor = persistor)

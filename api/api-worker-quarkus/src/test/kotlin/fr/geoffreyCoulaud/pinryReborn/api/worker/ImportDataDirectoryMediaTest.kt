@@ -1,14 +1,14 @@
 package fr.geoffreyCoulaud.pinryReborn.api.worker
 
 import io.smallrye.config.WithDefault
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.io.File
 
 /**
- * [ImportDataDirectoryCheck] creates and probes `imports.data_dir` at boot, so a default the image
- * cannot write refuses every boot. Nothing here boots a container: the two are pinned to each other.
+ * [ImportDataDirectoryCheck] creates and probes `imports.data_dir` at boot, so a default the image cannot write refuses
+ * every boot. Nothing here boots a container: the two are pinned to each other.
  */
 class ImportDataDirectoryMediaTest {
     private val dockerfile = File("../Dockerfile").readText()
@@ -18,11 +18,7 @@ class ImportDataDirectoryMediaTest {
 
     /** The directories the image creates for that uid. `COPY --chown=` carries no space and is not one. */
     private val ownedDirectories =
-        CHOWN_CALL
-            .findAll(dockerfile)
-            .filter { it.groupValues[1] in runtimeUsers }
-            .map { it.groupValues[2] }
-            .toList()
+        CHOWN_CALL.findAll(dockerfile).filter { it.groupValues[1] in runtimeUsers }.map { it.groupValues[2] }.toList()
 
     @Test
     fun `Given the Dockerfile, Then one instruction names the user the runtime runs as`() {

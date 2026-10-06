@@ -16,8 +16,8 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * The import lifecycle sweep (spec §6): abandons uploads nobody fed, fails walks whose task is gone,
- * reclaims the bytes of terminal rows, and drops staged files past their age. Built by `ImportProducers`.
+ * The import lifecycle sweep (spec §6): abandons uploads nobody fed, fails walks whose task is gone, reclaims the bytes
+ * of terminal rows, and drops staged files past their age. Built by `ImportProducers`.
  */
 @Suppress("LongParameterList") // Four ports, the clock, the two Durations and the bound ARC cannot resolve.
 class ReapUserDataImports(
@@ -31,8 +31,8 @@ class ReapUserDataImports(
     private val sweepBatchSize: Int,
 ) {
     /**
-     * The rows acted on, counting an abandonment, a failure and a reclamation alike. The transitions run
-     * first: `failInterruptedRuns` is what makes a key-holding row terminal, so reclaimable in this run.
+     * The rows acted on, counting an abandonment, a failure and a reclamation alike. The transitions run first:
+     * `failInterruptedRuns` is what makes a key-holding row terminal, so reclaimable in this run.
      */
     fun reap(): Int {
         val now = clock.now()
@@ -43,14 +43,15 @@ class ReapUserDataImports(
 
     private fun abandonStaleUploads(now: Instant): Int {
         val idleSince = now.minus(uploadGrace)
-        return SweepPages
-            .of(UserDataImport::id) { afterId -> repository.findAbandonableBefore(idleSince, afterId, sweepBatchSize) }
+        return SweepPages.of(UserDataImport::id) { afterId ->
+                repository.findAbandonableBefore(idleSince, afterId, sweepBatchSize)
+            }
             .count { swept(it.id) { abandon(it.id) } }
     }
 
     /**
-     * The state first, the file after: a fence refused here means the upload was completed while this
-     * run read it, and unlinking then would take the source of an archive being promoted.
+     * The state first, the file after: a fence refused here means the upload was completed while this run read it, and
+     * unlinking then would take the source of an archive being promoted.
      */
     private fun abandon(importId: UUID): Boolean {
         repository.saveFenced(transactionRunner, importId, { it.awaitsItsArchive() }) {
@@ -66,8 +67,8 @@ class ReapUserDataImports(
             .count { swept(it.id) { failInterrupted(it.id) } }
 
     /**
-     * Live is [TaskState.isLiveAttempt], shared with the export sweep so the set has one source.
-     * Absent means the terminal task sweep deleted it, never "not enqueued yet".
+     * Live is [TaskState.isLiveAttempt], shared with the export sweep so the set has one source. Absent means the
+     * terminal task sweep deleted it, never "not enqueued yet".
      */
     private fun UserDataImport.lostItsTask(): Boolean {
         val task = taskId?.let { taskQueue.findById(it) } ?: return true
@@ -84,8 +85,8 @@ class ReapUserDataImports(
             .count { swept(it.id) { reclaim(it.id) } }
 
     /**
-     * The bytes go before the row stops naming them: stamping over a failed delete would hide residue
-     * from the only sweep that can still name it. Derived key, so a dead completer's archive is named.
+     * The bytes go before the row stops naming them: stamping over a failed delete would hide residue from the only
+     * sweep that can still name it. Derived key, so a dead completer's archive is named.
      */
     private fun reclaim(importId: UUID): Boolean {
         archiveStore.delete(ImportArchiveKey.forImport(importId))
@@ -95,8 +96,8 @@ class ReapUserDataImports(
     }
 
     /**
-     * Item-level isolation, as `ReapUserDataExports` has: one row the store or the database
-     * refuses must not leave the rest of the hour's sweep undone, and either can throw anything.
+     * Item-level isolation, as `ReapUserDataExports` has: one row the store or the database refuses must not leave the
+     * rest of the hour's sweep undone, and either can throw anything.
      */
     @Suppress("TooGenericExceptionCaught")
     private fun swept(importId: UUID, sweep: () -> Boolean): Boolean =

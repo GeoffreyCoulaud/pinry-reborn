@@ -10,7 +10,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
@@ -23,6 +22,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutExce
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaCodecUnsupportedError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaInvalidError
@@ -41,16 +41,16 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 class SetPinMediaTest : BaseTest() {
     private val pins = mockk<PinRepositoryInterface>()
@@ -67,14 +67,30 @@ class SetPinMediaTest : BaseTest() {
         SetPinMedia(pins, mediaRepository, store, ingestion, clock, clearPinDownload, renditionCache, enqueueTask)
 
     private val owner = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
-    private fun pin(author: User = owner) = Pin(randomUUID(), author, "https://c", null, "d", emptyList(), emptyList(),
-        createdAt = TestTime.now, updatedAt = TestTime.now)
+
+    private fun pin(author: User = owner) =
+        Pin(
+            randomUUID(),
+            author,
+            "https://c",
+            null,
+            "d",
+            emptyList(),
+            emptyList(),
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
+
     private fun upload() = ByteArrayInputStream(byteArrayOf(1, 2, 3))
+
     private val staged = StagedFile("/tmp/s", 3, "hash")
 
-    init { every { renditionCache.evictMedia(any()) } returns Unit }
+    init {
+        every { renditionCache.evictMedia(any()) } returns Unit
+    }
 
-    @Test fun `Given a valid upload by the owner, Then it stores and persists a new image`() {
+    @Test
+    fun `Given a valid upload by the owner, Then it stores and persists a new image`() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
@@ -97,7 +113,8 @@ class SetPinMediaTest : BaseTest() {
         verify(exactly = 0) { renditionCache.evictMedia(any()) }
     }
 
-    @Test fun `Given a replacement, Then the old file is deleted after commit`() {
+    @Test
+    fun `Given a replacement, Then the old file is deleted after commit`() {
         val p = pin()
         val old =
             Media.StillImage(randomUUID(), p.id, "image/png", 1, 1, 1, "old", "originals/o/old.png", Instant.EPOCH)
@@ -114,7 +131,8 @@ class SetPinMediaTest : BaseTest() {
         verify { store.delete("originals/o/old.png") }
     }
 
-    @Test fun `Given a replaced image, Then the old image's rendition cache is evicted`() {
+    @Test
+    fun `Given a replaced image, Then the old image's rendition cache is evicted`() {
         val p = pin()
         val old =
             Media.StillImage(randomUUID(), p.id, "image/png", 1, 1, 1, "old", "originals/o/old.png", Instant.EPOCH)
@@ -130,7 +148,8 @@ class SetPinMediaTest : BaseTest() {
         verify { renditionCache.evictMedia(old.id) }
     }
 
-    @Test fun `Given the rendition cache eviction fails during replace, Then the upload still succeeds`() {
+    @Test
+    fun `Given the rendition cache eviction fails during replace, Then the upload still succeeds`() {
         val p = pin()
         val old =
             Media.StillImage(randomUUID(), p.id, "image/png", 1, 1, 1, "old", "originals/o/old.png", Instant.EPOCH)
@@ -148,25 +167,29 @@ class SetPinMediaTest : BaseTest() {
         verify { mediaRepository.save(result.media) }
     }
 
-    @Test fun `Given a missing pin, Then it throws MediaPinDoesNotExistError`() {
+    @Test
+    fun `Given a missing pin, Then it throws MediaPinDoesNotExistError`() {
         every { pins.findPinById(any()) } returns null
         assertThrows(MediaPinDoesNotExistError::class.java) { useCase.set(randomUUID(), owner, upload()) }
     }
 
-    @Test fun `Given a non-owner, Then it throws MediaPermissionError`() {
+    @Test
+    fun `Given a non-owner, Then it throws MediaPermissionError`() {
         val p = pin(author = User(randomUUID(), createRandomString(), createdAt = TestTime.now))
         every { pins.findPinById(p.id) } returns p
         assertThrows(MediaPermissionError::class.java) { useCase.set(p.id, owner, upload()) }
     }
 
-    @Test fun `Given an oversize upload, Then it throws MediaTooLargeError`() {
+    @Test
+    fun `Given an oversize upload, Then it throws MediaTooLargeError`() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } throws MediaTooLargeException("too big")
         assertThrows(MediaTooLargeError::class.java) { useCase.set(p.id, owner, upload()) }
     }
 
-    @Test fun `Given an image past its byte bound once probed, Then it throws MediaTooLargeError`() {
+    @Test
+    fun `Given an image past its byte bound once probed, Then it throws MediaTooLargeError`() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns StagedFile("/tmp/s", 31, "hash")
@@ -175,7 +198,8 @@ class SetPinMediaTest : BaseTest() {
         assertThrows(MediaTooLargeError::class.java) { useCase.set(p.id, owner, upload()) }
     }
 
-    @Test fun `Given a format libvips reads and the server refuses, Then it throws MediaCodecUnsupportedError`() {
+    @Test
+    fun `Given a format libvips reads and the server refuses, Then it throws MediaCodecUnsupportedError`() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
@@ -184,7 +208,8 @@ class SetPinMediaTest : BaseTest() {
         assertThrows(MediaCodecUnsupportedError::class.java) { useCase.set(p.id, owner, upload()) }
     }
 
-    @Test fun `Given an image format the server refuses, Then the error's message names no libvips loader`() {
+    @Test
+    fun `Given an image format the server refuses, Then the error's message names no libvips loader`() {
         // Given
         val p = pin()
         every { pins.findPinById(p.id) } returns p
@@ -199,23 +224,41 @@ class SetPinMediaTest : BaseTest() {
         assertEquals("The image format is not accepted", error.message)
     }
 
-    @Test fun `Given an undecodable image and a video ffmpeg cannot repackage, Then both errors carry one message`() {
+    @Test
+    fun `Given an undecodable image and a video ffmpeg cannot repackage, Then both errors carry one message`() {
         // Given
         val p = pin()
         val video = mockk<VideoProcessor>()
         val videoLimits = limits.copy(maxVideoBytes = 30, maxVideoDuration = Duration.ofSeconds(1))
-        val withVideo = SetPinMedia(
-            pins, mediaRepository, store, MediaIngestion(store, probe, video, videoLimits), clock, clearPinDownload,
-            renditionCache, enqueueTask,
-        )
+        val withVideo =
+            SetPinMedia(
+                pins,
+                mediaRepository,
+                store,
+                MediaIngestion(store, probe, video, videoLimits),
+                clock,
+                clearPinDownload,
+                renditionCache,
+                enqueueTask,
+            )
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
         every { probe.probe(staged) } throws UndecodableImageException("not an image")
         every { clock.now() } returns Instant.EPOCH
         every { video.probe(staged, Duration.ofSeconds(1)) } returns
             VideoProbeResult(
-                VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), frames = 25, bytes = 3, "avc1.640015",
-                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, sound = null,
+                VideoCodec.H264,
+                null,
+                2,
+                2,
+                Duration.ofSeconds(1),
+                frames = 25,
+                bytes = 3,
+                "avc1.640015",
+                VideoContainer.MP4,
+                alreadyRepackaged = true,
+                videoBitRate = 24,
+                sound = null,
             )
         every { video.repackage(staged, any()) } throws UndecodableVideoException("refused")
 
@@ -227,24 +270,33 @@ class SetPinMediaTest : BaseTest() {
         assertEquals(imageError.message, videoError.message)
     }
 
-    @Test fun `Given a video the processor refuses, Then each refusal takes its own error`() {
+    @Test
+    fun `Given a video the processor refuses, Then each refusal takes its own error`() {
         // Given
         val p = pin()
         val video = mockk<VideoProcessor>()
         val videoLimits = limits.copy(maxVideoBytes = 30, maxVideoDuration = Duration.ofSeconds(1))
-        val withVideo = SetPinMedia(
-            pins, mediaRepository, store, MediaIngestion(store, probe, video, videoLimits), clock, clearPinDownload,
-            renditionCache, enqueueTask,
-        )
+        val withVideo =
+            SetPinMedia(
+                pins,
+                mediaRepository,
+                store,
+                MediaIngestion(store, probe, video, videoLimits),
+                clock,
+                clearPinDownload,
+                renditionCache,
+                enqueueTask,
+            )
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
         every { probe.probe(staged) } throws UndecodableImageException("not an image")
         every { clock.now() } returns Instant.EPOCH
-        val refusals = mapOf(
-            VideoCodecUnsupportedException("ac3") to MediaCodecUnsupportedError::class.java,
-            VideoTooLongException("121 s") to MediaTooLongError::class.java,
-            VideoProcessorTimeoutException("ffprobe") to VideoProcessorTimeoutException::class.java,
-        )
+        val refusals =
+            mapOf(
+                VideoCodecUnsupportedException("ac3") to MediaCodecUnsupportedError::class.java,
+                VideoTooLongException("121 s") to MediaTooLongError::class.java,
+                VideoProcessorTimeoutException("ffprobe") to VideoProcessorTimeoutException::class.java,
+            )
         for ((refusal, expected) in refusals) {
             every { video.probe(staged, Duration.ofSeconds(1)) } throws refusal
             // When / Then
@@ -253,14 +305,25 @@ class SetPinMediaTest : BaseTest() {
         // A file ffprobe reads and ffmpeg then refuses
         every { video.probe(staged, Duration.ofSeconds(1)) } returns
             VideoProbeResult(
-                VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), frames = 25, bytes = 3, "avc1.640015",
-                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, sound = null,
+                VideoCodec.H264,
+                null,
+                2,
+                2,
+                Duration.ofSeconds(1),
+                frames = 25,
+                bytes = 3,
+                "avc1.640015",
+                VideoContainer.MP4,
+                alreadyRepackaged = true,
+                videoBitRate = 24,
+                sound = null,
             )
         every { video.repackage(staged, any()) } throws UndecodableVideoException("refused")
         assertThrows(MediaInvalidError::class.java) { withVideo.set(p.id, owner, upload()) }
     }
 
-    @Test fun `Given an undecodable upload, Then it discards the temp and throws MediaInvalidError`() {
+    @Test
+    fun `Given an undecodable upload, Then it discards the temp and throws MediaInvalidError`() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
@@ -270,7 +333,8 @@ class SetPinMediaTest : BaseTest() {
         verify { store.discard(staged) }
     }
 
-    @Test fun `Given a promote failure, Then it discards the temp and rethrows`() {
+    @Test
+    fun `Given a promote failure, Then it discards the temp and rethrows`() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
@@ -284,7 +348,8 @@ class SetPinMediaTest : BaseTest() {
         verify(exactly = 0) { mediaRepository.save(any()) }
     }
 
-    @Test fun `Given an IO failure during promote, Then it discards the temp and rethrows`() {
+    @Test
+    fun `Given an IO failure during promote, Then it discards the temp and rethrows`() {
         // FilesystemMediaStore.promote throws java.io.IOException (Files.createDirectories /
         // Files.move), not a RuntimeException; the cleanup catch must cover it too.
         val p = pin()
@@ -300,7 +365,8 @@ class SetPinMediaTest : BaseTest() {
         verify(exactly = 0) { mediaRepository.save(any()) }
     }
 
-    @Test fun `Given save fails after a successful promote, Then it discards the temp and deletes the promoted file`() {
+    @Test
+    fun `Given save fails after a successful promote, Then it discards the temp and deletes the promoted file`() {
         val p = pin()
         val storageKeySlot = slot<String>()
         every { pins.findPinById(p.id) } returns p
@@ -317,7 +383,8 @@ class SetPinMediaTest : BaseTest() {
         verify { store.delete(storageKeySlot.captured) }
     }
 
-    @Test fun `Given the old file delete fails during replace, Then the request still succeeds`() {
+    @Test
+    fun `Given the old file delete fails during replace, Then the request still succeeds`() {
         val p = pin()
         val old =
             Media.StillImage(randomUUID(), p.id, "image/png", 1, 1, 1, "old", "originals/o/old.png", Instant.EPOCH)
@@ -334,7 +401,8 @@ class SetPinMediaTest : BaseTest() {
         assertTrue(result.replaced)
     }
 
-    @Test fun `Given the rollback delete throws, Then the original promote error is preserved`() {
+    @Test
+    fun `Given the rollback delete throws, Then the original promote error is preserved`() {
         val p = pin()
         val promoteError = RuntimeException("disk full")
         every { pins.findPinById(p.id) } returns p
@@ -352,7 +420,8 @@ class SetPinMediaTest : BaseTest() {
         verify { store.discard(staged) }
     }
 
-    @Test fun `Given the rollback discard throws, Then the original promote error is preserved`() {
+    @Test
+    fun `Given the rollback discard throws, Then the original promote error is preserved`() {
         val p = pin()
         val promoteError = RuntimeException("disk full")
         every { pins.findPinById(p.id) } returns p

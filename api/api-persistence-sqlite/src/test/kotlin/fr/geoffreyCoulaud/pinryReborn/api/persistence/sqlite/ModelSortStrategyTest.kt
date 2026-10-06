@@ -6,18 +6,17 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelSortStrategy
-import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 /**
- * [ModelSortStrategy] routing logic (`filterCursorAndNeighbors`, `sortCursorNeighbors`) is
- * exercised through a minimal test double that just records which abstract member got called,
- * instead of a real [fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.PinModelSortStrategy],
- * to keep the assertions focused on the routing itself.
+ * [ModelSortStrategy] routing logic (`filterCursorAndNeighbors`, `sortCursorNeighbors`) is exercised through a minimal
+ * test double that just records which abstract member got called, instead of a real
+ * [fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.PinModelSortStrategy], to keep the assertions
+ * focused on the routing itself.
  */
 class ModelSortStrategyTest : RepositoryTest() {
     private class RecordingSortStrategy : ModelSortStrategy<PinModel, QPinModel>() {

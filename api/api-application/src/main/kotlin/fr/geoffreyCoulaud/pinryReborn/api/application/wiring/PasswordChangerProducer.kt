@@ -12,9 +12,9 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 
 /**
- * Constructs [PasswordChanger] with its configured minimum interval. The use case takes a raw
- * `Duration` (the `UserDataExportRequester` precedent) rather than the `AuthConfig` interface, so
- * `api-usecases` stays free of configuration; the composition root is the single place that reads it.
+ * Constructs [PasswordChanger] with its configured minimum interval. The use case takes a raw `Duration` (the
+ * `UserDataExportRequester` precedent) rather than the `AuthConfig` interface, so `api-usecases` stays free of
+ * configuration; the composition root is the single place that reads it.
  */
 @ApplicationScoped
 class PasswordChangerProducer {

@@ -31,29 +31,80 @@ class MeController(
     private val passwordChanger: PasswordChanger,
     private val accountDeleter: AccountDeleter,
 ) {
-    @GET
-    @Authenticated
-    fun getCurrentUser(): UserOutputDto = securityIdentity.getUser().toDto()
+    @GET @Authenticated fun getCurrentUser(): UserOutputDto = securityIdentity.getUser().toDto()
 
     @PUT
     @Path("/password")
     @Authenticated
     @APIResponse(responseCode = "204", description = "Password changed, and every session of the account revoked")
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
-    @APIResponse(responseCode = "403", description = "The current password is wrong",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["REAUTHENTICATION_FAILED"])]))])
-    @APIResponse(responseCode = "409", description = "Another change of this password landed first",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["PASSWORD_CHANGE_COLLISION"])]))])
+    @APIResponse(
+        responseCode = "403",
+        description = "The current password is wrong",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["REAUTHENTICATION_FAILED"])],
+                        ),
+                )
+            ],
+    )
+    @APIResponse(
+        responseCode = "409",
+        description = "Another change of this password landed first",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["PASSWORD_CHANGE_COLLISION"])],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
-    @APIResponse(responseCode = "422", description = "The account has held this password before",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["PASSWORD_PREVIOUSLY_USED"])]))])
-    @APIResponse(responseCode = "429", description = "The attempt limiter, or a change too soon after the last",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["TOO_MANY_AUTHENTICATION_ATTEMPTS", "PASSWORD_CHANGED_TOO_SOON"])]))])
+    @APIResponse(
+        responseCode = "422",
+        description = "The account has held this password before",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["PASSWORD_PREVIOUSLY_USED"])],
+                        ),
+                )
+            ],
+    )
+    @APIResponse(
+        responseCode = "429",
+        description = "The attempt limiter, or a change too soon after the last",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration = ["TOO_MANY_AUTHENTICATION_ATTEMPTS", "PASSWORD_CHANGED_TOO_SOON"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
     fun changePassword(@Valid @NotNull dto: PasswordChangeInputDto): RestResponse<Void> {
         passwordChanger.changePassword(securityIdentity.getUser(), dto.currentPassword, dto.newPassword)
         return RestResponse.noContent()

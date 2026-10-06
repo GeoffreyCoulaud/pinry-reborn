@@ -23,12 +23,12 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
 
 class UserDataExportRequesterTest : BaseTest() {
     private val repository = mockk<UserDataExportRepositoryInterface>()
@@ -43,7 +43,12 @@ class UserDataExportRequesterTest : BaseTest() {
     private val oldKey = "exports/old.zip"
     private val requester =
         UserDataExportRequester(
-            repository, archiveStore, enqueueTask, reauthenticator, clock, transactionRunner,
+            repository,
+            archiveStore,
+            enqueueTask,
+            reauthenticator,
+            clock,
+            transactionRunner,
             minimumInterval = Duration.ofHours(1),
         )
 
@@ -52,26 +57,45 @@ class UserDataExportRequesterTest : BaseTest() {
     // early-throwing tests (before the transaction) must not call this.
     private fun stubTransactionPassthrough() {
         every { transactionRunner.inTransaction<Pair<UserDataExport, String?>>(any()) } answers
-            { firstArg<() -> Pair<UserDataExport, String?>>().invoke() }
+            {
+                firstArg<() -> Pair<UserDataExport, String?>>().invoke()
+            }
     }
 
     private fun pendingExport(requestedAt: Instant = now) =
         UserDataExport(
-            id = randomUUID(), userId = user.id, state = UserDataExportState.PENDING,
-            formatVersion = 1, requestedAt = requestedAt,
+            id = randomUUID(),
+            userId = user.id,
+            state = UserDataExportState.PENDING,
+            formatVersion = 1,
+            requestedAt = requestedAt,
         )
 
     private fun readyExport(storageKey: String?) =
         UserDataExport(
-            id = randomUUID(), userId = user.id, state = UserDataExportState.READY,
-            formatVersion = 1, requestedAt = now.minus(Duration.ofDays(2)), storageKey = storageKey,
+            id = randomUUID(),
+            userId = user.id,
+            state = UserDataExportState.READY,
+            formatVersion = 1,
+            requestedAt = now.minus(Duration.ofDays(2)),
+            storageKey = storageKey,
         )
 
     private fun aTask() =
         Task(
-            id = randomUUID(), kind = UserDataExportTask.KIND, payload = "p", state = TaskState.PENDING,
-            priority = 0, availableAt = now, attempts = 0, maxAttempts = UserDataExportTask.MAX_ATTEMPTS,
-            leaseId = null, leaseExpiresAt = null, cancelRequested = false, dedupKey = null, lastError = null,
+            id = randomUUID(),
+            kind = UserDataExportTask.KIND,
+            payload = "p",
+            state = TaskState.PENDING,
+            priority = 0,
+            availableAt = now,
+            attempts = 0,
+            maxAttempts = UserDataExportTask.MAX_ATTEMPTS,
+            leaseId = null,
+            leaseExpiresAt = null,
+            cancelRequested = false,
+            dedupKey = null,
+            lastError = null,
         )
 
     private fun stubEnqueue(task: Task = aTask()): Task {
@@ -228,7 +252,7 @@ class UserDataExportRequesterTest : BaseTest() {
         // Then
         verify {
             repository.save(
-                match { it.id == ready.id && it.state == UserDataExportState.SUPERSEDED && it.storageKey == oldKey },
+                match { it.id == ready.id && it.state == UserDataExportState.SUPERSEDED && it.storageKey == oldKey }
             )
         }
         verify { archiveStore.delete(oldKey) }

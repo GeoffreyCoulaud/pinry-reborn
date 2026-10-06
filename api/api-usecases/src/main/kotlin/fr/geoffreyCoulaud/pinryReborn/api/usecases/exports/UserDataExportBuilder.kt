@@ -29,17 +29,17 @@ import java.time.Duration
 import java.util.UUID
 
 /**
- * Builds a user data export archive (spec `docs/specs/2026-07-22-user-data-export.md` §3, §4, §8):
- * walks a user's pins, boards, tags and images into an [ExportArchiveStore], then runs the worker's
- * `build` state machine that promotes the staged file and publishes the row.
+ * Builds a user data export archive (spec `docs/specs/2026-07-22-user-data-export.md` §3, §4, §8): walks a user's pins,
+ * boards, tags and images into an [ExportArchiveStore], then runs the worker's `build` state machine that promotes the
+ * staged file and publishes the row.
  *
  * Deliberately not `@ApplicationScoped` yet, same precedent as [UserDataExportRequester]:
- * `applicationVersion`/`pageSize`/`retention`/`minimumFreeBytes` have no CDI producer until the
- * wiring task (`ExportProducers`).
+ * `applicationVersion`/`pageSize`/`retention`/`minimumFreeBytes` have no CDI producer until the wiring task
+ * (`ExportProducers`).
  *
- * `@Suppress("TooManyFunctions")`: the build/write pipeline is intentionally split into many small,
- * single-purpose private helpers to keep each one under the method-length, return-count and
- * throws-count limits (mirrors `PinRepositoryInterface`'s precedent for the same trade-off).
+ * `@Suppress("TooManyFunctions")`: the build/write pipeline is intentionally split into many small, single-purpose
+ * private helpers to keep each one under the method-length, return-count and throws-count limits (mirrors
+ * `PinRepositoryInterface`'s precedent for the same trade-off).
  */
 @Suppress("LongParameterList", "TooManyFunctions")
 class UserDataExportBuilder(
@@ -60,13 +60,12 @@ class UserDataExportBuilder(
 ) {
 
     /**
-     * The worker's `account.export` task handler entry point (spec §8). Loads the export and its
-     * user, checks free space, stages the archive, then promotes and publishes it. Every write
-     * it makes is a compare-and-set on `PENDING` (`docs/adr/0016`), so a build racing a cancellation
-     * or an account deletion can never resurrect a row the user was told was gone. [isLastAttempt]
-     * controls whether a build failure marks the export `FAILED` (last attempt) or leaves it
-     * `PENDING` for a retry; either way the original failure is rethrown, so the queue's own retry
-     * and dead-lettering still run.
+     * The worker's `account.export` task handler entry point (spec §8). Loads the export and its user, checks free
+     * space, stages the archive, then promotes and publishes it. Every write it makes is a compare-and-set on `PENDING`
+     * (`docs/adr/0016`), so a build racing a cancellation or an account deletion can never resurrect a row the user was
+     * told was gone. [isLastAttempt] controls whether a build failure marks the export `FAILED` (last attempt) or
+     * leaves it `PENDING` for a retry; either way the original failure is rethrown, so the queue's own retry and
+     * dead-lettering still run.
      */
     fun build(exportId: UUID, isLastAttempt: Boolean, renewLease: () -> Unit) {
         val export = pendingExport(exportId) ?: return
@@ -86,10 +85,11 @@ class UserDataExportBuilder(
         exportRepository.findById(exportId)?.takeIf { it.state == UserDataExportState.PENDING }
 
     private fun requireUser(export: UserDataExport): User =
-        userRepository.findUserById(export.userId) ?: run {
-            markFailed(export.id, UserDataExportFailure.USER_GONE)
-            throw PermanentTaskException("user no longer exists")
-        }
+        userRepository.findUserById(export.userId)
+            ?: run {
+                markFailed(export.id, UserDataExportFailure.USER_GONE)
+                throw PermanentTaskException("user no longer exists")
+            }
 
     private fun requireFreeSpace(export: UserDataExport) {
         if (archiveStore.hasFreeSpace(minimumFreeBytes)) return
@@ -111,8 +111,8 @@ class UserDataExportBuilder(
         }
 
     /**
-     * Step 8 of `docs/specs/2026-07-22-user-data-export.md` over the completion: the staged file goes
-     * on every attempt, the row is marked on the last, and the failure is rethrown for the queue.
+     * Step 8 of `docs/specs/2026-07-22-user-data-export.md` over the completion: the staged file goes on every attempt,
+     * the row is marked on the last, and the failure is rethrown for the queue.
      */
     @Suppress("TooGenericExceptionCaught")
     private fun completeOrFail(exportId: UUID, storageKey: String, staged: StagedFile, isLastAttempt: Boolean) {
@@ -148,10 +148,9 @@ class UserDataExportBuilder(
     }
 
     /**
-     * The promote runs inside the fence rather than before it (`docs/adr/0017`): two attempts of one
-     * build both read a legitimate `PENDING` row, so the loser can only be told apart here, and it
-     * learns it has lost before it has touched the canonical key. It discards its own staged file,
-     * a handle that cannot name the winner's bytes.
+     * The promote runs inside the fence rather than before it (`docs/adr/0017`): two attempts of one build both read a
+     * legitimate `PENDING` row, so the loser can only be told apart here, and it learns it has lost before it has
+     * touched the canonical key. It discards its own staged file, a handle that cannot name the winner's bytes.
      */
     private fun publish(exportId: UUID, storageKey: String, staged: StagedFile) {
         val published = promoteIfStillPending(exportId, storageKey, staged)
@@ -174,31 +173,31 @@ class UserDataExportBuilder(
                     sha256 = staged.contentHash,
                     mediaType = archiveStore.format.mediaType,
                     fileExtension = archiveStore.format.fileExtension,
-                ),
+                )
             )
             true
         }
 
     /**
-     * Writes every archive entry for [export]/[user] into a freshly staged file, in the load-bearing
-     * order from spec §3: `README.md`, `user.json`, `boards.jsonl`, `tags.jsonl`, the image entries
-     * (first pin walk), `pins.jsonl` (second pin walk, referencing only images actually written), and
-     * `manifest.json` last. [renewLease] is threaded down to the pin walks so a long build keeps its
-     * task lease alive (spec §15).
+     * Writes every archive entry for [export]/[user] into a freshly staged file, in the load-bearing order from spec
+     * §3: `README.md`, `user.json`, `boards.jsonl`, `tags.jsonl`, the image entries (first pin walk), `pins.jsonl`
+     * (second pin walk, referencing only images actually written), and `manifest.json` last. [renewLease] is threaded
+     * down to the pin walks so a long build keeps its task lease alive (spec §15).
      */
     internal fun stageArchive(export: UserDataExport, user: User, renewLease: () -> Unit): StagedFile {
         val createdAt = clock.now()
-        val header = ExportManifest(
-            formatVersion = export.formatVersion,
-            generator = ExportGenerator(GENERATOR_NAME, applicationVersion),
-            exportId = export.id,
-            createdAt = createdAt,
-            expiresAt = createdAt.plus(retention),
-            user = ExportedRef(user.id, user.name),
-            counts = ExportCounts(pins = 0, boards = 0, tags = 0, media = 0),
-            entries = emptyList(),
-            excluded = EXCLUSIONS,
-        )
+        val header =
+            ExportManifest(
+                formatVersion = export.formatVersion,
+                generator = ExportGenerator(GENERATOR_NAME, applicationVersion),
+                exportId = export.id,
+                createdAt = createdAt,
+                expiresAt = createdAt.plus(retention),
+                user = ExportedRef(user.id, user.name),
+                counts = ExportCounts(pins = 0, boards = 0, tags = 0, media = 0),
+                entries = emptyList(),
+                excluded = EXCLUSIONS,
+            )
         return archiveStore.stage { sink -> writeArchive(sink, header, user, renewLease) }
     }
 
@@ -208,23 +207,31 @@ class UserDataExportBuilder(
         entries += sink.putJsonEntry("user.json", ExportedUser(user.id, user.name, user.createdAt))
 
         val boards = boardRepository.findActiveBoardsForUser(user) + boardRepository.findRecycledBoardsForUser(user)
-        val boardCount = writeCollection(sink, entries, "boards.jsonl", boards) { board ->
-            ExportedBoard(
-                board.id, board.name, board.description, board.createdAt, board.updatedAt, board.softDeletedAt,
-            )
-        }
-        val tagCount = writeCollection(sink, entries, "tags.jsonl", tagRepository.findAllTagsForUser(user)) { tag ->
-            ExportedTag(tag.id, tag.name, tag.createdAt)
-        }
+        val boardCount =
+            writeCollection(sink, entries, "boards.jsonl", boards) { board ->
+                ExportedBoard(
+                    board.id,
+                    board.name,
+                    board.description,
+                    board.createdAt,
+                    board.updatedAt,
+                    board.softDeletedAt,
+                )
+            }
+        val tagCount =
+            writeCollection(sink, entries, "tags.jsonl", tagRepository.findAllTagsForUser(user)) { tag ->
+                ExportedTag(tag.id, tag.name, tag.createdAt)
+            }
 
         val writtenMediaPaths = mutableSetOf<String>()
         val mediaCount = writeMedia(sink, entries, user, renewLease, writtenMediaPaths)
         val pinCount = writePins(sink, entries, user, renewLease, writtenMediaPaths)
 
-        val manifest = header.copy(
-            counts = ExportCounts(pins = pinCount, boards = boardCount, tags = tagCount, media = mediaCount),
-            entries = entries.toList(),
-        )
+        val manifest =
+            header.copy(
+                counts = ExportCounts(pins = pinCount, boards = boardCount, tags = tagCount, media = mediaCount),
+                entries = entries.toList(),
+            )
         sink.putJsonEntry("manifest.json", manifest)
     }
 
@@ -243,8 +250,8 @@ class UserDataExportBuilder(
     }
 
     /**
-     * Walk 1: writes every pin's image, BEFORE `pins.jsonl` is opened (a ZIP holds one open entry at
-     * a time). Records each written path so walk 2 can tell a dangling reference from a real one.
+     * Walk 1: writes every pin's image, BEFORE `pins.jsonl` is opened (a ZIP holds one open entry at a time). Records
+     * each written path so walk 2 can tell a dangling reference from a real one.
      */
     private fun writeMedia(
         sink: ArchiveSink,
@@ -274,31 +281,32 @@ class UserDataExportBuilder(
         writtenMediaPaths: Set<String>,
     ): Int {
         var count = 0
-        val pins = allPins(user, renewLease)
-            .map { pin -> exportedPin(pin, writtenMediaPaths) }
-            .onEach { count++ }
+        val pins = allPins(user, renewLease).map { pin -> exportedPin(pin, writtenMediaPaths) }.onEach { count++ }
         entries += sink.putJsonLinesEntry("pins.jsonl", pins)
         return count
     }
 
-    private fun exportedPin(pin: Pin, writtenMediaPaths: Set<String>): ExportedPin = ExportedPin(
-        id = pin.id,
-        description = pin.description,
-        sourceContextUrl = pin.sourceContextUrl,
-        sourceMediaUrl = pin.sourceMediaUrl,
-        createdAt = pin.createdAt,
-        updatedAt = pin.updatedAt,
-        deletedAt = pin.softDeletedAt,
-        tags = pin.tags.map { tag -> ExportedRef(tag.id, tag.name) },
-        boards = pinRepository.findBoardsForPinIncludingRecycled(pin.id)
-            .map { board -> ExportedRef(board.id, board.name) },
-        media = exportedMedia(pin, writtenMediaPaths),
-    )
+    private fun exportedPin(pin: Pin, writtenMediaPaths: Set<String>): ExportedPin =
+        ExportedPin(
+            id = pin.id,
+            description = pin.description,
+            sourceContextUrl = pin.sourceContextUrl,
+            sourceMediaUrl = pin.sourceMediaUrl,
+            createdAt = pin.createdAt,
+            updatedAt = pin.updatedAt,
+            deletedAt = pin.softDeletedAt,
+            tags = pin.tags.map { tag -> ExportedRef(tag.id, tag.name) },
+            boards =
+                pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { board ->
+                    ExportedRef(board.id, board.name)
+                },
+            media = exportedMedia(pin, writtenMediaPaths),
+        )
 
     /**
-     * `null` when the pin has no image **or** when its bytes could not be written (spec §4): the
-     * second condition is what makes a dangling reference structurally impossible, since a path only
-     * survives here if walk 1 actually wrote it.
+     * `null` when the pin has no image **or** when its bytes could not be written (spec §4): the second condition is
+     * what makes a dangling reference structurally impossible, since a path only survives here if walk 1 actually wrote
+     * it.
      */
     private fun exportedMedia(pin: Pin, writtenMediaPaths: Set<String>): ExportedMedia? {
         val media = mediaRepository.findByPinId(pin.id) ?: return null
@@ -328,18 +336,19 @@ class UserDataExportBuilder(
         pinSequence(user, recycled = false, renewLease) + pinSequence(user, recycled = true, renewLease)
 
     /**
-     * Cursor-paginated pins for one state (active or recycled), renewing the task lease once per
-     * fetched page -- called independently by each of the two walks in [allPins], so a slow build
-     * renews on every page of every walk, not just once overall.
+     * Cursor-paginated pins for one state (active or recycled), renewing the task lease once per fetched page -- called
+     * independently by each of the two walks in [allPins], so a slow build renews on every page of every walk, not just
+     * once overall.
      */
     private fun pinSequence(user: User, recycled: Boolean, renewLease: () -> Unit) = sequence {
         var cursor: Cursor? = null
         do {
-            val page = if (recycled) {
-                pinRepository.findSoftDeletedPinsForUser(user, cursor, pageSize, PinSortStrategy.DELETED_AT_DESC)
-            } else {
-                pinRepository.findPinsForUser(user, cursor, pageSize, PinSortStrategy.CREATED_AT_DESC)
-            }
+            val page =
+                if (recycled) {
+                    pinRepository.findSoftDeletedPinsForUser(user, cursor, pageSize, PinSortStrategy.DELETED_AT_DESC)
+                } else {
+                    pinRepository.findPinsForUser(user, cursor, pageSize, PinSortStrategy.CREATED_AT_DESC)
+                }
             renewLease()
             yieldAll(page.items)
             cursor = page.nextCursor
@@ -350,10 +359,11 @@ class UserDataExportBuilder(
         private val logger = KotlinLogging.logger {}
 
         const val GENERATOR_NAME = "pinry-reborn"
-        val EXCLUSIONS = listOf(
-            ExportExclusion("password hashes", "secrets; useless to you, dangerous if this archive leaks"),
-            ExportExclusion("session tokens", "secrets; expired and meaningless outside this instance"),
-            ExportExclusion("image renditions", "derived from the original bytes, regenerable"),
-        )
+        val EXCLUSIONS =
+            listOf(
+                ExportExclusion("password hashes", "secrets; useless to you, dangerous if this archive leaks"),
+                ExportExclusion("session tokens", "secrets; expired and meaningless outside this instance"),
+                ExportExclusion("image renditions", "derived from the original bytes, regenerable"),
+            )
     }
 }

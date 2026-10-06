@@ -4,8 +4,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.MediaDownloa
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaDownloadModel
 
 /**
- * The task centre's one order: most recently requested first, on the pair `(requestedAt, id)` and
- * not the instant alone, a page boundary inside a group sharing an instant stalling the cursor.
+ * The task centre's one order: most recently requested first, on the pair `(requestedAt, id)` and not the instant
+ * alone, a page boundary inside a group sharing an instant stalling the cursor.
  */
 class MediaDownloadModelSortStrategy : ModelSortStrategy<MediaDownloadModel, QMediaDownloadModel>() {
     override fun filterCursorAndForwardNeighbors(
@@ -14,14 +14,12 @@ class MediaDownloadModelSortStrategy : ModelSortStrategy<MediaDownloadModel, QMe
     ): QMediaDownloadModel =
         query
             .or()
-            .requestedAt.lessThan(cursor.pivot.requestedAt)
+            .requestedAt
+            .lessThan(cursor.pivot.requestedAt)
             .let {
-                it
-                    .and()
-                    .requestedAt.equalTo(cursor.pivot.requestedAt)
-                    .raw("id <= ?", cursor.pivot.id)
-                    .endAnd()
-            }.endOr()
+                it.and().requestedAt.equalTo(cursor.pivot.requestedAt).raw("id <= ?", cursor.pivot.id).endAnd()
+            }
+            .endOr()
 
     override fun filterCursorAndBackwardNeighbors(
         cursor: ModelCursor<MediaDownloadModel>,
@@ -29,14 +27,12 @@ class MediaDownloadModelSortStrategy : ModelSortStrategy<MediaDownloadModel, QMe
     ): QMediaDownloadModel =
         query
             .or()
-            .requestedAt.greaterThan(cursor.pivot.requestedAt)
+            .requestedAt
+            .greaterThan(cursor.pivot.requestedAt)
             .let {
-                it
-                    .and()
-                    .requestedAt.equalTo(cursor.pivot.requestedAt)
-                    .raw("id >= ?", cursor.pivot.id)
-                    .endAnd()
-            }.endOr()
+                it.and().requestedAt.equalTo(cursor.pivot.requestedAt).raw("id >= ?", cursor.pivot.id).endAnd()
+            }
+            .endOr()
 
     override fun sortCursorAndForwardNeighbors(query: QMediaDownloadModel): QMediaDownloadModel =
         query.orderBy().requestedAt.desc().id.desc()

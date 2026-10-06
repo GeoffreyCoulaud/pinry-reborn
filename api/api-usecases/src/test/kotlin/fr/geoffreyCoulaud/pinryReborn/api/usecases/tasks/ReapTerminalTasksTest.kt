@@ -6,21 +6,22 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class ReapTerminalTasksTest : BaseTest() {
     private val taskQueue: TaskQueueInterface = mockk()
     private val clock: Clock = mockk()
     private val terminalTaskGrace = Duration.ofDays(7)
 
-    private val reap = ReapTerminalTasks(
-        taskQueue = taskQueue,
-        clock = clock,
-        terminalTaskGrace = terminalTaskGrace,
-    )
+    private val reap =
+        ReapTerminalTasks(
+            taskQueue = taskQueue,
+            clock = clock,
+            terminalTaskGrace = terminalTaskGrace,
+        )
 
     private val now = Instant.parse("2026-07-27T00:00:00Z")
     private val cutoff = now.minus(terminalTaskGrace)

@@ -2,18 +2,24 @@ package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
 
 class MediaLimitsTest {
     private val limits =
         MediaLimits(
-            maxImageBytes = 30, maxVideoBytes = 40, Duration.ofSeconds(120), maxPixelsPerFrame = 50,
-            maxPixelsPerRender = 50, renderConcurrency = 1, Duration.ofSeconds(60), decoderMemory = 1,
+            maxImageBytes = 30,
+            maxVideoBytes = 40,
+            Duration.ofSeconds(120),
+            maxPixelsPerFrame = 50,
+            maxPixelsPerRender = 50,
+            renderConcurrency = 1,
+            Duration.ofSeconds(60),
+            decoderMemory = 1,
         )
 
     // Three frames, so a bound that counted every frame would refuse the image one pixel under it.
@@ -22,8 +28,18 @@ class MediaLimitsTest {
 
     private fun video(width: Int, height: Int, bytes: Long = 40) =
         VideoProbeResult(
-            VideoCodec.H264, null, width, height, Duration.ofSeconds(1), frames = 25, bytes, "avc1.640015",
-            VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = bytes * 8, sound = null,
+            VideoCodec.H264,
+            null,
+            width,
+            height,
+            Duration.ofSeconds(1),
+            frames = 25,
+            bytes,
+            "avc1.640015",
+            VideoContainer.MP4,
+            alreadyRepackaged = true,
+            videoBitRate = bytes * 8,
+            sound = null,
         )
 
     @Test
@@ -72,13 +88,33 @@ class MediaLimitsTest {
 
     private fun gif(frames: Int) =
         Media.AnimatedImage(
-            UUID.randomUUID(), UUID.randomUUID(), "image/gif", 7000, 7000, 1, "h", "k", Instant.EPOCH, frames,
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "image/gif",
+            7000,
+            7000,
+            1,
+            "h",
+            "k",
+            Instant.EPOCH,
+            frames,
         )
 
     private fun clip(width: Int, height: Int, frames: Int = 7200, duration: Duration = Duration.ofSeconds(120)) =
         Media.Video(
-            UUID.randomUUID(), UUID.randomUUID(), "video/mp4", width, height, 1, "h", "k", Instant.EPOCH, frames,
-            duration, videoBitRate = 1, sound = null,
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "video/mp4",
+            width,
+            height,
+            1,
+            "h",
+            "k",
+            Instant.EPOCH,
+            frames,
+            duration,
+            videoBitRate = 1,
+            sound = null,
         )
 
     @Test

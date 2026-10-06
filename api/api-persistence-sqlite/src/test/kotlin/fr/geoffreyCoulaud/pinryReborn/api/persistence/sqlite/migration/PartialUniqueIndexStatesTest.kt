@@ -3,28 +3,27 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.migration
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PartialUniqueIndexStates
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.io.File
 
 /**
- * A partial unique index constrains the rows its `where` clause selects, and the query that means those rows
- * repeats the same states in Kotlin. Each set is named once in [PartialUniqueIndexStates]; this pins it to the
- * predicate the current schema gives the index, so a narrowing or a widening of either side fails here rather
- * than leaving the two disagreeing (spec `docs/specs/2026-08-12-p2-debt-triage.md:142-155`).
+ * A partial unique index constrains the rows its `where` clause selects, and the query that means those rows repeats
+ * the same states in Kotlin. Each set is named once in [PartialUniqueIndexStates]; this pins it to the predicate the
+ * current schema gives the index, so a narrowing or a widening of either side fails here rather than leaving the two
+ * disagreeing (spec `docs/specs/2026-08-12-p2-debt-triage.md:142-155`).
  *
  * The history is append-only, so an index is whatever the last migration that touched it left: this guard reads
  * `MigrationDirectory.currentIndexes`, which replays every creation and removal in version order and keeps a
  * drop-and-recreate pair from reading as two live indexes with two predicates to satisfy at once.
  *
- * Unique indexes only: a partial index that is not unique is a plan hint, so a query naming other states than
- * its predicate is slower, while the same disagreement on a unique one is a wrong answer.
+ * Unique indexes only: a partial index that is not unique is a plan hint, so a query naming other states than its
+ * predicate is slower, while the same disagreement on a unique one is a wrong answer.
  *
  * What it does not check, deliberately:
- * - It reads the literals the `state` comparison names, not what the predicate means, so
- *   `not (state in ('PENDING','RUNNING'))` passes on the set whose complement it selects.
- * - Its reach is a predicate quoting a literal, so a partial index on `where soft_deleted_at is null` is
- *   extracted and then dropped by that filter, and demands no Kotlin set.
- * - Nothing stops a query from re-inlining the literals, since the comparison is between the named set and the
- *   DDL and never between the named set and what the query reads.
+ * - It reads the literals the `state` comparison names, not what the predicate means, so `not (state in
+ *   ('PENDING','RUNNING'))` passes on the set whose complement it selects.
+ * - Its reach is a predicate quoting a literal, so a partial index on `where soft_deleted_at is null` is extracted and
+ *   then dropped by that filter, and demands no Kotlin set.
+ * - Nothing stops a query from re-inlining the literals, since the comparison is between the named set and the DDL and
+ *   never between the named set and what the query reads.
  * - That `findOne()` returns at most one row rests on the index's uniqueness columns, which it does not read.
  */
 class PartialUniqueIndexStatesTest {
@@ -39,22 +38,17 @@ class PartialUniqueIndexStatesTest {
 
     // The loose probe for the extraction above, in the sense MigrationDirectory.locationsMatching describes,
     // counted over the same whole-file text rather than line by line.
-    private val looseConditionalUniqueness =
-        Regex("""\bunique\b[^;]*?\bwhere\b""", RegexOption.IGNORE_CASE)
+    private val looseConditionalUniqueness = Regex("""\bunique\b[^;]*?\bwhere\b""", RegexOption.IGNORE_CASE)
 
     private val wherePredicate = Regex("""\bwhere\b""", RegexOption.IGNORE_CASE)
 
-    private val stateComparison =
-        Regex("""\bstate\b\s*(?:=|\bin\b)\s*(\([^)]*\)|'[^']*')""", RegexOption.IGNORE_CASE)
+    private val stateComparison = Regex("""\bstate\b\s*(?:=|\bin\b)\s*(\([^)]*\)|'[^']*')""", RegexOption.IGNORE_CASE)
 
     private val quotedLiteral = Regex("""'([^']*)'""")
 
-
     /** Those of the current schema a Kotlin set has to mirror: one quoting no literal has no states to name. */
     private val stateBearingIndexes: List<DeclaredIndex> =
-        MigrationDirectory
-            .currentIndexes
-            .values
+        MigrationDirectory.currentIndexes.values
             .map { declaredFrom(it) }
             .filter { conditionallyUnique(it) && quotedLiteral.containsMatchIn(it.predicate.orEmpty()) }
             .sortedBy { it.name }
@@ -84,7 +78,8 @@ class PartialUniqueIndexStatesTest {
                         "${index.file} selects ${index.name} on ${sorted(selected)}, " +
                             "Kotlin names ${sorted(namedStates[index.name].orEmpty())}"
                     }
-                }.sorted()
+                }
+                .sorted()
 
         // Then
         assertEquals(emptyList<String>(), disagreeing)
@@ -135,5 +130,4 @@ class PartialUniqueIndexStatesTest {
         val unique: Boolean,
         val predicate: String?,
     )
-
 }

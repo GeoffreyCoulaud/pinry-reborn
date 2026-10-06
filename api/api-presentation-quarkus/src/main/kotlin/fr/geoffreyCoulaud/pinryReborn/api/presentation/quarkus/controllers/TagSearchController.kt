@@ -29,12 +29,13 @@ class TagSearchController(
     @APIResponse(
         responseCode = "200",
         description = "OK",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = TagSearchOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = TagSearchOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.BLANK_QUERY)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.UNREADABLE_QUERY)
@@ -46,10 +47,9 @@ class TagSearchController(
         // Bounded on both sides, as the catalogue's pageSize is: a non-positive row bound is no bound at all.
         val limit = (limitParam ?: DEFAULT_LIMIT).coerceIn(MIN_LIMIT, MAX_LIMIT)
 
-        return tagSearcher
-            .searchTags(user = user, query = query.orEmpty(), limit = limit)
-            .toTagSearchDto()
-            .let { RestResponse.ok(it) }
+        return tagSearcher.searchTags(user = user, query = query.orEmpty(), limit = limit).toTagSearchDto().let {
+            RestResponse.ok(it)
+        }
     }
 
     companion object {

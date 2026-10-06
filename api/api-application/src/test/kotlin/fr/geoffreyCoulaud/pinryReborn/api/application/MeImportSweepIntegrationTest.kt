@@ -9,37 +9,33 @@ import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 /**
- * The import sweep against real bytes on disk (spec §6), driven through the injected beans rather than
- * the fixed-delay scheduler, as [MeExportCompletionIntegrationTest] drives the export purge.
+ * The import sweep against real bytes on disk (spec §6), driven through the injected beans rather than the fixed-delay
+ * scheduler, as [MeExportCompletionIntegrationTest] drives the export purge.
  */
 @QuarkusTest
 @TestProfile(MeImportTestProfile::class)
 // The app under test runs the real SystemClock; these read the wall clock to backdate fixtures against it.
 @Suppress("WallClockRead")
 class MeImportSweepIntegrationTest : IntegrationTest() {
-    @Inject
-    lateinit var repository: UserDataImportRepositoryInterface
+    @Inject lateinit var repository: UserDataImportRepositoryInterface
 
-    @Inject
-    lateinit var reapUserDataImports: ReapUserDataImports
+    @Inject lateinit var reapUserDataImports: ReapUserDataImports
 
-    @Inject
-    lateinit var reapOrphanedStorage: ReapOrphanedStorage
+    @Inject lateinit var reapOrphanedStorage: ReapOrphanedStorage
 
-    @Inject
-    lateinit var importsConfig: ImportsConfig
+    @Inject lateinit var importsConfig: ImportsConfig
 
     private fun dataDir(): Path = Path.of(importsConfig.dataDir())
 
@@ -50,9 +46,13 @@ class MeImportSweepIntegrationTest : IntegrationTest() {
     private fun openImport(auth: AuthenticatedUser): UUID =
         given()
             .authenticatedAs(auth)
-            .`when`().post("/api/v1/me/imports")
-            .then().statusCode(202)
-            .extract().jsonPath().getString("id")
+            .`when`()
+            .post("/api/v1/me/imports")
+            .then()
+            .statusCode(202)
+            .extract()
+            .jsonPath()
+            .getString("id")
             .let(UUID::fromString)
 
     private fun uploadChunk(auth: AuthenticatedUser, importId: UUID, bytes: ByteArray) {
@@ -60,8 +60,10 @@ class MeImportSweepIntegrationTest : IntegrationTest() {
             .authenticatedAs(auth)
             .contentType("application/octet-stream")
             .body(bytes)
-            .`when`().put("/api/v1/me/imports/$importId/archive?offset=0")
-            .then().statusCode(200)
+            .`when`()
+            .put("/api/v1/me/imports/$importId/archive?offset=0")
+            .then()
+            .statusCode(200)
     }
 
     /** Backdates the row's last activity past the grace, which is what makes the sweep select it. */
@@ -108,7 +110,7 @@ class MeImportSweepIntegrationTest : IntegrationTest() {
             stored.copy(
                 state = UserDataImportState.CANCELLED,
                 storageKey = "imports/$importId.zip",
-            ),
+            )
         )
 
         // When

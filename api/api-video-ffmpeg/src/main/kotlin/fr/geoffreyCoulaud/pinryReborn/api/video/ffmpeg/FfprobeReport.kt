@@ -55,8 +55,18 @@ internal object FfprobeReport {
         val videoTag = video.path("codec_tag_string").asText()
         val alreadyRepackaged = streams.size == codecs.size && videoTag == codecs.first().substringBefore('.')
         return VideoProbeResult(
-            videoCodec, audio?.first, width, height, duration, frames, bytes, codecsParameter, demuxedAs,
-            alreadyRepackaged, rateOf(video), audioTrack?.let { Media.Sound(it.path("channels").asInt(), rateOf(it)) },
+            videoCodec,
+            audio?.first,
+            width,
+            height,
+            duration,
+            frames,
+            bytes,
+            codecsParameter,
+            demuxedAs,
+            alreadyRepackaged,
+            rateOf(video),
+            audioTrack?.let { Media.Sound(it.path("channels").asInt(), rateOf(it)) },
         )
     }
 

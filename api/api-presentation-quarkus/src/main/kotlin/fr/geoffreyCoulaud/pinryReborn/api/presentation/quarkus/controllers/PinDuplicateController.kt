@@ -19,13 +19,13 @@ import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.core.MediaType.APPLICATION_JSON as JSON
+import java.util.UUID
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
-import java.util.UUID
 
 /** A pin's likely duplicates, which the worker found, and their resolution (ADR 0051, ADR 0052). */
 @Path("/api/v1/pins")
@@ -40,11 +40,15 @@ class PinDuplicateController(
     @Path("/{pinId}/duplicates")
     @Operation(
         summary = "List the pin's likely duplicates",
-        description = "Those the user rejected included. A pair is listed while both pins are active, so a " +
-            "recycled pin lists none.",
+        description =
+            "Those the user rejected included. A pair is listed while both pins are active, so a " +
+                "recycled pin lists none.",
     )
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = PinDuplicateListOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = PinDuplicateListOutputDto::class))],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_NOT_FOUND)
     fun listDuplicates(pinId: UUID): RestResponse<PinDuplicateListOutputDto> {
@@ -57,25 +61,60 @@ class PinDuplicateController(
     @Path("/{pinId}/duplicates/resolutions")
     @Operation(
         summary = "Apply a decision to every version of the pin's group of duplicates, all or nothing",
-        description = "A rejected pin's pairs with the kept and merged pins are rejected first. The kept pin " +
-            "gains the merged pins' boards and tags, and fills a blank description or page address from the " +
-            "oldest that has one; they go to the recycle bin. A duplicate the body does not name is left as is.",
+        description =
+            "A rejected pin's pairs with the kept and merged pins are rejected first. The kept pin " +
+                "gains the merged pins' boards and tags, and fills a blank description or page address from the " +
+                "oldest that has one; they go to the recycle bin. A duplicate the body does not name is left as is.",
     )
-    @APIResponse(responseCode = "200", description = "The kept pin",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))])
-    @APIResponse(responseCode = "400",
-        description = "The body is not JSON, a key is not a pin id, a value is not a decision, there are too " +
-            "many entries, not exactly one pin is kept, the open pin is not named or is rejected, or no other " +
-            "pin is named",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["VALIDATION_ERROR", "MALFORMED_BODY"])]))])
+    @APIResponse(
+        responseCode = "200",
+        description = "The kept pin",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))],
+    )
+    @APIResponse(
+        responseCode = "400",
+        description =
+            "The body is not JSON, a key is not a pin id, a value is not a decision, there are too " +
+                "many entries, not exactly one pin is kept, the open pin is not named or is rejected, or no other " +
+                "pin is named",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [SchemaProperty(name = "code", enumeration = ["VALIDATION_ERROR", "MALFORMED_BODY"])],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
-    @APIResponse(responseCode = "404",
-        description = "The pin does not exist, a named pin is not among its listed duplicates, or a path value " +
-            "could not be read",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["PIN_DOES_NOT_EXIST", "DUPLICATE_DOES_NOT_EXIST", "UNKNOWN_ROUTE"])]))])
+    @APIResponse(
+        responseCode = "404",
+        description =
+            "The pin does not exist, a named pin is not among its listed duplicates, or a path value " +
+                "could not be read",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration =
+                                            ["PIN_DOES_NOT_EXIST", "DUPLICATE_DOES_NOT_EXIST", "UNKNOWN_ROUTE"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.PIN_ALREADY_RECYCLED)
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun resolveDuplicates(

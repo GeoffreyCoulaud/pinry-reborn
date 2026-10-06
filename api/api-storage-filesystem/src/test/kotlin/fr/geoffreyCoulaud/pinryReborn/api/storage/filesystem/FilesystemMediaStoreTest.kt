@@ -2,12 +2,6 @@ package fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -17,6 +11,12 @@ import java.nio.file.attribute.FileTime
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 class FilesystemMediaStoreTest {
     @TempDir lateinit var dataDir: Path
@@ -89,11 +89,22 @@ class FilesystemMediaStoreTest {
         // Given
         val store = store()
         store.promote(store.stage(ByteArrayInputStream(byteArrayOf(5, 6)), maxBytes = 100), "originals/u/p/v.mp4")
-        val media = Media.Video(
-            id = UUID.randomUUID(), pinId = UUID.randomUUID(), mimeType = "video/mp4", width = 2, height = 2,
-            byteSize = 2, contentHash = "hash", storageKey = "originals/u/p/v.mp4", createdAt = Instant.EPOCH,
-            frames = 2, duration = Duration.ofSeconds(1), videoBitRate = 16, sound = null,
-        )
+        val media =
+            Media.Video(
+                id = UUID.randomUUID(),
+                pinId = UUID.randomUUID(),
+                mimeType = "video/mp4",
+                width = 2,
+                height = 2,
+                byteSize = 2,
+                contentHash = "hash",
+                storageKey = "originals/u/p/v.mp4",
+                createdAt = Instant.EPOCH,
+                frames = 2,
+                duration = Duration.ofSeconds(1),
+                videoBitRate = 16,
+                sound = null,
+            )
         val original = dataDir.resolve("originals/u/p/v.mp4")
 
         // When
@@ -127,8 +138,9 @@ class FilesystemMediaStoreTest {
         val absent = dataDir.resolve("absent")
 
         // When
-        val hash = FilesystemMediaStore(absent.toString())
-            .digest(ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)), maxBytes = 100)
+        val hash =
+            FilesystemMediaStore(absent.toString())
+                .digest(ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)), maxBytes = 100)
 
         // Then: the same hash stage measures, and not a directory created. `stage(...).also { discard(it) }`
         // returns the same hash and deletes its temp file, but leaves `tmp/` behind, so this is what
@@ -145,8 +157,9 @@ class FilesystemMediaStoreTest {
         Files.writeString(blocked, "not a directory")
 
         // When
-        val hash = FilesystemMediaStore(blocked.toString())
-            .digest(ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)), maxBytes = 100)
+        val hash =
+            FilesystemMediaStore(blocked.toString())
+                .digest(ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)), maxBytes = 100)
 
         // Then
         assertEquals("9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a", hash)
@@ -269,8 +282,8 @@ class FilesystemMediaStoreTest {
     }
 
     /**
-     * Delivers [readableBytes] and then throws, so "the refusal arrives before the stream is
-     * exhausted" is observable rather than merely unmeasured.
+     * Delivers [readableBytes] and then throws, so "the refusal arrives before the stream is exhausted" is observable
+     * rather than merely unmeasured.
      */
     private class PoisonedStream(private val readableBytes: Int) : InputStream() {
         private var delivered = 0

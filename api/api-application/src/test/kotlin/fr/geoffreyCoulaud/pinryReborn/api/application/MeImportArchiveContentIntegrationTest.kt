@@ -5,14 +5,14 @@ import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
-import org.junit.jupiter.api.Assertions.assertArrayEquals
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 import kotlin.io.path.exists
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 @QuarkusTest
 @TestProfile(MeImportTestProfile::class)
@@ -49,7 +49,8 @@ class MeImportArchiveContentIntegrationTest : ImportIntegrationTest() {
                         mediaSha256 = ImportArchiveBuilder.sha256(text),
                     ),
                     ImportArchiveBuilder.pinLine("https://example.test/nomedia"),
-                ).appendLine("pins.jsonl", "{\"description\": \"cut in ha")
+                )
+                .appendLine("pins.jsonl", "{\"description\": \"cut in ha")
                 .bytes()
 
         // When
@@ -81,8 +82,9 @@ class MeImportArchiveContentIntegrationTest : ImportIntegrationTest() {
                         mediaPath = "media/lying.png",
                         mediaSha256 = ImportArchiveBuilder.sha256("not these bytes".toByteArray()),
                         mediaMimeType = "image/jpeg",
-                    ),
-                ).bytes()
+                    )
+                )
+                .bytes()
 
         // When
         val importId = importArchive(auth, archive)
@@ -121,8 +123,9 @@ class MeImportArchiveContentIntegrationTest : ImportIntegrationTest() {
                         sourceContextUrl = "https://example.test/ambiguous",
                         mediaPath = "media/ambiguous.png",
                         mediaSha256 = ImportArchiveBuilder.sha256(png),
-                    ),
-                ).bytes()
+                    )
+                )
+                .bytes()
 
         // When
         val importId = importArchive(auth, archive)
@@ -209,13 +212,14 @@ class MeImportArchiveContentIntegrationTest : ImportIntegrationTest() {
 
     private companion object {
         const val OVER_LONG_NAME = 300
-        val EXPECTED_ANOMALIES = listOf(
-            "ENTRY_PATH_INVALID",
-            "LINE_MALFORMED",
-            "MEDIA_ENTRY_MISSING",
-            "MEDIA_UNREADABLE",
-            "PIN_HAS_NO_MEDIA",
-            "FIELD_INVALID",
-        )
+        val EXPECTED_ANOMALIES =
+            listOf(
+                "ENTRY_PATH_INVALID",
+                "LINE_MALFORMED",
+                "MEDIA_ENTRY_MISSING",
+                "MEDIA_UNREADABLE",
+                "PIN_HAS_NO_MEDIA",
+                "FIELD_INVALID",
+            )
     }
 }

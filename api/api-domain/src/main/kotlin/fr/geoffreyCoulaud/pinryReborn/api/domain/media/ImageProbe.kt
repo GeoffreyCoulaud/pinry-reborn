@@ -10,7 +10,8 @@ data class ProbeResult(
     override val frames: Int,
     override val bytes: Long,
 ) : MeasuredMedia {
-    val animated: Boolean get() = frames > 1
+    val animated: Boolean
+        get() = frames > 1
 }
 
 interface ImageProbe {

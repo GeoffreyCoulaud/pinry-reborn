@@ -8,13 +8,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedExce
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -24,13 +17,19 @@ import java.security.MessageDigest
 import java.time.Duration
 import java.util.HexFormat
 import javax.imageio.ImageIO
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 class FfmpegVideoProcessorTest {
     private val processor = FfmpegVideoProcessor(Duration.ofSeconds(60), DECODER_MEMORY, webpQuality = 75)
     private val maxDuration = Duration.ofSeconds(120)
 
-    @TempDir
-    lateinit var directory: Path
+    @TempDir lateinit var directory: Path
 
     private fun fixture(name: String) = Path.of("src/test/resources/fixtures", name)
 
@@ -52,7 +51,9 @@ class FfmpegVideoProcessorTest {
         val entries = "stream=codec_type,codec_name,profile,level,nb_read_packets,codec_tag_string"
         val command = listOf("ffprobe", "-v", "error", "-count_packets", "-show_entries", entries, "-of", "json")
         val json = ProcessBuilder(command + staged.path).start().inputStream.readAllBytes().decodeToString()
-        return ObjectMapper().readTree(json).path("streams")
+        return ObjectMapper()
+            .readTree(json)
+            .path("streams")
             .filter { it.path("codec_type").asText() in setOf("video", "audio") }
             .map { track -> track.properties().associate { (key, value) -> key to value.asText() } }
     }

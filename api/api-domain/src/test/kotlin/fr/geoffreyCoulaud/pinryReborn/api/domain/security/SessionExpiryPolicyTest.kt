@@ -1,17 +1,18 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.security
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class SessionExpiryPolicyTest {
     private val now = Instant.parse("2026-07-21T00:00:00Z")
-    private val policy = SessionExpiryPolicy(
-        persistentTtl = Duration.ofDays(30),
-        ephemeralTtl = Duration.ofHours(12),
-        renewThreshold = 0.75,
-    )
+    private val policy =
+        SessionExpiryPolicy(
+            persistentTtl = Duration.ofDays(30),
+            ephemeralTtl = Duration.ofHours(12),
+            renewThreshold = 0.75,
+        )
 
     @Test
     fun `Given a persistent session, Then expiryFrom adds the persistent TTL`() {

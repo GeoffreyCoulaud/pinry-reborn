@@ -14,37 +14,19 @@ import java.time.Instant
 import java.util.UUID
 
 @ApplicationScoped
-class UserRepository(
-    private val persistor: Persistor,
-) : UserRepositoryInterface {
+class UserRepository(private val persistor: Persistor) : UserRepositoryInterface {
     /**
      * When possible, avoid using the SQL repository directly.
      *
-     * Favor usage of ebean's Query Beans.
-     * https://ebean.io/docs/query/query-beans
+     * Favor usage of ebean's Query Beans. https://ebean.io/docs/query/query-beans
      */
     private val sqlRepository = ModelRepository<UserModel>(persistor = persistor)
 
-    override fun findUserById(id: UUID): User? =
-        UserQueries.active()
-            .id
-            .equalTo(id)
-            .findOne()
-            ?.toDomain()
+    override fun findUserById(id: UUID): User? = UserQueries.active().id.equalTo(id).findOne()?.toDomain()
 
-    override fun findUserByName(name: String): User? =
-        UserQueries.active()
-            .name
-            .ieq(name)
-            .findOne()
-            ?.toDomain()
+    override fun findUserByName(name: String): User? = UserQueries.active().name.ieq(name).findOne()?.toDomain()
 
-    override fun findUserByIdIncludingDeleted(id: UUID): User? =
-        UserQueries.any()
-            .id
-            .equalTo(id)
-            .findOne()
-            ?.toDomain()
+    override fun findUserByIdIncludingDeleted(id: UUID): User? = UserQueries.any().id.equalTo(id).findOne()?.toDomain()
 
     override fun saveUser(user: User): User =
         try {
@@ -59,26 +41,16 @@ class UserRepository(
     // Rooted on the active accounts: a repeated deletion request then finds nothing and returns,
     // instead of re-stamping the instant and pushing the retention deadline further away every time.
     override fun markPendingDeletion(user: User, at: Instant) {
-        val model =
-            UserQueries.active()
-                .id
-                .equalTo(user.id)
-                .findOne() ?: return
+        val model = UserQueries.active().id.equalTo(user.id).findOne() ?: return
         model.softDeletedAt = at
         persistor.save(model)
     }
 
     override fun permanentlyDeleteUser(user: User) {
-        val model =
-            UserQueries.any()
-                .id
-                .equalTo(user.id)
-                .findOne() ?: return
+        val model = UserQueries.any().id.equalTo(user.id).findOne() ?: return
         persistor.delete(model)
     }
 
     override fun findTombstonedUsersSoftDeletedBefore(cutoff: Instant): List<User> =
-        UserQueries.tombstonedBefore(cutoff)
-            .findList()
-            .map { it.toDomain() }
+        UserQueries.tombstonedBefore(cutoff).findList().map { it.toDomain() }
 }

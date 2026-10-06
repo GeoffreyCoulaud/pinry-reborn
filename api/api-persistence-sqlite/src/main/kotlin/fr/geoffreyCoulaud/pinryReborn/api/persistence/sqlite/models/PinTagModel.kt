@@ -4,10 +4,7 @@ import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
 
-/**
- * Many-to-many join between tags and pins.
- * This is done to avoid interdependency of models and repos.
- */
+/** Many-to-many join between tags and pins. This is done to avoid interdependency of models and repos. */
 @Entity
 // A pin carries a tag once; `pin_id` leads, so it also serves every read by pin.
 @Index(

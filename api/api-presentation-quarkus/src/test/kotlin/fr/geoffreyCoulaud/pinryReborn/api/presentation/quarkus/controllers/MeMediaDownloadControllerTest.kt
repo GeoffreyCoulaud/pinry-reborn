@@ -13,10 +13,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.quarkus.security.identity.SecurityIdentity
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class MeMediaDownloadControllerTest {
     private val user = User(randomUUID(), "alice", createdAt = TestTime.now)
@@ -31,10 +31,19 @@ class MeMediaDownloadControllerTest {
         // Given
         every { mediaDownloads.list(user, null, DEFAULT_PAGE_SIZE) } returns
             Page(
-                items = listOf(
-                    MediaDownload(pinId, "https://x/i.png", DownloadStatus.PENDING, null, null, randomUUID(),
-                        Instant.EPOCH, Instant.EPOCH),
-                ),
+                items =
+                    listOf(
+                        MediaDownload(
+                            pinId,
+                            "https://x/i.png",
+                            DownloadStatus.PENDING,
+                            null,
+                            null,
+                            randomUUID(),
+                            Instant.EPOCH,
+                            Instant.EPOCH,
+                        )
+                    ),
                 previousCursor = null,
                 nextCursor = null,
             )

@@ -9,9 +9,9 @@ import jakarta.enterprise.event.Observes
 import java.util.concurrent.TimeUnit
 
 /**
- * Drives the export retention lifecycle: purges expired export archives and sweeps orphaned
- * staged files on application startup, keeps sweeping on a fixed delay so exports do not linger
- * past their retention window, and stops the scheduler on shutdown.
+ * Drives the export retention lifecycle: purges expired export archives and sweeps orphaned staged files on application
+ * startup, keeps sweeping on a fixed delay so exports do not linger past their retention window, and stops the
+ * scheduler on shutdown.
  */
 @ApplicationScoped
 class ExportRetentionLifecycle(
@@ -19,13 +19,9 @@ class ExportRetentionLifecycle(
     private val purgeScheduler: PeriodicScheduler,
     private val config: ExportsConfig,
 ) {
-    fun onStart(
-        @Observes ignored: StartupEvent,
-    ) = start()
+    fun onStart(@Observes ignored: StartupEvent) = start()
 
-    fun onStop(
-        @Observes ignored: ShutdownEvent,
-    ) = stop()
+    fun onStop(@Observes ignored: ShutdownEvent) = stop()
 
     // safeReap, not reap: `swept()` wraps the action on one row, so the three selections that feed it
     // and the task lookup pass 1 makes per pending row are outside every net, and a sweep that throws

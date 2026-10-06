@@ -8,9 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 @ApplicationScoped
-class AccountDeletionTaskHandler(
-    private val accountDeletionCleaner: AccountDeletionCleaner,
-) : TaskHandler {
+class AccountDeletionTaskHandler(private val accountDeletionCleaner: AccountDeletionCleaner) : TaskHandler {
     override val kind = AccountDeletionTask.KIND
 
     override fun handle(payload: String, context: TaskContext) {

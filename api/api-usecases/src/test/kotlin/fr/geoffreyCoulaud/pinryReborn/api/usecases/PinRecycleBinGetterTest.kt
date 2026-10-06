@@ -12,10 +12,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinRetrievalPinDoe
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
 
 class PinRecycleBinGetterTest {
     private val pinRepository = mockk<PinRepositoryInterface>()
@@ -37,12 +37,13 @@ class PinRecycleBinGetterTest {
         } returns expectedPage
 
         // When
-        val result = useCase.listSoftDeletedPinsPaginatedForUser(
-            reader = user,
-            cursor = null,
-            pageSize = 20,
-            sort = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val result =
+            useCase.listSoftDeletedPinsPaginatedForUser(
+                reader = user,
+                cursor = null,
+                pageSize = 20,
+                sort = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertEquals(expectedPage, result)
@@ -63,12 +64,13 @@ class PinRecycleBinGetterTest {
         } returns expectedPage
 
         // When
-        val result = useCase.listSoftDeletedPinsPaginatedForUser(
-            reader = user,
-            cursor = null,
-            pageSize = 500,
-            sort = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val result =
+            useCase.listSoftDeletedPinsPaginatedForUser(
+                reader = user,
+                cursor = null,
+                pageSize = 500,
+                sort = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertEquals(expectedPage, result)
@@ -89,12 +91,13 @@ class PinRecycleBinGetterTest {
         } returns expectedPage
 
         // When
-        val result = useCase.listSoftDeletedPinsPaginatedForUser(
-            reader = user,
-            cursor = null,
-            pageSize = 20,
-            sort = PinSortStrategy.DELETED_AT_DESC,
-        )
+        val result =
+            useCase.listSoftDeletedPinsPaginatedForUser(
+                reader = user,
+                cursor = null,
+                pageSize = 20,
+                sort = PinSortStrategy.DELETED_AT_DESC,
+            )
 
         // Then
         assertEquals(expectedPage, result)
@@ -105,18 +108,19 @@ class PinRecycleBinGetterTest {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
         val otherUser = User(id = randomUUID(), name = "Other", createdAt = TestTime.now)
-        val pin = Pin(
-            id = randomUUID(),
-            author = otherUser,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "A pin",
-            tags = emptyList(),
-            boards = emptyList(),
-            softDeletedAt = TestTime.now,
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val pin =
+            Pin(
+                id = randomUUID(),
+                author = otherUser,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "A pin",
+                tags = emptyList(),
+                boards = emptyList(),
+                softDeletedAt = TestTime.now,
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         val cursor = Cursor(pivotId = pin.id, direction = CursorDirection.FORWARD)
         every { pinRepository.findPinById(pin.id) } returns pin
 

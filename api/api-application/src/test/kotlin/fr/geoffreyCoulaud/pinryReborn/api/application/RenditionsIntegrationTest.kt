@@ -3,8 +3,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
-import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
@@ -12,65 +12,61 @@ import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.UUID
 
 /**
- * Below-the-fixtures rendition sizes so a real downscale happens against the 10x10 fixtures
- * (`sample.png`, `animated.gif`), and an isolated, writable `media.data_dir` per run so these
- * tests never touch the production default and successive local runs never collide.
+ * Below-the-fixtures rendition sizes so a real downscale happens against the 10x10 fixtures (`sample.png`,
+ * `animated.gif`), and an isolated, writable `media.data_dir` per run so these tests never touch the production default
+ * and successive local runs never collide.
  */
 class RenditionsTestProfile : QuarkusTestProfile {
-    override fun getConfigOverrides(): Map<String, String> = mapOf(
-        "media.data_dir" to "build/test-media-data/${UUID.randomUUID()}",
-        "media.renditions.tiny" to "4",
-        "media.renditions.small" to "6",
-    )
+    override fun getConfigOverrides(): Map<String, String> =
+        mapOf(
+            "media.data_dir" to "build/test-media-data/${UUID.randomUUID()}",
+            "media.renditions.tiny" to "4",
+            "media.renditions.small" to "6",
+        )
 }
 
 /**
- * End-to-end coverage of rendition serving through the fully wired app with real libvips + real
- * filesystem cache: WebP renditions at the correct shortest side, animated vs flattened output,
- * original-as-is when the requested size is not smaller than the source, a 400 on an unknown
- * size, and cache eviction on both delete and replace. This is where the animated `page-height`
- * correctness (spec
- * section 13) is validated end-to-end against a real 3-frame GIF, by re-probing the response
- * bytes with the real `VipsImageProbe`.
+ * End-to-end coverage of rendition serving through the fully wired app with real libvips + real filesystem cache: WebP
+ * renditions at the correct shortest side, animated vs flattened output, original-as-is when the requested size is not
+ * smaller than the source, a 400 on an unknown size, and cache eviction on both delete and replace. This is where the
+ * animated `page-height` correctness (spec section 13) is validated end-to-end against a real 3-frame GIF, by
+ * re-probing the response bytes with the real `VipsImageProbe`.
  */
 @QuarkusTest
 @TestProfile(RenditionsTestProfile::class)
 class RenditionsIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var mediaRepository: MediaRepositoryInterface
+    @Inject lateinit var mediaRepository: MediaRepositoryInterface
 
-    @Inject
-    lateinit var mediaConfig: MediaConfig
+    @Inject lateinit var mediaConfig: MediaConfig
 
-    @Inject
-    lateinit var imageProbe: ImageProbe
+    @Inject lateinit var imageProbe: ImageProbe
 
     private fun fixture(name: String) = File("src/test/resources/fixtures/$name")
 
     private fun createPinFor(auth: AuthenticatedUser): UUID {
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "rendition test",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "rendition test",
+                tags = emptyList(),
+            )
         return pin.id
     }
 
@@ -84,7 +80,8 @@ class RenditionsIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture(fixtureName), contentType)
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(expectedStatus)
     }
@@ -107,14 +104,16 @@ class RenditionsIntegrationTest : IntegrationTest() {
         upload(auth, pinId, "sample.png", "image/png")
 
         // When
-        val bytes = given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media?size=tiny")
-            .then()
-            .statusCode(200)
-            .contentType("image/webp")
-            .extract()
-            .asByteArray()
+        val bytes =
+            given()
+                .authenticatedAs(auth)
+                .`when`()
+                .get("/api/v1/pins/$pinId/media?size=tiny")
+                .then()
+                .statusCode(200)
+                .contentType("image/webp")
+                .extract()
+                .asByteArray()
 
         // Then
         val probe = probeBytes(bytes)
@@ -130,14 +129,16 @@ class RenditionsIntegrationTest : IntegrationTest() {
         upload(auth, pinId, "sample.png", "image/png")
 
         // When
-        val bytes = given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
-            .then()
-            .statusCode(200)
-            .contentType("image/png")
-            .extract()
-            .asByteArray()
+        val bytes =
+            given()
+                .authenticatedAs(auth)
+                .`when`()
+                .get("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(200)
+                .contentType("image/png")
+                .extract()
+                .asByteArray()
 
         // Then
         assertArrayEquals(Files.readAllBytes(fixture("sample.png").toPath()), bytes)
@@ -153,7 +154,8 @@ class RenditionsIntegrationTest : IntegrationTest() {
         // When / Then: never upscaled, original format
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media?size=large")
+            .`when`()
+            .get("/api/v1/pins/$pinId/media?size=large")
             .then()
             .statusCode(200)
             .contentType("image/png")
@@ -167,11 +169,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         upload(auth, pinId, "sample.png", "image/png")
 
         // When / Then
-        given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media?size=huge")
-            .then()
-            .statusCode(400)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/$pinId/media?size=huge").then().statusCode(400)
     }
 
     @Test
@@ -182,14 +180,16 @@ class RenditionsIntegrationTest : IntegrationTest() {
         upload(auth, pinId, "animated.gif", "image/gif")
 
         // When
-        val bytes = given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media?size=tiny&animated=false")
-            .then()
-            .statusCode(200)
-            .contentType("image/webp")
-            .extract()
-            .asByteArray()
+        val bytes =
+            given()
+                .authenticatedAs(auth)
+                .`when`()
+                .get("/api/v1/pins/$pinId/media?size=tiny&animated=false")
+                .then()
+                .statusCode(200)
+                .contentType("image/webp")
+                .extract()
+                .asByteArray()
 
         // Then
         assertFalse(probeBytes(bytes).animated)
@@ -203,14 +203,16 @@ class RenditionsIntegrationTest : IntegrationTest() {
         upload(auth, pinId, "animated.gif", "image/gif")
 
         // When
-        val bytes = given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media?size=tiny")
-            .then()
-            .statusCode(200)
-            .contentType("image/webp")
-            .extract()
-            .asByteArray()
+        val bytes =
+            given()
+                .authenticatedAs(auth)
+                .`when`()
+                .get("/api/v1/pins/$pinId/media?size=tiny")
+                .then()
+                .statusCode(200)
+                .contentType("image/webp")
+                .extract()
+                .asByteArray()
 
         // Then
         assertTrue(probeBytes(bytes).animated)
@@ -273,7 +275,8 @@ class RenditionsIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", File("../api-video-ffmpeg/src/test/resources/fixtures/h264-aac.mkv"), "video/mp4")
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(201)
     }
@@ -281,7 +284,8 @@ class RenditionsIntegrationTest : IntegrationTest() {
     private fun getWebp(auth: AuthenticatedUser, pinId: UUID, query: String): ByteArray =
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media?$query")
+            .`when`()
+            .get("/api/v1/pins/$pinId/media?$query")
             .then()
             .statusCode(200)
             .contentType("image/webp")
@@ -297,20 +301,12 @@ class RenditionsIntegrationTest : IntegrationTest() {
         val mediaId = requireNotNull(mediaRepository.findByPinId(pinId)).id
 
         // When: generate + cache a rendition
-        given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media?size=tiny")
-            .then()
-            .statusCode(200)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/$pinId/media?size=tiny").then().statusCode(200)
         val cacheDir: Path = Path.of(mediaConfig.dataDir()).resolve("cache/$mediaId")
         assertTrue(Files.exists(cacheDir), "rendition cache subtree should exist after first GET")
 
         // When: delete the image
-        given()
-            .authenticatedAs(auth)
-            .`when`().delete("/api/v1/pins/$pinId/media")
-            .then()
-            .statusCode(204)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/pins/$pinId/media").then().statusCode(204)
 
         // Then: the cache subtree is gone
         assertFalse(Files.exists(cacheDir), "rendition cache subtree should be evicted on delete")
@@ -323,11 +319,7 @@ class RenditionsIntegrationTest : IntegrationTest() {
         val pinId = createPinFor(auth)
         upload(auth, pinId, "sample.png", "image/png")
         val oldMediaId = requireNotNull(mediaRepository.findByPinId(pinId)).id
-        given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media?size=tiny")
-            .then()
-            .statusCode(200)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/$pinId/media?size=tiny").then().statusCode(200)
         val oldCacheDir: Path = Path.of(mediaConfig.dataDir()).resolve("cache/$oldMediaId")
         assertTrue(Files.exists(oldCacheDir), "rendition cache subtree should exist after the first GET")
 
@@ -342,7 +334,8 @@ class RenditionsIntegrationTest : IntegrationTest() {
         assertNotEquals(oldMediaId, newMediaId, "replacing should mint a new canonical image")
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media?size=tiny")
+            .`when`()
+            .get("/api/v1/pins/$pinId/media?size=tiny")
             .then()
             .statusCode(200)
             .contentType("image/webp")

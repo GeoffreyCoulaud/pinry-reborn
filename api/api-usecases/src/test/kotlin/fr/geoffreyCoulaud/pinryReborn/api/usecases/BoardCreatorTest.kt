@@ -21,6 +21,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.time.Instant
 import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -28,7 +29,6 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
 
 class BoardCreatorTest {
     private val boardRepository: BoardRepositoryInterface = mockk()
@@ -77,15 +77,17 @@ class BoardCreatorTest {
         val holder = board(author = author, name = name)
         val readIn = mutableListOf<Int?>()
         every { boardRepository.saveBoard(any()) } throws BoardNameAlreadyTakenException(cause = Exception("boom"))
-        every { boardRepository.findBoardForUserByName(user = author, name = name) } answers {
-            readIn += transactions.current
-            holder
-        }
+        every { boardRepository.findBoardForUserByName(user = author, name = name) } answers
+            {
+                readIn += transactions.current
+                holder
+            }
 
         // When
-        val error = assertThrows<BoardNameAlreadyExistsError> {
-            useCase.create(author = author, name = name, description = createRandomString())
-        }
+        val error =
+            assertThrows<BoardNameAlreadyExistsError> {
+                useCase.create(author = author, name = name, description = createRandomString())
+            }
 
         // Then: the holder is read after the rollback, outside the transaction
         assertEquals(ErrorCode.BOARD_NAME_ALREADY_EXISTS, error.code)
@@ -103,9 +105,10 @@ class BoardCreatorTest {
         every { boardRepository.findBoardForUserByName(user = author, name = name) } returns holder
 
         // When
-        val error = assertThrows<BoardNameAlreadyExistsError> {
-            useCase.create(author = author, name = name, description = createRandomString())
-        }
+        val error =
+            assertThrows<BoardNameAlreadyExistsError> {
+                useCase.create(author = author, name = name, description = createRandomString())
+            }
 
         // Then
         assertTrue(error.message.orEmpty().contains(RECYCLE_BIN_WORDING))
@@ -120,9 +123,10 @@ class BoardCreatorTest {
         every { boardRepository.findBoardForUserByName(user = author, name = name) } returns null
 
         // When
-        val error = assertThrows<BoardNameAlreadyExistsError> {
-            useCase.create(author = author, name = name, description = createRandomString())
-        }
+        val error =
+            assertThrows<BoardNameAlreadyExistsError> {
+                useCase.create(author = author, name = name, description = createRandomString())
+            }
 
         // Then
         assertEquals(ErrorCode.BOARD_NAME_ALREADY_EXISTS, error.code)
@@ -167,7 +171,11 @@ class BoardCreatorTest {
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         val pinIds = givenPins(pin(author), pin(author))
         val seen = mutableListOf<Int?>()
-        every { boardRepository.saveBoard(any()) } answers { seen += transactions.current; firstArg() }
+        every { boardRepository.saveBoard(any()) } answers
+            {
+                seen += transactions.current
+                firstArg()
+            }
         every { pinRepository.addPinsToBoard(any(), any(), any()) } answers { seen += transactions.current }
 
         // When

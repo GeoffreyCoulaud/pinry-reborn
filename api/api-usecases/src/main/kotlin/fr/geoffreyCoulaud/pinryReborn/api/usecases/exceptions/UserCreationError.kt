@@ -3,9 +3,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions
 open class UserCreationError(
     message: String,
     code: ErrorCode,
-    cause: Throwable? = null
-) :
-    BaseError(message, code, cause)
+    cause: Throwable? = null,
+) : BaseError(message, code, cause)
 
 class UsernameAlreadyTakenError(cause: Throwable) :
     UserCreationError(

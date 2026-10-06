@@ -6,8 +6,8 @@ open class BoardCreationError(message: String, code: ErrorCode, cause: Throwable
     BaseError(message, code, cause)
 
 /**
- * The author already holds the name, ASCII case folded, in any state (ADR 0009 decision 2: the index
- * decides, so [holder] is read back after the refusal, and is null when a hard delete raced it).
+ * The author already holds the name, ASCII case folded, in any state (ADR 0009 decision 2: the index decides, so
+ * [holder] is read back after the refusal, and is null when a hard delete raced it).
  */
 class BoardNameAlreadyExistsError(holder: Board?, cause: Throwable) :
     BoardCreationError(detailFor(holder), ErrorCode.BOARD_NAME_ALREADY_EXISTS, cause) {

@@ -12,12 +12,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMediaStatus
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
 
 class PinMapperTest {
     private fun createPin(): Pin =
@@ -77,11 +77,18 @@ class PinMapperTest {
     fun `Given a pin whose image is ready, Then toDto carries its dimensions and a relative url`() {
         // Given
         val pin = createPin()
-        val media = Media.StillImage(
-            id = randomUUID(), pinId = pin.id, mimeType = "image/png", width = 800, height = 600,
-            byteSize = 1024, contentHash = "h", storageKey = "originals/x/y/z.png",
-            createdAt = TestTime.now,
-        )
+        val media =
+            Media.StillImage(
+                id = randomUUID(),
+                pinId = pin.id,
+                mimeType = "image/png",
+                width = 800,
+                height = 600,
+                byteSize = 1024,
+                contentHash = "h",
+                storageKey = "originals/x/y/z.png",
+                createdAt = TestTime.now,
+            )
         val states = mapOf(pin.id to PinMediaState(PinMediaStatus.READY, media, null, null))
 
         // When

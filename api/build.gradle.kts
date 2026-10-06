@@ -95,7 +95,8 @@ subprojects {
         jvmTarget = "25"
     }
 
-    // detekt's documented way out of check (detekt.dev/docs/gettingstarted/gradle): one type-resolved task per source set runs instead.
+    // detekt's documented way out of check (detekt.dev/docs/gettingstarted/gradle): one type-resolved task per source
+    // set runs instead.
     tasks.named("check").configure {
         setDependsOn(dependsOn.filterNot { it is TaskProvider<*> && it.name == "detekt" })
         dependsOn("detektMain", "detektTest", tasks.matching { it.name == "detektTestFixtures" })
@@ -161,7 +162,8 @@ subprojects {
 // is the repository goes to the pipeline instead (docs/adr/0024, consequences).
 tasks.register("gate") {
     group = "verification"
-    description = "The API's gate: the ktfmt format check, detekt, all tests (check) and the 100% branch coverage bound."
+    description =
+        "The API's gate: the ktfmt format check, detekt, all tests (check) and the 100% branch coverage bound."
     dependsOn("spotlessCheck")
     dependsOn(subprojects.map { "${it.path}:check" })
     dependsOn(subprojects.filter { it.name != "api-application" }.map { "${it.path}:koverVerify" })

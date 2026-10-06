@@ -7,9 +7,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.TaskHandler
 import jakarta.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
-class MediaFingerprintTaskHandler(
-    private val fingerprintMedia: FingerprintMedia,
-) : TaskHandler {
+class MediaFingerprintTaskHandler(private val fingerprintMedia: FingerprintMedia) : TaskHandler {
     override val kind = MediaFingerprintTask.KIND
 
     override fun handle(payload: String, context: TaskContext) = fingerprintMedia.drain(context.renewLease)

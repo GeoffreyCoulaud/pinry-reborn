@@ -4,6 +4,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.LumaFrame
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -11,18 +16,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Duration
-import java.time.Instant
-import java.util.UUID
 
 /** Runs the `vips` and `vipsheader` on the `PATH`, and `ffmpeg` to draw the animated images. */
 class VipsFrameSamplingTest {
     private val sampler = VipsImageTransformer(quality = 80, Duration.ofSeconds(60), DECODER_MEMORY)
 
-    @TempDir
-    lateinit var directory: Path
+    @TempDir lateinit var directory: Path
 
     private fun media(animated: Boolean) =
         if (animated) {

@@ -18,9 +18,10 @@ class BodyLimitCheckTest {
     @Test
     fun `Given an image limit equal to the body limit, Then the boot is refused naming both keys`() {
         // Given / When: equal leaves no room for the multipart framing around the file
-        val error = assertThrows<IllegalStateException> {
-            BodyLimitCheck.verify(maxImageBytes = 100, maxVideoBytes = 99, maxChunkBytes = 99, maxBodyBytes = 100)
-        }
+        val error =
+            assertThrows<IllegalStateException> {
+                BodyLimitCheck.verify(maxImageBytes = 100, maxVideoBytes = 99, maxChunkBytes = 99, maxBodyBytes = 100)
+            }
 
         // Then
         assertEquals(
@@ -32,9 +33,10 @@ class BodyLimitCheckTest {
     @Test
     fun `Given a video limit past the body limit, Then the boot is refused naming both keys`() {
         // Given / When
-        val error = assertThrows<IllegalStateException> {
-            BodyLimitCheck.verify(maxImageBytes = 99, maxVideoBytes = 101, maxChunkBytes = 99, maxBodyBytes = 100)
-        }
+        val error =
+            assertThrows<IllegalStateException> {
+                BodyLimitCheck.verify(maxImageBytes = 99, maxVideoBytes = 101, maxChunkBytes = 99, maxBodyBytes = 100)
+            }
 
         // Then
         assertEquals(
@@ -46,9 +48,10 @@ class BodyLimitCheckTest {
     @Test
     fun `Given a chunk limit past the body limit, Then the boot is refused naming both keys`() {
         // Given / When
-        val error = assertThrows<IllegalStateException> {
-            BodyLimitCheck.verify(maxImageBytes = 99, maxVideoBytes = 99, maxChunkBytes = 101, maxBodyBytes = 100)
-        }
+        val error =
+            assertThrows<IllegalStateException> {
+                BodyLimitCheck.verify(maxImageBytes = 99, maxVideoBytes = 99, maxChunkBytes = 101, maxBodyBytes = 100)
+            }
 
         // Then
         assertEquals(

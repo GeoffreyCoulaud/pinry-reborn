@@ -6,14 +6,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveLine
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveSource
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportChunkOffsetMismatchException
-import org.junit.jupiter.api.Assertions.assertArrayEquals
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -25,6 +17,14 @@ import java.util.UUID.randomUUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 class FilesystemZipImportArchiveStoreTest {
     @TempDir lateinit var tempDir: Path
@@ -319,8 +319,7 @@ class FilesystemZipImportArchiveStoreTest {
             }
 
         // When
-        val manifest =
-            store.open(storageKey).use { it.readJson("manifest.json", ManifestFixture::class.java, 1_000) }
+        val manifest = store.open(storageKey).use { it.readJson("manifest.json", ManifestFixture::class.java, 1_000) }
 
         // Then
         assertEquals(ManifestFixture(formatVersion = 1, generator = "pinry-reborn"), manifest)
@@ -355,8 +354,7 @@ class FilesystemZipImportArchiveStoreTest {
         val storageKey = promoteArchive("imports/empty.zip") { writeEntry(it, "other.json", "{}") }
 
         // When
-        val manifest =
-            store.open(storageKey).use { it.readJson("manifest.json", ManifestFixture::class.java, 1_000) }
+        val manifest = store.open(storageKey).use { it.readJson("manifest.json", ManifestFixture::class.java, 1_000) }
 
         // Then
         assertNull(manifest)
@@ -431,8 +429,7 @@ class FilesystemZipImportArchiveStoreTest {
         // noise the user cannot act on.
         val first = """{"name":"first","count":1}"""
         val third = """{"name":"third","count":3}"""
-        val storageKey =
-            promoteArchive("imports/blank-line.zip") { writeEntry(it, "pins.jsonl", "$first\n\n$third\n") }
+        val storageKey = promoteArchive("imports/blank-line.zip") { writeEntry(it, "pins.jsonl", "$first\n\n$third\n") }
 
         // When
         val lines = readLines(storageKey)
@@ -515,12 +512,11 @@ class FilesystemZipImportArchiveStoreTest {
     fun `Given an archive written by the export sink, Then this source reads it back`() {
         // Given
         val exportStore = FilesystemZipExportArchiveStore(tempDir.toString())
-        val staged =
-            exportStore.stage { sink ->
-                sink.putJsonEntry("manifest.json", mapOf("formatVersion" to 1, "generator" to "pinry-reborn"))
-                sink.putJsonLinesEntry("pins.jsonl", sequenceOf(mapOf("name" to "first", "count" to 1)))
-                sink.putBinaryEntry("media/a.bin", ByteArrayInputStream(byteArrayOf(7, 8)))
-            }
+        val staged = exportStore.stage { sink ->
+            sink.putJsonEntry("manifest.json", mapOf("formatVersion" to 1, "generator" to "pinry-reborn"))
+            sink.putJsonLinesEntry("pins.jsonl", sequenceOf(mapOf("name" to "first", "count" to 1)))
+            sink.putBinaryEntry("media/a.bin", ByteArrayInputStream(byteArrayOf(7, 8)))
+        }
         val storageKey = "imports/round-trip.zip"
         exportStore.promote(staged, storageKey)
 
@@ -566,8 +562,8 @@ class FilesystemZipImportArchiveStoreTest {
         ("""{"name":"""" + "a".repeat(PADDING_CHARACTERS) + """","count":1}""").toByteArray()
 
     /**
-     * An entry that decodes for its first [KEPT_COMPRESSED_BYTES] compressed bytes and then raises, so
-     * reaching the corruption is only possible by reading past the bound under test.
+     * An entry that decodes for its first [KEPT_COMPRESSED_BYTES] compressed bytes and then raises, so reaching the
+     * corruption is only possible by reading past the bound under test.
      */
     private fun writeArchiveWithCorruptTail(storageKey: String, entryName: String, content: ByteArray): String {
         promoteArchive(storageKey) { zip ->

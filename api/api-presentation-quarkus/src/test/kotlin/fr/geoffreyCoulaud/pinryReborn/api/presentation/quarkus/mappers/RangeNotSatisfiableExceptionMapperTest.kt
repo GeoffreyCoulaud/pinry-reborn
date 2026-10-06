@@ -8,9 +8,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class RangeNotSatisfiableExceptionMapperTest {
-    private val mapper = RangeNotSatisfiableExceptionMapper().apply {
-        uriInfo = mockk<UriInfo> { every { path } returns "/api/v1/me/exports/x/download" }
-    }
+    private val mapper =
+        RangeNotSatisfiableExceptionMapper().apply {
+            uriInfo = mockk<UriInfo> { every { path } returns "/api/v1/me/exports/x/download" }
+        }
 
     @Test
     fun `Given an unsatisfiable range, Then it maps to 416 with a Content-Range total`() {

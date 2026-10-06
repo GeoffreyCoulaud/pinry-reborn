@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
@@ -21,14 +21,12 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 
 /**
- * CDI wiring for the four garbage collection sweeps whose constructor takes a primitive ARC cannot
- * resolve ([ReapOrphanedStorage] takes an `Int` and a `Duration`, [ReapTombstonedAccounts] a `Duration`,
- * [ReapTerminalTasks] and [ReapStaleMediaDownloads] a `Duration`).
- * Mirrors [ExportProducers.reapExpiredUserDataExports]:
- * `GarbageCollectionConfig` lives in `api-worker-quarkus`, so a use case in `api-usecases` cannot
- * take it directly and the primitive is read here. `ReapExpiredSessionTokens` is
- * `@ApplicationScoped` already (its dependencies are all injectable beans), so it has no producer
- * here.
+ * CDI wiring for the four garbage collection sweeps whose constructor takes a primitive ARC cannot resolve
+ * ([ReapOrphanedStorage] takes an `Int` and a `Duration`, [ReapTombstonedAccounts] a `Duration`, [ReapTerminalTasks]
+ * and [ReapStaleMediaDownloads] a `Duration`). Mirrors [ExportProducers.reapExpiredUserDataExports]:
+ * `GarbageCollectionConfig` lives in `api-worker-quarkus`, so a use case in `api-usecases` cannot take it directly and
+ * the primitive is read here. `ReapExpiredSessionTokens` is `@ApplicationScoped` already (its dependencies are all
+ * injectable beans), so it has no producer here.
  */
 @ApplicationScoped
 class GarbageCollectionProducers {

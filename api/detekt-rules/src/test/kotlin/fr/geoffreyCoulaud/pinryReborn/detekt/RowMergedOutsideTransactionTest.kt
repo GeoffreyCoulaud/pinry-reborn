@@ -19,7 +19,8 @@ class RowMergedOutsideTransactionTest {
 
             internal fun Repo.saveFencedOver(runner: TransactionRunner, id: UUID, held: (Row) -> Boolean) =
                 runner.fencedOver({ findById(id) }, held, { it.copy(state = 2) }) { save(it) }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -35,7 +36,8 @@ class RowMergedOutsideTransactionTest {
             """
             internal fun Repo.saveLater(runner: Scheduler, id: UUID) =
                 runner.later({ findById(id) }) { save(it) }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -55,7 +57,8 @@ class RowMergedOutsideTransactionTest {
                     pinRepository.savePin(updated)
                 }
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -73,7 +76,8 @@ class RowMergedOutsideTransactionTest {
             class Creator {
                 fun create(token: SessionToken, hash: String) = repository.saveSessionToken(token, hash)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -92,7 +96,8 @@ class RowMergedOutsideTransactionTest {
                     repository.save(userDataImport.copy(state = UserDataImportState.CANCELLED))
                 }
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -121,7 +126,8 @@ class RowMergedOutsideTransactionTest {
                         }
                     }
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -143,7 +149,8 @@ class RowMergedOutsideTransactionTest {
                 fun stamp(userDataImport: UserDataImport, activity: Instant) =
                     repository.save(userDataImport.copy(activity))
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -161,7 +168,8 @@ class RowMergedOutsideTransactionTest {
                 fun create(user: User) =
                     repository.save(UserDataImport(id = randomUUID(), state = AWAITING_ARCHIVE))
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -190,7 +198,8 @@ class RowMergedOutsideTransactionTest {
 
                 fun asRead(row: UserDataImport) = repository.save(row)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -207,7 +216,8 @@ class RowMergedOutsideTransactionTest {
             class Fence {
                 fun saveNothing() = save()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -229,7 +239,8 @@ class RowMergedOutsideTransactionTest {
                 fun report(current: UserDataImport) =
                     recorder.record(current.copy(state = UserDataImportState.FAILED))
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -247,7 +258,8 @@ class RowMergedOutsideTransactionTest {
                 fun cancel(userDataImport: UserDataImport) =
                     with(userDataImport) { repository.save(copy(state = UserDataImportState.CANCELLED)) }
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)

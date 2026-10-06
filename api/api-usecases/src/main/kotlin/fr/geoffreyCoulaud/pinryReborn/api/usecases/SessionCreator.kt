@@ -20,22 +20,21 @@ class SessionCreator(
     private val expiryPolicy: SessionExpiryPolicy,
     private val transactionRunner: TransactionRunner,
 ) {
-    fun create(name: String, password: String, persistent: Boolean): IssuedSession =
-        transactionRunner.inTransaction {
-            val user = userAuthenticator.authenticate(BasicAuthLogin(userName = name, password = password))
-            val token = tokenGenerator.generateToken()
-            val expiresAt = expiryPolicy.expiryFrom(clock.now(), persistent)
-            sessionTokenRepository.saveSessionToken(
-                sessionToken =
-                    SessionToken(
-                        id = randomUUID(),
-                        user = user,
-                        expiresAt = expiresAt,
-                        persistent = persistent,
-                        createdAt = clock.now(),
-                    ),
-                tokenHash = TokenHasher.sha256(token),
-            )
-            IssuedSession(token, expiresAt, expiryPolicy.renewAfterFor(expiresAt, persistent))
-        }
+    fun create(name: String, password: String, persistent: Boolean): IssuedSession = transactionRunner.inTransaction {
+        val user = userAuthenticator.authenticate(BasicAuthLogin(userName = name, password = password))
+        val token = tokenGenerator.generateToken()
+        val expiresAt = expiryPolicy.expiryFrom(clock.now(), persistent)
+        sessionTokenRepository.saveSessionToken(
+            sessionToken =
+                SessionToken(
+                    id = randomUUID(),
+                    user = user,
+                    expiresAt = expiresAt,
+                    persistent = persistent,
+                    createdAt = clock.now(),
+                ),
+            tokenHash = TokenHasher.sha256(token),
+        )
+        IssuedSession(token, expiresAt, expiryPolicy.renewAfterFor(expiresAt, persistent))
+    }
 }

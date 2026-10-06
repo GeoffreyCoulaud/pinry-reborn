@@ -13,8 +13,8 @@ import java.util.zip.ZipOutputStream
  * [ArchiveSink] backed by a [ZipOutputStream].
  *
  * Every `put*Entry` method returns the digest of the UNCOMPRESSED bytes it wrote: the per-entry
- * [CountingDigestOutputStream] sits between the caller and [zip], so it counts and digests before
- * deflation happens downstream, not after.
+ * [CountingDigestOutputStream] sits between the caller and [zip], so it counts and digests before deflation happens
+ * downstream, not after.
  */
 internal class ZipArchiveSink(private val zip: ZipOutputStream, private val mapper: ObjectMapper) : ArchiveSink {
 

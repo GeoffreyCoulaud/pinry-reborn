@@ -20,10 +20,11 @@ class ProblemResponsesTest {
     @Test
     fun `Given a binding failure under a property, Then the detail names the property and nothing else`() {
         // Given: the innermost reference is prepended first, so the path reads tags[2]
-        val exception = mismatchedInput().apply {
-            prependPath(Any(), 2)
-            prependPath(Any(), "tags")
-        }
+        val exception =
+            mismatchedInput().apply {
+                prependPath(Any(), 2)
+                prependPath(Any(), "tags")
+            }
 
         // When
         val problem = ProblemResponses.malformedBody(exception, uriInfo).build().entity as ProblemDetail

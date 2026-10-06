@@ -6,9 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseMo
 import io.ebean.typequery.QueryBean
 
 abstract class ModelSortStrategy<M : BaseModel, Q : QueryBean<M, Q>> {
-    /**
-     * Adapt the query to find the cursor's pivot and neighbors
-     */
+    /** Adapt the query to find the cursor's pivot and neighbors */
     fun filterCursorAndNeighbors(
         query: Q,
         cursor: ModelCursor<M>?,
@@ -20,25 +18,19 @@ abstract class ModelSortStrategy<M : BaseModel, Q : QueryBean<M, Q>> {
         }
     }
 
-    /**
-     * Adapt the query to find the cursor's pivot and its forward neighbors
-     */
+    /** Adapt the query to find the cursor's pivot and its forward neighbors */
     protected abstract fun filterCursorAndForwardNeighbors(
         cursor: ModelCursor<M>,
         query: Q,
     ): Q
 
-    /**
-     * Adapt the query to find the cursor's pivot and its backward neighbors
-     */
+    /** Adapt the query to find the cursor's pivot and its backward neighbors */
     protected abstract fun filterCursorAndBackwardNeighbors(
         cursor: ModelCursor<M>,
         query: Q,
     ): Q
 
-    /**
-     * Adapt the query to sort the result according to the strategy
-     */
+    /** Adapt the query to sort the result according to the strategy */
     fun sortCursorNeighbors(
         query: Q,
         cursor: ModelCursor<M>?,
@@ -48,13 +40,9 @@ abstract class ModelSortStrategy<M : BaseModel, Q : QueryBean<M, Q>> {
             BACKWARD -> sortCursorAndBackwardNeighbors(query)
         }
 
-    /**
-     * Adapt the query to sort the result according to the strategy when going forward
-     */
+    /** Adapt the query to sort the result according to the strategy when going forward */
     protected abstract fun sortCursorAndForwardNeighbors(query: Q): Q
 
-    /**
-     * Adapt the query to sort the result according to the strategy when going backward
-     */
+    /** Adapt the query to sort the result according to the strategy when going backward */
     protected abstract fun sortCursorAndBackwardNeighbors(query: Q): Q
 }

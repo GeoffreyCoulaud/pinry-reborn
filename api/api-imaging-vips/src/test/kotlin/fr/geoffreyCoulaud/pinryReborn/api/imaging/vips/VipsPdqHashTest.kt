@@ -4,20 +4,20 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PdqHash
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PdqHasher
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
-import java.time.Duration
-import java.time.Instant
-import java.util.UUID
 
 /** Meta's images under `pdq/`, with its BSD notice, and their hashes from `pdq/cpp/output-regtest/out`. */
 class VipsPdqHashTest {
     private val sampler = VipsImageTransformer(quality = 80, Duration.ofSeconds(60), DECODER_MEMORY)
 
     private fun hashOf(name: String): PdqHash {
-        val media = Media.StillImage(UUID.randomUUID(), UUID.randomUUID(), "image/jpeg", 1, 1, 0,"", "", Instant.EPOCH)
+        val media = Media.StillImage(UUID.randomUUID(), UUID.randomUUID(), "image/jpeg", 1, 1, 0, "", "", Instant.EPOCH)
         val hashes = mutableListOf<PdqHash>()
         sampler.sample(media, StagedFile("src/test/resources/pdq/$name", 0, "")) { hashes += PdqHasher.hash(it) }
         return hashes.single()

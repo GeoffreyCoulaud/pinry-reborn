@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.enums
 
 /**
- * What the importer reported about one archive line. "Already present" is not one of these: it is a
- * counter, and [LINE_REJECTED] is the catch-all that keeps one bad entry from failing an import.
+ * What the importer reported about one archive line. "Already present" is not one of these: it is a counter, and
+ * [LINE_REJECTED] is the catch-all that keeps one bad entry from failing an import.
  */
 enum class UserDataImportIssueKind {
     PIN_HAS_NO_MEDIA,

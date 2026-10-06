@@ -24,12 +24,12 @@ import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType.APPLICATION_JSON as JSON
+import java.util.UUID
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
-import java.util.UUID
 
 @Path("/api/v1/pins/recycled")
 class PinRecycleBinController(
@@ -40,8 +40,11 @@ class PinRecycleBinController(
 ) {
     @GET
     @Authenticated
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = PinListOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = PinListOutputDto::class))],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_NOT_FOUND)
     fun listRecycledPins(
@@ -62,16 +65,17 @@ class PinRecycleBinController(
     @POST
     @Authenticated
     @Path("/{pinId}/restore")
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = PinOutputDto::class))],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.PIN_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.PIN_NOT_FOUND)
     @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.PIN_NOT_RECYCLED)
     fun restorePin(pinId: UUID): RestResponse<PinOutputDto> {
         val user = securityIdentity.getUser()
-        return pinRecycleBin
-            .restore(pinId = pinId, user = user)
-            .let { RestResponse.ok(pinResponses.pin(it)) }
+        return pinRecycleBin.restore(pinId = pinId, user = user).let { RestResponse.ok(pinResponses.pin(it)) }
     }
 
     @POST

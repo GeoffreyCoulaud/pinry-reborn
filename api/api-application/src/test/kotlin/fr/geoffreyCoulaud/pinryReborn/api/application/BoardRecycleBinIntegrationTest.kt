@@ -8,6 +8,7 @@ import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import jakarta.inject.Inject
+import java.util.UUID
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.Matchers.emptyIterable
@@ -16,19 +17,15 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.UUID
 
 @QuarkusTest
 class BoardRecycleBinIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var boardCreator: BoardCreator
+    @Inject lateinit var boardCreator: BoardCreator
 
-    @Inject
-    lateinit var boardRepository: BoardRepositoryInterface
+    @Inject lateinit var boardRepository: BoardRepositoryInterface
 
     /** The stored board, whatever its state. `updatedAt` is on no output DTO, so it is read here. */
     private fun reloadBoard(boardId: UUID): Board =
@@ -41,22 +38,18 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Pin",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Pin",
+                tags = emptyList(),
+            )
         replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
 
         // When
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .delete("/api/v1/boards/${board.id}")
-            .then()
-            .statusCode(204)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${board.id}").then().statusCode(204)
 
         // Then - hidden from the board list and no longer directly reachable
         given()
@@ -67,12 +60,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
             .statusCode(200)
             .body("boards", emptyIterable<Any>())
 
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .get("/api/v1/boards/${board.id}")
-            .then()
-            .statusCode(404)
+        given().authenticatedAs(auth).`when`().get("/api/v1/boards/${board.id}").then().statusCode(404)
 
         // Then - its pins stay active in the feed
         given()
@@ -104,12 +92,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         waitForTheClockToTick()
 
         // When
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .delete("/api/v1/boards/${board.id}")
-            .then()
-            .statusCode(204)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${board.id}").then().statusCode(204)
 
         // Then - recycling is a modification, and both instants come from the same stamp
         val recycled = reloadBoard(board.id)
@@ -151,13 +134,14 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Pin",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Pin",
+                tags = emptyList(),
+            )
         replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
         given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}")
 
@@ -230,23 +214,19 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Pin",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Pin",
+                tags = emptyList(),
+            )
         replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
         given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}")
 
         // When
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .delete("/api/v1/boards/recycled/${board.id}")
-            .then()
-            .statusCode(204)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/boards/recycled/${board.id}").then().statusCode(204)
 
         // Then - the pin survives, without the deleted board
         given()
@@ -280,12 +260,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         given().authenticatedAs(auth).delete("/api/v1/boards/${board2.id}")
 
         // When
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .delete("/api/v1/boards/recycled")
-            .then()
-            .statusCode(204)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/boards/recycled").then().statusCode(204)
 
         // Then
         given()
@@ -304,19 +279,10 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
-        given()
-            .authenticatedAs(auth)
-            .delete("/api/v1/boards/${board.id}")
-            .then()
-            .statusCode(204)
+        given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}").then().statusCode(204)
 
         // When / Then - a second soft-delete conflicts instead of 404-ing
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .delete("/api/v1/boards/${board.id}")
-            .then()
-            .statusCode(409)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${board.id}").then().statusCode(409)
     }
 
     @Test
@@ -328,12 +294,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         given().authenticatedAs(owner).delete("/api/v1/boards/${board.id}")
 
         // When / Then - ownership is checked before state, so a non-owner gets 403 not 404
-        given()
-            .authenticatedAs(attacker)
-            .`when`()
-            .delete("/api/v1/boards/recycled/${board.id}")
-            .then()
-            .statusCode(403)
+        given().authenticatedAs(attacker).`when`().delete("/api/v1/boards/recycled/${board.id}").then().statusCode(403)
     }
 
     // --- Pin recycle bin interactions ---
@@ -343,23 +304,19 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Pin",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Pin",
+                tags = emptyList(),
+            )
         replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
         given().authenticatedAs(auth).delete("/api/v1/pins/${pin.id}")
 
         // When
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .delete("/api/v1/pins/recycled/${pin.id}")
-            .then()
-            .statusCode(204)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/pins/recycled/${pin.id}").then().statusCode(204)
 
         // Then
         given()
@@ -376,22 +333,21 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Pin",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Pin",
+                tags = emptyList(),
+            )
         replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
         given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}")
 
         // When - re-saving the pin must not drop the recycled board's join row. The write sends no
         // board, the recycled one being invisible to a read, and the row still has to stand.
         replacePin(auth, pin, tags = listOf("nature")).statusCode(200)
-        given()
-            .authenticatedAs(auth)
-            .post("/api/v1/boards/recycled/${board.id}/restore")
+        given().authenticatedAs(auth).post("/api/v1/boards/recycled/${board.id}/restore")
 
         // Then - the pin is still listed under the restored board
         given()
@@ -410,22 +366,18 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         val board1 = boardCreator.create(author = auth.user, name = "Board 1", description = "")
         val board2 = boardCreator.create(author = auth.user, name = "Board 2", description = "")
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Pin",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Pin",
+                tags = emptyList(),
+            )
         replacePin(auth, pin, boardIds = listOf(board1.id, board2.id)).statusCode(200)
 
         // When
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .delete("/api/v1/boards/${board1.id}")
-            .then()
-            .statusCode(204)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${board1.id}").then().statusCode(204)
 
         // Then - the recycled board never appears in the pin's boards
         given()

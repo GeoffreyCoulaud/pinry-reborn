@@ -10,12 +10,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class ReapStaleMediaDownloadsTest : BaseTest() {
     private val mediaDownloadRepository: MediaDownloadRepositoryInterface = mockk()
@@ -23,19 +23,27 @@ class ReapStaleMediaDownloadsTest : BaseTest() {
     private val clock: Clock = mockk()
     private val failedGrace = Duration.ofDays(7)
 
-    private val reap = ReapStaleMediaDownloads(
-        mediaDownloadRepository = mediaDownloadRepository,
-        taskQueue = taskQueue,
-        clock = clock,
-        failedGrace = failedGrace,
-    )
+    private val reap =
+        ReapStaleMediaDownloads(
+            mediaDownloadRepository = mediaDownloadRepository,
+            taskQueue = taskQueue,
+            clock = clock,
+            failedGrace = failedGrace,
+        )
 
     private val now = Instant.parse("2026-09-14T00:00:00Z")
 
-    private fun pending(pinId: UUID, taskId: UUID) = MediaDownload(
-        pinId = pinId, sourceUrl = "https://x/i.png", status = DownloadStatus.PENDING, reasonCode = null,
-        lastError = null, taskId = taskId, requestedAt = now, updatedAt = now,
-    )
+    private fun pending(pinId: UUID, taskId: UUID) =
+        MediaDownload(
+            pinId = pinId,
+            sourceUrl = "https://x/i.png",
+            status = DownloadStatus.PENDING,
+            reasonCode = null,
+            lastError = null,
+            taskId = taskId,
+            requestedAt = now,
+            updatedAt = now,
+        )
 
     @Test
     fun `Given a PENDING row whose task is gone, Then reap settles that row and leaves the live one`() {

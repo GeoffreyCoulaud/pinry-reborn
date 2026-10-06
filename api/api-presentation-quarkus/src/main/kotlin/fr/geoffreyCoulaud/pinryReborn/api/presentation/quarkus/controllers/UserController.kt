@@ -20,17 +20,30 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 
 @Path("/api/v1/users")
-class UserController(
-    private val userCreator: UserCreator,
-) {
+class UserController(private val userCreator: UserCreator) {
     @POST
     @PermitAll
-    @APIResponse(responseCode = "200", description = "The account created",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = UserOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "The account created",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = UserOutputDto::class))],
+    )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BODY)
-    @APIResponse(responseCode = "409", description = "Another account holds this name, whatever its case",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["USERNAME_ALREADY_EXISTS"])]))])
+    @APIResponse(
+        responseCode = "409",
+        description = "Another account holds this name, whatever its case",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["USERNAME_ALREADY_EXISTS"])],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun createUser(@Valid @NotNull userDto: UserInputDto): RestResponse<UserOutputDto> {
         val userOutputDto = userCreator.createUserWithPassword(name = userDto.name, password = userDto.password).toDto()

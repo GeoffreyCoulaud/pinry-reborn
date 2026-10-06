@@ -39,8 +39,8 @@ class MediaModel(
     var fingerprintVersion: Int? = null
 
     /**
-     * The pin [pinId] names, so a query about it is a join rather than raw SQL. No index of its own:
-     * `uq_media_pin_id` already covers the column.
+     * The pin [pinId] names, so a query about it is a join rather than raw SQL. No index of its own: `uq_media_pin_id`
+     * already covers the column.
      */
     @ManyToOne
     @DbForeignKey(noIndex = true)

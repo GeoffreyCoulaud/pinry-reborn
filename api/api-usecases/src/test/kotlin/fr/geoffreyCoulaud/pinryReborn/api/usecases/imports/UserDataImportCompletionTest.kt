@@ -15,8 +15,8 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 /**
- * Steps 7 and 8 of spec section 8: the compare-and-set that publishes, the catch-all that marks an
- * unenumerated failure, and the archive's fate on each. Split off for `LargeClass`, as the pin walk was.
+ * Steps 7 and 8 of spec section 8: the compare-and-set that publishes, the catch-all that marks an unenumerated
+ * failure, and the archive's fate on each. Split off for `LargeClass`, as the pin walk was.
  */
 internal class UserDataImportCompletionTest : UserDataImportRunnerFixtures() {
     @Test
@@ -47,8 +47,7 @@ internal class UserDataImportCompletionTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given a cancellation landing before the completion, Then nothing is published and the bytes go`() {
         // Given: one pin settles, then the canceller writes, and step 7 reads the row it left
-        val source =
-            FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
+        val source = FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
         stubWalk(source)
         stubMediaPath()
         stubArchiveRelease()
@@ -86,8 +85,7 @@ internal class UserDataImportCompletionTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given an unexpected failure on the last attempt, Then the row is marked failed and the throw escapes`() {
         // Given: without this the row stays RUNNING for ever, holding the account's only import slot
-        val source =
-            FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
+        val source = FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
         stubWalk(source)
         stubDigest()
         stubHashLookup()
@@ -106,8 +104,7 @@ internal class UserDataImportCompletionTest : UserDataImportRunnerFixtures() {
     fun `Given a lost lease on the last attempt, Then the row stays RUNNING under its run and the archive stays`() {
         // Given: the heartbeat throws before the first pin, as TaskProcessor's does once the queue refuses,
         // so nothing of the pin walk runs, and the archive is not deleted either: no release stub
-        val source =
-            FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
+        val source = FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
         stubOpen(source)
         every { issueRepository.countForImport(any()) } returns 0
 

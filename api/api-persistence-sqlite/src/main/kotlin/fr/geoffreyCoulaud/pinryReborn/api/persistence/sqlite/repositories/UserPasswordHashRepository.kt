@@ -13,9 +13,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.PersistenceException
 
 @ApplicationScoped
-class UserPasswordHashRepository(
-    persistor: Persistor,
-) : UserPasswordHashRepositoryInterface {
+class UserPasswordHashRepository(persistor: Persistor) : UserPasswordHashRepositoryInterface {
     private val sqlRepository = ModelRepository<UserPasswordHashModel>(persistor = persistor)
 
     override fun saveUserPasswordHash(
@@ -38,7 +36,8 @@ class UserPasswordHashRepository(
 
     override fun findCurrentPasswordHash(user: User): HashedPassword? =
         QUserPasswordHashModel()
-            .user.id
+            .user
+            .id
             .equalTo(user.id)
             .orderBy()
             .createdAt
@@ -48,16 +47,9 @@ class UserPasswordHashRepository(
             ?.toDomain()
 
     override fun findAllPasswordHashesForUser(user: User): List<HashedPassword> =
-        QUserPasswordHashModel()
-            .user.id
-            .equalTo(user.id)
-            .findList()
-            .map { it.toDomain() }
+        QUserPasswordHashModel().user.id.equalTo(user.id).findList().map { it.toDomain() }
 
     override fun deleteForUser(user: User) {
-        QUserPasswordHashModel()
-            .user.id
-            .equalTo(user.id)
-            .delete()
+        QUserPasswordHashModel().user.id.equalTo(user.id).delete()
     }
 }

@@ -20,14 +20,14 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifyOrder
+import java.time.Instant
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Instant
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 class PinRecycleBinTest {
     private val pinRepository = mockk<PinRepositoryInterface>()
@@ -37,15 +37,16 @@ class PinRecycleBinTest {
     private val renditionCache = mockk<RenditionCache>()
     private val clock = mockk<Clock>()
     private val transitionInstant = Instant.parse("2026-07-29T08:30:00Z")
-    private val useCase = PinRecycleBin(
-        pinRepository = pinRepository,
-        mediaRepository = mediaRepository,
-        mediaStore = mediaStore,
-        clearPinDownload = clearPinDownload,
-        renditionCache = renditionCache,
-        clock = clock,
-        transactionRunner = PassthroughTransactionRunner(),
-    )
+    private val useCase =
+        PinRecycleBin(
+            pinRepository = pinRepository,
+            mediaRepository = mediaRepository,
+            mediaStore = mediaStore,
+            clearPinDownload = clearPinDownload,
+            renditionCache = renditionCache,
+            clock = clock,
+            transactionRunner = PassthroughTransactionRunner(),
+        )
 
     @BeforeEach
     fun stubClockAndRenditionCache() {
@@ -53,30 +54,32 @@ class PinRecycleBinTest {
         every { clock.now() } returns transitionInstant
     }
 
-    private fun createPin(author: User, softDeletedAt: Instant? = null) = Pin(
-        id = randomUUID(),
-        author = author,
-        sourceContextUrl = "https://example.com",
-        sourceMediaUrl = "https://example.com/img.jpg",
-        description = "A pin",
-        tags = emptyList(),
-        boards = emptyList(),
-        softDeletedAt = softDeletedAt,
-        createdAt = TestTime.now,
-        updatedAt = TestTime.now,
-    )
+    private fun createPin(author: User, softDeletedAt: Instant? = null) =
+        Pin(
+            id = randomUUID(),
+            author = author,
+            sourceContextUrl = "https://example.com",
+            sourceMediaUrl = "https://example.com/img.jpg",
+            description = "A pin",
+            tags = emptyList(),
+            boards = emptyList(),
+            softDeletedAt = softDeletedAt,
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
 
-    private fun createMedia(pinId: UUID) = Media.StillImage(
-        id = randomUUID(),
-        pinId = pinId,
-        mimeType = "image/png",
-        width = 1,
-        height = 1,
-        byteSize = 1,
-        contentHash = "hash",
-        storageKey = "originals/x/$pinId/i.png",
-        createdAt = Instant.parse("2026-07-08T00:00:00Z"),
-    )
+    private fun createMedia(pinId: UUID) =
+        Media.StillImage(
+            id = randomUUID(),
+            pinId = pinId,
+            mimeType = "image/png",
+            width = 1,
+            height = 1,
+            byteSize = 1,
+            contentHash = "hash",
+            storageKey = "originals/x/$pinId/i.png",
+            createdAt = Instant.parse("2026-07-08T00:00:00Z"),
+        )
 
     // --- Soft delete ---
 
@@ -86,8 +89,7 @@ class PinRecycleBinTest {
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
         val pin = createPin(author = user)
         every { pinRepository.findPinById(pin.id) } returns pin
-        every { pinRepository.softDeletePin(pin = pin, at = any()) } returns
-            pin.copy(softDeletedAt = transitionInstant)
+        every { pinRepository.softDeletePin(pin = pin, at = any()) } returns pin.copy(softDeletedAt = transitionInstant)
 
         // When
         useCase.softDelete(pinId = pin.id, user = user)
@@ -105,8 +107,7 @@ class PinRecycleBinTest {
         val pin = createPin(author = user)
         val stampedInstant = slot<Instant>()
         every { pinRepository.findPinById(pin.id) } returns pin
-        every { pinRepository.softDeletePin(pin = pin, at = any()) } returns
-            pin.copy(softDeletedAt = transitionInstant)
+        every { pinRepository.softDeletePin(pin = pin, at = any()) } returns pin.copy(softDeletedAt = transitionInstant)
 
         // When
         useCase.softDelete(pinId = pin.id, user = user)
@@ -237,10 +238,11 @@ class PinRecycleBinTest {
     fun `Given owned recycled pins, Then restoreAll restores them at the clock's instant`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val pinIds = givenPins(
-            createPin(author = user, softDeletedAt = TestTime.now),
-            createPin(author = user, softDeletedAt = TestTime.now),
-        )
+        val pinIds =
+            givenPins(
+                createPin(author = user, softDeletedAt = TestTime.now),
+                createPin(author = user, softDeletedAt = TestTime.now),
+            )
         justRun { pinRepository.restorePins(any(), any()) }
 
         // When

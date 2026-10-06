@@ -12,26 +12,29 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserD
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDto
 
 object UserDataExportDtoMapper {
-    fun UserDataExport.toDto() = UserDataExportOutputDto(
-        id = id,
-        state = state.toDto(),
-        requestedAt = requestedAt,
-        completedAt = completedAt,
-        expiresAt = expiresAt,
-        byteSize = byteSize,
-        mediaType = mediaType,
-        sha256 = sha256,
-        reasonCode = reason(),
-        formatVersion = formatVersion,
-    )
+    fun UserDataExport.toDto() =
+        UserDataExportOutputDto(
+            id = id,
+            state = state.toDto(),
+            requestedAt = requestedAt,
+            completedAt = completedAt,
+            expiresAt = expiresAt,
+            byteSize = byteSize,
+            mediaType = mediaType,
+            sha256 = sha256,
+            reasonCode = reason(),
+            formatVersion = formatVersion,
+        )
 
-    fun Page<UserDataExport>.toDto() = UserDataExportListOutputDto(
-        exports = items.map { it.toDto() },
-        pagination = PaginationOutputDto(
-            previousCursor = previousCursor?.toDto(),
-            nextCursor = nextCursor?.toDto(),
-        ),
-    )
+    fun Page<UserDataExport>.toDto() =
+        UserDataExportListOutputDto(
+            exports = items.map { it.toDto() },
+            pagination =
+                PaginationOutputDto(
+                    previousCursor = previousCursor?.toDto(),
+                    nextCursor = nextCursor?.toDto(),
+                ),
+        )
 
     private fun UserDataExportState.toDto(): UserDataExportStateDto =
         when (this) {
@@ -40,13 +43,13 @@ object UserDataExportDtoMapper {
             UserDataExportState.FAILED -> UserDataExportStateDto.FAILED
             UserDataExportState.EXPIRED,
             UserDataExportState.DELETED,
-            UserDataExportState.SUPERSEDED,
-            -> UserDataExportStateDto.GONE
+            UserDataExportState.SUPERSEDED -> UserDataExportStateDto.GONE
         }
 
     private fun UserDataExport.reason(): UserDataExportReasonDto? =
         when (state) {
-            UserDataExportState.PENDING, UserDataExportState.READY -> null
+            UserDataExportState.PENDING,
+            UserDataExportState.READY -> null
             UserDataExportState.FAILED -> failureCode?.toDto()
             UserDataExportState.EXPIRED -> UserDataExportReasonDto.EXPIRED
             UserDataExportState.DELETED -> UserDataExportReasonDto.DELETED

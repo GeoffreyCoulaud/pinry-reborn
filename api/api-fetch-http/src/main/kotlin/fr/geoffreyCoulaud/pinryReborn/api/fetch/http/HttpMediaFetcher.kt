@@ -75,12 +75,9 @@ class HttpMediaFetcher(
                 }
                 status == UNAUTHORIZED || status == FORBIDDEN ->
                     throw FetchAccessDeniedException("origin refused access ($status)")
-                status == NOT_FOUND || status == GONE ->
-                    throw FetchNotFoundException("no media at this url ($status)")
-                status == TOO_MANY_REQUESTS ->
-                    throw FetchUnreachableException("origin error ($status)")
-                status < SERVER_ERROR_MIN ->
-                    throw FetchFailedException("unexpected response status $status")
+                status == NOT_FOUND || status == GONE -> throw FetchNotFoundException("no media at this url ($status)")
+                status == TOO_MANY_REQUESTS -> throw FetchUnreachableException("origin error ($status)")
+                status < SERVER_ERROR_MIN -> throw FetchFailedException("unexpected response status $status")
                 else -> throw FetchUnreachableException("origin error ($status)")
             }
         }

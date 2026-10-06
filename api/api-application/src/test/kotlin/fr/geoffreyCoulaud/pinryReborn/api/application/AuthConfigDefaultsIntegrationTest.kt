@@ -3,18 +3,17 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.AuthConfig
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
+import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.Duration
 
 /**
- * Pins the attempt-limiting defaults, and the assumption under them: a `List<Duration>` mapping
- * resolves `@WithDefault` from a comma-separated string (`docs/specs/2026-08-13-auth-attempt-limiting.md`).
+ * Pins the attempt-limiting defaults, and the assumption under them: a `List<Duration>` mapping resolves `@WithDefault`
+ * from a comma-separated string (`docs/specs/2026-08-13-auth-attempt-limiting.md`).
  */
 @QuarkusTest
 class AuthConfigDefaultsIntegrationTest {
-    @Inject
-    lateinit var config: AuthConfig
+    @Inject lateinit var config: AuthConfig
 
     @Test
     fun `Given no configuration, Then the attempt-limiting defaults are the specified ones`() {

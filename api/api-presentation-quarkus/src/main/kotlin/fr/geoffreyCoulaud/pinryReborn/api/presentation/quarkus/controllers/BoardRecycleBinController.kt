@@ -20,13 +20,13 @@ import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.core.MediaType.APPLICATION_JSON as JSON
+import java.util.UUID
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
-import java.util.UUID
 
 @Path("/api/v1/boards/recycled")
 class BoardRecycleBinController(
@@ -45,8 +45,11 @@ class BoardRecycleBinController(
     @POST
     @Authenticated
     @Path("/{boardId}/restore")
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = JSON, schema = Schema(implementation = BoardOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [Content(mediaType = JSON, schema = Schema(implementation = BoardOutputDto::class))],
+    )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.BOARD_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.BOARD_NOT_FOUND)
     @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.BOARD_NOT_RECYCLED)
@@ -63,9 +66,21 @@ class BoardRecycleBinController(
     @APIResponse(responseCode = "204", description = "Boards restored")
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.INVALID_BATCH_BODY)
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.BOARD_FORBIDDEN)
-    @APIResponse(responseCode = "404", description = "A board the body names does not exist",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["BOARD_DOES_NOT_EXIST"])]))])
+    @APIResponse(
+        responseCode = "404",
+        description = "A board the body names does not exist",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["BOARD_DOES_NOT_EXIST"])],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "409", ref = SharedRefusalsFilter.BOARD_NOT_RECYCLED)
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun restoreBoards(@Valid @NotNull dto: BoardIdsInputDto): RestResponse<Void> {

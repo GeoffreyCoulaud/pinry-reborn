@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.jandex)
 }
+
 dependencies {
     implementation(project(":api-domain"))
     compileOnly(libs.jakarta.cdi.api)

@@ -12,6 +12,7 @@ import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import io.restassured.response.ValidatableResponse
 import jakarta.inject.Inject
+import java.util.UUID
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.Matchers.containsInAnyOrder
@@ -20,16 +21,13 @@ import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
-import java.util.UUID
 
 @QuarkusTest
 class PinUpdaterIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var boardCreator: BoardCreator
+    @Inject lateinit var boardCreator: BoardCreator
 
     @Test
     fun `Given a new description, Then the write replaces it`() {
@@ -51,8 +49,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         val pin = createPin(auth)
 
         // When
-        update(auth, pin, sourceContextUrl = "https://example.com/other", sourceMediaUrl = "  ")
-            .statusCode(200)
+        update(auth, pin, sourceContextUrl = "https://example.com/other", sourceMediaUrl = "  ").statusCode(200)
 
         // Then
         readPin(auth, pin)
@@ -70,9 +67,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         update(auth, pin, tags = listOf("nature", "landscape")).statusCode(200)
 
         // Then
-        readPin(auth, pin)
-            .body("tags", hasSize<Any>(2))
-            .body("tags.name", containsInAnyOrder("nature", "landscape"))
+        readPin(auth, pin).body("tags", hasSize<Any>(2)).body("tags.name", containsInAnyOrder("nature", "landscape"))
     }
 
     @Test
@@ -101,9 +96,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         update(auth, pin).statusCode(200)
 
         // Then
-        readPin(auth, pin)
-            .body("tags", emptyIterable<Any>())
-            .body("boards", emptyIterable<Any>())
+        readPin(auth, pin).body("tags", emptyIterable<Any>()).body("boards", emptyIterable<Any>())
     }
 
     @Test
@@ -113,8 +106,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         val pin = createPin(auth)
 
         // When
-        update(auth, pin, description = "Never stored", boardIds = listOf(UUID.randomUUID()))
-            .statusCode(404)
+        update(auth, pin, description = "Never stored", boardIds = listOf(UUID.randomUUID())).statusCode(404)
 
         // Then
         readPin(auth, pin).body("description", equalTo("A pin"))
@@ -151,8 +143,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         val othersBoard = boardCreator.create(author = other.user, name = "Not yours", description = "")
 
         // When
-        update(auth, pin, description = "Never stored", boardIds = listOf(othersBoard.id))
-            .statusCode(403)
+        update(auth, pin, description = "Never stored", boardIds = listOf(othersBoard.id)).statusCode(403)
 
         // Then
         readPin(auth, pin).body("description", equalTo("A pin"))
@@ -223,39 +214,37 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
                     "sourceMediaUrl" to sourceMediaUrl,
                     "tags" to tags,
                     "boardIds" to boardIds.map { it?.toString() },
-                ),
+                )
             )
             .`when`()
             .put("/api/v1/pins/${pin.id}")
             .then()
 
     private fun readPin(auth: AuthenticatedUser, pin: Pin): ValidatableResponse =
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .get("/api/v1/pins/${pin.id}")
-            .then()
-            .statusCode(200)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/${pin.id}").then().statusCode(200)
 
     // ==================== Resolution ====================
 
-    @Inject
-    lateinit var duplicateRepository: PinDuplicateRepositoryInterface
+    @Inject lateinit var duplicateRepository: PinDuplicateRepositoryInterface
 
-    @Inject
-    lateinit var pinRecycleBin: PinRecycleBin
+    @Inject lateinit var pinRecycleBin: PinRecycleBin
 
     // Each pin as its owner reads it, so a refused resolution is shown to have written nothing.
-    private fun bodiesOf(vararg pins: Pair<AuthenticatedUser, Pin>): List<String> =
-        pins.map { (auth, pin) -> readPin(auth, pin).extract().asString() }
+    private fun bodiesOf(vararg pins: Pair<AuthenticatedUser, Pin>): List<String> = pins.map { (auth, pin) ->
+        readPin(auth, pin).extract().asString()
+    }
 
     private fun postResolution(
         auth: AuthenticatedUser,
         openPinId: UUID,
         decisions: Map<String, String?>,
     ): ValidatableResponse =
-        given().authenticatedAs(auth).contentType(ContentType.JSON).body(mapOf("decisions" to decisions))
-            .post("/api/v1/pins/$openPinId/duplicates/resolutions").then()
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .body(mapOf("decisions" to decisions))
+            .post("/api/v1/pins/$openPinId/duplicates/resolutions")
+            .then()
 
     // The open pin first, paired with each of the others.
     private fun createPinsPairedWithTheFirst(auth: AuthenticatedUser, size: Int): List<Pin> {
@@ -270,8 +259,14 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
 
     // A set: pins created within one clock tick tie on the list's order.
     private fun listDuplicatesWithRejection(auth: AuthenticatedUser, pin: Pin): Set<Pair<String, Boolean>> {
-        val body = given().authenticatedAs(auth).get("/api/v1/pins/${pin.id}/duplicates")
-            .then().statusCode(200).extract().jsonPath()
+        val body =
+            given()
+                .authenticatedAs(auth)
+                .get("/api/v1/pins/${pin.id}/duplicates")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
         return body.getList<String>("duplicates.pin.id").zip(body.getList<Boolean>("duplicates.rejected")).toSet()
     }
 
@@ -282,19 +277,21 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         val pins = createPinsPairedWithTheFirst(auth, 3).map { auth to it }.toTypedArray()
         val (openId, other, third) = pins.map { "${it.second.id}" }
         val before = readPinsAndEveryPair(*pins)
-        val malformed = listOf(
-            mapOf("not-a-pin" to "KEEP", other to "MERGE"),
-            mapOf(openId to "KEEP", other to "DROP"),
-            mapOf(openId to "KEEP", other to null),
-        )
-        val invalid = listOf(
-            mapOf(openId to "MERGE", other to "MERGE"),
-            mapOf(openId to "KEEP", other to "KEEP"),
-            mapOf(other to "KEEP", third to "MERGE"),
-            mapOf(openId to "REJECT", other to "KEEP"),
-            mapOf(openId to "KEEP"),
-            List(PinIdsInputDto.MAX_IDENTIFIERS) { "${UUID.randomUUID()}" to "MERGE" }.toMap() + (openId to "KEEP"),
-        )
+        val malformed =
+            listOf(
+                mapOf("not-a-pin" to "KEEP", other to "MERGE"),
+                mapOf(openId to "KEEP", other to "DROP"),
+                mapOf(openId to "KEEP", other to null),
+            )
+        val invalid =
+            listOf(
+                mapOf(openId to "MERGE", other to "MERGE"),
+                mapOf(openId to "KEEP", other to "KEEP"),
+                mapOf(other to "KEEP", third to "MERGE"),
+                mapOf(openId to "REJECT", other to "KEEP"),
+                mapOf(openId to "KEEP"),
+                List(PinIdsInputDto.MAX_IDENTIFIERS) { "${UUID.randomUUID()}" to "MERGE" }.toMap() + (openId to "KEEP"),
+            )
 
         // When, Then
         val pinId = UUID.fromString(openId)
@@ -341,7 +338,8 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         listOf(unpaired.id, UUID.randomUUID(), foreign.id, recycled.id).forEach {
             val decisions = mapOf("${openPin.id}" to "KEEP", "${candidate.id}" to "MERGE", "$it" to "REJECT")
             postResolution(auth, openPin.id, decisions)
-                .statusCode(404).body("code", equalTo("DUPLICATE_DOES_NOT_EXIST"))
+                .statusCode(404)
+                .body("code", equalTo("DUPLICATE_DOES_NOT_EXIST"))
         }
         assertEquals(before, readPinsAndEveryPair(*pins))
     }
@@ -350,8 +348,8 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
     fun `Given the open pin merged into a candidate with a third, Then a fourth stays rejected against the kept pin`() {
         // Given: the open pin paired with the others, the rejected with the kept, the merged with an outsider
         val auth = createAuthenticatedUser()
-        val (openBoard, mergedBoard) = listOf("Open", "Merged")
-            .map { boardCreator.create(author = auth.user, name = it, description = "") }
+        val (openBoard, mergedBoard) =
+            listOf("Open", "Merged").map { boardCreator.create(author = auth.user, name = it, description = "") }
         val pins = createPinsPairedWithTheFirst(auth, 4)
         val (openPin, kept, merged) = pins
         val rejected = pins.last()
@@ -363,8 +361,8 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         val decisions = mapOf(openPin to "MERGE", kept to "KEEP", merged to "MERGE", rejected to "REJECT")
 
         // When
-        val answered = postResolution(auth, openPin.id, decisions.mapKeys { "${it.key.id}" })
-            .statusCode(200).extract().jsonPath()
+        val answered =
+            postResolution(auth, openPin.id, decisions.mapKeys { "${it.key.id}" }).statusCode(200).extract().jsonPath()
         val recycledAt = listOf(openPin, merged).map { readPin(auth, it).extract().path<String?>("softDeletedAt") }
         val keptDuplicates = listDuplicatesWithRejection(auth, kept)
         pinRecycleBin.restore(openPin.id, auth.user)
@@ -386,8 +384,11 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         val (openPin, rejected, unnamed) = createPinsPairedWithTheFirst(auth, 3)
 
         // When
-        val answered = postResolution(auth, openPin.id, mapOf("${openPin.id}" to "KEEP", "${rejected.id}" to "REJECT"))
-            .statusCode(200).extract().path<String>("id")
+        val answered =
+            postResolution(auth, openPin.id, mapOf("${openPin.id}" to "KEEP", "${rejected.id}" to "REJECT"))
+                .statusCode(200)
+                .extract()
+                .path<String>("id")
 
         // Then
         assertEquals("${openPin.id}", answered)

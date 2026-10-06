@@ -1,11 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security
 
-import io.quarkus.security.identity.IdentityProviderManager
-import io.quarkus.security.identity.SecurityIdentity
-import io.quarkus.security.identity.request.TokenAuthenticationRequest
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.quarkus.security.identity.IdentityProviderManager
+import io.quarkus.security.identity.SecurityIdentity
+import io.quarkus.security.identity.request.TokenAuthenticationRequest
 import io.smallrye.mutiny.Uni
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.ext.web.RoutingContext

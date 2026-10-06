@@ -10,16 +10,16 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.PinQueries
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.matchingText
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID.randomUUID
 
 /**
- * The catalogue's `q`: what a term matches, what it does not, and the junction that has to stay
- * closed for the second page of a search to still be a search.
+ * The catalogue's `q`: what a term matches, what it does not, and the junction that has to stay closed for the second
+ * page of a search to still be a search.
  */
 class PinRepositorySearchTest : PinRepositoryFixtures() {
     private fun savePin(
@@ -40,7 +40,7 @@ class PinRepositorySearchTest : PinRepositoryFixtures() {
                 boards = boards,
                 createdAt = createdAt,
                 updatedAt = createdAt,
-            ),
+            )
         )
 
     private fun search(
@@ -81,14 +81,15 @@ class PinRepositorySearchTest : PinRepositoryFixtures() {
         savePin(author, description = "A cat elsewhere")
 
         // When
-        val found = repository.findActivePinsForBoard(
-            reader = author,
-            boardId = board.id,
-            cursor = null,
-            pageSize = 20,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-            query = "cat",
-        )
+        val found =
+            repository.findActivePinsForBoard(
+                reader = author,
+                boardId = board.id,
+                cursor = null,
+                pageSize = 20,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+                query = "cat",
+            )
 
         // Then
         assertEquals(listOf(inside.id), found.items.map { it.id })

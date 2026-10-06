@@ -5,10 +5,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.Media
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.MediaDownloadDtoMapper.toDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaDownloads
 import io.quarkus.security.Authenticated
 import io.quarkus.security.identity.SecurityIdentity
@@ -17,17 +17,17 @@ import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
+import java.util.UUID
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
-import java.util.UUID
 
 /**
- * `/api/v1/me/media-downloads`: the caller's downloads that are running or failed, a success
- * leaving the pin and no row (spec `docs/specs/2026-09-10-web-application.md`, section 4.4).
+ * `/api/v1/me/media-downloads`: the caller's downloads that are running or failed, a success leaving the pin and no row
+ * (spec `docs/specs/2026-09-10-web-application.md`, section 4.4).
  */
 @Path("/api/v1/me/media-downloads")
 @Authenticated
@@ -43,12 +43,13 @@ class MeMediaDownloadController(
     @APIResponse(
         responseCode = "200",
         description = "One page of the caller's downloads, running and failed",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = MediaDownloadListOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = MediaDownloadListOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.UNREADABLE_QUERY)
     fun listMediaDownloads(
@@ -64,9 +65,21 @@ class MeMediaDownloadController(
     @Operation(summary = "Drop one settled download", description = "The pin and its media are untouched.")
     @APIResponse(responseCode = "204", description = "Download dropped")
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.MEDIA_NOT_FOUND)
-    @APIResponse(responseCode = "409", description = "The download is still running, and the worker owns its row",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_DOWNLOAD_IN_PROGRESS"])]))])
+    @APIResponse(
+        responseCode = "409",
+        description = "The download is still running, and the worker owns its row",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["MEDIA_DOWNLOAD_IN_PROGRESS"])],
+                        ),
+                )
+            ],
+    )
     fun deleteMediaDownload(pinId: UUID): RestResponse<Void> {
         mediaDownloads.delete(securityIdentity.getUser(), pinId)
         return RestResponse.noContent()

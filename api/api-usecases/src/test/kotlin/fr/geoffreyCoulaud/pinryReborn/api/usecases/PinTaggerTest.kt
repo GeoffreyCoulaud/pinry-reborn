@@ -5,9 +5,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 class PinTaggerTest {
     private val tagCreator = mockk<TagCreator>()

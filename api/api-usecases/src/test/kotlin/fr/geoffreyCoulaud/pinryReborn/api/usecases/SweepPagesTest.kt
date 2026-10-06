@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 class SweepPagesTest {
     private data class Row(val id: UUID)
@@ -18,7 +18,12 @@ class SweepPagesTest {
         val pages = mapOf<UUID?, List<Row>>(null to first, first.last().id to second, second.last().id to emptyList())
 
         // When
-        val rows = SweepPages.of(Row::id) { afterId -> cursors += afterId; pages.getValue(afterId) }.toList()
+        val rows =
+            SweepPages.of(Row::id) { afterId ->
+                    cursors += afterId
+                    pages.getValue(afterId)
+                }
+                .toList()
 
         // Then
         assertEquals(first + second, rows)
@@ -32,7 +37,13 @@ class SweepPagesTest {
         var reads = 0
 
         // When / Then
-        assertThrows(IllegalStateException::class.java) { SweepPages.of(Row::id) { reads += 1; stuck }.count() }
+        assertThrows(IllegalStateException::class.java) {
+            SweepPages.of(Row::id) {
+                    reads += 1
+                    stuck
+                }
+                .count()
+        }
         assertEquals(SweepPages.MAX_PAGES + 1, reads)
     }
 }

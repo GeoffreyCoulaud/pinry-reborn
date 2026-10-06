@@ -10,9 +10,9 @@ import jakarta.ws.rs.container.ContainerResponseContext
 import jakarta.ws.rs.core.MultivaluedHashMap
 import jakarta.ws.rs.core.NewCookie
 import jakarta.ws.rs.core.UriInfo
+import java.net.URI
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.net.URI
 
 class LoggingRequestResponseFilterTest {
     private val objectMapper = spyk(ObjectMapper())
@@ -57,9 +57,8 @@ class LoggingRequestResponseFilterTest {
     @Test
     fun `Given Authorization and Cookie request headers, Then requestFilter redacts them and keeps the rest`() {
         // Given
-        val ctx = request(
-            mapOf("Authorization" to "Bearer a-token", "Cookie" to "pinry_session=a-token", "Accept" to "*/*"),
-        )
+        val ctx =
+            request(mapOf("Authorization" to "Bearer a-token", "Cookie" to "pinry_session=a-token", "Accept" to "*/*"))
 
         // When
         filter.requestFilter(ctx)

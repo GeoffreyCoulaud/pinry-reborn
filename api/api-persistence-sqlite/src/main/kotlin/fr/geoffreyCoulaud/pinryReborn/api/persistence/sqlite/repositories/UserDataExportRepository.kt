@@ -27,23 +27,20 @@ import java.util.UUID
 // BoardRepository and EbeanTaskQueue for the same rule).
 @Suppress("TooManyFunctions")
 @ApplicationScoped
-class UserDataExportRepository(
-    private val persistor: Persistor,
-) : UserDataExportRepositoryInterface {
+class UserDataExportRepository(private val persistor: Persistor) : UserDataExportRepositoryInterface {
     private val sqlRepository = ModelRepository<UserDataExportModel>(persistor = persistor)
 
     private fun persist(model: UserDataExportModel): UserDataExport = sqlRepository.saveAndReturn(model).toDomain()
 
     /**
-     * A state-change re-save (any state but PENDING) only updates columns on a row that already
-     * exists, so it does not re-resolve the active user: the owner may be tombstoned by now (the
-     * account cleaner reaps exports after the user), and re-resolving would throw
-     * `UserModelDoesNotExistError` and abort the retention sweep. The user id is enough to keep the
-     * foreign key, supplied as an Ebean reference that never loads the row.
+     * A state-change re-save (any state but PENDING) only updates columns on a row that already exists, so it does not
+     * re-resolve the active user: the owner may be tombstoned by now (the account cleaner reaps exports after the
+     * user), and re-resolving would throw `UserModelDoesNotExistError` and abort the retention sweep. The user id is
+     * enough to keep the foreign key, supplied as an Ebean reference that never loads the row.
      *
-     * A new PENDING export still resolves the active user: that lookup is the guard that keeps a
-     * tombstoned account from queueing more work against its own data. It stays outside the try so
-     * `UserModelDoesNotExistError` is never mistaken for the unique-index violation translated below.
+     * A new PENDING export still resolves the active user: that lookup is the guard that keeps a tombstoned account
+     * from queueing more work against its own data. It stays outside the try so `UserModelDoesNotExistError` is never
+     * mistaken for the unique-index violation translated below.
      */
     override fun save(export: UserDataExport): UserDataExport {
         if (export.state != UserDataExportState.PENDING) {
@@ -61,8 +58,7 @@ class UserDataExportRepository(
         }
     }
 
-    override fun findById(id: UUID): UserDataExport? =
-        QUserDataExportModel().id.equalTo(id).findOne()?.toDomain()
+    override fun findById(id: UUID): UserDataExport? = QUserDataExportModel().id.equalTo(id).findOne()?.toDomain()
 
     override fun findAllForUser(
         userId: UUID,
@@ -89,48 +85,54 @@ class UserDataExportRepository(
 
     override fun findPendingForUser(userId: UUID): UserDataExport? =
         QUserDataExportModel()
-            .user.id.equalTo(userId)
-            .state.isIn(PartialUniqueIndexStates.pendingExportStates)
+            .user
+            .id
+            .equalTo(userId)
+            .state
+            .isIn(PartialUniqueIndexStates.pendingExportStates)
             .findOne()
             ?.toDomain()
 
     override fun findReadyForUser(userId: UUID): UserDataExport? =
         QUserDataExportModel()
-            .user.id.equalTo(userId)
-            .state.equalTo(UserDataExportState.READY.name)
+            .user
+            .id
+            .equalTo(userId)
+            .state
+            .equalTo(UserDataExportState.READY.name)
             .findOne()
             ?.toDomain()
 
     override fun findLastRequestedAtForUser(userId: UUID): Instant? =
-        QUserDataExportModel()
-            .user.id.equalTo(userId)
-            .orderBy()
-            .requestedAt.desc()
-            .setMaxRows(1)
-            .findOne()
-            ?.requestedAt
+        QUserDataExportModel().user.id.equalTo(userId).orderBy().requestedAt.desc().setMaxRows(1).findOne()?.requestedAt
 
     override fun findExpiredReadyExports(now: Instant, afterId: UUID?, limit: Int): List<UserDataExport> =
         QUserDataExportModel()
-            .state.equalTo(UserDataExportState.READY.name)
-            .expiresAt.lessThan(now)
+            .state
+            .equalTo(UserDataExportState.READY.name)
+            .expiresAt
+            .lessThan(now)
             .pageByIdAfter(afterId, limit)
             .findList()
             .map { it.toDomain() }
 
     override fun findPending(limit: Int): List<UserDataExport> =
         QUserDataExportModel()
-            .state.equalTo(UserDataExportState.PENDING.name)
+            .state
+            .equalTo(UserDataExportState.PENDING.name)
             .orderBy()
-            .requestedAt.asc()
+            .requestedAt
+            .asc()
             .setMaxRows(limit)
             .findList()
             .map { it.toDomain() }
 
     override fun findReclaimableTerminal(afterId: UUID?, limit: Int): List<UserDataExport> =
         QUserDataExportModel()
-            .state.isIn(TerminalExportStates.all)
-            .storageKey.isNotNull()
+            .state
+            .isIn(TerminalExportStates.all)
+            .storageKey
+            .isNotNull()
             .pageByIdAfter(afterId, limit)
             .findList()
             .map { it.toDomain() }

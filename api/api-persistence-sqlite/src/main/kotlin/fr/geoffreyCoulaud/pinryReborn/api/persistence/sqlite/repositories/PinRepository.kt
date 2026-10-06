@@ -8,13 +8,13 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PinModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PinModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.TagModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.TagModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.BoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinBoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
@@ -39,40 +39,19 @@ import java.util.UUID
 // across artificial classes for no readability gain (mirrors EbeanTaskQueue's precedent for the
 // same rule).
 @Suppress("TooManyFunctions")
-class PinRepository(
-    private val persistor: Persistor,
-) : PinRepositoryInterface {
-    private val sqlRepository =
-        ModelRepository<PinModel>(
-            persistor = persistor,
-        )
+class PinRepository(private val persistor: Persistor) : PinRepositoryInterface {
+    private val sqlRepository = ModelRepository<PinModel>(persistor = persistor)
 
     private fun getTagsForPin(pinId: UUID): List<Tag> =
-        QPinTagModel()
-            .pin.id
-            .equalTo(pinId)
-            .fetch("tag")
-            .findList()
-            .map { it.tag.toDomain() }
+        QPinTagModel().pin.id.equalTo(pinId).fetch("tag").findList().map { it.tag.toDomain() }
 
     // Only active (non soft-deleted) boards are exposed on a pin: a recycled board must never
     // appear in a pin's boards even though the join row is kept (mirrors softDeleteBoard's contract).
     private fun getBoardsForPin(pinId: UUID): List<Board> =
-        QPinBoardModel()
-            .pin.id
-            .equalTo(pinId)
-            .withActiveBoard()
-            .fetch("board")
-            .findList()
-            .map { it.board.toDomain() }
+        QPinBoardModel().pin.id.equalTo(pinId).withActiveBoard().fetch("board").findList().map { it.board.toDomain() }
 
     override fun findBoardsForPinIncludingRecycled(pinId: UUID): List<Board> =
-        QPinBoardModel()
-            .pin.id
-            .equalTo(pinId)
-            .fetch("board")
-            .findList()
-            .map { it.board.toDomain() }
+        QPinBoardModel().pin.id.equalTo(pinId).fetch("board").findList().map { it.board.toDomain() }
 
     override fun savePin(pin: Pin): Pin {
         val pinModel = sqlRepository.saveAndReturn(pin.toModel())
@@ -87,22 +66,11 @@ class PinRepository(
     ) {
         // Get the new tag IDs
         val updatedTagIds = tags.map { it.id }.toSet()
-        val existingTagIds =
-            QPinTagModel()
-                .pin.id
-                .equalTo(pinModel.id)
-                .findList()
-                .map { it.tag.id }
-                .toSet()
+        val existingTagIds = QPinTagModel().pin.id.equalTo(pinModel.id).findList().map { it.tag.id }.toSet()
 
         // Remove the appropriate ones
         val removedTagIds = existingTagIds.minus(updatedTagIds)
-        QPinTagModel()
-            .pin.id
-            .equalTo(pinModel.id)
-            .tag.id
-            .isIn(removedTagIds)
-            .delete()
+        QPinTagModel().pin.id.equalTo(pinModel.id).tag.id.isIn(removedTagIds).delete()
 
         // Persist the new tags
         val newTagIds = updatedTagIds.minus(existingTagIds)
@@ -122,22 +90,11 @@ class PinRepository(
         // Only diff against ACTIVE memberships: a recycled board's join row is kept (getBoardsForPin
         // never exposes it, so `boards` can't contain it), and re-saving the pin must not remove it.
         val existingBoardIds =
-            QPinBoardModel()
-                .pin.id
-                .equalTo(pinModel.id)
-                .withActiveBoard()
-                .findList()
-                .map { it.board.id }
-                .toSet()
+            QPinBoardModel().pin.id.equalTo(pinModel.id).withActiveBoard().findList().map { it.board.id }.toSet()
 
         // Remove the appropriate ones
         val removedBoardIds = existingBoardIds.minus(updatedBoardIds)
-        QPinBoardModel()
-            .pin.id
-            .equalTo(pinModel.id)
-            .board.id
-            .isIn(removedBoardIds)
-            .delete()
+        QPinBoardModel().pin.id.equalTo(pinModel.id).board.id.isIn(removedBoardIds).delete()
 
         // Persist the new boards
         val newBoardIds = updatedBoardIds.minus(existingBoardIds)
@@ -160,25 +117,22 @@ class PinRepository(
         pinIdsByContentHashQuery(user, contentHash).findSingleAttributeList()
 
     /**
-     * Rooted on the image so `ix_media_content_hash` stays the selective predicate. `internal` so
-     * its plan test reads this SQL, and the override above must keep delegating to it.
+     * Rooted on the image so `ix_media_content_hash` stays the selective predicate. `internal` so its plan test reads
+     * this SQL, and the override above must keep delegating to it.
      */
     internal fun pinIdsByContentHashQuery(user: User, contentHash: String) =
         QMediaModel()
             .withPinInAnyState()
             .contentHash
             .equalTo(contentHash)
-            .pin.author.id
+            .pin
+            .author
+            .id
             .equalTo(user.id)
             .select("pinId")
 
     override fun findPinById(id: UUID): Pin? {
-        val pin =
-            PinQueries
-                .any()
-                .id
-                .equalTo(id)
-                .findOne() ?: return null
+        val pin = PinQueries.any().id.equalTo(id).findOne() ?: return null
         return pin.toDomain(getTagsForPin(pin.id), getBoardsForPin(pin.id))
     }
 
@@ -192,16 +146,22 @@ class PinRepository(
 
     private fun tagsByPin(pinIds: List<UUID>): Map<UUID, List<Tag>> =
         QPinTagModel()
-            .pin.id.isIn(pinIds)
-            .tag.fetch()
+            .pin
+            .id
+            .isIn(pinIds)
+            .tag
+            .fetch()
             .findList()
             .groupBy(keySelector = { it.pin.id }, valueTransform = { it.tag.toDomain() })
 
     private fun activeBoardsByPin(pinIds: List<UUID>): Map<UUID, List<Board>> =
         QPinBoardModel()
-            .pin.id.isIn(pinIds)
+            .pin
+            .id
+            .isIn(pinIds)
             .withActiveBoard()
-            .board.fetch()
+            .board
+            .fetch()
             .findList()
             .groupBy(keySelector = { it.pin.id }, valueTransform = { it.board.toDomain() })
 
@@ -212,9 +172,8 @@ class PinRepository(
 
         val alreadyFiledPinIds = memberships(board, pinIds).findList().map { it.pin.id }.toSet()
         val boardModel = persistor.reference(BoardModel::class.java, board.id)
-        val newMemberships = pins
-            .filterNot { it.id in alreadyFiledPinIds }
-            .map { PinBoardModel(pin = it, board = boardModel) }
+        val newMemberships =
+            pins.filterNot { it.id in alreadyFiledPinIds }.map { PinBoardModel(pin = it, board = boardModel) }
         persistor.saveAll(newMemberships)
     }
 
@@ -271,9 +230,10 @@ class PinRepository(
         PinQueries.any().author.id.equalTo(user.id).findList().map { it.id }
 
     override fun softDeletePin(pin: Pin, at: Instant): Pin {
-        val model = checkNotNull(PinQueries.any().id.equalTo(pin.id).findOne()) {
-            "pin ${pin.id} vanished between read and soft-delete transition"
-        }
+        val model =
+            checkNotNull(PinQueries.any().id.equalTo(pin.id).findOne()) {
+                "pin ${pin.id} vanished between read and soft-delete transition"
+            }
         model.softDeletedAt = at
         model.updatedAt = at
         persistor.save(model)
@@ -281,9 +241,10 @@ class PinRepository(
     }
 
     override fun restorePin(pin: Pin, at: Instant): Pin {
-        val model = checkNotNull(PinQueries.any().id.equalTo(pin.id).findOne()) {
-            "pin ${pin.id} vanished between read and restore transition"
-        }
+        val model =
+            checkNotNull(PinQueries.any().id.equalTo(pin.id).findOne()) {
+                "pin ${pin.id} vanished between read and restore transition"
+            }
         model.softDeletedAt = null
         model.updatedAt = at
         persistor.save(model)
@@ -297,11 +258,7 @@ class PinRepository(
     }
 
     override fun permanentlyDeleteAllSoftDeletedPinsForUser(user: User) {
-        val softDeletedPinIds = PinQueries
-            .recycled()
-            .author.id.equalTo(user.id)
-            .findList()
-            .map { it.id }
+        val softDeletedPinIds = PinQueries.recycled().author.id.equalTo(user.id).findList().map { it.id }
         if (softDeletedPinIds.isEmpty()) return
         QPinTagModel().pin.id.isIn(softDeletedPinIds).delete()
         QPinBoardModel().pin.id.isIn(softDeletedPinIds).delete()
@@ -317,12 +274,9 @@ class PinRepository(
     }
 
     override fun findAllSoftDeletedPinsForUser(user: User): List<Pin> =
-        PinQueries
-            .recycled()
-            .author.id
-            .equalTo(user.id)
-            .findList()
-            .map { it.toDomain(getTagsForPin(it.id), getBoardsForPin(it.id)) }
+        PinQueries.recycled().author.id.equalTo(user.id).findList().map {
+            it.toDomain(getTagsForPin(it.id), getBoardsForPin(it.id))
+        }
 
     override fun findSoftDeletedPinsForUser(
         reader: User,
@@ -356,17 +310,13 @@ class PinRepository(
     ): Page<Pin> {
         // Loads the board's pin ids up front; acceptable for v1, called out in spec §11 as a
         // scaling risk (large boards mean a large IN clause).
-        val pinIdsInBoard =
-            QPinBoardModel().board.id.equalTo(boardId).findList().map { it.pin.id }
+        val pinIdsInBoard = QPinBoardModel().board.id.equalTo(boardId).findList().map { it.pin.id }
         val modelPage =
             ModelPaginationHelper.getPage(
                 cursor = findCursorPivot(cursor),
                 pageSize = pageSize,
-                baseQuery = PinQueries
-                    .active()
-                    .author.id.equalTo(reader.id)
-                    .id.isIn(pinIdsInBoard)
-                    .matchingText(reader, query),
+                baseQuery =
+                    PinQueries.active().author.id.equalTo(reader.id).id.isIn(pinIdsInBoard).matchingText(reader, query),
                 sortStrategy = PinModelSortStrategy.fromDomain(sortStrategy),
             )
         return Page(

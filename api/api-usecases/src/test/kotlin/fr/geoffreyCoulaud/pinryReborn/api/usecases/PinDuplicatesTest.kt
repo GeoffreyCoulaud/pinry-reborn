@@ -10,12 +10,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class PinDuplicatesTest {
     private val duplicateRepository = mockk<PinDuplicateRepositoryInterface>()

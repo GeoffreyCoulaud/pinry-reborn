@@ -12,16 +12,13 @@ object PinQueries : SoftDeletableQueries<PinModel, QPinModel>(::QPinModel, { it.
 private const val PIN_ID_PATH = "pin.id"
 
 /**
- * Pins whose description or tag name contains [query]; a null [query] filters nothing. The tag half
- * is a subquery scoped to [reader], and its junction is closed so the cursor's clauses stay outside it.
+ * Pins whose description or tag name contains [query]; a null [query] filters nothing. The tag half is a subquery
+ * scoped to [reader], and its junction is closed so the cursor's clauses stay outside it.
  */
 fun QPinModel.matchingText(reader: User, query: String?): QPinModel =
     if (query == null) {
         this
     } else {
         val tagged = QPinTagModel().tag.author.id.equalTo(reader.id).tag.name.contains(query)
-        or()
-            .description.contains(query)
-            .id.isIn(tagged.select(PIN_ID_PATH).query())
-            .endOr()
+        or().description.contains(query).id.isIn(tagged.select(PIN_ID_PATH).query()).endOr()
     }

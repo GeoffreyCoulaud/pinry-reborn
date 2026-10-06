@@ -21,10 +21,17 @@ class FencesTest {
         // When
         val result =
             runner.fenced(
-                read = { readIn = runner.current; Row(active = true, version = 0) },
+                read = {
+                    readIn = runner.current
+                    Row(active = true, version = 0)
+                },
                 held = { it.active },
                 update = { it.copy(version = it.version + 1) },
-                write = { writtenIn = runner.current; written += it; it },
+                write = {
+                    writtenIn = runner.current
+                    written += it
+                    it
+                },
             )
 
         // Then: the read and the write carry the same transaction number, and there is one
@@ -36,14 +43,22 @@ class FencesTest {
 
     @Test
     fun `Given a row the predicate refuses, Then fenced writes nothing and answers null`() {
-        val result = runner.fenced({ Row(active = false, version = 0) }, { it.active }, { it }) { written += it; it }
+        val result =
+            runner.fenced({ Row(active = false, version = 0) }, { it.active }, { it }) {
+                written += it
+                it
+            }
         assertNull(result)
         assertEquals(emptyList<Row>(), written)
     }
 
     @Test
     fun `Given no row, Then fenced writes nothing and answers null`() {
-        val result = runner.fenced<Row>({ null }, { it.active }, { it }) { written += it; it }
+        val result =
+            runner.fenced<Row>({ null }, { it.active }, { it }) {
+                written += it
+                it
+            }
         assertNull(result)
         assertEquals(emptyList<Row>(), written)
     }
@@ -57,10 +72,17 @@ class FencesTest {
         // When
         val result =
             runner.fencedOver(
-                read = { readIn = runner.current; Row(active = true, version = 0) },
+                read = {
+                    readIn = runner.current
+                    Row(active = true, version = 0)
+                },
                 held = { it.active },
                 update = { it.copy(version = it.version + 1) },
-                write = { writtenIn = runner.current; written += it; it },
+                write = {
+                    writtenIn = runner.current
+                    written += it
+                    it
+                },
             )
 
         // Then
@@ -73,14 +95,22 @@ class FencesTest {
     @Test
     fun `Given a row the predicate refuses, Then fencedOver writes nothing and answers null`() {
         val refused = Row(active = false, version = 0)
-        val result = runner.fencedOver({ refused }, { it.active }, { it }) { written += it; it }
+        val result =
+            runner.fencedOver({ refused }, { it.active }, { it }) {
+                written += it
+                it
+            }
         assertNull(result)
         assertEquals(emptyList<Row>(), written)
     }
 
     @Test
     fun `Given no row, Then fencedOver writes nothing and answers null`() {
-        val result = runner.fencedOver<Row>({ null }, { it.active }, { it }) { written += it; it }
+        val result =
+            runner.fencedOver<Row>({ null }, { it.active }, { it }) {
+                written += it
+                it
+            }
         assertNull(result)
         assertEquals(emptyList<Row>(), written)
     }

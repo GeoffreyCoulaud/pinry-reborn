@@ -4,9 +4,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenExc
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.BoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinBoardModel
@@ -23,9 +23,7 @@ import java.util.UUID
 // fragment one cohesive adapter across artificial classes for no readability gain (mirrors
 // PinRepository's precedent for the same rule).
 @Suppress("TooManyFunctions")
-class BoardRepository(
-    private val persistor: Persistor,
-) : BoardRepositoryInterface {
+class BoardRepository(private val persistor: Persistor) : BoardRepositoryInterface {
     private val sqlRepository = ModelRepository<BoardModel>(persistor = persistor)
 
     // Case-insensitive name sort with id tie-breaker, applied in-memory after the DB fetch
@@ -44,35 +42,28 @@ class BoardRepository(
             }
         }
 
-    override fun findBoardById(id: UUID): Board? =
-        BoardQueries.any().id.equalTo(id).findOne()?.toDomain()
+    override fun findBoardById(id: UUID): Board? = BoardQueries.any().id.equalTo(id).findOne()?.toDomain()
 
     // Reads every state through BoardQueries.any(): a recycled board holds its name (ADR 0008 asks
     // the state be named). The comparison goes through the column's own collation rather than
     // Ebean's `ieq`, which renders lower(column) = ? with the bind lowercased in Java: that fold is
     // Unicode aware while `collate nocase` is ASCII only, so the two disagree in one direction.
     override fun findBoardForUserByName(user: User, name: String): Board? =
-        BoardQueries.any()
-            .author.id.equalTo(user.id)
-            .raw("name collate nocase = ?", name)
-            .findOne()
-            ?.toDomain()
+        BoardQueries.any().author.id.equalTo(user.id).raw("name collate nocase = ?", name).findOne()?.toDomain()
 
-    override fun findActiveBoardById(id: UUID): Board? =
-        BoardQueries.active().id.equalTo(id).findOne()?.toDomain()
+    override fun findActiveBoardById(id: UUID): Board? = BoardQueries.active().id.equalTo(id).findOne()?.toDomain()
 
     override fun findActiveBoardsForUser(user: User): List<Board> =
-        BoardQueries.active().author.id.equalTo(user.id)
-            .findList().sortedForListing().map { it.toDomain() }
+        BoardQueries.active().author.id.equalTo(user.id).findList().sortedForListing().map { it.toDomain() }
 
     override fun findRecycledBoardsForUser(user: User): List<Board> =
-        BoardQueries.recycled().author.id.equalTo(user.id)
-            .findList().sortedForListing().map { it.toDomain() }
+        BoardQueries.recycled().author.id.equalTo(user.id).findList().sortedForListing().map { it.toDomain() }
 
     override fun softDeleteBoard(board: Board, at: Instant): Board {
-        val model = checkNotNull(BoardQueries.any().id.equalTo(board.id).findOne()) {
-            "board ${board.id} vanished between read and soft-delete transition"
-        }
+        val model =
+            checkNotNull(BoardQueries.any().id.equalTo(board.id).findOne()) {
+                "board ${board.id} vanished between read and soft-delete transition"
+            }
         model.softDeletedAt = at
         model.updatedAt = at
         persistor.save(model)
@@ -80,9 +71,10 @@ class BoardRepository(
     }
 
     override fun restoreBoard(board: Board, at: Instant): Board {
-        val model = checkNotNull(BoardQueries.any().id.equalTo(board.id).findOne()) {
-            "board ${board.id} vanished between read and restore transition"
-        }
+        val model =
+            checkNotNull(BoardQueries.any().id.equalTo(board.id).findOne()) {
+                "board ${board.id} vanished between read and restore transition"
+            }
         model.softDeletedAt = null
         model.updatedAt = at
         persistor.save(model)
@@ -95,8 +87,7 @@ class BoardRepository(
     }
 
     override fun permanentlyDeleteAllRecycledBoardsForUser(user: User) {
-        val recycledIds = BoardQueries.recycled().author.id.equalTo(user.id)
-            .findList().map { it.id }
+        val recycledIds = BoardQueries.recycled().author.id.equalTo(user.id).findList().map { it.id }
         if (recycledIds.isEmpty()) return
         QPinBoardModel().board.id.isIn(recycledIds).delete()
         BoardQueries.any().id.isIn(recycledIds).delete()
@@ -116,8 +107,14 @@ class BoardRepository(
         val filed = QPinBoardModel().board.id.equalTo(boardId).select("pin.id")
         return QMediaModel()
             .withActivePin()
-            .pinId.isIn(filed.query())
-            .orderBy().pin.createdAt.desc().pinId.desc()
+            .pinId
+            .isIn(filed.query())
+            .orderBy()
+            .pin
+            .createdAt
+            .desc()
+            .pinId
+            .desc()
             .setMaxRows(1)
             .select("pinId")
             .findSingleAttribute<UUID>()

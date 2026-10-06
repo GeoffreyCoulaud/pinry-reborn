@@ -5,8 +5,8 @@ import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
 
 /**
- * Many-to-many join between pins and boards.
- * Kept as a standalone join entity (like PinTagModel) to avoid interdependency of models and repos.
+ * Many-to-many join between pins and boards. Kept as a standalone join entity (like PinTagModel) to avoid
+ * interdependency of models and repos.
  */
 @Entity
 // A pin is filed under a board once; `pin_id` leads, so it also serves every read by pin.

@@ -10,8 +10,8 @@ object ReauthenticationHeader {
     private const val PASSWORD_KIND = "password"
 
     /**
-     * Parse `<kind> <base64url(value)>`. Missing header -> [ReauthenticationError] (403);
-     * unparseable, unsupported kind, or bad base64url -> [MalformedReauthenticationError] (400).
+     * Parse `<kind> <base64url(value)>`. Missing header -> [ReauthenticationError] (403); unparseable, unsupported
+     * kind, or bad base64url -> [MalformedReauthenticationError] (400).
      */
     fun parsePasswordFactor(headerValue: String?): String {
         if (headerValue == null) throw ReauthenticationError()

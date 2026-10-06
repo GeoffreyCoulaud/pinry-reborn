@@ -12,21 +12,20 @@ import java.time.Instant
 import java.util.UUID
 
 @ApplicationScoped
-class SessionTokenRepository(
-    persistor: Persistor,
-) : SessionTokenRepositoryInterface {
+class SessionTokenRepository(persistor: Persistor) : SessionTokenRepositoryInterface {
     private val sqlRepository = ModelRepository<SessionTokenModel>(persistor = persistor)
 
     override fun saveSessionToken(sessionToken: SessionToken, tokenHash: String): SessionToken {
         val userModel = ActiveUserModels.resolve(sessionToken.user.id)
-        val model = SessionTokenModel(
-            id = sessionToken.id,
-            user = userModel,
-            tokenHash = tokenHash,
-            expiresAt = sessionToken.expiresAt,
-            persistent = sessionToken.persistent,
-            createdAt = sessionToken.createdAt,
-        )
+        val model =
+            SessionTokenModel(
+                id = sessionToken.id,
+                user = userModel,
+                tokenHash = tokenHash,
+                expiresAt = sessionToken.expiresAt,
+                persistent = sessionToken.persistent,
+                createdAt = sessionToken.createdAt,
+            )
         return sqlRepository.saveAndReturn(model).toDomain()
     }
 
@@ -41,6 +40,5 @@ class SessionTokenRepository(
         QSessionTokenModel().user.id.equalTo(userId).delete()
     }
 
-    override fun deleteExpiredBefore(now: Instant): Int =
-        QSessionTokenModel().expiresAt.lessThan(now).delete()
+    override fun deleteExpiredBefore(now: Instant): Int = QSessionTokenModel().expiresAt.lessThan(now).delete()
 }

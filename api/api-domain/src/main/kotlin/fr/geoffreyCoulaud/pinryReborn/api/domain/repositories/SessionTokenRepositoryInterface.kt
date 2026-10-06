@@ -18,8 +18,8 @@ interface SessionTokenRepositoryInterface {
     fun deleteAllForUser(userId: UUID)
 
     /**
-     * Delete every session token whose [SessionToken.expiresAt] is strictly before [now].
-     * Returns the number of rows deleted.
+     * Delete every session token whose [SessionToken.expiresAt] is strictly before [now]. Returns the number of rows
+     * deleted.
      */
     fun deleteExpiredBefore(now: Instant): Int
 }

@@ -2,9 +2,9 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionSpec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
@@ -17,11 +17,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaRenditionUnav
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertInstanceOf
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -36,6 +31,11 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertTimeoutPreemptively
 
 class GetPinMediaRenditionTest {
     private val getPinMedia = mockk<GetPinMedia>()
@@ -45,16 +45,24 @@ class GetPinMediaRenditionTest {
     private val videoProcessor = mockk<VideoProcessor>()
 
     // Bounds every rendition below fits whole, unless a test tightens one.
-    private val roomy = MediaLimits(
-        1, 1, Duration.ZERO, maxPixelsPerFrame = 1_000_000, maxPixelsPerRender = 1_000_000, renderConcurrency = 2,
-        decoderTimeout = Duration.ofSeconds(60), decoderMemory = 2_147_483_648,
-    )
+    private val roomy =
+        MediaLimits(
+            1,
+            1,
+            Duration.ZERO,
+            maxPixelsPerFrame = 1_000_000,
+            maxPixelsPerRender = 1_000_000,
+            renderConcurrency = 2,
+            decoderTimeout = Duration.ofSeconds(60),
+            decoderMemory = 2_147_483_648,
+        )
 
     // Moved forward by the tests that age a failure marker.
     private var now = Instant.parse("2026-10-04T12:00:00Z")
-    private val clock = object : Clock {
-        override fun now() = this@GetPinMediaRenditionTest.now
-    }
+    private val clock =
+        object : Clock {
+            override fun now() = this@GetPinMediaRenditionTest.now
+        }
 
     private fun useCase(limits: MediaLimits = roomy) =
         GetPinMediaRendition(getPinMedia, mediaStore, imageTransformer, renditionCache, videoProcessor, limits, clock)
@@ -74,8 +82,19 @@ class GetPinMediaRenditionTest {
 
     private fun video(pinId: UUID, frames: Int = 2) =
         Media.Video(
-            randomUUID(), pinId, "video/mp4; codecs=\"avc1.64000c\"", 160, 120, 1, "h", "originals/u/$pinId/v.mp4",
-            Instant.EPOCH, frames, Duration.ofSeconds(1), videoBitRate = 8, sound = null,
+            randomUUID(),
+            pinId,
+            "video/mp4; codecs=\"avc1.64000c\"",
+            160,
+            120,
+            1,
+            "h",
+            "originals/u/$pinId/v.mp4",
+            Instant.EPOCH,
+            frames,
+            Duration.ofSeconds(1),
+            videoBitRate = 8,
+            sound = null,
         )
 
     private val original = StagedFile("/tmp/original", 1, "h")
@@ -560,9 +579,10 @@ class GetPinMediaRenditionTest {
         val img = image()
         held.release.countDown()
         repeat(2) { held.failures += UndecodableImageException("vips ran past 60s and was destroyed") }
-        fun unavailable(limits: MediaLimits) = assertThrows(MediaRenditionUnavailableError::class.java) {
-            meeting(limits).get(img.pinId, requester, 40, null)
-        }
+        fun unavailable(limits: MediaLimits) =
+            assertThrows(MediaRenditionUnavailableError::class.java) {
+                meeting(limits).get(img.pinId, requester, 40, null)
+            }
 
         // When / Then: the failure is not replayed under the same bounds
         unavailable(roomy)

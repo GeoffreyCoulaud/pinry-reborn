@@ -2,10 +2,10 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.MediaMapper.toDto
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class MediaMapperTest {
     @Test

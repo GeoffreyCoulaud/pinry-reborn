@@ -7,21 +7,22 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportIssueKindDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDataImportIssueDtoMapper.toDto
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 class UserDataImportIssueDtoMapperTest {
-    private fun anIssue() = UserDataImportIssue(
-        id = randomUUID(),
-        importId = randomUUID(),
-        kind = UserDataImportIssueKind.MEDIA_DIGEST_MISMATCH,
-        line = 42,
-        subject = "media/a1b2.jpg",
-        detail = "declared sha256 does not match the bytes",
-    )
+    private fun anIssue() =
+        UserDataImportIssue(
+            id = randomUUID(),
+            importId = randomUUID(),
+            kind = UserDataImportIssueKind.MEDIA_DIGEST_MISMATCH,
+            line = 42,
+            subject = "media/a1b2.jpg",
+            detail = "declared sha256 does not match the bytes",
+        )
 
     @Test
     fun `Given an issue, Then toDto carries the kind name, the line, the subject and the detail`() {

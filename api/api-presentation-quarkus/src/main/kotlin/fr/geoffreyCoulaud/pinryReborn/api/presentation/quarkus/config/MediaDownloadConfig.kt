@@ -6,21 +6,16 @@ import java.time.Duration
 
 @ConfigMapping(prefix = "media.download", namingStrategy = ConfigMapping.NamingStrategy.SNAKE_CASE)
 interface MediaDownloadConfig {
-    @WithDefault("PT5S")
-    fun connectTimeout(): Duration
+    @WithDefault("PT5S") fun connectTimeout(): Duration
 
-    @WithDefault("PT30S")
-    fun requestTimeout(): Duration
+    @WithDefault("PT30S") fun requestTimeout(): Duration
 
-    @WithDefault("5")
-    fun maxRedirects(): Int
+    @WithDefault("5") fun maxRedirects(): Int
 
     // Escape hatch for trusted networks (e.g. a self-hoster pinning from a LAN NAS) and for
     // integration tests that fetch from a loopback origin. Default false = full Standard SSRF guard.
-    @WithDefault("false")
-    fun allowPrivateAddresses(): Boolean
+    @WithDefault("false") fun allowPrivateAddresses(): Boolean
 
     /** Bounds one yt-dlp run and a direct download's body; `OrphanGraceCheck` keeps two runs under the orphan grace. */
-    @WithDefault("PT5M")
-    fun extractionTimeout(): Duration
+    @WithDefault("PT5M") fun extractionTimeout(): Duration
 }

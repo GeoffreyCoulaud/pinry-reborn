@@ -14,12 +14,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class PinUpdaterTest {
     private val pinRepository = mockk<PinRepositoryInterface>()
@@ -38,10 +38,15 @@ class PinUpdaterTest {
 
     private val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
     private val tag = Tag(id = randomUUID(), name = "nature", author = user, createdAt = TestTime.now)
-    private val board = Board(
-        id = randomUUID(), author = user, name = "Board", description = "",
-        createdAt = TestTime.now, updatedAt = TestTime.now,
-    )
+    private val board =
+        Board(
+            id = randomUUID(),
+            author = user,
+            name = "Board",
+            description = "",
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
 
     @Test
     fun `Given an owned active pin, Then update replaces every field it was sent`() {
@@ -99,8 +104,7 @@ class PinUpdaterTest {
     fun `Given a pin recycled between the read and the fence, Then update refuses and saves nothing`() {
         // Given: the first read answers an active pin, the fence's re-read a recycled one
         val pin = pin(author = user)
-        every { pinRepository.findPinById(pin.id) } returnsMany
-            listOf(pin, pin.copy(softDeletedAt = TestTime.now))
+        every { pinRepository.findPinById(pin.id) } returnsMany listOf(pin, pin.copy(softDeletedAt = TestTime.now))
         every { pinTagger.resolveTags(emptyList(), user) } returns emptyList()
         every { pinBoardSetter.resolveBoards(emptyList(), user) } returns emptyList()
 
@@ -125,15 +129,16 @@ class PinUpdaterTest {
         pinId: UUID,
         tagNames: List<String> = emptyList(),
         boardIds: List<UUID> = emptyList(),
-    ) = useCase.update(
-        pinId = pinId,
-        description = "A new description",
-        sourceContextUrl = "https://example.com/new",
-        sourceMediaUrl = null,
-        tagNames = tagNames,
-        boardIds = boardIds,
-        user = user,
-    )
+    ) =
+        useCase.update(
+            pinId = pinId,
+            description = "A new description",
+            sourceContextUrl = "https://example.com/new",
+            sourceMediaUrl = null,
+            tagNames = tagNames,
+            boardIds = boardIds,
+            user = user,
+        )
 
     private fun pin(author: User) =
         Pin(

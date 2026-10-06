@@ -13,8 +13,8 @@ import java.io.InputStream
 import java.util.zip.ZipFile
 
 /**
- * [ArchiveSource] over a [ZipFile], reading random entries out of hostile input. Every read refuses
- * its bound by stopping at it, never by reading to the end and measuring afterwards.
+ * [ArchiveSource] over a [ZipFile], reading random entries out of hostile input. Every read refuses its bound by
+ * stopping at it, never by reading to the end and measuring afterwards.
  */
 internal class ZipArchiveSource(
     private val zip: ZipFile,
@@ -73,8 +73,8 @@ internal class ZipArchiveSource(
         }
 
     /**
-     * Every read of an entry, and its close, translated. An inflater reaches corruption byte by byte,
-     * so the failure lands in the middle of a caller that is already writing what it read.
+     * Every read of an entry, and its close, translated. An inflater reaches corruption byte by byte, so the failure
+     * lands in the middle of a caller that is already writing what it read.
      */
     private inner class EntryStream(private val name: String, private val delegate: InputStream) : InputStream() {
         override fun read(): Int = reading(name) { delegate.read() }
@@ -86,22 +86,21 @@ internal class ZipArchiveSource(
     }
 
     /**
-     * A bad line is reported and walked past, never ending the walk: a walk that ends is
-     * indistinguishable from the end of the entry, so every later line would be dropped unreported.
+     * A bad line is reported and walked past, never ending the walk: a walk that ends is indistinguishable from the end
+     * of the entry, so every later line would be dropped unreported.
      */
     private fun <T : Any> lines(
         stream: InputStream,
         type: Class<T>,
-    ): Sequence<ArchiveLine<T>> =
-        sequence {
-            var number = 0
-            while (true) {
-                val line = readLine(stream) ?: return@sequence
-                number++
-                val read = read(number, line, type)
-                if (read != null) yield(read)
-            }
+    ): Sequence<ArchiveLine<T>> = sequence {
+        var number = 0
+        while (true) {
+            val line = readLine(stream) ?: return@sequence
+            number++
+            val read = read(number, line, type)
+            if (read != null) yield(read)
         }
+    }
 
     /** Null for a line of no bytes: it holds no entry, so it is not an entry that failed. */
     private fun <T : Any> read(

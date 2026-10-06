@@ -4,8 +4,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HashedPassword
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PasswordHashAlgorithm
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.PasswordHasher
 import jakarta.enterprise.context.ApplicationScoped
-import org.mindrot.jbcrypt.BCrypt
 import java.time.Instant
+import org.mindrot.jbcrypt.BCrypt
 
 @ApplicationScoped
 class BcryptPasswordHasher : PasswordHasher {

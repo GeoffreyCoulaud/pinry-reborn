@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import java.time.Instant
+import java.util.UUID.randomUUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
@@ -19,7 +20,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
-import java.util.UUID.randomUUID
 
 class TagCreatorTest {
     private val tagRepository = mockk<TagRepositoryInterface>()
@@ -97,8 +97,8 @@ class TagCreatorTest {
     }
 
     /**
-     * Serialises a pair the way one transaction on the single connection does. A thread finding the
-     * lock taken releases [bothRead] as it queues, so the holder never pays the rendezvous timeout.
+     * Serialises a pair the way one transaction on the single connection does. A thread finding the lock taken releases
+     * [bothRead] as it queues, so the holder never pays the rendezvous timeout.
      */
     private class SerialisingTransactionRunner(private val bothRead: CountDownLatch) : TransactionRunner {
         private val lock = ReentrantLock()
@@ -122,13 +122,14 @@ class TagCreatorTest {
     }
 
     /**
-     * Stands in for `ix_tags_author_name_nocase`, refusing a second row as the untranslated violation
-     * does. Each read waits at [bothRead] for the other, bounded, so the race is forced, not sampled.
+     * Stands in for `ix_tags_author_name_nocase`, refusing a second row as the untranslated violation does. Each read
+     * waits at [bothRead] for the other, bounded, so the race is forced, not sampled.
      */
     private class IndexedTagRepository(private val bothRead: CountDownLatch) : TagRepositoryInterface {
         private val rows = ConcurrentHashMap<String, Tag>()
 
-        val rowCount: Int get() = rows.size
+        val rowCount: Int
+            get() = rows.size
 
         override fun findUserTagByName(user: User, name: String): Tag? {
             val found = rows[foldedKey(user, name)]

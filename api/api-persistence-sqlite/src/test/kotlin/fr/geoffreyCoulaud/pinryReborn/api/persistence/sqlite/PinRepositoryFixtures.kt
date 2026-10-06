@@ -16,9 +16,9 @@ import java.util.UUID.randomUUID
 /**
  * The fixtures the `PinRepository` suite shares, declared once instead of copied into each slice.
  *
- * The suite is split across [PinRepositoryTest], [PinRepositorySoftDeleteTest],
- * [PinRepositoryPaginationTest], [PinRepositoryRecycledMembershipTest] and
- * [PinRepositoryContentHashTest] to keep every class under detekt's `LargeClass` threshold.
+ * The suite is split across [PinRepositoryTest], [PinRepositorySoftDeleteTest], [PinRepositoryPaginationTest],
+ * [PinRepositoryRecycledMembershipTest] and [PinRepositoryContentHashTest] to keep every class under detekt's
+ * `LargeClass` threshold.
  */
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a fixture base for the slices above.
 abstract class PinRepositoryFixtures : RepositoryTest() {
@@ -37,7 +37,7 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
                 id = randomUUID(),
                 name = createRandomString(),
                 createdAt = storableNow(),
-            ),
+            )
         )
 
     protected fun createAndSaveTag(
@@ -50,21 +50,22 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
                 author = user,
                 name = name,
                 createdAt = storableNow(),
-            ),
+            )
         )
 
     protected fun createAndSaveBoard(
         user: User,
         name: String = createRandomString(),
     ): Board {
-        val board = Board(
-            id = randomUUID(),
-            author = user,
-            name = name,
-            description = "",
-            createdAt = storableNow(),
-            updatedAt = storableNow(),
-        )
+        val board =
+            Board(
+                id = randomUUID(),
+                author = user,
+                name = name,
+                description = "",
+                createdAt = storableNow(),
+                updatedAt = storableNow(),
+            )
         database.save(board.toModel())
         return board
     }
@@ -94,29 +95,26 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
             updatedAt = storableNow(),
         )
 
-    protected fun createPinWithTags(vararg tags: Tag): Pin =
-        createPin()
-            .copy(tags = tags.toList())
+    protected fun createPinWithTags(vararg tags: Tag): Pin = createPin().copy(tags = tags.toList())
 
-    protected fun createPinWithBoards(vararg boards: Board): Pin =
-        createPin()
-            .copy(boards = boards.toList())
+    protected fun createPinWithBoards(vararg boards: Board): Pin = createPin().copy(boards = boards.toList())
 
     protected fun createAndSavePin(
         author: User,
         createdAt: Instant = storableNow(),
     ): Pin {
-        val pin = Pin(
-            id = randomUUID(),
-            author = author,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/media.jpeg",
-            description = "Something",
-            tags = emptyList(),
-            boards = emptyList(),
-            createdAt = createdAt,
-            updatedAt = createdAt,
-        )
+        val pin =
+            Pin(
+                id = randomUUID(),
+                author = author,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/media.jpeg",
+                description = "Something",
+                tags = emptyList(),
+                boards = emptyList(),
+                createdAt = createdAt,
+                updatedAt = createdAt,
+            )
         return repository.savePin(pin)
     }
 }

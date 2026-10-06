@@ -6,22 +6,21 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 /**
  * How `PinRepository` pages: the cursor a page hands back, and the pivot a caller sends in.
  *
- * Pins created in the same clock tick share a `createdAt`. Without a tie-breaker the cursor
- * cannot advance past such a group, so a caller draining the pages loops forever on the same rows.
- * The draining tests use a hard page budget: an unfixed strategy blows the budget instead
- * of hanging the suite. The cursor-resolution tests below them pin what a pivot resolves to,
- * including one naming a pin that is not there.
+ * Pins created in the same clock tick share a `createdAt`. Without a tie-breaker the cursor cannot advance past such a
+ * group, so a caller draining the pages loops forever on the same rows. The draining tests use a hard page budget: an
+ * unfixed strategy blows the budget instead of hanging the suite. The cursor-resolution tests below them pin what a
+ * pivot resolves to, including one naming a pin that is not there.
  */
 class PinRepositoryPaginationTest : PinRepositoryFixtures() {
     private val tiedPinCount = 5
@@ -29,14 +28,12 @@ class PinRepositoryPaginationTest : PinRepositoryFixtures() {
     private val maxPages = 10
 
     /**
-     * `@WhenCreated` and the soft-deletion instant are written by the persistence layer, so the
-     * shared instant is forced with raw SQL. Every pin in the (freshly truncated) database belongs
-     * to the test at hand, so collapsing them all is safe.
+     * `@WhenCreated` and the soft-deletion instant are written by the persistence layer, so the shared instant is
+     * forced with raw SQL. Every pin in the (freshly truncated) database belongs to the test at hand, so collapsing
+     * them all is safe.
      */
     private fun collapseAllPinInstants(column: String) {
-        database
-            .sqlUpdate("update pins set $column = (select min($column) from pins)")
-            .execute()
+        database.sqlUpdate("update pins set $column = (select min($column) from pins)").execute()
     }
 
     private data class Drain(
@@ -47,8 +44,8 @@ class PinRepositoryPaginationTest : PinRepositoryFixtures() {
     )
 
     /**
-     * Walks pages forward until the cursor is exhausted or [maxPages] is reached, reporting the ids
-     * it saw, how many pages it took, and where the last page leaves off.
+     * Walks pages forward until the cursor is exhausted or [maxPages] is reached, reporting the ids it saw, how many
+     * pages it took, and where the last page leaves off.
      */
     private fun drainForward(readPage: (Cursor?) -> Page<Pin>): Drain {
         val seen = mutableSetOf<UUID>()
@@ -70,15 +67,14 @@ class PinRepositoryPaginationTest : PinRepositoryFixtures() {
     private fun drainActivePinsForward(
         user: User,
         sortStrategy: PinSortStrategy,
-    ): Drain =
-        drainForward { cursor ->
-            repository.findPinsForUser(
-                reader = user,
-                cursor = cursor,
-                pageSize = pageSize,
-                sortStrategy = sortStrategy,
-            )
-        }
+    ): Drain = drainForward { cursor ->
+        repository.findPinsForUser(
+            reader = user,
+            cursor = cursor,
+            pageSize = pageSize,
+            sortStrategy = sortStrategy,
+        )
+    }
 
     @Test
     fun `Given more pins than a page sharing one creation instant, Then paging reaches them all`() {
@@ -149,15 +145,14 @@ class PinRepositoryPaginationTest : PinRepositoryFixtures() {
         collapseAllPinInstants("soft_deleted_at")
 
         // When
-        val drain =
-            drainForward { cursor ->
-                repository.findSoftDeletedPinsForUser(
-                    reader = user,
-                    cursor = cursor,
-                    pageSize = pageSize,
-                    sortStrategy = PinSortStrategy.DELETED_AT_DESC,
-                )
-            }
+        val drain = drainForward { cursor ->
+            repository.findSoftDeletedPinsForUser(
+                reader = user,
+                cursor = cursor,
+                pageSize = pageSize,
+                sortStrategy = PinSortStrategy.DELETED_AT_DESC,
+            )
+        }
 
         // Then
         assertTrue(drain.pages < maxPages, "pagination did not terminate")

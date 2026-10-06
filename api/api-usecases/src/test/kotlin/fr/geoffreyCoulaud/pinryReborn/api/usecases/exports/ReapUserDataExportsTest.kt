@@ -34,7 +34,11 @@ class ReapUserDataExportsTest : BaseTest() {
     private val now = Instant.parse("2026-07-22T10:00:00Z")
     private val reaper =
         ReapUserDataExports(
-            repository, archiveStore, taskQueue, clock, transactions,
+            repository,
+            archiveStore,
+            taskQueue,
+            clock,
+            transactions,
             interruptedGrace = INTERRUPTED_GRACE,
             stagedFileMaxAge = STAGED_FILE_MAX_AGE,
             sweepBatchSize = SWEEP_BATCH_SIZE,
@@ -56,10 +60,17 @@ class ReapUserDataExportsTest : BaseTest() {
         storageKey: String? = null,
         requestedAt: Instant = now.minus(Duration.ofDays(10)),
         taskId: UUID? = null,
-    ) = UserDataExport(
-        id = id, userId = randomUUID(), state = state, formatVersion = 1,
-        requestedAt = requestedAt, storageKey = storageKey, taskId = taskId,
-    ).also { rows[it.id] = it }
+    ) =
+        UserDataExport(
+                id = id,
+                userId = randomUUID(),
+                state = state,
+                formatVersion = 1,
+                requestedAt = requestedAt,
+                storageKey = storageKey,
+                taskId = taskId,
+            )
+            .also { rows[it.id] = it }
 
     /** A row naming the bytes its own id derives, which is what a build that completed leaves. */
     private fun exportNamingItsBytes(state: UserDataExportState): UserDataExport {
@@ -69,9 +80,19 @@ class ReapUserDataExportsTest : BaseTest() {
 
     private fun aTask(state: TaskState) =
         Task(
-            id = randomUUID(), kind = "account.export", payload = "", state = state,
-            priority = -1, availableAt = now, attempts = 1, maxAttempts = 3, leaseId = null,
-            leaseExpiresAt = null, cancelRequested = false, dedupKey = null, lastError = null,
+            id = randomUUID(),
+            kind = "account.export",
+            payload = "",
+            state = state,
+            priority = -1,
+            availableAt = now,
+            attempts = 1,
+            maxAttempts = 3,
+            leaseId = null,
+            leaseExpiresAt = null,
+            cancelRequested = false,
+            dedupKey = null,
+            lastError = null,
         )
 
     private fun stored(id: UUID): UserDataExport = requireNotNull(rows[id])
@@ -79,28 +100,32 @@ class ReapUserDataExportsTest : BaseTest() {
     /** What every run reads, whether or not it finds anything: the three selections and the tmp sweep. */
     private fun stubSweep() {
         stubSelections()
-        every { archiveStore.discardOrphanedStagedFiles(any()) } answers {
-            orphanCutoff = firstArg()
-            0
-        }
+        every { archiveStore.discardOrphanedStagedFiles(any()) } answers
+            {
+                orphanCutoff = firstArg()
+                0
+            }
     }
 
     /** Apart from the tmp sweep, so a case can refuse that one without shadowing a stub nothing reaches. */
     private fun stubSelections() {
         every { clock.now() } returns now
-        every { repository.findPending(any()) } answers {
-            selectionLimits += firstArg<Int>()
-            rows.values.filter { row -> row.state == UserDataExportState.PENDING }
-        }
-        every { repository.findExpiredReadyExports(now, any(), any()) } answers {
-            selectionLimits += thirdArg<Int>()
-            pageAfter(secondArg(), thirdArg()) { row -> row.state == UserDataExportState.READY }
-        }
-        every { repository.findReclaimableTerminal(any(), any()) } answers {
-            selectionLimits += secondArg<Int>()
-            reclaimPages++
-            pageAfter(firstArg(), secondArg()) { row -> row.state.isTerminal && row.storageKey != null }
-        }
+        every { repository.findPending(any()) } answers
+            {
+                selectionLimits += firstArg<Int>()
+                rows.values.filter { row -> row.state == UserDataExportState.PENDING }
+            }
+        every { repository.findExpiredReadyExports(now, any(), any()) } answers
+            {
+                selectionLimits += thirdArg<Int>()
+                pageAfter(secondArg(), thirdArg()) { row -> row.state == UserDataExportState.READY }
+            }
+        every { repository.findReclaimableTerminal(any(), any()) } answers
+            {
+                selectionLimits += secondArg<Int>()
+                reclaimPages++
+                pageAfter(firstArg(), secondArg()) { row -> row.state.isTerminal && row.storageKey != null }
+            }
     }
 
     /** One page by id, as the repository answers it: the rows past [afterId], the first [limit] of them. */
@@ -126,22 +151,24 @@ class ReapUserDataExportsTest : BaseTest() {
     /** One key the store refuses and every other taken, which is how one half of a double delete fails. */
     private fun stubArchiveDeletionRefusing(refusedKey: String) {
         stubArchiveFormat()
-        every { archiveStore.delete(any()) } answers {
-            val key = firstArg<String>()
-            if (key == refusedKey) throw IOException("permission denied")
-            deletedArchives += key
-        }
+        every { archiveStore.delete(any()) } answers
+            {
+                val key = firstArg<String>()
+                if (key == refusedKey) throw IOException("permission denied")
+                deletedArchives += key
+            }
     }
 
     /**
-     * The racing actor committing between the batch selection and this row's write, which only a read
-     * inside the write's transaction sees: answered outside it, the fence would pass unfenced code.
+     * The racing actor committing between the batch selection and this row's write, which only a read inside the
+     * write's transaction sees: answered outside it, the fence would pass unfenced code.
      */
     private fun stubRacedRow(raced: UserDataExport, state: UserDataExportState) {
-        every { repository.findById(raced.id) } answers {
-            if (!transactions.inside) return@answers stored(raced.id)
-            stored(raced.id).copy(state = state).also { row -> rows[row.id] = row }
-        }
+        every { repository.findById(raced.id) } answers
+            {
+                if (!transactions.inside) return@answers stored(raced.id)
+                stored(raced.id).copy(state = state).also { row -> rows[row.id] = row }
+            }
     }
 
     // --- Pass 1: a build nothing is driving any more ---

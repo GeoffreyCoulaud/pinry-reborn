@@ -13,8 +13,8 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 /**
- * What a requester still has to watch or to clear: a row lives while the fetch runs and after it
- * failed, success deleting it (spec `docs/specs/2026-09-10-web-application.md`, section 4.4).
+ * What a requester still has to watch or to clear: a row lives while the fetch runs and after it failed, success
+ * deleting it (spec `docs/specs/2026-09-10-web-application.md`, section 4.4).
  */
 @ApplicationScoped
 class MediaDownloads(
@@ -26,12 +26,12 @@ class MediaDownloads(
         mediaDownloadRepository.findByAuthor(requester.id, cursor, pageSize.coerceIn(1, PinGetter.MAX_PAGE_SIZE))
 
     /**
-     * Drops one settled row: what the requester cannot see is absent, and a running row belongs to
-     * the worker. One transaction, the same download being requestable again while this runs.
+     * Drops one settled row: what the requester cannot see is absent, and a running row belongs to the worker. One
+     * transaction, the same download being requestable again while this runs.
      */
     fun delete(requester: User, pinId: UUID): Unit = transactionRunner.inTransaction {
-        val download = mediaDownloadRepository.findByAuthorAndPin(requester.id, pinId)
-            ?: throw MediaDownloadDoesNotExistError()
+        val download =
+            mediaDownloadRepository.findByAuthorAndPin(requester.id, pinId) ?: throw MediaDownloadDoesNotExistError()
         if (download.status == DownloadStatus.PENDING) throw MediaDownloadInProgressError()
         mediaDownloadRepository.deleteByPinId(pinId)
     }
