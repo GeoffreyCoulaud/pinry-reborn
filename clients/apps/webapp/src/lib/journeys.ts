@@ -40,7 +40,7 @@ export const REQUIRED_JOURNEYS = [
 	"step through the grid from a pin",
 	"play a video pin",
 	"a video this browser cannot play falls back",
-	"hover a video tile",
+	"a video tile plays its animation",
 	"upload a video",
 	"the boards screen shows each board's cover",
 	"reject a duplicate",
