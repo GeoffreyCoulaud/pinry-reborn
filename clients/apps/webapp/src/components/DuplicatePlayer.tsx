@@ -45,15 +45,21 @@ function PlayerBar({
 }) {
 	const length = Math.max(...durations);
 	const slack = slackOf(durations);
+	const tenths = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
+	const number = new Intl.NumberFormat(getLocale(), tenths);
 	const seconds = new Intl.NumberFormat(getLocale(), {
+		...tenths,
 		style: "unit",
 		unit: "second",
-		minimumFractionDigits: 1,
-		maximumFractionDigits: 1,
+		unitDisplay: "narrow",
 	});
 	const label = (millis: number) => seconds.format(millis / 1_000);
-	// One label width on both rows, so the slider ends where the bar ends.
-	const box = "w-30 shrink-0 text-end text-sm tabular-nums text-muted";
+	const total = `${number.format(length / 1_000)} / ${label(length)}`;
+	// One label width on both rows, so the slider ends where the bar ends; no wider, for a phone's bar.
+	const box = {
+		className: "shrink-0 text-end text-sm tabular-nums text-muted",
+		style: { width: `${total.length}ch` },
+	};
 	return (
 		<div className="flex flex-col gap-1">
 			<div className="flex items-center gap-3">
@@ -85,8 +91,8 @@ function PlayerBar({
 						<Slider.Thumb />
 					</Slider.Track>
 				</Slider>
-				<span className={box}>
-					{label(time)} / {label(length)}
+				<span {...box}>
+					{number.format(time / 1_000)} / {label(length)}
 				</span>
 			</div>
 			{slack > 0 ? (
@@ -105,7 +111,7 @@ function PlayerBar({
 							<Slider.Thumb />
 						</Slider.Track>
 					</Slider>
-					<span className={box}>{label(offset)}</span>
+					<span {...box}>{label(offset)}</span>
 				</div>
 			) : null}
 		</div>
