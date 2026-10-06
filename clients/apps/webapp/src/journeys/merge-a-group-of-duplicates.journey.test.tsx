@@ -95,6 +95,10 @@ describe("merge a group of duplicates", () => {
 		const versions = within(dialog).getByRole("list", {
 			name: m.compare_versions(),
 		});
+		await user.keyboard("{ArrowRight}");
+		expect(
+			within(versions).getByRole("button", { name: smaller.description }),
+		).toHaveAttribute("aria-current", "true");
 		await user.click(
 			within(versions).getByRole("button", { name: noon.description }),
 		);

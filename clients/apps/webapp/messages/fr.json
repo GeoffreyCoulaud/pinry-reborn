@@ -30,6 +30,7 @@
 	"compare_back": "Retour à l’épingle",
 	"compare_decision": "Décision pour cette version",
 	"compare_heading": "Quelle version conserver ?",
+	"compare_kept": "Conservée",
 	"compare_merge": "Fusionner",
 	"compare_merge_count": "Fusionner {count} épingles en une",
 	"compare_nothing": "Rien à fusionner",
@@ -44,7 +45,11 @@
 			}
 		}
 	],
+	"compare_split": "Déplacer la séparation",
+	"compare_this_version": "Cette version",
 	"compare_versions": "Versions",
+	"compare_zoom_in": "Zoomer",
+	"compare_zoom_out": "Dézoomer",
 	"create_board": "Ajouter un tableau",
 	"create_pin": "Ajouter une épingle",
 	"creation_refused": "Cette épingle n’a pas pu être ajoutée.",
