@@ -17,7 +17,7 @@ data class VideoProbeResult(
     val audioCodec: AudioCodec?,
     override val width: Int,
     override val height: Int,
-    override val duration: Duration,
+    val duration: Duration,
     // The video track's packets, one per frame.
     override val frames: Int,
     override val bytes: Long,

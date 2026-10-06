@@ -32,7 +32,14 @@ object MediaModelMapper {
     // The columns are nullable for an image's sake: a video row missing one is a defect, not a state.
     private fun MediaModel.toVideo(): Media.Video {
         val durationMillis = checkNotNull(durationMillis) { "Video $id has no duration" }
-        val sound = audioChannels?.let { Media.Sound(it, checkNotNull(audioBitRate) { "Video $id has no audio rate" }) }
+        val sound = if (audioChannels == null && audioBitRate == null) {
+            null
+        } else {
+            Media.Sound(
+                checkNotNull(audioChannels) { "Video $id has no audio channels" },
+                checkNotNull(audioBitRate) { "Video $id has no audio rate" },
+            )
+        }
         return Media.Video(
             id = id, pinId = pinId, mimeType = mimeType, width = width, height = height, byteSize = byteSize,
             contentHash = contentHash, storageKey = storageKey, createdAt = createdAt, frames = frames,

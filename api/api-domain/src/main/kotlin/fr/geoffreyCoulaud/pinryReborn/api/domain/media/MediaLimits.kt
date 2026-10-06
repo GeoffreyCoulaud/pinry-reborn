@@ -9,7 +9,6 @@ sealed interface MeasuredMedia {
     val height: Int
     val frames: Int
     val bytes: Long
-    val duration: Duration?
 }
 
 /** What a rendition draws, richest first (ADR 0050, decision 2). */

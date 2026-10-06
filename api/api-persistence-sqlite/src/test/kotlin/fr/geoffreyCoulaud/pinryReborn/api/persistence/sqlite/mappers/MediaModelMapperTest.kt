@@ -56,12 +56,13 @@ class MediaModelMapperTest {
     }
 
     @Test
-    fun `Given a video row missing its duration, its video rate or its audio rate, Then reading it fails`() {
+    fun `Given a video row missing its duration, video rate, audio rate or channels, Then reading it fails`() {
         val stored = { video(Media.Sound(2, 64_000)).toModel() }
         val rows = listOf(
             stored().apply { durationMillis = null },
             stored().apply { videoBitRate = null },
             stored().apply { audioBitRate = null },
+            stored().apply { audioChannels = null },
         )
         rows.forEach { row -> assertThrows(IllegalStateException::class.java) { row.toDomain() } }
     }
