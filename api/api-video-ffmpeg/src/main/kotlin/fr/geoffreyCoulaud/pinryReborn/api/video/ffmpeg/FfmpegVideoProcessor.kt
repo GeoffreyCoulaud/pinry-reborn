@@ -72,7 +72,7 @@ class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val
     override fun sample(media: Media, staged: StagedFile, onFrame: (LumaFrame) -> Unit) {
         val directory = Files.createTempDirectory(Path.of(staged.path).toAbsolutePath().parent, "frames-")
         try {
-            val instants = FrameSampler.instants(media.duration ?: Duration.ZERO)
+            val instants = FrameSampler.instants((media as Media.Video).duration)
             val select = instants.joinToString("+", transform = ::firstFrameAt)
             val filters = listOf("-map", "0:v:0", "-vf", "select='$select',$SQUARE_PIXELS,$BOUNDED_FRAME")
             val frames = listOf("-fps_mode", "passthrough", "-pix_fmt", "rgb24", "-f", "image2")

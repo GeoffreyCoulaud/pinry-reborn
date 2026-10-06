@@ -23,8 +23,7 @@ class MediaLimitsTest {
     private fun video(width: Int, height: Int, bytes: Long = 40) =
         VideoProbeResult(
             VideoCodec.H264, null, width, height, Duration.ofSeconds(1), frames = 25, bytes, "avc1.640015",
-            VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = bytes * 8, audioChannels = null,
-            audioBitRate = null,
+            VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = bytes * 8, sound = null,
         )
 
     @Test
@@ -71,16 +70,16 @@ class MediaLimitsTest {
     // The defaults of `media.max_pixels_per_frame` and `media.max_pixels_per_render`.
     private val defaults = limits.copy(maxPixelsPerFrame = 50_000_000, maxPixelsPerRender = 8_000_000_000)
 
-    private fun stored(mimeType: String, width: Int, height: Int, frames: Int, duration: Duration?) = Media(
-        id = UUID.randomUUID(), pinId = UUID.randomUUID(), mimeType = mimeType, width = width, height = height,
-        animated = frames > 1, byteSize = 1, contentHash = "h", storageKey = "k", createdAt = Instant.EPOCH,
-        frames = frames, duration = duration,
-    )
+    private fun gif(frames: Int) =
+        Media.AnimatedImage(
+            UUID.randomUUID(), UUID.randomUUID(), "image/gif", 7000, 7000, 1, "h", "k", Instant.EPOCH, frames,
+        )
 
-    private fun gif(frames: Int) = stored("image/gif", 7000, 7000, frames, duration = null)
-
-    private fun clip(width: Int, height: Int, frames: Int = 7200, duration: Duration? = Duration.ofSeconds(120)) =
-        stored("video/mp4", width, height, frames, duration)
+    private fun clip(width: Int, height: Int, frames: Int = 7200, duration: Duration = Duration.ofSeconds(120)) =
+        Media.Video(
+            UUID.randomUUID(), UUID.randomUUID(), "video/mp4", width, height, 1, "h", "k", Instant.EPOCH, frames,
+            duration, videoBitRate = 1, sound = null,
+        )
 
     @Test
     fun `Given a 7000x7000 GIF of 1000 frames, Then its animated rendition keeps its first frame`() {
@@ -126,11 +125,11 @@ class MediaLimitsTest {
     }
 
     @Test
-    fun `Given a 1080p video with no duration, Then its animated rendition counts every frame`() {
-        // 7200 frames of 2 MP: 15 Gpx, where three seconds of 120 would be whole
-        val undated = clip(1920, 1080, duration = null)
+    fun `Given a 1080p video of three seconds, Then its animated rendition counts every frame`() {
+        // 7200 frames of 2 MP: 15 Gpx, the preview's three seconds being the whole video
+        val short = clip(1920, 1080, duration = Duration.ofSeconds(3))
 
-        assertEquals(RenditionMode.FIRST_FRAME, defaults.renditionOf(undated, 480, animated = true))
+        assertEquals(RenditionMode.FIRST_FRAME, defaults.renditionOf(short, 480, animated = true))
     }
 
     @Test
@@ -144,7 +143,8 @@ class MediaLimitsTest {
     @Test
     fun `Given a frame past the per-frame bound, Then an image and a video have no rendition`() {
         // 8000x7000 is 56 MP, stored before the bound was lowered
-        val image = stored("image/png", 8000, 7000, frames = 1, duration = null)
+        val image =
+            Media.StillImage(UUID.randomUUID(), UUID.randomUUID(), "image/png", 8000, 7000, 1, "h", "k", Instant.EPOCH)
 
         assertEquals(RenditionMode.NONE, defaults.renditionOf(image, 480, animated = false))
         assertEquals(RenditionMode.NONE, defaults.renditionOf(clip(8000, 7000), 480, animated = true))

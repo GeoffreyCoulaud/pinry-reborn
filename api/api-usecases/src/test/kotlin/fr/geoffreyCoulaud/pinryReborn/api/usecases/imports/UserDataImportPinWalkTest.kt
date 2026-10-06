@@ -503,8 +503,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         every { videoProcessor.probe(any(), any()) } returns
             VideoProbeResult(
                 VideoCodec.H264, null, 4, 6, Duration.ofSeconds(1), frames = 25, bytes = 1, "avc1.640015",
-                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 8, audioChannels = null,
-                audioBitRate = null,
+                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 8, sound = null,
             )
 
         // When

@@ -179,6 +179,11 @@ on 55.)*
 60 `refactor/the-reject-route-goes`, on 55: the `PUT` route, its DTO and `PinDuplicates.setRejected`; the contract
 `23.0.0`. 65 `refactor/the-merge-route-goes`, on 60: `POST /api/v1/pins/merges`, its DTO and `PinMerger`, and the
 lot's handoff. The closing block stacks on 65.)*
+*(Corrected on 2026-10-06, from the operator's review comment on `Media.kt` in PR #337, which asked for the legal
+states as sealed types: 70 `feat/a-media-is-still-animated-or-video`, on 65. `Media` becomes a still image, an
+animated image or a video; a video always has its duration and video rate, and its sound, channels and rate together,
+is optional as a whole. The contract and the schema do not change: the persistence mapper refuses a video row missing
+one. The closing block stacks on 70.)*
 
 ### Block 10
 

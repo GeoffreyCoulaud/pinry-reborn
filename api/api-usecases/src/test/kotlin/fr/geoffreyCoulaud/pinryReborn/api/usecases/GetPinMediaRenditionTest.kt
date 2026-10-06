@@ -63,14 +63,20 @@ class GetPinMediaRenditionTest {
 
     private val requester = mockk<User>()
 
-    private fun media(pinId: UUID, width: Int, height: Int, animated: Boolean) = Media(
-        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = width, height = height,
-        animated = animated, byteSize = 1, contentHash = "h",
-        storageKey = "originals/u/$pinId/i.png", createdAt = java.time.Instant.EPOCH,
-    )
+    private fun media(pinId: UUID, width: Int, height: Int, animated: Boolean, frames: Int = 2): Media {
+        val key = "originals/u/$pinId/i.png"
+        return if (animated) {
+            Media.AnimatedImage(randomUUID(), pinId, "image/png", width, height, 1, "h", key, Instant.EPOCH, frames)
+        } else {
+            Media.StillImage(randomUUID(), pinId, "image/png", width, height, 1, "h", key, Instant.EPOCH)
+        }
+    }
 
-    private fun video(pinId: UUID) =
-        media(pinId, 160, 120, animated = true).copy(mimeType = "video/mp4; codecs=\"avc1.64000c\"")
+    private fun video(pinId: UUID, frames: Int = 2) =
+        Media.Video(
+            randomUUID(), pinId, "video/mp4; codecs=\"avc1.64000c\"", 160, 120, 1, "h", "originals/u/$pinId/v.mp4",
+            Instant.EPOCH, frames, Duration.ofSeconds(1), videoBitRate = 8, sound = null,
+        )
 
     private val original = StagedFile("/tmp/original", 1, "h")
     private val poster = StagedFile("/tmp/poster.png", 2, "p")
@@ -312,7 +318,7 @@ class GetPinMediaRenditionTest {
     fun `Given an animated image past the per-render bound, Then it gets the static key, the animated once raised`() {
         // Given: 10 frames of 100x80 decode 80,000 pixels
         val pinId = randomUUID()
-        val img = media(pinId, 100, 80, animated = true).copy(frames = 10)
+        val img = media(pinId, 100, 80, animated = true, frames = 10)
         every { getPinMedia.get(pinId, requester) } returns img
         stubMiss(img, "v2-40-s.webp")
         stubMiss(img, "v2-40-a.webp")
@@ -333,7 +339,7 @@ class GetPinMediaRenditionTest {
     fun `Given a video whose preview decodes past the per-render bound, Then its poster takes the static key`() {
         // Given: 200 frames of 160x120 decode 3,840,000 pixels, the poster's 100 half that
         val pinId = randomUUID()
-        val video = video(pinId).copy(frames = 200)
+        val video = video(pinId, frames = 200)
         every { getPinMedia.get(pinId, requester) } returns video
         stubVideoMiss(video, "v2-40-s.webp")
         every { videoProcessor.poster(original, 40, fromOneFrame = false) } returns poster

@@ -21,10 +21,12 @@ class FfmpegFrameSamplingTest {
     @TempDir
     lateinit var directory: Path
 
-    private fun media(duration: Duration?) =
-        Media(UUID.randomUUID(), UUID.randomUUID(), "video/mp4", 1, 1, true, 0, "", "", Instant.EPOCH, 1, duration)
+    private fun media(duration: Duration) =
+        Media.Video(
+            UUID.randomUUID(), UUID.randomUUID(), "video/mp4", 1, 1, 0, "", "", Instant.EPOCH, 2, duration, 1, null,
+        )
 
-    private fun framesOf(video: Path, duration: Duration?): List<LumaFrame> {
+    private fun framesOf(video: Path, duration: Duration): List<LumaFrame> {
         val frames = mutableListOf<LumaFrame>()
         sampler.sample(media(duration), StagedFile(video.toString(), 0, ""), frames::add)
         return frames
@@ -55,11 +57,6 @@ class FfmpegFrameSamplingTest {
     @Test
     fun `Given a video of two seconds, Then four frames are sampled`() {
         assertEquals(4, framesOf(video(seconds = 2), Duration.ofSeconds(2)).size)
-    }
-
-    @Test
-    fun `Given a video whose duration is unknown, Then its first frame alone is sampled`() {
-        assertEquals(1, framesOf(video(seconds = 2), duration = null).size)
     }
 
     @Test

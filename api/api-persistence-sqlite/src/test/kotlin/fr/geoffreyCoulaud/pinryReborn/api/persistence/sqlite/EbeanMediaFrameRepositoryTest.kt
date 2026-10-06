@@ -111,7 +111,7 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
             ),
         )
         val media = EbeanMediaRepository(persistor, transactionRunner).save(
-            Media(randomUUID(), pin.id, "image/png", 1, 1, false, 1, "", "originals/x", storableNow()),
+            Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1,"", "originals/x", storableNow()),
         )
         val gone = randomUUID()
         repository.save(media.id, listOf(stored))

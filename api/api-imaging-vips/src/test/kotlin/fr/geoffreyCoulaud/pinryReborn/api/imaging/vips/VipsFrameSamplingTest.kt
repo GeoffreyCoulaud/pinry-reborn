@@ -25,7 +25,11 @@ class VipsFrameSamplingTest {
     lateinit var directory: Path
 
     private fun media(animated: Boolean) =
-        Media(UUID.randomUUID(), UUID.randomUUID(), "image/gif", 1, 1, animated, 0, "", "", Instant.EPOCH)
+        if (animated) {
+            Media.AnimatedImage(UUID.randomUUID(), UUID.randomUUID(), "image/gif", 1, 1, 0, "", "", Instant.EPOCH, 2)
+        } else {
+            Media.StillImage(UUID.randomUUID(), UUID.randomUUID(), "image/gif", 1, 1, 0, "", "", Instant.EPOCH)
+        }
 
     private fun framesOf(image: Path, animated: Boolean): List<LumaFrame> {
         val frames = mutableListOf<LumaFrame>()

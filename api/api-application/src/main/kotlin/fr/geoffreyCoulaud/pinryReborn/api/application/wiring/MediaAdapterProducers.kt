@@ -75,7 +75,7 @@ class MediaAdapterProducers {
         val image = VipsImageTransformer(renditions.webpQuality(), config.decoderTimeout(), config.decoderMemoryBytes())
         return object : FrameSampler {
             override fun sample(media: Media, staged: StagedFile, onFrame: (LumaFrame) -> Unit) =
-                (if (media.isVideo) video else image).sample(media, staged, onFrame)
+                (if (media is Media.Video) video else image).sample(media, staged, onFrame)
         }
     }
 }

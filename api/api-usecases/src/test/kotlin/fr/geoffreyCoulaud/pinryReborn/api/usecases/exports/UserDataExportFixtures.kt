@@ -191,8 +191,8 @@ internal abstract class UserDataExportFixtures : BaseTest() {
         createdAt = createdAt, updatedAt = updatedAt,
     )
 
-    protected fun aMedia(pinId: UUID, id: UUID = randomUUID(), mimeType: String = "image/jpeg") = Media(
-        id = id, pinId = pinId, mimeType = mimeType, width = 10, height = 10, animated = false,
+    protected fun aMedia(pinId: UUID, id: UUID = randomUUID(), mimeType: String = "image/jpeg") = Media.StillImage(
+        id = id, pinId = pinId, mimeType = mimeType, width = 10, height = 10,
         byteSize = 3L, contentHash = "content-hash", storageKey = "originals/$id", createdAt = now,
     )
 

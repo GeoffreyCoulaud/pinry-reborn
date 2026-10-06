@@ -65,9 +65,9 @@ class AccountDeletionCleanerTest : BaseTest() {
         updatedAt = TestTime.now,
     )
 
-    private fun buildMedia(pinId: UUID) = Media(
+    private fun buildMedia(pinId: UUID) = Media.StillImage(
         id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1,
-        animated = false, byteSize = 1, contentHash = "h", storageKey = "originals/x/$pinId/i.png",
+        byteSize = 1, contentHash = "h", storageKey = "originals/x/$pinId/i.png",
         createdAt = Instant.parse("2026-07-10T00:00:00Z"),
     )
 

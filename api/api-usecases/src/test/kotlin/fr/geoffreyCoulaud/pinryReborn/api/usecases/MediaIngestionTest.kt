@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.AudioCodec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
@@ -22,6 +23,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
@@ -38,7 +40,7 @@ class MediaIngestionTest : BaseTest() {
     private val ingestion = MediaIngestion(store, probe, video, limits)
     private val aVideo = VideoProbeResult(
         VideoCodec.VP9, AudioCodec.OPUS, 4, 6, Duration.ofSeconds(1), frames = 25, bytes = 3, "vp09.00.10.08,opus",
-        VideoContainer.WEBM, alreadyRepackaged = true, videoBitRate = 80_000, audioChannels = 2, audioBitRate = 64_000,
+        VideoContainer.WEBM, alreadyRepackaged = true, videoBitRate = 80_000, Media.Sound(2, 64_000),
     )
     private val anMp4 = aVideo.copy(
         videoCodec = VideoCodec.H264, audioCodec = null, codecs = "avc1.640015", demuxedAs = VideoContainer.MP4,
@@ -99,14 +101,12 @@ class MediaIngestionTest : BaseTest() {
         assertEquals("image/webp", media.mimeType)
         assertEquals(4, media.width)
         assertEquals(5, media.height)
-        assertEquals(true, media.animated)
+        assertInstanceOf(Media.AnimatedImage::class.java, media)
         assertEquals(3, media.frames)
-        assertEquals(null, media.duration)
         assertEquals(staged.byteSize, media.byteSize)
         assertEquals(staged.contentHash, media.contentHash)
         assertEquals(pinId, media.pinId)
         assertEquals(createdAt, media.createdAt)
-        assertEquals(Triple(null, null, null), Triple(media.videoBitRate, media.audioChannels, media.audioBitRate))
     }
 
     @Test fun `Given a file neither probe reads, Then the staged file is discarded and the image refusal rethrown`() {
@@ -152,16 +152,15 @@ class MediaIngestionTest : BaseTest() {
         val ingested = ingestion.ingest(staged, ownerId, pinId, createdAt)
 
         // Then
-        val media = ingested.media
+        val media = assertInstanceOf(Media.Video::class.java, ingested.media)
         assertEquals(repackaged, ingested.staged)
         assertEquals("originals/$ownerId/$pinId/${media.id}.webm", media.storageKey)
         assertEquals("video/webm; codecs=\"vp09.00.10.08,opus\"", media.mimeType)
         assertEquals(4, media.width)
         assertEquals(6, media.height)
-        assertEquals(true, media.animated)
         assertEquals(25, media.frames)
         assertEquals(Duration.ofSeconds(1), media.duration)
-        assertEquals(Triple(80_000L, 2, 64_000L), Triple(media.videoBitRate, media.audioChannels, media.audioBitRate))
+        assertEquals(80_000L to Media.Sound(2, 64_000), media.videoBitRate to media.sound)
         assertEquals(7, media.byteSize)
         assertEquals("repackaged", media.contentHash)
         verify { store.discard(staged) }

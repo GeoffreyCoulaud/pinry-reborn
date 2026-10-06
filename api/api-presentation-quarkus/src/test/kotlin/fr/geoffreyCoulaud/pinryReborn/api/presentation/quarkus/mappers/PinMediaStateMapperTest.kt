@@ -23,24 +23,31 @@ class PinMediaStateMapperTest {
 
     @Test fun `Given READY, Then the dto carries the serve url and dimensions`() {
         val img =
-            Media(randomUUID(), pinId, "image/png", 4, 5, false, 6, "h", "originals/x/$pinId/i.png", Instant.EPOCH)
+            Media.StillImage(randomUUID(), pinId, "image/png", 4, 5, 6,"h", "originals/x/$pinId/i.png", Instant.EPOCH)
         val dto = PinMediaState(PinMediaStatus.READY, img, null, null).toDto(pinId)
         assertEquals(PinMediaStatusDto.READY, dto.status)
         assertEquals("/api/v1/pins/$pinId/media", dto.url)
         assertEquals(4, dto.width)
     }
 
-    @Test fun `Given a READY video, Then the dto carries its duration, rates and channels`() {
-        val video = Media(
-            randomUUID(), pinId, "video/mp4", 4, 5, true, 6, "h", "originals/x/$pinId/v.mp4", Instant.EPOCH,
-            frames = 30, duration = Duration.ofMillis(1_500),
-            videoBitRate = 4_200_000, audioChannels = 2, audioBitRate = 128_000,
+    private fun video(sound: Media.Sound?) =
+        Media.Video(
+            randomUUID(), pinId, "video/mp4", 4, 5, 6, "h", "originals/x/$pinId/v.mp4", Instant.EPOCH,
+            frames = 30, duration = Duration.ofMillis(1_500), videoBitRate = 4_200_000, sound = sound,
         )
-        val dto = PinMediaState(PinMediaStatus.READY, video, null, null).toDto(pinId)
+
+    @Test fun `Given a READY video, Then the dto carries its duration, rates and channels`() {
+        val dto = PinMediaState(PinMediaStatus.READY, video(Media.Sound(2, 128_000)), null, null).toDto(pinId)
         assertEquals(1_500L, dto.durationMillis)
         assertEquals(4_200_000L, dto.videoBitRate)
         assertEquals(2, dto.audioChannels)
         assertEquals(128_000L, dto.audioBitRate)
+    }
+
+    @Test fun `Given a READY video without sound, Then the dto carries its video rate and no audio`() {
+        val dto = PinMediaState(PinMediaStatus.READY, video(sound = null), null, null).toDto(pinId)
+        assertEquals(4_200_000L, dto.videoBitRate)
+        assertEquals(null to null, dto.audioChannels to dto.audioBitRate)
     }
 
     @Test fun `Given FAILED, Then the dto carries the reason code and a message`() {
@@ -52,7 +59,7 @@ class PinMediaStateMapperTest {
 
     @Test fun `Given READY with a FAILED replacement, Then the replacement carries its reason`() {
         val img =
-            Media(randomUUID(), pinId, "image/png", 1, 1, false, 1, "h", "originals/x/$pinId/i.png", Instant.EPOCH)
+            Media.StillImage(randomUUID(), pinId, "image/png", 1, 1, 1, "h", "originals/x/$pinId/i.png", Instant.EPOCH)
         val state =
             PinMediaState(
                 PinMediaStatus.READY,
@@ -84,7 +91,7 @@ class PinMediaStateMapperTest {
 
     @Test fun `Given READY with a successful replacement, Then the replacement has no reason or message`() {
         val img =
-            Media(randomUUID(), pinId, "image/png", 1, 1, false, 1, "h", "originals/x/$pinId/i.png", Instant.EPOCH)
+            Media.StillImage(randomUUID(), pinId, "image/png", 1, 1, 1, "h", "originals/x/$pinId/i.png", Instant.EPOCH)
         val state =
             PinMediaState(
                 PinMediaStatus.READY,

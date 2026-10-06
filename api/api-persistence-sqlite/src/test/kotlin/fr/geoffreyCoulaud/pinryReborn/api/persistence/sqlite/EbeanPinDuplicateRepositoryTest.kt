@@ -49,7 +49,7 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
 
     private fun withMedia(pin: Pin) {
         EbeanMediaRepository(persistor, transactionRunner)
-            .save(Media(randomUUID(), pin.id, "image/png", 1, 1, false, 1, "", "originals/x", storableNow()))
+            .save(Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1,"", "originals/x", storableNow()))
     }
 
     @Test

@@ -33,11 +33,16 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
         )
     }
 
-    private fun mediaFor(pinId: UUID, hash: String = "h", animated: Boolean = false) = Media(
-        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1, animated = animated,
+    private fun mediaFor(pinId: UUID, hash: String = "h") = Media.StillImage(
+        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1,
         byteSize = 1, contentHash = hash, storageKey = "originals/x/$pinId/i.png",
         createdAt = Instant.parse("2026-07-08T00:00:00Z"),
     )
+
+    private fun animatedFor(pinId: UUID) =
+        mediaFor(pinId).run {
+            Media.AnimatedImage(id, pinId, "image/gif", width, height, byteSize, contentHash, storageKey, createdAt, 3)
+        }
 
     @Test
     fun `Given a new image, Then save persists it and findByPinId returns it`() {
@@ -47,19 +52,24 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given an animated image, Then save persists it and findByPinId reads back animated = true`() {
+    fun `Given an animated image, Then findByPinId reads it back animated, with its frames`() {
         val pin = savedPin()
-        val saved = repository.save(mediaFor(pin.id, animated = true))
-        assertTrue(saved.animated)
-        assertEquals(true, repository.findByPinId(pin.id)?.animated)
+        val saved = repository.save(animatedFor(pin.id))
+        assertEquals(saved, repository.findByPinId(pin.id))
     }
 
     @Test
-    fun `Given a video, Then findByPinId reads back its frames and duration`() {
+    fun `Given a video, Then findByPinId reads back its frames, duration, rates and sound`() {
         val pin = savedPin()
-        repository.save(mediaFor(pin.id).copy(frames = 25, duration = Duration.ofMillis(1_023)))
-        val found = repository.findByPinId(pin.id)
-        assertEquals(25 to Duration.ofMillis(1_023), found?.frames to found?.duration)
+        val video =
+            mediaFor(pin.id).run {
+                Media.Video(
+                    id, pinId, "video/mp4", width, height, byteSize, contentHash, storageKey, createdAt, 25,
+                    Duration.ofMillis(1_023), videoBitRate = 8_000, sound = Media.Sound(2, 1_000),
+                )
+            }
+        val saved = repository.save(video)
+        assertEquals(saved, repository.findByPinId(pin.id))
     }
 
     @Test
@@ -167,7 +177,7 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
         val recycled = repository.save(mediaFor(recycledPin.id))
         pinRepository.softDeletePin(recycledPin, storableNow())
         val otherAuthor = repository.save(mediaFor(savedPin().id))
-        val animated = repository.save(mediaFor(savedPin(author).id, animated = true))
+        val animated = repository.save(animatedFor(savedPin(author).id))
         val outdated = repository.save(mediaFor(savedPin(author).id))
         val candidates = listOf(media, comparable, recycled, otherAuthor, animated, outdated)
         candidates.filter { it != outdated }.forEach { repository.markFingerprinted(it.id, VERSION) }

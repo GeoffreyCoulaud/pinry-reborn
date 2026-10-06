@@ -82,9 +82,9 @@ class PinListIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         val (imaged, downloading, _) = createPinsForUser(auth.user, 3)
         mediaRepository.save(
-            Media(
+            Media.StillImage(
                 id = UUID.randomUUID(), pinId = imaged, mimeType = "image/png", width = 800, height = 600,
-                animated = false, byteSize = 1024, contentHash = "hash-$imaged",
+                byteSize = 1024, contentHash = "hash-$imaged",
                 storageKey = "originals/x/$imaged/i.png", createdAt = FIXED_INSTANT,
             ),
         )
@@ -117,12 +117,12 @@ class PinListIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         val pinId = createPinsForUser(auth.user, 1).single()
         mediaRepository.save(
-            Media(
+            Media.Video(
                 id = UUID.randomUUID(), pinId = pinId, mimeType = "video/mp4", width = 800, height = 600,
-                animated = true, byteSize = 1024, contentHash = "hash-$pinId",
+                byteSize = 1024, contentHash = "hash-$pinId",
                 storageKey = "originals/x/$pinId/v.mp4", createdAt = FIXED_INSTANT,
                 frames = 30, duration = Duration.ofMillis(1_500),
-                videoBitRate = 4_200_000, audioChannels = 2, audioBitRate = 128_000,
+                videoBitRate = 4_200_000, sound = Media.Sound(2, 128_000),
             ),
         )
 

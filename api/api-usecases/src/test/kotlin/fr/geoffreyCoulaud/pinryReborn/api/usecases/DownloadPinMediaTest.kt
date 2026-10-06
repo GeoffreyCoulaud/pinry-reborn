@@ -387,8 +387,7 @@ class DownloadPinMediaTest {
             every { video.probe(any(), any()) } returns
                 VideoProbeResult(
                     VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), frames = 25, bytes = 3, "avc1.640015",
-                    VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, audioChannels = null,
-                    audioBitRate = null,
+                    VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, sound = null,
                 )
             every { video.repackage(any(), any()) } throws refusal
             // When / Then
@@ -458,7 +457,7 @@ class DownloadPinMediaTest {
         every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         val supersededKey = "originals/x/$pinId/old.png"
         every { mediaRepository.findByPinId(pinId) } returns
-            Media(randomUUID(), pinId, "image/png", 1, 1, false, 3, "oldhash", supersededKey, now)
+            Media.StillImage(randomUUID(), pinId, "image/png", 1, 1, 3, "oldhash", supersededKey, now)
         every { downloads.deleteIfPending(pinId) } returns 1
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
         subject.download(pinId, ctx())
@@ -473,7 +472,7 @@ class DownloadPinMediaTest {
         stubUntilStage()
         every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         val supersededKey = "originals/x/$pinId/old.png"
-        val superseded = Media(randomUUID(), pinId, "image/png", 1, 1, false, 3, "oldhash", supersededKey, now)
+        val superseded = Media.StillImage(randomUUID(), pinId, "image/png", 1, 1, 3, "oldhash", supersededKey, now)
         every { mediaRepository.findByPinId(pinId) } returns superseded
         every { downloads.deleteIfPending(pinId) } returns 1
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }
@@ -486,7 +485,7 @@ class DownloadPinMediaTest {
         stubUntilStage()
         every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         val supersededKey = "originals/x/$pinId/old.png"
-        val superseded = Media(randomUUID(), pinId, "image/png", 1, 1, false, 3, "oldhash", supersededKey, now)
+        val superseded = Media.StillImage(randomUUID(), pinId, "image/png", 1, 1, 3, "oldhash", supersededKey, now)
         every { mediaRepository.findByPinId(pinId) } returns superseded
         every { downloads.deleteIfPending(pinId) } returns 1
         every { runner.inTransaction<Boolean>(any()) } answers { firstArg<() -> Boolean>().invoke() }

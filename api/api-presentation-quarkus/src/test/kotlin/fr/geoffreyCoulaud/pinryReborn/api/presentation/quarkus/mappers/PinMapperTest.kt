@@ -77,9 +77,9 @@ class PinMapperTest {
     fun `Given a pin whose image is ready, Then toDto carries its dimensions and a relative url`() {
         // Given
         val pin = createPin()
-        val media = Media(
+        val media = Media.StillImage(
             id = randomUUID(), pinId = pin.id, mimeType = "image/png", width = 800, height = 600,
-            animated = false, byteSize = 1024, contentHash = "h", storageKey = "originals/x/y/z.png",
+            byteSize = 1024, contentHash = "h", storageKey = "originals/x/y/z.png",
             createdAt = TestTime.now,
         )
         val states = mapOf(pin.id to PinMediaState(PinMediaStatus.READY, media, null, null))

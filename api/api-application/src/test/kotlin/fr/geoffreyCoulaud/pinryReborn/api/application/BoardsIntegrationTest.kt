@@ -285,9 +285,9 @@ class BoardsIntegrationTest : IntegrationTest() {
     private fun imagedPin(auth: AuthenticatedUser): Pin {
         val pin = pinCreator.createPin(auth.user, "https://example.com", null, "Pin", emptyList())
         mediaRepository.save(
-            Media(
+            Media.StillImage(
                 id = UUID.randomUUID(), pinId = pin.id, mimeType = "image/png", width = 1, height = 1,
-                animated = false, byteSize = 1, contentHash = "hash-${pin.id}",
+                byteSize = 1, contentHash = "hash-${pin.id}",
                 storageKey = "originals/x/${pin.id}/i.png", createdAt = Instant.EPOCH,
             ),
         )

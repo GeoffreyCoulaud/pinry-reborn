@@ -17,7 +17,7 @@ class VipsPdqHashTest {
     private val sampler = VipsImageTransformer(quality = 80, Duration.ofSeconds(60), DECODER_MEMORY)
 
     private fun hashOf(name: String): PdqHash {
-        val media = Media(UUID.randomUUID(), UUID.randomUUID(), "image/jpeg", 1, 1, false, 0, "", "", Instant.EPOCH)
+        val media = Media.StillImage(UUID.randomUUID(), UUID.randomUUID(), "image/jpeg", 1, 1, 0,"", "", Instant.EPOCH)
         val hashes = mutableListOf<PdqHash>()
         sampler.sample(media, StagedFile("src/test/resources/pdq/$name", 0, "")) { hashes += PdqHasher.hash(it) }
         return hashes.single()
