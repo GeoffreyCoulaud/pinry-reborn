@@ -72,7 +72,7 @@ function Comparison({
 	const submit = submitOf(decisions, duplicates);
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+		<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto lg:overflow-hidden">
 			<header className="flex items-center gap-2">
 				<IconButton
 					icon={ArrowLeft}
@@ -82,8 +82,9 @@ function Comparison({
 				/>
 				<h2 className="font-semibold">{m.compare_heading()}</h2>
 			</header>
-			<div className="flex min-w-0 flex-col gap-3">
-				<div className="relative h-80 shrink-0 bg-background-secondary lg:h-[460px]">
+			{/* From `lg` the stage takes what is left, so the decision, the strip and the footer stay in view. */}
+			<div className="flex min-w-0 flex-col gap-3 lg:min-h-0 lg:flex-1">
+				<div className="relative h-80 shrink-0 bg-background-secondary lg:h-auto lg:min-h-0 lg:flex-1">
 					{url ? (
 						<img
 							src={stageSource(url, under.media?.mimeType)}
@@ -124,7 +125,7 @@ function Comparison({
 				</ToggleButtonGroup>
 				<ul
 					aria-label={m.compare_versions()}
-					className="flex gap-2.5 overflow-x-auto pb-0.5"
+					className="flex shrink-0 gap-2.5 overflow-x-auto pb-0.5"
 				>
 					{versions.map((version, at) => (
 						<li key={version.id} className="shrink-0">
