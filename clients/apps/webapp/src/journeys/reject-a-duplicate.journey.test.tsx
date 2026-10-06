@@ -21,21 +21,24 @@ const markers = () =>
 	screen.queryAllByRole("img", { name: m.duplicates_badge(), hidden: true });
 
 describe("reject a duplicate", () => {
-	it("Given two pins marked as duplicates, When one is not a duplicate, Then it folds under the rejected, the markers go, and restoring brings both back", async () => {
+	it("Given two pins marked as duplicates, When one is not a duplicate, Then the markers go, and Review shows it rejected and merges it", async () => {
 		const harbour = readyPin("a harbour at dusk");
 		const copy = readyPin("the same harbour, smaller", 400, 300);
-		const pair: Pair = { pins: [harbour, copy], rejected: false };
+		const pairs: Pair[] = [{ pins: [harbour, copy], rejected: false }];
 		const flagged = (pin: Pin) => ({
 			...pin,
-			hasPendingDuplicates: !pair.rejected,
+			hasPendingDuplicates: pairs.some((pair) => !pair.rejected),
 		});
 		server.use(
 			sessionRoute(() => true),
-			onePinPage(() => [harbour, copy].map(flagged)),
+			// The copy is recycled once merged, which hides its pair.
+			onePinPage(() =>
+				(pairs.length > 0 ? [harbour, copy] : [harbour]).map(flagged),
+			),
 			http.get("/api/v1/pins/:pinId", ({ params }) =>
 				HttpResponse.json(flagged(params.pinId === copy.id ? copy : harbour)),
 			),
-			...duplicateRoutes([pair]),
+			...duplicateRoutes(pairs),
 			downloadsRoute(),
 			handshakeRoute(),
 		);
@@ -47,35 +50,47 @@ describe("reject a duplicate", () => {
 		);
 		expect(markers()).toHaveLength(2);
 		const dialog = await screen.findByRole("dialog");
-		const pending = await within(dialog).findByRole("list", {
-			name: m.duplicates(),
-		});
-		const row = within(pending).getByRole("listitem");
-		expect(within(row).getByText(copy.description)).toBeVisible();
 		expect(
-			within(row).getByText(m.media_dimensions({ width: 400, height: 300 })),
+			await within(dialog).findByText(m.duplicates_pending({ count: 1 })),
 		).toBeVisible();
+		await user.click(within(dialog).getByRole("button", { name: m.compare() }));
 		await user.click(
-			within(row).getByRole("button", { name: m.duplicate_reject() }),
+			await within(dialog).findByRole("radio", { name: m.duplicate_reject() }),
 		);
-
-		const folded = await within(dialog).findByRole("button", {
-			name: m.duplicates_rejected({ count: 1 }),
-		});
-		expect(
-			within(dialog).queryByRole("list", { name: m.duplicates() }),
-		).toBeNull();
-		await waitFor(() => expect(markers()).toHaveLength(0));
-
-		await user.click(folded);
 		await user.click(
-			await within(dialog).findByRole("button", {
-				name: m.duplicate_restore(),
+			within(dialog).getByRole("button", {
+				name: m.compare_reject_count({ count: 1 }),
 			}),
 		);
+
 		expect(
-			await within(dialog).findByRole("list", { name: m.duplicates() }),
+			await within(dialog).findByText(m.duplicates_rejected({ count: 1 })),
 		).toBeVisible();
-		await waitFor(() => expect(markers()).toHaveLength(2));
+		await waitFor(() => expect(markers()).toHaveLength(0));
+
+		await user.click(within(dialog).getByRole("button", { name: m.review() }));
+		expect(
+			await within(dialog).findByRole("button", { name: m.compare_nothing() }),
+		).toBeDisabled();
+		expect(
+			within(dialog).getByRole("radio", { name: m.duplicate_reject() }),
+		).toBeChecked();
+		await user.click(
+			within(dialog).getByRole("radio", { name: m.compare_merge() }),
+		);
+		await user.click(
+			within(dialog).getByRole("button", {
+				name: m.compare_merge_count({ count: 2 }),
+			}),
+		);
+
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("img", { name: copy.description, hidden: true }),
+			).toBeNull(),
+		);
+		expect(
+			within(dialog).queryByRole("button", { name: m.review() }),
+		).toBeNull();
 	});
 });

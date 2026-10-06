@@ -273,6 +273,8 @@ export function DuplicateComparator({
 	merged: (kept: Pin) => void;
 }) {
 	const duplicates = useDuplicates(pin.id).data;
+	// Each refusal remounts the comparison on the list read again.
+	const [refusals, setRefusals] = useState(0);
 	const resolve = useResolveDuplicates(pin.id, (kept) => {
 		close();
 		if (kept.id !== pin.id) {
@@ -285,13 +287,17 @@ export function DuplicateComparator({
 	}
 	return (
 		<Comparison
+			key={refusals}
 			pin={pin}
 			duplicates={duplicates}
 			close={close}
 			busy={resolve.isPending}
 			submit={(decisions) =>
 				resolve.mutate(decisions, {
-					onError: () => toast.danger(m.compare_refused()),
+					onError: () => {
+						toast.danger(m.compare_refused());
+						setRefusals((count) => count + 1);
+					},
 				})
 			}
 		/>

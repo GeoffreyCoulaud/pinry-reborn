@@ -191,16 +191,16 @@ export function onePinPage(pins: () => Pin[]) {
 	);
 }
 
-/** A pair of likely duplicates, which a `PUT` or a resolution changes in place. */
+/** A pair of likely duplicates, which a resolution rejects in place or hides. */
 export interface Pair {
 	pins: [Pin, Pin];
 	rejected: boolean;
 }
 
 /**
- * The pairs the journey holds, listed from either pin, so what a write leaves behind is what the
- * next read answers. A resolution rejects a rejected pin's pairs with the kept and merged pins,
- * hides a merged pin's pairs with it, and answers the kept pin (ADR 0052).
+ * The pairs the journey holds, listed from either pin, so what a resolution leaves behind is what
+ * the next read answers: a rejected pin's pairs with the kept and merged pins rejected, a merged
+ * pin's pairs hidden with it, and the kept pin answered (ADR 0052).
  */
 export function duplicateRoutes(pairs: Pair[]) {
 	const listed = (pair: Pair, pinId: unknown) => ({
@@ -216,21 +216,6 @@ export function duplicateRoutes(pairs: Pair[]) {
 					listed(pair, params.pinId),
 				),
 			}),
-		),
-		http.put(
-			"/api/v1/pins/:pinId/duplicates/:otherPinId",
-			async ({ request, params }) => {
-				const pair = holding(params.pinId).find((held) =>
-					held.pins.some((one) => one.id === params.otherPinId),
-				);
-				if (pair === undefined) {
-					return refused(404, "DUPLICATE_DOES_NOT_EXIST");
-				}
-				pair.rejected = (
-					(await request.json()) as { rejected: boolean }
-				).rejected;
-				return HttpResponse.json(listed(pair, params.pinId));
-			},
 		),
 		http.post(
 			"/api/v1/pins/:pinId/duplicates/resolutions",

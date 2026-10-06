@@ -12,6 +12,7 @@ import {
 	onePinPage,
 	type Pair,
 	readyPin,
+	refused,
 	renderApp,
 	sessionRoute,
 } from "../test/app";
@@ -86,6 +87,9 @@ describe("merge a group of duplicates", () => {
 		await user.click(
 			await screen.findByRole("img", { name: open.description }),
 		);
+		expect(
+			await screen.findByText(m.duplicates_pending({ count: 3 })),
+		).toBeVisible();
 		const dialog = await compare(user);
 		expect(
 			within(dialog).getByRole("button", {
@@ -176,5 +180,48 @@ describe("merge a group of duplicates", () => {
 		for (const name of [m.pin_previous(), m.pin_next()]) {
 			expect(within(shown).getByRole("button", { name })).toBeDisabled();
 		}
+	});
+
+	it("Given a duplicate recycled meanwhile, When the merge is refused, Then the refusal is shown and the comparator reopens on the list read again", async () => {
+		const open = marked("a harbour at dusk");
+		const gone = marked("the same harbour, recycled meanwhile");
+		const kept = marked("the same harbour, kept");
+		const pairs = [pending([open, gone]), pending([open, kept])];
+		server.use(
+			sessionRoute(() => true),
+			onePinPage(() => [open, gone, kept]),
+			http.post(`/api/v1/pins/${open.id}/duplicates/resolutions`, () => {
+				pairs.splice(0, 1);
+				return refused(404, "DUPLICATE_DOES_NOT_EXIST");
+			}),
+			...duplicateRoutes(pairs),
+			downloadsRoute(),
+			handshakeRoute(),
+		);
+		renderApp("/");
+		const user = userEvent.setup();
+
+		await user.click(
+			await screen.findByRole("img", { name: open.description }),
+		);
+		const dialog = await compare(user);
+		await user.click(
+			within(dialog).getByRole("button", {
+				name: m.compare_merge_count({ count: 3 }),
+			}),
+		);
+
+		expect(await screen.findByText(m.compare_refused())).toBeVisible();
+		expect(
+			await within(dialog).findByRole("button", {
+				name: m.compare_merge_count({ count: 2 }),
+			}),
+		).toBeEnabled();
+		const versions = within(dialog).getByRole("list", {
+			name: m.compare_versions(),
+		});
+		expect(
+			within(versions).queryByRole("button", { name: gone.description }),
+		).toBeNull();
 	});
 });

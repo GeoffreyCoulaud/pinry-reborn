@@ -38,7 +38,7 @@
 	"compare_merge_count": "Fusionner {count} épingles en une",
 	"compare_nothing": "Rien à fusionner",
 	"compare_open_pin": "Épingle ouverte",
-	"compare_refused": "Ces doublons n’ont pas pu être traités.",
+	"compare_refused": "Ces doublons n’ont pas pu être traités. La liste a été relue.",
 	"compare_reject_count": [
 		{
 			"declarations": ["input count", "local countPlural = count: plural"],
@@ -80,12 +80,28 @@
 	"drop_reading": "Lecture des fichiers déposés : {count}",
 	"drop_to_add": "Déposez un fichier média ici pour ajouter une épingle",
 	"drop_unsupported": "Rien dans ce dépôt ne pouvait devenir une épingle.",
-	"duplicate_refused": "Ce doublon n’a pas pu être modifié.",
 	"duplicate_reject": "Pas un doublon",
-	"duplicate_restore": "Rétablir",
-	"duplicates": "Doublons probables",
 	"duplicates_badge": "A des doublons",
-	"duplicates_rejected": "Écartés ({count})",
+	"duplicates_pending": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} doublon possible",
+				"countPlural=other": "{count} doublons possibles"
+			}
+		}
+	],
+	"duplicates_rejected": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} écarté",
+				"countPlural=other": "{count} écartés"
+			}
+		}
+	],
 	"edit_pin": "Modifier",
 	"empty_bin": "Vider la corbeille",
 	"empty_bin_question": "Vider la corbeille ?",
@@ -181,14 +197,7 @@
 	"media_too_long": "Cette vidéo dure plus longtemps que ce que ce serveur accepte.",
 	"media_unsaved": "Nouveau média, pas encore enregistré",
 	"membership_refused": "Ce tableau n’a pas pu être modifié.",
-	"merge": "Fusionner ({count})",
-	"merge_include": "Inclure",
-	"merge_include_pin": "Inclure {description}",
 	"merge_keep": "Conserver",
-	"merge_keep_pin": "Conserver {description}",
-	"merge_keep_this": "Conserver cette épingle",
-	"merge_kept": "L’épingle à conserver",
-	"merge_refused": "Ces épingles n’ont pas pu être fusionnées.",
 	"name": "Nom",
 	"new_board": "Nouveau tableau…",
 	"new_password": "Nouveau mot de passe",
@@ -229,6 +238,7 @@
 	"restore": "Restaurer {name}",
 	"restore_selection": "Restaurer",
 	"retry": "Réessayer",
+	"review": "Revoir",
 	"save": "Enregistrer",
 	"search_empty": "Aucune épingle ne correspond à {term}.",
 	"search_everywhere": "Chercher dans toutes vos épingles",
