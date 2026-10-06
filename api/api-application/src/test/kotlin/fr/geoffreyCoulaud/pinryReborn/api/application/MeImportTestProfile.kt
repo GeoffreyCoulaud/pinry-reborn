@@ -4,9 +4,8 @@ import io.quarkus.test.junit.QuarkusTestProfile
 import java.util.UUID
 
 /**
- * Writable, per-run data directories, mirroring [MeExportTestProfile]: the production defaults are not writable in CI
- * and successive local runs would collide on them. `exports.data_dir` is here because the round trip pours a real
- * export into a real import.
+ * Writable, per-run data directories, like [MeExportTestProfile]: the defaults are not writable in CI and local runs
+ * would collide on them. `exports.data_dir` is here because the round trip pours an export into an import.
  */
 class MeImportTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> =

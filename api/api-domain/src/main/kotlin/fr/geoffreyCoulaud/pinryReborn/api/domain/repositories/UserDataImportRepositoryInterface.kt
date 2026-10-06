@@ -13,9 +13,8 @@ import java.util.UUID
  */
 interface UserDataImportRepositoryInterface {
     /**
-     * Create or update an import row.
-     *
-     * @throws ImportAlreadyInProgressException when the user already holds an active import.
+     * Create or update an import row. Throws [ImportAlreadyInProgressException] when the user already holds an active
+     * import.
      */
     fun save(userDataImport: UserDataImport): UserDataImport
 

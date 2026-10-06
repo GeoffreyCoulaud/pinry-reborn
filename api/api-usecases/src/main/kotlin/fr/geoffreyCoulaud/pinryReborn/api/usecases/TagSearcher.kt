@@ -9,9 +9,8 @@ import jakarta.enterprise.context.ApplicationScoped
 @ApplicationScoped
 class TagSearcher(private val tagRepository: TagRepositoryInterface) {
     /**
-     * Find at most [limit] of the user's tags matching [query], in the order the store serves them.
-     *
-     * @throws SearchEmptyQueryError when the query is blank, an absent one included.
+     * Find at most [limit] of the user's tags matching [query], in the order the store serves them. Throws
+     * [SearchEmptyQueryError] when the query is blank, an absent one included.
      */
     fun searchTags(
         user: User,
