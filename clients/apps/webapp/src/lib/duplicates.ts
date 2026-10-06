@@ -11,7 +11,7 @@ interface Version {
 }
 
 /** A media the API never measured counts none, so it never takes the kept place. */
-function pixelsOf(version: Version): number {
+export function pixelsOf(version: Version): number {
 	return (version.media?.width ?? 0) * (version.media?.height ?? 0);
 }
 

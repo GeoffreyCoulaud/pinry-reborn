@@ -11,13 +11,16 @@ import {
 	type Decision,
 	type Decisions,
 	decide,
+	pixelsOf,
 	type Submit,
 	storedDecisions,
 	submitOf,
 } from "../lib/duplicates";
+import { isVideo, soundLine, weightLine } from "../lib/media";
 import { tileStillSource } from "../lib/tiles";
 import { UNZOOMED } from "../lib/zoom";
 import { m } from "../paraglide/messages.js";
+import { getLocale } from "../paraglide/runtime.js";
 import {
 	type Duplicate,
 	type Pin,
@@ -36,6 +39,78 @@ function submitLabel(submit: Submit) {
 	return submit.kind === "MERGE"
 		? m.compare_merge_count({ count: submit.count })
 		: m.compare_reject_count({ count: submit.count });
+}
+
+/** The facts beside the stage, with no control among them (decision A). */
+function Facts({
+	version,
+	open,
+	largest,
+}: {
+	version: Pin;
+	open: boolean;
+	largest: boolean;
+}) {
+	const media: Partial<NonNullable<Pin["media"]>> = version.media ?? {};
+	const locale = getLocale();
+	const seconds = new Intl.NumberFormat(locale, {
+		style: "unit",
+		unit: "second",
+		maximumFractionDigits: 1,
+	});
+	const added = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+	const names = (list: { name: string }[], none: string) =>
+		list.length > 0 ? list.map((one) => one.name).join(", ") : none;
+
+	return (
+		<aside className="flex min-w-0 flex-col gap-4 lg:min-h-0 lg:overflow-y-auto lg:border-s lg:border-separator lg:ps-5">
+			<div>
+				<h3 className="font-semibold">{version.description}</h3>
+				{open ? (
+					<p className="text-sm text-muted">{m.compare_open_pin()}</p>
+				) : null}
+			</div>
+			<dl className="grid grid-cols-[auto_1fr] gap-x-3.5 gap-y-1.5 tabular-nums [&_dd]:min-w-0 [&_dt]:text-muted">
+				<dt>{m.compare_size()}</dt>
+				<dd>
+					{media.width != null && media.height != null
+						? m.media_dimensions({ width: media.width, height: media.height })
+						: null}{" "}
+					{largest ? (
+						<span className="text-sm font-semibold text-warning">
+							{m.compare_largest()}
+						</span>
+					) : null}
+				</dd>
+				{media.durationMillis == null ? null : (
+					<>
+						<dt>{m.compare_duration()}</dt>
+						<dd>{seconds.format(media.durationMillis / 1000)}</dd>
+					</>
+				)}
+				{isVideo(media.mimeType) ? (
+					<>
+						<dt>{m.compare_sound()}</dt>
+						<dd>
+							{soundLine(media, locale, {
+								mono: m.compare_sound_mono(),
+								stereo: m.compare_sound_stereo(),
+								many: (count) => m.compare_sound_channels({ count }),
+							}) ?? m.compare_sound_none()}
+						</dd>
+					</>
+				) : null}
+				<dt>{m.compare_weight()}</dt>
+				<dd>{weightLine(media, locale)}</dd>
+				<dt>{m.compare_added()}</dt>
+				<dd>{added.format(new Date(version.createdAt))}</dd>
+				<dt>{m.boards()}</dt>
+				<dd>{names(version.boards, m.boards_none())}</dd>
+				<dt>{m.tags()}</dt>
+				<dd>{names(version.tags, m.compare_tags_none())}</dd>
+			</dl>
+		</aside>
+	);
 }
 
 /** The group on one stage, opened on its stored state, with a decision per version (decision A). */
@@ -74,11 +149,12 @@ function Comparison({
 	const under = versions[index] ?? pin;
 	const kept = versions.find((one) => decisions[one.id] === "KEEP") ?? pin;
 	const decision = decisions[under.id];
+	const most = Math.max(...versions.map(pixelsOf));
 	const submit = submitOf(decisions, duplicates);
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto lg:overflow-hidden">
-			<header className="flex items-center gap-2">
+		<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_minmax(0,1fr)_auto] lg:overflow-hidden">
+			<header className="col-span-full flex items-center gap-2">
 				<IconButton
 					icon={ArrowLeft}
 					name={m.compare_back()}
@@ -88,7 +164,7 @@ function Comparison({
 				<h2 className="font-semibold">{m.compare_heading()}</h2>
 			</header>
 			{/* From `lg` the stage takes what is left, so the decision, the strip and the footer stay in view. */}
-			<div className="flex min-w-0 flex-col gap-3 lg:min-h-0 lg:flex-1">
+			<div className="flex min-w-0 flex-col gap-3 lg:min-h-0">
 				<DuplicateStage
 					under={under}
 					kept={kept}
@@ -158,7 +234,12 @@ function Comparison({
 					))}
 				</ul>
 			</div>
-			<footer className="flex flex-wrap justify-end gap-3 border-t border-separator pt-3">
+			<Facts
+				version={under}
+				open={under.id === pin.id}
+				largest={most > 0 && pixelsOf(under) === most}
+			/>
+			<footer className="col-span-full flex flex-wrap justify-end gap-3 border-t border-separator pt-3">
 				<Button variant="secondary" onPress={close}>
 					{m.cancel()}
 				</Button>
