@@ -195,14 +195,14 @@ export function DuplicateStage({
 					</div>
 					<Chip
 						size="sm"
-						className="pointer-events-none absolute start-3 top-3"
+						className="pointer-events-none absolute start-3 top-3 bg-surface shadow-surface"
 					>
 						{m.compare_this_version()}
 					</Chip>
 					<Chip
 						size="sm"
 						color="warning"
-						className="pointer-events-none absolute end-3 top-3"
+						className="pointer-events-none absolute end-3 top-3 bg-surface shadow-surface"
 					>
 						<Crown aria-hidden className="size-3" />
 						{m.compare_kept()}
