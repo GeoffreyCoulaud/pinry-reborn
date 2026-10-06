@@ -399,7 +399,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
                 } else {
                     assertEquals(want, requireNotNull(got) { file.name }.toDouble(), want / 100, file.name)
                 }
-            }        }
+            }
+        }
     }
 
     // The probe's own fixtures, generated once in the module that reads them (its README holds the commands).
