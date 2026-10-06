@@ -22,6 +22,8 @@ detekt = "2.0.0-alpha.5"
 kover = "0.9.8"
 konsist = "0.17.3"
 jetty = "12.1.13"
+spotless = "8.10.3"
+ktfmt = "0.64"
 
 [libraries]
 # Testing
@@ -36,6 +38,9 @@ konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 # supplies its own copy at analysis time, so shipping it would risk two versions on the classpath.
 detekt-api = { module = "dev.detekt:detekt-api", version.ref = "detekt" }
 detekt-test = { module = "dev.detekt:detekt-test", version.ref = "detekt" }
+
+# Spotless resolves ktfmt itself and reads only its version here; the library entry is what Dependabot sees.
+ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
 
 # Ebean ORM
 ebean = { module = "io.ebean:ebean", version.ref = "ebean" }
@@ -129,3 +134,4 @@ ebean = { id = "io.ebean", version.ref = "ebean" }
 jandex = { id = "org.kordamp.gradle.jandex", version.ref = "jandex" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

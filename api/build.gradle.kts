@@ -7,7 +7,12 @@ plugins {
     alias(libs.plugins.ebean) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.kover) apply false
+    alias(libs.plugins.spotless) apply false
 }
+
+val ktfmtVersion = checkNotNull(libs.ktfmt.get().version)
+// detekt's MaxLineLength bound (docs/adr/0053-ktfmt-formats-the-kotlin-code.md, decision 3).
+val ktfmtMaxWidth = 120
 
 allprojects {
     group = "fr.geoffreyCoulaud.pinryReborn"
@@ -17,11 +22,21 @@ allprojects {
         mavenCentral()
         mavenLocal()
     }
+
+    // Every project's own *.gradle.kts, the root's included.
+    apply(plugin = "com.diffplug.spotless")
+    extensions.configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+        kotlinGradle { ktfmt(ktfmtVersion).kotlinlangStyle().configure { it.setMaxWidth(ktfmtMaxWidth) } }
+    }
 }
 
 subprojects {
     apply(plugin = "java")
     apply(plugin = "dev.detekt")
+
+    extensions.configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+        kotlin { ktfmt(ktfmtVersion).kotlinlangStyle().configure { it.setMaxWidth(ktfmtMaxWidth) } }
+    }
 
     extensions.configure<JavaPluginExtension> {
         toolchain {
@@ -137,15 +152,17 @@ subprojects {
 }
 
 // The API's whole build in one task, called by the pipeline's `api-gate` function (`.dagger/`).
-// A root-level `dependsOn("check")` does NOT fan out to subprojects (the name resolves only inside
-// the root project, which has no such task), so the subproject tasks are referenced explicitly.
-// `check` exists in every module (the java plugin); `koverVerify` only in modules that apply Kover,
-// i.e. every module except `api-application` (the composition root, no unit tests by design). Add
-// more `dependsOn` lines here as the API's checks grow; a check whose scope is the repository goes
-// to the pipeline instead (docs/adr/0024, consequences).
+// A root-level `dependsOn("check")` does NOT fan out to subprojects (the name resolves only to the
+// root project's own `check`, which Spotless's `base` plugin creates and which holds nothing of the
+// modules), so the subproject tasks are referenced explicitly, and the root's `spotlessCheck` by name.
+// `check` exists in every module (the java plugin) and carries its `spotlessCheck`; `koverVerify` only
+// in modules that apply Kover, i.e. every module except `api-application` (the composition root, no
+// unit tests by design). Add more `dependsOn` lines here as the API's checks grow; a check whose scope
+// is the repository goes to the pipeline instead (docs/adr/0024, consequences).
 tasks.register("gate") {
     group = "verification"
-    description = "The API's gate: detekt, all tests (check) and the 100% branch coverage bound."
+    description = "The API's gate: the ktfmt format check, detekt, all tests (check) and the 100% branch coverage bound."
+    dependsOn("spotlessCheck")
     dependsOn(subprojects.map { "${it.path}:check" })
     dependsOn(subprojects.filter { it.name != "api-application" }.map { "${it.path}:koverVerify" })
 }
