@@ -19,14 +19,16 @@ export function PinDuplicates({
 	compare: () => void;
 }) {
 	const duplicates = useDuplicates(pinId).data ?? [];
-	const pending = duplicates.filter((one) => !one.rejected).length;
+	const pending = duplicates.filter((one) => !one.rejected);
 	if (duplicates.length === 0) {
 		return null;
 	}
+	// The thumbnails are the ones the count counts.
+	const counted = pending.length > 0 ? pending : duplicates;
 	return (
 		<div className="flex flex-wrap items-center gap-3 rounded-2xl border border-separator p-3">
 			<div className="flex">
-				{duplicates
+				{counted
 					.slice(0, STACKED)
 					.map(({ pin }) =>
 						pin.media?.url ? (
@@ -40,12 +42,12 @@ export function PinDuplicates({
 					)}
 			</div>
 			<span className="min-w-32 flex-1">
-				{pending > 0
-					? m.duplicates_pending({ count: pending })
+				{pending.length > 0
+					? m.duplicates_pending({ count: pending.length })
 					: m.duplicates_rejected({ count: duplicates.length })}
 			</span>
 			<Button size="sm" onPress={compare}>
-				{pending > 0 ? m.compare() : m.review()}
+				{pending.length > 0 ? m.compare() : m.review()}
 			</Button>
 		</div>
 	);
