@@ -50,7 +50,8 @@ The operator's answers of 2026-10-06 in Discuss. ADR 0053 records A to C with th
 
 **B. Spotless runs it**, over ktfmt-gradle (decision 2): Spotless 8.10.3, and ktfmt 0.64 declared as a library of
 `api/gradle/libs.versions.toml` (`com.facebook:ktfmt`), its version read from there, so that Dependabot's Gradle
-updater sees the pin.
+updater sees the pin. (Corrected: the updater's `gradle` group excludes it, so a ktfmt bump, which can reformat the
+code, arrives in a pull request of its own; the holistic review, `.reviews/0.51.0-holistic.md`.)
 
 **C. 120 columns**, detekt's `MaxLineLength` bound, set in the build with `setMaxWidth(120)` (decision 3).
 

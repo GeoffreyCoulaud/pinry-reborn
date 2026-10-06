@@ -15,7 +15,10 @@ Lot `0.51.0`, one stack of 2 code blocks: 10 `refactor/the-import-integration-te
 - **The code is formatted once**, in block 20's second commit (`7a1e741c` before the merge), which the lead adds to
   `.git-blame-ignore-revs` after the merge, as merged.
 - **`MeImportIntegrationTest` is split** into four classes over an abstract `ImportIntegrationTest`, so detekt's
-  `LargeClass` still accepts each after ktfmt (block 10).
+  `LargeClass` still accepts each after ktfmt (block 10). (Corrected: the base is `MeImportFixtures` since the
+  closing block, and `MeImportSweepIntegrationTest` extends it too.)
+- **A ktfmt bump arrives alone**: Dependabot's `gradle` group excludes `com.facebook:ktfmt`, and `api/AGENTS.md`'s
+  Gotchas say its reformatting goes in a commit of its own, listed in `.git-blame-ignore-revs` (closing block).
 - **No editor setting is committed**: `api/.idea/ktlint-plugin.xml` is gone.
 
 ## Evidence
@@ -59,6 +62,7 @@ Lot `0.51.0`, one stack of 2 code blocks: 10 `refactor/the-import-integration-te
   `clean`. The root's `check` is outside `gate`.
 - **`MeImportSweepIntegrationTest` keeps private `openImport` and `uploadChunk`** close to the base's, left alone
   because merging them changes code (block 10). The base's KDoc still says "The round trip is the point of it".
+  (Corrected: both fixed in the closing block, see the holistic review below.)
 - **Gradle warns that `project(":detekt-rules")` as a dependency notation fails in Gradle 10**
   (`api/build.gradle.kts`, the `detektPlugins` line). Predates the lot, untouched.
 
@@ -68,12 +72,30 @@ None, in either block.
 
 ## What is not validated
 
-- Dependabot proposing a ktfmt bump from the catalog's `com.facebook:ktfmt` entry: the next weekly run shows it.
+- Dependabot proposing a ktfmt bump from the catalog's `com.facebook:ktfmt` entry, in a pull request of its own:
+  the first ktfmt release after the merge shows it.
 - That `gh stack submit` ran the `pre-push` gate on block 10's push: its output shows no gate run (#356's report).
 
 ## The holistic review
 
-To be filled in Wrap: a lot of two blocks gets it.
+`.reviews/0.51.0-holistic.md`, over `lot/0.50.0-the-tile-plays-and-the-offset-steps-finer..ca407d10`: no CRITICAL,
+no MAJOR, 7 MINOR, every one fixed in the closing block.
+
+- **The base's KDoc described the old suite**, "The round trip is the point of it": it now says what the base holds,
+  the wire path and seeding the suites share. Fixed.
+- **The base was named `ImportIntegrationTest`**, a `*Test` holding no test: renamed `MeImportFixtures`, as the
+  repository names a split base (`PinRepositoryFixtures`). Fixed.
+- **`MeImportSweepIntegrationTest` duplicated the base's `openImport` and `uploadChunk`**: it extends the base and
+  calls them, and reads the base's `importRepository` and `importsConfig`. Fixed.
+- **Commit 3's cut of `AuthenticationAttemptKey.forLogin`'s KDoc dropped the reason for digesting**: the reason is
+  back, the ADR pointer shortened to "ADR 0013, decision 4". Fixed.
+- **A ktfmt bump would land inside the grouped Gradle update**, its reformatting mixed with the other bumps:
+  `.github/dependabot.yml` excludes `com.facebook:ktfmt` from the `gradle` group (`exclude-patterns`, GitHub Docs,
+  "Dependabot options reference", `groups`), and `api/AGENTS.md` gains the Gotcha. Fixed, both ways.
+- **ADR 0053 named a `ktfmt("0.64")` literal and 590 files**: corrected to the catalog's version and 594 files, the
+  specification's decision B corrected for the Dependabot group. Fixed.
+- **`settings.gradle.kts` spread its modules over one `include` each**, ktfmt putting a blank line between calls:
+  one `include` call, one module per line. Fixed.
 
 ## The backlog
 
@@ -82,16 +104,16 @@ operator's answer "a" of 2026-10-06 (specification section 5).
 
 ## The lot's counts
 
-Read with `gh run list --branch <branch>` before block 20's first fix-back was pushed; to be completed before the
-merge.
+Read with `gh run list --branch <branch>` on the lot's three branches, before the closing block's push.
 
-- Fix-backs: 1, block 20, for this handoff.
+- Fix-backs: 1, block 20, for this handoff (`ca407d10`). Its push cancelled the run on `8bfeecd3` (37531422234),
+  replaced by 37531708373.
 - Cascaded rebases: 0.
-- Runs re-triggered by a cascade: 0.
+- Runs re-triggered by a cascade: 0. Block 10 ran once (37529088530).
 - The operator's reading of the bodies: no remark so far.
 
 ## Next step
 
-The holistic review and the closing block, then the operator's review and `gh stack merge --rebase`. After the
+The operator's review of the stack, the closing block included, and `gh stack merge --rebase`. After the
 merge, the lead opens the pull request adding the formatting commit, as merged, to `.git-blame-ignore-revs`, and
 tags `lot/0.51.0-ktfmt-formats-the-kotlin-code`.
