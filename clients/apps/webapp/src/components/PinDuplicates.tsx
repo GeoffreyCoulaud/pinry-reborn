@@ -18,16 +18,14 @@ import {
 } from "../pins";
 import { RenditionImage } from "./RenditionImage";
 
-/** One candidate, opened by its thumbnail, with the gesture that rejects or restores it. */
+/** One candidate, with the gesture that rejects or restores it. */
 function DuplicateRow({
 	duplicate,
-	open,
 	toggle,
 	isDisabled,
 	children,
 }: {
 	duplicate: Duplicate;
-	open: (pinId: string) => void;
 	toggle: () => void;
 	isDisabled: boolean;
 	children?: ReactNode;
@@ -37,11 +35,7 @@ function DuplicateRow({
 	return (
 		<li className="flex flex-col gap-1">
 			<div className="flex items-center gap-3">
-				<button
-					type="button"
-					onClick={() => open(pin.id)}
-					className="flex min-w-0 flex-1 items-center gap-3 rounded text-start outline-none focus-visible:ring-2 focus-visible:ring-focus"
-				>
+				<div className="flex min-w-0 flex-1 items-center gap-3">
 					{media?.url ? (
 						<RenditionImage
 							src={tileStillSource(media.url, "SMALL")}
@@ -60,7 +54,7 @@ function DuplicateRow({
 							</span>
 						) : null}
 					</span>
-				</button>
+				</div>
 				<Button
 					size="sm"
 					variant="outline"
@@ -81,12 +75,10 @@ function DuplicateRow({
  */
 export function PinDuplicates({
 	pinId,
-	open,
 	merged,
 	compare,
 }: {
 	pinId: string;
-	open: (pinId: string) => void;
 	merged: (kept: Pin) => void;
 	compare: () => void;
 }) {
@@ -119,7 +111,6 @@ export function PinDuplicates({
 		<DuplicateRow
 			key={duplicate.pin.id}
 			duplicate={duplicate}
-			open={open}
 			isDisabled={busy}
 			toggle={() =>
 				reject.mutate(
