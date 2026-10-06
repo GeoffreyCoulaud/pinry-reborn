@@ -20,6 +20,6 @@ interface PinDuplicateRepositoryInterface {
     /** The pins among [pinIds] that hold a pair the user has not rejected, both pins active, in one query. */
     fun findPinIdsWithPending(pinIds: Collection<UUID>): Set<UUID>
 
-    /** Stamp the shown pair of [pinId] and [otherPinId], if there is one, with [rejectedAt]. */
-    fun setRejected(pinId: UUID, otherPinId: UUID, rejectedAt: Instant)
+    /** Stamp [pinId]'s shown pairs with any of [otherPinIds] with [rejectedAt], in one statement. */
+    fun setRejected(pinId: UUID, otherPinIds: Collection<UUID>, rejectedAt: Instant)
 }

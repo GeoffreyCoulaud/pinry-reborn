@@ -109,9 +109,8 @@ class DuplicateResolverTest {
 
         // Then
         assertEquals(kept.copy(updatedAt = TestTime.now), answered)
-        listOf(open, kept, merged).forEach {
-            verify { duplicateRepository.setRejected(rejected.id, it.id, TestTime.now) }
-        }
+        val held = setOf(open.id, kept.id, merged.id)
+        verify(exactly = 1) { duplicateRepository.setRejected(rejected.id, match { it.toSet() == held }, TestTime.now) }
         verify { pinRepository.softDeletePins(match { it.toSet() == setOf(open.id, merged.id) }, TestTime.now) }
     }
 
@@ -160,7 +159,7 @@ class DuplicateResolverTest {
         // Then
         assertEquals(open, answered)
         verify(exactly = 1) { duplicateRepository.setRejected(any(), any(), any()) }
-        verify { duplicateRepository.setRejected(rejected.id, open.id, TestTime.now) }
+        verify { duplicateRepository.setRejected(rejected.id, listOf(open.id), TestTime.now) }
         verify(exactly = 0) { pinRepository.savePin(any()) }
         verify(exactly = 0) { pinRepository.softDeletePins(any(), any()) }
     }

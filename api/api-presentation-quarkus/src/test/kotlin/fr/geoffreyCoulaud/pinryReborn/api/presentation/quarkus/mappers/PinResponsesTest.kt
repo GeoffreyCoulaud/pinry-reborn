@@ -67,6 +67,6 @@ class PinResponsesTest {
 
         override fun findShownFor(pinId: UUID): Map<UUID, Boolean> = error("not used")
 
-        override fun setRejected(pinId: UUID, otherPinId: UUID, rejectedAt: Instant) = error("not used")
+        override fun setRejected(pinId: UUID, otherPinIds: Collection<UUID>, rejectedAt: Instant) = error("not used")
     }
 }

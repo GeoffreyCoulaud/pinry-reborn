@@ -105,18 +105,20 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given a shown pair and a hidden one, Then a rejection from either side reaches the shown one alone`() {
+    fun `Given a shown pair, a hidden one and two named others' pair, Then a rejection reaches the shown one alone`() {
         // Given
-        val (pin, other, recycled) = storedPins(3, recycled = 1).map { it.id }
+        val ids = storedPins(4, recycled = 1).map { it.id }
+        val (pin, other, third) = ids
+        val recycled = ids.last()
         repository.addMissing(pin, listOf(other, recycled))
+        repository.addMissing(other, listOf(third))
 
-        // When: the shown pair named from its second side
-        repository.setRejected(other, pin, storableNow())
-        repository.setRejected(pin, recycled, storableNow())
-        repository.setRejected(pin, randomUUID(), storableNow())
+        // When
+        repository.setRejected(pin, listOf(other, third, recycled, randomUUID()), storableNow())
 
         // Then
-        assertEquals(setOf(setOf(pin, other) to true, setOf(pin, recycled) to false), pairs())
+        val expected = setOf(setOf(pin, other) to true, setOf(pin, recycled) to false, setOf(other, third) to false)
+        assertEquals(expected, pairs())
     }
 
     @Test
