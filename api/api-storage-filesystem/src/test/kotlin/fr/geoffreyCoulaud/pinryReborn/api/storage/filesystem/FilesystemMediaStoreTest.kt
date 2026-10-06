@@ -14,6 +14,7 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -88,10 +89,10 @@ class FilesystemMediaStoreTest {
         // Given
         val store = store()
         store.promote(store.stage(ByteArrayInputStream(byteArrayOf(5, 6)), maxBytes = 100), "originals/u/p/v.mp4")
-        val media = Media(
+        val media = Media.Video(
             id = UUID.randomUUID(), pinId = UUID.randomUUID(), mimeType = "video/mp4", width = 2, height = 2,
-            animated = true, byteSize = 2, contentHash = "hash", storageKey = "originals/u/p/v.mp4",
-            createdAt = Instant.EPOCH,
+            byteSize = 2, contentHash = "hash", storageKey = "originals/u/p/v.mp4", createdAt = Instant.EPOCH,
+            frames = 2, duration = Duration.ofSeconds(1), videoBitRate = 16, sound = null,
         )
         val original = dataDir.resolve("originals/u/p/v.mp4")
 

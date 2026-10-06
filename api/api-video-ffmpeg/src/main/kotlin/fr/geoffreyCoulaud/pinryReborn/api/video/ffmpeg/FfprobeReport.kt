@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.video.ffmpeg
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.AudioCodec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
@@ -55,7 +56,7 @@ internal object FfprobeReport {
         val alreadyRepackaged = streams.size == codecs.size && videoTag == codecs.first().substringBefore('.')
         return VideoProbeResult(
             videoCodec, audio?.first, width, height, duration, frames, bytes, codecsParameter, demuxedAs,
-            alreadyRepackaged, rateOf(video), audioTrack?.let { it.path("channels").asInt() }, audioTrack?.let(rateOf),
+            alreadyRepackaged, rateOf(video), audioTrack?.let { Media.Sound(it.path("channels").asInt(), rateOf(it)) },
         )
     }
 

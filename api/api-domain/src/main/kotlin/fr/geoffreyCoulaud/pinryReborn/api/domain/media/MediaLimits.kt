@@ -44,20 +44,18 @@ data class MediaLimits(
         return when {
             frame > maxPixelsPerFrame -> RenditionMode.NONE
             animated && frame * animatedFrames(media) <= maxPixelsPerRender -> RenditionMode.WHOLE
-            !media.isVideo || posterFits(media, px, frame) -> static
+            media !is Media.Video || posterFits(media, px, frame) -> static
             else -> RenditionMode.ONE_FRAME_POSTER
         }
     }
 
     // An animated image decodes every frame, a video's preview its first seconds.
-    private fun animatedFrames(media: Media): Long {
-        val duration = media.duration ?: Duration.ZERO
-        return if (duration > PREVIEW) {
-            Math.ceilDiv(media.frames * PREVIEW.toMillis(), duration.toMillis())
+    private fun animatedFrames(media: Media): Long =
+        if (media is Media.Video && media.duration > PREVIEW) {
+            Math.ceilDiv(media.frames * PREVIEW.toMillis(), media.duration.toMillis())
         } else {
             media.frames.toLong()
         }
-    }
 
     // The poster's thumbnail holds its frames at the output's size and decodes as many of the source's.
     private fun posterFits(media: Media, px: Int, frame: Long): Boolean {

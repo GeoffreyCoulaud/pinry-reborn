@@ -43,7 +43,7 @@ class GetPinMediaRendition(
         // Reuse 2a's load + owner/not-found guards verbatim (403/404 behaviour unchanged).
         val media = getPinMedia.get(pinId, requester)
         // Left unsaid, an image keeps its animation and a video gives its poster (decision D1).
-        val requestedAnimated = animated ?: !media.isVideo
+        val requestedAnimated = animated ?: (media !is Media.Video)
         // The requested flag is a no-op on a non-animated source (spec section 3), so intersect it
         // with the source before it reaches the key, the spec, or the descriptor. Without this a
         // static original renders under an "-a" key: identical bytes cached twice and served under
@@ -65,7 +65,7 @@ class GetPinMediaRendition(
         val srcShort = minOf(media.width, media.height)
         val needsDownscale = srcShort > requestedPx
         val needsFlatten = media.animated && !animated
-        return if (media.isVideo || needsDownscale || needsFlatten) minOf(requestedPx, srcShort) else null
+        return if (media is Media.Video || needsDownscale || needsFlatten) minOf(requestedPx, srcShort) else null
     }
 
     // What is rendered is what MediaLimits judges, so the key names that rather than what was asked (ADR 0050).
@@ -77,7 +77,7 @@ class GetPinMediaRendition(
         val key = keyFor(effectivePx, rendersAnimated, fromOneFrame)
         if (!isCached(media.id, key)) {
             renderMiss(media.id, key) {
-                if (media.isVideo) {
+                if (media is Media.Video) {
                     renderVideo(media, effectivePx, rendersAnimated, fromOneFrame)
                 } else {
                     mediaStore.openStream(media.storageKey).use { source ->

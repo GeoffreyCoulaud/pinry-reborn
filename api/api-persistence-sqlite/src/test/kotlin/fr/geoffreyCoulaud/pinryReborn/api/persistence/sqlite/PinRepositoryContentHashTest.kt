@@ -24,13 +24,12 @@ class PinRepositoryContentHashTest : PinRepositoryFixtures() {
         hash: String = contentHash,
     ): Media =
         mediaRepository.save(
-            Media(
+            Media.StillImage(
                 id = randomUUID(),
                 pinId = pin.id,
                 mimeType = "image/png",
                 width = 1,
                 height = 1,
-                animated = false,
                 byteSize = 1,
                 contentHash = hash,
                 storageKey = "originals/${pin.id}.png",

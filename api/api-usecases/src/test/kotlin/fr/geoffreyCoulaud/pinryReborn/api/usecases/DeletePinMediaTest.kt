@@ -39,8 +39,8 @@ class DeletePinMediaTest : BaseTest() {
     private val owner = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
     private fun pin(author: User = owner) = Pin(randomUUID(), author, "https://c", null, "d", emptyList(), emptyList(),
         createdAt = TestTime.now, updatedAt = TestTime.now)
-    private fun mediaFor(pinId: UUID, hash: String = "h") = Media(
-        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1, animated = false,
+    private fun mediaFor(pinId: UUID, hash: String = "h") = Media.StillImage(
+        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1,
         byteSize = 1, contentHash = hash, storageKey = "originals/x/$pinId/i.png",
         createdAt = Instant.parse("2026-07-08T00:00:00Z"),
     )

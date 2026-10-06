@@ -125,7 +125,7 @@ class ResolvePinMediaStateTest {
         createdAt = TestTime.now, updatedAt = TestTime.now)
 
     private fun media(pinId: UUID, mimeType: String) =
-        Media(randomUUID(), pinId, mimeType, 1, 1, false, 1L, "h-$mimeType", "k-$mimeType", TestTime.now)
+        Media.StillImage(randomUUID(), pinId, mimeType, 1, 1, 1L,"h-$mimeType", "k-$mimeType", TestTime.now)
 
     /** Counts the reads a page costs: the criterion is one per page, which a mock's `verify` cannot state. */
     private class CountingMedia(private val stored: Map<UUID, Media>) : MediaRepositoryInterface {

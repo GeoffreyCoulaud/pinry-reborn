@@ -1,10 +1,12 @@
 package fr.geoffreyCoulaud.pinryReborn.api.video.ffmpeg
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -67,13 +69,12 @@ class FfprobeReportTest {
         // When
         val result = read(mapper.writeValueAsString(json))
         // Then
-        assertEquals(Triple(6_000L, 2, 1_000L), Triple(result.videoBitRate, result.audioChannels, result.audioBitRate))
+        assertEquals(6_000L to Media.Sound(2, 1_000L), result.videoBitRate to result.sound)
     }
 
     @Test
-    fun `Given no audio track, Then read returns no channels and no audio rate`() {
-        val result = read(report(h264()))
-        assertEquals(null to null, result.audioChannels to result.audioBitRate)
+    fun `Given no audio track, Then read returns no sound`() {
+        assertNull(read(report(h264())).sound)
     }
 
     @Test

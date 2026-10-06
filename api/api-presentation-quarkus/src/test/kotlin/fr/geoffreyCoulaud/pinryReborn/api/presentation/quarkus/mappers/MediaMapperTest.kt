@@ -12,7 +12,7 @@ class MediaMapperTest {
     fun `Given an image, Then toDto builds a serve url relative to the origin serving it`() {
         val pinId = randomUUID()
         val media =
-            Media(randomUUID(), pinId, "image/webp", 8, 6, false, 99, "h", "originals/x/y/z.webp", Instant.EPOCH)
+            Media.StillImage(randomUUID(), pinId, "image/webp", 8, 6, 99, "h", "originals/x/y/z.webp", Instant.EPOCH)
         val dto = media.toDto()
         assertEquals("/api/v1/pins/$pinId/media", dto.url)
         assertEquals("image/webp", dto.mimeType)

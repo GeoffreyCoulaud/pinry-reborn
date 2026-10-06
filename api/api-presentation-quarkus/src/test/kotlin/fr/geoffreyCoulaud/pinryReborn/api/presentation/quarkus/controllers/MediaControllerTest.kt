@@ -63,13 +63,12 @@ class MediaControllerTest {
     @TempDir
     lateinit var tempDir: Path
 
-    private fun aMedia(pinId: UUID) = Media(
+    private fun aMedia(pinId: UUID) = Media.StillImage(
         id = randomUUID(),
         pinId = pinId,
         mimeType = "image/png",
         width = 8,
         height = 6,
-        animated = false,
         byteSize = 4,
         contentHash = createRandomString(),
         storageKey = "originals/x/$pinId/y.png",

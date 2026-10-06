@@ -46,8 +46,8 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
         )
     }
 
-    private fun mediaFor(pinId: UUID) = Media(
-        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1, animated = false,
+    private fun mediaFor(pinId: UUID) = Media.StillImage(
+        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1,
         byteSize = 1, contentHash = "h", storageKey = "originals/x/$pinId/i.png", createdAt = now,
     )
 

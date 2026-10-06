@@ -84,8 +84,8 @@ class BoardRepositoryTest : RepositoryTest() {
 
     private fun saveMediaFor(pin: Pin) =
         mediaRepository.save(
-            Media(
-                id = randomUUID(), pinId = pin.id, mimeType = "image/png", width = 1, height = 1, animated = false,
+            Media.StillImage(
+                id = randomUUID(), pinId = pin.id, mimeType = "image/png", width = 1, height = 1,
                 byteSize = 1, contentHash = "h", storageKey = "originals/x/${pin.id}/i.png", createdAt = storableNow(),
             ),
         )

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
@@ -364,7 +365,7 @@ class MediaHostingIntegrationTest : IntegrationTest() {
 
             // Then
             val media = requireNotNull(mediaRepository.findByPinId(pinId)) { "${file.name} should be stored" }
-            assertEquals(framesAndDuration, media.frames to media.duration, file.name)
+            assertEquals(framesAndDuration, media.frames to (media as? Media.Video)?.duration, file.name)
         }
     }
 
@@ -390,7 +391,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
 
             // Then: within 1 %
             val media = requireNotNull(mediaRepository.findByPinId(pinId)) { "${file.name} should be stored" }
-            val stored = listOf(media.videoBitRate, media.audioChannels, media.audioBitRate)
+            val video = media as? Media.Video
+            val stored = listOf(video?.videoBitRate, video?.sound?.channels, video?.sound?.bitRate)
             for ((want, got) in tracks.zip(stored)) {
                 if (want == null) {
                     assertNull(got, file.name)

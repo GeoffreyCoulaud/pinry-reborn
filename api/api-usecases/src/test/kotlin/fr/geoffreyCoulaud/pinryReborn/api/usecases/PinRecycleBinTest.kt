@@ -66,13 +66,12 @@ class PinRecycleBinTest {
         updatedAt = TestTime.now,
     )
 
-    private fun createMedia(pinId: UUID) = Media(
+    private fun createMedia(pinId: UUID) = Media.StillImage(
         id = randomUUID(),
         pinId = pinId,
         mimeType = "image/png",
         width = 1,
         height = 1,
-        animated = false,
         byteSize = 1,
         contentHash = "hash",
         storageKey = "originals/x/$pinId/i.png",

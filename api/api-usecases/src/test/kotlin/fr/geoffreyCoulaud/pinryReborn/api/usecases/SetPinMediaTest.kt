@@ -99,7 +99,8 @@ class SetPinMediaTest : BaseTest() {
 
     @Test fun `Given a replacement, Then the old file is deleted after commit`() {
         val p = pin()
-        val old = Media(randomUUID(), p.id, "image/png", 1, 1, false, 1, "old", "originals/o/old.png", Instant.EPOCH)
+        val old =
+            Media.StillImage(randomUUID(), p.id, "image/png", 1, 1, 1, "old", "originals/o/old.png", Instant.EPOCH)
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
         every { probe.probe(staged) } returns ProbeResult(MediaFormat.WEBP, 2, 2, frames = 1, bytes = 3)
@@ -115,7 +116,8 @@ class SetPinMediaTest : BaseTest() {
 
     @Test fun `Given a replaced image, Then the old image's rendition cache is evicted`() {
         val p = pin()
-        val old = Media(randomUUID(), p.id, "image/png", 1, 1, false, 1, "old", "originals/o/old.png", Instant.EPOCH)
+        val old =
+            Media.StillImage(randomUUID(), p.id, "image/png", 1, 1, 1, "old", "originals/o/old.png", Instant.EPOCH)
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
         every { probe.probe(staged) } returns ProbeResult(MediaFormat.WEBP, 2, 2, frames = 1, bytes = 3)
@@ -130,7 +132,8 @@ class SetPinMediaTest : BaseTest() {
 
     @Test fun `Given the rendition cache eviction fails during replace, Then the upload still succeeds`() {
         val p = pin()
-        val old = Media(randomUUID(), p.id, "image/png", 1, 1, false, 1, "old", "originals/o/old.png", Instant.EPOCH)
+        val old =
+            Media.StillImage(randomUUID(), p.id, "image/png", 1, 1, 1, "old", "originals/o/old.png", Instant.EPOCH)
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
         every { probe.probe(staged) } returns ProbeResult(MediaFormat.WEBP, 2, 2, frames = 1, bytes = 3)
@@ -212,8 +215,7 @@ class SetPinMediaTest : BaseTest() {
         every { video.probe(staged, Duration.ofSeconds(1)) } returns
             VideoProbeResult(
                 VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), frames = 25, bytes = 3, "avc1.640015",
-                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, audioChannels = null,
-                audioBitRate = null,
+                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, sound = null,
             )
         every { video.repackage(staged, any()) } throws UndecodableVideoException("refused")
 
@@ -252,8 +254,7 @@ class SetPinMediaTest : BaseTest() {
         every { video.probe(staged, Duration.ofSeconds(1)) } returns
             VideoProbeResult(
                 VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), frames = 25, bytes = 3, "avc1.640015",
-                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, audioChannels = null,
-                audioBitRate = null,
+                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, sound = null,
             )
         every { video.repackage(staged, any()) } throws UndecodableVideoException("refused")
         assertThrows(MediaInvalidError::class.java) { withVideo.set(p.id, owner, upload()) }
@@ -318,7 +319,8 @@ class SetPinMediaTest : BaseTest() {
 
     @Test fun `Given the old file delete fails during replace, Then the request still succeeds`() {
         val p = pin()
-        val old = Media(randomUUID(), p.id, "image/png", 1, 1, false, 1, "old", "originals/o/old.png", Instant.EPOCH)
+        val old =
+            Media.StillImage(randomUUID(), p.id, "image/png", 1, 1, 1, "old", "originals/o/old.png", Instant.EPOCH)
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
         every { probe.probe(staged) } returns ProbeResult(MediaFormat.WEBP, 2, 2, frames = 1, bytes = 3)

@@ -67,17 +67,28 @@ class MediaIngestion(
             }
         val mediaId = randomUUID()
         val storageKey = "${StorageLayout.ORIGINALS_DIRECTORY}/$ownerId/$pinId/$mediaId.${found.extension}"
-        val video = found.measured as? VideoProbeResult
+        val measured = found.measured
+        val stored = found.stored
+        val (width, height) = measured.width to measured.height
         val media =
-            Media(
-                id = mediaId, pinId = pinId, mimeType = found.mimeType, width = found.measured.width,
-                height = found.measured.height, animated = found.animated, byteSize = found.stored.byteSize,
-                contentHash = found.stored.contentHash, storageKey = storageKey, createdAt = createdAt,
-                frames = found.measured.frames, duration = found.measured.duration,
-                videoBitRate = video?.videoBitRate, audioChannels = video?.audioChannels,
-                audioBitRate = video?.audioBitRate,
-            )
-        return IngestedMedia(media, found.stored)
+            when (measured) {
+                is VideoProbeResult -> Media.Video(
+                    mediaId, pinId, found.mimeType, width, height, stored.byteSize, stored.contentHash, storageKey,
+                    createdAt, measured.frames, measured.duration, measured.videoBitRate, measured.sound,
+                )
+                is ProbeResult -> if (measured.animated) {
+                    Media.AnimatedImage(
+                        mediaId, pinId, found.mimeType, width, height, stored.byteSize, stored.contentHash,
+                        storageKey, createdAt, measured.frames,
+                    )
+                } else {
+                    Media.StillImage(
+                        mediaId, pinId, found.mimeType, width, height, stored.byteSize, stored.contentHash,
+                        storageKey, createdAt,
+                    )
+                }
+            }
+        return IngestedMedia(media, stored)
     }
 
     private fun identify(staged: StagedFile, keepArchivedMp4: Boolean): Found {
@@ -86,7 +97,7 @@ class MediaIngestion(
         return when (measured) {
             is ProbeResult -> {
                 val format = measured.format
-                Found(format.mimeType, format.extension, measured, measured.animated, staged)
+                Found(format.mimeType, format.extension, measured, staged)
             }
             is VideoProbeResult -> video(staged, measured, keepArchivedMp4)
         }
@@ -124,7 +135,7 @@ class MediaIngestion(
                 videoProcessor.repackage(staged, video).also { mediaStore.discardQuietly(staged) }
             }
         val mimeType = "${container.mimeType}; codecs=\"${video.codecs}\""
-        return Found(mimeType, container.extension, video, animated = true, stored)
+        return Found(mimeType, container.extension, video, stored)
     }
 
     fun promote(ingested: IngestedMedia) = mediaStore.promote(ingested.staged, ingested.media.storageKey)
@@ -140,7 +151,6 @@ class MediaIngestion(
         val mimeType: String,
         val extension: String,
         val measured: MeasuredMedia,
-        val animated: Boolean,
         val stored: StagedFile,
     )
 }

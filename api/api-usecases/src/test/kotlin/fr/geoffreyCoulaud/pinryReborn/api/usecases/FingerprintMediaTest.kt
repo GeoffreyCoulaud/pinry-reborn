@@ -55,7 +55,7 @@ class FingerprintMediaTest : BaseTest() {
     private fun uniform() = LumaFrame(SIDE, SIDE, FloatArray(SIDE * SIDE) { 128f })
 
     private fun media(sampledFrames: List<LumaFrame>): Media {
-        val media = Media(randomUUID(), randomUUID(), "image/png", 1, 1, false, 1, "", "", Instant.EPOCH)
+        val media = Media.StillImage(randomUUID(), randomUUID(), "image/png", 1, 1, 1,"", "", Instant.EPOCH)
         sampled[media.id] = sampledFrames
         return media
     }

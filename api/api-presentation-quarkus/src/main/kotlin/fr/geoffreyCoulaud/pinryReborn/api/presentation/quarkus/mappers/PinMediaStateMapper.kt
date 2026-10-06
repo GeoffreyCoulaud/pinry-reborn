@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
@@ -15,6 +16,8 @@ import java.util.UUID
 object PinMediaStateMapper {
     fun PinMediaState.toDto(pinId: UUID): PinMediaStateDto {
         val img = media
+        val video = img as? Media.Video
+        val sound = video?.sound
         return PinMediaStateDto(
             status = status.toDto(),
             url = img?.let { mediaUrl(pinId) },
@@ -22,10 +25,10 @@ object PinMediaStateMapper {
             width = img?.width,
             height = img?.height,
             byteSize = img?.byteSize,
-            durationMillis = img?.duration?.toMillis(),
-            videoBitRate = img?.videoBitRate,
-            audioChannels = img?.audioChannels,
-            audioBitRate = img?.audioBitRate,
+            durationMillis = video?.run { duration.toMillis() },
+            videoBitRate = video?.videoBitRate,
+            audioChannels = sound?.channels,
+            audioBitRate = sound?.bitRate,
             reasonCode = reasonCode?.toDto(),
             message = reasonCode?.let { messageFor(it) },
             replacement = replacement?.toDto(),

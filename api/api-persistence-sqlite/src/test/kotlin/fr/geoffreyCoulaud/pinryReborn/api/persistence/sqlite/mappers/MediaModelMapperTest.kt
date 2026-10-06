@@ -4,19 +4,25 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.MediaModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.MediaModelMapper.toModel
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
 
 class MediaModelMapperTest {
+    private fun video(sound: Media.Sound?) =
+        Media.Video(
+            randomUUID(), randomUUID(), "video/webm", 4, 6, 1, "h", "originals/x/y/z.webm", Instant.EPOCH, 25,
+            Duration.ofMillis(1_023), videoBitRate = 80_000, sound = sound,
+        )
+
     @Test
-    fun `Given an image, Then toModel and toDomain round-trip its fields`() {
+    fun `Given a still image, Then toModel and toDomain round-trip its fields`() {
         // Given
-        val media = Media(
+        val media = Media.StillImage(
             id = randomUUID(), pinId = randomUUID(), mimeType = "image/png",
-            width = 4, height = 5, animated = false, byteSize = 6, contentHash = "h",
+            width = 4, height = 5, byteSize = 6, contentHash = "h",
             storageKey = "originals/a/b/c.png", createdAt = Instant.parse("2026-07-08T00:00:00Z"),
         )
         // When
@@ -26,29 +32,37 @@ class MediaModelMapperTest {
     }
 
     @Test
-    fun `Given an animated image, Then the flag round-trips through the model`() {
+    fun `Given an animated image, Then it round-trips as one, with its frames`() {
         // Given
-        val media = Media(
-            randomUUID(), randomUUID(), "image/gif", 10, 10, animated = true,
-            byteSize = 1, contentHash = "h", storageKey = "originals/x/y/z.gif", createdAt = Instant.EPOCH,
+        val media = Media.AnimatedImage(
+            randomUUID(), randomUUID(), "image/gif", 10, 10, 1, "h", "originals/x/y/z.gif", Instant.EPOCH, frames = 3,
         )
         // When
         val back = media.toModel().toDomain()
         // Then
-        assertTrue(back.animated)
+        assertEquals(media, back)
     }
 
     @Test
-    fun `Given a video, Then its frames and duration round-trip through the model`() {
-        // Given
-        val media = Media(
-            randomUUID(), randomUUID(), "video/webm", 4, 6, animated = true, byteSize = 1, contentHash = "h",
-            storageKey = "originals/x/y/z.webm", createdAt = Instant.EPOCH, frames = 25,
-            duration = Duration.ofMillis(1_023),
+    fun `Given a video with sound, Then its frames, duration, rates and channels round-trip through the model`() {
+        val media = video(Media.Sound(2, 64_000))
+        assertEquals(media, media.toModel().toDomain())
+    }
+
+    @Test
+    fun `Given a video without sound, Then it round-trips with no sound`() {
+        val media = video(sound = null)
+        assertEquals(media, media.toModel().toDomain())
+    }
+
+    @Test
+    fun `Given a video row missing its duration, its video rate or its audio rate, Then reading it fails`() {
+        val stored = { video(Media.Sound(2, 64_000)).toModel() }
+        val rows = listOf(
+            stored().apply { durationMillis = null },
+            stored().apply { videoBitRate = null },
+            stored().apply { audioBitRate = null },
         )
-        // When
-        val back = media.toModel().toDomain()
-        // Then
-        assertEquals(25 to Duration.ofMillis(1_023), back.frames to back.duration)
+        rows.forEach { row -> assertThrows(IllegalStateException::class.java) { row.toDomain() } }
     }
 }

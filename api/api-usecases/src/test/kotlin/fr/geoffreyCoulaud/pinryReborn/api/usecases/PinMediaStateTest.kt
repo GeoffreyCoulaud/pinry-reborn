@@ -13,7 +13,7 @@ import java.util.UUID.randomUUID
 class PinMediaStateTest {
     private val pinId = randomUUID()
     private fun media() =
-        Media(randomUUID(), pinId, "image/png", 1, 1, false, 1, "h", "originals/x/$pinId/i.png", Instant.EPOCH)
+        Media.StillImage(randomUUID(), pinId, "image/png", 1, 1, 1,"h", "originals/x/$pinId/i.png", Instant.EPOCH)
     private fun download(status: DownloadStatus, reason: DownloadReason? = null) =
         MediaDownload(pinId, "https://x", status, reason, null, randomUUID(), Instant.EPOCH, Instant.EPOCH)
 

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import java.time.Duration
 
@@ -26,8 +27,7 @@ data class VideoProbeResult(
     val alreadyRepackaged: Boolean,
     // In bits per second, summed from the packets: WebM states no rate per track.
     val videoBitRate: Long,
-    val audioChannels: Int?,
-    val audioBitRate: Long?,
+    val sound: Media.Sound?,
 ) : MeasuredMedia
 
 interface VideoProcessor {

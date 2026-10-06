@@ -309,13 +309,12 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
 
     /** An image row the account already holds, which is what the content-hash lookup answers from. */
     protected fun anExistingMediaRow(contentHash: String) =
-        Media(
+        Media.StillImage(
             id = randomUUID(),
             pinId = randomUUID(),
             mimeType = MediaFormat.PNG.mimeType,
             width = WIDTH,
             height = HEIGHT,
-            animated = false,
             byteSize = 1,
             contentHash = contentHash,
             storageKey = "originals/existing",
