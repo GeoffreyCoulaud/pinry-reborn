@@ -6,7 +6,7 @@ import {
 	toast,
 } from "@heroui/react";
 import { ArrowLeft, Crown } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
 	type Decision,
 	type Decisions,
@@ -16,7 +16,7 @@ import {
 	storedDecisions,
 	submitOf,
 } from "../lib/duplicates";
-import { isVideo, soundLine, weightLine } from "../lib/media";
+import { isVideo, soundLine, weightParts } from "../lib/media";
 import { tileStillSource } from "../lib/tiles";
 import { UNZOOMED } from "../lib/zoom";
 import { m } from "../paraglide/messages.js";
@@ -101,7 +101,15 @@ function Facts({
 					</>
 				) : null}
 				<dt>{m.compare_weight()}</dt>
-				<dd>{weightLine(media, locale)}</dd>
+				<dd>
+					{/* A part never wraps inside, "Mb/s" breaking after its slash otherwise. */}
+					{weightParts(media, locale).map((part, at) => (
+						<Fragment key={part}>
+							{at > 0 ? " · " : null}
+							<span className="whitespace-nowrap">{part}</span>
+						</Fragment>
+					))}
+				</dd>
 				<dt>{m.compare_added()}</dt>
 				<dd>{added.format(new Date(version.createdAt))}</dd>
 				<dt>{m.boards()}</dt>
