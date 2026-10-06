@@ -102,8 +102,8 @@ class SharedRefusalsFilter : OASFilter {
                     ),
                 BODY_TOO_LARGE to
                     refusal(
-                        "The Content-Length is past quarkus.http.limits.max-body-size; a chunked body past it gets a 413 " +
-                            "with no body",
+                        "The Content-Length is past quarkus.http.limits.max-body-size; " +
+                            "a chunked body past it gets a 413 with no body",
                         ProblemCode.BODY_TOO_LARGE,
                     ),
                 REAUTHENTICATION_HEADER_FAILED to

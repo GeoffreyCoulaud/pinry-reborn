@@ -11,9 +11,8 @@ import java.util.UUID
 @Suppress("TooManyFunctions")
 interface BoardRepositoryInterface {
     /**
-     * Create or update a board from the given domain data.
-     *
-     * @throws BoardNameAlreadyTakenException when the author already holds the name, ASCII case folded.
+     * Create or update a board from the given domain data. Throws [BoardNameAlreadyTakenException] when the author
+     * already holds the name, ASCII case folded.
      */
     fun saveBoard(board: Board): Board
 

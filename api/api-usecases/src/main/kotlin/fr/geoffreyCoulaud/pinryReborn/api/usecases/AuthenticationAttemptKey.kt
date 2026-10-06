@@ -21,10 +21,8 @@ private constructor(
 ) {
     companion object {
         /**
-         * The submitted name, counted whether or not that user exists. Lower-cased with [Locale.ROOT], since the store
-         * matches names case-insensitively, then digested, since undigested one entry weighs what the caller sent
-         * (`docs/adr/0013-in-memory-authentication-attempt-limiting.md`, decision 4). Lower-cased first, or the folding
-         * would depend on the name's length.
+         * The submitted name, whether or not that user exists, lower-cased with [Locale.ROOT] since the store ignores
+         * case, then digested (`docs/adr/0013-in-memory-authentication-attempt-limiting.md`, decision 4).
          */
         fun forLogin(name: String) =
             AuthenticationAttemptKey(
