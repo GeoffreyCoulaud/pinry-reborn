@@ -9,6 +9,7 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import { auth, bodyOf } from "./api";
+import type { Decisions } from "./lib/duplicates";
 import type { PinSort } from "./lib/sorts";
 import { removePins, replacePins } from "./lib/tiles";
 import { rereadSettledPins } from "./media";
@@ -231,6 +232,53 @@ export function useMergePins(merged: (kept: Pin) => void) {
 			await queryClient.invalidateQueries({ queryKey: BOARDS });
 			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
 			// Every absorbed pin held a pending pair, whose other pin may now have none.
+			await queryClient.invalidateQueries({ queryKey: PINS });
+		},
+	});
+}
+
+/**
+ * Applies the comparator's decision to the open pin's group in one call, which answers with the
+ * kept pin (ADR 0052). The merged pins leave every catalogue at once and the kept one is written in.
+ * @internal until block 41's comparator reads it, with `lib/duplicates`.
+ */
+export function useResolveDuplicates(
+	pinId: string,
+	resolved: (kept: Pin) => void,
+) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (decisions: Decisions) => {
+			const kept = bodyOf(
+				await auth.client.POST("/api/v1/pins/{pinId}/duplicates/resolutions", {
+					params: { path: { pinId } },
+					body: { decisions: { ...decisions } },
+				}),
+				"the resolution",
+			);
+			const merged = Object.keys(decisions).filter(
+				(id) => decisions[id] === "MERGE",
+			);
+			// Before the open pin leaves the cache, in the same render: a dialog left with no pin closes.
+			queryClient.setQueryData([...PIN, kept.id], kept);
+			resolved(kept);
+			queryClient.setQueriesData<InfiniteData<PinPage>>(
+				{ queryKey: PINS },
+				(catalogue) =>
+					catalogue === undefined
+						? catalogue
+						: {
+								...catalogue,
+								pages: removePins(catalogue.pages, merged).map((page) => ({
+									...page,
+									pins: replacePins(page.pins, [kept]),
+								})),
+							},
+			);
+			// The kept pin gained the merged pins' boards, whose counts lost them.
+			await queryClient.invalidateQueries({ queryKey: BOARDS });
+			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
+			// Every pin named held a pending pair or a rejected one, whose other pin's marker may move.
 			await queryClient.invalidateQueries({ queryKey: PINS });
 		},
 	});

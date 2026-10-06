@@ -191,13 +191,17 @@ export function onePinPage(pins: () => Pin[]) {
 	);
 }
 
-/** A pair of likely duplicates, which a `PUT` rejects or restores in place. */
+/** A pair of likely duplicates, which a `PUT` or a resolution changes in place. */
 export interface Pair {
 	pins: [Pin, Pin];
 	rejected: boolean;
 }
 
-/** The pairs the journey holds, listed from either pin, so what a write leaves behind is what the next read answers. */
+/**
+ * The pairs the journey holds, listed from either pin, so what a write leaves behind is what the
+ * next read answers. A resolution rejects a rejected pin's pairs with the kept and merged pins,
+ * hides a merged pin's pairs with it, and answers the kept pin (ADR 0052).
+ */
 export function duplicateRoutes(pairs: Pair[]) {
 	const listed = (pair: Pair, pinId: unknown) => ({
 		pin: pair.pins[0].id === pinId ? pair.pins[1] : pair.pins[0],
@@ -226,6 +230,30 @@ export function duplicateRoutes(pairs: Pair[]) {
 					(await request.json()) as { rejected: boolean }
 				).rejected;
 				return HttpResponse.json(listed(pair, params.pinId));
+			},
+		),
+		http.post(
+			"/api/v1/pins/:pinId/duplicates/resolutions",
+			async ({ request }) => {
+				const { decisions } = (await request.json()) as {
+					decisions: Record<string, string>;
+				};
+				const named = (decision: string) =>
+					Object.keys(decisions).filter((id) => decisions[id] === decision);
+				const involves = (pair: Pair, ids: string[]) =>
+					pair.pins.some((one) => ids.includes(one.id));
+				const survivors = [...named("KEEP"), ...named("MERGE")];
+				const kept = pairs
+					.flatMap((pair) => pair.pins)
+					.find((one) => one.id === named("KEEP")[0]);
+				for (const pair of pairs) {
+					if (involves(pair, named("REJECT")) && involves(pair, survivors)) {
+						pair.rejected = true;
+					}
+				}
+				const left = pairs.filter((pair) => !involves(pair, named("MERGE")));
+				pairs.splice(0, pairs.length, ...left);
+				return HttpResponse.json(kept);
 			},
 		),
 	];
