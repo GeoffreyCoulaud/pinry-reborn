@@ -99,6 +99,11 @@ describe("merge a group of duplicates", () => {
 		expect(
 			within(versions).getByRole("button", { name: smaller.description }),
 		).toHaveAttribute("aria-current", "true");
+		expect(within(dialog).queryByText(m.compare_largest())).toBeNull();
+		await user.click(
+			within(versions).getByRole("button", { name: larger.description }),
+		);
+		expect(within(dialog).getByText(m.compare_largest())).toBeVisible();
 		await user.click(
 			within(versions).getByRole("button", { name: noon.description }),
 		);
