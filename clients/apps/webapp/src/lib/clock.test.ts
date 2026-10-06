@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { advance, localTimes, slackOf } from "./clock";
+import { advance, frameAt, frameMillis, localTimes, slackOf } from "./clock";
 
 describe("the shared clock", () => {
 	it("Given the shared time before the shorter version's span, Then it holds its first frame", () => {
@@ -43,5 +43,18 @@ describe("the shared clock", () => {
 
 	it("Given one version alone, Then there is no slider", () => {
 		expect(slackOf([4_000])).toBe(0);
+	});
+
+	it("Given a frame stating no duration and one stating zero, Then each counts 100 ms in the sum", () => {
+		expect(frameMillis([50_000, null, 0])).toEqual([50, 100, 100]);
+	});
+
+	it("Given frames of 100, 200 and 100 ms, Then a time names the frame shown then, the last one past the end", () => {
+		const frames = [100, 200, 100];
+
+		expect(frameAt(frames, 0)).toBe(0);
+		expect(frameAt(frames, 150)).toBe(1);
+		expect(frameAt(frames, 300)).toBe(2);
+		expect(frameAt(frames, 400)).toBe(2);
 	});
 });

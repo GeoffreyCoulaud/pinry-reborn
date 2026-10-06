@@ -19,6 +19,7 @@ import {
 import { isVideo, soundLine, weightParts } from "../lib/media";
 import { tileStillSource } from "../lib/tiles";
 import { UNZOOMED } from "../lib/zoom";
+import { useMotion } from "../motions";
 import { m } from "../paraglide/messages.js";
 import { getLocale } from "../paraglide/runtime.js";
 import {
@@ -52,6 +53,8 @@ function Facts({
 	largest: boolean;
 }) {
 	const media: Partial<NonNullable<Pin["media"]>> = version.media ?? {};
+	const motion = useMotion(version);
+	const duration = "duration" in motion ? motion.duration : null;
 	const locale = getLocale();
 	const seconds = new Intl.NumberFormat(locale, {
 		style: "unit",
@@ -82,10 +85,10 @@ function Facts({
 						</span>
 					) : null}
 				</dd>
-				{media.durationMillis == null ? null : (
+				{duration === null ? null : (
 					<>
 						<dt>{m.compare_duration()}</dt>
-						<dd>{seconds.format(media.durationMillis / 1000)}</dd>
+						<dd>{seconds.format(duration / 1000)}</dd>
 					</>
 				)}
 				{isVideo(media.mimeType) ? (
