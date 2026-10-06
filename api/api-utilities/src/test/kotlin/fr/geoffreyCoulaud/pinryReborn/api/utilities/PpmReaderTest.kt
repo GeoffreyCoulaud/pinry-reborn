@@ -1,5 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.utilities
 
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -7,13 +10,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
 
 class PpmReaderTest {
-    @TempDir
-    lateinit var directory: Path
+    @TempDir lateinit var directory: Path
 
     private fun file(header: String, vararg raster: Int): Path =
         Files.write(directory.resolve("frame.ppm"), header.toByteArray() + raster.map(Int::toByte).toByteArray())

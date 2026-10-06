@@ -21,17 +21,23 @@ import java.util.UUID
 @ApplicationScoped
 // Splitting would fragment one adapter of one port across artificial classes, as UserDataExportRepository says.
 @Suppress("TooManyFunctions")
-class EbeanMediaDownloadRepository(
-    private val persistor: Persistor,
-) : MediaDownloadRepositoryInterface {
+class EbeanMediaDownloadRepository(private val persistor: Persistor) : MediaDownloadRepositoryInterface {
     // No explicit beginTransaction here: delete+save and the bulk CAS updates run under the ambient
     // transaction when TransactionRunner opened one (Ebean binds it to the thread), else auto-commit.
     override fun upsertPending(pinId: UUID, sourceUrl: String, taskId: UUID, now: Instant): MediaDownload {
         QMediaDownloadModel().pinId.equalTo(pinId).delete()
-        val model = MediaDownload(
-            pinId = pinId, sourceUrl = sourceUrl, status = DownloadStatus.PENDING, reasonCode = null,
-            lastError = null, taskId = taskId, requestedAt = now, updatedAt = now,
-        ).toModel(id = UUID.randomUUID())
+        val model =
+            MediaDownload(
+                    pinId = pinId,
+                    sourceUrl = sourceUrl,
+                    status = DownloadStatus.PENDING,
+                    reasonCode = null,
+                    lastError = null,
+                    taskId = taskId,
+                    requestedAt = now,
+                    updatedAt = now,
+                )
+                .toModel(id = UUID.randomUUID())
         persistor.save(model)
         return model.toDomain()
     }
@@ -54,10 +60,15 @@ class EbeanMediaDownloadRepository(
                 ?.let {
                     QMediaDownloadModel()
                         .withActivePin()
-                        .pin.author.id.equalTo(authorId)
-                        .id.equalTo(it.pivotId)
+                        .pin
+                        .author
+                        .id
+                        .equalTo(authorId)
+                        .id
+                        .equalTo(it.pivotId)
                         .findOne()
-                }?.let { ModelCursor(pivot = it, direction = cursor.direction) }
+                }
+                ?.let { ModelCursor(pivot = it, direction = cursor.direction) }
         val modelPage =
             ModelPaginationHelper.getPage(
                 cursor = modelCursor,
@@ -73,12 +84,7 @@ class EbeanMediaDownloadRepository(
     }
 
     override fun findByAuthorAndPin(authorId: UUID, pinId: UUID): MediaDownload? =
-        QMediaDownloadModel()
-            .withActivePin()
-            .pin.author.id.equalTo(authorId)
-            .pinId.equalTo(pinId)
-            .findOne()
-            ?.toDomain()
+        QMediaDownloadModel().withActivePin().pin.author.id.equalTo(authorId).pinId.equalTo(pinId).findOne()?.toDomain()
 
     override fun markFailed(pinId: UUID, reason: DownloadReason, now: Instant): Boolean =
         pendingRows(pinId)
@@ -89,11 +95,7 @@ class EbeanMediaDownloadRepository(
             .update() > 0
 
     override fun recordLastError(pinId: UUID, lastError: String, now: Instant): Boolean =
-        pendingRows(pinId)
-            .asUpdate()
-            .set("lastError", lastError)
-            .set("updatedAt", now)
-            .update() > 0
+        pendingRows(pinId).asUpdate().set("lastError", lastError).set("updatedAt", now).update() > 0
 
     override fun deleteIfPending(pinId: UUID): Int = pendingRows(pinId).delete()
 
@@ -102,16 +104,10 @@ class EbeanMediaDownloadRepository(
     }
 
     override fun findPending(): List<MediaDownload> =
-        QMediaDownloadModel()
-            .status.equalTo(DownloadStatus.PENDING.name)
-            .findList()
-            .map { it.toDomain() }
+        QMediaDownloadModel().status.equalTo(DownloadStatus.PENDING.name).findList().map { it.toDomain() }
 
     override fun deleteFailedBefore(cutoff: Instant): Int =
-        QMediaDownloadModel()
-            .status.equalTo(DownloadStatus.FAILED.name)
-            .updatedAt.lessThan(cutoff)
-            .delete()
+        QMediaDownloadModel().status.equalTo(DownloadStatus.FAILED.name).updatedAt.lessThan(cutoff).delete()
 
     private fun pendingRows(pinId: UUID) =
         QMediaDownloadModel().pinId.equalTo(pinId).status.equalTo(DownloadStatus.PENDING.name)

@@ -27,8 +27,8 @@ internal object YtDlpReport {
     }
 
     /**
-     * The chosen video for `--load-info-json`, less the page address yt-dlp would fetch again when a download fails.
-     * A playlist loaded whole fails there with "There are no entries".
+     * The chosen video for `--load-info-json`, less the page address yt-dlp would fetch again when a download fails. A
+     * playlist loaded whole fails there with "There are no entries".
      */
     fun infoOf(json: String): String =
         mapper.writeValueAsString((videoOf(json) as ObjectNode).apply { remove("webpage_url") })

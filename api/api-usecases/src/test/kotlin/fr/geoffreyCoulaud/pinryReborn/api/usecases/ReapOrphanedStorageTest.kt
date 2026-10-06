@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
@@ -15,13 +15,13 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class ReapOrphanedStorageTest : BaseTest() {
     private val renditionCache = mockk<RenditionCache>()
@@ -40,18 +40,19 @@ class ReapOrphanedStorageTest : BaseTest() {
     /** What the store's format answers in production, and what the derived key therefore carries. */
     private val archiveExtension = "zip"
 
-    private val useCase = ReapOrphanedStorage(
-        renditionCache = renditionCache,
-        exportArchiveStore = exportArchiveStore,
-        importArchiveStore = importArchiveStore,
-        mediaStore = mediaStore,
-        mediaRepository = mediaRepository,
-        userDataExportRepository = userDataExportRepository,
-        userDataImportRepository = userDataImportRepository,
-        clock = clock,
-        batchSize = batchSize,
-        orphanGrace = orphanGrace,
-    )
+    private val useCase =
+        ReapOrphanedStorage(
+            renditionCache = renditionCache,
+            exportArchiveStore = exportArchiveStore,
+            importArchiveStore = importArchiveStore,
+            mediaStore = mediaStore,
+            mediaRepository = mediaRepository,
+            userDataExportRepository = userDataExportRepository,
+            userDataImportRepository = userDataImportRepository,
+            clock = clock,
+            batchSize = batchSize,
+            orphanGrace = orphanGrace,
+        )
 
     /** What the media store holds past [cutoff]: it filters by age, so it is stubbed at that cutoff alone. */
     private var originalsPastGrace = emptyList<String>()
@@ -60,9 +61,10 @@ class ReapOrphanedStorageTest : BaseTest() {
     @BeforeEach
     fun stubTheMediaStore() {
         every { clock.now() } returns now
-        every { mediaStore.forEachStorageKeyOnDisk(cutoff, any()) } answers {
-            secondArg<(Sequence<String>) -> Unit>().invoke(originalsPastGrace.asSequence())
-        }
+        every { mediaStore.forEachStorageKeyOnDisk(cutoff, any()) } answers
+            {
+                secondArg<(Sequence<String>) -> Unit>().invoke(originalsPastGrace.asSequence())
+            }
         every { mediaStore.discardOrphanedStagedFiles(cutoff) } answers { stagedPastGrace }
     }
 
@@ -107,21 +109,24 @@ class ReapOrphanedStorageTest : BaseTest() {
 
     /** Every run reads all five disks, so a case names what its own half holds and empties the rest. */
     private fun renditionsOnDisk(vararg ids: UUID) {
-        every { renditionCache.forEachMediaIdOnDisk(any()) } answers {
-            firstArg<(Sequence<UUID>) -> Unit>().invoke(ids.asSequence())
-        }
+        every { renditionCache.forEachMediaIdOnDisk(any()) } answers
+            {
+                firstArg<(Sequence<UUID>) -> Unit>().invoke(ids.asSequence())
+            }
     }
 
     private fun exportsOnDisk(vararg keys: String) {
-        every { exportArchiveStore.forEachStorageKeyOnDisk(any()) } answers {
-            firstArg<(Sequence<String>) -> Unit>().invoke(keys.asSequence())
-        }
+        every { exportArchiveStore.forEachStorageKeyOnDisk(any()) } answers
+            {
+                firstArg<(Sequence<String>) -> Unit>().invoke(keys.asSequence())
+            }
     }
 
     private fun importsOnDisk(vararg keys: String) {
-        every { importArchiveStore.forEachStorageKeyOnDisk(any()) } answers {
-            firstArg<(Sequence<String>) -> Unit>().invoke(keys.asSequence())
-        }
+        every { importArchiveStore.forEachStorageKeyOnDisk(any()) } answers
+            {
+                firstArg<(Sequence<String>) -> Unit>().invoke(keys.asSequence())
+            }
     }
 
     @Test

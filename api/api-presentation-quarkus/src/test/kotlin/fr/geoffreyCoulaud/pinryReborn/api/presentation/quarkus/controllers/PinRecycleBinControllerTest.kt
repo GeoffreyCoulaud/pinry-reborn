@@ -16,25 +16,27 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.quarkus.security.identity.SecurityIdentity
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 class PinRecycleBinControllerTest {
     private val pinRecycleBinGetter = mockk<PinRecycleBinGetter>()
     private val securityIdentity = mockk<SecurityIdentity>()
 
     // The real assembler over a stubbed resolver: the responses under assertion are the mapped ones.
-    private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
-        every { it.statesFor(any()) } returns emptyMap()
-    }
+    private val resolvePinMediaState =
+        mockk<ResolvePinMediaState>().also {
+            every { it.statesFor(any()) } returns emptyMap()
+        }
     private val pinDuplicates = mockk<PinDuplicates>().also { every { it.pendingAmong(any()) } returns emptySet() }
-    private val controller = PinRecycleBinController(
-        pinRecycleBin = mockk(),
-        pinRecycleBinGetter = pinRecycleBinGetter,
-        securityIdentity = securityIdentity,
-        pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
-    )
+    private val controller =
+        PinRecycleBinController(
+            pinRecycleBin = mockk(),
+            pinRecycleBinGetter = pinRecycleBinGetter,
+            securityIdentity = securityIdentity,
+            pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
+        )
 
     @Test
     fun `Given no cursor, no page size and no sort, Then listRecycledPins uses defaults`() {
@@ -78,11 +80,12 @@ class PinRecycleBinControllerTest {
         } returns page
 
         // When
-        val response = controller.listRecycledPins(
-            cursorInput = cursorInput,
-            pageSizeInput = pageSizeInput,
-            sortInput = sortInput,
-        )
+        val response =
+            controller.listRecycledPins(
+                cursorInput = cursorInput,
+                pageSizeInput = pageSizeInput,
+                sortInput = sortInput,
+            )
 
         // Then
         assertEquals(200, response.status)

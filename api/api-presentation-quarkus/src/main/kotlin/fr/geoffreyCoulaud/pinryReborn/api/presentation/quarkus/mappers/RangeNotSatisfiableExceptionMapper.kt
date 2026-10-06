@@ -8,19 +8,20 @@ import jakarta.ws.rs.ext.ExceptionMapper
 import jakarta.ws.rs.ext.Provider
 
 /**
- * `416 Requested Range Not Satisfiable`, with a `Content-Range` header naming the resource's total
- * size (spec `docs/specs/2026-07-22-user-data-export.md` §7) so the client can retry correctly.
+ * `416 Requested Range Not Satisfiable`, with a `Content-Range` header naming the resource's total size (spec
+ * `docs/specs/2026-07-22-user-data-export.md` §7) so the client can retry correctly.
  */
 @Provider
 class RangeNotSatisfiableExceptionMapper : ExceptionMapper<RangeNotSatisfiableException> {
-    @Context
-    lateinit var uriInfo: UriInfo
+    @Context lateinit var uriInfo: UriInfo
 
     override fun toResponse(exception: RangeNotSatisfiableException): Response =
         ProblemResponses.problemResponse(
-            status = Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE,
-            detail = exception.message,
-            code = ProblemCode.RANGE_NOT_SATISFIABLE,
-            uriInfo = uriInfo,
-        ).header("Content-Range", "bytes */${exception.totalSize}").build()
+                status = Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE,
+                detail = exception.message,
+                code = ProblemCode.RANGE_NOT_SATISFIABLE,
+                uriInfo = uriInfo,
+            )
+            .header("Content-Range", "bytes */${exception.totalSize}")
+            .build()
 }

@@ -12,14 +12,15 @@ import jakarta.ws.rs.ext.Provider
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 class UnauthorizedExceptionMapper : ExceptionMapper<UnauthorizedException> {
-    @Context
-    lateinit var uriInfo: UriInfo
+    @Context lateinit var uriInfo: UriInfo
 
     override fun toResponse(exception: UnauthorizedException): Response =
         ProblemResponses.problemResponse(
-            status = Response.Status.UNAUTHORIZED,
-            detail = "Authentication required",
-            code = ProblemCode.AUTHENTICATION_REQUIRED,
-            uriInfo = uriInfo,
-        ).header("WWW-Authenticate", ProblemResponses.WWW_AUTHENTICATE_BEARER).build()
+                status = Response.Status.UNAUTHORIZED,
+                detail = "Authentication required",
+                code = ProblemCode.AUTHENTICATION_REQUIRED,
+                uriInfo = uriInfo,
+            )
+            .header("WWW-Authenticate", ProblemResponses.WWW_AUTHENTICATE_BEARER)
+            .build()
 }

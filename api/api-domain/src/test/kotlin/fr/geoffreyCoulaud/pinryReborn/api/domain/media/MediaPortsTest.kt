@@ -3,13 +3,13 @@ package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayInputStream
-import java.io.InputStream
-import java.time.Instant
 
 class MediaPortsTest {
     @Test
@@ -22,22 +22,34 @@ class MediaPortsTest {
     @Suppress("EmptyFunctionBlock")
     @Test
     fun `Given a fake store and probe, Then the port contracts compile and return`() {
-        val store = object : MediaStore {
-            override fun stage(source: InputStream, maxBytes: Long) =
-                StagedFile("/tmp/staged", source.readBytes().size.toLong(), "hash")
-            override fun digest(source: InputStream, maxBytes: Long) = "hash"
-            override fun promote(staged: StagedFile, storageKey: String) {}
-            override fun openStream(storageKey: String): InputStream = ByteArrayInputStream(ByteArray(0))
-            override fun stageStored(media: Media) = StagedFile("/tmp/stored", media.byteSize, media.contentHash)
-            override fun openStaged(staged: StagedFile): InputStream = ByteArrayInputStream(ByteArray(0))
-            override fun delete(storageKey: String) {}
-            override fun discard(staged: StagedFile) {}
-            override fun discardOrphanedStagedFiles(olderThan: Instant) = 0
-            override fun forEachStorageKeyOnDisk(olderThan: Instant, block: (Sequence<String>) -> Unit) {}
-        }
-        val probe = object : ImageProbe {
-            override fun probe(staged: StagedFile) = ProbeResult(MediaFormat.PNG, 10, 20, frames = 1, staged.byteSize)
-        }
+        val store =
+            object : MediaStore {
+                override fun stage(source: InputStream, maxBytes: Long) =
+                    StagedFile("/tmp/staged", source.readBytes().size.toLong(), "hash")
+
+                override fun digest(source: InputStream, maxBytes: Long) = "hash"
+
+                override fun promote(staged: StagedFile, storageKey: String) {}
+
+                override fun openStream(storageKey: String): InputStream = ByteArrayInputStream(ByteArray(0))
+
+                override fun stageStored(media: Media) = StagedFile("/tmp/stored", media.byteSize, media.contentHash)
+
+                override fun openStaged(staged: StagedFile): InputStream = ByteArrayInputStream(ByteArray(0))
+
+                override fun delete(storageKey: String) {}
+
+                override fun discard(staged: StagedFile) {}
+
+                override fun discardOrphanedStagedFiles(olderThan: Instant) = 0
+
+                override fun forEachStorageKeyOnDisk(olderThan: Instant, block: (Sequence<String>) -> Unit) {}
+            }
+        val probe =
+            object : ImageProbe {
+                override fun probe(staged: StagedFile) =
+                    ProbeResult(MediaFormat.PNG, 10, 20, frames = 1, staged.byteSize)
+            }
         val staged = store.stage(ByteArrayInputStream(byteArrayOf(1, 2, 3)), 100)
         val result = probe.probe(staged)
         assertEquals(3, staged.byteSize)

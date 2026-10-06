@@ -5,30 +5,30 @@ import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import jakarta.inject.Inject
+import java.util.UUID
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.emptyIterable
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Test
-import java.util.UUID
 
 @QuarkusTest
 class PinTaggingIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
     @Test
     fun `setting tags returns 200 with updated tags`() {
         val auth = createAuthenticatedUser()
 
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/media.jpg",
-            description = "My pin",
-            tags = emptyList()
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com/page",
+                sourceMediaUrl = "https://example.com/media.jpg",
+                description = "My pin",
+                tags = emptyList(),
+            )
 
         replacePin(auth, pin, tags = listOf("nature", "landscape"))
             .statusCode(200)
@@ -41,22 +41,24 @@ class PinTaggingIntegrationTest : IntegrationTest() {
     fun `Given a stored tag, Then tagging with a different case reuses it and returns its spelling`() {
         // Given: a pin already carrying `landscape`, stored in that spelling.
         val auth = createAuthenticatedUser()
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/media.jpg",
-            description = "My pin",
-            tags = listOf("landscape"),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com/page",
+                sourceMediaUrl = "https://example.com/media.jpg",
+                description = "My pin",
+                tags = listOf("landscape"),
+            )
 
         // When: the client tags a second pin with the same name in another case.
-        val other = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com/other",
-            sourceMediaUrl = "https://example.com/other.jpg",
-            description = "Another pin",
-            tags = emptyList(),
-        )
+        val other =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com/other",
+                sourceMediaUrl = "https://example.com/other.jpg",
+                description = "Another pin",
+                tags = emptyList(),
+            )
         replacePin(auth, other, tags = listOf("Landscape"))
             .statusCode(200)
             // Then: the stored spelling comes back, not the one that was sent. Before the fold
@@ -78,13 +80,14 @@ class PinTaggingIntegrationTest : IntegrationTest() {
     fun `setting tags replaces existing tags`() {
         val auth = createAuthenticatedUser()
 
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/media.jpg",
-            description = "My pin",
-            tags = listOf("oldtag1", "oldtag2")
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com/page",
+                sourceMediaUrl = "https://example.com/media.jpg",
+                description = "My pin",
+                tags = listOf("oldtag1", "oldtag2"),
+            )
 
         replacePin(auth, pin, tags = listOf("newtag"))
             .statusCode(200)
@@ -96,17 +99,16 @@ class PinTaggingIntegrationTest : IntegrationTest() {
     fun `setting empty tags clears all tags`() {
         val auth = createAuthenticatedUser()
 
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/media.jpg",
-            description = "My pin",
-            tags = listOf("tag1", "tag2")
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com/page",
+                sourceMediaUrl = "https://example.com/media.jpg",
+                description = "My pin",
+                tags = listOf("tag1", "tag2"),
+            )
 
-        replacePin(auth, pin, tags = emptyList())
-            .statusCode(200)
-            .body("tags", emptyIterable<Any>())
+        replacePin(auth, pin, tags = emptyList()).statusCode(200).body("tags", emptyIterable<Any>())
     }
 
     @Test
@@ -114,16 +116,16 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val owner = createAuthenticatedUser()
         val attacker = createAuthenticatedUser()
 
-        val pin = pinCreator.createPin(
-            author = owner.user,
-            sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/media.jpg",
-            description = "Owner's pin",
-            tags = emptyList()
-        )
+        val pin =
+            pinCreator.createPin(
+                author = owner.user,
+                sourceContextUrl = "https://example.com/page",
+                sourceMediaUrl = "https://example.com/media.jpg",
+                description = "Owner's pin",
+                tags = emptyList(),
+            )
 
-        replacePin(attacker, pin, tags = listOf("hacked"))
-            .statusCode(403)
+        replacePin(attacker, pin, tags = listOf("hacked")).statusCode(403)
     }
 
     @Test
@@ -146,13 +148,14 @@ class PinTaggingIntegrationTest : IntegrationTest() {
     fun `unauthenticated request returns 401`() {
         val auth = createAuthenticatedUser()
 
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/media.jpg",
-            description = "My pin",
-            tags = emptyList()
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com/page",
+                sourceMediaUrl = "https://example.com/media.jpg",
+                description = "My pin",
+                tags = emptyList(),
+            )
 
         given()
             .contentType(ContentType.JSON)

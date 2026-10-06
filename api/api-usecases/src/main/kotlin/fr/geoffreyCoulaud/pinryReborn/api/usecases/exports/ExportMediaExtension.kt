@@ -1,21 +1,21 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 /**
- * Maps an [fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media.mimeType] to the file extension
- * used for its `media/<mediaId>.<ext>` entry (spec `docs/specs/2026-07-22-user-data-export.md` §4).
- * The MIME type comes from a server-side enum, never from client input, so no user-controlled string
- * ever reaches a ZIP entry path.
+ * Maps an [fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media.mimeType] to the file extension used for its
+ * `media/<mediaId>.<ext>` entry (spec `docs/specs/2026-07-22-user-data-export.md` §4). The MIME type comes from a
+ * server-side enum, never from client input, so no user-controlled string ever reaches a ZIP entry path.
  */
 internal object ExportMediaExtension {
     // A video's type carries its `codecs` parameter, which names no other extension.
-    fun forMimeType(mimeType: String): String = when (mimeType.substringBefore(';')) {
-        "image/jpeg" -> "jpg"
-        "image/png" -> "png"
-        "image/webp" -> "webp"
-        "image/gif" -> "gif"
-        "image/avif" -> "avif"
-        "video/mp4" -> "mp4"
-        "video/webm" -> "webm"
-        else -> "bin"
-    }
+    fun forMimeType(mimeType: String): String =
+        when (mimeType.substringBefore(';')) {
+            "image/jpeg" -> "jpg"
+            "image/png" -> "png"
+            "image/webp" -> "webp"
+            "image/gif" -> "gif"
+            "image/avif" -> "avif"
+            "video/mp4" -> "mp4"
+            "video/webm" -> "webm"
+            else -> "bin"
+        }
 }

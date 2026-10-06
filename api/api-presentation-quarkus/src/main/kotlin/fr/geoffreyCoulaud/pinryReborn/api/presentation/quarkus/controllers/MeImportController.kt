@@ -30,6 +30,8 @@ import jakarta.ws.rs.PUT
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
+import java.io.InputStream
+import java.util.UUID
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
@@ -38,8 +40,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder
-import java.io.InputStream
-import java.util.UUID
 
 /**
  * `/api/v1/me/imports`: open an import, upload its archive in chunks, track it and cancel it (spec
@@ -67,16 +67,29 @@ class MeImportController(
     @APIResponse(
         responseCode = "202",
         description = "Import opened, awaiting its archive",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = UserDataImportOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = UserDataImportOutputDto::class),
+                )
+            ],
     )
-    @APIResponse(responseCode = "409", description = "This account already has an active import",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["IMPORT_ALREADY_IN_PROGRESS"])]))])
+    @APIResponse(
+        responseCode = "409",
+        description = "This account already has an active import",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["IMPORT_ALREADY_IN_PROGRESS"])],
+                        ),
+                )
+            ],
+    )
     fun createImport(): RestResponse<UserDataImportOutputDto> {
         val user = securityIdentity.getUser()
         val userDataImport = creator.create(user)
@@ -84,8 +97,8 @@ class MeImportController(
     }
 
     /**
-     * Blocking deliberately: Quarkus REST reads this body lazily only on a worker thread, and an
-     * extension installing a global Vert.x body handler would buffer it whatever this says (spec §7).
+     * Blocking deliberately: Quarkus REST reads this body lazily only on a worker thread, and an extension installing a
+     * global Vert.x body handler would buffer it whatever this says (spec §7).
      */
     @PUT
     @Path("/{id}/archive")
@@ -93,36 +106,81 @@ class MeImportController(
     @Blocking
     @Operation(
         summary = "Append one chunk of the archive at the given offset",
-        description = "Answers the upload's new length. An offset that is not the current length is " +
-            "refused with that length, so a client resumes rather than restarts.",
+        description =
+            "Answers the upload's new length. An offset that is not the current length is " +
+                "refused with that length, so a client resumes rather than restarts.",
     )
     @APIResponse(
         responseCode = "200",
         description = "Chunk appended, with the upload's new length",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = UserDataImportOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = UserDataImportOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMPORT_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMPORT_NOT_FOUND)
-    @APIResponse(responseCode = "409", description = "The import no longer awaits its archive, or the offset " +
-        "is not the upload's length, which the currentLength member names to resume from",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["IMPORT_NOT_AWAITING_ARCHIVE", "IMPORT_CHUNK_OFFSET_MISMATCH"])]))])
-    @APIResponse(responseCode = "413", description = "IMPORT_ARCHIVE_TOO_LARGE: the chunk would carry the upload " +
-        "past imports.max_archive_bytes. BODY_TOO_LARGE: the Content-Length is past " +
-        "quarkus.http.limits.max-body-size, which is above imports.max_chunk_bytes; a chunked body past it gets " +
-        "a 413 with no body",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["IMPORT_ARCHIVE_TOO_LARGE"])]))])
+    @APIResponse(
+        responseCode = "409",
+        description =
+            "The import no longer awaits its archive, or the offset " +
+                "is not the upload's length, which the currentLength member names to resume from",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration = ["IMPORT_NOT_AWAITING_ARCHIVE", "IMPORT_CHUNK_OFFSET_MISMATCH"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
+    @APIResponse(
+        responseCode = "413",
+        description =
+            "IMPORT_ARCHIVE_TOO_LARGE: the chunk would carry the upload " +
+                "past imports.max_archive_bytes. BODY_TOO_LARGE: the Content-Length is past " +
+                "quarkus.http.limits.max-body-size, which is above imports.max_chunk_bytes; a chunked body past it gets " +
+                "a 413 with no body",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["IMPORT_ARCHIVE_TOO_LARGE"])],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
-    @APIResponse(responseCode = "507", description = "Free space is under imports.minimum_free_bytes",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["IMPORT_INSUFFICIENT_STORAGE"])]))])
+    @APIResponse(
+        responseCode = "507",
+        description = "Free space is under imports.minimum_free_bytes",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["IMPORT_INSUFFICIENT_STORAGE"])],
+                        ),
+                )
+            ],
+    )
     fun uploadChunk(
         id: UUID,
         @QueryParam("offset")
@@ -146,19 +204,37 @@ class MeImportController(
     @APIResponse(
         responseCode = "202",
         description = "Upload closed and the import queued",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = UserDataImportOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = UserDataImportOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMPORT_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMPORT_NOT_FOUND)
-    @APIResponse(responseCode = "409", description = "The import no longer awaits its archive, or no chunk ever landed",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["IMPORT_NOT_AWAITING_ARCHIVE", "IMPORT_ARCHIVE_EMPTY"])]))])
+    @APIResponse(
+        responseCode = "409",
+        description = "The import no longer awaits its archive, or no chunk ever landed",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration = ["IMPORT_NOT_AWAITING_ARCHIVE", "IMPORT_ARCHIVE_EMPTY"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
     fun completeArchive(id: UUID): RestResponse<UserDataImportOutputDto> {
         val user = securityIdentity.getUser()
         val userDataImport = archiveCompleter.complete(user, id)
@@ -166,9 +242,17 @@ class MeImportController(
     }
 
     @GET
-    @APIResponse(responseCode = "200", description = "OK",
-        content = [Content(mediaType = MediaType.APPLICATION_JSON,
-            schema = Schema(implementation = UserDataImportListOutputDto::class))])
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = UserDataImportListOutputDto::class),
+                )
+            ],
+    )
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.UNREADABLE_QUERY)
     fun listImports(
         @QueryParam("cursor") @Base64Json cursorInput: CursorDto? = null,
@@ -185,12 +269,13 @@ class MeImportController(
     @APIResponse(
         responseCode = "200",
         description = "The import's state and counters",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = UserDataImportOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = UserDataImportOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMPORT_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMPORT_NOT_FOUND)
@@ -203,18 +288,20 @@ class MeImportController(
     @Path("/{id}/issues")
     @Operation(
         summary = "Read the import's report",
-        description = "Anomalies the walk recorded. Past `imports.report_detail_limit` rows only the " +
-            "count keeps growing, and the import says so through `issueDetailTruncated`.",
+        description =
+            "Anomalies the walk recorded. Past `imports.report_detail_limit` rows only the " +
+                "count keeps growing, and the import says so through `issueDetailTruncated`.",
     )
     @APIResponse(
         responseCode = "200",
         description = "One page of the import's report",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = UserDataImportIssueListOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = UserDataImportIssueListOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMPORT_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.IMPORT_NOT_FOUND)
@@ -233,8 +320,9 @@ class MeImportController(
     @Path("/{id}")
     @Operation(
         summary = "Cancel an import",
-        description = "Cancelling leaves partial state: the pins, boards and tags the import has " +
-            "already created stay, and only the archive and the work still to do are dropped.",
+        description =
+            "Cancelling leaves partial state: the pins, boards and tags the import has " +
+                "already created stay, and only the archive and the work still to do are dropped.",
     )
     @APIResponse(responseCode = "204", description = "Import cancelled")
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.IMPORT_FORBIDDEN)

@@ -30,16 +30,7 @@ import io.quarkus.test.junit.QuarkusMock
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
-import io.restassured.http.ContentType
 import jakarta.inject.Inject
-import org.junit.jupiter.api.Assertions.assertArrayEquals
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -52,17 +43,23 @@ import java.util.HexFormat
 import java.util.UUID
 import java.util.logging.Level
 import java.util.zip.ZipFile
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 /**
- * End-to-end coverage of the async export completion path (spec `docs/specs/2026-07-22-user-data-export.md`
- * §3, §4, §8, §9, §10), with a REAL async worker building a REAL archive on disk -- this is what
- * would have caught `Pin.media` being always null under mocked repositories, per the spec's own
- * testing-strategy rationale (§13.1).
+ * End-to-end coverage of the async export completion path (spec `docs/specs/2026-07-22-user-data-export.md` §3, §4, §8,
+ * §9, §10), with a REAL async worker building a REAL archive on disk -- this is what would have caught `Pin.media`
+ * being always null under mocked repositories, per the spec's own testing-strategy rationale (§13.1).
  *
- * The archive-content test, "Given a seeded account with recycled content and a real image, Then
- * the archive is correct", is the point of the whole task: it seeds real pins, a real recycled
- * board membership and a real uploaded image, waits for the real worker, downloads the real bytes
- * and opens them as a [ZipFile].
+ * The archive-content test, "Given a seeded account with recycled content and a real image, Then the archive is
+ * correct", is the point of the whole task: it seeds real pins, a real recycled board membership and a real uploaded
+ * image, waits for the real worker, downloads the real bytes and opens them as a [ZipFile].
  */
 @QuarkusTest
 @TestProfile(MeExportTestProfile::class)
@@ -70,40 +67,29 @@ import java.util.zip.ZipFile
 @Suppress("WallClockRead")
 class MeExportCompletionIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var boardCreator: BoardCreator
+    @Inject lateinit var boardCreator: BoardCreator
 
-    @Inject
-    lateinit var userDataExportRepository: UserDataExportRepositoryInterface
+    @Inject lateinit var userDataExportRepository: UserDataExportRepositoryInterface
 
-    @Inject
-    lateinit var reapUserDataExports: ReapUserDataExports
+    @Inject lateinit var reapUserDataExports: ReapUserDataExports
 
-    @Inject
-    lateinit var exportsConfig: ExportsConfig
+    @Inject lateinit var exportsConfig: ExportsConfig
 
-    @Inject
-    lateinit var exportRetentionLifecycle: ExportRetentionLifecycle
+    @Inject lateinit var exportRetentionLifecycle: ExportRetentionLifecycle
 
-    @Inject
-    lateinit var objectMapper: ObjectMapper
+    @Inject lateinit var objectMapper: ObjectMapper
 
-    @Inject
-    lateinit var enqueueTask: EnqueueTask
+    @Inject lateinit var enqueueTask: EnqueueTask
 
-    @Inject
-    lateinit var taskQueue: TaskQueueInterface
+    @Inject lateinit var taskQueue: TaskQueueInterface
 
-    private fun stepUp(password: String) =
-        "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())
+    private fun stepUp(password: String) = "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())
 
     private fun fixture(name: String) = File("src/test/resources/fixtures/$name")
 
-    private fun archivePathFor(exportId: UUID): Path =
-        Path.of(exportsConfig.dataDir()).resolve("exports/$exportId.zip")
+    private fun archivePathFor(exportId: UUID): Path = Path.of(exportsConfig.dataDir()).resolve("exports/$exportId.zip")
 
     private fun sha256Hex(bytes: ByteArray): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
@@ -116,19 +102,28 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .header("X-Reauthentication", stepUp(password))
-            .`when`().post("/api/v1/me/exports")
-            .then().statusCode(202)
-            .extract().jsonPath().getString("id")
+            .`when`()
+            .post("/api/v1/me/exports")
+            .then()
+            .statusCode(202)
+            .extract()
+            .jsonPath()
+            .getString("id")
             .let(UUID::fromString)
 
     /** Bounded poll of `GET .../{id}` until `state == "READY"`, returning the last observed state. */
     private fun pollUntilReady(auth: IntegrationTest.AuthenticatedUser, exportId: UUID): String {
         var lastState = "UNKNOWN"
         repeat(POLL_ATTEMPTS) {
-            lastState = given()
-                .authenticatedAs(auth)
-                .`when`().get("/api/v1/me/exports/$exportId")
-                .then().extract().jsonPath().getString("state")
+            lastState =
+                given()
+                    .authenticatedAs(auth)
+                    .`when`()
+                    .get("/api/v1/me/exports/$exportId")
+                    .then()
+                    .extract()
+                    .jsonPath()
+                    .getString("state")
             if (lastState == "READY") return lastState
             Thread.sleep(POLL_INTERVAL_MS)
         }
@@ -168,9 +163,12 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
     private fun downloadBytes(auth: IntegrationTest.AuthenticatedUser, exportId: UUID): ByteArray =
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/me/exports/$exportId/download")
-            .then().statusCode(200)
-            .extract().asByteArray()
+            .`when`()
+            .get("/api/v1/me/exports/$exportId/download")
+            .then()
+            .statusCode(200)
+            .extract()
+            .asByteArray()
 
     private fun openZip(bytes: ByteArray): ZipFile {
         val tempFile = Files.createTempFile("me-export-completion-", ".zip")
@@ -218,8 +216,10 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/${mediaPin.id}/media")
-            .then().statusCode(201)
+            .`when`()
+            .put("/api/v1/pins/${mediaPin.id}/media")
+            .then()
+            .statusCode(201)
         given().authenticatedAs(auth).`when`().delete("/api/v1/pins/${recycledPin.id}").then().statusCode(204)
 
         val activeBoard = boardCreator.create(author = auth.user, name = "Active board", description = "")
@@ -338,8 +338,10 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .header("X-Reauthentication", stepUp(password))
-            .`when`().delete("/api/v1/me")
-            .then().statusCode(202)
+            .`when`()
+            .delete("/api/v1/me")
+            .then()
+            .statusCode(202)
 
         // Then
         assertTrue(pollUntilExportGone(exportId), "the export row should be erased by the deletion worker")
@@ -361,7 +363,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
                 formatVersion = 1,
                 requestedAt = requestedAt,
                 taskId = taskId,
-            ),
+            )
         )
         return exportId
     }
@@ -462,21 +464,26 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         assertNull(untouched.failureCode, "a row the sweep left alone carries no failure code")
         // 202 rather than merely "not 409": this profile pins exports.minimum_interval to PT0S,
         // where production answers 429 for as long as the cooldown runs.
-        val acceptedId = given()
-            .authenticatedAs(auth)
-            .header("X-Reauthentication", stepUp(password))
-            .`when`().post("/api/v1/me/exports")
-            .then().statusCode(202)
-            .extract().jsonPath().getString("id")
-            .let(UUID::fromString)
+        val acceptedId =
+            given()
+                .authenticatedAs(auth)
+                .header("X-Reauthentication", stepUp(password))
+                .`when`()
+                .post("/api/v1/me/exports")
+                .then()
+                .statusCode(202)
+                .extract()
+                .jsonPath()
+                .getString("id")
+                .let(UUID::fromString)
         // Drained for the same reason as the superseding build above: the case must not hand back
         // while the worker still holds the single test connection.
         assertEquals("READY", pollUntilReady(auth, acceptedId), "the accepted request should build")
     }
 
     /**
-     * A real repository in every respect but the READY write, which lands before it throws: refusing
-     * ahead of that write would leave the same row behind and prove no rollback ran.
+     * A real repository in every respect but the READY write, which lands before it throws: refusing ahead of that
+     * write would leave the same row behind and prove no rollback ran.
      */
     private class RefusingThePublish(private val real: UserDataExportRepositoryInterface) :
         UserDataExportRepositoryInterface by real {
@@ -488,27 +495,28 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
     }
 
     /**
-     * The real build with one seam replaced. Wired by hand rather than mocked: the repository bean is
-     * a class Kotlin sees as final, and `QuarkusMock` demands a mock its proxy could stand in for.
+     * The real build with one seam replaced. Wired by hand rather than mocked: the repository bean is a class Kotlin
+     * sees as final, and `QuarkusMock` demands a mock its proxy could stand in for.
      */
     private fun buildRefusingThePublish(exportId: UUID, isLastAttempt: Boolean) {
         val arc = Arc.container()
         UserDataExportBuilder(
-            exportRepository = RefusingThePublish(userDataExportRepository),
-            userRepository = arc.instance(UserRepositoryInterface::class.java).get(),
-            pinRepository = arc.instance(PinRepositoryInterface::class.java).get(),
-            mediaRepository = arc.instance(MediaRepositoryInterface::class.java).get(),
-            boardRepository = arc.instance(BoardRepositoryInterface::class.java).get(),
-            tagRepository = arc.instance(TagRepositoryInterface::class.java).get(),
-            mediaStore = arc.instance(MediaStore::class.java).get(),
-            archiveStore = arc.instance(ExportArchiveStore::class.java).get(),
-            transactionRunner = arc.instance(TransactionRunner::class.java).get(),
-            clock = arc.instance(Clock::class.java).get(),
-            applicationVersion = "test",
-            pageSize = exportsConfig.pageSize(),
-            retention = exportsConfig.retention(),
-            minimumFreeBytes = exportsConfig.minimumFreeBytes(),
-        ).build(exportId, isLastAttempt = isLastAttempt, renewLease = {})
+                exportRepository = RefusingThePublish(userDataExportRepository),
+                userRepository = arc.instance(UserRepositoryInterface::class.java).get(),
+                pinRepository = arc.instance(PinRepositoryInterface::class.java).get(),
+                mediaRepository = arc.instance(MediaRepositoryInterface::class.java).get(),
+                boardRepository = arc.instance(BoardRepositoryInterface::class.java).get(),
+                tagRepository = arc.instance(TagRepositoryInterface::class.java).get(),
+                mediaStore = arc.instance(MediaStore::class.java).get(),
+                archiveStore = arc.instance(ExportArchiveStore::class.java).get(),
+                transactionRunner = arc.instance(TransactionRunner::class.java).get(),
+                clock = arc.instance(Clock::class.java).get(),
+                applicationVersion = "test",
+                pageSize = exportsConfig.pageSize(),
+                retention = exportsConfig.retention(),
+                minimumFreeBytes = exportsConfig.minimumFreeBytes(),
+            )
+            .build(exportId, isLastAttempt = isLastAttempt, renewLease = {})
     }
 
     @Test
@@ -583,7 +591,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
                 completedAt = Instant.now().minus(Duration.ofDays(8)),
                 expiresAt = Instant.now().minus(Duration.ofDays(1)),
                 storageKey = storageKey,
-            ),
+            )
         )
     }
 
@@ -621,9 +629,10 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         QuarkusMock.installMockForType(RefusingStagingSweep(exportsConfig.dataDir()), ExportArchiveStore::class.java)
 
         // When
-        val logged = capturingLogsOf(ReapUserDataExports::class.java.name) {
-            assertEquals(1, reapUserDataExports.reap().expired, "the refusal must not cost the passes")
-        }
+        val logged =
+            capturingLogsOf(ReapUserDataExports::class.java.name) {
+                assertEquals(1, reapUserDataExports.reap().expired, "the refusal must not cost the passes")
+            }
 
         // Then: absorbed, and named on the channel, cause included. A net that swallows in silence
         // leaves an operator with a sweep that reports its counts and never drops a staged file.
@@ -661,15 +670,18 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
                 sha256 = sha256,
                 mediaType = "text/plain",
                 fileExtension = "txt",
-            ),
+            )
         )
 
         // When
-        val extracted = given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/me/exports/$exportId/download")
-            .then().statusCode(200)
-            .extract()
+        val extracted =
+            given()
+                .authenticatedAs(auth)
+                .`when`()
+                .get("/api/v1/me/exports/$exportId/download")
+                .then()
+                .statusCode(200)
+                .extract()
 
         // Then
         assertEquals("text/plain", extracted.header("Content-Type"))

@@ -11,8 +11,8 @@ import io.mockk.mockk
 import io.mockk.runs
 
 /**
- * The fixtures over the archive store as a mock, for the cases whose window opens before the
- * completion. Never the fake store here: [UserDataExportFakeStoreFixtures] holds that one.
+ * The fixtures over the archive store as a mock, for the cases whose window opens before the completion. Never the fake
+ * store here: [UserDataExportFakeStoreFixtures] holds that one.
  */
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a fixture base, as the import suite has.
 internal abstract class UserDataExportMockStoreFixtures : UserDataExportFixtures() {
@@ -27,19 +27,21 @@ internal abstract class UserDataExportMockStoreFixtures : UserDataExportFixtures
 
     protected fun stubArchiveStore() {
         sink = RecordingSink()
-        every { archiveStore.stage(any()) } answers {
-            stageCalls++
-            firstArg<(ArchiveSink) -> Unit>().invoke(sink)
-            StagedFile(path = "tmp/staged.zip", byteSize = stagedByteSize, contentHash = stagedHash)
-        }
+        every { archiveStore.stage(any()) } answers
+            {
+                stageCalls++
+                firstArg<(ArchiveSink) -> Unit>().invoke(sink)
+                StagedFile(path = "tmp/staged.zip", byteSize = stagedByteSize, contentHash = stagedHash)
+            }
     }
 
     /** A staging that fails once the build has committed to it, which is the window site 2 answers for. */
     protected fun stubFailingStage() {
-        every { archiveStore.stage(any()) } answers {
-            stageCalls++
-            error("the archive could not be staged")
-        }
+        every { archiveStore.stage(any()) } answers
+            {
+                stageCalls++
+                error("the archive could not be staged")
+            }
     }
 
     /** What a build reads before it stages: the row, the account, the disk and the archive format. */

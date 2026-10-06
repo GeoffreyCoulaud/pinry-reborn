@@ -5,8 +5,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import jakarta.enterprise.context.ApplicationScoped
 
 /**
- * Reclaims expired leases. Sits between the registry and the queue because this is where a kind
- * resolves to its handler, and so to the floor its retries need: the queue works on rows.
+ * Reclaims expired leases. Sits between the registry and the queue because this is where a kind resolves to its
+ * handler, and so to the floor its retries need: the queue works on rows.
  */
 @ApplicationScoped
 class ReapExpiredTasks(

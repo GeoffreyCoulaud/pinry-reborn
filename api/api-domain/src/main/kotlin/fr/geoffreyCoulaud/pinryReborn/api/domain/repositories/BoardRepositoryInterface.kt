@@ -12,13 +12,14 @@ import java.util.UUID
 interface BoardRepositoryInterface {
     /**
      * Create or update a board from the given domain data.
+     *
      * @throws BoardNameAlreadyTakenException when the author already holds the name, ASCII case folded.
      */
     fun saveBoard(board: Board): Board
 
     /**
-     * Find the board holding [name] for [user] in **any** state, or null: a recycled board holds its name.
-     * The fold is the index's own, ASCII case only, so two names differing outside A to Z are two names.
+     * Find the board holding [name] for [user] in **any** state, or null: a recycled board holds its name. The fold is
+     * the index's own, ASCII case only, so two names differing outside A to Z are two names.
      */
     fun findBoardForUserByName(user: User, name: String): Board?
 
@@ -35,14 +36,12 @@ interface BoardRepositoryInterface {
     fun findRecycledBoardsForUser(user: User): List<Board>
 
     /**
-     * Soft-delete a board, recording [at] as both its softDeletedAt and its updatedAt: recycling is
-     * a modification like any other. Keeps its pin memberships.
+     * Soft-delete a board, recording [at] as both its softDeletedAt and its updatedAt: recycling is a modification like
+     * any other. Keeps its pin memberships.
      */
     fun softDeleteBoard(board: Board, at: Instant): Board
 
-    /**
-     * Restore a soft-deleted board by clearing its softDeletedAt, recording [at] as its updatedAt.
-     */
+    /** Restore a soft-deleted board by clearing its softDeletedAt, recording [at] as its updatedAt. */
     fun restoreBoard(board: Board, at: Instant): Board
 
     /** Permanently delete a board and its pin memberships. */

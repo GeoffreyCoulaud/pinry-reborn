@@ -12,8 +12,9 @@ class SessionSecurityRequirementFilterTest {
     @Test
     fun `Given an operation SmallRye stamped, Then it names both transports, the header first`() {
         // Given: the lone requirement SmallRye writes, which names whichever scheme it picked
-        val operation = OASFactory.createOperation()
-            .addSecurityRequirement(OASFactory.createSecurityRequirement().addScheme("CookieScheme"))
+        val operation =
+            OASFactory.createOperation()
+                .addSecurityRequirement(OASFactory.createSecurityRequirement().addScheme("CookieScheme"))
 
         // When
         val filtered = filter.filterOperation(operation)

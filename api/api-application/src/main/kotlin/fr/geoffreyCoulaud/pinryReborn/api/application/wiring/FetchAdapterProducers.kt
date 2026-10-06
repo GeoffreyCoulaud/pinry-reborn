@@ -15,9 +15,9 @@ import java.nio.file.Path
 import java.time.Duration
 
 /**
- * CDI wiring for [MediaFetcher] and [PageMediaExtractor] in the composition root: only this module may depend on
- * the fetch adapters. Each download's proxy takes the SSRF address policy from config: the Standard
- * guard by default, or AllowAll when `media.download.allow_private_addresses=true` (trusted networks / tests).
+ * CDI wiring for [MediaFetcher] and [PageMediaExtractor] in the composition root: only this module may depend on the
+ * fetch adapters. Each download's proxy takes the SSRF address policy from config: the Standard guard by default, or
+ * AllowAll when `media.download.allow_private_addresses=true` (trusted networks / tests).
  */
 @ApplicationScoped
 class FetchAdapterProducers {
@@ -29,7 +29,9 @@ class FetchAdapterProducers {
             requestTimeout = config.requestTimeout(),
             maxRedirects = config.maxRedirects(),
             bodyTimeout = config.extractionTimeout(),
-        ) { proxy(config) }
+        ) {
+            proxy(config)
+        }
 
     @Produces
     @ApplicationScoped
@@ -39,7 +41,9 @@ class FetchAdapterProducers {
             maxBytes = media.maxVideoBytes(),
             maxDuration = Duration.ofSeconds(media.maxVideoSeconds()),
             timeout = config.extractionTimeout(),
-        ) { proxy(config) }
+        ) {
+            proxy(config)
+        }
 
     private fun proxy(config: MediaDownloadConfig): GuardingProxy {
         val policy = if (config.allowPrivateAddresses()) AddressPolicy.AllowAll else AddressPolicy.Standard

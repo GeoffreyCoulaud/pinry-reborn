@@ -1,17 +1,16 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.tasks
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class ExponentialBackoffWithJitterTest {
     private val base = Duration.ofSeconds(1)
     private val cap = Duration.ofSeconds(10)
     private val now = Instant.parse("2026-07-08T00:00:00Z")
 
-    private fun policy(random: Double) =
-        ExponentialBackoffWithJitter(base = base, cap = cap, random = { random })
+    private fun policy(random: Double) = ExponentialBackoffWithJitter(base = base, cap = cap, random = { random })
 
     @Test
     fun `Given attempt 1 and full jitter, Then delay is the base window`() {

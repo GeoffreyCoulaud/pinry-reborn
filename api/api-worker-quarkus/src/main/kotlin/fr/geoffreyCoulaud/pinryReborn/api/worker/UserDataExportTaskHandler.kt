@@ -8,9 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 @ApplicationScoped
-class UserDataExportTaskHandler(
-    private val builder: UserDataExportBuilder,
-) : TaskHandler {
+class UserDataExportTaskHandler(private val builder: UserDataExportBuilder) : TaskHandler {
     override val kind = UserDataExportTask.KIND
 
     override fun handle(payload: String, context: TaskContext) =

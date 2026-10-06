@@ -11,17 +11,15 @@ import org.jetbrains.kotlin.psi.psiUtil.isPlain
 import org.jetbrains.kotlin.psi.psiUtil.plainContent
 
 /**
- * Reports a `raw(` call whose argument is not a fragment of [INVENTORY], or is not a plain string
- * literal at all. The reasons in that map are the record the prohibition rests on, and the argument
- * for it is `docs/specs/2026-09-15-raw-sql-audited.md`, section C.
+ * Reports a `raw(` call whose argument is not a fragment of [INVENTORY], or is not a plain string literal at all. The
+ * reasons in that map are the record the prohibition rests on, and the argument for it is
+ * `docs/specs/2026-09-15-raw-sql-audited.md`, section C.
  *
- * This closes one of Ebean's doors to SQL. The others (`sqlQuery`, `sqlUpdate`, `RawSqlBuilder`,
- * `@Sql`) are shut by `ArchitectureKonsistTest`'s confinement of `io.ebean.Database`, which is the
- * other half of the closed-set claim.
+ * This closes one of Ebean's doors to SQL. The others (`sqlQuery`, `sqlUpdate`, `RawSqlBuilder`, `@Sql`) are shut by
+ * `ArchitectureKonsistTest`'s confinement of `io.ebean.Database`, which is the other half of the closed-set claim.
  */
-class RawSqlOutsideInventory(
-    config: Config,
-) : Rule(
+class RawSqlOutsideInventory(config: Config) :
+    Rule(
         config,
         "Production raw SQL is a closed set, and a raw( call outside the inventory carries no reason " +
             "for reaching past the query beans.",
@@ -74,13 +72,13 @@ class RawSqlOutsideInventory(
                 "id > ?" to NO_ORDERED_COMPARISON,
                 "name collate nocase = ?" to
                     "The lookup has to ask what the unique index asks, and that index is " +
-                    "(author_id, name collate nocase). ieq asks something else: " +
-                    "CaseInsensitiveEqualExpression emits lower(col) = ? and binds value.toLowerCase(), " +
-                    "so the column is folded by SQLite and the value by Java. SQLite's lower() is " +
-                    "limited to the English alphabet and Java's is full Unicode, so a row `ete` accented " +
-                    "is found by an upper-case search and not the reverse; toLowerCase() also takes no " +
-                    "locale. And lower(name) is not the indexed expression, so a find-or-create could " +
-                    "miss a row the constraint then refuses.",
+                        "(author_id, name collate nocase). ieq asks something else: " +
+                        "CaseInsensitiveEqualExpression emits lower(col) = ? and binds value.toLowerCase(), " +
+                        "so the column is folded by SQLite and the value by Java. SQLite's lower() is " +
+                        "limited to the English alphabet and Java's is full Unicode, so a row `ete` accented " +
+                        "is found by an upper-case search and not the reverse; toLowerCase() also takes no " +
+                        "locale. And lower(name) is not the indexed expression, so a find-or-create could " +
+                        "miss a row the constraint then refuses.",
                 "((hash_0 >> 48) & 65535) in (?1)" to FRAME_HASH_BAND,
                 "((hash_0 >> 32) & 65535) in (?1)" to FRAME_HASH_BAND,
                 "((hash_0 >> 16) & 65535) in (?1)" to FRAME_HASH_BAND,

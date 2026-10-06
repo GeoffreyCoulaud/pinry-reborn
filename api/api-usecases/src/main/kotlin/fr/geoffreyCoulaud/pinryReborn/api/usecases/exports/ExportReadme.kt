@@ -1,16 +1,15 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 /**
- * Renders the archive's `README.md`: a plain-text explanation of what the export contains, aimed at
- * the end user opening the ZIP rather than at a developer (spec §4).
+ * Renders the archive's `README.md`: a plain-text explanation of what the export contains, aimed at the end user
+ * opening the ZIP rather than at a developer (spec §4).
  *
- * The exclusion list is built **from [ExportManifest.excluded]**, never hand-duplicated, so the text
- * a user reads and `manifest.json`'s own `excluded` array can never disagree.
+ * The exclusion list is built **from [ExportManifest.excluded]**, never hand-duplicated, so the text a user reads and
+ * `manifest.json`'s own `excluded` array can never disagree.
  *
- * Deliberately branch-free: every section is a fixed template, and the only per-manifest content (the
- * exclusion list) is produced with `joinToString`, not a hand-written loop or conditional. `render`
- * itself contains no `if`/`when`, so there is no second branch for the 100%-branch-coverage gate to
- * demand a test for.
+ * Deliberately branch-free: every section is a fixed template, and the only per-manifest content (the exclusion list)
+ * is produced with `joinToString`, not a hand-written loop or conditional. `render` itself contains no `if`/`when`, so
+ * there is no second branch for the 100%-branch-coverage gate to demand a test for.
  */
 internal object ExportReadme {
 
@@ -53,6 +52,7 @@ internal object ExportReadme {
             |
             |$exclusions
             |
-            """.trimMargin()
+            """
+            .trimMargin()
     }
 }

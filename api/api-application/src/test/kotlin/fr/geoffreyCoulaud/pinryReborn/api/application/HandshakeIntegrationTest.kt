@@ -9,23 +9,21 @@ import io.restassured.RestAssured.given
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-/**
- * Numbers no default carries, so a response holding them can only have read the deployment's own
- * configuration.
- */
+/** Numbers no default carries, so a response holding them can only have read the deployment's own configuration. */
 class HandshakeTestProfile : QuarkusTestProfile {
-    override fun getConfigOverrides(): Map<String, String> = mapOf(
-        "media.max_image_bytes" to "$MAX_IMAGE_BYTES",
-        "media.max_video_bytes" to "$MAX_VIDEO_BYTES",
-        "media.max_video_seconds" to "$MAX_VIDEO_SECONDS",
-        "media.max_pixels_per_frame" to "$MAX_PIXELS_PER_FRAME",
-        "media.renditions.tiny" to "$TINY",
-        "media.renditions.small" to "$SMALL",
-        "media.renditions.medium" to "$MEDIUM",
-        "media.renditions.large" to "$LARGE",
-        "imports.max_chunk_bytes" to "$MAX_IMPORT_CHUNK_BYTES",
-        "imports.max_archive_bytes" to "$MAX_IMPORT_ARCHIVE_BYTES",
-    )
+    override fun getConfigOverrides(): Map<String, String> =
+        mapOf(
+            "media.max_image_bytes" to "$MAX_IMAGE_BYTES",
+            "media.max_video_bytes" to "$MAX_VIDEO_BYTES",
+            "media.max_video_seconds" to "$MAX_VIDEO_SECONDS",
+            "media.max_pixels_per_frame" to "$MAX_PIXELS_PER_FRAME",
+            "media.renditions.tiny" to "$TINY",
+            "media.renditions.small" to "$SMALL",
+            "media.renditions.medium" to "$MEDIUM",
+            "media.renditions.large" to "$LARGE",
+            "imports.max_chunk_bytes" to "$MAX_IMPORT_CHUNK_BYTES",
+            "imports.max_archive_bytes" to "$MAX_IMPORT_ARCHIVE_BYTES",
+        )
 
     companion object {
         const val MAX_IMAGE_BYTES = 1_234_567L
@@ -42,8 +40,8 @@ class HandshakeTestProfile : QuarkusTestProfile {
 }
 
 /**
- * The one route a client calls before it has a session: the contract it negotiates on and the
- * deployment's numbers (`docs/specs/2026-09-10-web-application.md`, section 4.3).
+ * The one route a client calls before it has a session: the contract it negotiates on and the deployment's numbers
+ * (`docs/specs/2026-09-10-web-application.md`, section 4.3).
  */
 @QuarkusTest
 @TestProfile(HandshakeTestProfile::class)
@@ -91,21 +89,16 @@ class HandshakeIntegrationTest {
     fun `Given the shipped configuration, Then the handshake answers the contract version it declares`() {
         // Given: the file, not the injected value, so the assertion cannot pass by comparing a
         // number to itself
-        val declared = requireNotNull(ProductionProperties[CONTRACT_VERSION_KEY]) {
-            "$CONTRACT_VERSION_KEY is not declared, and comparing two absent values proves nothing"
-        }
+        val declared =
+            requireNotNull(ProductionProperties[CONTRACT_VERSION_KEY]) {
+                "$CONTRACT_VERSION_KEY is not declared, and comparing two absent values proves nothing"
+            }
 
         // When / Then
         assertEquals(declared, handshake().getString("contractVersion"))
     }
 
-    private fun handshake() = given()
-        .`when`()
-        .get(HANDSHAKE_PATH)
-        .then()
-        .statusCode(HTTP_OK)
-        .extract()
-        .jsonPath()
+    private fun handshake() = given().`when`().get(HANDSHAKE_PATH).then().statusCode(HTTP_OK).extract().jsonPath()
 
     private companion object {
         const val HANDSHAKE_PATH = "/api/v1/handshake"

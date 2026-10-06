@@ -13,9 +13,7 @@ import java.util.UUID
 import java.util.UUID.randomUUID
 
 @ApplicationScoped
-class EbeanPinDuplicateRepository(
-    private val persistor: Persistor,
-) : PinDuplicateRepositoryInterface {
+class EbeanPinDuplicateRepository(private val persistor: Persistor) : PinDuplicateRepositoryInterface {
     override fun deletePending(pinId: UUID) {
         pairsOf(pinId).rejectedAt.isNull.delete()
     }
@@ -33,8 +31,17 @@ class EbeanPinDuplicateRepository(
         val gone = QPinDuplicateModel().or().firstPinId.notIn(pins).secondPinId.notIn(pins).endOr().delete()
         // What a crash between `DeletePinMedia`'s two deletes would leave: a pin with no media is never hashed again.
         val withMedia = QMediaModel().select("pinId").query()
-        return gone + QPinDuplicateModel().rejectedAt.isNull
-            .or().firstPinId.notIn(withMedia).secondPinId.notIn(withMedia).endOr().delete()
+        return gone +
+            QPinDuplicateModel()
+                .rejectedAt
+                .isNull
+                .or()
+                .firstPinId
+                .notIn(withMedia)
+                .secondPinId
+                .notIn(withMedia)
+                .endOr()
+                .delete()
     }
 
     override fun findShownFor(pinId: UUID): Map<UUID, Boolean> =
@@ -45,8 +52,17 @@ class EbeanPinDuplicateRepository(
 
     override fun findPinIdsWithPending(pinIds: Collection<UUID>): Set<UUID> {
         val asked = pinIds.toSet()
-        return QPinDuplicateModel().or().firstPinId.isIn(asked).secondPinId.isIn(asked).endOr()
-            .rejectedAt.isNull.withActivePins().findList()
+        return QPinDuplicateModel()
+            .or()
+            .firstPinId
+            .isIn(asked)
+            .secondPinId
+            .isIn(asked)
+            .endOr()
+            .rejectedAt
+            .isNull
+            .withActivePins()
+            .findList()
             .flatMap { listOf(it.firstPinId, it.secondPinId) }
             .filter { it in asked }
             .toSet()

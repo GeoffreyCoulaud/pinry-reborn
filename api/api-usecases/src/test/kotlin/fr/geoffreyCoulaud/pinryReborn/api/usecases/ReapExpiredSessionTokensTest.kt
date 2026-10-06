@@ -6,9 +6,9 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.Instant
 
 class ReapExpiredSessionTokensTest {
     private val sessionTokenRepository = mockk<SessionTokenRepositoryInterface>()

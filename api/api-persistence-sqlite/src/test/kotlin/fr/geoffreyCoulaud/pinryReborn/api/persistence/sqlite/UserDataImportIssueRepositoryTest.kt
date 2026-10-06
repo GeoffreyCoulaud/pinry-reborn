@@ -11,13 +11,13 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserDa
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserDataImportRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import java.time.Instant
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 class UserDataImportIssueRepositoryTest : RepositoryTest() {
     private val repository = UserDataImportIssueRepository(persistor)
@@ -36,21 +36,22 @@ class UserDataImportIssueRepositoryTest : RepositoryTest() {
                 state = UserDataImportState.RUNNING,
                 requestedAt = requestedAt,
                 lastActivityAt = requestedAt,
-            ),
+            )
         )
 
     private fun issue(
         importId: UUID,
         kind: UserDataImportIssueKind = UserDataImportIssueKind.LINE_MALFORMED,
         line: Int? = 1,
-    ) = UserDataImportIssue(
-        id = randomUUID(),
-        importId = importId,
-        kind = kind,
-        line = line,
-        subject = "pins.jsonl",
-        detail = "Unexpected end of input",
-    )
+    ) =
+        UserDataImportIssue(
+            id = randomUUID(),
+            importId = importId,
+            kind = kind,
+            line = line,
+            subject = "pins.jsonl",
+            detail = "Unexpected end of input",
+        )
 
     @Test
     fun `Given a saved issue, Then it comes back with every field it was given`() {
@@ -71,10 +72,7 @@ class UserDataImportIssueRepositoryTest : RepositoryTest() {
         // Given: an archive-level issue has no line to point at
         val user = createAndSaveUser()
         val userDataImport = createAndSaveImport(user.id)
-        val saved =
-            repository.save(
-                issue(userDataImport.id, line = null).copy(subject = null, detail = null),
-            )
+        val saved = repository.save(issue(userDataImport.id, line = null).copy(subject = null, detail = null))
 
         // When
         val page = repository.findAllForImport(userDataImport.id, cursor = null, pageSize = 10)

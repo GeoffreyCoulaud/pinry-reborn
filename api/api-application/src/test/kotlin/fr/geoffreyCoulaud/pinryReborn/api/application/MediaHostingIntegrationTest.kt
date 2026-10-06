@@ -9,6 +9,11 @@ import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Duration
+import java.util.UUID
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.CoreMatchers.notNullValue
@@ -19,16 +24,11 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Duration
-import java.util.UUID
 
 /**
- * Isolated, writable `media.data_dir` for the whole class run: a fresh UUID-suffixed directory
- * under the module's `build/`, so these tests never touch the production default
- * (`/var/lib/pinry/media`, not writable in CI) and successive local runs never collide.
+ * Isolated, writable `media.data_dir` for the whole class run: a fresh UUID-suffixed directory under the module's
+ * `build/`, so these tests never touch the production default (`/var/lib/pinry/media`, not writable in CI) and
+ * successive local runs never collide.
  */
 class MediaHostingDataDirTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> =
@@ -36,36 +36,33 @@ class MediaHostingDataDirTestProfile : QuarkusTestProfile {
 }
 
 /**
- * End-to-end coverage of the canonical-media-hosting flow through the fully wired app: multipart
- * PUT upload/replace, conditional GET (`ETag`/`If-None-Match`), DELETE, and the interaction with
- * pin permanent deletion. This is what validates the spec's flagged risk -- a real multipart PUT,
- * routed by RESTEasy Reactive through `@RestForm`/`FileUpload`, exercised for real against a
- * running app (not a controller unit test).
+ * End-to-end coverage of the canonical-media-hosting flow through the fully wired app: multipart PUT upload/replace,
+ * conditional GET (`ETag`/`If-None-Match`), DELETE, and the interaction with pin permanent deletion. This is what
+ * validates the spec's flagged risk -- a real multipart PUT, routed by RESTEasy Reactive through
+ * `@RestForm`/`FileUpload`, exercised for real against a running app (not a controller unit test).
  */
 @QuarkusTest
 @TestProfile(MediaHostingDataDirTestProfile::class)
 class MediaHostingIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var mediaRepository: MediaRepositoryInterface
+    @Inject lateinit var mediaRepository: MediaRepositoryInterface
 
-    @Inject
-    lateinit var mediaConfig: MediaConfig
+    @Inject lateinit var mediaConfig: MediaConfig
 
     private fun fixture(name: String) = File("src/test/resources/fixtures/$name")
 
     private fun createPinForNewUser(): Pair<AuthenticatedUser, UUID> {
         val auth = createAuthenticatedUser()
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Image hosting test pin",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Image hosting test pin",
+                tags = emptyList(),
+            )
         return auth to pin.id
     }
 
@@ -78,27 +75,31 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(201)
             .body("url", equalTo("/api/v1/pins/$pinId/media"))
 
         // Then: GET returns the image with an ETag
-        val etag = given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
-            .then()
-            .statusCode(200)
-            .contentType("image/png")
-            .header("ETag", matchesPattern("\"[0-9a-f]{64}\""))
-            .extract()
-            .header("ETag")
+        val etag =
+            given()
+                .authenticatedAs(auth)
+                .`when`()
+                .get("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(200)
+                .contentType("image/png")
+                .header("ETag", matchesPattern("\"[0-9a-f]{64}\""))
+                .extract()
+                .header("ETag")
 
         // Then: re-GET with a matching If-None-Match returns 304
         given()
             .authenticatedAs(auth)
             .header("If-None-Match", etag)
-            .`when`().get("/api/v1/pins/$pinId/media")
+            .`when`()
+            .get("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(304)
     }
@@ -111,35 +112,40 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(201)
 
         // Then: no Range serves the whole original and advertises ranges
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
+            .`when`()
+            .get("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(200)
             .header("Accept-Ranges", "bytes")
 
         // Then: the first ten bytes
-        val slice = given()
-            .authenticatedAs(auth)
-            .header("Range", "bytes=0-9")
-            .`when`().get("/api/v1/pins/$pinId/media")
-            .then()
-            .statusCode(206)
-            .header("Content-Range", "bytes 0-9/${bytes.size}")
-            .extract()
-            .asByteArray()
+        val slice =
+            given()
+                .authenticatedAs(auth)
+                .header("Range", "bytes=0-9")
+                .`when`()
+                .get("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(206)
+                .header("Content-Range", "bytes 0-9/${bytes.size}")
+                .extract()
+                .asByteArray()
         assertArrayEquals(bytes.copyOfRange(0, 10), slice)
 
         // Then: a start at the size is past the end
         given()
             .authenticatedAs(auth)
             .header("Range", "bytes=${bytes.size}-")
-            .`when`().get("/api/v1/pins/$pinId/media")
+            .`when`()
+            .get("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(416)
             .header("Content-Range", "bytes */${bytes.size}")
@@ -152,22 +158,26 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(201)
-        val originalEtag = given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
-            .then()
-            .statusCode(200)
-            .extract()
-            .header("ETag")
+        val originalEtag =
+            given()
+                .authenticatedAs(auth)
+                .`when`()
+                .get("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(200)
+                .extract()
+                .header("ETag")
 
         // When: replace with a different image
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("sample.jpg"), "image/jpeg")
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(200)
             .body("url", equalTo("/api/v1/pins/$pinId/media"))
@@ -175,7 +185,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         // Then: GET reflects the replaced image
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
+            .`when`()
+            .get("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(200)
             .contentType("image/jpeg")
@@ -193,7 +204,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(intruder)
             .multiPart("file", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(403)
     }
@@ -207,7 +219,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("not-an-image.txt"), "text/plain")
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(422)
     }
@@ -221,7 +234,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("other", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(400)
             .body("code", equalTo("VALIDATION_ERROR"))
@@ -233,11 +247,7 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         val (auth, pinId) = createPinForNewUser()
 
         // When / Then
-        given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
-            .then()
-            .statusCode(404)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/$pinId/media").then().statusCode(404)
     }
 
     @Test
@@ -247,23 +257,16 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(201)
 
         // When
-        given()
-            .authenticatedAs(auth)
-            .`when`().delete("/api/v1/pins/$pinId/media")
-            .then()
-            .statusCode(204)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/pins/$pinId/media").then().statusCode(204)
 
         // Then
-        given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
-            .then()
-            .statusCode(404)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/$pinId/media").then().statusCode(404)
     }
 
     @Test
@@ -273,7 +276,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(201)
         val media = requireNotNull(mediaRepository.findByPinId(pinId)) { "image should exist right after upload" }
@@ -282,11 +286,7 @@ class MediaHostingIntegrationTest : IntegrationTest() {
 
         // When: soft-delete then empty the recycle bin (permanent delete)
         given().authenticatedAs(auth).delete("/api/v1/pins/$pinId").then().statusCode(204)
-        given()
-            .authenticatedAs(auth)
-            .`when`().delete("/api/v1/pins/recycled")
-            .then()
-            .statusCode(204)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/pins/recycled").then().statusCode(204)
 
         // Then: the stored file is gone
         assertFalse(Files.exists(storedPath), "image file should be removed from disk after permanent delete")
@@ -295,12 +295,13 @@ class MediaHostingIntegrationTest : IntegrationTest() {
     @Test
     fun `Given each accepted video, Then the upload answers 201 and the original is served with its codecs`() {
         // Given: each fixture and the container its codecs choose (decision L1)
-        val containers = mapOf(
-            "h264-aac.mkv" to "video/mp4",
-            "h265-hev1-aac.mov" to "video/mp4",
-            "vp9-opus.webm" to "video/webm",
-            "av1.mp4" to "video/webm",
-        )
+        val containers =
+            mapOf(
+                "h264-aac.mkv" to "video/mp4",
+                "h265-hev1-aac.mov" to "video/mp4",
+                "vp9-opus.webm" to "video/webm",
+                "av1.mp4" to "video/webm",
+            )
         for ((name, container) in containers) {
             val (auth, pinId) = createPinForNewUser()
 
@@ -308,14 +309,16 @@ class MediaHostingIntegrationTest : IntegrationTest() {
             given()
                 .authenticatedAs(auth)
                 .multiPart("file", videoFixture(name), "application/octet-stream")
-                .`when`().put("/api/v1/pins/$pinId/media")
+                .`when`()
+                .put("/api/v1/pins/$pinId/media")
                 .then()
                 .statusCode(201)
 
             // Then
             given()
                 .authenticatedAs(auth)
-                .`when`().get("/api/v1/pins/$pinId/media")
+                .`when`()
+                .get("/api/v1/pins/$pinId/media")
                 .then()
                 .statusCode(200)
                 .header("Content-Type", matchesPattern("$container; codecs=\"[^\"]+\""))
@@ -325,11 +328,12 @@ class MediaHostingIntegrationTest : IntegrationTest() {
     @Test
     fun `Given a video or a format the server refuses, Then the upload answers its refusal code`() {
         // Given: AC-3 audio, 121 seconds, and an AVIF libvips reads and ffprobe finds a single frame in
-        val refusals = mapOf(
-            "h264-ac3.mkv" to (415 to "MEDIA_CODEC_UNSUPPORTED"),
-            "too-long.mkv" to (422 to "MEDIA_TOO_LONG"),
-            "still.avif" to (415 to "MEDIA_CODEC_UNSUPPORTED"),
-        )
+        val refusals =
+            mapOf(
+                "h264-ac3.mkv" to (415 to "MEDIA_CODEC_UNSUPPORTED"),
+                "too-long.mkv" to (422 to "MEDIA_TOO_LONG"),
+                "still.avif" to (415 to "MEDIA_CODEC_UNSUPPORTED"),
+            )
         for ((name, refusal) in refusals) {
             val (auth, pinId) = createPinForNewUser()
 
@@ -337,7 +341,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
             given()
                 .authenticatedAs(auth)
                 .multiPart("file", videoFixture(name), "application/octet-stream")
-                .`when`().put("/api/v1/pins/$pinId/media")
+                .`when`()
+                .put("/api/v1/pins/$pinId/media")
                 .then()
                 .statusCode(refusal.first)
                 .body("code", equalTo(refusal.second))
@@ -347,11 +352,12 @@ class MediaHostingIntegrationTest : IntegrationTest() {
     @Test
     fun `Given a still, an animated GIF and a video, Then each stored media carries its kind, frames and duration`() {
         // Given: what each file holds, the video's as ffprobe counts and reads it
-        val expected = mapOf(
-            fixture("sample.png") to Triple(Media.StillImage::class, 1, null),
-            fixture("animated.gif") to Triple(Media.AnimatedImage::class, 3, null),
-            videoFixture("vp9-opus.webm") to Triple(Media.Video::class, 10, Duration.ofMillis(1_008)),
-        )
+        val expected =
+            mapOf(
+                fixture("sample.png") to Triple(Media.StillImage::class, 1, null),
+                fixture("animated.gif") to Triple(Media.AnimatedImage::class, 3, null),
+                videoFixture("vp9-opus.webm") to Triple(Media.Video::class, 10, Duration.ofMillis(1_008)),
+            )
         for ((file, want) in expected) {
             val (auth, pinId) = createPinForNewUser()
 
@@ -359,7 +365,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
             given()
                 .authenticatedAs(auth)
                 .multiPart("file", file, "application/octet-stream")
-                .`when`().put("/api/v1/pins/$pinId/media")
+                .`when`()
+                .put("/api/v1/pins/$pinId/media")
                 .then()
                 .statusCode(201)
 
@@ -372,12 +379,13 @@ class MediaHostingIntegrationTest : IntegrationTest() {
     @Test
     fun `Given videos with and without sound and a GIF, Then each stored media carries its rates and channels`() {
         // Given: each track's packet bits as ffprobe sums them over the file's duration, then the channels
-        val expected = mapOf(
-            videoFixture("h264-aac-stereo.mp4") to listOf(11_652 * 8 / 1.0, 2.0, 16_347 * 8 / 1.0),
-            videoFixture("vp9-opus.webm") to listOf(10_013 * 8 / 1.008, 1.0, 9_276 * 8 / 1.008),
-            videoFixture("vp9.webm") to listOf(10_013 * 8 / 1.0, null, null),
-            fixture("animated.gif") to listOf(null, null, null),
-        )
+        val expected =
+            mapOf(
+                videoFixture("h264-aac-stereo.mp4") to listOf(11_652 * 8 / 1.0, 2.0, 16_347 * 8 / 1.0),
+                videoFixture("vp9-opus.webm") to listOf(10_013 * 8 / 1.008, 1.0, 9_276 * 8 / 1.008),
+                videoFixture("vp9.webm") to listOf(10_013 * 8 / 1.0, null, null),
+                fixture("animated.gif") to listOf(null, null, null),
+            )
         for ((file, tracks) in expected) {
             val (auth, pinId) = createPinForNewUser()
 
@@ -385,7 +393,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
             given()
                 .authenticatedAs(auth)
                 .multiPart("file", file, "application/octet-stream")
-                .`when`().put("/api/v1/pins/$pinId/media")
+                .`when`()
+                .put("/api/v1/pins/$pinId/media")
                 .then()
                 .statusCode(201)
 

@@ -1,13 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.worker
 
 import io.smallrye.config.WithDefault
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.io.File
 
 /**
- * The twin of [ImportDataDirectoryMediaTest], and it exists because this lot made the export half
- * behave like the import one: [ExportDataDirectoryCheck] now creates and probes at boot.
+ * The twin of [ImportDataDirectoryMediaTest], and it exists because this lot made the export half behave like the
+ * import one: [ExportDataDirectoryCheck] now creates and probes at boot.
  */
 class ExportDataDirectoryMediaTest {
     private val dockerfile = File("../Dockerfile").readText()
@@ -15,11 +15,7 @@ class ExportDataDirectoryMediaTest {
     private val runtimeUsers = USER_INSTRUCTION.findAll(dockerfile).map { it.groupValues[1] }.toList()
 
     private val ownedDirectories =
-        CHOWN_CALL
-            .findAll(dockerfile)
-            .filter { it.groupValues[1] in runtimeUsers }
-            .map { it.groupValues[2] }
-            .toList()
+        CHOWN_CALL.findAll(dockerfile).filter { it.groupValues[1] in runtimeUsers }.map { it.groupValues[2] }.toList()
 
     @Test
     fun `Given the export data directory's default, Then the image provides it to the user it runs as`() {

@@ -4,9 +4,8 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * Size and media type travel in the representation, not only in the download headers, so a client
- * can announce e.g. "3.2 GB ZIP archive" before the user commits to downloading it (spec
- * `docs/specs/2026-07-22-user-data-export.md` §7).
+ * Size and media type travel in the representation, not only in the download headers, so a client can announce e.g.
+ * "3.2 GB ZIP archive" before the user commits to downloading it (spec `docs/specs/2026-07-22-user-data-export.md` §7).
  */
 data class UserDataExportOutputDto(
     val id: UUID,

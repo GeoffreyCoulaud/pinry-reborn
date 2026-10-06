@@ -19,28 +19,30 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.quarkus.security.identity.SecurityIdentity
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 class PinControllerTest {
     private val pinCreator = mockk<PinCreator>()
     private val pinGetter = mockk<PinGetter>()
     private val securityIdentity = mockk<SecurityIdentity>()
     // The real assembler over a stubbed resolver: the responses under assertion are the mapped ones.
-    private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
-        every { it.statesFor(any()) } returns emptyMap()
-    }
+    private val resolvePinMediaState =
+        mockk<ResolvePinMediaState>().also {
+            every { it.statesFor(any()) } returns emptyMap()
+        }
     private val pinDuplicates = mockk<PinDuplicates>().also { every { it.pendingAmong(any()) } returns emptySet() }
-    private val controller = PinController(
-        pinCreator = pinCreator,
-        pinGetter = pinGetter,
-        pinRecycleBin = mockk(),
-        pinUpdater = mockk(),
-        securityIdentity = securityIdentity,
-        pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
-    )
+    private val controller =
+        PinController(
+            pinCreator = pinCreator,
+            pinGetter = pinGetter,
+            pinRecycleBin = mockk(),
+            pinUpdater = mockk(),
+            securityIdentity = securityIdentity,
+            pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
+        )
 
     /** Creates a pin through the controller and answers what the created pin actually carries. */
     private fun createPinWith(
@@ -57,24 +59,26 @@ class PinControllerTest {
                 description = any(),
                 tags = any(),
             )
-        } answers {
-            Pin(
-                id = randomUUID(),
-                author = user,
-                sourceContextUrl = arg(1),
-                sourceMediaUrl = arg(2),
-                description = arg(3),
-                tags = emptyList(),
-                boards = emptyList(),
-                createdAt = TestTime.now,
-                updatedAt = TestTime.now,
+        } answers
+            {
+                Pin(
+                    id = randomUUID(),
+                    author = user,
+                    sourceContextUrl = arg(1),
+                    sourceMediaUrl = arg(2),
+                    description = arg(3),
+                    tags = emptyList(),
+                    boards = emptyList(),
+                    createdAt = TestTime.now,
+                    updatedAt = TestTime.now,
+                )
+            }
+        val dto =
+            PinCreationInputDto(
+                sourceContextUrl = sourceContextUrl,
+                sourceMediaUrl = sourceMediaUrl,
+                description = createRandomString(),
             )
-        }
-        val dto = PinCreationInputDto(
-            sourceContextUrl = sourceContextUrl,
-            sourceMediaUrl = sourceMediaUrl,
-            description = createRandomString(),
-        )
 
         return controller.createPin(dto).entity
     }
@@ -151,11 +155,12 @@ class PinControllerTest {
         } returns page
 
         // When
-        val response = controller.listPins(
-            cursorInput = cursorInput,
-            pageSizeInput = pageSizeInput,
-            sortInput = sortInput,
-        )
+        val response =
+            controller.listPins(
+                cursorInput = cursorInput,
+                pageSizeInput = pageSizeInput,
+                sortInput = sortInput,
+            )
 
         // Then
         assertEquals(200, response.status)

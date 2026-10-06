@@ -37,11 +37,20 @@ class UserDataExportDownloaderTest : BaseTest() {
         byteSize: Long? = 100L,
         sha256: String? = "abc123",
         completedAt: Instant? = now,
-    ) = UserDataExport(
-        id = exportId, userId = user.id, state = state, formatVersion = 1, requestedAt = now,
-        storageKey = storageKey, mediaType = mediaType, fileExtension = fileExtension,
-        byteSize = byteSize, sha256 = sha256, completedAt = completedAt,
-    )
+    ) =
+        UserDataExport(
+            id = exportId,
+            userId = user.id,
+            state = state,
+            formatVersion = 1,
+            requestedAt = now,
+            storageKey = storageKey,
+            mediaType = mediaType,
+            fileExtension = fileExtension,
+            byteSize = byteSize,
+            sha256 = sha256,
+            completedAt = completedAt,
+        )
 
     @Test
     fun `Given a pending export, Then downloading it throws ExportNotReadyError`() {
@@ -73,8 +82,7 @@ class UserDataExportDownloaderTest : BaseTest() {
     @Test
     fun `Given a ready export missing its storage key, Then downloading throws ExportNotReadyError`() {
         // Given
-        every { getter.get(user, exportId) } returns
-            exportWith(state = UserDataExportState.READY, storageKey = null)
+        every { getter.get(user, exportId) } returns exportWith(state = UserDataExportState.READY, storageKey = null)
 
         // When / Then
         assertThrows(ExportNotReadyError::class.java) { downloader.open(user, exportId, 0) }

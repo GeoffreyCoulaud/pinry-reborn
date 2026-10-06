@@ -20,11 +20,11 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID.randomUUID
 
 class RequestPinMediaDownloadTest {
     private val pins: PinRepositoryInterface = mockk()
@@ -43,12 +43,35 @@ class RequestPinMediaDownloadTest {
         every { runner.inTransaction<MediaDownload>(any()) } answers { firstArg<() -> MediaDownload>().invoke() }
     }
 
-    private fun pin(author: User = owner) = Pin(pinId, author, "https://ctx", null, "d", emptyList(), emptyList(),
-        createdAt = TestTime.now, updatedAt = TestTime.now)
-    private fun aTask(id: java.util.UUID) = Task(
-        id, PinDownloadTask.KIND, pinId.toString(), TaskState.PENDING, 0, now, 0, 5, null, null, false,
-        "${PinDownloadTask.KIND}:$pinId", null,
-    )
+    private fun pin(author: User = owner) =
+        Pin(
+            pinId,
+            author,
+            "https://ctx",
+            null,
+            "d",
+            emptyList(),
+            emptyList(),
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
+
+    private fun aTask(id: java.util.UUID) =
+        Task(
+            id,
+            PinDownloadTask.KIND,
+            pinId.toString(),
+            TaskState.PENDING,
+            0,
+            now,
+            0,
+            5,
+            null,
+            null,
+            false,
+            "${PinDownloadTask.KIND}:$pinId",
+            null,
+        )
 
     @Test
     fun `Given a missing pin, Then it throws MediaPinDoesNotExistError`() {
@@ -101,7 +124,9 @@ class RequestPinMediaDownloadTest {
         every { enqueue.enqueue(any(), any(), any(), any(), any(), any()) } returns aTask(taskId)
         every { downloads.upsertPending(pinId, "https://x/i.png", taskId, now) } returns
             MediaDownload(pinId, "https://x/i.png", DownloadStatus.PENDING, null, null, taskId, now, now)
-        val kindSlot = slot<String>(); val payloadSlot = slot<String>(); val dedupSlot = slot<String?>()
+        val kindSlot = slot<String>()
+        val payloadSlot = slot<String>()
+        val dedupSlot = slot<String?>()
         every {
             enqueue.enqueue(capture(kindSlot), capture(payloadSlot), any(), any(), any(), captureNullable(dedupSlot))
         } returns aTask(taskId)

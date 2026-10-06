@@ -12,21 +12,19 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 /**
- * Deletes a user data export on request (spec `docs/specs/2026-07-22-user-data-export.md` §6):
- * owner-checked through [UserDataExportGetter], then one fenced write of `DELETED` over any state
- * that is not already `isGone`, the release taken from the state that write replaced. A row already
- * gone keeps the state that says why, and the bytes it still names are released again, that replay
- * being the fast repair for a first attempt whose release failed after its write landed; the export
- * sweep's third pass is the guaranteed one.
+ * Deletes a user data export on request (spec `docs/specs/2026-07-22-user-data-export.md` §6): owner-checked through
+ * [UserDataExportGetter], then one fenced write of `DELETED` over any state that is not already `isGone`, the release
+ * taken from the state that write replaced. A row already gone keeps the state that says why, and the bytes it still
+ * names are released again, that replay being the fast repair for a first attempt whose release failed after its write
+ * landed; the export sweep's third pass is the guaranteed one.
  *
- * Only the `READY` arm propagates a storage failure, because that delete is the user's own
- * operation. The other two are residue cleanup and best-effort (`docs/adr/0003`, decision 1): the
- * `PENDING` arm releases the key a build derives, which is where a promote whose transaction rolled
- * back left its bytes (`docs/adr/0017`, decision 2).
+ * Only the `READY` arm propagates a storage failure, because that delete is the user's own operation. The other two are
+ * residue cleanup and best-effort (`docs/adr/0003`, decision 1): the `PENDING` arm releases the key a build derives,
+ * which is where a promote whose transaction rolled back left its bytes (`docs/adr/0017`, decision 2).
  *
- * [CancelTask.cancel]'s `Boolean` result is deliberately ignored: whether the task was still
- * cancellable or had already settled, the export is being deleted either way, so branching on it
- * would create a side with no observable difference and no way to test it.
+ * [CancelTask.cancel]'s `Boolean` result is deliberately ignored: whether the task was still cancellable or had already
+ * settled, the export is being deleted either way, so branching on it would create a side with no observable difference
+ * and no way to test it.
  */
 @ApplicationScoped
 @Suppress("UnsafeCallOnNullableType")
@@ -46,8 +44,8 @@ class UserDataExportDeleter(
     }
 
     /**
-     * The release taken from the state the write replaced: the state read before the fence may be one
-     * state old, and each arm releases what only that state's owner is not holding.
+     * The release taken from the state the write replaced: the state read before the fence may be one state old, and
+     * each arm releases what only that state's owner is not holding.
      */
     private fun release(deleted: UserDataExport) {
         when (deleted.state) {
@@ -71,8 +69,8 @@ class UserDataExportDeleter(
     }
 
     /**
-     * Decided on the copy read before the fence, whose key no path here clears: a gone row still names
-     * the bytes a first release lost. Best-effort, the sweep's third pass being the guaranteed repair.
+     * Decided on the copy read before the fence, whose key no path here clears: a gone row still names the bytes a
+     * first release lost. Best-effort, the sweep's third pass being the guaranteed repair.
      */
     private fun releaseStranded(found: UserDataExport) {
         if (!found.state.isGone) return
@@ -84,8 +82,8 @@ class UserDataExportDeleter(
         ExportArchiveKey.forExport(exportId, archiveStore.format.fileExtension)
 
     /**
-     * The state alone, on the row as it is now, answering the row it wrote over: a build advances this
-     * row while the request runs, and one already gone keeps the state that says why.
+     * The state alone, on the row as it is now, answering the row it wrote over: a build advances this row while the
+     * request runs, and one already gone keeps the state that says why.
      */
     private fun markDeleted(exportId: UUID): UserDataExport? =
         repository.saveFencedOver(transactionRunner, exportId, { !it.state.isGone }) {

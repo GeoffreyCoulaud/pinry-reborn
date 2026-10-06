@@ -1,14 +1,14 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.io.File
 
 /**
- * Nothing else holds these keys: the producer loads them from this file, and no integration test can read
- * production's copy of it (`docs/adr/0012-one-datasource-declaration-and-one-transaction-seam.md`).
- * A missing one fails silently (migrations that never run, a pool above one connection) or, for the
- * credentials, loudly at a boot no test performed until the image smoke check.
+ * Nothing else holds these keys: the producer loads them from this file, and no integration test can read production's
+ * copy of it (`docs/adr/0012-one-datasource-declaration-and-one-transaction-seam.md`). A missing one fails silently
+ * (migrations that never run, a pool above one connection) or, for the credentials, loudly at a boot no test performed
+ * until the image smoke check.
  */
 class ProductionDatasourceDeclarationTest {
     private val requiredKeys =

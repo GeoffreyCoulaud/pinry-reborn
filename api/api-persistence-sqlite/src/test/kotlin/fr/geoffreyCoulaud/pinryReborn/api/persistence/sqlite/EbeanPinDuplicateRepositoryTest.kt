@@ -10,12 +10,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanP
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     private val repository = EbeanPinDuplicateRepository(persistor)
@@ -25,8 +25,14 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
         QPinDuplicateModel().findList().map { setOf(it.firstPinId, it.secondPinId) to (it.rejectedAt != null) }.toSet()
 
     private fun reject(first: UUID, second: UUID) {
-        QPinDuplicateModel().firstPinId.isIn(first, second).secondPinId.isIn(first, second)
-            .asUpdate().set("rejectedAt", storableNow()).update()
+        QPinDuplicateModel()
+            .firstPinId
+            .isIn(first, second)
+            .secondPinId
+            .isIn(first, second)
+            .asUpdate()
+            .set("rejectedAt", storableNow())
+            .update()
     }
 
     private val pins = PinRepository(persistor)
@@ -35,21 +41,29 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     private fun storedPins(count: Int, recycled: Int = 0): List<Pin> {
         val user =
             UserRepository(persistor).saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
-        val stored = List(count) {
-            pins.savePin(
-                Pin(
-                    randomUUID(), user, null, null, "", emptyList(), emptyList(),
-                    createdAt = storableNow(), updatedAt = storableNow(),
-                ),
-            )
-        }
+        val stored =
+            List(count) {
+                pins.savePin(
+                    Pin(
+                        randomUUID(),
+                        user,
+                        null,
+                        null,
+                        "",
+                        emptyList(),
+                        emptyList(),
+                        createdAt = storableNow(),
+                        updatedAt = storableNow(),
+                    )
+                )
+            }
         stored.takeLast(recycled).forEach { pins.softDeletePin(it, storableNow()) }
         return stored
     }
 
     private fun withMedia(pin: Pin) {
         EbeanMediaRepository(persistor, transactionRunner)
-            .save(Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1,"", "originals/x", storableNow()))
+            .save(Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1, "", "originals/x", storableNow()))
     }
 
     @Test
@@ -126,8 +140,8 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
         // Given: a gone pin on either side, since its id sorts first or second; two pins with no media
         val (stored, recycled) = storedPins(2, recycled = 1).onEach(::withMedia)
         val (emptied, emptiedRejected) = storedPins(2)
-        val (goneLow, goneHigh) = listOf("00000000-0000-0000-0000-000000000000", "ffffffff-ffff-ffff-ffff-ffffffffffff")
-            .map(UUID::fromString)
+        val (goneLow, goneHigh) =
+            listOf("00000000-0000-0000-0000-000000000000", "ffffffff-ffff-ffff-ffff-ffffffffffff").map(UUID::fromString)
         repository.addMissing(stored.id, listOf(recycled.id, goneLow, goneHigh, emptied.id, emptiedRejected.id))
         reject(stored.id, emptiedRejected.id)
 

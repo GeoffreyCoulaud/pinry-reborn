@@ -15,27 +15,29 @@ import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import java.math.BigInteger
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.math.BigInteger
 
 class OversizeBodyRefusalTest {
     private val objectMapper = ObjectMapper()
     private val refusal = OversizeBodyRefusal(objectMapper, MemorySize(BigInteger.valueOf(LIMIT)))
 
     private val connection = mockk<HttpConnection>(relaxed = true)
-    private val response = mockk<HttpServerResponse> {
-        every { setStatusCode(any()) } returns this
-        every { putHeader(any<CharSequence>(), any<CharSequence>()) } returns this
-        every { endHandler(any()) } returns this
-        every { end(any<String>()) } returns mockk()
-    }
+    private val response =
+        mockk<HttpServerResponse> {
+            every { setStatusCode(any()) } returns this
+            every { putHeader(any<CharSequence>(), any<CharSequence>()) } returns this
+            every { endHandler(any()) } returns this
+            every { end(any<String>()) } returns mockk()
+        }
 
     private fun context(contentLength: String?): RoutingContext {
-        val request = mockk<HttpServerRequest> {
-            every { getHeader(HttpHeaders.CONTENT_LENGTH) } returns contentLength
-            every { connection() } returns connection
-        }
+        val request =
+            mockk<HttpServerRequest> {
+                every { getHeader(HttpHeaders.CONTENT_LENGTH) } returns contentLength
+                every { connection() } returns connection
+            }
         return mockk(relaxed = true) {
             every { normalizedPath() } returns PATH
             every { request() } returns request

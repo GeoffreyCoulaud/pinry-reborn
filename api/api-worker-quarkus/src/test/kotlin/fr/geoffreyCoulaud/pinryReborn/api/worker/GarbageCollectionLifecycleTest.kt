@@ -11,9 +11,9 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.quarkus.runtime.ShutdownEvent
 import io.quarkus.runtime.StartupEvent
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import org.junit.jupiter.api.Test
 
 class GarbageCollectionLifecycleTest {
     private val reapExpiredSessionTokens = mockk<ReapExpiredSessionTokens>(relaxed = true)
@@ -25,16 +25,17 @@ class GarbageCollectionLifecycleTest {
     private val executor = mockk<PeriodicScheduler>(relaxed = true)
     private val config = mockk<GarbageCollectionConfig>()
 
-    private fun lifecycle() = GarbageCollectionLifecycle(
-        reapExpiredSessionTokens = reapExpiredSessionTokens,
-        reapOrphanedStorage = reapOrphanedStorage,
-        reapTombstonedAccounts = reapTombstonedAccounts,
-        reapTerminalTasks = reapTerminalTasks,
-        reapStaleMediaDownloads = reapStaleMediaDownloads,
-        reapFingerprints = reapFingerprints,
-        executor = executor,
-        config = config,
-    )
+    private fun lifecycle() =
+        GarbageCollectionLifecycle(
+            reapExpiredSessionTokens = reapExpiredSessionTokens,
+            reapOrphanedStorage = reapOrphanedStorage,
+            reapTombstonedAccounts = reapTombstonedAccounts,
+            reapTerminalTasks = reapTerminalTasks,
+            reapStaleMediaDownloads = reapStaleMediaDownloads,
+            reapFingerprints = reapFingerprints,
+            executor = executor,
+            config = config,
+        )
 
     @Test
     fun `Given startup, Then it runs every sweep once and schedules safeAll on the garbage collection executor`() {

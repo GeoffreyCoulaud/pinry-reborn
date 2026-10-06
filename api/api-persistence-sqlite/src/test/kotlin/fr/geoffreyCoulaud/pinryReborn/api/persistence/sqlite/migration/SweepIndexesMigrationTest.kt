@@ -6,21 +6,20 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * The indexes a hot query depends on, pinned in the current schema (`MigrationDirectory.currentIndexes`) so a
- * later migration dropping one fails here.
+ * The indexes a hot query depends on, pinned in the current schema (`MigrationDirectory.currentIndexes`) so a later
+ * migration dropping one fails here.
  *
- * Two of them serve the periodic garbage collection cutoff sweeps, which filter on columns that accumulate
- * with activity, so the spec (`docs/specs/2026-07-27-periodic-gc.md` section 11) requires supporting indexes
- * to keep each sweep a targeted scan rather than O(n) over a growing table. The third serves the task queue's
- * claim query (`docs/specs/2026-08-13-persistence-p2-debt.md` section 3.3).
+ * Two of them serve the periodic garbage collection cutoff sweeps, which filter on columns that accumulate with
+ * activity, so the spec (`docs/specs/2026-07-27-periodic-gc.md` section 11) requires supporting indexes to keep each
+ * sweep a targeted scan rather than O(n) over a growing table. The third serves the task queue's claim query
+ * (`docs/specs/2026-08-13-persistence-p2-debt.md` section 3.3).
  *
- * `media_download` is exempt, on the pattern section 11 uses for `users`: the fifth sweep is itself
- * what bounds that table, so its reads scan one grace of failures rather than a column that grows.
- * Revisit if the table is ever seen to accumulate.
+ * `media_download` is exempt, on the pattern section 11 uses for `users`: the fifth sweep is itself what bounds that
+ * table, so its reads scan one grace of failures rather than a column that grows. Revisit if the table is ever seen to
+ * accumulate.
  *
- * The assertion is form-independent: it ignores which Ebean annotation produced the index and the
- * generated index name, and checks only that some migration declares an index spanning the expected
- * table and column set.
+ * The assertion is form-independent: it ignores which Ebean annotation produced the index and the generated index name,
+ * and checks only that some migration declares an index spanning the expected table and column set.
  */
 class SweepIndexesMigrationTest {
     private val sessionTokenExpiresAtIndex =
@@ -93,8 +92,8 @@ class SweepIndexesMigrationTest {
     }
 
     /**
-     * The statements the history leaves in place, not every statement it ever carried: a later migration dropping
-     * one of these indexes has to fail this test, which reading the whole history concatenated cannot do.
+     * The statements the history leaves in place, not every statement it ever carried: a later migration dropping one
+     * of these indexes has to fail this test, which reading the whole history concatenated cannot do.
      */
     private fun readAllMigrations(): String =
         MigrationDirectory.currentIndexes.values.joinToString(separator = "\n") { it.statement }

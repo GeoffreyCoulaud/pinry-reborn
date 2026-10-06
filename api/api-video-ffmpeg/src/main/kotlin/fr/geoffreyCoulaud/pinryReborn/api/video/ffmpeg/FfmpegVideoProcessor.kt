@@ -132,7 +132,8 @@ class FfmpegVideoProcessor(timeout: Duration, maxAddressSpace: Long, private val
         // Before -i, where ffmpeg reads them as input options: after it, an MPEG-TS would pass (ADR 0047, decision 3).
         val DEMUXERS = listOf("-format_whitelist", "mov,matroska", "-protocol_whitelist", "file")
         val PROBE =
-            listOf("ffprobe", "-v", "error") + DEMUXERS +
+            listOf("ffprobe", "-v", "error") +
+                DEMUXERS +
                 listOf("-of", "json", "-show_streams", "-show_format", "-show_data", "-count_packets") +
                 listOf("-show_entries", "packet=stream_index,size", "-i")
         val FFMPEG = listOf("ffmpeg", "-nostdin", "-y", "-v", "error") + DEMUXERS

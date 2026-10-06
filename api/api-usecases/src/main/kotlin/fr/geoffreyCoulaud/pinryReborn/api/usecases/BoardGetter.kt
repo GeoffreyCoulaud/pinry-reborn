@@ -12,17 +12,14 @@ import java.util.UUID
 data class BoardSummary(val pinCount: Int, val coverPinId: UUID?)
 
 @ApplicationScoped
-class BoardGetter(
-    private val boardRepository: BoardRepositoryInterface,
-) {
+class BoardGetter(private val boardRepository: BoardRepositoryInterface) {
     fun getActiveBoardForUser(boardId: UUID, reader: User): Board {
         val board = boardRepository.findActiveBoardById(boardId) ?: throw BoardRetrievalBoardDoesNotExistError()
         if (board.author != reader) throw BoardRetrievalPermissionError()
         return board
     }
 
-    fun listActiveBoardsForUser(reader: User): List<Board> =
-        boardRepository.findActiveBoardsForUser(reader)
+    fun listActiveBoardsForUser(reader: User): List<Board> = boardRepository.findActiveBoardsForUser(reader)
 
     fun summarizeActiveBoardForUser(boardId: UUID, reader: User): BoardSummary {
         getActiveBoardForUser(boardId = boardId, reader = reader)

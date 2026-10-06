@@ -12,9 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QTagMo
 import jakarta.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
-class TagRepository(
-    persistor: Persistor,
-) : TagRepositoryInterface {
+class TagRepository(persistor: Persistor) : TagRepositoryInterface {
     private val sqlRepository = ModelRepository<TagModel>(persistor = persistor)
 
     override fun saveTag(tag: Tag): Tag = sqlRepository.saveAndReturn(tag.toModel()).toDomain()
@@ -26,20 +24,10 @@ class TagRepository(
     override fun findUserTagByName(
         user: User,
         name: String,
-    ): Tag? =
-        QTagModel()
-            .author.id
-            .equalTo(user.id)
-            .raw("name collate nocase = ?", name)
-            .findOne()
-            ?.toDomain()
+    ): Tag? = QTagModel().author.id.equalTo(user.id).raw("name collate nocase = ?", name).findOne()?.toDomain()
 
     override fun findAllTagsForUser(user: User): List<Tag> =
-        QTagModel()
-            .author.id
-            .equalTo(user.id)
-            .findList()
-            .map { it.toDomain() }
+        QTagModel().author.id.equalTo(user.id).findList().map { it.toDomain() }
 
     // `contains` and `startsWith` rather than their case-insensitive twins: a bare LIKE folds A to Z
     // as ix_tags_author_name_nocase does, where `icontains` lowercases the bind in Java and would
@@ -52,29 +40,25 @@ class TagRepository(
         // setMaxRows reads a non-positive bound as no bound, so the refusal is here where every caller passes.
         if (limit <= 0) return emptyList()
 
-        val prefixed = QTagModel()
-            .author.id
-            .equalTo(user.id)
-            .name
-            .startsWith(query)
-            .setMaxRows(limit)
-            .findList()
+        val prefixed = QTagModel().author.id.equalTo(user.id).name.startsWith(query).setMaxRows(limit).findList()
         val remaining = limit - prefixed.size
-        val contained = if (remaining == 0) {
-            emptyList()
-        } else {
-            QTagModel()
-                .author.id
-                .equalTo(user.id)
-                .name
-                .contains(query)
-                .not()
-                .name
-                .startsWith(query)
-                .endNot()
-                .setMaxRows(remaining)
-                .findList()
-        }
+        val contained =
+            if (remaining == 0) {
+                emptyList()
+            } else {
+                QTagModel()
+                    .author
+                    .id
+                    .equalTo(user.id)
+                    .name
+                    .contains(query)
+                    .not()
+                    .name
+                    .startsWith(query)
+                    .endNot()
+                    .setMaxRows(remaining)
+                    .findList()
+            }
         return (prefixed + contained).map { it.toDomain() }
     }
 

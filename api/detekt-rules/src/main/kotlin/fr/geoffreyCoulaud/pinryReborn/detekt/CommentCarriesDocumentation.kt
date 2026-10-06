@@ -1,27 +1,26 @@
 package fr.geoffreyCoulaud.pinryReborn.detekt
 
+import com.intellij.psi.PsiComment
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiWhiteSpace
 import dev.detekt.api.Config
 import dev.detekt.api.Entity
 import dev.detekt.api.Finding
 import dev.detekt.api.Rule
 import dev.detekt.api.config
-import com.intellij.psi.PsiComment
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiWhiteSpace
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.psiUtil.parents
 
 /**
- * Past a few lines a comment has become documentation, which belongs where documentation lives: a spec,
- * an ADR, the backlog or a handoff (`agents/writing.md`). The threshold is deliberately generous, since
- * no rule can judge the reason that justifies a long comment; it catches the prose that has clearly
- * moved in, not the explanation that earns its second line.
+ * Past a few lines a comment has become documentation, which belongs where documentation lives: a spec, an ADR, the
+ * backlog or a handoff (`agents/writing.md`). The threshold is deliberately generous, since no rule can judge the
+ * reason that justifies a long comment; it catches the prose that has clearly moved in, not the explanation that earns
+ * its second line.
  */
-class CommentCarriesDocumentation(
-    config: Config,
-) : Rule(
+class CommentCarriesDocumentation(config: Config) :
+    Rule(
         config,
         "A comment past a few lines is documentation, and documentation belongs in a document.",
     ) {
@@ -47,13 +46,14 @@ class CommentCarriesDocumentation(
                     Entity.from(start, start.signatureAnchor() ?: file),
                     "This comment is $lines lines long, past the $allowedLines allowed. " +
                         "Keep the sentence that says why, and move the rest to the document that owns it.",
-                ),
+                )
             )
         }
     }
 
-    private fun PsiElement.signatureAnchor(): PsiElement? =
-        parents.firstOrNull { it is KtNamedFunction || it is KtClassOrObject }
+    private fun PsiElement.signatureAnchor(): PsiElement? = parents.firstOrNull {
+        it is KtNamedFunction || it is KtClassOrObject
+    }
 
     // Collected by descent rather than by `visitComment`: a KDoc is a PsiComment but accepts the Kotlin
     // visitor, which routes it to visitElement and never to visitComment.
@@ -61,15 +61,14 @@ class CommentCarriesDocumentation(
 
     // Walked child by child rather than through `children`, which skips leaf elements: a line comment
     // and a block comment are leaves, and only a KDoc is composite.
-    private fun PsiElement.descendants(): Sequence<PsiElement> =
-        sequence {
-            var child = firstChild
-            while (child != null) {
-                yield(child)
-                yieldAll(child.descendants())
-                child = child.nextSibling
-            }
+    private fun PsiElement.descendants(): Sequence<PsiElement> = sequence {
+        var child = firstChild
+        while (child != null) {
+            yield(child)
+            yieldAll(child.descendants())
+            child = child.nextSibling
         }
+    }
 
     /** [first] plus every line comment that follows it with nothing but same-line whitespace between. */
     private fun runFrom(first: PsiComment): List<PsiComment> {

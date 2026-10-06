@@ -14,10 +14,6 @@ import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import java.io.File
 import java.net.InetSocketAddress
 import java.nio.file.Files
@@ -25,6 +21,10 @@ import java.util.UUID
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 
 /** A lease far shorter than a slow task, which no other suite can run under. */
 class LeaseRenewalTestProfile : QuarkusTestProfile {
@@ -40,14 +40,11 @@ class LeaseRenewalTestProfile : QuarkusTestProfile {
 @TestProfile(LeaseRenewalTestProfile::class)
 class LeaseRenewalIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var importsConfig: ImportsConfig
+    @Inject lateinit var importsConfig: ImportsConfig
 
-    @Inject
-    lateinit var objectMapper: ObjectMapper
+    @Inject lateinit var objectMapper: ObjectMapper
 
     /** A real store whose archives yield each tag line a beat late. */
     private class SlowTagsArchiveStore(private val store: ImportArchiveStore) : ImportArchiveStore by store {
@@ -78,12 +75,29 @@ class LeaseRenewalIntegrationTest : IntegrationTest() {
 
         // When
         val importId =
-            given().authenticatedAs(auth).`when`().post("/api/v1/me/imports")
-                .then().statusCode(202).extract().jsonPath().getString("id")
-        given().authenticatedAs(auth).contentType("application/octet-stream").body(archive)
-            .`when`().put("/api/v1/me/imports/$importId/archive?offset=0").then().statusCode(200)
-        given().authenticatedAs(auth).`when`().post("/api/v1/me/imports/$importId/archive/complete")
-            .then().statusCode(202)
+            given()
+                .authenticatedAs(auth)
+                .`when`()
+                .post("/api/v1/me/imports")
+                .then()
+                .statusCode(202)
+                .extract()
+                .jsonPath()
+                .getString("id")
+        given()
+            .authenticatedAs(auth)
+            .contentType("application/octet-stream")
+            .body(archive)
+            .`when`()
+            .put("/api/v1/me/imports/$importId/archive?offset=0")
+            .then()
+            .statusCode(200)
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .post("/api/v1/me/imports/$importId/archive/complete")
+            .then()
+            .statusCode(202)
 
         // Then
         assertEquals("COMPLETED", pollImportUntilSettled(importId, auth))
@@ -93,8 +107,15 @@ class LeaseRenewalIntegrationTest : IntegrationTest() {
         var state = "UNKNOWN"
         repeat(POLL_ATTEMPTS) {
             state =
-                given().authenticatedAs(auth).`when`().get("/api/v1/me/imports/$importId")
-                    .then().statusCode(200).extract().jsonPath().getString("state")
+                given()
+                    .authenticatedAs(auth)
+                    .`when`()
+                    .get("/api/v1/me/imports/$importId")
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .jsonPath()
+                    .getString("state")
             if (state != "PENDING" && state != "RUNNING") return state
             Thread.sleep(POLL_INTERVAL_MS)
         }
@@ -106,21 +127,25 @@ class LeaseRenewalIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val pinId =
-            pinCreator.createPin(
-                author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.png",
-                description = "Lease renewal test pin",
-                tags = emptyList(),
-            ).id
+            pinCreator
+                .createPin(
+                    author = auth.user,
+                    sourceContextUrl = "https://example.com",
+                    sourceMediaUrl = "https://example.com/img.png",
+                    description = "Lease renewal test pin",
+                    tags = emptyList(),
+                )
+                .id
 
         // When
         given()
             .authenticatedAs(auth)
             .contentType("application/json")
             .body(mapOf("sourceUrl" to "http://127.0.0.1:$port/slow.png"))
-            .`when`().put("/api/v1/pins/$pinId/media")
-            .then().statusCode(202)
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
+            .then()
+            .statusCode(202)
 
         // Then
         assertEquals("READY", pollUntilSettled(pinId, auth))
@@ -132,9 +157,13 @@ class LeaseRenewalIntegrationTest : IntegrationTest() {
             val status =
                 given()
                     .authenticatedAs(auth)
-                    .`when`().get("/api/v1/pins/$pinId/media/status")
-                    .then().statusCode(200)
-                    .extract().jsonPath().getString("status")
+                    .`when`()
+                    .get("/api/v1/pins/$pinId/media/status")
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .jsonPath()
+                    .getString("status")
             if (status != "PENDING" && status != "NONE") return status
             Thread.sleep(POLL_INTERVAL_MS)
         }
@@ -152,8 +181,7 @@ class LeaseRenewalIntegrationTest : IntegrationTest() {
         private lateinit var originExecutor: ExecutorService
         private val slowFetches = AtomicInteger()
 
-        @Volatile
-        private var port: Int = 0
+        @Volatile private var port: Int = 0
 
         @JvmStatic
         @BeforeAll

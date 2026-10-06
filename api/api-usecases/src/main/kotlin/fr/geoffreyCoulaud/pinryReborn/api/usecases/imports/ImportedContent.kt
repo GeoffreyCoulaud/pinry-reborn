@@ -3,8 +3,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 import java.time.Instant
 
 /**
- * What the importer reads out of a `formatVersion` 2 archive (spec section 4): only the fields it acts
- * on, so an archive identifier never reaches a row. Plain Kotlin, no Jackson: the adapter owns the mapper.
+ * What the importer reads out of a `formatVersion` 2 archive (spec section 4): only the fields it acts on, so an
+ * archive identifier never reaches a row. Plain Kotlin, no Jackson: the adapter owns the mapper.
  */
 
 /** `manifest.json`'s `counts`, read for progress display only and never for a decision. */
@@ -28,8 +28,8 @@ internal data class ImportedBoard(
 internal data class ImportedRef(val name: String)
 
 /**
- * A pin's `media` object. `mimeType` and the dimensions are deliberately absent: the manifest is never
- * trusted for anything with a consequence, and `sha256` is read only to be compared and reported.
+ * A pin's `media` object. `mimeType` and the dimensions are deliberately absent: the manifest is never trusted for
+ * anything with a consequence, and `sha256` is read only to be compared and reported.
  */
 internal data class ImportedMedia(val path: String, val sha256: String)
 

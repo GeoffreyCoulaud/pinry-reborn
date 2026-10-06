@@ -7,14 +7,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanM
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 class EbeanMediaRepositoryTest : RepositoryTest() {
     private val repository = EbeanMediaRepository(persistor, transactionRunner)
@@ -27,17 +27,31 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
     private fun savedPin(user: User = savedUser()): Pin {
         return pinRepository.savePin(
             Pin(
-                randomUUID(), user, "https://ctx", null, "desc", emptyList(), emptyList(),
-                createdAt = storableNow(), updatedAt = storableNow(),
-            ),
+                randomUUID(),
+                user,
+                "https://ctx",
+                null,
+                "desc",
+                emptyList(),
+                emptyList(),
+                createdAt = storableNow(),
+                updatedAt = storableNow(),
+            )
         )
     }
 
-    private fun mediaFor(pinId: UUID, hash: String = "h") = Media.StillImage(
-        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1,
-        byteSize = 1, contentHash = hash, storageKey = "originals/x/$pinId/i.png",
-        createdAt = Instant.parse("2026-07-08T00:00:00Z"),
-    )
+    private fun mediaFor(pinId: UUID, hash: String = "h") =
+        Media.StillImage(
+            id = randomUUID(),
+            pinId = pinId,
+            mimeType = "image/png",
+            width = 1,
+            height = 1,
+            byteSize = 1,
+            contentHash = hash,
+            storageKey = "originals/x/$pinId/i.png",
+            createdAt = Instant.parse("2026-07-08T00:00:00Z"),
+        )
 
     private fun animatedFor(pinId: UUID) =
         mediaFor(pinId).run {
@@ -64,8 +78,19 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
         val video =
             mediaFor(pin.id).run {
                 Media.Video(
-                    id, pinId, "video/mp4", width, height, byteSize, contentHash, storageKey, createdAt, 25,
-                    Duration.ofMillis(1_023), videoBitRate = 8_000, sound = Media.Sound(2, 1_000),
+                    id,
+                    pinId,
+                    "video/mp4",
+                    width,
+                    height,
+                    byteSize,
+                    contentHash,
+                    storageKey,
+                    createdAt,
+                    25,
+                    Duration.ofMillis(1_023),
+                    videoBitRate = 8_000,
+                    sound = Media.Sound(2, 1_000),
                 )
             }
         val saved = repository.save(video)

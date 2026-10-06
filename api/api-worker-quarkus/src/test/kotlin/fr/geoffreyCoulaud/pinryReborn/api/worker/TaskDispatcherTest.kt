@@ -7,11 +7,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.TaskProcessor
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class TaskDispatcherTest {
     private val queue: TaskQueueInterface = mockk()
@@ -22,6 +22,7 @@ class TaskDispatcherTest {
     private val now = Instant.parse("2026-07-08T00:00:00Z")
 
     private fun dispatcher() = TaskDispatcher(queue, processor, executor, clock, config)
+
     private fun claim() = ClaimedTask(randomUUID(), "k", "{}", 1, 3, "l", false)
 
     init {

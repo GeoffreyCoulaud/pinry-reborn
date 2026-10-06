@@ -65,9 +65,10 @@ class RangeHeaderTest {
     @Test
     fun `Given a start past the end of the file, Then it is unsatisfiable`() {
         // Given / When / Then
-        val exception = assertThrows(RangeNotSatisfiableException::class.java) {
-            RangeHeader.parse("bytes=1000-", totalSize)
-        }
+        val exception =
+            assertThrows(RangeNotSatisfiableException::class.java) {
+                RangeHeader.parse("bytes=1000-", totalSize)
+            }
         assertEquals(totalSize, exception.totalSize)
     }
 

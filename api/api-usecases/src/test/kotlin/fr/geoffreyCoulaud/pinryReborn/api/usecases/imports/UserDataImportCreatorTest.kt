@@ -13,12 +13,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
 
 class UserDataImportCreatorTest : BaseTest() {
     private val clock = mockk<Clock>()
@@ -74,12 +74,11 @@ class UserDataImportCreatorTest : BaseTest() {
     }
 
     /**
-     * Fails the test on any read: ADR 0009 decision 2 bars a read that only answers a uniqueness
-     * question, and this import has no second refusal to order ahead of the first.
+     * Fails the test on any read: ADR 0009 decision 2 bars a read that only answers a uniqueness question, and this
+     * import has no second refusal to order ahead of the first.
      */
-    private class WriteOnlyImportRepository(
-        private val outcome: (UserDataImport) -> UserDataImport,
-    ) : UserDataImportRepositoryInterface {
+    private class WriteOnlyImportRepository(private val outcome: (UserDataImport) -> UserDataImport) :
+        UserDataImportRepositoryInterface {
         val saved = mutableListOf<UserDataImport>()
 
         override fun save(userDataImport: UserDataImport): UserDataImport {

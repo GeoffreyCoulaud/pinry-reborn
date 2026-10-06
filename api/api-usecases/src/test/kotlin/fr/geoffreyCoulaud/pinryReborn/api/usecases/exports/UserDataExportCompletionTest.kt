@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * The tail of a build: the promote, the fence publishing it, and the net covering both (spec sections
- * 4.1 and 4.2). Read off the fake store, so the canonical key is what the disk holds afterwards.
+ * The tail of a build: the promote, the fence publishing it, and the net covering both (spec sections 4.1 and 4.2).
+ * Read off the fake store, so the canonical key is what the disk holds afterwards.
  */
 internal class UserDataExportCompletionTest : UserDataExportFakeStoreFixtures() {
 
@@ -131,9 +131,10 @@ internal class UserDataExportCompletionTest : UserDataExportFakeStoreFixtures() 
         fakeArchiveStore.beforeDiscard = { error("the staged file could not be unlinked") }
 
         // When / Then: the failure that reaches the queue is the promote's, not the discard's
-        val thrown = assertThrows(IllegalStateException::class.java) {
-            fakeStoreBuilder.build(exportId, isLastAttempt = true, renewLease = {})
-        }
+        val thrown =
+            assertThrows(IllegalStateException::class.java) {
+                fakeStoreBuilder.build(exportId, isLastAttempt = true, renewLease = {})
+            }
         assertEquals("the archive could not be promoted", thrown.message)
         assertEquals(UserDataExportState.FAILED, stored()?.state)
         assertEquals(UserDataExportFailure.BUILD_FAILED, stored()?.failureCode)

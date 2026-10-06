@@ -10,13 +10,11 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 /**
- * Reads user data imports (spec §6). [get] is where [UserDataImportIssueLister] and
- * [UserDataImportCanceller] send their existence and ownership check, so it exists once.
+ * Reads user data imports (spec §6). [get] is where [UserDataImportIssueLister] and [UserDataImportCanceller] send
+ * their existence and ownership check, so it exists once.
  */
 @ApplicationScoped
-class UserDataImportGetter(
-    private val repository: UserDataImportRepositoryInterface,
-) {
+class UserDataImportGetter(private val repository: UserDataImportRepositoryInterface) {
     fun get(user: User, importId: UUID): UserDataImport = repository.findOwned(user, importId)
 
     /** [pageSize] is clamped as [PinGetter] clamps it: at zero the helper answers a page with no cursor. */

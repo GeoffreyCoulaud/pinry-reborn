@@ -20,13 +20,13 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import java.nio.file.NoSuchFileException
+import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.nio.file.NoSuchFileException
-import java.time.Instant
-import java.util.UUID.randomUUID
 
 class UserDataImportArchiveCompleterTest : BaseTest() {
     private val repository = mockk<UserDataImportRepositoryInterface>()
@@ -34,8 +34,7 @@ class UserDataImportArchiveCompleterTest : BaseTest() {
     private val enqueueTask = mockk<EnqueueTask>()
     private val clock = mockk<Clock>()
     private val transactions = PassthroughTransactionRunner()
-    private val completer =
-        UserDataImportArchiveCompleter(repository, archiveStore, enqueueTask, clock, transactions)
+    private val completer = UserDataImportArchiveCompleter(repository, archiveStore, enqueueTask, clock, transactions)
     private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
     private val stranger = User(id = randomUUID(), name = "mallory", createdAt = TestTime.now)
     private val importId = randomUUID()
@@ -62,29 +61,44 @@ class UserDataImportArchiveCompleterTest : BaseTest() {
 
     private fun importWith(state: UserDataImportState = UserDataImportState.AWAITING_ARCHIVE) =
         UserDataImport(
-            id = importId, userId = user.id, state = state, requestedAt = now, lastActivityAt = now,
+            id = importId,
+            userId = user.id,
+            state = state,
+            requestedAt = now,
+            lastActivityAt = now,
             uploadedBytes = 4096,
         )
 
     private fun aTask() =
         Task(
-            id = randomUUID(), kind = "account.import", payload = importId.toString(), state = TaskState.PENDING,
-            priority = -1, availableAt = now, attempts = 0, maxAttempts = 5, leaseId = null,
-            leaseExpiresAt = null, cancelRequested = false, dedupKey = null, lastError = null,
+            id = randomUUID(),
+            kind = "account.import",
+            payload = importId.toString(),
+            state = TaskState.PENDING,
+            priority = -1,
+            availableAt = now,
+            attempts = 0,
+            maxAttempts = 5,
+            leaseId = null,
+            leaseExpiresAt = null,
+            cancelRequested = false,
+            dedupKey = null,
+            lastError = null,
         )
 
     /** Reads answer the stored row, so every fence sees what the write before it committed. */
     private fun stubStoredRow(stored: UserDataImport = importWith()) {
         row = stored
-        every { repository.findById(importId) } answers {
-            readInTransactions += transactions.current
-            reread(row)
-        }
+        every { repository.findById(importId) } answers
+            {
+                readInTransactions += transactions.current
+                reread(row)
+            }
     }
 
     /**
-     * Another actor landing at a chosen point of the completion: from then on a re-read answers [state],
-     * which is how a concurrent request reaches this use case, by the row rather than by a call.
+     * Another actor landing at a chosen point of the completion: from then on a re-read answers [state], which is how a
+     * concurrent request reaches this use case, by the row rather than by a call.
      */
     private fun landing(state: UserDataImportState, landed: () -> Boolean) {
         reread = { current ->
@@ -99,7 +113,11 @@ class UserDataImportArchiveCompleterTest : BaseTest() {
     private fun cancelWhen(landed: () -> Boolean) = landing(UserDataImportState.CANCELLED, landed)
 
     private fun stubDigest() {
-        every { archiveStore.finishUpload(importId) } answers { digested = true; staged }
+        every { archiveStore.finishUpload(importId) } answers
+            {
+                digested = true
+                staged
+            }
     }
 
     private fun stubPromote() {
@@ -107,10 +125,11 @@ class UserDataImportArchiveCompleterTest : BaseTest() {
     }
 
     private fun stubRowWrites() {
-        every { repository.save(any()) } answers {
-            savedInTransactions += transactions.current
-            firstArg<UserDataImport>().also { saved -> row = saved }
-        }
+        every { repository.save(any()) } answers
+            {
+                savedInTransactions += transactions.current
+                firstArg<UserDataImport>().also { saved -> row = saved }
+            }
     }
 
     private fun stubArchiveDeletion() {
@@ -126,10 +145,11 @@ class UserDataImportArchiveCompleterTest : BaseTest() {
                     maxAttempts = 5,
                     priority = -1,
                 )
-            } answers {
-                enqueuedInTransaction = transactions.current
-                task
-            }
+            } answers
+                {
+                    enqueuedInTransaction = transactions.current
+                    task
+                }
         }
 
     /** Everything a completion that is never interrupted needs. */

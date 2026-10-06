@@ -1,15 +1,15 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.io.File
 
 /**
- * `info.version` is the contract's own number, never the build's, and always a plain release: the
- * weaker assertion, that it carries a value, passes on the document this replaced (`docs/adr/0024`).
+ * `info.version` is the contract's own number, never the build's, and always a plain release: the weaker assertion,
+ * that it carries a value, passes on the document this replaced (`docs/adr/0024`).
  */
 class ContractVersionDeclarationTest {
     private val infoVersionKey = "quarkus.smallrye-openapi.info-version"
@@ -48,18 +48,13 @@ class ContractVersionDeclarationTest {
         )
     }
 
-    private fun publishedContractVersion(): String =
-        PublishedContract.document
-            .path("info")
-            .path("version")
-            .asText()
+    private fun publishedContractVersion(): String = PublishedContract.document.path("info").path("version").asText()
 
     /** The one place the Gradle version is written, which is what `quarkus.application.version` carries. */
     private fun buildVersion(): String =
-        File("../build.gradle.kts")
-            .readLines()
-            .firstNotNullOfOrNull { buildVersionLine.find(it.trim())?.groupValues?.get(1) }
-            ?: error("No `version = \"...\"` line in api/build.gradle.kts")
+        File("../build.gradle.kts").readLines().firstNotNullOfOrNull {
+            buildVersionLine.find(it.trim())?.groupValues?.get(1)
+        } ?: error("No `version = \"...\"` line in api/build.gradle.kts")
 
     private fun readProductionProperties(): Map<String, String> =
         File("src/main/resources/application.properties")

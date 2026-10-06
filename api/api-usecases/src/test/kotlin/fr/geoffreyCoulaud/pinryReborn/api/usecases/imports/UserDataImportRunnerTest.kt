@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * The claim, the archive's refusals and the tag and board walks (spec section 8, steps 1 to 5). The pin
- * walk is [UserDataImportPinWalkTest], split off to keep both under detekt's `LargeClass` threshold.
+ * The claim, the archive's refusals and the tag and board walks (spec section 8, steps 1 to 5). The pin walk is
+ * [UserDataImportPinWalkTest], split off to keep both under detekt's `LargeClass` threshold.
  */
 internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
     @Test
@@ -225,9 +225,15 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         val readIn = mutableListOf<Int?>()
         val writtenIn = mutableListOf<Int?>()
         every { tagRepository.findUserTagByName(user, any()) } answers
-            { readIn += transactions.current; existingTags[secondArg<String>()] }
+            {
+                readIn += transactions.current
+                existingTags[secondArg<String>()]
+            }
         every { tagRepository.saveTag(any()) } answers
-            { writtenIn += transactions.current; firstArg<Tag>().also { tag -> savedTags += tag } }
+            {
+                writtenIn += transactions.current
+                firstArg<Tag>().also { tag -> savedTags += tag }
+            }
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)
@@ -248,8 +254,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
                         TestLine(1, ImportedTag(name = "voyage", createdAt = pastInstant)),
                         TestLine(2, ImportedTag(name = "voyage", createdAt = futureInstant)),
                     ),
-                boards =
-                    listOf(TestLine(1, aBoard("Summer")), TestLine(2, aBoard("Summer", description = "second"))),
+                boards = listOf(TestLine(1, aBoard("Summer")), TestLine(2, aBoard("Summer", description = "second"))),
             )
         stubWalk(source)
         stubTagLookup()
@@ -326,8 +331,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
     fun `Given a name held only by a recycled board, Then it is reported and nothing is created`() {
         // Given: a recycled board holds its name, so the archive's active board cannot take it
         anExistingBoard("Winter", softDeletedAt = pastInstant)
-        val source =
-            FakeArchiveSource(manifest = aManifest(), boards = listOf(TestLine(1, aBoard("Winter"))))
+        val source = FakeArchiveSource(manifest = aManifest(), boards = listOf(TestLine(1, aBoard("Winter"))))
         stubWalk(source)
         stubBoardLookup()
         stubIssues()
@@ -391,20 +395,22 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         stubIssues()
         stubTagLookup()
         stubBoardLookup()
-        every { tagRepository.saveTag(any()) } answers {
-            val tag = firstArg<Tag>()
-            check(tag.name != "taken") { "UNIQUE constraint failed: tags.author_id, tags.name" }
-            savedTags += tag
-            existingTags[tag.name] = tag
-            tag
-        }
-        every { boardRepository.saveBoard(any()) } answers {
-            val board = firstArg<Board>()
-            if (board.name == "Taken") throw BoardNameAlreadyTakenException(IllegalStateException("ix_boards"))
-            savedBoards += board
-            existingBoards[board.name] = board
-            board
-        }
+        every { tagRepository.saveTag(any()) } answers
+            {
+                val tag = firstArg<Tag>()
+                check(tag.name != "taken") { "UNIQUE constraint failed: tags.author_id, tags.name" }
+                savedTags += tag
+                existingTags[tag.name] = tag
+                tag
+            }
+        every { boardRepository.saveBoard(any()) } answers
+            {
+                val board = firstArg<Board>()
+                if (board.name == "Taken") throw BoardNameAlreadyTakenException(IllegalStateException("ix_boards"))
+                savedBoards += board
+                existingBoards[board.name] = board
+                board
+            }
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)
@@ -454,10 +460,11 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         // commits in it. A claim merging the copy read before that window puts RUNNING back under a
         // fresh token, and every downstream fence then reads its own token and lets the walk run on.
         stubRow(anImport(UserDataImportState.PENDING))
-        every { userRepository.findUserById(user.id) } answers {
-            seedRow(rows.getValue(importId).copy(state = UserDataImportState.CANCELLED))
-            user
-        }
+        every { userRepository.findUserById(user.id) } answers
+            {
+                seedRow(rows.getValue(importId).copy(state = UserDataImportState.CANCELLED))
+                user
+            }
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)
@@ -547,8 +554,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         val source =
             FakeArchiveSource(
                 manifest = aManifest(),
-                boards =
-                    listOf(TestLine(1, aBoard("Winter", deletedAt = pastInstant)), TestLine(2, aBoard("Winter"))),
+                boards = listOf(TestLine(1, aBoard("Winter", deletedAt = pastInstant)), TestLine(2, aBoard("Winter"))),
             )
         stubWalk(source)
         stubBoardLookup()

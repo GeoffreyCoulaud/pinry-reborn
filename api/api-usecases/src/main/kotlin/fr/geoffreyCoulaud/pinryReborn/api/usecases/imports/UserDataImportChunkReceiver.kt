@@ -15,8 +15,8 @@ import java.io.InputStream
 import java.util.UUID
 
 /**
- * Appends one chunk of an import archive (spec §6). Deliberately not `@ApplicationScoped`: its two
- * bounds are plain scalars ARC cannot resolve, so `ImportProducers` is the one place it is built.
+ * Appends one chunk of an import archive (spec §6). Deliberately not `@ApplicationScoped`: its two bounds are plain
+ * scalars ARC cannot resolve, so `ImportProducers` is the one place it is built.
  */
 class UserDataImportChunkReceiver(
     private val repository: UserDataImportRepositoryInterface,
@@ -27,8 +27,8 @@ class UserDataImportChunkReceiver(
     private val minimumFreeBytes: Long,
 ) {
     /**
-     * The state is read twice and the second read decides: the chunk streams to disk in between, and a
-     * save of the copy read first would restore `AWAITING_ARCHIVE` over a cancellation, and over no bytes.
+     * The state is read twice and the second read decides: the chunk streams to disk in between, and a save of the copy
+     * read first would restore `AWAITING_ARCHIVE` over a cancellation, and over no bytes.
      */
     fun receive(
         user: User,

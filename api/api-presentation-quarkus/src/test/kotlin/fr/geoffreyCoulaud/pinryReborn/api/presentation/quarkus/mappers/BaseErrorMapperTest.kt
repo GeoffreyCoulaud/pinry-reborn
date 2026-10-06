@@ -15,11 +15,13 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class BaseErrorMapperTest {
-    private val mapper = BaseErrorMapper().apply {
-        uriInfo = mockk<UriInfo>().also {
-            every { it.path } returns "/api/v1/test"
+    private val mapper =
+        BaseErrorMapper().apply {
+            uriInfo =
+                mockk<UriInfo>().also {
+                    every { it.path } returns "/api/v1/test"
+                }
         }
-    }
 
     private fun statusFor(code: ErrorCode): Response.Status {
         val exception = BaseError(message = "boom", code = code)
@@ -30,14 +32,13 @@ class BaseErrorMapperTest {
     @Test
     fun `Given every ErrorCode, Then no two share a wire code but the ones merged on purpose`() {
         // Given: names are free to differ (docs/adr/0042-the-presentation-owns-the-refusal-codes.md, decision 2)
-        val merged = mapOf(
-            ProblemCode.AUTHENTICATION_FAILED to listOf(ErrorCode.USER_DOES_NOT_EXIST, ErrorCode.INVALID_PASSWORD),
-        )
+        val merged =
+            mapOf(
+                ProblemCode.AUTHENTICATION_FAILED to listOf(ErrorCode.USER_DOES_NOT_EXIST, ErrorCode.INVALID_PASSWORD)
+            )
 
         // When
-        val shared = ErrorCode.entries
-            .groupBy { mapper.problemFor(it).first }
-            .filterValues { it.size > 1 }
+        val shared = ErrorCode.entries.groupBy { mapper.problemFor(it).first }.filterValues { it.size > 1 }
 
         // Then
         assertEquals(merged, shared)

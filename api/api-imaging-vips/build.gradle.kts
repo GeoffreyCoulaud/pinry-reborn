@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
 }
+
 dependencies {
     implementation(project(":api-domain"))
     implementation(project(":api-utilities"))

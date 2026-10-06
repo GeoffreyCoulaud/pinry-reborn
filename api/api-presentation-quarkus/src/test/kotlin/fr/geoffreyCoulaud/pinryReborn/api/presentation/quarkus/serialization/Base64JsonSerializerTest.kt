@@ -17,7 +17,7 @@ class Base64JsonSerializerTest {
     fun `Given a null value, Then serialize writes null`() {
         // Given
         val gen = mockk<JsonGenerator>()
-        every { gen.writeNull() } answers { }
+        every { gen.writeNull() } answers {}
 
         // When
         serializer.serialize(null, gen, provider)
@@ -32,7 +32,7 @@ class Base64JsonSerializerTest {
         val gen = mockk<JsonGenerator>()
         val codec = ObjectMapper()
         every { gen.codec } returns codec
-        every { gen.writeString(any<String>()) } answers { }
+        every { gen.writeString(any<String>()) } answers {}
 
         // When
         serializer.serialize(mapOf("key" to "value"), gen, provider)
@@ -46,7 +46,7 @@ class Base64JsonSerializerTest {
         // Given
         val gen = mockk<JsonGenerator>()
         every { gen.codec } returns mockk<ObjectCodec>()
-        every { gen.writeString(any<String>()) } answers { }
+        every { gen.writeString(any<String>()) } answers {}
 
         // When
         serializer.serialize(mapOf("key" to "value"), gen, provider)

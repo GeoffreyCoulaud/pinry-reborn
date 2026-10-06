@@ -30,5 +30,4 @@ class MediaDownloadDoesNotExistError : MediaError("Pin has no media download", E
 class MediaRenditionUnavailableError(cause: Throwable? = null) :
     MediaError("The media has no rendition", ErrorCode.MEDIA_RENDITION_UNAVAILABLE, cause)
 
-class MediaDownloadInProgressError :
-    MediaError("The download is still running", ErrorCode.MEDIA_DOWNLOAD_IN_PROGRESS)
+class MediaDownloadInProgressError : MediaError("The download is still running", ErrorCode.MEDIA_DOWNLOAD_IN_PROGRESS)

@@ -11,26 +11,24 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelPag
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.PinModelSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID.randomUUID
 
 /**
- * Exercises [ModelPaginationHelper] directly (bypassing PinRepository) so every
- * direction / has-more / cursor-presence combination can be driven precisely.
+ * Exercises [ModelPaginationHelper] directly (bypassing PinRepository) so every direction / has-more / cursor-presence
+ * combination can be driven precisely.
  */
 class ModelPaginationHelperTest : RepositoryTest() {
     private val userRepository = UserRepository(persistor)
     private val strategy = PinModelSortStrategy.CreatedAtAsc()
 
     private fun createUser(): User =
-        userRepository.saveUser(
-            User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()),
-        )
+        userRepository.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
 
     private fun baseQueryFor(user: User) = QPinModel().author.id.equalTo(user.id)
 
@@ -38,17 +36,17 @@ class ModelPaginationHelperTest : RepositoryTest() {
         user: User,
         cursor: ModelCursor<PinModel>?,
         pageSize: Int,
-    ) = ModelPaginationHelper.getPage(
-        cursor = cursor,
-        pageSize = pageSize,
-        baseQuery = baseQueryFor(user),
-        sortStrategy = strategy,
-    )
+    ) =
+        ModelPaginationHelper.getPage(
+            cursor = cursor,
+            pageSize = pageSize,
+            baseQuery = baseQueryFor(user),
+            sortStrategy = strategy,
+        )
 
     /**
-     * Persist [count] pins for [user] with strictly increasing creation timestamps (index 0 is the
-     * oldest), so the ordering under test is deterministic rather than dependent on two inserts
-     * landing on different milliseconds.
+     * Persist [count] pins for [user] with strictly increasing creation timestamps (index 0 is the oldest), so the
+     * ordering under test is deterministic rather than dependent on two inserts landing on different milliseconds.
      */
     private fun seedPins(
         user: User,

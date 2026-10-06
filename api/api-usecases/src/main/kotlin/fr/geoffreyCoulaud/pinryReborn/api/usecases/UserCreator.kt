@@ -22,15 +22,14 @@ class UserCreator(
     fun createUserWithPassword(
         name: String,
         password: String,
-    ): User =
-        transactionRunner.inTransaction {
-            val user = saveUser(name)
-            userPasswordRepository.saveUserPasswordHash(
-                user = user,
-                hashedPassword = passwordHasher.hash(password, clock.now()),
-            )
-            user
-        }
+    ): User = transactionRunner.inTransaction {
+        val user = saveUser(name)
+        userPasswordRepository.saveUserPasswordHash(
+            user = user,
+            hashedPassword = passwordHasher.hash(password, clock.now()),
+        )
+        user
+    }
 
     // The index is the sole authority on the name being free, case and tombstones included: no read here.
     private fun saveUser(name: String): User =

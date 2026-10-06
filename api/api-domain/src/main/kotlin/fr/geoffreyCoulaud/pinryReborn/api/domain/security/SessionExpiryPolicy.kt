@@ -4,9 +4,9 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * Pure expiry policy. `expiryFrom` is `now + ttl`; `renewAfterFor` is the recommended soft-renewal
- * instant, `expiresAt - ttl * (1 - renewThreshold)` (renew once renewThreshold of the lifetime has
- * elapsed). Defining renewAfter from expiresAt lets it be recomputed for an already-stored token.
+ * Pure expiry policy. `expiryFrom` is `now + ttl`; `renewAfterFor` is the recommended soft-renewal instant,
+ * `expiresAt - ttl * (1 - renewThreshold)` (renew once renewThreshold of the lifetime has elapsed). Defining renewAfter
+ * from expiresAt lets it be recomputed for an already-stored token.
  */
 class SessionExpiryPolicy(
     private val persistentTtl: Duration,

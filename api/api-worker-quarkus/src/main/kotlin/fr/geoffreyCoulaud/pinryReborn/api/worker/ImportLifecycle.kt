@@ -9,8 +9,8 @@ import jakarta.enterprise.event.Observes
 import java.util.concurrent.TimeUnit
 
 /**
- * Drives the import sweep on startup and then on a fixed delay, as [ExportRetentionLifecycle] does its
- * own. Its [PeriodicScheduler] is `@Dependent`, so this sweep gets a thread of its own (ADR 0004).
+ * Drives the import sweep on startup and then on a fixed delay, as [ExportRetentionLifecycle] does its own. Its
+ * [PeriodicScheduler] is `@Dependent`, so this sweep gets a thread of its own (ADR 0004).
  */
 @ApplicationScoped
 class ImportLifecycle(
@@ -18,13 +18,9 @@ class ImportLifecycle(
     private val sweepScheduler: PeriodicScheduler,
     private val config: ImportsConfig,
 ) {
-    fun onStart(
-        @Observes ignored: StartupEvent,
-    ) = start()
+    fun onStart(@Observes ignored: StartupEvent) = start()
 
-    fun onStop(
-        @Observes ignored: ShutdownEvent,
-    ) = stop()
+    fun onStop(@Observes ignored: ShutdownEvent) = stop()
 
     // safeReap, not reap: the sweep's selections sit outside its per-row net, and a throw there ends the boot.
     fun start() {

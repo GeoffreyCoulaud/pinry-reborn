@@ -17,28 +17,31 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.quarkus.security.identity.SecurityIdentity
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 class PinDuplicateControllerTest {
     private val user = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
-    private val securityIdentity = mockk<SecurityIdentity>().also {
-        every { it.getAttribute<User>("user") } returns user
-    }
+    private val securityIdentity =
+        mockk<SecurityIdentity>().also {
+            every { it.getAttribute<User>("user") } returns user
+        }
     private val pinDuplicates = mockk<PinDuplicates>().also { every { it.pendingAmong(any()) } returns emptySet() }
 
     // The real assembler over stubbed resolvers: the responses under assertion are the mapped ones.
-    private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
-        every { it.statesFor(any()) } returns emptyMap()
-    }
+    private val resolvePinMediaState =
+        mockk<ResolvePinMediaState>().also {
+            every { it.statesFor(any()) } returns emptyMap()
+        }
     private val duplicateResolver = mockk<DuplicateResolver>()
-    private val controller = PinDuplicateController(
-        pinDuplicates = pinDuplicates,
-        duplicateResolver = duplicateResolver,
-        securityIdentity = securityIdentity,
-        pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
-    )
+    private val controller =
+        PinDuplicateController(
+            pinDuplicates = pinDuplicates,
+            duplicateResolver = duplicateResolver,
+            securityIdentity = securityIdentity,
+            pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
+        )
 
     private fun pin() = Pin(randomUUID(), user, null, null, "", emptyList(), emptyList(), TestTime.now, TestTime.now)
 

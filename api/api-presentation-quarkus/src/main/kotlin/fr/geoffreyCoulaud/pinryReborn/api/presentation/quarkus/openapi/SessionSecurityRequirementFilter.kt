@@ -6,8 +6,8 @@ import org.eclipse.microprofile.openapi.OASFilter
 import org.eclipse.microprofile.openapi.models.Operation
 
 /**
- * A protected operation accepts either transport, and SmallRye stamps exactly one scheme name on it,
- * the first of the two declared. This replaces that lone requirement with both, in a fixed order.
+ * A protected operation accepts either transport, and SmallRye stamps exactly one scheme name on it, the first of the
+ * two declared. This replaces that lone requirement with both, in a fixed order.
  */
 @OpenApiFilter(stages = [OpenApiFilter.RunStage.BUILD])
 class SessionSecurityRequirementFilter : OASFilter {

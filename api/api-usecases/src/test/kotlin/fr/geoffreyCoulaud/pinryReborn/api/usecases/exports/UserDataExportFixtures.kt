@@ -34,8 +34,8 @@ import java.util.UUID
 import java.util.UUID.randomUUID
 
 /**
- * A fake [ArchiveSink] recording what was written, with REAL digests: a manifest test must tell a
- * correct manifest from one that lost or mixed up entries. `order` pins the entry writing order.
+ * A fake [ArchiveSink] recording what was written, with REAL digests: a manifest test must tell a correct manifest from
+ * one that lost or mixed up entries. `order` pins the entry writing order.
  */
 internal class RecordingSink : ArchiveSink {
     val text = linkedMapOf<String, String>()
@@ -44,28 +44,32 @@ internal class RecordingSink : ArchiveSink {
     val binary = linkedMapOf<String, ByteArray>()
     val order = mutableListOf<String>()
 
-    override fun putTextEntry(name: String, text: String) = record(name) {
-        this.text[name] = text
-        text.toByteArray()
-    }
+    override fun putTextEntry(name: String, text: String) =
+        record(name) {
+            this.text[name] = text
+            text.toByteArray()
+        }
 
-    override fun putJsonEntry(name: String, value: Any) = record(name) {
-        json[name] = value
-        value.toString().toByteArray()
-    }
+    override fun putJsonEntry(name: String, value: Any) =
+        record(name) {
+            json[name] = value
+            value.toString().toByteArray()
+        }
 
-    override fun putJsonLinesEntry(name: String, values: Sequence<Any>) = record(name) {
-        // The real sink consumes the sequence here too: this is the one and only iteration.
-        val list = values.toList()
-        jsonLines[name] = list
-        list.toString().toByteArray()
-    }
+    override fun putJsonLinesEntry(name: String, values: Sequence<Any>) =
+        record(name) {
+            // The real sink consumes the sequence here too: this is the one and only iteration.
+            val list = values.toList()
+            jsonLines[name] = list
+            list.toString().toByteArray()
+        }
 
-    override fun putBinaryEntry(name: String, bytes: InputStream) = record(name) {
-        val content = bytes.use { it.readBytes() }
-        binary[name] = content
-        content
-    }
+    override fun putBinaryEntry(name: String, bytes: InputStream) =
+        record(name) {
+            val content = bytes.use { it.readBytes() }
+            binary[name] = content
+            content
+        }
 
     private fun record(name: String, write: () -> ByteArray) =
         write().let { bytes ->
@@ -78,8 +82,8 @@ internal class RecordingSink : ArchiveSink {
 }
 
 /**
- * What every export build case reads and writes through, over whichever archive store a sibling
- * supplies: one sibling per store, so an assertion on the other store cannot pass vacuously.
+ * What every export build case reads and writes through, over whichever archive store a sibling supplies: one sibling
+ * per store, so an assertion on the other store cannot pass vacuously.
  */
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a fixture base, as the import suite has.
 internal abstract class UserDataExportFixtures : BaseTest() {
@@ -109,11 +113,23 @@ internal abstract class UserDataExportFixtures : BaseTest() {
     /** The handle the first staging answers with, held apart from the fake's own var, which moves. */
     protected val stagedFile = StagedFile(path = "tmp/staged.zip", byteSize = stagedByteSize, contentHash = stagedHash)
 
-    protected fun builderOver(store: ExportArchiveStore) = UserDataExportBuilder(
-        exportRepository, userRepository, pinRepository, mediaRepository, boardRepository, tagRepository,
-        mediaStore, store, transactions, clock, applicationVersion = "1.2.3", pageSize = pageSize,
-        retention = retention, minimumFreeBytes = minimumFreeBytes,
-    )
+    protected fun builderOver(store: ExportArchiveStore) =
+        UserDataExportBuilder(
+            exportRepository,
+            userRepository,
+            pinRepository,
+            mediaRepository,
+            boardRepository,
+            tagRepository,
+            mediaStore,
+            store,
+            transactions,
+            clock,
+            applicationVersion = "1.2.3",
+            pageSize = pageSize,
+            retention = retention,
+            minimumFreeBytes = minimumFreeBytes,
+        )
 
     /** The rows as the store holds them, so a refusal is read as the row it left rather than as a call. */
     protected val rows = mutableMapOf<UUID, UserDataExport>()
@@ -130,8 +146,11 @@ internal abstract class UserDataExportFixtures : BaseTest() {
 
     protected fun anExport(formatVersion: Int = 1) =
         UserDataExport(
-            id = exportId, userId = userId, state = UserDataExportState.PENDING,
-            formatVersion = formatVersion, requestedAt = now,
+            id = exportId,
+            userId = userId,
+            state = UserDataExportState.PENDING,
+            formatVersion = formatVersion,
+            requestedAt = now,
         )
 
     /** The row as the store holds it now, which is what a refusal is asserted on. */
@@ -143,17 +162,19 @@ internal abstract class UserDataExportFixtures : BaseTest() {
 
     protected fun stubRow(row: UserDataExport = anExport()) {
         seedRow(row)
-        every { exportRepository.findById(any()) } answers {
-            readInTransactions += transactions.current
-            rows[firstArg<UUID>()]?.let(reread)
-        }
+        every { exportRepository.findById(any()) } answers
+            {
+                readInTransactions += transactions.current
+                rows[firstArg<UUID>()]?.let(reread)
+            }
     }
 
     protected fun stubRowWrites() {
-        every { exportRepository.save(any()) } answers {
-            writtenInTransactions += transactions.current
-            firstArg<UserDataExport>().also(beforeWrite).also(::seedRow)
-        }
+        every { exportRepository.save(any()) } answers
+            {
+                writtenInTransactions += transactions.current
+                firstArg<UserDataExport>().also(beforeWrite).also(::seedRow)
+            }
     }
 
     /** The owner's DELETE committing at the next re-read, which is how a cancellation reaches a build. */
@@ -185,21 +206,43 @@ internal abstract class UserDataExportFixtures : BaseTest() {
         softDeletedAt: Instant? = null,
         createdAt: Instant = now,
         updatedAt: Instant = now,
-    ) = Pin(
-        id = id, author = user, sourceContextUrl = "https://example.org/a", sourceMediaUrl = null,
-        description = "desc", tags = tags, boards = emptyList(), softDeletedAt = softDeletedAt,
-        createdAt = createdAt, updatedAt = updatedAt,
-    )
+    ) =
+        Pin(
+            id = id,
+            author = user,
+            sourceContextUrl = "https://example.org/a",
+            sourceMediaUrl = null,
+            description = "desc",
+            tags = tags,
+            boards = emptyList(),
+            softDeletedAt = softDeletedAt,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+        )
 
-    protected fun aMedia(pinId: UUID, id: UUID = randomUUID(), mimeType: String = "image/jpeg") = Media.StillImage(
-        id = id, pinId = pinId, mimeType = mimeType, width = 10, height = 10,
-        byteSize = 3L, contentHash = "content-hash", storageKey = "originals/$id", createdAt = now,
-    )
+    protected fun aMedia(pinId: UUID, id: UUID = randomUUID(), mimeType: String = "image/jpeg") =
+        Media.StillImage(
+            id = id,
+            pinId = pinId,
+            mimeType = mimeType,
+            width = 10,
+            height = 10,
+            byteSize = 3L,
+            contentHash = "content-hash",
+            storageKey = "originals/$id",
+            createdAt = now,
+        )
 
-    protected fun aBoard(id: UUID = randomUUID(), name: String = "board", softDeletedAt: Instant? = null) = Board(
-        id = id, author = user, name = name, description = "d", softDeletedAt = softDeletedAt,
-        createdAt = now, updatedAt = now,
-    )
+    protected fun aBoard(id: UUID = randomUUID(), name: String = "board", softDeletedAt: Instant? = null) =
+        Board(
+            id = id,
+            author = user,
+            name = name,
+            description = "d",
+            softDeletedAt = softDeletedAt,
+            createdAt = now,
+            updatedAt = now,
+        )
 
     /** Stubs a single active-pin page holding exactly [pins]. */
     protected fun stubActivePins(pins: List<Pin>) {

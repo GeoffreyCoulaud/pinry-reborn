@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 /**
- * Spec section 4.1's bounds, restated because the import is a second write path into tables whose only
- * invariants live on REST input DTOs. Each answers null when the field passes, else the reported reason.
+ * Spec section 4.1's bounds, restated because the import is a second write path into tables whose only invariants live
+ * on REST input DTOs. Each answers null when the field passes, else the reported reason.
  */
 object ImportFieldBounds {
     const val MAX_NAME_LENGTH = 200
@@ -34,8 +34,8 @@ object ImportFieldBounds {
         if (count > MAX_REFERENCES) "$field holds more than $MAX_REFERENCES entries" else null
 
     /**
-     * Traversal cannot reach the disk anyway: an entry name is only ever a ZIP lookup key. The check
-     * exists so a malformed archive is reported rather than silently skipped.
+     * Traversal cannot reach the disk anyway: an entry name is only ever a ZIP lookup key. The check exists so a
+     * malformed archive is reported rather than silently skipped.
      */
     fun entryPathFault(path: String): String? =
         when {

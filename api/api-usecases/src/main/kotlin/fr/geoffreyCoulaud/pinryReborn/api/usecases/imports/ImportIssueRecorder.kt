@@ -7,8 +7,8 @@ import java.util.UUID
 import java.util.UUID.randomUUID
 
 /**
- * Writes one import's issue rows under `imports.report_detail_limit` (spec section 9): past it only the
- * row's `issueCount` climbs and [truncated] flips. Seeded from the row, so a retry does not start over.
+ * Writes one import's issue rows under `imports.report_detail_limit` (spec section 9): past it only the row's
+ * `issueCount` climbs and [truncated] flips. Seeded from the row, so a retry does not start over.
  */
 internal class ImportIssueRecorder(
     private val issueRepository: UserDataImportIssueRepositoryInterface,
@@ -36,7 +36,7 @@ internal class ImportIssueRecorder(
                 line = line,
                 subject = subject?.take(TEXT_LIMIT),
                 detail = detail?.take(TEXT_LIMIT),
-            ),
+            )
         )
         stored++
     }

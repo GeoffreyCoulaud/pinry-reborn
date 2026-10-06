@@ -8,22 +8,21 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchFailedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchNotFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaFetcher
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchedMedia
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaFetcher
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchedMedia
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageExtractionException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaExtractor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.TooManyRedirectsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
@@ -31,6 +30,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepos
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
+import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
@@ -124,16 +124,15 @@ class DownloadPinMedia(
         val superseded = mediaRepository.findByPinId(pinId)
         try {
             mediaIngestion.promote(ingested)
-            val swapped =
-                transactionRunner.inTransaction {
-                    if (mediaDownloadRepository.deleteIfPending(pinId) > 0) {
-                        mediaRepository.save(media)
-                        MediaFingerprintTask.enqueueOn(enqueueTask)
-                        true
-                    } else {
-                        false
-                    }
+            val swapped = transactionRunner.inTransaction {
+                if (mediaDownloadRepository.deleteIfPending(pinId) > 0) {
+                    mediaRepository.save(media)
+                    MediaFingerprintTask.enqueueOn(enqueueTask)
+                    true
+                } else {
+                    false
                 }
+            }
             if (swapped) {
                 // Best-effort delete of the superseded file (and eviction of its cached
                 // renditions) on a successful mode-B replace (spec section 8 step 7), mirroring

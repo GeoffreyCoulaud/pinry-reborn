@@ -29,9 +29,9 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.quarkus.security.identity.SecurityIdentity
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 class BoardControllerTest {
     private val boardCreator = mockk<BoardCreator>()
@@ -42,35 +42,50 @@ class BoardControllerTest {
     private val pinBoardSetter = mockk<PinBoardSetter>(relaxed = true)
     private val securityIdentity = mockk<SecurityIdentity>()
     // The real assembler over a stubbed resolver: the responses under assertion are the mapped ones.
-    private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
-        every { it.statesFor(any()) } returns emptyMap()
-    }
+    private val resolvePinMediaState =
+        mockk<ResolvePinMediaState>().also {
+            every { it.statesFor(any()) } returns emptyMap()
+        }
     private val pinDuplicates = mockk<PinDuplicates>().also { every { it.pendingAmong(any()) } returns emptySet() }
     private val pinResponses = PinResponses(resolvePinMediaState, pinDuplicates)
-    private val controller = BoardController(
-        boardCreator = boardCreator,
-        boardGetter = boardGetter,
-        boardUpdater = boardUpdater,
-        boardPinLister = boardPinLister,
-        boardRecycleBin = boardRecycleBin,
-        pinBoardSetter = pinBoardSetter,
-        securityIdentity = securityIdentity,
-        pinResponses = pinResponses,
-    )
+    private val controller =
+        BoardController(
+            boardCreator = boardCreator,
+            boardGetter = boardGetter,
+            boardUpdater = boardUpdater,
+            boardPinLister = boardPinLister,
+            boardRecycleBin = boardRecycleBin,
+            pinBoardSetter = pinBoardSetter,
+            securityIdentity = securityIdentity,
+            pinResponses = pinResponses,
+        )
 
     private fun aUser() = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
 
     private fun aBoard(author: User) =
-        Board(id = randomUUID(), author = author, name = createRandomString(), description = createRandomString(),
-            createdAt = TestTime.now, updatedAt = TestTime.now)
+        Board(
+            id = randomUUID(),
+            author = author,
+            name = createRandomString(),
+            description = createRandomString(),
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
 
     @Test
     fun `Given valid input, Then createBoard returns 201 with Location and a zero pin count`() {
         // Given
         val user = aUser()
         val dto = BoardCreationInputDto(name = createRandomString(), description = createRandomString())
-        val board = Board(id = randomUUID(), author = user, name = dto.name, description = dto.description,
-            createdAt = TestTime.now, updatedAt = TestTime.now)
+        val board =
+            Board(
+                id = randomUUID(),
+                author = user,
+                name = dto.name,
+                description = dto.description,
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardCreator.create(user, dto.name, dto.description, emptyList()) } returns board
         every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(0, null)
@@ -126,10 +141,20 @@ class BoardControllerTest {
         val body = response.entity as BoardListOutputDto
         assertEquals(
             listOf(
-                BoardOutputDto(id = boardA.id, name = boardA.name, description = boardA.description, pinCount = 3,
-                    coverUrl = "/api/v1/pins/$coverPinId/media"),
-                BoardOutputDto(id = boardB.id, name = boardB.name, description = boardB.description, pinCount = 0,
-                    coverUrl = null),
+                BoardOutputDto(
+                    id = boardA.id,
+                    name = boardA.name,
+                    description = boardA.description,
+                    pinCount = 3,
+                    coverUrl = "/api/v1/pins/$coverPinId/media",
+                ),
+                BoardOutputDto(
+                    id = boardB.id,
+                    name = boardB.name,
+                    description = boardB.description,
+                    pinCount = 0,
+                    coverUrl = null,
+                ),
             ),
             body.boards,
         )
@@ -160,8 +185,15 @@ class BoardControllerTest {
         val user = aUser()
         val boardId = randomUUID()
         val dto = BoardInputDto(name = createRandomString(), description = createRandomString())
-        val updated = Board(id = boardId, author = user, name = dto.name, description = dto.description,
-            createdAt = TestTime.now, updatedAt = TestTime.now)
+        val updated =
+            Board(
+                id = boardId,
+                author = user,
+                name = dto.name,
+                description = dto.description,
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         every { securityIdentity.getAttribute<User>("user") } returns user
         every {
             boardUpdater.update(boardId = boardId, name = dto.name, description = dto.description, user = user)
@@ -213,12 +245,13 @@ class BoardControllerTest {
         } returns page
 
         // When
-        val response = controller.listBoardPins(
-            boardId = boardId,
-            cursorInput = null,
-            pageSizeInput = null,
-            sortInput = null,
-        )
+        val response =
+            controller.listBoardPins(
+                boardId = boardId,
+                cursorInput = null,
+                pageSizeInput = null,
+                sortInput = null,
+            )
 
         // Then
         assertEquals(200, response.status)
@@ -248,12 +281,13 @@ class BoardControllerTest {
         } returns page
 
         // When
-        val response = controller.listBoardPins(
-            boardId = boardId,
-            cursorInput = cursorInput,
-            pageSizeInput = pageSizeInput,
-            sortInput = sortInput,
-        )
+        val response =
+            controller.listBoardPins(
+                boardId = boardId,
+                cursorInput = cursorInput,
+                pageSizeInput = pageSizeInput,
+                sortInput = sortInput,
+            )
 
         // Then
         assertEquals(200, response.status)

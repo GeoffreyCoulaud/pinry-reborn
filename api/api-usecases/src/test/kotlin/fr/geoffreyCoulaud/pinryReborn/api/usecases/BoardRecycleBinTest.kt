@@ -16,37 +16,39 @@ import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Instant
-import java.util.UUID.randomUUID
 
 class BoardRecycleBinTest {
     private val boardRepository: BoardRepositoryInterface = mockk()
     private val clock = mockk<Clock>()
     private val transitionInstant = Instant.parse("2026-07-29T08:30:00Z")
-    private val useCase = BoardRecycleBin(
-        boardRepository = boardRepository,
-        clock = clock,
-        transactionRunner = PassthroughTransactionRunner(),
-    )
+    private val useCase =
+        BoardRecycleBin(
+            boardRepository = boardRepository,
+            clock = clock,
+            transactionRunner = PassthroughTransactionRunner(),
+        )
 
     @BeforeEach
     fun stubClock() {
         every { clock.now() } returns transitionInstant
     }
 
-    private fun createBoard(author: User, softDeletedAt: Instant? = null) = Board(
-        id = randomUUID(),
-        author = author,
-        name = createRandomString(),
-        description = createRandomString(),
-        softDeletedAt = softDeletedAt,
-        createdAt = TestTime.now,
-        updatedAt = TestTime.now,
-    )
+    private fun createBoard(author: User, softDeletedAt: Instant? = null) =
+        Board(
+            id = randomUUID(),
+            author = author,
+            name = createRandomString(),
+            description = createRandomString(),
+            softDeletedAt = softDeletedAt,
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
 
     // --- Soft delete ---
 

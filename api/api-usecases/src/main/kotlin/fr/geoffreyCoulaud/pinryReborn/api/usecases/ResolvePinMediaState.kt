@@ -28,8 +28,8 @@ class ResolvePinMediaState(
     }
 
     /**
-     * The state of [pins] keyed by pin id, in two reads whatever the page holds; a pin with neither
-     * image nor download is absent. No permission check: the caller's query was reader-scoped.
+     * The state of [pins] keyed by pin id, in two reads whatever the page holds; a pin with neither image nor download
+     * is absent. No permission check: the caller's query was reader-scoped.
      */
     fun statesFor(pins: Collection<Pin>): Map<UUID, PinMediaState> {
         if (pins.isEmpty()) return emptyMap()

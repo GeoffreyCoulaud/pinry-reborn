@@ -16,14 +16,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.worker.ImportsConfig
 import io.restassured.RestAssured.given
 import io.restassured.response.Response
 import jakarta.inject.Inject
-import org.hamcrest.CoreMatchers.equalTo
-import org.junit.jupiter.api.Assertions.assertEquals
 import java.io.File
 import java.util.UUID
+import org.hamcrest.CoreMatchers.equalTo
+import org.junit.jupiter.api.Assertions.assertEquals
 
 /**
- * `/api/v1/me/imports` end to end (spec `docs/specs/2026-08-14-user-data-import.md` section 13), over the
- * real REST surface, archive store, libvips probe and async worker. The round trip is the point of it.
+ * `/api/v1/me/imports` end to end (spec `docs/specs/2026-08-14-user-data-import.md` section 13), over the real REST
+ * surface, archive store, libvips probe and async worker. The round trip is the point of it.
  */
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: the wire path the import suites share.
 abstract class ImportIntegrationTest : IntegrationTest() {
@@ -52,9 +52,13 @@ abstract class ImportIntegrationTest : IntegrationTest() {
     protected fun openImport(auth: AuthenticatedUser): UUID =
         given()
             .authenticatedAs(auth)
-            .`when`().post("/api/v1/me/imports")
-            .then().statusCode(202)
-            .extract().jsonPath().getString("id")
+            .`when`()
+            .post("/api/v1/me/imports")
+            .then()
+            .statusCode(202)
+            .extract()
+            .jsonPath()
+            .getString("id")
             .let(UUID::fromString)
 
     protected fun uploadChunk(auth: AuthenticatedUser, importId: UUID, bytes: ByteArray, offset: Long): Response =
@@ -62,21 +66,29 @@ abstract class ImportIntegrationTest : IntegrationTest() {
             .authenticatedAs(auth)
             .contentType("application/octet-stream")
             .body(bytes)
-            .`when`().put("/api/v1/me/imports/$importId/archive?offset=$offset")
+            .`when`()
+            .put("/api/v1/me/imports/$importId/archive?offset=$offset")
 
     protected fun completeArchive(auth: AuthenticatedUser, importId: UUID) {
         given()
             .authenticatedAs(auth)
-            .`when`().post("/api/v1/me/imports/$importId/archive/complete")
-            .then().statusCode(202).body("state", equalTo("PENDING"))
+            .`when`()
+            .post("/api/v1/me/imports/$importId/archive/complete")
+            .then()
+            .statusCode(202)
+            .body("state", equalTo("PENDING"))
     }
 
     private fun importState(auth: AuthenticatedUser, importId: UUID): String =
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/me/imports/$importId")
-            .then().statusCode(200)
-            .extract().jsonPath().getString("state")
+            .`when`()
+            .get("/api/v1/me/imports/$importId")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath()
+            .getString("state")
 
     /** Bounded poll until the row stops moving; the last state observed is what the caller asserts. */
     protected fun pollUntilSettled(auth: AuthenticatedUser, importId: UUID): String {
@@ -101,16 +113,23 @@ abstract class ImportIntegrationTest : IntegrationTest() {
     protected fun issueKinds(auth: AuthenticatedUser, importId: UUID): List<String> =
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/me/imports/$importId/issues?pageSize=$ISSUE_PAGE_SIZE")
-            .then().statusCode(200)
-            .extract().jsonPath().getList("issues.kind", String::class.java)
+            .`when`()
+            .get("/api/v1/me/imports/$importId/issues?pageSize=$ISSUE_PAGE_SIZE")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath()
+            .getList("issues.kind", String::class.java)
 
     protected fun counters(auth: AuthenticatedUser, importId: UUID) =
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/me/imports/$importId")
-            .then().statusCode(200)
-            .extract().jsonPath()
+            .`when`()
+            .get("/api/v1/me/imports/$importId")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath()
 
     // --- Seeding ---
 
@@ -120,8 +139,10 @@ abstract class ImportIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture(name), mediaType)
-            .`when`().put("/api/v1/pins/$pinId/media")
-            .then().statusCode(201)
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
+            .then()
+            .statusCode(201)
     }
 
     protected fun createPin(
@@ -129,22 +150,25 @@ abstract class ImportIntegrationTest : IntegrationTest() {
         slug: String,
         tags: List<String> = emptyList(),
         sourceContextUrl: String? = "https://example.test/$slug",
-    ) = pinCreator.createPin(
-        author = auth.user,
-        sourceContextUrl = sourceContextUrl,
-        sourceMediaUrl = "https://example.test/$slug.jpg",
-        description = "Pin $slug",
-        tags = tags,
-    )
+    ) =
+        pinCreator.createPin(
+            author = auth.user,
+            sourceContextUrl = sourceContextUrl,
+            sourceMediaUrl = "https://example.test/$slug.jpg",
+            description = "Pin $slug",
+            tags = tags,
+        )
 
     /** The account's active pins. No case here seeds more than a handful, so one page holds them. */
     protected fun activePinsOf(user: User): List<Pin> =
-        pinRepository.findPinsForUser(
-            reader = user,
-            cursor = null,
-            pageSize = 50,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-        ).items
+        pinRepository
+            .findPinsForUser(
+                reader = user,
+                cursor = null,
+                pageSize = 50,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+            )
+            .items
 
     // --- Fixtures shared by several cases ---
 
@@ -161,8 +185,9 @@ abstract class ImportIntegrationTest : IntegrationTest() {
                     tags = listOf("nature"),
                     mediaPath = "media/only.png",
                     mediaSha256 = ImportArchiveBuilder.sha256(png),
-                ),
-            ).bytes()
+                )
+            )
+            .bytes()
     }
 
     protected companion object {

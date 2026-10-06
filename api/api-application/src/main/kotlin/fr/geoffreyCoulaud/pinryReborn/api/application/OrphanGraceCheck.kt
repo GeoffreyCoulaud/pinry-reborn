@@ -16,9 +16,8 @@ class OrphanGraceCheck(
     private val garbageCollectionConfig: GarbageCollectionConfig,
     private val mediaDownloadConfig: MediaDownloadConfig,
 ) {
-    fun onStart(
-        @Observes ignored: StartupEvent,
-    ) = verify(garbageCollectionConfig.orphanGrace(), mediaDownloadConfig.extractionTimeout())
+    fun onStart(@Observes ignored: StartupEvent) =
+        verify(garbageCollectionConfig.orphanGrace(), mediaDownloadConfig.extractionTimeout())
 
     companion object {
         fun verify(orphanGrace: Duration, extractionTimeout: Duration) =

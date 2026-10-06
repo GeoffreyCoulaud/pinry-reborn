@@ -10,17 +10,15 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Observes
 
 /**
- * Exposes the task queue's current backlog to Prometheus as three gauges, sampled lazily by
- * Micrometer at scrape time (each scrape runs 3 quick `countByState` queries).
+ * Exposes the task queue's current backlog to Prometheus as three gauges, sampled lazily by Micrometer at scrape time
+ * (each scrape runs 3 quick `countByState` queries).
  */
 @ApplicationScoped
 class TaskQueueMetrics(
     private val taskQueue: TaskQueueInterface,
     private val registry: MeterRegistry,
 ) {
-    fun onStart(
-        @Observes ignored: StartupEvent,
-    ) {
+    fun onStart(@Observes ignored: StartupEvent) {
         registerGauge("tasks.pending", "Number of pending tasks", TaskState.PENDING)
         registerGauge("tasks.running", "Number of running tasks", TaskState.RUNNING)
         registerGauge("tasks.dead", "Number of dead tasks", TaskState.DEAD)
@@ -28,9 +26,7 @@ class TaskQueueMetrics(
     }
 
     private fun registerGauge(name: String, description: String, state: TaskState) {
-        Gauge.builder(name, taskQueue) { it.countByState(state).toDouble() }
-            .description(description)
-            .register(registry)
+        Gauge.builder(name, taskQueue) { it.countByState(state).toDouble() }.description(description).register(registry)
     }
 
     private companion object {

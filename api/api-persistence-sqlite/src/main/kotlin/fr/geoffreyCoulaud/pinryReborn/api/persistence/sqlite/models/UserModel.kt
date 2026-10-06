@@ -21,5 +21,4 @@ class UserModel(
     // Written by the mapper from the domain entity, never generated. See AuthoredBaseModel.
     @Column(name = "when_created") var createdAt: Instant,
     override var softDeletedAt: Instant? = null,
-) : BaseModel(id = id),
-    SoftDeletableModel
+) : BaseModel(id = id), SoftDeletableModel

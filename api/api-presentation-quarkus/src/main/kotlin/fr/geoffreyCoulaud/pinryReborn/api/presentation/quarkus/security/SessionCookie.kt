@@ -5,15 +5,15 @@ import java.time.Instant
 import java.util.Date
 
 /**
- * The `pinry_session` cookie. `SameSite=Strict` is what closes CSRF, and it suffices because one
- * reverse proxy puts the web application on the API's own origin (`docs/adr/0026-one-session-two-transports.md`).
+ * The `pinry_session` cookie. `SameSite=Strict` is what closes CSRF, and it suffices because one reverse proxy puts the
+ * web application on the API's own origin (`docs/adr/0026-one-session-two-transports.md`).
  */
 object SessionCookie {
     const val NAME = "pinry_session"
 
     /**
-     * The cookie carrying [token]. A persistent session expires with the token; an ephemeral one
-     * carries no expiry at all, so the browser drops it when it closes.
+     * The cookie carrying [token]. A persistent session expires with the token; an ephemeral one carries no expiry at
+     * all, so the browser drops it when it closes.
      */
     fun issued(token: String, expiresAt: Instant, persistent: Boolean): NewCookie {
         val cookie = attributes().value(token)
@@ -25,9 +25,5 @@ object SessionCookie {
     fun cleared(): NewCookie = attributes().value("").maxAge(0).build()
 
     private fun attributes(): NewCookie.Builder =
-        NewCookie.Builder(NAME)
-            .path("/")
-            .httpOnly(true)
-            .secure(true)
-            .sameSite(NewCookie.SameSite.STRICT)
+        NewCookie.Builder(NAME).path("/").httpOnly(true).secure(true).sameSite(NewCookie.SameSite.STRICT)
 }

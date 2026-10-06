@@ -3,19 +3,18 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 import fr.geoffreyCoulaud.pinryReborn.api.worker.ExportsConfig
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
+import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Duration
 
 /**
- * The two keys the export sweep reads, resolved by the container: an anonymous implementation of
- * the mapping asserts nothing about `@WithDefault`. Default profile, so this joins the instance.
+ * The two keys the export sweep reads, resolved by the container: an anonymous implementation of the mapping asserts
+ * nothing about `@WithDefault`. Default profile, so this joins the instance.
  */
 @QuarkusTest
 class ExportsConfigIntegrationTest {
-    @Inject
-    lateinit var config: ExportsConfig
+    @Inject lateinit var config: ExportsConfig
 
     @Test
     fun `Given no configuration, Then the interrupted grace is the age a build is presumed dead at`() {

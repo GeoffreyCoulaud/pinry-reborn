@@ -26,27 +26,27 @@ import java.util.UUID
 // Partial, so `definition` carries the `where`.
 @Index(
     name = "ux_tasks_dedup",
-    definition = "create unique index ux_tasks_dedup on tasks (dedup_key) " +
-        "where dedup_key is not null and state in ('PENDING','RUNNING')",
+    definition =
+        "create unique index ux_tasks_dedup on tasks (dedup_key) " +
+            "where dedup_key is not null and state in ('PENDING','RUNNING')",
 )
 class TaskModel
-    @Suppress("LongParameterList")
-    constructor(
-        id: UUID,
-        var kind: String,
-        var payload: String,
-        var state: String,
-        var priority: Int,
-        var availableAt: Instant,
-        var attempts: Int,
-        var maxAttempts: Int,
-        var leaseId: String? = null,
-        var leaseExpiresAt: Instant? = null,
-        var cancelRequested: Boolean = false,
-        var dedupKey: String? = null,
-        var lastError: String? = null,
-        var terminalStateAt: Instant? = null,
-    ) : BaseModel(id = id) {
-    @Version
-    var version: Long = 0
+@Suppress("LongParameterList")
+constructor(
+    id: UUID,
+    var kind: String,
+    var payload: String,
+    var state: String,
+    var priority: Int,
+    var availableAt: Instant,
+    var attempts: Int,
+    var maxAttempts: Int,
+    var leaseId: String? = null,
+    var leaseExpiresAt: Instant? = null,
+    var cancelRequested: Boolean = false,
+    var dedupKey: String? = null,
+    var lastError: String? = null,
+    var terminalStateAt: Instant? = null,
+) : BaseModel(id = id) {
+    @Version var version: Long = 0
 }

@@ -31,8 +31,8 @@ class MediaDownloadModel(
     var updatedAt: Instant,
 ) : BaseModel(id) {
     /**
-     * The pin [pinId] names, so a query about it is a join rather than raw SQL. Ebean refuses `@Id`
-     * on an association, which is why this is a second property on the column.
+     * The pin [pinId] names, so a query about it is a join rather than raw SQL. Ebean refuses `@Id` on an association,
+     * which is why this is a second property on the column.
      */
     @ManyToOne
     @DbForeignKey(noIndex = true)

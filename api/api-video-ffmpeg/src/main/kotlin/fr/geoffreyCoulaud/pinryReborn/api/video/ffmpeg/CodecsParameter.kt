@@ -73,9 +73,10 @@ internal object CodecsParameter {
     }
 
     private fun extradataOf(track: JsonNode, minimumSize: Int): ByteArray {
-        val digits = track.path("extradata").asText().lines().joinToString("") { line ->
-            line.substringAfter(": ", "").take(HEXDUMP_WIDTH).replace(" ", "")
-        }
+        val digits =
+            track.path("extradata").asText().lines().joinToString("") { line ->
+                line.substringAfter(": ", "").take(HEXDUMP_WIDTH).replace(" ", "")
+            }
         val bytes = hex.parseHex(digits)
         if (bytes.size < minimumSize) {
             throw UndecodableVideoException("The ${track.path("codec_name").asText()} track carries no configuration")

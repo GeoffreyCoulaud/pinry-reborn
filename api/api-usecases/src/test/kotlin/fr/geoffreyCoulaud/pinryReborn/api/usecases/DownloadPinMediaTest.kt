@@ -13,20 +13,21 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchNotFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchedMedia
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaFetcher
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaFetcher
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaExtractor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.TooManyRedirectsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodec
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoContainer
@@ -34,12 +35,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
+import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
@@ -49,16 +49,16 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertDoesNotThrow
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
 
 class DownloadPinMediaTest {
     private val pins: PinRepositoryInterface = mockk()
@@ -81,9 +81,17 @@ class DownloadPinMediaTest {
 
     private val subject =
         DownloadPinMedia(
-            pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, NoVideoProcessor, imageLimits), fetcher,
-            pageExtractor, runner, clock, renditionCache, enqueueTask,
+            pins,
+            mediaRepository,
+            downloads,
+            store,
+            MediaIngestion(store, probe, NoVideoProcessor, imageLimits),
+            fetcher,
+            pageExtractor,
+            runner,
+            clock,
+            renditionCache,
+            enqueueTask,
         )
 
     init {
@@ -91,15 +99,45 @@ class DownloadPinMediaTest {
         every { renditionCache.evictMedia(any()) } returns Unit
     }
 
-    private fun pendingRow() = MediaDownload(
-        pinId, "https://x/i.png", DownloadStatus.PENDING, null, null, randomUUID(), now, now,
-    )
-    private fun failedRow() = MediaDownload(
-        pinId, "https://x/i.png", DownloadStatus.FAILED, DownloadReason.NOT_FOUND, null, randomUUID(), now, now,
-    )
-    private fun pin() = Pin(pinId, user, "https://ctx", "https://x/i.png", "d", emptyList(), emptyList(),
-        createdAt = TestTime.now, updatedAt = TestTime.now)
+    private fun pendingRow() =
+        MediaDownload(
+            pinId,
+            "https://x/i.png",
+            DownloadStatus.PENDING,
+            null,
+            null,
+            randomUUID(),
+            now,
+            now,
+        )
+
+    private fun failedRow() =
+        MediaDownload(
+            pinId,
+            "https://x/i.png",
+            DownloadStatus.FAILED,
+            DownloadReason.NOT_FOUND,
+            null,
+            randomUUID(),
+            now,
+            now,
+        )
+
+    private fun pin() =
+        Pin(
+            pinId,
+            user,
+            "https://ctx",
+            "https://x/i.png",
+            "d",
+            emptyList(),
+            emptyList(),
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
+
     private fun ctx(attempt: Int = 1, max: Int = 3) = TaskContext(attempt, max)
+
     private fun staged() = StagedFile("tmp/x", 3, "hash")
 
     private fun stubUntilFetch() {
@@ -249,10 +287,14 @@ class DownloadPinMediaTest {
         // Given
         stubUntilStage()
         every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1, 2, 3)), null)
-        every { store.stage(any(), any()) } answers {
-            firstArg<InputStream>().run { read(); readAllBytes() }
-            staged()
-        }
+        every { store.stage(any(), any()) } answers
+            {
+                firstArg<InputStream>().run {
+                    read()
+                    readAllBytes()
+                }
+                staged()
+            }
         every { probe.probe(any()) } throws UndecodableImageException("garbage")
         var renewals = 0
         val context = ctx().apply { renewLeaseIfDue = { renewals++ } }
@@ -271,18 +313,22 @@ class DownloadPinMediaTest {
             // Given
             stubUntilStage()
             var pageClosed = false
-            val page = object : ByteArrayInputStream(byteArrayOf(0)) {
-                override fun close() { pageClosed = true }
-            }
+            val page =
+                object : ByteArrayInputStream(byteArrayOf(0)) {
+                    override fun close() {
+                        pageClosed = true
+                    }
+                }
             val video = byteArrayOf(7, 8, 9)
             every { fetcher.openStream("https://x/i.png") } returns FetchedMedia(page, pageType)
             every { pageExtractor.extract("https://x/i.png", any()) } returns
                 FetchedMedia(ByteArrayInputStream(video), null)
             var stagedBytes = byteArrayOf()
-            every { store.stage(any(), any()) } answers {
-                stagedBytes = firstArg<InputStream>().readAllBytes()
-                staged()
-            }
+            every { store.stage(any(), any()) } answers
+                {
+                    stagedBytes = firstArg<InputStream>().readAllBytes()
+                    staged()
+                }
             every { probe.probe(any()) } throws UndecodableImageException("judged by ingestion")
 
             // When
@@ -312,11 +358,12 @@ class DownloadPinMediaTest {
 
     @Test
     fun `Given a page whose extraction refuses, Then each refusal marks FAILED with its reason and throws Permanent`() {
-        val reasons = mapOf(
-            NoMediaFoundException("no video") to DownloadReason.NO_MEDIA_FOUND,
-            PageMediaTooLongException("121 s") to DownloadReason.TOO_LONG,
-            UrlNotAllowedException("refused by the proxy") to DownloadReason.URL_NOT_ALLOWED,
-        )
+        val reasons =
+            mapOf(
+                NoMediaFoundException("no video") to DownloadReason.NO_MEDIA_FOUND,
+                PageMediaTooLongException("121 s") to DownloadReason.TOO_LONG,
+                UrlNotAllowedException("refused by the proxy") to DownloadReason.URL_NOT_ALLOWED,
+            )
         for ((refusal, reason) in reasons) {
             // Given
             stubUntilStage()
@@ -335,10 +382,11 @@ class DownloadPinMediaTest {
         stubUntilStage()
         every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf()), "text/html")
         val beats = 4
-        every { pageExtractor.extract(any(), any()) } answers {
-            repeat(beats) { secondArg<() -> Unit>().invoke() }
-            throw NoMediaFoundException("no video")
-        }
+        every { pageExtractor.extract(any(), any()) } answers
+            {
+                repeat(beats) { secondArg<() -> Unit>().invoke() }
+                throw NoMediaFoundException("no video")
+            }
         var renewals = 0
         val context = ctx().apply { renewLeaseIfDue = { renewals++ } }
 
@@ -371,23 +419,43 @@ class DownloadPinMediaTest {
     fun `Given a video the processor refuses, Then each refusal marks FAILED with its reason and throws Permanent`() {
         // Given
         val video = mockk<VideoProcessor>()
-        val withVideo = DownloadPinMedia(
-            pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, video, videoLimits), fetcher,
-            pageExtractor, runner, clock, renditionCache, enqueueTask,
-        )
+        val withVideo =
+            DownloadPinMedia(
+                pins,
+                mediaRepository,
+                downloads,
+                store,
+                MediaIngestion(store, probe, video, videoLimits),
+                fetcher,
+                pageExtractor,
+                runner,
+                clock,
+                renditionCache,
+                enqueueTask,
+            )
         stubUntilStage()
         every { probe.probe(any()) } throws UndecodableImageException("not an image")
-        val reasons = mapOf(
-            VideoTooLongException("121 s") to DownloadReason.TOO_LONG,
-            VideoCodecUnsupportedException("ac3") to DownloadReason.UNSUPPORTED_CODEC,
-            UndecodableVideoException("refused by ffmpeg") to DownloadReason.INVALID_MEDIA,
-        )
+        val reasons =
+            mapOf(
+                VideoTooLongException("121 s") to DownloadReason.TOO_LONG,
+                VideoCodecUnsupportedException("ac3") to DownloadReason.UNSUPPORTED_CODEC,
+                UndecodableVideoException("refused by ffmpeg") to DownloadReason.INVALID_MEDIA,
+            )
         for ((refusal, reason) in reasons) {
             every { video.probe(any(), any()) } returns
                 VideoProbeResult(
-                    VideoCodec.H264, null, 2, 2, Duration.ofSeconds(1), frames = 25, bytes = 3, "avc1.640015",
-                    VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 24, sound = null,
+                    VideoCodec.H264,
+                    null,
+                    2,
+                    2,
+                    Duration.ofSeconds(1),
+                    frames = 25,
+                    bytes = 3,
+                    "avc1.640015",
+                    VideoContainer.MP4,
+                    alreadyRepackaged = true,
+                    videoBitRate = 24,
+                    sound = null,
                 )
             every { video.repackage(any(), any()) } throws refusal
             // When / Then
@@ -400,11 +468,20 @@ class DownloadPinMediaTest {
     fun `Given a processor timeout below the attempt limit, Then it records a retryable error`() {
         // Given
         val video = mockk<VideoProcessor>()
-        val withVideo = DownloadPinMedia(
-            pins, mediaRepository, downloads, store,
-            MediaIngestion(store, probe, video, videoLimits), fetcher,
-            pageExtractor, runner, clock, renditionCache, enqueueTask,
-        )
+        val withVideo =
+            DownloadPinMedia(
+                pins,
+                mediaRepository,
+                downloads,
+                store,
+                MediaIngestion(store, probe, video, videoLimits),
+                fetcher,
+                pageExtractor,
+                runner,
+                clock,
+                renditionCache,
+                enqueueTask,
+            )
         stubUntilStage()
         every { probe.probe(any()) } throws UndecodableImageException("not an image")
         every { video.probe(any(), any()) } throws VideoProcessorTimeoutException("ffprobe ran past PT1S")
@@ -529,9 +606,10 @@ class DownloadPinMediaTest {
         every { store.promote(any(), any()) } throws promoteError
         every { store.delete(any()) } throws RuntimeException("cleanup boom")
 
-        val thrown = assertThrows(RuntimeException::class.java) {
-            subject.download(pinId, ctx(attempt = 1, max = 3))
-        }
+        val thrown =
+            assertThrows(RuntimeException::class.java) {
+                subject.download(pinId, ctx(attempt = 1, max = 3))
+            }
 
         // The cleanup exception must not mask the original promote failure; the retry policy
         // records the original cause and rethrows it.
@@ -547,9 +625,10 @@ class DownloadPinMediaTest {
         every { store.promote(any(), any()) } throws promoteError
         every { store.discard(staged()) } throws RuntimeException("discard boom")
 
-        val thrown = assertThrows(RuntimeException::class.java) {
-            subject.download(pinId, ctx(attempt = 1, max = 3))
-        }
+        val thrown =
+            assertThrows(RuntimeException::class.java) {
+                subject.download(pinId, ctx(attempt = 1, max = 3))
+            }
 
         // The staged-temp discard failure must not mask the original promote failure; the retry
         // policy records the original cause and rethrows it.

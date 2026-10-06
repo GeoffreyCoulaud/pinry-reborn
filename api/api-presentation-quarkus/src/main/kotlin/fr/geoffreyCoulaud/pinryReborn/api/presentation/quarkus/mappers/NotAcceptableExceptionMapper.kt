@@ -10,14 +10,14 @@ import jakarta.ws.rs.ext.Provider
 /** A `406`: the route produces none of the `Accept` types. Raised against a declared `@Produces` only. */
 @Provider
 class NotAcceptableExceptionMapper : ExceptionMapper<NotAcceptableException> {
-    @Context
-    lateinit var uriInfo: UriInfo
+    @Context lateinit var uriInfo: UriInfo
 
     override fun toResponse(exception: NotAcceptableException): Response =
         ProblemResponses.problemResponse(
-            Response.Status.NOT_ACCEPTABLE,
-            "The route produces none of the Accept types",
-            ProblemCode.NOT_ACCEPTABLE,
-            uriInfo,
-        ).build()
+                Response.Status.NOT_ACCEPTABLE,
+                "The route produces none of the Accept types",
+                ProblemCode.NOT_ACCEPTABLE,
+                uriInfo,
+            )
+            .build()
 }

@@ -29,19 +29,20 @@ class FingerprintMedia(
 ) {
     /** Newest first, reading again until none is left, so a media saved meanwhile is drained too. */
     fun drain(renewLease: () -> Unit) {
-        generateSequence { mediaRepository.findNewestNotFingerprinted(FINGERPRINT_VERSION) }.forEach { media ->
-            renewLease()
-            val hashes = hashesOf(media, renewLease)
-            // Outside the transaction, so the band lookups never hold the write lock; its own pin is not compared.
-            val duplicates = duplicatesOf(media, hashes)
-            transactionRunner.inTransaction {
-                frameRepository.deleteByMediaId(media.id)
-                duplicateRepository.deletePending(media.pinId)
-                frameRepository.save(media.id, hashes)
-                duplicateRepository.addMissing(media.pinId, duplicates)
-                mediaRepository.markFingerprinted(media.id, FINGERPRINT_VERSION)
+        generateSequence { mediaRepository.findNewestNotFingerprinted(FINGERPRINT_VERSION) }
+            .forEach { media ->
+                renewLease()
+                val hashes = hashesOf(media, renewLease)
+                // Outside the transaction, so the band lookups never hold the write lock; its own pin is not compared.
+                val duplicates = duplicatesOf(media, hashes)
+                transactionRunner.inTransaction {
+                    frameRepository.deleteByMediaId(media.id)
+                    duplicateRepository.deletePending(media.pinId)
+                    frameRepository.save(media.id, hashes)
+                    duplicateRepository.addMissing(media.pinId, duplicates)
+                    mediaRepository.markFingerprinted(media.id, FINGERPRINT_VERSION)
+                }
             }
-        }
     }
 
     // An undecodable media is stamped with no frames, so it never holds the drain back.

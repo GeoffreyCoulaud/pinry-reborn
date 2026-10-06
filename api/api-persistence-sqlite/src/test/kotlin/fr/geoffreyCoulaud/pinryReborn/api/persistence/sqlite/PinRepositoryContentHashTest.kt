@@ -3,16 +3,16 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 /**
- * The import's "do I already hold these bytes?" lookup. A content-addressed key is an oracle on other
- * accounts unless the author is part of the question, which is why the cross-user case is here.
+ * The import's "do I already hold these bytes?" lookup. A content-addressed key is an oracle on other accounts unless
+ * the author is part of the question, which is why the cross-user case is here.
  */
 class PinRepositoryContentHashTest : PinRepositoryFixtures() {
     private val mediaRepository = EbeanMediaRepository(persistor, transactionRunner)
@@ -34,7 +34,7 @@ class PinRepositoryContentHashTest : PinRepositoryFixtures() {
                 contentHash = hash,
                 storageKey = "originals/${pin.id}.png",
                 createdAt = storableNow(),
-            ),
+            )
         )
 
     @Test

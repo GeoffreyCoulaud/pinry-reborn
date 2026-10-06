@@ -13,16 +13,16 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure.UNS
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure.USER_GONE
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveBoundExceededException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveEntryUnreadableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveLine
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveSource
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbeException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTooManyPixelsException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaTooLargeException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -68,8 +68,8 @@ class UserDataImportRunner(
     private val reportDetailLimit: Int,
 ) {
     /**
-     * The `account.import` task's entry point. A row cancelled, swept or finished is left alone, since running it
-     * would resurrect it. [renewLeaseIfDue] is called on every line, so the caller throttles it.
+     * The `account.import` task's entry point. A row cancelled, swept or finished is left alone, since running it would
+     * resurrect it. [renewLeaseIfDue] is called on every line, so the caller throttles it.
      */
     fun run(importId: UUID, isLastAttempt: Boolean, renewLeaseIfDue: () -> Unit) {
         val userDataImport = importRepository.findById(importId)?.takeIf { it.state.isRunnable() } ?: return
@@ -80,8 +80,8 @@ class UserDataImportRunner(
     }
 
     /**
-     * Steps 3 to 8. An unenumerated throw marks the row only on the last attempt, and always rethrows so
-     * the queue counts the attempt; a permanent refusal already marked it, which the fence reads.
+     * Steps 3 to 8. An unenumerated throw marks the row only on the last attempt, and always rethrows so the queue
+     * counts the attempt; a permanent refusal already marked it, which the fence reads.
      */
     @Suppress("TooGenericExceptionCaught", "RethrowCaughtException")
     // Caught as broadly as `UserDataExportBuilder.stageOrFail` does: a row left RUNNING for ever holds
@@ -112,8 +112,8 @@ class UserDataImportRunner(
     }
 
     /**
-     * Step 8. The bytes go once the row is terminal or gone, and stay while it is `RUNNING`: a retry
-     * resumes from the cursor, and a row a second runner has claimed is being read right now.
+     * Step 8. The bytes go once the row is terminal or gone, and stay while it is `RUNNING`: a retry resumes from the
+     * cursor, and a row a second runner has claimed is being read right now.
      */
     private fun releaseArchive(runnable: RunnableImport) {
         val current = importRepository.findById(runnable.importId)
@@ -129,8 +129,8 @@ class UserDataImportRunner(
             ?: markFailed(userDataImport.id, USER_GONE, "the account no longer exists") { it.state.isRunnable() }
 
     /**
-     * Step 2, on the row as it is now: null when it stopped being runnable while the account was looked
-     * up, which a merge of the copy read before that lookup would have restored to RUNNING instead.
+     * Step 2, on the row as it is now: null when it stopped being runnable while the account was looked up, which a
+     * merge of the copy read before that lookup would have restored to RUNNING instead.
      */
     private fun claim(importId: UUID, runToken: UUID): UserDataImport? =
         fenced(importId, { it.state.isRunnable() }) {
@@ -155,13 +155,14 @@ class UserDataImportRunner(
         )
 
     private fun walkArchive(runnable: RunnableImport, user: User, renewLeaseIfDue: () -> Unit) {
-        readingArchive(runnable) { archiveStore.open(runnable.storageKey) }.use { source ->
-            // Read where the central directory already is, so it costs nothing: an archive past the
-            // bound is refused before a walk has created anything, rather than after both of them.
-            val entryNames = readingArchive(runnable) { source.entryNames(maxEntries) }
-            val opened = recordManifest(source, runnable) ?: return
-            walkContent(source, runnable, user, renewLeaseIfDue, recorderFor(opened), entryNames)
-        }
+        readingArchive(runnable) { archiveStore.open(runnable.storageKey) }
+            .use { source ->
+                // Read where the central directory already is, so it costs nothing: an archive past the
+                // bound is refused before a walk has created anything, rather than after both of them.
+                val entryNames = readingArchive(runnable) { source.entryNames(maxEntries) }
+                val opened = recordManifest(source, runnable) ?: return
+                walkContent(source, runnable, user, renewLeaseIfDue, recorderFor(opened), entryNames)
+            }
     }
 
     /** Steps 4 to 6. A walk whose fenced write is refused ends the run there: the row is no longer ours. */
@@ -181,8 +182,8 @@ class UserDataImportRunner(
     }
 
     /**
-     * The fence at every row write the per-pin settlement does not own: re-read inside the transaction,
-     * written only while the row still holds the run, since a blind merge restores state and token.
+     * The fence at every row write the per-pin settlement does not own: re-read inside the transaction, written only
+     * while the row still holds the run, since a blind merge restores state and token.
      */
     private fun advance(runnable: RunnableImport, update: (UserDataImport) -> UserDataImport): UserDataImport? =
         fenced(runnable.importId, { it.holds(runnable.runToken) }, update)
@@ -205,8 +206,8 @@ class UserDataImportRunner(
         )
 
     /**
-     * Every way an archive refuses to be read is the same answer: the bytes will not change, so no
-     * attempt is spent on them. A bound exceeded is not an [IOException], deliberately.
+     * Every way an archive refuses to be read is the same answer: the bytes will not change, so no attempt is spent on
+     * them. A bound exceeded is not an [IOException], deliberately.
      */
     private fun <T> readingArchive(runnable: RunnableImport, read: () -> T): T =
         try {
@@ -287,8 +288,8 @@ class UserDataImportRunner(
     }
 
     /**
-     * `LINE_REJECTED` for a metadata line, as [importPin] has for a pin: a name a concurrent write took
-     * between this walk's read and its own raises against a unique index, and costs its line only.
+     * `LINE_REJECTED` for a metadata line, as [importPin] has for a pin: a name a concurrent write took between this
+     * walk's read and its own raises against a unique index, and costs its line only.
      */
     @Suppress("TooGenericExceptionCaught")
     private fun rejecting(tally: MetadataTally, line: Int, importLine: () -> Unit) {
@@ -364,8 +365,8 @@ class UserDataImportRunner(
         ImportFieldBounds.nameFault(board.name) ?: ImportFieldBounds.descriptionFault(board.description)
 
     /**
-     * A board that already exists is left untouched whatever its state (spec section 8): only a board
-     * this import creates carries the archive's description, timestamps and recycled state.
+     * A board that already exists is left untouched whatever its state (spec section 8): only a board this import
+     * creates carries the archive's description, timestamps and recycled state.
      */
     private fun importNamedBoard(
         user: User,
@@ -399,7 +400,7 @@ class UserDataImportRunner(
                     createdAt = createdAt,
                     updatedAt = clamp.clampUpdate(board.updatedAt, createdAt),
                     softDeletedAt = board.deletedAt?.let { clamp.clamp(it) },
-                ),
+                )
             )
         if (created.softDeletedAt != null) tally.recycled += created.id
         tally.created++
@@ -417,19 +418,21 @@ class UserDataImportRunner(
     }
 
     /**
-     * Step 6, from the cursor. One transaction per line, so an interruption costs at most the pin it was
-     * on, and a refused fence stops the walk rather than letting a second worker write beside the first.
+     * Step 6, from the cursor. One transaction per line, so an interruption costs at most the pin it was on, and a
+     * refused fence stops the walk rather than letting a second worker write beside the first.
      */
     private fun walkPins(walk: PinWalk, current: UserDataImport) {
         val cursor = current.processedPins
         var seen = 0
         var holding = true
         walk.source.readJsonLines(PINS_ENTRY, ImportedPin::class.java) { lines ->
-            lines.takeWhile { holding }.forEach { line ->
-                seen++
-                walk.renewLeaseIfDue()
-                if (seen > cursor) holding = importPin(walk, line)
-            }
+            lines
+                .takeWhile { holding }
+                .forEach { line ->
+                    seen++
+                    walk.renewLeaseIfDue()
+                    if (seen > cursor) holding = importPin(walk, line)
+                }
         }
     }
 
@@ -457,8 +460,8 @@ class UserDataImportRunner(
         }
 
     /**
-     * The bytes land before the row, as `SetPinMedia` does, and a refusal undoes both halves: a promoted
-     * object nothing points at is residue the sweep would have to reclaim.
+     * The bytes land before the row, as `SetPinMedia` does, and a refusal undoes both halves: a promoted object nothing
+     * points at is residue the sweep would have to reclaim.
      */
     @Suppress("TooGenericExceptionCaught")
     private fun promoteAndWrite(walk: PinWalk, line: Int, outcome: PinOutcome, created: CreatedPin): Boolean =
@@ -494,8 +497,8 @@ class UserDataImportRunner(
     }
 
     /**
-     * Names are resolved here, inside the settling transaction. One that resolves to nothing is dropped:
-     * a name the metadata walk refused must not come back through a membership.
+     * Names are resolved here, inside the settling transaction. One that resolves to nothing is dropped: a name the
+     * metadata walk refused must not come back through a membership.
      */
     @Suppress("RowMergedOutsideTransaction")
     // An insert of a row this walk built two frames up, which the rule cannot see from here: it reads
@@ -505,7 +508,7 @@ class UserDataImportRunner(
             created.pin.copy(
                 tags = created.tagNames.mapNotNull { tagRepository.findUserTagByName(walk.user, it) },
                 boards = created.boardNames.mapNotNull { boardRepository.findBoardForUserByName(walk.user, it) },
-            ),
+            )
         )
         mediaRepository.save(created.ingested.media)
     }
@@ -539,15 +542,14 @@ class UserDataImportRunner(
         return when {
             media == null -> reported(UserDataImportIssueKind.PIN_HAS_NO_MEDIA, subjectOf(pin), null)
             fault != null -> reported(UserDataImportIssueKind.ENTRY_PATH_INVALID, media.path, fault)
-            media.path !in walk.entryNames ->
-                reported(UserDataImportIssueKind.MEDIA_ENTRY_MISSING, media.path, null)
+            media.path !in walk.entryNames -> reported(UserDataImportIssueKind.MEDIA_ENTRY_MISSING, media.path, null)
             else -> boundedMedia(walk, pin, media)
         }
     }
 
     /**
-     * Steps 2 to 5. One arm for the byte bound: [MediaIngestion.digest] reads it first, so a refusal from
-     * the staging pass over the same bytes under the same bound is the same answer.
+     * Steps 2 to 5. One arm for the byte bound: [MediaIngestion.digest] reads it first, so a refusal from the staging
+     * pass over the same bytes under the same bound is the same answer.
      */
     private fun boundedMedia(walk: PinWalk, pin: ImportedPin, media: ImportedMedia): PinOutcome =
         try {
@@ -588,8 +590,8 @@ class UserDataImportRunner(
         }
 
     /**
-     * The entry the name set announced. A source that then refuses to open it contradicts itself, which
-     * is the per-line catch-all's business rather than a report of a medium the archive never carried.
+     * The entry the name set announced. A source that then refuses to open it contradicts itself, which is the per-line
+     * catch-all's business rather than a report of a medium the archive never carried.
      */
     private fun entryOf(walk: PinWalk, path: String): InputStream =
         walk.source.openEntry(path) ?: error("the archive refused the entry $path")

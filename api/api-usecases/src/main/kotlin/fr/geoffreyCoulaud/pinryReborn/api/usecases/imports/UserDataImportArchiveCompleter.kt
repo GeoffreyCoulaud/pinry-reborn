@@ -27,8 +27,8 @@ class UserDataImportArchiveCompleter(
     private val transactionRunner: TransactionRunner,
 ) {
     /**
-     * Every write here is fenced: the window before the first is the feature's widest, an fsync and a
-     * digest of up to twenty gigabytes, and a `DELETE` landing in it takes the upload with it.
+     * Every write here is fenced: the window before the first is the feature's widest, an fsync and a digest of up to
+     * twenty gigabytes, and a `DELETE` landing in it takes the upload with it.
      */
     fun complete(user: User, importId: UUID): UserDataImport {
         val userDataImport = repository.findAwaitingArchive(user, importId)
@@ -55,8 +55,8 @@ class UserDataImportArchiveCompleter(
     }
 
     /**
-     * A cancellation writes `CANCELLED` and then unlinks the upload, and nothing re-reads the row
-     * between the fence and the store call: the caller is told now what its next `GET` would say.
+     * A cancellation writes `CANCELLED` and then unlinks the upload, and nothing re-reads the row between the fence and
+     * the store call: the caller is told now what its next `GET` would say.
      */
     private fun <T> onTheUpload(touch: () -> T): T =
         try {
@@ -74,14 +74,11 @@ class UserDataImportArchiveCompleter(
         // holds it, so the read and both writes stay inside the block a reader can see.
         transactionRunner.inTransaction {
             val current =
-                repository.findById(importId)?.takeIf { it.awaitsItsArchive() }
-                    ?: throw ImportNotAwaitingArchiveError()
+                repository.findById(importId)?.takeIf { it.awaitsItsArchive() } ?: throw ImportNotAwaitingArchiveError()
             // The transition before the enqueue: a worker claiming a row still awaiting its archive
             // would return without running it and leave the import to be swept instead.
             val pending =
-                repository.save(
-                    current.copy(state = UserDataImportState.PENDING, archiveCompletedAt = clock.now()),
-                )
+                repository.save(current.copy(state = UserDataImportState.PENDING, archiveCompletedAt = clock.now()))
             repository.save(pending.copy(taskId = enqueued(importId).id))
         }
 

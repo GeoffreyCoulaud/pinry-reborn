@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * The pin walk (spec section 8, step 6 and the per-pin sequence): the fence, the cursor, every issue
- * kind a pin line produces, and the report cap. Split from [UserDataImportRunnerTest] for `LargeClass`.
+ * The pin walk (spec section 8, step 6 and the per-pin sequence): the fence, the cursor, every issue kind a pin line
+ * produces, and the report cap. Split from [UserDataImportRunnerTest] for `LargeClass`.
  */
 internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
     private val secondImportId = randomUUID()
@@ -203,8 +203,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given a per-pin transaction that throws, Then the promoted bytes go and the line is reported`() {
         // Given: the resumption case throws before anything is staged, so this path needs its own case
-        val source =
-            FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
+        val source = FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, aPin())), media = everyMedium)
         stubWalk(source)
         stubDigest()
         stubHashLookup()
@@ -502,8 +501,18 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         every { imageProbe.probe(any()) } throws UndecodableImageException("not an image")
         every { videoProcessor.probe(any(), any()) } returns
             VideoProbeResult(
-                VideoCodec.H264, null, 4, 6, Duration.ofSeconds(1), frames = 25, bytes = 1, "avc1.640015",
-                VideoContainer.MP4, alreadyRepackaged = true, videoBitRate = 8, sound = null,
+                VideoCodec.H264,
+                null,
+                4,
+                6,
+                Duration.ofSeconds(1),
+                frames = 25,
+                bytes = 1,
+                "avc1.640015",
+                VideoContainer.MP4,
+                alreadyRepackaged = true,
+                videoBitRate = 8,
+                sound = null,
             )
 
         // When

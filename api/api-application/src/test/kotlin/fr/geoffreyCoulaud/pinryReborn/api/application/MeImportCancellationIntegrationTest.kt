@@ -9,17 +9,17 @@ import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Duration
+import java.util.UUID
+import kotlin.io.path.exists
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Duration
-import java.util.UUID
-import kotlin.io.path.exists
 
 @QuarkusTest
 @TestProfile(MeImportTestProfile::class)
@@ -60,15 +60,16 @@ class MeImportCancellationIntegrationTest : ImportIntegrationTest() {
         val archivePath = Path.of(importsConfig.dataDir()).resolve(storageKey)
         Files.createDirectories(archivePath.parent)
         Files.write(archivePath, oneGoodPinArchive())
-        val task = enqueueTask.enqueue(
-            kind = UserDataImportTask.KIND,
-            payload = importId.toString(),
-            maxAttempts = UserDataImportTask.MAX_ATTEMPTS,
-            delay = Duration.ofHours(1),
-        )
+        val task =
+            enqueueTask.enqueue(
+                kind = UserDataImportTask.KIND,
+                payload = importId.toString(),
+                maxAttempts = UserDataImportTask.MAX_ATTEMPTS,
+                delay = Duration.ofHours(1),
+            )
         val opened = requireNotNull(importRepository.findById(importId))
         importRepository.save(
-            opened.copy(state = UserDataImportState.PENDING, taskId = task.id, storageKey = storageKey),
+            opened.copy(state = UserDataImportState.PENDING, taskId = task.id, storageKey = storageKey)
         )
 
         // When
@@ -88,8 +89,10 @@ class MeImportCancellationIntegrationTest : ImportIntegrationTest() {
         // When / Then
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/me/imports/${UUID.randomUUID()}")
-            .then().statusCode(404)
+            .`when`()
+            .get("/api/v1/me/imports/${UUID.randomUUID()}")
+            .then()
+            .statusCode(404)
             .contentType("application/problem+json")
             .body("code", equalTo("IMPORT_DOES_NOT_EXIST"))
             .body("status", equalTo(404))

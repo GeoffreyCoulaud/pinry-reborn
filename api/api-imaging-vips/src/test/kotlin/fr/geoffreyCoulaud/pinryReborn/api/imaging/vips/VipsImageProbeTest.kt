@@ -1,16 +1,16 @@
 package fr.geoffreyCoulaud.pinryReborn.api.imaging.vips
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
-import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableImageException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UnsupportedImageFormatException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import java.nio.file.Path
+import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.nio.file.Path
-import java.time.Duration
 
 /** Runs the `vipsheader` on the `PATH`. */
 class VipsImageProbeTest {

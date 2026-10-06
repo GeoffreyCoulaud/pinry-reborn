@@ -17,11 +17,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.time.Duration
+import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Duration
-import java.util.UUID
 
 class UserAuthenticatorTest : BaseTest() {
     private val userRepository = mockk<UserRepositoryInterface>()

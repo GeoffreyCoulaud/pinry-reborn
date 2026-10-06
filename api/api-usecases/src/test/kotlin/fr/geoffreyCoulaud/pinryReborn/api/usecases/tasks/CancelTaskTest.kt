@@ -5,11 +5,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID.randomUUID
 
 class CancelTaskTest {
     private val queue: TaskQueueInterface = mockk()

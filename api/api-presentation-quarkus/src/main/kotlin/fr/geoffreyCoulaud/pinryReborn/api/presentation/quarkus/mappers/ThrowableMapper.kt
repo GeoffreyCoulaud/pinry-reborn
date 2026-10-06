@@ -12,8 +12,7 @@ import jakarta.ws.rs.ext.Provider
 class ThrowableMapper : ExceptionMapper<Throwable> {
     private val logger = KotlinLogging.logger {}
 
-    @Context
-    lateinit var uriInfo: UriInfo
+    @Context lateinit var uriInfo: UriInfo
 
     override fun toResponse(exception: Throwable): Response {
         logger.error(exception) { "Request to ${uriInfo.path} failed" }

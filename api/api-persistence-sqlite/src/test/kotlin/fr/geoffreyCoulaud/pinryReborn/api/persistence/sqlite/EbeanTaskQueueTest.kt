@@ -9,6 +9,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanT
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.ebean.test.LoggedSql
 import jakarta.persistence.PersistenceException
+import java.time.Duration
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
@@ -20,10 +24,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.sqlite.SQLiteErrorCode
 import org.sqlite.SQLiteException
-import java.time.Duration
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-import java.util.UUID
 
 class EbeanTaskQueueTest : RepositoryTest() {
     // The real policy at full jitter, so the delay a reap writes is exactly computable rather than
@@ -101,8 +101,8 @@ class EbeanTaskQueueTest : RepositoryTest() {
     }
 
     /**
-     * Without one transaction around the dedup check and the insert, the pair races as two autocommit
-     * statements (`agents/engineering.md`, "One connection"). No other test in this suite notices.
+     * Without one transaction around the dedup check and the insert, the pair races as two autocommit statements
+     * (`agents/engineering.md`, "One connection"). No other test in this suite notices.
      */
     @Test
     fun `Given no ambient transaction, Then enqueue still inserts inside one`() {
@@ -177,8 +177,7 @@ class EbeanTaskQueueTest : RepositoryTest() {
     fun `Given a dedup violation with no live task behind it, Then enqueue propagates the violation`() {
         // Given: the violation carries no row to converge on, so propagating it is the honest answer
         val violation = uniqueConstraintViolation()
-        val racingQueue =
-            EbeanTaskQueue(NoConflictRowPersistor(persistor, violation), transactionRunner, backoffPolicy)
+        val racingQueue = EbeanTaskQueue(NoConflictRowPersistor(persistor, violation), transactionRunner, backoffPolicy)
 
         // When, Then
         val thrown =
@@ -239,9 +238,9 @@ class EbeanTaskQueueTest : RepositoryTest() {
     }
 
     /**
-     * Stages a lost dedup race by writing [conflict] just before the insert: the real race does not reproduce
-     * while `enqueue` holds its check and its insert in one transaction
-     * (`docs/adr/0009-unique-index-named-outcomes.md`, findings).
+     * Stages a lost dedup race by writing [conflict] just before the insert: the real race does not reproduce while
+     * `enqueue` holds its check and its insert in one transaction (`docs/adr/0009-unique-index-named-outcomes.md`,
+     * findings).
      */
     private class LosingDedupRacePersistor(
         private val delegate: Persistor,
@@ -656,9 +655,7 @@ class EbeanTaskQueueTest : RepositoryTest() {
         val gone = UUID.randomUUID()
 
         // When
-        val live = queue.findLiveIds(
-            listOf(pending.id, running.id, succeeded.id, dead.id, cancelled.id, gone),
-        )
+        val live = queue.findLiveIds(listOf(pending.id, running.id, succeeded.id, dead.id, cancelled.id, gone))
 
         // Then: a terminal task and an absent one are both answers the sweep reads as abandoned
         assertEquals(setOf(pending.id, running.id), live)

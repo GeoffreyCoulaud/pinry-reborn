@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.worker
 
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class SingleThreadPeriodicSchedulerTest {
     @Test
@@ -30,7 +30,7 @@ class SingleThreadPeriodicSchedulerTest {
 
         // When / Then
         assertThrows<RejectedExecutionException> {
-            scheduler.scheduleWithFixedDelay({ }, 0L, 1L, TimeUnit.SECONDS)
+            scheduler.scheduleWithFixedDelay({}, 0L, 1L, TimeUnit.SECONDS)
         }
     }
 }

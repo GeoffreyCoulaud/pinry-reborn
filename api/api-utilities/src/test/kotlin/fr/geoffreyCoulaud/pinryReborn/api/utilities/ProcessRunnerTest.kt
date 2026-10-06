@@ -1,20 +1,19 @@
 package fr.geoffreyCoulaud.pinryReborn.api.utilities
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Duration
+import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertTimeoutPreemptively
 import org.junit.jupiter.api.io.TempDir
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Duration
-import java.util.concurrent.TimeUnit
 
 /** Runs real commands: `sh`, `sleep`, `pwd` and `python3`. */
 class ProcessRunnerTest {
-    @TempDir
-    lateinit var directory: Path
+    @TempDir lateinit var directory: Path
 
     private val runner = ProcessRunner(Duration.ofSeconds(60))
 
@@ -63,9 +62,10 @@ class ProcessRunnerTest {
         // reaper drains and closes a pipe nobody reads yet when its process exits (ProcessImpl.processExited).
         val impatient = ProcessRunner(Duration.ofSeconds(2))
         // When
-        val outcome = assertTimeoutPreemptively(Duration.ofSeconds(10)) {
-            impatient.run(listOf("sh", "-c", "sleep 20 & sleep 0.5"))
-        }
+        val outcome =
+            assertTimeoutPreemptively(Duration.ofSeconds(10)) {
+                impatient.run(listOf("sh", "-c", "sleep 20 & sleep 0.5"))
+            }
         // Then
         assertEquals(ProcessOutcome.TimedOut(Duration.ofSeconds(2)), outcome)
     }

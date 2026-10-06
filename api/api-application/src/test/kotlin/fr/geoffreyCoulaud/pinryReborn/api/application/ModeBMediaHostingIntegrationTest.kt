@@ -12,14 +12,6 @@ import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import io.restassured.path.json.JsonPath
 import jakarta.inject.Inject
-import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.notNullValue
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import java.io.File
 import java.net.InetSocketAddress
 import java.nio.file.Files
@@ -28,12 +20,20 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.notNullValue
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 
 /**
- * Isolated, writable `media.data_dir` for the class run (fresh UUID-suffixed directory under
- * `build/`, as in 2a) and `allow_private_addresses=true` so the real SSRF-guarded [MediaFetcher]
- * accepts the loopback stub origin these tests fetch from (without it the fetch fails
- * `URL_NOT_ALLOWED`). Config keys are snake_case, matching the SmallRye `@ConfigMapping`s.
+ * Isolated, writable `media.data_dir` for the class run (fresh UUID-suffixed directory under `build/`, as in 2a) and
+ * `allow_private_addresses=true` so the real SSRF-guarded [MediaFetcher] accepts the loopback stub origin these tests
+ * fetch from (without it the fetch fails `URL_NOT_ALLOWED`). Config keys are snake_case, matching the SmallRye
+ * `@ConfigMapping`s.
  */
 class ModeBMediaHostingTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> =
@@ -44,32 +44,32 @@ class ModeBMediaHostingTestProfile : QuarkusTestProfile {
 }
 
 /**
- * End-to-end coverage of mode-B (server-side) image ingestion through the fully wired app: a real
- * REST request enqueues a download, the real async worker fetches from a local `HttpServer` origin,
- * probes with native libvips, and swaps the bytes in atomically. The worker is real and async, so
- * settled-state cases poll the status sub-resource in a bounded loop, and cases that must observe a
- * transient `PENDING` gate the origin on a latch so the download cannot settle before the assertion.
+ * End-to-end coverage of mode-B (server-side) image ingestion through the fully wired app: a real REST request enqueues
+ * a download, the real async worker fetches from a local `HttpServer` origin, probes with native libvips, and swaps the
+ * bytes in atomically. The worker is real and async, so settled-state cases poll the status sub-resource in a bounded
+ * loop, and cases that must observe a transient `PENDING` gate the origin on a latch so the download cannot settle
+ * before the assertion.
  */
 @QuarkusTest
 @TestProfile(ModeBMediaHostingTestProfile::class)
 class ModeBMediaHostingIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var pageMediaExtractor: PageMediaExtractor
+    @Inject lateinit var pageMediaExtractor: PageMediaExtractor
 
     private fun fixture(name: String) = File("src/test/resources/fixtures/$name")
 
     private fun createPin(auth: AuthenticatedUser): UUID =
-        pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Mode-B image hosting test pin",
-            tags = emptyList(),
-        ).id
+        pinCreator
+            .createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Mode-B image hosting test pin",
+                tags = emptyList(),
+            )
+            .id
 
     private fun createUserAndPin(): Pair<AuthenticatedUser, UUID> {
         val auth = createAuthenticatedUser()
@@ -82,9 +82,12 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
     private fun statusOf(pinId: UUID, auth: AuthenticatedUser): JsonPath =
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media/status")
-            .then().statusCode(200)
-            .extract().jsonPath()
+            .`when`()
+            .get("/api/v1/pins/$pinId/media/status")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath()
 
     /** Bounded poll of the status sub-resource until the primary `status` reaches [target]. */
     private fun pollStatus(pinId: UUID, auth: AuthenticatedUser, target: String): JsonPath {
@@ -111,21 +114,19 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             .authenticatedAs(auth)
             .contentType("application/json")
             .body(mapOf("sourceUrl" to sourceUrl))
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
 
     private fun uploadMedia(pinId: UUID, auth: AuthenticatedUser, fixtureName: String, mimeType: String) =
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture(fixtureName), mimeType)
-            .`when`().put("/api/v1/pins/$pinId/media")
+            .`when`()
+            .put("/api/v1/pins/$pinId/media")
 
     /** The caller's task centre: the downloads that are running or have failed (expects `200`). */
     private fun downloadList(auth: AuthenticatedUser): JsonPath =
-        given()
-            .authenticatedAs(auth)
-            .`when`().get(DOWNLOADS_PATH)
-            .then().statusCode(200)
-            .extract().jsonPath()
+        given().authenticatedAs(auth).`when`().get(DOWNLOADS_PATH).then().statusCode(200).extract().jsonPath()
 
     @Test
     fun `Given the running instance, Then its page media extractor is the yt-dlp adapter`() {
@@ -156,7 +157,8 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
         // Then: the canonical bytes are served with an ETag
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
+            .`when`()
+            .get("/api/v1/pins/$pinId/media")
             .then()
             .statusCode(200)
             .contentType("image/png")
@@ -294,9 +296,13 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
         val oldEtag =
             given()
                 .authenticatedAs(auth)
-                .`when`().get("/api/v1/pins/$pinId/media")
-                .then().statusCode(200).contentType("image/jpeg")
-                .extract().header("ETag")
+                .`when`()
+                .get("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(200)
+                .contentType("image/jpeg")
+                .extract()
+                .header("ETag")
 
         // When: request a mode-B replacement gated so it cannot settle before we observe it
         gateLatch = CountDownLatch(1)
@@ -312,8 +318,12 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             )
             given()
                 .authenticatedAs(auth)
-                .`when`().get("/api/v1/pins/$pinId/media")
-                .then().statusCode(200).contentType("image/jpeg").header("ETag", equalTo(oldEtag))
+                .`when`()
+                .get("/api/v1/pins/$pinId/media")
+                .then()
+                .statusCode(200)
+                .contentType("image/jpeg")
+                .header("ETag", equalTo(oldEtag))
         } finally {
             // Release the gate so the worker can complete the swap
             gateLatch.countDown()
@@ -324,8 +334,12 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
         assertTrue(settled.getString("mimeType") == "image/png", "the swapped-in image should be the new PNG")
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
-            .then().statusCode(200).contentType("image/png").header("ETag", notNullValue())
+            .`when`()
+            .get("/api/v1/pins/$pinId/media")
+            .then()
+            .statusCode(200)
+            .contentType("image/png")
+            .header("ETag", notNullValue())
     }
 
     @Test
@@ -336,10 +350,7 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
 
         // When / Then: a non-owner may neither request a download nor read the status
         requestDownload(pinId, intruder, originUrl("/img.png")).then().statusCode(403)
-        given()
-            .authenticatedAs(intruder)
-            .`when`().get("/api/v1/pins/$pinId/media/status")
-            .then().statusCode(403)
+        given().authenticatedAs(intruder).`when`().get("/api/v1/pins/$pinId/media/status").then().statusCode(403)
     }
 
     @Test
@@ -350,10 +361,7 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
 
         // When / Then
         requestDownload(missingPinId, auth, originUrl("/img.png")).then().statusCode(404)
-        given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$missingPinId/media/status")
-            .then().statusCode(404)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/$missingPinId/media/status").then().statusCode(404)
     }
 
     @Test
@@ -378,10 +386,7 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             assertTrue(statusOf(pinId, auth).getString("status") == "PENDING", "download must be PENDING")
 
             // When: delete the image while the first-time download is still in flight
-            given()
-                .authenticatedAs(auth)
-                .`when`().delete("/api/v1/pins/$pinId/media")
-                .then().statusCode(204)
+            given().authenticatedAs(auth).`when`().delete("/api/v1/pins/$pinId/media").then().statusCode(204)
 
             // Then: the in-flight download is cancelled and the pin is back to NONE
             assertTrue(statusOf(pinId, auth).getString("status") == "NONE", "the download is cancelled")
@@ -394,10 +399,7 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             assertTrue(statusOf(pinId, auth).getString("status") == "NONE", "stays NONE after release")
             Thread.sleep(POLL_INTERVAL_MS)
         }
-        given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
-            .then().statusCode(404)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/$pinId/media").then().statusCode(404)
     }
 
     @Test
@@ -413,10 +415,7 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             assertTrue(during.getString("replacement.status") == "PENDING", "the replacement is PENDING")
 
             // When: delete the image while the replacement download is in flight
-            given()
-                .authenticatedAs(auth)
-                .`when`().delete("/api/v1/pins/$pinId/media")
-                .then().statusCode(204)
+            given().authenticatedAs(auth).`when`().delete("/api/v1/pins/$pinId/media").then().statusCode(204)
 
             // Then: the image and the in-flight download are both cleared
             assertTrue(statusOf(pinId, auth).getString("status") == "NONE", "everything is cleared")
@@ -429,10 +428,7 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             assertTrue(statusOf(pinId, auth).getString("status") == "NONE", "stays NONE after release")
             Thread.sleep(POLL_INTERVAL_MS)
         }
-        given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/$pinId/media")
-            .then().statusCode(404)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/$pinId/media").then().statusCode(404)
     }
 
     @Test
@@ -446,10 +442,7 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
 
             // When: soft-delete then permanently delete the pin while the download is in flight
             given().authenticatedAs(auth).delete("/api/v1/pins/$pinId").then().statusCode(204)
-            given()
-                .authenticatedAs(auth)
-                .`when`().delete("/api/v1/pins/recycled")
-                .then().statusCode(204)
+            given().authenticatedAs(auth).`when`().delete("/api/v1/pins/recycled").then().statusCode(204)
         } finally {
             gateLatch.countDown()
         }
@@ -459,8 +452,11 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             val code =
                 given()
                     .authenticatedAs(auth)
-                    .`when`().get("/api/v1/pins/$pinId/media/status")
-                    .then().extract().statusCode()
+                    .`when`()
+                    .get("/api/v1/pins/$pinId/media/status")
+                    .then()
+                    .extract()
+                    .statusCode()
             if (code == 404) return
             Thread.sleep(POLL_INTERVAL_MS)
         }
@@ -535,8 +531,11 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
             // When / Then
             given()
                 .authenticatedAs(auth)
-                .`when`().delete("$DOWNLOADS_PATH/$pinId")
-                .then().statusCode(409).body("code", equalTo("MEDIA_DOWNLOAD_IN_PROGRESS"))
+                .`when`()
+                .delete("$DOWNLOADS_PATH/$pinId")
+                .then()
+                .statusCode(409)
+                .body("code", equalTo("MEDIA_DOWNLOAD_IN_PROGRESS"))
         } finally {
             gateLatch.countDown()
         }
@@ -559,13 +558,11 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
         private lateinit var server: HttpServer
         private lateinit var originExecutor: ExecutorService
 
-        @Volatile
-        private var port: Int = 0
+        @Volatile private var port: Int = 0
 
         // A fresh latch is assigned per gated test; a completed latch lets `/gated` serve immediately,
         // so the non-gated tests (which never touch it) are unaffected.
-        @Volatile
-        private var gateLatch = CountDownLatch(0)
+        @Volatile private var gateLatch = CountDownLatch(0)
 
         private lateinit var pngBytes: ByteArray
         private lateinit var textBytes: ByteArray

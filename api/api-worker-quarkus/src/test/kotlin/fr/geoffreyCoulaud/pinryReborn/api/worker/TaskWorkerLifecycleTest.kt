@@ -6,9 +6,9 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.quarkus.runtime.ShutdownEvent
 import io.quarkus.runtime.StartupEvent
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import org.junit.jupiter.api.Test
 
 class TaskWorkerLifecycleTest {
     private val dispatcher: TaskDispatcher = mockk(relaxed = true)

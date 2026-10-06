@@ -30,6 +30,8 @@ import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.StreamingOutput
+import java.time.Instant
+import java.util.UUID
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
@@ -37,13 +39,11 @@ import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestResponse
 import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder
-import java.time.Instant
-import java.util.UUID
 
 /**
- * `/api/v1/me/exports`: request, track, download and destroy the caller's own user data export
- * archives (spec `docs/specs/2026-07-22-user-data-export.md` §7). All endpoints are owner-scoped
- * through the use cases they delegate to (`403` for a non-owner, `404` for an unknown id).
+ * `/api/v1/me/exports`: request, track, download and destroy the caller's own user data export archives (spec
+ * `docs/specs/2026-07-22-user-data-export.md` §7). All endpoints are owner-scoped through the use cases they delegate
+ * to (`403` for a non-owner, `404` for an unknown id).
  */
 @Path("/api/v1/me/exports")
 @Authenticated
@@ -57,31 +57,63 @@ class MeExportController(
     @POST
     @Operation(
         summary = "Request an export of the caller's data",
-        description = "Queued, not built: the archive is downloadable once the export reads READY. " +
-            "Needs the reauthentication header.",
+        description =
+            "Queued, not built: the archive is downloadable once the export reads READY. " +
+                "Needs the reauthentication header.",
     )
     @APIResponse(
         responseCode = "202",
         description = "Export requested and queued",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = UserDataExportOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = UserDataExportOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "400", ref = SharedRefusalsFilter.UNSUPPORTED_REAUTHENTICATION_FACTOR)
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.REAUTHENTICATION_HEADER_FAILED)
-    @APIResponse(responseCode = "409", description = "This account already has a pending export",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["EXPORT_ALREADY_IN_PROGRESS"])]))])
-    @APIResponse(responseCode = "429", description = "The attempt limiter, or the last request is inside " +
-        "exports.minimum_interval; Retry-After names the wait",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code",
-                enumeration = ["EXPORT_TOO_SOON", "TOO_MANY_AUTHENTICATION_ATTEMPTS"])]))])
+    @APIResponse(
+        responseCode = "409",
+        description = "This account already has a pending export",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["EXPORT_ALREADY_IN_PROGRESS"])],
+                        ),
+                )
+            ],
+    )
+    @APIResponse(
+        responseCode = "429",
+        description =
+            "The attempt limiter, or the last request is inside " +
+                "exports.minimum_interval; Retry-After names the wait",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties =
+                                [
+                                    SchemaProperty(
+                                        name = "code",
+                                        enumeration = ["EXPORT_TOO_SOON", "TOO_MANY_AUTHENTICATION_ATTEMPTS"],
+                                    )
+                                ],
+                        ),
+                )
+            ],
+    )
     fun requestExport(
-        @HeaderParam(ReauthenticationHeader.HEADER) reauthHeader: String?,
+        @HeaderParam(ReauthenticationHeader.HEADER) reauthHeader: String?
     ): RestResponse<UserDataExportOutputDto> {
         val user = securityIdentity.getUser()
         val factor = ReauthenticationHeader.parsePasswordFactor(reauthHeader)
@@ -93,12 +125,13 @@ class MeExportController(
     @APIResponse(
         responseCode = "200",
         description = "One page of the caller's exports, every state included",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = UserDataExportListOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = UserDataExportListOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.UNREADABLE_QUERY)
     fun listExports(
@@ -116,12 +149,13 @@ class MeExportController(
     @APIResponse(
         responseCode = "200",
         description = "The export's state and, once READY, its size, digest and expiry",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = UserDataExportOutputDto::class),
-            ),
-        ],
+        content =
+            [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = Schema(implementation = UserDataExportOutputDto::class),
+                )
+            ],
     )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.EXPORT_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.EXPORT_NOT_FOUND)
@@ -148,13 +182,36 @@ class MeExportController(
     )
     @APIResponse(responseCode = "403", ref = SharedRefusalsFilter.EXPORT_FORBIDDEN)
     @APIResponse(responseCode = "404", ref = SharedRefusalsFilter.EXPORT_NOT_FOUND)
-    @APIResponse(responseCode = "409", description = "The export is still pending or has failed",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["EXPORT_NOT_READY"])]))])
-    @APIResponse(responseCode = "410",
+    @APIResponse(
+        responseCode = "409",
+        description = "The export is still pending or has failed",
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["EXPORT_NOT_READY"])],
+                        ),
+                )
+            ],
+    )
+    @APIResponse(
+        responseCode = "410",
         description = "The archive expired, was deleted or was superseded by a newer export",
-        content = [Content(mediaType = PROBLEM_JSON, schema = Schema(allOf = [ProblemDetail::class],
-            properties = [SchemaProperty(name = "code", enumeration = ["EXPORT_GONE"])]))])
+        content =
+            [
+                Content(
+                    mediaType = PROBLEM_JSON,
+                    schema =
+                        Schema(
+                            allOf = [ProblemDetail::class],
+                            properties = [SchemaProperty(name = "code", enumeration = ["EXPORT_GONE"])],
+                        ),
+                )
+            ],
+    )
     @APIResponse(responseCode = "416", ref = SharedRefusalsFilter.RANGE_NOT_SATISFIABLE)
     fun downloadExport(id: UUID, @HeaderParam("Range") rangeHeader: String?): RestResponse<StreamingOutput> {
         val user = securityIdentity.getUser()

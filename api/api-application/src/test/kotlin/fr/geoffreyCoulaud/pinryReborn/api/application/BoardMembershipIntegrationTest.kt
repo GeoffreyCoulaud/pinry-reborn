@@ -8,21 +8,19 @@ import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import jakarta.inject.Inject
+import java.util.UUID
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.emptyIterable
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Test
-import java.util.UUID
 
 @QuarkusTest
 class BoardMembershipIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var boardCreator: BoardCreator
+    @Inject lateinit var boardCreator: BoardCreator
 
     // --- Set boards on a pin ---
 
@@ -32,13 +30,14 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         val board1 = boardCreator.create(author = auth.user, name = "Board 1", description = "")
         val board2 = boardCreator.create(author = auth.user, name = "Board 2", description = "")
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Pin",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Pin",
+                tags = emptyList(),
+            )
 
         // When
         replacePin(auth, pin, boardIds = listOf(board1.id, board2.id))
@@ -62,20 +61,22 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val board = boardCreator.create(author = auth.user, name = "Shared board", description = "")
-        val pin1 = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com/1",
-            sourceMediaUrl = "https://example.com/img1.jpg",
-            description = "Pin 1",
-            tags = emptyList(),
-        )
-        val pin2 = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com/2",
-            sourceMediaUrl = "https://example.com/img2.jpg",
-            description = "Pin 2",
-            tags = emptyList(),
-        )
+        val pin1 =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com/1",
+                sourceMediaUrl = "https://example.com/img1.jpg",
+                description = "Pin 1",
+                tags = emptyList(),
+            )
+        val pin2 =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com/2",
+                sourceMediaUrl = "https://example.com/img2.jpg",
+                description = "Pin 2",
+                tags = emptyList(),
+            )
         replacePin(auth, pin1, boardIds = listOf(board.id)).statusCode(200)
         replacePin(auth, pin2, boardIds = listOf(board.id)).statusCode(200)
 
@@ -122,17 +123,17 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given an unknown board id, Then setting it on a pin returns 404`() {
         // Given
         val auth = createAuthenticatedUser()
-        val pin = pinCreator.createPin(
-            author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Pin",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = auth.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Pin",
+                tags = emptyList(),
+            )
 
         // When / Then
-        replacePin(auth, pin, boardIds = listOf(UUID.randomUUID()))
-            .statusCode(404)
+        replacePin(auth, pin, boardIds = listOf(UUID.randomUUID())).statusCode(404)
     }
 
     @Test
@@ -141,17 +142,17 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         val owner = createAuthenticatedUser()
         val attacker = createAuthenticatedUser()
         val otherBoard = boardCreator.create(author = attacker.user, name = "Not yours", description = "")
-        val pin = pinCreator.createPin(
-            author = owner.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
-            description = "Pin",
-            tags = emptyList(),
-        )
+        val pin =
+            pinCreator.createPin(
+                author = owner.user,
+                sourceContextUrl = "https://example.com",
+                sourceMediaUrl = "https://example.com/img.jpg",
+                description = "Pin",
+                tags = emptyList(),
+            )
 
         // When / Then
-        replacePin(owner, pin, boardIds = listOf(otherBoard.id))
-            .statusCode(403)
+        replacePin(owner, pin, boardIds = listOf(otherBoard.id)).statusCode(403)
     }
 
     // --- Bulk membership ---
@@ -175,12 +176,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
             .then()
 
     private fun boardsOf(auth: AuthenticatedUser, pin: Pin) =
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .get("/api/v1/pins/${pin.id}")
-            .then()
-            .statusCode(200)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/${pin.id}").then().statusCode(200)
 
     @Test
     fun `Given two owned pins, Then adding them to a board files both under it`() {
@@ -333,10 +329,12 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         val second = createPin(auth.user, "Second")
 
         // When
-        val boardId = createBoard(auth, "Trip", listOf(first.id, second.id))
-            .statusCode(201)
-            .body("pinCount", equalTo(2))
-            .extract().path<String>("id")
+        val boardId =
+            createBoard(auth, "Trip", listOf(first.id, second.id))
+                .statusCode(201)
+                .body("pinCount", equalTo(2))
+                .extract()
+                .path<String>("id")
 
         // Then
         given()

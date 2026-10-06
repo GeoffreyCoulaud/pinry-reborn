@@ -15,13 +15,13 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
 import java.io.IOException
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 class UserDataImportCancellerTest : BaseTest() {
     private val repository = mockk<UserDataImportRepositoryInterface>()
@@ -48,20 +48,20 @@ class UserDataImportCancellerTest : BaseTest() {
         state: UserDataImportState,
         userId: UUID = user.id,
         taskId: UUID? = null,
-    ) = UserDataImport(
-        id = importId,
-        userId = userId,
-        state = state,
-        requestedAt = now,
-        lastActivityAt = now,
-        taskId = taskId,
-        storageKey = if (state == UserDataImportState.AWAITING_ARCHIVE) null else storageKey,
-    )
+    ) =
+        UserDataImport(
+            id = importId,
+            userId = userId,
+            state = state,
+            requestedAt = now,
+            lastActivityAt = now,
+            taskId = taskId,
+            storageKey = if (state == UserDataImportState.AWAITING_ARCHIVE) null else storageKey,
+        )
 
-    private fun verifyCancelled() =
-        verify {
-            repository.save(match { it.id == importId && it.state == UserDataImportState.CANCELLED })
-        }
+    private fun verifyCancelled() = verify {
+        repository.save(match { it.id == importId && it.state == UserDataImportState.CANCELLED })
+    }
 
     @Test
     fun `Given an unknown import, Then cancelling it is refused as absent`() {
@@ -105,8 +105,7 @@ class UserDataImportCancellerTest : BaseTest() {
     fun `Given a pending import, Then its task is cancelled and its archive deleted`() {
         // Given: the only state that does both, since the archive is promoted and no runner holds it
         val taskId = randomUUID()
-        every { repository.findById(importId) } returns
-            importWith(state = UserDataImportState.PENDING, taskId = taskId)
+        every { repository.findById(importId) } returns importWith(state = UserDataImportState.PENDING, taskId = taskId)
         every { cancelTask.cancel(taskId) } returns true
         every { archiveStore.delete(storageKey) } just runs
         every { repository.save(any()) } answers { firstArg() }
@@ -144,9 +143,10 @@ class UserDataImportCancellerTest : BaseTest() {
         // Given: the runner claims the task and completes the walk in that window, so the fence is lost.
         // Deciding from the copy read first would cancel a task that ran and delete an archive it owns.
         val read = importWith(state = UserDataImportState.PENDING, taskId = randomUUID())
-        every { repository.findById(importId) } answers {
-            if (transactions.inside) read.copy(state = UserDataImportState.COMPLETED) else read
-        }
+        every { repository.findById(importId) } answers
+            {
+                if (transactions.inside) read.copy(state = UserDataImportState.COMPLETED) else read
+            }
 
         // When
         canceller.cancel(user, importId)
@@ -162,9 +162,10 @@ class UserDataImportCancellerTest : BaseTest() {
         // Given: the runner claims the row between the read and the fence, so the walk holds the archive.
         // The PENDING arm would delete it from under a live read, which is what the RUNNING arm refuses.
         val read = importWith(state = UserDataImportState.PENDING, taskId = randomUUID())
-        every { repository.findById(importId) } answers {
-            if (transactions.inside) read.copy(state = UserDataImportState.RUNNING) else read
-        }
+        every { repository.findById(importId) } answers
+            {
+                if (transactions.inside) read.copy(state = UserDataImportState.RUNNING) else read
+            }
         every { repository.save(any()) } answers { firstArg() }
 
         // When
@@ -181,9 +182,10 @@ class UserDataImportCancellerTest : BaseTest() {
         // Given: the completer promotes and moves the row on in that window, so unlinking the upload
         // here would take the source of an archive being promoted. The sweep fences on the same reason.
         val read = importWith(state = UserDataImportState.AWAITING_ARCHIVE)
-        every { repository.findById(importId) } answers {
-            if (transactions.inside) read.copy(state = UserDataImportState.COMPLETED) else read
-        }
+        every { repository.findById(importId) } answers
+            {
+                if (transactions.inside) read.copy(state = UserDataImportState.COMPLETED) else read
+            }
 
         // When
         canceller.cancel(user, importId)
@@ -197,9 +199,10 @@ class UserDataImportCancellerTest : BaseTest() {
     fun `Given an import erased while the request ran, Then nothing is released`() {
         // Given: the account deletion cleaner drops the row between the owner check and the fence, so
         // there is no phase left to answer and nothing this request is still the one to release
-        every { repository.findById(importId) } answers {
-            if (transactions.inside) null else importWith(state = UserDataImportState.AWAITING_ARCHIVE)
-        }
+        every { repository.findById(importId) } answers
+            {
+                if (transactions.inside) null else importWith(state = UserDataImportState.AWAITING_ARCHIVE)
+            }
 
         // When
         canceller.cancel(user, importId)
@@ -213,8 +216,7 @@ class UserDataImportCancellerTest : BaseTest() {
     fun `Given a pending import with no task id, Then no cancellation is attempted and the archive still goes`() {
         // Given: the column is nullable because the row exists before its task does, so nothing here
         // may depend on it being set, whatever the hand-over now guarantees
-        every { repository.findById(importId) } returns
-            importWith(state = UserDataImportState.PENDING, taskId = null)
+        every { repository.findById(importId) } returns importWith(state = UserDataImportState.PENDING, taskId = null)
         every { archiveStore.delete(storageKey) } just runs
         every { repository.save(any()) } answers { firstArg() }
 
@@ -231,8 +233,7 @@ class UserDataImportCancellerTest : BaseTest() {
     fun `Given a store that cannot take the archive back, Then the import is cancelled all the same`() {
         // Given: deleteIfExists throws, which would otherwise answer a DELETE with a 500 on a task that
         // is already cancelled. The periodic sweep is the guarantor of the bytes (ADR 0003).
-        every { repository.findById(importId) } returns
-            importWith(state = UserDataImportState.PENDING, taskId = null)
+        every { repository.findById(importId) } returns importWith(state = UserDataImportState.PENDING, taskId = null)
         every { archiveStore.delete(storageKey) } throws IOException("permission denied")
         every { repository.save(any()) } answers { firstArg() }
 
@@ -279,7 +280,7 @@ class UserDataImportCancellerTest : BaseTest() {
                     it.state == UserDataImportState.CANCELLED &&
                         it.processedPins == SETTLED_PINS &&
                         it.createdPins == SETTLED_PINS
-                },
+                }
             )
         }
     }
@@ -289,9 +290,10 @@ class UserDataImportCancellerTest : BaseTest() {
         // Given: the runner writes COMPLETED in that same window, and a merge would take a finished
         // import back to CANCELLED and tell its owner nothing was imported
         val read = importWith(state = UserDataImportState.RUNNING, taskId = randomUUID())
-        every { repository.findById(importId) } answers {
-            if (transactions.inside) read.copy(state = UserDataImportState.COMPLETED) else read
-        }
+        every { repository.findById(importId) } answers
+            {
+                if (transactions.inside) read.copy(state = UserDataImportState.COMPLETED) else read
+            }
 
         // When
         canceller.cancel(user, importId)

@@ -25,12 +25,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.quarkus.security.identity.SecurityIdentity
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class MeImportControllerTest {
     private val creator = mockk<UserDataImportCreator>()
@@ -40,25 +40,27 @@ class MeImportControllerTest {
     private val issueLister = mockk<UserDataImportIssueLister>()
     private val canceller = mockk<UserDataImportCanceller>()
     private val securityIdentity = mockk<SecurityIdentity>()
-    private val controller = MeImportController(
-        creator = creator,
-        chunkReceiver = chunkReceiver,
-        archiveCompleter = archiveCompleter,
-        getter = getter,
-        issueLister = issueLister,
-        canceller = canceller,
-        securityIdentity = securityIdentity,
-    )
+    private val controller =
+        MeImportController(
+            creator = creator,
+            chunkReceiver = chunkReceiver,
+            archiveCompleter = archiveCompleter,
+            getter = getter,
+            issueLister = issueLister,
+            canceller = canceller,
+            securityIdentity = securityIdentity,
+        )
 
     private fun aUser() = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
 
-    private fun awaitingImport(userId: UUID) = UserDataImport(
-        id = randomUUID(),
-        userId = userId,
-        state = UserDataImportState.AWAITING_ARCHIVE,
-        requestedAt = Instant.parse("2026-08-14T10:00:00Z"),
-        lastActivityAt = Instant.parse("2026-08-14T10:00:00Z"),
-    )
+    private fun awaitingImport(userId: UUID) =
+        UserDataImport(
+            id = randomUUID(),
+            userId = userId,
+            state = UserDataImportState.AWAITING_ARCHIVE,
+            requestedAt = Instant.parse("2026-08-14T10:00:00Z"),
+            lastActivityAt = Instant.parse("2026-08-14T10:00:00Z"),
+        )
 
     @Test
     fun `Given an authenticated caller, Then createImport returns 202 with the opened import`() {
@@ -178,14 +180,15 @@ class MeImportControllerTest {
         // Given
         val user = aUser()
         val importId = randomUUID()
-        val issue = UserDataImportIssue(
-            id = randomUUID(),
-            importId = importId,
-            kind = UserDataImportIssueKind.PIN_HAS_NO_MEDIA,
-            line = 12,
-            subject = "pin",
-            detail = "no media",
-        )
+        val issue =
+            UserDataImportIssue(
+                id = randomUUID(),
+                importId = importId,
+                kind = UserDataImportIssueKind.PIN_HAS_NO_MEDIA,
+                line = 12,
+                subject = "pin",
+                detail = "no media",
+            )
         val page = Page(items = listOf(issue), previousCursor = null, nextCursor = null)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { issueLister.list(user, importId, null, MeImportController.DEFAULT_PAGE_SIZE) } returns page
@@ -207,14 +210,15 @@ class MeImportControllerTest {
         val importId = randomUUID()
         val pivotId = randomUUID()
         val cursorInput = CursorDto(pivotId = pivotId, direction = CursorDirectionDto.BACKWARD)
-        val issue = UserDataImportIssue(
-            id = randomUUID(),
-            importId = importId,
-            kind = UserDataImportIssueKind.MEDIA_DIGEST_MISMATCH,
-            line = 7,
-            subject = "media/one.png",
-            detail = "digest mismatch",
-        )
+        val issue =
+            UserDataImportIssue(
+                id = randomUUID(),
+                importId = importId,
+                kind = UserDataImportIssueKind.MEDIA_DIGEST_MISMATCH,
+                line = 7,
+                subject = "media/one.png",
+                detail = "digest mismatch",
+            )
         val previousCursor = Cursor(pivotId = issue.id, direction = CursorDirection.BACKWARD)
         val page = Page(items = listOf(issue), previousCursor = previousCursor, nextCursor = null)
         every { securityIdentity.getAttribute<User>("user") } returns user

@@ -9,8 +9,8 @@ import jakarta.enterprise.event.Observes
 import org.eclipse.microprofile.config.inject.ConfigProperty
 
 /**
- * Refuses the boot when an upload's published limit is not strictly under `quarkus.http.limits.max-body-size`,
- * which would cut an upload the contract allows. Here because the two keys live in two modules.
+ * Refuses the boot when an upload's published limit is not strictly under `quarkus.http.limits.max-body-size`, which
+ * would cut an upload the contract allows. Here because the two keys live in two modules.
  */
 @ApplicationScoped
 class BodyLimitCheck(
@@ -18,12 +18,13 @@ class BodyLimitCheck(
     private val importsConfig: ImportsConfig,
     @param:ConfigProperty(name = "quarkus.http.limits.max-body-size") private val maxBodySize: MemorySize,
 ) {
-    fun onStart(
-        @Observes ignored: StartupEvent,
-    ) = verify(
-        mediaConfig.maxImageBytes(), mediaConfig.maxVideoBytes(), importsConfig.maxChunkBytes(),
-        maxBodySize.asLongValue(),
-    )
+    fun onStart(@Observes ignored: StartupEvent) =
+        verify(
+            mediaConfig.maxImageBytes(),
+            mediaConfig.maxVideoBytes(),
+            importsConfig.maxChunkBytes(),
+            maxBodySize.asLongValue(),
+        )
 
     companion object {
         fun verify(maxImageBytes: Long, maxVideoBytes: Long, maxChunkBytes: Long, maxBodyBytes: Long) {

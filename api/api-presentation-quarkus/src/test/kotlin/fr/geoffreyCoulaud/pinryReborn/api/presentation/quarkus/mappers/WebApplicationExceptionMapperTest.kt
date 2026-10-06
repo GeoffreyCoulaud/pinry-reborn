@@ -13,9 +13,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class WebApplicationExceptionMapperTest {
-    private val mapper = WebApplicationExceptionMapper().apply {
-        uriInfo = mockk<UriInfo> { every { path } returns "/api/v1/sessions" }
-    }
+    private val mapper =
+        WebApplicationExceptionMapper().apply {
+            uriInfo = mockk<UriInfo> { every { path } returns "/api/v1/sessions" }
+        }
 
     @Test
     fun `Given a bare 400 wrapping a Jackson failure, Then it maps to 400 MALFORMED_BODY`() {

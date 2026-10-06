@@ -15,18 +15,18 @@ import io.restassured.http.ContentType
 import io.restassured.response.ValidatableResponse
 import io.restassured.specification.RequestSpecification
 import jakarta.inject.Inject
-import org.junit.jupiter.api.BeforeEach
 import java.util.UUID
 import java.util.logging.Handler
 import java.util.logging.LogRecord
 import java.util.logging.Logger
+import org.junit.jupiter.api.BeforeEach
 
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a shared test base for concrete subclasses.
 abstract class IntegrationTest {
-    @Inject
-    lateinit var userCreator: UserCreator
+    @Inject lateinit var userCreator: UserCreator
 
-    private val database: Database get() = DB.getDefault()
+    private val database: Database
+        get() = DB.getDefault()
 
     /** A created user together with a live bearer token for it. */
     data class AuthenticatedUser(val user: User, val token: String)
@@ -37,9 +37,8 @@ abstract class IntegrationTest {
      * - Tables prefixed by "sqlite_" are ignored.
      * - The "db_migration" table is ignored, as it's necessary for ebean.
      *
-     * The database is not the only state a case shares: `AuthenticationAttemptLimiter` counts failed
-     * password attempts in memory and nothing empties those, so a case submitting a wrong credential
-     * takes an identity of its own.
+     * The database is not the only state a case shares: `AuthenticationAttemptLimiter` counts failed password attempts
+     * in memory and nothing empties those, so a case submitting a wrong credential takes an identity of its own.
      */
     @BeforeEach
     fun truncateAllTables() {
@@ -58,21 +57,23 @@ abstract class IntegrationTest {
         rememberMe: Boolean = false,
     ): AuthenticatedUser {
         val user = userCreator.createUserWithPassword(name = name, password = password)
-        val token = RestAssured
-            .given()
-            .contentType(ContentType.JSON)
-            .body(mapOf("name" to name, "password" to password, "rememberMe" to rememberMe, "transport" to "BEARER"))
-            .post("/api/v1/sessions")
-            .then()
-            .statusCode(HTTP_CREATED)
-            .extract()
-            .path<String>("token")
+        val token =
+            RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(
+                    mapOf("name" to name, "password" to password, "rememberMe" to rememberMe, "transport" to "BEARER")
+                )
+                .post("/api/v1/sessions")
+                .then()
+                .statusCode(HTTP_CREATED)
+                .extract()
+                .path<String>("token")
         return AuthenticatedUser(user, token)
     }
 
     /**
-     * Write a pin over `PUT /api/v1/pins/{pinId}`, which replaces the whole pin: what the case does
-     * not change is sent as the pin carries it, so a tag or a board survives a write about the other.
+     * Write a pin over `PUT /api/v1/pins/{pinId}`, which replaces the whole pin: what the case does not change is sent
+     * as the pin carries it, so a tag or a board survives a write about the other.
      */
     protected fun replacePin(
         auth: AuthenticatedUser,
@@ -80,8 +81,7 @@ abstract class IntegrationTest {
         tags: List<String> = pin.tags.map { it.name },
         boardIds: List<UUID> = pin.boards.map { it.id },
     ): ValidatableResponse =
-        RestAssured
-            .given()
+        RestAssured.given()
             .authenticatedAs(auth)
             .contentType(ContentType.JSON)
             .body(
@@ -91,7 +91,7 @@ abstract class IntegrationTest {
                     "sourceMediaUrl" to pin.sourceMediaUrl,
                     "tags" to tags,
                     "boardIds" to boardIds.map { it.toString() },
-                ),
+                )
             )
             .`when`()
             .put("/api/v1/pins/${pin.id}")
@@ -104,9 +104,8 @@ abstract class IntegrationTest {
     /**
      * Wait long enough for the next stamped instant to differ from the previous one.
      *
-     * Stamped instants are truncated to the millisecond, so two writes inside the same millisecond
-     * carry the same value and an "instant moved" assertion cannot tell a fresh stamp from a stale
-     * one.
+     * Stamped instants are truncated to the millisecond, so two writes inside the same millisecond carry the same value
+     * and an "instant moved" assertion cannot tell a fresh stamp from a stale one.
      */
     protected fun waitForTheClockToTick() = Thread.sleep(CLOCK_RESOLUTION_MILLIS)
 
@@ -145,8 +144,9 @@ abstract class IntegrationTest {
 
     /** Every line the request log writes while [action] runs, joined. */
     protected fun requestLogOf(action: () -> Unit): String =
-        capturingLogsOf(LoggingRequestResponseFilter::class.java.name, action)
-            .joinToString(separator = "\n") { it.message.orEmpty() }
+        capturingLogsOf(LoggingRequestResponseFilter::class.java.name, action).joinToString(separator = "\n") {
+            it.message.orEmpty()
+        }
 
     companion object {
         const val DEFAULT_PASSWORD = "password123"

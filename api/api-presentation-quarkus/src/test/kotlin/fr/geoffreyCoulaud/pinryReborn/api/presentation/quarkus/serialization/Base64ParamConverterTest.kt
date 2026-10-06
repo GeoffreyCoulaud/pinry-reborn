@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import kotlin.io.encoding.Base64
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import kotlin.io.encoding.Base64
 
 class Base64JsonParamConverterTest {
     private val objectMapper = ObjectMapper()

@@ -9,15 +9,15 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImportIssue
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveEntryUnreadableException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveLine
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveSource
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
-import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveEntryUnreadableException
-import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveLine
-import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveSource
-import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -44,8 +44,8 @@ import java.util.UUID
 import java.util.UUID.randomUUID
 
 /**
- * The ambient transaction the claim runs in; this suite owns no connection. Run inline, so [inside]
- * tells a read within the transaction from one before it and [current] tells two from one.
+ * The ambient transaction the claim runs in; this suite owns no connection. Run inline, so [inside] tells a read within
+ * the transaction from one before it and [current] tells two from one.
  */
 internal class PassthroughTransactionRunner : TransactionRunner {
     private var depth = 0
@@ -55,7 +55,8 @@ internal class PassthroughTransactionRunner : TransactionRunner {
     var current: Int? = null
         private set
 
-    val inside: Boolean get() = current != null
+    val inside: Boolean
+        get() = current != null
 
     override fun <T> inTransaction(block: () -> T): T {
         depth++
@@ -79,8 +80,8 @@ internal data class TestLine<out T>(
 ) : ArchiveLine<T>
 
 /**
- * An [ArchiveSource] over typed lines, so a runner test says what the archive holds. A [media] name
- * mapped to null is announced by [entryNames] and refused by [openEntry], the one shape they disagree on.
+ * An [ArchiveSource] over typed lines, so a runner test says what the archive holds. A [media] name mapped to null is
+ * announced by [entryNames] and refused by [openEntry], the one shape they disagree on.
  */
 internal data class FakeArchiveSource(
     val manifest: ImportedManifest?,
@@ -151,8 +152,8 @@ internal data class FakeArchiveSource(
 }
 
 /**
- * What [UserDataImportRunnerTest] and [UserDataImportPinWalkTest] share, split for `LargeClass`. Every
- * stub is opt-in: `BaseTest` fails a test that declares one it never reaches.
+ * What [UserDataImportRunnerTest] and [UserDataImportPinWalkTest] share, split for `LargeClass`. Every stub is opt-in:
+ * `BaseTest` fails a test that declares one it never reaches.
  */
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a fixture base for the slices above.
 internal abstract class UserDataImportRunnerFixtures : BaseTest() {
@@ -199,9 +200,18 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             archiveStore = archiveStore,
             mediaIngestion =
                 MediaIngestion(
-                    mediaStore, imageProbe, videoProcessor,
+                    mediaStore,
+                    imageProbe,
+                    videoProcessor,
                     MediaLimits(
-                        MAX_MEDIA_BYTES, MAX_MEDIA_BYTES, Duration.ZERO, MAX_PIXELS, MAX_PIXELS, 1, Duration.ZERO, 0,
+                        MAX_MEDIA_BYTES,
+                        MAX_MEDIA_BYTES,
+                        Duration.ZERO,
+                        MAX_PIXELS,
+                        MAX_PIXELS,
+                        1,
+                        Duration.ZERO,
+                        0,
                     ),
                 ),
             // The real one over the same fake repository: the boundary it owns is what the walk needs.
@@ -234,8 +244,8 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
     protected var reread: (UserDataImport) -> UserDataImport? = { it }
 
     /**
-     * The canceller landing at the next fenced re-read, which is how a `DELETE` reaches a running walk:
-     * the state is written, the token is left alone, and the runner is told by the row, not by a call.
+     * The canceller landing at the next fenced re-read, which is how a `DELETE` reaches a running walk: the state is
+     * written, the token is left alone, and the runner is told by the row, not by a call.
      */
     protected fun cancelWhen(landed: () -> Boolean) {
         reread = { row ->
@@ -257,15 +267,16 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
         id: UUID = importId,
         storageKey: String? = ImportArchiveKey.forImport(id),
         startedAt: Instant? = null,
-    ) = UserDataImport(
-        id = id,
-        userId = user.id,
-        state = state,
-        requestedAt = now,
-        lastActivityAt = now,
-        storageKey = storageKey,
-        startedAt = startedAt,
-    )
+    ) =
+        UserDataImport(
+            id = id,
+            userId = user.id,
+            state = state,
+            requestedAt = now,
+            lastActivityAt = now,
+            storageKey = storageKey,
+            startedAt = startedAt,
+        )
 
     protected fun aManifest(pins: Int? = ANNOUNCED_PINS, formatVersion: Int = 2) =
         ImportedManifest(formatVersion = formatVersion, counts = pins?.let { ImportedCounts(pins = it) })
@@ -280,14 +291,15 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
 
     protected fun anExistingBoard(name: String, softDeletedAt: Instant? = null) =
         Board(
-            id = randomUUID(),
-            author = user,
-            name = name,
-            description = "kept",
-            createdAt = accountCreatedAt,
-            updatedAt = accountCreatedAt,
-            softDeletedAt = softDeletedAt,
-        ).also { existingBoards[name] = it }
+                id = randomUUID(),
+                author = user,
+                name = name,
+                description = "kept",
+                createdAt = accountCreatedAt,
+                updatedAt = accountCreatedAt,
+                softDeletedAt = softDeletedAt,
+            )
+            .also { existingBoards[name] = it }
 
     /** One `pins.jsonl` line over [path]; the rest is set through `copy`, so the parameter bound holds. */
     protected fun aPin(
@@ -295,31 +307,33 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
         bytes: ByteArray = alphaBytes,
         tags: List<String> = emptyList(),
         boards: List<String> = emptyList(),
-    ) = ImportedPin(
-        description = "a pin",
-        sourceContextUrl = "https://example.test/alpha",
-        sourceMediaUrl = null,
-        createdAt = pastInstant,
-        updatedAt = pastInstant,
-        deletedAt = null,
-        tags = tags.map { ImportedRef(it) },
-        boards = boards.map { ImportedRef(it) },
-        media = path?.let { ImportedMedia(path = it, sha256 = sha256(bytes)) },
-    )
+    ) =
+        ImportedPin(
+            description = "a pin",
+            sourceContextUrl = "https://example.test/alpha",
+            sourceMediaUrl = null,
+            createdAt = pastInstant,
+            updatedAt = pastInstant,
+            deletedAt = null,
+            tags = tags.map { ImportedRef(it) },
+            boards = boards.map { ImportedRef(it) },
+            media = path?.let { ImportedMedia(path = it, sha256 = sha256(bytes)) },
+        )
 
     /** An image row the account already holds, which is what the content-hash lookup answers from. */
     protected fun anExistingMediaRow(contentHash: String) =
         Media.StillImage(
-            id = randomUUID(),
-            pinId = randomUUID(),
-            mimeType = MediaFormat.PNG.mimeType,
-            width = WIDTH,
-            height = HEIGHT,
-            byteSize = 1,
-            contentHash = contentHash,
-            storageKey = "originals/existing",
-            createdAt = accountCreatedAt,
-        ).also { savedMedia += it }
+                id = randomUUID(),
+                pinId = randomUUID(),
+                mimeType = MediaFormat.PNG.mimeType,
+                width = WIDTH,
+                height = HEIGHT,
+                byteSize = 1,
+                contentHash = contentHash,
+                storageKey = "originals/existing",
+                createdAt = accountCreatedAt,
+            )
+            .also { savedMedia += it }
 
     protected fun seedRow(row: UserDataImport) {
         rows[row.id] = row
@@ -333,12 +347,19 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
 
     protected fun stubRowWrites() {
         every { importRepository.save(any()) } answers
-            { firstArg<UserDataImport>().also { row -> rows[row.id] = row; stored = row } }
+            {
+                firstArg<UserDataImport>().also { row ->
+                    rows[row.id] = row
+                    stored = row
+                }
+            }
     }
 
     protected fun stubIssues() {
         every { issueRepository.save(any()) } answers
-            { firstArg<UserDataImportIssue>().also { issue -> savedIssues += issue } }
+            {
+                firstArg<UserDataImportIssue>().also { issue -> savedIssues += issue }
+            }
     }
 
     protected fun stubTagLookup() {
@@ -348,7 +369,12 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
     /** A created row is one the lookup answers with from then on, as a repository would. */
     protected fun stubTagCreation() {
         every { tagRepository.saveTag(any()) } answers
-            { firstArg<Tag>().also { tag -> savedTags += tag; existingTags[tag.name] = tag } }
+            {
+                firstArg<Tag>().also { tag ->
+                    savedTags += tag
+                    existingTags[tag.name] = tag
+                }
+            }
     }
 
     protected fun stubBoardLookup() {
@@ -357,7 +383,12 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
 
     protected fun stubBoardCreation() {
         every { boardRepository.saveBoard(any()) } answers
-            { firstArg<Board>().also { board -> savedBoards += board; existingBoards[board.name] = board } }
+            {
+                firstArg<Board>().also { board ->
+                    savedBoards += board
+                    existingBoards[board.name] = board
+                }
+            }
     }
 
     /** Everything a run needs to reach the archive: the row, its writes, the account and the clock. */
@@ -376,8 +407,8 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
     }
 
     /**
-     * A run that reaches the walks, where the report cap asks how many rows the report already holds and
-     * whose row ends terminal, so the runner releases the archive as it returns (spec section 8 step 8).
+     * A run that reaches the walks, where the report cap asks how many rows the report already holds and whose row ends
+     * terminal, so the runner releases the archive as it returns (spec section 8 step 8).
      */
     protected fun stubWalk(
         source: FakeArchiveSource,
@@ -396,34 +427,38 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
 
     /** Step 3: who already holds those bytes, answered from the image rows the account has. */
     protected fun stubHashLookup() {
-        every { pinRepository.findPinIdsByContentHashForUser(user, any()) } answers {
-            val contentHash = secondArg<String>()
-            savedMedia.filter { media -> media.contentHash == contentHash }.map { media -> media.pinId }
-        }
+        every { pinRepository.findPinIdsByContentHashForUser(user, any()) } answers
+            {
+                val contentHash = secondArg<String>()
+                savedMedia.filter { media -> media.contentHash == contentHash }.map { media -> media.pinId }
+            }
     }
 
     /** Step 4: the entry is reopened and written to a temp file, which the probe then reads. */
     protected fun stubStage() {
-        every { mediaStore.stage(any(), MAX_MEDIA_BYTES) } answers {
-            stageCalls++
-            val bytes = firstArg<InputStream>().readBytes()
-            StagedFile(path = "tmp/${randomUUID()}", byteSize = bytes.size.toLong(), contentHash = sha256(bytes))
-                .also { file -> stagedPaths += file.path }
-        }
+        every { mediaStore.stage(any(), MAX_MEDIA_BYTES) } answers
+            {
+                stageCalls++
+                val bytes = firstArg<InputStream>().readBytes()
+                StagedFile(path = "tmp/${randomUUID()}", byteSize = bytes.size.toLong(), contentHash = sha256(bytes))
+                    .also { file -> stagedPaths += file.path }
+            }
     }
 
     /** Step 5's first half: the temp file is moved into place before any row is written. */
     protected fun stubPromote() {
-        every { mediaStore.promote(any(), any()) } answers {
-            stagedPaths -= firstArg<StagedFile>().path
-            promoted += secondArg<String>()
-        }
+        every { mediaStore.promote(any(), any()) } answers
+            {
+                stagedPaths -= firstArg<StagedFile>().path
+                promoted += secondArg<String>()
+            }
     }
 
     protected fun stubProbe() {
-        every { imageProbe.probe(any()) } answers {
-            ProbeResult(MediaFormat.PNG, WIDTH, HEIGHT, frames = 1, bytes = firstArg<StagedFile>().byteSize)
-        }
+        every { imageProbe.probe(any()) } answers
+            {
+                ProbeResult(MediaFormat.PNG, WIDTH, HEIGHT, frames = 1, bytes = firstArg<StagedFile>().byteSize)
+            }
     }
 
     protected fun stubPinWrites() {
@@ -447,15 +482,16 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
     }
 
     /**
-     * Recorded rather than counted through [stagedPaths]: the promote fixture already emptied that set,
-     * so asserting it holds nothing says nothing about a compensation that never ran.
+     * Recorded rather than counted through [stagedPaths]: the promote fixture already emptied that set, so asserting it
+     * holds nothing says nothing about a compensation that never ran.
      */
     protected fun stubDiscard() {
-        every { mediaStore.discard(any()) } answers {
-            val staged = firstArg<StagedFile>()
-            discarded += staged.path
-            stagedPaths -= staged.path
-        }
+        every { mediaStore.discard(any()) } answers
+            {
+                val staged = firstArg<StagedFile>()
+                discarded += staged.path
+                stagedPaths -= staged.path
+            }
     }
 
     protected fun stubDelete() {
@@ -478,16 +514,18 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
         savedPins
             .map { pin ->
                 listOf(
-                    pin.sourceContextUrl,
-                    pin.description,
-                    pin.createdAt,
-                    pin.updatedAt,
-                    pin.softDeletedAt,
-                    pin.tags.map { it.name },
-                    pin.boards.map { it.name },
-                    savedMedia.single { it.pinId == pin.id }.contentHash,
-                ).joinToString("|")
-            }.sorted()
+                        pin.sourceContextUrl,
+                        pin.description,
+                        pin.createdAt,
+                        pin.updatedAt,
+                        pin.softDeletedAt,
+                        pin.tags.map { it.name },
+                        pin.boards.map { it.name },
+                        savedMedia.single { it.pinId == pin.id }.contentHash,
+                    )
+                    .joinToString("|")
+            }
+            .sorted()
 
     companion object {
         const val MAX_METADATA_BYTES = 16L * 1024 * 1024

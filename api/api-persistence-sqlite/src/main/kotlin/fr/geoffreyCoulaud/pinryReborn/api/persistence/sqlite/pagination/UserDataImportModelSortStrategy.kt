@@ -4,8 +4,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataImpo
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QUserDataImportModel
 
 /**
- * Most recently requested first, on the pair `(requestedAt, id)`: the instant alone stalls the cursor
- * inside a group sharing it, as it did for pins and for exports. The pivot stays deliberately in range.
+ * Most recently requested first, on the pair `(requestedAt, id)`: the instant alone stalls the cursor inside a group
+ * sharing it, as it did for pins and for exports. The pivot stays deliberately in range.
  */
 class UserDataImportModelSortStrategy : ModelSortStrategy<UserDataImportModel, QUserDataImportModel>() {
     override fun filterCursorAndForwardNeighbors(
@@ -14,14 +14,12 @@ class UserDataImportModelSortStrategy : ModelSortStrategy<UserDataImportModel, Q
     ): QUserDataImportModel =
         query
             .or()
-            .requestedAt.lessThan(cursor.pivot.requestedAt)
+            .requestedAt
+            .lessThan(cursor.pivot.requestedAt)
             .let {
-                it
-                    .and()
-                    .requestedAt.equalTo(cursor.pivot.requestedAt)
-                    .raw("id <= ?", cursor.pivot.id)
-                    .endAnd()
-            }.endOr()
+                it.and().requestedAt.equalTo(cursor.pivot.requestedAt).raw("id <= ?", cursor.pivot.id).endAnd()
+            }
+            .endOr()
 
     override fun filterCursorAndBackwardNeighbors(
         cursor: ModelCursor<UserDataImportModel>,
@@ -29,14 +27,12 @@ class UserDataImportModelSortStrategy : ModelSortStrategy<UserDataImportModel, Q
     ): QUserDataImportModel =
         query
             .or()
-            .requestedAt.greaterThan(cursor.pivot.requestedAt)
+            .requestedAt
+            .greaterThan(cursor.pivot.requestedAt)
             .let {
-                it
-                    .and()
-                    .requestedAt.equalTo(cursor.pivot.requestedAt)
-                    .raw("id >= ?", cursor.pivot.id)
-                    .endAnd()
-            }.endOr()
+                it.and().requestedAt.equalTo(cursor.pivot.requestedAt).raw("id >= ?", cursor.pivot.id).endAnd()
+            }
+            .endOr()
 
     override fun sortCursorAndForwardNeighbors(query: QUserDataImportModel): QUserDataImportModel =
         query.orderBy().requestedAt.desc().id.desc()

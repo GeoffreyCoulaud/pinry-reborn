@@ -9,26 +9,23 @@ import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import jakarta.inject.Inject
+import java.time.Instant
+import java.util.UUID
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasKey
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID
 
 @QuarkusTest
 class BoardsIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var boardCreator: BoardCreator
+    @Inject lateinit var boardCreator: BoardCreator
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var mediaRepository: MediaRepositoryInterface
+    @Inject lateinit var mediaRepository: MediaRepositoryInterface
 
     // --- Create ---
 
@@ -193,12 +190,7 @@ class BoardsIntegrationTest : IntegrationTest() {
         val board = boardCreator.create(author = owner.user, name = "Private", description = "")
 
         // When / Then
-        given()
-            .authenticatedAs(attacker)
-            .`when`()
-            .get("/api/v1/boards/${board.id}")
-            .then()
-            .statusCode(403)
+        given().authenticatedAs(attacker).`when`().get("/api/v1/boards/${board.id}").then().statusCode(403)
     }
 
     @Test
@@ -207,12 +199,7 @@ class BoardsIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
 
         // When / Then
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .get("/api/v1/boards/${UUID.randomUUID()}")
-            .then()
-            .statusCode(404)
+        given().authenticatedAs(auth).`when`().get("/api/v1/boards/${UUID.randomUUID()}").then().statusCode(404)
     }
 
     @Test
@@ -257,12 +244,7 @@ class BoardsIntegrationTest : IntegrationTest() {
         val board = boardCreator.create(author = owner.user, name = "Private", description = "")
 
         // When / Then
-        given()
-            .authenticatedAs(attacker)
-            .`when`()
-            .delete("/api/v1/boards/${board.id}")
-            .then()
-            .statusCode(403)
+        given().authenticatedAs(attacker).`when`().delete("/api/v1/boards/${board.id}").then().statusCode(403)
     }
 
     @Test
@@ -271,12 +253,7 @@ class BoardsIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
 
         // When / Then
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .delete("/api/v1/boards/${UUID.randomUUID()}")
-            .then()
-            .statusCode(404)
+        given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${UUID.randomUUID()}").then().statusCode(404)
     }
 
     // --- Cover ---
@@ -286,10 +263,16 @@ class BoardsIntegrationTest : IntegrationTest() {
         val pin = pinCreator.createPin(auth.user, "https://example.com", null, "Pin", emptyList())
         mediaRepository.save(
             Media.StillImage(
-                id = UUID.randomUUID(), pinId = pin.id, mimeType = "image/png", width = 1, height = 1,
-                byteSize = 1, contentHash = "hash-${pin.id}",
-                storageKey = "originals/x/${pin.id}/i.png", createdAt = Instant.EPOCH,
-            ),
+                id = UUID.randomUUID(),
+                pinId = pin.id,
+                mimeType = "image/png",
+                width = 1,
+                height = 1,
+                byteSize = 1,
+                contentHash = "hash-${pin.id}",
+                storageKey = "originals/x/${pin.id}/i.png",
+                createdAt = Instant.EPOCH,
+            )
         )
         return pin
     }

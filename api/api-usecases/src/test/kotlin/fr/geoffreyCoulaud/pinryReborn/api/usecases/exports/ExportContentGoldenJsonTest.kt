@@ -4,39 +4,34 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveEntryDigest
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 /**
- * Pins the exact JSON shape of every `Exported*` type against a Jackson upgrade or an accidental
- * property rename (spec §4: "the field names are a published contract").
+ * Pins the exact JSON shape of every `Exported*` type against a Jackson upgrade or an accidental property rename (spec
+ * §4: "the field names are a published contract").
  *
- * `api-usecases` carries no Jackson dependency on its main classpath by design (Jackson is
- * adapter-only); this mapper is built **test-only**, configured identically to the real one in
- * `FilesystemZipExportArchiveStore` (`JavaTimeModule` registered, `WRITE_DATES_AS_TIMESTAMPS`
- * disabled, nothing else). That equality is what makes this test meaningful: if the adapter's mapper
- * config ever drifts from this one, this test stops proving anything about the real archive. The
- * end-to-end proof that a real archive on disk matches this shape is the integration tests (later
- * tasks), not this test.
+ * `api-usecases` carries no Jackson dependency on its main classpath by design (Jackson is adapter-only); this mapper
+ * is built **test-only**, configured identically to the real one in `FilesystemZipExportArchiveStore` (`JavaTimeModule`
+ * registered, `WRITE_DATES_AS_TIMESTAMPS` disabled, nothing else). That equality is what makes this test meaningful: if
+ * the adapter's mapper config ever drifts from this one, this test stops proving anything about the real archive. The
+ * end-to-end proof that a real archive on disk matches this shape is the integration tests (later tasks), not this
+ * test.
  *
- * `jackson-module-kotlin` reached `api-storage-filesystem` with the import reader, so the sentence
- * this KDoc used to carry (none anywhere in the codebase) is no longer true. It is registered on the
- * reader's mapper only; the writer's registered module ids are asserted in
- * `FilesystemZipExportArchiveStoreTest`, which is where a stray registration would be caught. Nothing
- * registers it here either, so every type below is still serialized through plain JavaBean getter
- * introspection, not constructor/property metadata. The one place that matters is `Boolean`: a
- * property named `isX` compiles to a getter `isX()`, which Jackson reads as a property named `x` (the
- * `is` prefix is stripped). [ExportedMedia.animated] is named `animated`, not `isAnimated`,
- * specifically so its getter is `getAnimated()` and its published field name stays `animated`,
- * matching spec §4 exactly.
+ * `jackson-module-kotlin` reached `api-storage-filesystem` with the import reader, so the sentence this KDoc used to
+ * carry (none anywhere in the codebase) is no longer true. It is registered on the reader's mapper only; the writer's
+ * registered module ids are asserted in `FilesystemZipExportArchiveStoreTest`, which is where a stray registration
+ * would be caught. Nothing registers it here either, so every type below is still serialized through plain JavaBean
+ * getter introspection, not constructor/property metadata. The one place that matters is `Boolean`: a property named
+ * `isX` compiles to a getter `isX()`, which Jackson reads as a property named `x` (the `is` prefix is stripped).
+ * [ExportedMedia.animated] is named `animated`, not `isAnimated`, specifically so its getter is `getAnimated()` and its
+ * published field name stays `animated`, matching spec §4 exactly.
  */
 class ExportContentGoldenJsonTest {
     private val mapper: ObjectMapper =
-        ObjectMapper()
-            .registerModule(JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        ObjectMapper().registerModule(JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
     @Test
     fun `Given a fully populated ExportGenerator, Then it serializes to the published JSON shape`() {
@@ -265,7 +260,7 @@ class ExportContentGoldenJsonTest {
                         ExportExclusion(
                             what = "password hashes",
                             why = "secrets; useless to you, dangerous if this archive leaks",
-                        ),
+                        )
                     ),
             )
 

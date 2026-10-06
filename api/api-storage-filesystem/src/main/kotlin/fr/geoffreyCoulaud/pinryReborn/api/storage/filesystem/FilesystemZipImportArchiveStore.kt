@@ -26,8 +26,8 @@ import java.util.zip.ZipFile
 import kotlin.streams.asSequence
 
 /**
- * [ImportArchiveStore] over the filesystem, [FilesystemZipExportArchiveStore] the other way round: an
- * upload accumulates under `tmp/`, is measured in one pass, then promoted by atomic rename.
+ * [ImportArchiveStore] over the filesystem, [FilesystemZipExportArchiveStore] the other way round: an upload
+ * accumulates under `tmp/`, is measured in one pass, then promoted by atomic rename.
  */
 @Suppress("TooManyFunctions") // Every port method plus its helpers: one cohesive adapter, never split.
 class FilesystemZipImportArchiveStore(
@@ -35,28 +35,29 @@ class FilesystemZipImportArchiveStore(
     private val maxLineBytes: Int,
 ) : ImportArchiveStore {
     private val paths = DataDirPaths(dataDir)
-    private val tmpDir: Path get() = Path.of(dataDir).resolve(StorageLayout.STAGING_DIRECTORY)
+    private val tmpDir: Path
+        get() = Path.of(dataDir).resolve(StorageLayout.STAGING_DIRECTORY)
 
     /**
-     * Reader only, never handed to a writer. The Kotlin module turns a missing or null field into a parse
-     * failure, not a null in a non-nullable property; an undeclared field is ignored, as the format says.
+     * Reader only, never handed to a writer. The Kotlin module turns a missing or null field into a parse failure, not
+     * a null in a non-nullable property; an undeclared field is ignored, as the format says.
      */
     private val mapper: ObjectMapper =
         ObjectMapper(
-            JsonFactory
-                .builder()
-                .streamReadConstraints(
-                    // Explicit, since the defaults bound a single string and leave the document's shape
-                    // open; the per-read byte bounds below are what cap its length.
-                    StreamReadConstraints
-                        .builder()
-                        .maxNestingDepth(MAX_NESTING_DEPTH)
-                        .maxStringLength(MAX_STRING_LENGTH)
-                        .maxNameLength(MAX_NAME_LENGTH)
-                        .maxNumberLength(MAX_NUMBER_LENGTH)
-                        .build(),
-                ).build(),
-        ).registerModule(JavaTimeModule())
+                JsonFactory.builder()
+                    .streamReadConstraints(
+                        // Explicit, since the defaults bound a single string and leave the document's shape
+                        // open; the per-read byte bounds below are what cap its length.
+                        StreamReadConstraints.builder()
+                            .maxNestingDepth(MAX_NESTING_DEPTH)
+                            .maxStringLength(MAX_STRING_LENGTH)
+                            .maxNameLength(MAX_NAME_LENGTH)
+                            .maxNumberLength(MAX_NUMBER_LENGTH)
+                            .build()
+                    )
+                    .build()
+            )
+            .registerModule(JavaTimeModule())
             .registerKotlinModule()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
@@ -137,14 +138,14 @@ class FilesystemZipImportArchiveStore(
 
     override fun discardOrphanedStagedFiles(olderThan: Instant): Int {
         if (!Files.isDirectory(tmpDir)) return 0
-        return Files
-            .list(tmpDir)
+        return Files.list(tmpDir)
             .use { stream ->
                 stream
                     .filter { it.fileName.toString().startsWith(UPLOAD_PREFIX) }
                     .filter { Files.getLastModifiedTime(it).toInstant().isBefore(olderThan) }
                     .toList()
-            }.count { Files.deleteIfExists(it) }
+            }
+            .count { Files.deleteIfExists(it) }
     }
 
     override fun forEachStorageKeyOnDisk(block: (Sequence<String>) -> Unit) {
@@ -158,8 +159,10 @@ class FilesystemZipImportArchiveStore(
         }
         Files.list(importsDir).use { stream ->
             block(
-                stream.asSequence().filter { Files.isRegularFile(it) }
-                    .map { "${StorageLayout.IMPORTS_DIRECTORY}/${it.fileName}" },
+                stream
+                    .asSequence()
+                    .filter { Files.isRegularFile(it) }
+                    .map { "${StorageLayout.IMPORTS_DIRECTORY}/${it.fileName}" }
             )
         }
     }

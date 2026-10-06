@@ -1,24 +1,32 @@
 package fr.geoffreyCoulaud.pinryReborn.api.worker
 
+import java.time.Duration
+import java.util.concurrent.AbstractExecutorService
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Duration
-import java.util.concurrent.AbstractExecutorService
-import java.util.concurrent.Semaphore
-import java.util.concurrent.TimeUnit
 
 class BoundedWorkerExecutorTest {
     // Minimal inline ExecutorService: runs submitted work immediately, records shutdown/awaitTermination.
     private class InlineExecutor(private val awaitResult: Boolean) : AbstractExecutorService() {
         var shutdownCalled = false
+
         override fun execute(command: Runnable) = command.run()
-        override fun shutdown() { shutdownCalled = true }
+
+        override fun shutdown() {
+            shutdownCalled = true
+        }
+
         override fun shutdownNow() = mutableListOf<Runnable>()
+
         override fun isShutdown() = shutdownCalled
+
         override fun isTerminated() = shutdownCalled
+
         override fun awaitTermination(timeout: Long, unit: TimeUnit) = awaitResult
     }
 

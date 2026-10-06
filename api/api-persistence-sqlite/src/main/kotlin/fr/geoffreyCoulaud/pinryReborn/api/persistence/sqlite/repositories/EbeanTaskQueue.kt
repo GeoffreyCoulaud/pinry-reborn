@@ -21,15 +21,13 @@ import java.util.UUID.randomUUID
 /**
  * Ebean-backed implementation of [TaskQueueInterface].
  *
- * Settle/cancel operations are fenced bulk updates guarded by `id` + `leaseId` (or `state`),
- * using the row-count returned by [io.ebean.UpdateQuery.update] as the success signal instead
- * of loading, mutating and saving the entity. This avoids racing with a concurrent claim/settle
- * on the same row.
+ * Settle/cancel operations are fenced bulk updates guarded by `id` + `leaseId` (or `state`), using the row-count
+ * returned by [io.ebean.UpdateQuery.update] as the success signal instead of loading, mutating and saving the entity.
+ * This avoids racing with a concurrent claim/settle on the same row.
  *
- * [enqueue]'s dedup check-then-insert, [claimNext]'s select-then-update and [reapExpired]'s
- * select-then-save are each wrapped in one [TransactionRunner.inTransaction] block, so the pair
- * serializes instead of racing across two auto-commit statements. A caller's transaction is joined,
- * which is Ebean's REQUIRED semantics.
+ * [enqueue]'s dedup check-then-insert, [claimNext]'s select-then-update and [reapExpired]'s select-then-save are each
+ * wrapped in one [TransactionRunner.inTransaction] block, so the pair serializes instead of racing across two
+ * auto-commit statements. A caller's transaction is joined, which is Ebean's REQUIRED semantics.
  */
 @ApplicationScoped
 // TaskQueueInterface itself has exactly 11 methods (the port's minimal surface); a full,
@@ -64,10 +62,7 @@ class EbeanTaskQueue(
     }
 
     private fun findLiveTaskWithDedupKey(dedupKey: String): TaskModel? =
-        QTaskModel()
-            .dedupKey.equalTo(dedupKey)
-            .state.isIn(PartialUniqueIndexStates.liveTaskStates)
-            .findOne()
+        QTaskModel().dedupKey.equalTo(dedupKey).state.isIn(PartialUniqueIndexStates.liveTaskStates).findOne()
 
     private fun insert(task: NewTask): Task {
         val model =
@@ -92,57 +87,58 @@ class EbeanTaskQueue(
 
     override fun findLiveIds(ids: Collection<UUID>): Set<UUID> {
         if (ids.isEmpty()) return emptySet()
-        return QTaskModel()
-            .id.isIn(ids)
-            .state.isIn(TaskState.PENDING.name, TaskState.RUNNING.name)
-            .findList()
-            .mapTo(mutableSetOf()) { it.id }
+        return QTaskModel().id.isIn(ids).state.isIn(TaskState.PENDING.name, TaskState.RUNNING.name).findList().mapTo(
+            mutableSetOf()
+        ) {
+            it.id
+        }
     }
 
     override fun claimNext(
         now: Instant,
         leaseDuration: Duration,
-    ): ClaimedTask? =
-        transactionRunner.inTransaction {
-            val model =
-                QTaskModel()
-                    .state.equalTo(TaskState.PENDING.name)
-                    .availableAt.le(now)
-                    .orderBy("priority desc, availableAt asc, id asc")
-                    .setMaxRows(1)
-                    .findOne()
-            if (model == null) {
-                return@inTransaction null
-            }
-            // A task whose handler never returns is never settled, so its attempts are only ever spent by
-            // the reaper putting it back to PENDING; without this guard it is claimed again forever. A
-            // handler still running stops at its next heartbeat (TaskLeaseLostException), so the one killed
-            // here is at most one heartbeat gap behind. Killing rather than skipping keeps the claim one row.
-            if (model.attempts >= model.maxAttempts) {
-                model.state = TaskState.DEAD.name
-                model.lastError = "attempts exhausted"
-                model.leaseId = null
-                model.leaseExpiresAt = null
-                model.terminalStateAt = now
-                persistor.save(model)
-                return@inTransaction null
-            }
-            val leaseId = randomUUID().toString()
-            model.state = TaskState.RUNNING.name
-            model.leaseId = leaseId
-            model.leaseExpiresAt = now.plus(leaseDuration)
-            model.attempts += 1
-            persistor.save(model)
-            ClaimedTask(
-                id = model.id,
-                kind = model.kind,
-                payload = model.payload,
-                attempts = model.attempts,
-                maxAttempts = model.maxAttempts,
-                leaseId = leaseId,
-                cancelRequested = model.cancelRequested,
-            )
+    ): ClaimedTask? = transactionRunner.inTransaction {
+        val model =
+            QTaskModel()
+                .state
+                .equalTo(TaskState.PENDING.name)
+                .availableAt
+                .le(now)
+                .orderBy("priority desc, availableAt asc, id asc")
+                .setMaxRows(1)
+                .findOne()
+        if (model == null) {
+            return@inTransaction null
         }
+        // A task whose handler never returns is never settled, so its attempts are only ever spent by
+        // the reaper putting it back to PENDING; without this guard it is claimed again forever. A
+        // handler still running stops at its next heartbeat (TaskLeaseLostException), so the one killed
+        // here is at most one heartbeat gap behind. Killing rather than skipping keeps the claim one row.
+        if (model.attempts >= model.maxAttempts) {
+            model.state = TaskState.DEAD.name
+            model.lastError = "attempts exhausted"
+            model.leaseId = null
+            model.leaseExpiresAt = null
+            model.terminalStateAt = now
+            persistor.save(model)
+            return@inTransaction null
+        }
+        val leaseId = randomUUID().toString()
+        model.state = TaskState.RUNNING.name
+        model.leaseId = leaseId
+        model.leaseExpiresAt = now.plus(leaseDuration)
+        model.attempts += 1
+        persistor.save(model)
+        ClaimedTask(
+            id = model.id,
+            kind = model.kind,
+            payload = model.payload,
+            attempts = model.attempts,
+            maxAttempts = model.maxAttempts,
+            leaseId = leaseId,
+            cancelRequested = model.cancelRequested,
+        )
+    }
 
     override fun renewLease(
         id: UUID,
@@ -150,7 +146,8 @@ class EbeanTaskQueue(
         until: Instant,
     ): Boolean =
         leaseGuard(id, leaseId)
-            .state.equalTo(TaskState.RUNNING.name)
+            .state
+            .equalTo(TaskState.RUNNING.name)
             .asUpdate()
             .set("leaseExpiresAt", until)
             .setRaw("version = version + 1")
@@ -205,7 +202,8 @@ class EbeanTaskQueue(
         now: Instant,
     ): Boolean =
         leaseGuard(id, leaseId)
-            .cancelRequested.equalTo(true)
+            .cancelRequested
+            .equalTo(true)
             .asUpdate()
             .set("state", TaskState.CANCELLED.name)
             .set("terminalStateAt", now)
@@ -217,8 +215,10 @@ class EbeanTaskQueue(
         now: Instant,
     ): Boolean =
         QTaskModel()
-            .id.equalTo(id)
-            .state.equalTo(TaskState.PENDING.name)
+            .id
+            .equalTo(id)
+            .state
+            .equalTo(TaskState.PENDING.name)
             .asUpdate()
             .set("state", TaskState.CANCELLED.name)
             .set("terminalStateAt", now)
@@ -227,25 +227,23 @@ class EbeanTaskQueue(
 
     override fun requestCancel(id: UUID): Boolean =
         QTaskModel()
-            .id.equalTo(id)
-            .state.equalTo(TaskState.RUNNING.name)
+            .id
+            .equalTo(id)
+            .state
+            .equalTo(TaskState.RUNNING.name)
             .asUpdate()
             .set("cancelRequested", true)
             .setRaw("version = version + 1")
             .update() > 0
 
     /**
-     * Row by row rather than in one bulk update: the delay is per row, off its attempts and the floor
-     * its kind is given. One transaction for [claimNext]'s reason; at most [limit] rows, the rest next sweep.
+     * Row by row rather than in one bulk update: the delay is per row, off its attempts and the floor its kind is
+     * given. One transaction for [claimNext]'s reason; at most [limit] rows, the rest next sweep.
      */
     override fun reapExpired(now: Instant, retryFloors: Map<String, Duration>, limit: Int): Int =
         transactionRunner.inTransaction {
             val expired =
-                QTaskModel()
-                    .state.equalTo(TaskState.RUNNING.name)
-                    .leaseExpiresAt.le(now)
-                    .setMaxRows(limit)
-                    .findList()
+                QTaskModel().state.equalTo(TaskState.RUNNING.name).leaseExpiresAt.le(now).setMaxRows(limit).findList()
             expired.forEach { model ->
                 model.state = TaskState.PENDING.name
                 model.lastError = "reclaimed after lease expiry"
@@ -263,8 +261,10 @@ class EbeanTaskQueue(
 
     override fun deleteTerminalBefore(cutoff: Instant): Int =
         QTaskModel()
-            .state.isIn(TaskState.SUCCEEDED.name, TaskState.DEAD.name, TaskState.CANCELLED.name)
-            .terminalStateAt.lessThan(cutoff)
+            .state
+            .isIn(TaskState.SUCCEEDED.name, TaskState.DEAD.name, TaskState.CANCELLED.name)
+            .terminalStateAt
+            .lessThan(cutoff)
             .delete()
 
     /** Query for the task row identified by [id], guarded by its current [leaseId] (fencing). */

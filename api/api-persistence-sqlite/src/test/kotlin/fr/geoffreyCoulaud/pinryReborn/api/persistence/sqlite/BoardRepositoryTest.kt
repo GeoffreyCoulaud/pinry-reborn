@@ -11,14 +11,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRep
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 class BoardRepositoryTest : RepositoryTest() {
     private val boardRepository = BoardRepository(persistor)
@@ -32,7 +32,7 @@ class BoardRepositoryTest : RepositoryTest() {
                 id = randomUUID(),
                 name = createRandomString(),
                 createdAt = storableNow(),
-            ),
+            )
         )
 
     private fun createAndSaveBoard(
@@ -47,7 +47,7 @@ class BoardRepositoryTest : RepositoryTest() {
                 description = "",
                 createdAt = storableNow(),
                 updatedAt = storableNow(),
-            ),
+            )
         )
 
     // A board whose id is not in the store: the use case read and validated a board a concurrent
@@ -79,15 +79,22 @@ class BoardRepositoryTest : RepositoryTest() {
                 boards = boards,
                 createdAt = createdAt,
                 updatedAt = storableNow(),
-            ),
+            )
         )
 
     private fun saveMediaFor(pin: Pin) =
         mediaRepository.save(
             Media.StillImage(
-                id = randomUUID(), pinId = pin.id, mimeType = "image/png", width = 1, height = 1,
-                byteSize = 1, contentHash = "h", storageKey = "originals/x/${pin.id}/i.png", createdAt = storableNow(),
-            ),
+                id = randomUUID(),
+                pinId = pin.id,
+                mimeType = "image/png",
+                width = 1,
+                height = 1,
+                byteSize = 1,
+                contentHash = "h",
+                storageKey = "originals/x/${pin.id}/i.png",
+                createdAt = storableNow(),
+            )
         )
 
     @Test
@@ -178,9 +185,10 @@ class BoardRepositoryTest : RepositoryTest() {
         val board = absentBoard(user)
 
         // When / Then
-        val exception = assertThrows<IllegalStateException> {
-            boardRepository.softDeleteBoard(board, storableNow())
-        }
+        val exception =
+            assertThrows<IllegalStateException> {
+                boardRepository.softDeleteBoard(board, storableNow())
+            }
         assertTrue(exception.message!!.contains(board.id.toString()))
     }
 
@@ -191,9 +199,10 @@ class BoardRepositoryTest : RepositoryTest() {
         val board = absentBoard(user)
 
         // When / Then
-        val exception = assertThrows<IllegalStateException> {
-            boardRepository.restoreBoard(board, storableNow())
-        }
+        val exception =
+            assertThrows<IllegalStateException> {
+                boardRepository.restoreBoard(board, storableNow())
+            }
         assertTrue(exception.message!!.contains(board.id.toString()))
     }
 

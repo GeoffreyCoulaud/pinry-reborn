@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
@@ -13,18 +13,17 @@ import java.time.Duration
 import java.util.UUID
 
 /**
- * Reclaims orphaned rendition subtrees, export and import archives, media originals and staged media
- * files on disk: residue no row-based sweep can see (a committed account delete that left bytes
- * behind, a crash mid-write, residue from before this change). Disk drives the iteration and each
- * batch is checked against the DB, so memory is bounded by [batchSize] regardless of how many files or
- * rows an active instance accumulates. The garbage collection bounds residue, not live data (spec
- * docs/specs/2026-07-27-periodic-gc.md, decision D5).
+ * Reclaims orphaned rendition subtrees, export and import archives, media originals and staged media files on disk:
+ * residue no row-based sweep can see (a committed account delete that left bytes behind, a crash mid-write, residue
+ * from before this change). Disk drives the iteration and each batch is checked against the DB, so memory is bounded by
+ * [batchSize] regardless of how many files or rows an active instance accumulates. The garbage collection bounds
+ * residue, not live data (spec docs/specs/2026-07-27-periodic-gc.md, decision D5).
  *
- * Not `@ApplicationScoped`: [batchSize] is a primitive ARC cannot resolve, so the bean is produced
- * in wiring (`GarbageCollectionProducers`), mirroring `ExportProducers` for `ReapUserDataExports`.
+ * Not `@ApplicationScoped`: [batchSize] is a primitive ARC cannot resolve, so the bean is produced in wiring
+ * (`GarbageCollectionProducers`), mirroring `ExportProducers` for `ReapUserDataExports`.
  *
- * Logger-free: the `*Quietly` extensions log per-item failures, and the lifecycle `safeAll` logs a
- * sweep-level throw. Add no logger here.
+ * Logger-free: the `*Quietly` extensions log per-item failures, and the lifecycle `safeAll` logs a sweep-level throw.
+ * Add no logger here.
  */
 @Suppress("LongParameterList") // One port and one repository per dataset, plus the clock and both bounds.
 class ReapOrphanedStorage(
@@ -40,11 +39,11 @@ class ReapOrphanedStorage(
     private val orphanGrace: Duration,
 ) {
     /**
-     * Reclaim every orphaned rendition subtree, archive, original and staged media file on disk, batched
-     * by [batchSize]. Returns the total count of orphans identified for reclamation: per-item
-     * eviction/deletion is best-effort via the `*Quietly` extensions, so a failed delete is logged at
-     * WARN and retried on the next sweep, not counted here as a success. An original or a staged file
-     * younger than [orphanGrace] may be a promotion awaiting its transaction, so it stays.
+     * Reclaim every orphaned rendition subtree, archive, original and staged media file on disk, batched by
+     * [batchSize]. Returns the total count of orphans identified for reclamation: per-item eviction/deletion is
+     * best-effort via the `*Quietly` extensions, so a failed delete is logged at WARN and retried on the next sweep,
+     * not counted here as a success. An original or a staged file younger than [orphanGrace] may be a promotion
+     * awaiting its transaction, so it stays.
      */
     fun reap(): Int {
         val cutoff = clock.now().minus(orphanGrace)
@@ -57,19 +56,22 @@ class ReapOrphanedStorage(
             }
         }
         exportArchiveStore.forEachStorageKeyOnDisk { keys ->
-            reclaimed += reclaimOrphans(keys, EXPORTS_PREFIX, userDataExportRepository::findMissingExportIds) {
-                exportArchiveStore.deleteQuietly(it)
-            }
+            reclaimed +=
+                reclaimOrphans(keys, EXPORTS_PREFIX, userDataExportRepository::findMissingExportIds) {
+                    exportArchiveStore.deleteQuietly(it)
+                }
         }
         importArchiveStore.forEachStorageKeyOnDisk { keys ->
-            reclaimed += reclaimOrphans(keys, IMPORTS_PREFIX, userDataImportRepository::findMissingImportIds) {
-                importArchiveStore.deleteQuietly(it)
-            }
+            reclaimed +=
+                reclaimOrphans(keys, IMPORTS_PREFIX, userDataImportRepository::findMissingImportIds) {
+                    importArchiveStore.deleteQuietly(it)
+                }
         }
         mediaStore.forEachStorageKeyOnDisk(cutoff) { keys ->
-            reclaimed += reclaimOrphans(keys, ORIGINALS_PREFIX, mediaRepository::findMissingMediaIds) {
-                mediaStore.deleteQuietly(it)
-            }
+            reclaimed +=
+                reclaimOrphans(keys, ORIGINALS_PREFIX, mediaRepository::findMissingMediaIds) {
+                    mediaStore.deleteQuietly(it)
+                }
         }
         reclaimed += mediaStore.discardOrphanedStagedFiles(cutoff)
         return reclaimed
@@ -94,8 +96,8 @@ class ReapOrphanedStorage(
     }
 
     /**
-     * The id in a `<prefix>[<directories>/]<uuid>.<ext>` key. Null on any failure, and a key that does
-     * not parse is skipped, never deleted, and never passed to the repository.
+     * The id in a `<prefix>[<directories>/]<uuid>.<ext>` key. Null on any failure, and a key that does not parse is
+     * skipped, never deleted, and never passed to the repository.
      */
     private fun parseId(storageKey: String, prefix: String): UUID? {
         if (!storageKey.startsWith(prefix)) return null

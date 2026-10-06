@@ -13,9 +13,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 @ApplicationScoped
-class PinGetter(
-    private val pinRepository: PinRepositoryInterface,
-) {
+class PinGetter(private val pinRepository: PinRepositoryInterface) {
     fun getPinForUser(
         reader: User,
         pinId: UUID,

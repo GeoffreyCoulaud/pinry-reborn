@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.http
 
 import jakarta.ws.rs.core.StreamingOutput
-import org.jboss.resteasy.reactive.RestResponse
-import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder
 import java.io.InputStream
 import java.io.OutputStream
+import org.jboss.resteasy.reactive.RestResponse
+import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder
 
 /** A stored body served whole as `200`, or one [ByteRange] of it as `206`, both under `Accept-Ranges: bytes`. */
 object ByteRangeResponse {
@@ -20,9 +20,8 @@ object ByteRangeResponse {
                 copyBounded(stream, output, sliceLength)
             }
         }
-        val builder = ResponseBuilder.create(status, body)
-            .header("Content-Length", sliceLength)
-            .header("Accept-Ranges", "bytes")
+        val builder =
+            ResponseBuilder.create(status, body).header("Content-Length", sliceLength).header("Accept-Ranges", "bytes")
         if (range != null) builder.header("Content-Range", "bytes ${range.start}-${range.endInclusive}/$totalSize")
         return builder
     }

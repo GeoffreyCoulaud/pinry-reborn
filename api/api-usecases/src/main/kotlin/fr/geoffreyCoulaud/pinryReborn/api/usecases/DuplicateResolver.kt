@@ -42,8 +42,8 @@ class DuplicateResolver(
             val (rejected, held) = decisions.keys.partition { decisions[it] == DuplicateDecision.REJECT }
             // Before any pin is recycled, so it is not the kept pin's candidate afterwards (ADR 0052, decision 5).
             rejected.forEach { duplicateRepository.setRejected(it, held, now) }
-            val absorbed = held.filter { decisions[it] == DuplicateDecision.MERGE }.map(found::getValue)
-                .sortedBy { it.createdAt }
+            val absorbed =
+                held.filter { decisions[it] == DuplicateDecision.MERGE }.map(found::getValue).sortedBy { it.createdAt }
             val kept = found.getValue(keptId)
             if (absorbed.isEmpty()) {
                 kept
@@ -59,9 +59,10 @@ class DuplicateResolver(
     /** [kept] with what [absorbed] hold, blanks filled in [absorbed]'s order, oldest first (ADR 0052, decision 3). */
     private fun afterAbsorbing(kept: Pin, absorbed: List<Pin>, now: Instant): Pin =
         kept.copy(
-            description = kept.description.ifBlank {
-                absorbed.map { it.description }.firstOrNull { it.isNotBlank() } ?: kept.description
-            },
+            description =
+                kept.description.ifBlank {
+                    absorbed.map { it.description }.firstOrNull { it.isNotBlank() } ?: kept.description
+                },
             sourceContextUrl = kept.sourceContextUrl ?: absorbed.firstNotNullOfOrNull { it.sourceContextUrl },
             tags = (kept.tags + absorbed.flatMap { it.tags }).distinct(),
             boards = (kept.boards + absorbed.flatMap { it.boards }).distinct(),

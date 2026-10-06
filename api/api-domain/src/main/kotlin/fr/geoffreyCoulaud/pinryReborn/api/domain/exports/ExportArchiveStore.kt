@@ -13,35 +13,44 @@ data class ArchiveEntryDigest(val path: String, val byteSize: Long, val sha256: 
 /** Writable target for the content of one export archive, passed to the [ExportArchiveStore.stage] block. */
 interface ArchiveSink {
     fun putTextEntry(name: String, text: String): ArchiveEntryDigest
+
     fun putJsonEntry(name: String, value: Any): ArchiveEntryDigest
+
     fun putJsonLinesEntry(name: String, values: Sequence<Any>): ArchiveEntryDigest
+
     fun putBinaryEntry(name: String, bytes: InputStream): ArchiveEntryDigest
 }
 
 /**
  * Produces, stores and retires export archives.
  *
- * Mirrors [fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore]: stage into a temp file,
- * promote by atomic rename, so a truncated archive is never reachable.
+ * Mirrors [fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore]: stage into a temp file, promote by atomic
+ * rename, so a truncated archive is never reachable.
  */
 interface ExportArchiveStore {
     val format: ArchiveFormat
+
     fun hasFreeSpace(requiredBytes: Long): Boolean
+
     fun stage(block: (ArchiveSink) -> Unit): StagedFile
+
     fun promote(staged: StagedFile, storageKey: String)
+
     fun openStream(storageKey: String, skipBytes: Long = 0): InputStream
+
     /** Idempotent: a key whose bytes are already gone is not an error, so a retrying sweep converges. */
     fun delete(storageKey: String)
+
     fun discard(staged: StagedFile)
+
     fun discardOrphanedStagedFiles(olderThan: Instant): Int
 
     /**
      * Enumerate every archive storage key present on disk, loaning a lazy [Sequence] to [block].
      *
-     * Same loan contract as [fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache.forEachMediaIdOnDisk]:
-     * the adapter owns the directory stream and closes it when [block] returns, so the sequence
-     * must be consumed inside [block]. Lets a sweep ask "what is on disk" without holding the whole
-     * listing in memory.
+     * Same loan contract as [fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache.forEachMediaIdOnDisk]: the
+     * adapter owns the directory stream and closes it when [block] returns, so the sequence must be consumed inside
+     * [block]. Lets a sweep ask "what is on disk" without holding the whole listing in memory.
      */
     fun forEachStorageKeyOnDisk(block: (Sequence<String>) -> Unit)
 }

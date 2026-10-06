@@ -9,26 +9,27 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadReasonDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.DownloadStatusDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.MediaDownloadDtoMapper.toDto
+import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID.randomUUID
 
 class MediaDownloadDtoMapperTest {
     private val pinId = randomUUID()
 
-    private fun download(status: DownloadStatus, reason: DownloadReason?) = MediaDownload(
-        pinId = pinId,
-        sourceUrl = "https://x/i.png",
-        status = status,
-        reasonCode = reason,
-        lastError = "a transient error nobody outside the server reads",
-        taskId = randomUUID(),
-        requestedAt = Instant.EPOCH,
-        updatedAt = Instant.EPOCH,
-    )
+    private fun download(status: DownloadStatus, reason: DownloadReason?) =
+        MediaDownload(
+            pinId = pinId,
+            sourceUrl = "https://x/i.png",
+            status = status,
+            reasonCode = reason,
+            lastError = "a transient error nobody outside the server reads",
+            taskId = randomUUID(),
+            requestedAt = Instant.EPOCH,
+            updatedAt = Instant.EPOCH,
+        )
 
     @Test
     fun `Given a failed download, Then the dto carries its reason code and a message`() {
@@ -58,11 +59,12 @@ class MediaDownloadDtoMapperTest {
     fun `Given a page of downloads, Then the dto holds one item per row and both cursors`() {
         // Given
         val next = Cursor(pivotId = randomUUID(), direction = CursorDirection.FORWARD)
-        val page = Page(
-            items = listOf(download(DownloadStatus.PENDING, null)),
-            previousCursor = null,
-            nextCursor = next,
-        )
+        val page =
+            Page(
+                items = listOf(download(DownloadStatus.PENDING, null)),
+                previousCursor = null,
+                nextCursor = next,
+            )
 
         // When
         val dto = page.toDto()
@@ -77,11 +79,12 @@ class MediaDownloadDtoMapperTest {
     fun `Given a last page, Then the dto carries the cursor back and none forward`() {
         // Given: the mirror of the case above, so neither cursor is mapped on one branch alone
         val previous = Cursor(pivotId = randomUUID(), direction = CursorDirection.BACKWARD)
-        val page = Page(
-            items = listOf(download(DownloadStatus.FAILED, DownloadReason.NOT_FOUND)),
-            previousCursor = previous,
-            nextCursor = null,
-        )
+        val page =
+            Page(
+                items = listOf(download(DownloadStatus.FAILED, DownloadReason.NOT_FOUND)),
+                previousCursor = previous,
+                nextCursor = null,
+            )
 
         // When
         val dto = page.toDto()

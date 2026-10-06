@@ -8,9 +8,8 @@ import java.util.HexFormat
 /**
  * Counts and digests bytes on the way through, WITHOUT closing the delegate.
  *
- * Used both to measure a whole staged archive file and, per entry, the uncompressed bytes written
- * into a ZIP entry: in the latter case the delegate is the shared [java.util.zip.ZipOutputStream],
- * which must stay open across entries.
+ * Used both to measure a whole staged archive file and, per entry, the uncompressed bytes written into a ZIP entry: in
+ * the latter case the delegate is the shared [java.util.zip.ZipOutputStream], which must stay open across entries.
  */
 internal class CountingDigestOutputStream(delegate: OutputStream) : FilterOutputStream(delegate) {
     private val digest = MessageDigest.getInstance("SHA-256")

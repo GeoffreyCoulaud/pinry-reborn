@@ -2,10 +2,10 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security
 
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MalformedReauthenticationError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ReauthenticationError
+import java.util.Base64
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.util.Base64
 
 class ReauthenticationHeaderTest {
     @Test

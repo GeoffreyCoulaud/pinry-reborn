@@ -28,29 +28,29 @@ interface UserDataExportRepositoryInterface {
     fun findLastRequestedAtForUser(userId: UUID): Instant?
 
     /**
-     * `READY` rows past their expiry, one page by `id`: the rows after [afterId], `null` for the first
-     * page, at most [limit] of them, so a row whose write is refused is passed by the next page.
+     * `READY` rows past their expiry, one page by `id`: the rows after [afterId], `null` for the first page, at most
+     * [limit] of them, so a row whose write is refused is passed by the next page.
      */
     fun findExpiredReadyExports(now: Instant, afterId: UUID?, limit: Int): List<UserDataExport>
 
     /**
-     * `PENDING` rows oldest first, bounded at the query: the sweep applies its grace after the
-     * selection, so an unordered batch of recent rows would starve the oldest ones for good.
+     * `PENDING` rows oldest first, bounded at the query: the sweep applies its grace after the selection, so an
+     * unordered batch of recent rows would starve the oldest ones for good.
      */
     fun findPending(limit: Int): List<UserDataExport>
 
     /**
-     * Terminal rows that still name an archive, one page by `id` after [afterId] as above: a row is
-     * held here until its bytes are gone, and one whose delete is refused is passed by the next page.
+     * Terminal rows that still name an archive, one page by `id` after [afterId] as above: a row is held here until its
+     * bytes are gone, and one whose delete is refused is passed by the next page.
      */
     fun findReclaimableTerminal(afterId: UUID?, limit: Int): List<UserDataExport>
 
     fun findAllExportIdsForUser(userId: UUID): List<UUID>
 
     /**
-     * Return the candidate ids that have no export row, i.e. the orphans the garbage collection
-     * sweep should reclaim. Backed by a primary-key `IN (...)` lookup, so the
-     * call is bounded by the size of [candidates] (the orphan sweep chunks it).
+     * Return the candidate ids that have no export row, i.e. the orphans the garbage collection sweep should reclaim.
+     * Backed by a primary-key `IN (...)` lookup, so the call is bounded by the size of [candidates] (the orphan sweep
+     * chunks it).
      */
     fun findMissingExportIds(candidates: Collection<UUID>): Set<UUID>
 

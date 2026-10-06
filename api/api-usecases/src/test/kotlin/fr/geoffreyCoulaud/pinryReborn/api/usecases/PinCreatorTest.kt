@@ -8,9 +8,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 class PinCreatorTest {
     private val pinRepository: PinRepositoryInterface = mockk()
@@ -32,14 +32,15 @@ class PinCreatorTest {
         val mediaUrl = "https://example.com/media.jpeg"
         val description = "some description"
         val tags = listOf("blue", "landscape", "water")
-        every { tagCreator.findOrCreate(any(), any()) } answers {
-            Tag(
-                id = randomUUID(),
-                name = firstArg(),
-                author = secondArg(),
-                createdAt = TestTime.now,
-            )
-        }
+        every { tagCreator.findOrCreate(any(), any()) } answers
+            {
+                Tag(
+                    id = randomUUID(),
+                    name = firstArg(),
+                    author = secondArg(),
+                    createdAt = TestTime.now,
+                )
+            }
         every { pinRepository.savePin(any()) } answers { firstArg() }
 
         // When

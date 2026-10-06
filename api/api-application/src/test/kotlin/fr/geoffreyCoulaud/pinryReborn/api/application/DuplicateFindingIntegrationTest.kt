@@ -14,39 +14,32 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.SetPinMedia
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
 import jakarta.inject.Inject
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 /** The worker's drain over real media, which the `ffmpeg` on the `PATH` draws (ADR 0051). */
 @QuarkusTest
 @TestProfile(MediaHostingDataDirTestProfile::class)
 class DuplicateFindingIntegrationTest : IntegrationTest() {
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var setPinMedia: SetPinMedia
+    @Inject lateinit var setPinMedia: SetPinMedia
 
-    @Inject
-    lateinit var fingerprintMedia: FingerprintMedia
+    @Inject lateinit var fingerprintMedia: FingerprintMedia
 
-    @Inject
-    lateinit var deletePinMedia: DeletePinMedia
+    @Inject lateinit var deletePinMedia: DeletePinMedia
 
-    @Inject
-    lateinit var reapFingerprints: ReapFingerprints
+    @Inject lateinit var reapFingerprints: ReapFingerprints
 
-    @Inject
-    lateinit var mediaConfig: MediaConfig
+    @Inject lateinit var mediaConfig: MediaConfig
 
-    @TempDir
-    lateinit var directory: Path
+    @TempDir lateinit var directory: Path
 
     private fun pinned(user: User, file: Path): Media {
         val pin = pinCreator.createPin(user, "https://example.com", null, "", emptyList())
@@ -174,8 +167,14 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
         val still = still()
         val (first, middle, last) = List(3) { pinned(author, still) }
         awaitFingerprintDrain()
-        QPinDuplicateModel().firstPinId.isIn(first.pinId, last.pinId).secondPinId.isIn(first.pinId, last.pinId)
-            .asUpdate().set("rejectedAt", Instant.EPOCH).update()
+        QPinDuplicateModel()
+            .firstPinId
+            .isIn(first.pinId, last.pinId)
+            .secondPinId
+            .isIn(first.pinId, last.pinId)
+            .asUpdate()
+            .set("rejectedAt", Instant.EPOCH)
+            .update()
         outdate(first, middle, last)
         val atEachRenewal = mutableListOf<Set<Pair<Set<UUID>, Boolean>>>()
 
@@ -230,8 +229,14 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
         val still = still()
         val (first, second, emptied) = List(3) { pinned(author, still) }
         awaitFingerprintDrain()
-        QPinDuplicateModel().firstPinId.isIn(first.pinId, emptied.pinId).secondPinId.isIn(first.pinId, emptied.pinId)
-            .asUpdate().set("rejectedAt", Instant.EPOCH).update()
+        QPinDuplicateModel()
+            .firstPinId
+            .isIn(first.pinId, emptied.pinId)
+            .secondPinId
+            .isIn(first.pinId, emptied.pinId)
+            .asUpdate()
+            .set("rejectedAt", Instant.EPOCH)
+            .update()
         QMediaModel().id.equalTo(emptied.id).delete()
 
         // When

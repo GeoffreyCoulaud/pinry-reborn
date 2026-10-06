@@ -4,26 +4,37 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.LumaFrame
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 /** Runs the `ffmpeg` on the `PATH`, which also draws the videos. */
 class FfmpegFrameSamplingTest {
     private val sampler = FfmpegVideoProcessor(Duration.ofSeconds(60), DECODER_MEMORY, webpQuality = 75)
 
-    @TempDir
-    lateinit var directory: Path
+    @TempDir lateinit var directory: Path
 
     private fun media(duration: Duration) =
         Media.Video(
-            UUID.randomUUID(), UUID.randomUUID(), "video/mp4", 1, 1, 0, "", "", Instant.EPOCH, 2, duration, 1, null,
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "video/mp4",
+            1,
+            1,
+            0,
+            "",
+            "",
+            Instant.EPOCH,
+            2,
+            duration,
+            1,
+            null,
         )
 
     private fun framesOf(video: Path, duration: Duration): List<LumaFrame> {

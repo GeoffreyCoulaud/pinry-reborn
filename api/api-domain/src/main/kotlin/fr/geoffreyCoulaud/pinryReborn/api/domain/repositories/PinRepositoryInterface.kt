@@ -13,14 +13,10 @@ import java.util.UUID
 // for the same rule: one cohesive repository surface, and splitting it buys no readability.
 @Suppress("TooManyFunctions")
 interface PinRepositoryInterface {
-    /**
-     * Create or update a pin from the given domain data.
-     */
+    /** Create or update a pin from the given domain data. */
     fun savePin(pin: Pin): Pin
 
-    /**
-     * Find a pin by its ID
-     */
+    /** Find a pin by its ID */
     fun findPinById(id: UUID): Pin?
 
     /** The pins among [ids], in any state, read in a constant number of queries; an unknown id is absent. */
@@ -34,6 +30,7 @@ interface PinRepositoryInterface {
 
     /**
      * Find pins with pagination support
+     *
      * @param cursor The cursor to find pins relative to
      * @param pageSize Number of pins to return (will be capped at server max)
      * @param sortStrategy The sort strategy
@@ -49,20 +46,18 @@ interface PinRepositoryInterface {
     ): Page<Pin>
 
     /**
-     * All pin ids for the author (active and soft-deleted), without mapping the author - safe
-     * when the author is itself soft-deleted (deletion cleaner).
+     * All pin ids for the author (active and soft-deleted), without mapping the author - safe when the author is itself
+     * soft-deleted (deletion cleaner).
      */
     fun findAllPinIdsForUser(user: User): List<UUID>
 
     /**
-     * Soft-delete a pin, recording [at] as both its softDeletedAt and its updatedAt: recycling is
-     * a modification like any other.
+     * Soft-delete a pin, recording [at] as both its softDeletedAt and its updatedAt: recycling is a modification like
+     * any other.
      */
     fun softDeletePin(pin: Pin, at: Instant): Pin
 
-    /**
-     * Restore a soft-deleted pin by clearing its softDeletedAt, recording [at] as its updatedAt.
-     */
+    /** Restore a soft-deleted pin by clearing its softDeletedAt, recording [at] as its updatedAt. */
     fun restorePin(pin: Pin, at: Instant): Pin
 
     /** Soft-deletes each pin as [softDeletePin] does, in a constant number of reads. */
@@ -71,24 +66,16 @@ interface PinRepositoryInterface {
     /** Restores each pin as [restorePin] does, in a constant number of reads. */
     fun restorePins(pinIds: List<UUID>, at: Instant)
 
-    /**
-     * Permanently delete a pin and its tag associations
-     */
+    /** Permanently delete a pin and its tag associations */
     fun permanentlyDeletePin(pin: Pin)
 
-    /**
-     * Permanently delete all soft-deleted pins for a user
-     */
+    /** Permanently delete all soft-deleted pins for a user */
     fun permanentlyDeleteAllSoftDeletedPinsForUser(user: User)
 
-    /**
-     * Permanently delete all pins for a user regardless of state (active and soft-deleted).
-     */
+    /** Permanently delete all pins for a user regardless of state (active and soft-deleted). */
     fun permanentlyDeleteAllPinsForUser(user: User)
 
-    /**
-     * Find soft-deleted pins for a user with pagination support
-     */
+    /** Find soft-deleted pins for a user with pagination support */
     fun findSoftDeletedPinsForUser(
         reader: User,
         cursor: Cursor?,
@@ -96,14 +83,12 @@ interface PinRepositoryInterface {
         sortStrategy: PinSortStrategy,
     ): Page<Pin>
 
-    /**
-     * Find all soft-deleted pins for a user (unpaginated)
-     */
+    /** Find all soft-deleted pins for a user (unpaginated) */
     fun findAllSoftDeletedPinsForUser(user: User): List<Pin>
 
     /**
-     * Find active pins belonging to a board, with pagination support. Excludes soft-deleted pins;
-     * the board's existence and ownership are the caller's to check. A null [query] is every pin.
+     * Find active pins belonging to a board, with pagination support. Excludes soft-deleted pins; the board's existence
+     * and ownership are the caller's to check. A null [query] is every pin.
      */
     @Suppress("LongParameterList") // The catalogue's five parameters plus the term (spec 2026-09-21, decision O)
     fun findActivePinsForBoard(
@@ -116,16 +101,15 @@ interface PinRepositoryInterface {
     ): Page<Pin>
 
     /**
-     * Find every board a pin belongs to, regardless of the board's own state (active or
-     * recycled). Unlike the boards exposed on a mapped [Pin], this does NOT filter out recycled
-     * boards: `softDeleteBoard` keeps the join row, and the export must see it, exactly as
-     * recycled pins are already exported with their own deletion marker.
+     * Find every board a pin belongs to, regardless of the board's own state (active or recycled). Unlike the boards
+     * exposed on a mapped [Pin], this does NOT filter out recycled boards: `softDeleteBoard` keeps the join row, and
+     * the export must see it, exactly as recycled pins are already exported with their own deletion marker.
      */
     fun findBoardsForPinIncludingRecycled(pinId: UUID): List<Board>
 
     /**
-     * Ids of [user]'s pins whose image carries [contentHash], in **every** state, so an import never
-     * re-creates a recycled pin. Author-scoped: a content hash is otherwise an oracle on other accounts.
+     * Ids of [user]'s pins whose image carries [contentHash], in **every** state, so an import never re-creates a
+     * recycled pin. Author-scoped: a content hash is otherwise an oracle on other accounts.
      */
     fun findPinIdsByContentHashForUser(user: User, contentHash: String): List<UUID>
 }

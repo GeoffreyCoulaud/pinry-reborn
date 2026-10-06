@@ -14,20 +14,20 @@ interface MediaDownloadRepositoryInterface {
     fun findByPinId(pinId: UUID): MediaDownload?
 
     /**
-     * The download rows of [pinIds], keyed by pin id; a pin with no row is absent from the map.
-     * One `IN (...)` lookup, bounded by the size of [pinIds] (a page).
+     * The download rows of [pinIds], keyed by pin id; a pin with no row is absent from the map. One `IN (...)` lookup,
+     * bounded by the size of [pinIds] (a page).
      */
     fun findByPinIds(pinIds: Collection<UUID>): Map<UUID, MediaDownload>
 
     /**
-     * One page of [authorId]'s downloads, newest request first. Ownership is a traversal: the row
-     * carries no author, so it is read through the pin, and a recycled pin's row is left out.
+     * One page of [authorId]'s downloads, newest request first. Ownership is a traversal: the row carries no author, so
+     * it is read through the pin, and a recycled pin's row is left out.
      */
     fun findByAuthor(authorId: UUID, cursor: Cursor?, pageSize: Int): Page<MediaDownload>
 
     /**
-     * The download of [pinId] when that pin is [authorId]'s and not recycled, else null. The same
-     * traversal as [findByAuthor], narrowed to one pin: a single row is not read through a page.
+     * The download of [pinId] when that pin is [authorId]'s and not recycled, else null. The same traversal as
+     * [findByAuthor], narrowed to one pin: a single row is not read through a page.
      */
     fun findByAuthorAndPin(authorId: UUID, pinId: UUID): MediaDownload?
 
@@ -44,14 +44,14 @@ interface MediaDownloadRepositoryInterface {
     fun deleteByPinId(pinId: UUID)
 
     /**
-     * Every PENDING row, with the task id that says whether one is still being advanced. Bounded by
-     * the downloads in flight, the sweep below being what keeps an abandoned one from staying here.
+     * Every PENDING row, with the task id that says whether one is still being advanced. Bounded by the downloads in
+     * flight, the sweep below being what keeps an abandoned one from staying here.
      */
     fun findPending(): List<MediaDownload>
 
     /**
-     * Delete the FAILED rows last updated before [cutoff]. Neither sweep read filters on the pin's
-     * state, unlike [findByAuthor]: this is about the row, not about what a requester can see.
+     * Delete the FAILED rows last updated before [cutoff]. Neither sweep read filters on the pin's state, unlike
+     * [findByAuthor]: this is about the row, not about what a requester can see.
      */
     fun deleteFailedBefore(cutoff: Instant): Int
 }

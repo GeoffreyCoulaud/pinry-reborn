@@ -9,15 +9,15 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.BoardR
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 /**
  * The three query constructors, run against the database for each recyclable type.
  *
- * Boards exercise the shared logic. Pins and users get a test of their own because handing over the
- * wrong column accessor is the one thing a per-type declaration can get wrong.
+ * Boards exercise the shared logic. Pins and users get a test of their own because handing over the wrong column
+ * accessor is the one thing a per-type declaration can get wrong.
  */
 class SoftDeletableQueriesTest : RepositoryTest() {
     private val userRepository = UserRepository(persistor)
@@ -30,7 +30,7 @@ class SoftDeletableQueriesTest : RepositoryTest() {
                 id = randomUUID(),
                 name = createRandomString(),
                 createdAt = storableNow(),
-            ),
+            )
         )
 
     private fun createAndSaveBoard(author: User): Board =
@@ -42,7 +42,7 @@ class SoftDeletableQueriesTest : RepositoryTest() {
                 description = "",
                 createdAt = storableNow(),
                 updatedAt = storableNow(),
-            ),
+            )
         )
 
     private fun createAndSavePin(
@@ -60,7 +60,7 @@ class SoftDeletableQueriesTest : RepositoryTest() {
                 boards = boards,
                 createdAt = storableNow(),
                 updatedAt = storableNow(),
-            ),
+            )
         )
 
     @Test
@@ -151,13 +151,7 @@ class SoftDeletableQueriesTest : RepositoryTest() {
         boardRepository.softDeleteBoard(recycledBoard, storableNow())
 
         // When
-        val boardIds =
-            QPinBoardModel()
-                .pin.id
-                .equalTo(pin.id)
-                .withActiveBoard()
-                .findList()
-                .map { it.board.id }
+        val boardIds = QPinBoardModel().pin.id.equalTo(pin.id).withActiveBoard().findList().map { it.board.id }
 
         // Then
         assertEquals(listOf(activeBoard.id), boardIds)
@@ -173,13 +167,7 @@ class SoftDeletableQueriesTest : RepositoryTest() {
         pinRepository.softDeletePin(recycledPin, storableNow())
 
         // When
-        val pinIds =
-            QPinBoardModel()
-                .board.id
-                .equalTo(board.id)
-                .withActivePin()
-                .findList()
-                .map { it.pin.id }
+        val pinIds = QPinBoardModel().board.id.equalTo(board.id).withActivePin().findList().map { it.pin.id }
 
         // Then
         assertEquals(listOf(activePin.id), pinIds)

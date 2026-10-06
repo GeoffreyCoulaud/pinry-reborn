@@ -4,18 +4,18 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 /**
  * The core of `PinRepository`: saving a pin, reading it back, and its tag and board memberships.
  *
- * The feature slices live in sibling classes: [PinRepositorySoftDeleteTest],
- * [PinRepositoryPaginationTest], [PinRepositoryRecycledMembershipTest] and PinModelSortStrategyTest.
+ * The feature slices live in sibling classes: [PinRepositorySoftDeleteTest], [PinRepositoryPaginationTest],
+ * [PinRepositoryRecycledMembershipTest] and PinModelSortStrategyTest.
  */
 class PinRepositoryTest : PinRepositoryFixtures() {
     @Test
@@ -213,13 +213,14 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         repository.savePin(createPinWithBoards(otherBoard).copy(author = user))
 
         // When
-        val page = repository.findActivePinsForBoard(
-            reader = user,
-            boardId = board.id,
-            cursor = null,
-            pageSize = 10,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val page =
+            repository.findActivePinsForBoard(
+                reader = user,
+                boardId = board.id,
+                cursor = null,
+                pageSize = 10,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertEquals(listOf(inBoard.id), page.items.map { it.id })
@@ -234,13 +235,14 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         repository.softDeletePin(pin, storableNow())
 
         // When
-        val page = repository.findActivePinsForBoard(
-            reader = user,
-            boardId = board.id,
-            cursor = null,
-            pageSize = 10,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val page =
+            repository.findActivePinsForBoard(
+                reader = user,
+                boardId = board.id,
+                cursor = null,
+                pageSize = 10,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertTrue(page.items.isEmpty())
@@ -255,13 +257,14 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         repository.savePin(createPinWithBoards(board).copy(author = owner))
 
         // When
-        val page = repository.findActivePinsForBoard(
-            reader = otherUser,
-            boardId = board.id,
-            cursor = null,
-            pageSize = 10,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val page =
+            repository.findActivePinsForBoard(
+                reader = otherUser,
+                boardId = board.id,
+                cursor = null,
+                pageSize = 10,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertTrue(page.items.isEmpty())
@@ -272,20 +275,19 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         // Given
         val user = createAndSaveUser()
         val board = createAndSaveBoard(name = "board1", user = user)
-        val firstPin =
-            repository.savePin(createPinWithBoards(board).copy(author = user, createdAt = firstInstant))
-        val secondPin =
-            repository.savePin(createPinWithBoards(board).copy(author = user, createdAt = secondInstant))
+        val firstPin = repository.savePin(createPinWithBoards(board).copy(author = user, createdAt = firstInstant))
+        val secondPin = repository.savePin(createPinWithBoards(board).copy(author = user, createdAt = secondInstant))
         val cursor = Cursor(pivotId = firstPin.id, direction = CursorDirection.FORWARD)
 
         // When
-        val page = repository.findActivePinsForBoard(
-            reader = user,
-            boardId = board.id,
-            cursor = cursor,
-            pageSize = 10,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val page =
+            repository.findActivePinsForBoard(
+                reader = user,
+                boardId = board.id,
+                cursor = cursor,
+                pageSize = 10,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertTrue(page.items.none { it.id == firstPin.id })
@@ -301,13 +303,14 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         val cursor = Cursor(pivotId = randomUUID(), direction = CursorDirection.FORWARD)
 
         // When
-        val page = repository.findActivePinsForBoard(
-            reader = user,
-            boardId = board.id,
-            cursor = cursor,
-            pageSize = 10,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val page =
+            repository.findActivePinsForBoard(
+                reader = user,
+                boardId = board.id,
+                cursor = cursor,
+                pageSize = 10,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertEquals(1, page.items.size)
@@ -338,13 +341,14 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         repeat(3) { repository.savePin(createPinWithBoards(board).copy(author = user)) }
 
         // When
-        val page = repository.findActivePinsForBoard(
-            reader = user,
-            boardId = board.id,
-            cursor = null,
-            pageSize = 2,
-            sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-        )
+        val page =
+            repository.findActivePinsForBoard(
+                reader = user,
+                boardId = board.id,
+                cursor = null,
+                pageSize = 2,
+                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
+            )
 
         // Then
         assertEquals(2, page.items.size)

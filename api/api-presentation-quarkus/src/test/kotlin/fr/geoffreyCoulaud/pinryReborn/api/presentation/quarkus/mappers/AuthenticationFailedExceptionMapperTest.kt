@@ -10,9 +10,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class AuthenticationFailedExceptionMapperTest {
-    private val mapper = AuthenticationFailedExceptionMapper().apply {
-        uriInfo = mockk<UriInfo> { every { path } returns "/api/v1/me" }
-    }
+    private val mapper =
+        AuthenticationFailedExceptionMapper().apply {
+            uriInfo = mockk<UriInfo> { every { path } returns "/api/v1/me" }
+        }
 
     @Test
     fun `Given a session token expired cause, Then it maps to 401 SESSION_EXPIRED with a Bearer challenge`() {

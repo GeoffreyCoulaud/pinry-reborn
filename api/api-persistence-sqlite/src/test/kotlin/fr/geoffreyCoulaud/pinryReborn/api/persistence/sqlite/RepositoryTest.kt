@@ -7,32 +7,35 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanT
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.ebean.DB
 import io.ebean.Database
-import org.junit.jupiter.api.BeforeEach
 import java.time.Instant
+import org.junit.jupiter.api.BeforeEach
 
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a shared test base for concrete subclasses.
 abstract class RepositoryTest {
-    protected val database: Database get() = DB.getDefault()
+    protected val database: Database
+        get() = DB.getDefault()
 
     // The CRUD repositories inject Persistor in production; tests wire the same adapter here so a
     // repo under test sees the write capability through the port, not the Database type it is being
     // weaned off. Each access wraps the shared database; EbeanPersistor is stateless.
-    protected val persistor: Persistor get() = EbeanPersistor(database)
+    protected val persistor: Persistor
+        get() = EbeanPersistor(database)
 
     // The transaction runner injects TransactionControl in production; tests wire the same adapter here.
     // Each access wraps the shared database; EbeanTransactionControl is stateless.
-    protected val transactionControl: TransactionControl get() = EbeanTransactionControl(database)
+    protected val transactionControl: TransactionControl
+        get() = EbeanTransactionControl(database)
 
     // The adapters that need a transaction boundary inject TransactionRunner in production; tests wire
     // the same adapter here. Stateless like the two above.
-    protected val transactionRunner: TransactionRunner get() = EbeanTransactionRunner(transactionControl)
+    protected val transactionRunner: TransactionRunner
+        get() = EbeanTransactionRunner(transactionControl)
 
     /**
      * An instant an entity can carry across a save-then-read unchanged.
      *
-     * TestTime.now is millisecond-coarse, so it round-trips through the store (SystemClock truncates
-     * for the same reason; a nanosecond-precision instant would come back different and break equality
-     * on a re-read entity).
+     * TestTime.now is millisecond-coarse, so it round-trips through the store (SystemClock truncates for the same
+     * reason; a nanosecond-precision instant would come back different and break equality on a re-read entity).
      */
     protected fun storableNow(): Instant = TestTime.now
 

@@ -19,20 +19,20 @@ import java.util.UUID
 data class ExportSweepCounts(val failed: Int, val expired: Int, val reclaimed: Int)
 
 /**
- * The export lifecycle sweep (spec `docs/specs/2026-08-27-export-build-completion.md` section 4.3):
- * fails a build nothing is driving any more, expires a `READY` archive past its retention, reclaims
- * the bytes of terminal rows, and drops staged files past their age.
+ * The export lifecycle sweep (spec `docs/specs/2026-08-27-export-build-completion.md` section 4.3): fails a build
+ * nothing is driving any more, expires a `READY` archive past its retention, reclaims the bytes of terminal rows, and
+ * drops staged files past their age.
  *
- * One rule holds the three together: a state transition writes the state and nothing else, and
- * reclaiming bytes is pass 3's job for every terminal state. Passes 2 and 3 would otherwise take the
- * same row in one run, count it twice and issue the same delete twice.
+ * One rule holds the three together: a state transition writes the state and nothing else, and reclaiming bytes is pass
+ * 3's job for every terminal state. Passes 2 and 3 would otherwise take the same row in one run, count it twice and
+ * issue the same delete twice.
  *
- * Deliberately not `@ApplicationScoped`: the two `Duration`s and the batch size are plain values ARC
- * cannot resolve, so annotating this bean would fail Quarkus's build-time bean validation in
- * `api-application`. `ExportProducers` is the single place that constructs it.
+ * Deliberately not `@ApplicationScoped`: the two `Duration`s and the batch size are plain values ARC cannot resolve, so
+ * annotating this bean would fail Quarkus's build-time bean validation in `api-application`. `ExportProducers` is the
+ * single place that constructs it.
  *
- * Each row is isolated in its own try/catch and a failure is logged at WARN rather than aborting the
- * batch: one bad row must not leave the rest unswept that run. Same shape as `ReapTombstonedAccounts`.
+ * Each row is isolated in its own try/catch and a failure is logged at WARN rather than aborting the batch: one bad row
+ * must not leave the rest unswept that run. Same shape as `ReapTombstonedAccounts`.
  */
 @Suppress("LongParameterList") // Four ports, the clock, the two Durations and the bound ARC cannot resolve.
 class ReapUserDataExports(
@@ -66,19 +66,20 @@ class ReapUserDataExports(
     }
 
     /**
-     * The grace dominates the longest plausible staging: a builder that lost its lease stops at its next
-     * heartbeat, one image stream at most, and condemning early writes FAILED under one still building.
+     * The grace dominates the longest plausible staging: a builder that lost its lease stops at its next heartbeat, one
+     * image stream at most, and condemning early writes FAILED under one still building.
      */
     private fun failInterruptedBuilds(now: Instant): Int {
         val condemnedBefore = now.minus(interruptedGrace)
-        return repository.findPending(sweepBatchSize)
+        return repository
+            .findPending(sweepBatchSize)
             .filter { it.requestedAt.isBefore(condemnedBefore) && it.lostItsTask() }
             .count { swept(it.id) { failInterrupted(it.id) } }
     }
 
     /**
-     * Live is [TaskState.isLiveAttempt], shared with the import sweep so the set has one source.
-     * Absent means the terminal task sweep deleted it, never "not enqueued yet".
+     * Live is [TaskState.isLiveAttempt], shared with the import sweep so the set has one source. Absent means the
+     * terminal task sweep deleted it, never "not enqueued yet".
      */
     private fun UserDataExport.lostItsTask(): Boolean {
         val task = taskId?.let { taskQueue.findById(it) } ?: return true
@@ -91,8 +92,9 @@ class ReapUserDataExports(
         } != null
 
     private fun expireReadyExports(now: Instant): Int =
-        SweepPages
-            .of(UserDataExport::id) { afterId -> repository.findExpiredReadyExports(now, afterId, sweepBatchSize) }
+        SweepPages.of(UserDataExport::id) { afterId ->
+                repository.findExpiredReadyExports(now, afterId, sweepBatchSize)
+            }
             .count { swept(it.id) { expire(it.id) } }
 
     /** The state and nothing else: the bytes of every terminal row are pass 3's, this row's included. */
@@ -113,8 +115,8 @@ class ReapUserDataExports(
             .count { export -> swept(export.id) { reclaim(export) } }
 
     /**
-     * The bytes before the column (`docs/adr/0017`, decision 3): the column is this sweep's only index
-     * into the residue, so stamping over a failed delete hides it from the one pass that can name it.
+     * The bytes before the column (`docs/adr/0017`, decision 3): the column is this sweep's only index into the
+     * residue, so stamping over a failed delete hides it from the one pass that can name it.
      */
     private fun reclaim(export: UserDataExport): Boolean {
         val derived = ExportArchiveKey.forExport(export.id, archiveStore.format.fileExtension)
@@ -127,8 +129,8 @@ class ReapUserDataExports(
     }
 
     /**
-     * Item-level isolation, as `ReapUserDataImports` has: one row the store or the database
-     * refuses must not leave the rest of the sweep undone, and either can throw anything.
+     * Item-level isolation, as `ReapUserDataImports` has: one row the store or the database refuses must not leave the
+     * rest of the sweep undone, and either can throw anything.
      */
     @Suppress("TooGenericExceptionCaught")
     private fun swept(exportId: UUID, sweep: () -> Boolean): Boolean =

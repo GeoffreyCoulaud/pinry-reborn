@@ -6,8 +6,7 @@ import java.time.Duration
 
 @ConfigMapping(prefix = "media", namingStrategy = ConfigMapping.NamingStrategy.SNAKE_CASE)
 interface MediaConfig {
-    @WithDefault("/var/lib/pinry/media")
-    fun dataDir(): String
+    @WithDefault("/var/lib/pinry/media") fun dataDir(): String
 
     @WithDefault("31457280") // 30 MiB
     fun maxImageBytes(): Long
@@ -15,23 +14,19 @@ interface MediaConfig {
     @WithDefault("52428800") // 50 MiB
     fun maxVideoBytes(): Long
 
-    @WithDefault("120")
-    fun maxVideoSeconds(): Long
+    @WithDefault("120") fun maxVideoSeconds(): Long
 
     @WithDefault("50000000") // 50 megapixels
     fun maxPixelsPerFrame(): Long
 
     /** The pixels one render may decode, about 8 s of decoding, measured in ADR 0050's specification. */
-    @WithDefault("8000000000")
-    fun maxPixelsPerRender(): Long
+    @WithDefault("8000000000") fun maxPixelsPerRender(): Long
 
     /** How many renditions render at once: two of the largest measured, about 1.5 GiB (ADR 0050). */
-    @WithDefault("2")
-    fun renderConcurrency(): Int
+    @WithDefault("2") fun renderConcurrency(): Int
 
     /** How long one decoder run may take before it is destroyed. */
-    @WithDefault("PT60S")
-    fun decoderTimeout(): Duration
+    @WithDefault("PT60S") fun decoderTimeout(): Duration
 
     /** The address space one decoder run may reserve, in bytes, measured in ADR 0050's specification. */
     @WithDefault("2147483648") // 2 GiB

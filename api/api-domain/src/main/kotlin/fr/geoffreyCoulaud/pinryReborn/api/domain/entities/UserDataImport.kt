@@ -6,8 +6,8 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * One import request and its running counters, which increment and are never assigned, so a resumed
- * attempt adds to them. [runToken] fences the walk: a per-pin transaction proceeds only while its own.
+ * One import request and its running counters, which increment and are never assigned, so a resumed attempt adds to
+ * them. [runToken] fences the walk: a per-pin transaction proceeds only while its own.
  */
 @Suppress("LongParameterList") // One row of counters; splitting it would only move the arity around.
 data class UserDataImport(

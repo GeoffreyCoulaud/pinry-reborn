@@ -10,9 +10,7 @@ import org.jboss.resteasy.reactive.server.ServerRequestFilter
 import org.jboss.resteasy.reactive.server.ServerResponseFilter
 
 /** Logs each request line, response status and headers; never a body, and never a credential header's value. */
-class LoggingRequestResponseFilter(
-    private val objectMapper: ObjectMapper,
-) {
+class LoggingRequestResponseFilter(private val objectMapper: ObjectMapper) {
     private val logger = KotlinLogging.logger {}
 
     @ServerRequestFilter
@@ -28,9 +26,10 @@ class LoggingRequestResponseFilter(
     }
 
     private fun logHeaders(headers: MultivaluedMap<String, out Any>) {
-        val headersMap = headers.entries.associate { (name, values) ->
-            name to if (CREDENTIAL_HEADERS.any { it.equals(name, ignoreCase = true) }) REDACTED else values
-        }
+        val headersMap =
+            headers.entries.associate { (name, values) ->
+                name to if (CREDENTIAL_HEADERS.any { it.equals(name, ignoreCase = true) }) REDACTED else values
+            }
         val headersString = objectMapper.writeValueAsString(headersMap)
         logger.info { "Headers: $headersString" }
     }

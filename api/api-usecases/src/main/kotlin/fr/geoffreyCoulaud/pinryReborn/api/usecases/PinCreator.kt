@@ -34,7 +34,7 @@ class PinCreator(
                 boards = emptyList(),
                 createdAt = now,
                 updatedAt = now,
-            ),
+            )
         )
     }
 }

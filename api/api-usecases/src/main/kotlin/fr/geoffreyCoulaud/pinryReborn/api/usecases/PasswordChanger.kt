@@ -6,8 +6,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserPasswordHashRe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.PasswordChangeCollisionException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.PasswordHasher
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PasswordChangedTooSoonError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PasswordChangeCollisionError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PasswordChangedTooSoonError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PasswordPreviouslyUsedError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ReauthenticationError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ThrottledError

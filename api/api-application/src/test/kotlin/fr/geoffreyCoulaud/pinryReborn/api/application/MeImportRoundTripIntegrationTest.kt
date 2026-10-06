@@ -5,27 +5,26 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
+import java.io.File
+import java.time.Instant
+import java.util.Base64
+import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.io.File
-import java.time.Instant
-import java.util.Base64
-import java.util.UUID
 
 @QuarkusTest
 @TestProfile(MeImportTestProfile::class)
 class MeImportRoundTripIntegrationTest : ImportIntegrationTest() {
     // --- Seeding, and the real export the round trip pours back in ---
 
-    private fun stepUp(password: String) =
-        "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())
+    private fun stepUp(password: String) = "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())
 
     /**
-     * Two active pins, one recycled pin naming no page, an active board, a recycled board holding a
-     * pin, two tags, and a fourth pin sharing the first one's medium byte for byte (spec section 13.1).
+     * Two active pins, one recycled pin naming no page, an active board, a recycled board holding a pin, two tags, and
+     * a fourth pin sharing the first one's medium byte for byte (spec section 13.1).
      */
     private fun seedRoundTripContent(auth: AuthenticatedUser) {
         val alpha = createPin(auth, ALPHA, tags = listOf("nature", "travel"))
@@ -51,15 +50,23 @@ class MeImportRoundTripIntegrationTest : ImportIntegrationTest() {
             given()
                 .authenticatedAs(auth)
                 .header("X-Reauthentication", stepUp(password))
-                .`when`().post("/api/v1/me/exports")
-                .then().statusCode(202)
-                .extract().jsonPath().getString("id")
+                .`when`()
+                .post("/api/v1/me/exports")
+                .then()
+                .statusCode(202)
+                .extract()
+                .jsonPath()
+                .getString("id")
         repeat(POLL_ATTEMPTS) {
             val state =
                 given()
                     .authenticatedAs(auth)
-                    .`when`().get("/api/v1/me/exports/$exportId")
-                    .then().extract().jsonPath().getString("state")
+                    .`when`()
+                    .get("/api/v1/me/exports/$exportId")
+                    .then()
+                    .extract()
+                    .jsonPath()
+                    .getString("state")
             if (state == "READY") return downloadExport(auth, exportId)
             Thread.sleep(POLL_INTERVAL_MS)
         }
@@ -69,9 +76,12 @@ class MeImportRoundTripIntegrationTest : ImportIntegrationTest() {
     private fun downloadExport(auth: AuthenticatedUser, exportId: String): ByteArray =
         given()
             .authenticatedAs(auth)
-            .`when`().get("/api/v1/me/exports/$exportId/download")
-            .then().statusCode(200)
-            .extract().asByteArray()
+            .`when`()
+            .get("/api/v1/me/exports/$exportId/download")
+            .then()
+            .statusCode(200)
+            .extract()
+            .asByteArray()
 
     // --- What an account holds, in a shape two accounts can be compared on ---
 
@@ -187,8 +197,10 @@ class MeImportRoundTripIntegrationTest : ImportIntegrationTest() {
             given()
                 .authenticatedAs(origin)
                 .multiPart("file", File("../api-video-ffmpeg/src/test/resources/fixtures/$name"), "video/mp4")
-                .`when`().put("/api/v1/pins/${pin.id}/media")
-                .then().statusCode(201)
+                .`when`()
+                .put("/api/v1/pins/${pin.id}/media")
+                .then()
+                .statusCode(201)
 
             // When
             importArchive(destination, exportArchiveOf(origin, password))
@@ -219,8 +231,9 @@ class MeImportRoundTripIntegrationTest : ImportIntegrationTest() {
                         mediaPath = "media/clip.mkv",
                         mediaSha256 = ImportArchiveBuilder.sha256(mkv),
                         mediaMimeType = "video/x-matroska",
-                    ),
-                ).bytes()
+                    )
+                )
+                .bytes()
 
         // When
         importArchive(auth, archive)
@@ -248,8 +261,9 @@ class MeImportRoundTripIntegrationTest : ImportIntegrationTest() {
                         mediaPath = "media/clip.mkv",
                         mediaSha256 = ImportArchiveBuilder.sha256(mkv),
                         mediaMimeType = "video/x-matroska",
-                    ),
-                ).bytes()
+                    )
+                )
+                .bytes()
 
         // When
         importArchive(auth, archive)

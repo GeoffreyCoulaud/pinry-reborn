@@ -5,8 +5,8 @@ import java.time.Instant
 
 interface PasswordHasher {
     /**
-     * Hash [raw] with a fresh random salt, stamped with [createdAt]. The adapter does not own a
-     * business instant, so the creation instant arrives here and passes straight through.
+     * Hash [raw] with a fresh random salt, stamped with [createdAt]. The adapter does not own a business instant, so
+     * the creation instant arrives here and passes straight through.
      */
     fun hash(raw: String, createdAt: Instant): HashedPassword
 

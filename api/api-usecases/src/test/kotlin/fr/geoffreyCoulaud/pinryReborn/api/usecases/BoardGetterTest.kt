@@ -10,10 +10,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
 
 class BoardGetterTest {
     private val boardRepository: BoardRepositoryInterface = mockk()
@@ -23,14 +23,15 @@ class BoardGetterTest {
     fun `Given an owned active board, Then getActiveBoardForUser returns it`() {
         // Given
         val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val board = Board(
-            id = randomUUID(),
-            author = reader,
-            name = createRandomString(),
-            description = createRandomString(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val board =
+            Board(
+                id = randomUUID(),
+                author = reader,
+                name = createRandomString(),
+                description = createRandomString(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         every { boardRepository.findActiveBoardById(board.id) } returns board
 
         // When
@@ -58,14 +59,15 @@ class BoardGetterTest {
         // Given
         val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val board = Board(
-            id = randomUUID(),
-            author = author,
-            name = createRandomString(),
-            description = createRandomString(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val board =
+            Board(
+                id = randomUUID(),
+                author = author,
+                name = createRandomString(),
+                description = createRandomString(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         every { boardRepository.findActiveBoardById(board.id) } returns board
 
         // When, Then
@@ -78,14 +80,15 @@ class BoardGetterTest {
     fun `Given a reader with boards, Then listActiveBoardsForUser delegates to the repository`() {
         // Given
         val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val board = Board(
-            id = randomUUID(),
-            author = reader,
-            name = createRandomString(),
-            description = createRandomString(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val board =
+            Board(
+                id = randomUUID(),
+                author = reader,
+                name = createRandomString(),
+                description = createRandomString(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         val expected = listOf(board)
         every { boardRepository.findActiveBoardsForUser(reader) } returns expected
 
@@ -101,14 +104,15 @@ class BoardGetterTest {
     fun `Given an owned active board, Then summarizeActiveBoardForUser returns its count and cover`() {
         // Given
         val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val board = Board(
-            id = randomUUID(),
-            author = reader,
-            name = createRandomString(),
-            description = createRandomString(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val board =
+            Board(
+                id = randomUUID(),
+                author = reader,
+                name = createRandomString(),
+                description = createRandomString(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         val coverPinId = randomUUID()
         every { boardRepository.findActiveBoardById(board.id) } returns board
         every { boardRepository.countActivePinsInBoard(board.id) } returns 42
@@ -126,14 +130,15 @@ class BoardGetterTest {
         // Given
         val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val board = Board(
-            id = randomUUID(),
-            author = author,
-            name = createRandomString(),
-            description = createRandomString(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val board =
+            Board(
+                id = randomUUID(),
+                author = author,
+                name = createRandomString(),
+                description = createRandomString(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         every { boardRepository.findActiveBoardById(board.id) } returns board
 
         // When, Then

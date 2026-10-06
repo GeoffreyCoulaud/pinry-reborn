@@ -20,7 +20,8 @@ class PinModel(
     // Written by the mapper from the domain entity, never generated. See AuthoredBaseModel.
     @Column(name = "when_modified") var updatedAt: Instant,
     override var softDeletedAt: Instant? = null,
-) : AuthoredBaseModel(
+) :
+    AuthoredBaseModel(
         id = id,
         author = author,
         createdAt = createdAt,

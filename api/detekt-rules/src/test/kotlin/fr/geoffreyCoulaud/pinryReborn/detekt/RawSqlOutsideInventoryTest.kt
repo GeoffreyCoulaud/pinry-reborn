@@ -17,7 +17,8 @@ class RawSqlOutsideInventoryTest {
             class Strategy {
                 fun page(query: Query, pivot: UUID) = query.raw("id <= ?", pivot)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -35,7 +36,8 @@ class RawSqlOutsideInventoryTest {
                 fun find(query: Query, hash: String) =
                     query.raw("id in (select pin_id from images where content_hash = ?)", hash)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -56,7 +58,8 @@ class RawSqlOutsideInventoryTest {
             class Repository {
                 fun find(query: Query, pivot: UUID) = query.raw(KEYSET_TIEBREAKER, pivot)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -73,7 +76,8 @@ class RawSqlOutsideInventoryTest {
             class Repository {
                 fun find(query: Query, column: String, pivot: UUID) = query.raw("${'$'}column <= ?", pivot)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -90,7 +94,8 @@ class RawSqlOutsideInventoryTest {
             class Repository {
                 fun find(query: Query) = query.raw()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -117,7 +122,8 @@ class RawSqlOutsideInventoryTest {
             class Repository {
                 fun find(query: Query) = query.orderBy("id asc")
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)

@@ -15,10 +15,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
 
 class BoardUpdaterTest {
     private val boardRepository: BoardRepositoryInterface = mockk()
@@ -37,14 +37,15 @@ class BoardUpdaterTest {
     fun `Given an owned active board, Then update saves a copy with the new name and description`() {
         // Given
         val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val board = Board(
-            id = randomUUID(),
-            author = user,
-            name = createRandomString(),
-            description = createRandomString(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val board =
+            Board(
+                id = randomUUID(),
+                author = user,
+                name = createRandomString(),
+                description = createRandomString(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         val newName = createRandomString()
         val newDescription = createRandomString()
         every { boardGetter.getActiveBoardForUser(boardId = board.id, reader = user) } returns board
@@ -62,7 +63,7 @@ class BoardUpdaterTest {
         assertEquals(board.createdAt, result.createdAt)
         verify {
             boardRepository.saveBoard(
-                board.copy(name = newName, description = newDescription, updatedAt = clockInstant),
+                board.copy(name = newName, description = newDescription, updatedAt = clockInstant)
             )
         }
     }
@@ -71,14 +72,15 @@ class BoardUpdaterTest {
     fun `Given the new name held by another board, Then update rethrows BoardNameAlreadyExistsError`() {
         // Given: renaming is the second of the three sites the index refuses
         val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val board = Board(
-            id = randomUUID(),
-            author = user,
-            name = createRandomString(),
-            description = createRandomString(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val board =
+            Board(
+                id = randomUUID(),
+                author = user,
+                name = createRandomString(),
+                description = createRandomString(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         val takenName = createRandomString()
         every { boardGetter.getActiveBoardForUser(boardId = board.id, reader = user) } returns board
         every { boardRepository.findBoardById(board.id) } returns board
@@ -87,9 +89,10 @@ class BoardUpdaterTest {
             board.copy(id = randomUUID(), name = takenName)
 
         // When
-        val error = assertThrows<BoardNameAlreadyExistsError> {
-            useCase.update(boardId = board.id, name = takenName, description = createRandomString(), user = user)
-        }
+        val error =
+            assertThrows<BoardNameAlreadyExistsError> {
+                useCase.update(boardId = board.id, name = takenName, description = createRandomString(), user = user)
+            }
 
         // Then
         assertEquals(ErrorCode.BOARD_NAME_ALREADY_EXISTS, error.code)
@@ -99,14 +102,15 @@ class BoardUpdaterTest {
     fun `Given a board recycled between the read and the fence, Then update refuses it as absent and saves nothing`() {
         // Given: the first read answers an active board, the fence's re-read a recycled one
         val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val board = Board(
-            id = randomUUID(),
-            author = user,
-            name = createRandomString(),
-            description = createRandomString(),
-            createdAt = TestTime.now,
-            updatedAt = TestTime.now,
-        )
+        val board =
+            Board(
+                id = randomUUID(),
+                author = user,
+                name = createRandomString(),
+                description = createRandomString(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
         every { boardGetter.getActiveBoardForUser(boardId = board.id, reader = user) } returns board
         every { boardRepository.findBoardById(board.id) } returns board.copy(softDeletedAt = TestTime.now)
         every { boardRepository.saveBoard(any()) } answers { firstArg() }

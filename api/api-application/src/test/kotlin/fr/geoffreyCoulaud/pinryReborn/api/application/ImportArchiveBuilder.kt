@@ -9,8 +9,8 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * A `formatVersion` 2 archive built entry by entry, so a case can hand the real importer what the real
- * exporter never writes: a lying manifest, a truncated line, a traversal path, a text file named `.jpg`.
+ * A `formatVersion` 2 archive built entry by entry, so a case can hand the real importer what the real exporter never
+ * writes: a lying manifest, a truncated line, a traversal path, a text file named `.jpg`.
  */
 internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
     private val entries = linkedMapOf<String, ByteArray>()
@@ -65,14 +65,15 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
             name: String,
             description: String = "",
             deletedAt: Instant? = null,
-        ): Map<String, Any?> = mapOf(
-            "id" to "11111111-1111-1111-1111-111111111111",
-            "name" to name,
-            "description" to description,
-            "createdAt" to PAST.toString(),
-            "updatedAt" to PAST.toString(),
-            "deletedAt" to deletedAt?.toString(),
-        )
+        ): Map<String, Any?> =
+            mapOf(
+                "id" to "11111111-1111-1111-1111-111111111111",
+                "name" to name,
+                "description" to description,
+                "createdAt" to PAST.toString(),
+                "updatedAt" to PAST.toString(),
+                "deletedAt" to deletedAt?.toString(),
+            )
 
         /** One `pins.jsonl` line. [mediaPath] null is a pin with no medium, which has no identity. */
         @Suppress("LongParameterList") // The published line's shape; grouping it would invent a type.
@@ -85,19 +86,21 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
             mediaSha256: String = "",
             mediaMimeType: String = "image/png",
             deletedAt: Instant? = null,
-        ): Map<String, Any?> = mapOf(
-            "id" to "22222222-2222-2222-2222-222222222222",
-            "description" to description,
-            "sourceContextUrl" to sourceContextUrl,
-            "sourceMediaUrl" to null,
-            "createdAt" to PAST.toString(),
-            "updatedAt" to PAST.toString(),
-            "deletedAt" to deletedAt?.toString(),
-            "tags" to tags.map { mapOf("name" to it) },
-            "boards" to boards.map { mapOf("name" to it) },
-            "media" to mediaPath?.let {
-                mapOf("path" to it, "sha256" to mediaSha256, "mimeType" to mediaMimeType)
-            },
-        )
+        ): Map<String, Any?> =
+            mapOf(
+                "id" to "22222222-2222-2222-2222-222222222222",
+                "description" to description,
+                "sourceContextUrl" to sourceContextUrl,
+                "sourceMediaUrl" to null,
+                "createdAt" to PAST.toString(),
+                "updatedAt" to PAST.toString(),
+                "deletedAt" to deletedAt?.toString(),
+                "tags" to tags.map { mapOf("name" to it) },
+                "boards" to boards.map { mapOf("name" to it) },
+                "media" to
+                    mediaPath?.let {
+                        mapOf("path" to it, "sha256" to mediaSha256, "mimeType" to mediaMimeType)
+                    },
+            )
     }
 }

@@ -49,7 +49,11 @@ class ImportProducers {
         config: ImportsConfig,
     ): ReapUserDataImports =
         ReapUserDataImports(
-            repository, archiveStore, taskQueue, clock, transactionRunner,
+            repository,
+            archiveStore,
+            taskQueue,
+            clock,
+            transactionRunner,
             uploadGrace = config.uploadGrace(),
             stagedFileMaxAge = config.stagedFileMaxAge(),
             sweepBatchSize = config.sweepBatchSize(),
@@ -68,7 +72,10 @@ class ImportProducers {
         config: ImportsConfig,
     ): UserDataImportChunkReceiver =
         UserDataImportChunkReceiver(
-            repository, archiveStore, clock, transactionRunner,
+            repository,
+            archiveStore,
+            clock,
+            transactionRunner,
             maxArchiveBytes = config.maxArchiveBytes(),
             minimumFreeBytes = config.minimumFreeBytes(),
         )
@@ -96,9 +103,18 @@ class ImportProducers {
         config: ImportsConfig,
     ): UserDataImportRunner =
         UserDataImportRunner(
-            importRepository, issueRepository, userRepository, tagRepository, boardRepository,
-            pinRepository, mediaRepository, archiveStore, mediaIngestion, tagCreator,
-            transactionRunner, clock,
+            importRepository,
+            issueRepository,
+            userRepository,
+            tagRepository,
+            boardRepository,
+            pinRepository,
+            mediaRepository,
+            archiveStore,
+            mediaIngestion,
+            tagCreator,
+            transactionRunner,
+            clock,
             maxMetadataBytes = config.maxMetadataBytes(),
             maxEntries = config.maxEntries(),
             reportDetailLimit = config.reportDetailLimit(),

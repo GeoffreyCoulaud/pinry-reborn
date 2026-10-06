@@ -14,10 +14,11 @@ class PdqHasherTest {
         val (magic, size, maxValue) = String(bytes, Charsets.ISO_8859_1).split('\n', limit = 4)
         val (width, height) = size.split(' ').map(String::toInt)
         val offset = magic.length + size.length + maxValue.length + 3
-        val luma = FloatArray(width * height) { pixel ->
-            val (red, green, blue) = (0 until 3).map { bytes[offset + pixel * 3 + it].toUByte().toDouble() }
-            (red * 0.299 + green * 0.587 + blue * 0.114).toFloat()
-        }
+        val luma =
+            FloatArray(width * height) { pixel ->
+                val (red, green, blue) = (0 until 3).map { bytes[offset + pixel * 3 + it].toUByte().toDouble() }
+                (red * 0.299 + green * 0.587 + blue * 0.114).toFloat()
+            }
         return LumaFrame(width, height, luma)
     }
 

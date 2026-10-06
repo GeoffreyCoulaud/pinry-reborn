@@ -4,11 +4,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataImpo
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QUserDataImportIssueModel
 
 /**
- * Ordered on `id` alone, which is arbitrary but total and stable: an issue carries no instant, and its
- * `line` is null for the archive-level kinds, so neither can key a page boundary without ties.
+ * Ordered on `id` alone, which is arbitrary but total and stable: an issue carries no instant, and its `line` is null
+ * for the archive-level kinds, so neither can key a page boundary without ties.
  */
-class UserDataImportIssueModelSortStrategy :
-    ModelSortStrategy<UserDataImportIssueModel, QUserDataImportIssueModel>() {
+class UserDataImportIssueModelSortStrategy : ModelSortStrategy<UserDataImportIssueModel, QUserDataImportIssueModel>() {
     override fun filterCursorAndForwardNeighbors(
         cursor: ModelCursor<UserDataImportIssueModel>,
         query: QUserDataImportIssueModel,

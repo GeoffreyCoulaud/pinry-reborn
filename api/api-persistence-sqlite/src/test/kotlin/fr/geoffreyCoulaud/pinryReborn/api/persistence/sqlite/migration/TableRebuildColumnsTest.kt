@@ -1,21 +1,19 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.migration
 
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
-import java.io.File
 
 /**
- * A `<table>_tmp_rebuild` copy loses a column silently: the test database is empty, so the copy runs
- * over zero rows and only production pays (`docs/specs/2026-09-13-optional-source-page-url.md`, §3).
+ * A `<table>_tmp_rebuild` copy loses a column silently: the test database is empty, so the copy runs over zero rows and
+ * only production pays (`docs/specs/2026-09-13-optional-source-page-url.md`, §3).
  */
 class TableRebuildColumnsTest {
     private val createRebuild =
         Regex("""create\s+table\s+(\w+)_tmp_rebuild\s*\(([^;]*)\)\s*;""", RegexOption.IGNORE_CASE)
-    private val insertRebuild =
-        Regex("""insert\s+into\s+(\w+)_tmp_rebuild\s*\(([^)]*)\)""", RegexOption.IGNORE_CASE)
-    private val selectFrom =
-        Regex("""select\s+([^;]*?)\s+from\s+(\w+)\s*;""", RegexOption.IGNORE_CASE)
+    private val insertRebuild = Regex("""insert\s+into\s+(\w+)_tmp_rebuild\s*\(([^)]*)\)""", RegexOption.IGNORE_CASE)
+    private val selectFrom = Regex("""select\s+([^;]*?)\s+from\s+(\w+)\s*;""", RegexOption.IGNORE_CASE)
 
     private val rebuilds: List<Rebuild> = MigrationDirectory.sqlScripts.flatMap { rebuildsIn(it) }
 
@@ -38,8 +36,7 @@ class TableRebuildColumnsTest {
 
         // Given
         val silent =
-            MigrationDirectory
-                .sqlScripts
+            MigrationDirectory.sqlScripts
                 .filter { MigrationDirectory.schemaOnly(it).contains("_tmp_rebuild") }
                 .filter { file -> rebuilds.none { it.location.startsWith(file.name) } }
                 .map { it.name }
@@ -51,15 +48,18 @@ class TableRebuildColumnsTest {
 
     private fun rebuildsIn(file: File): List<Rebuild> {
         val schema = MigrationDirectory.schemaOnly(file)
-        return createRebuild.findAll(schema).map { creation ->
-            val table = creation.groupValues[1]
-            Rebuild(
-                location = "${file.name}: $table",
-                created = createdColumnsOf(creation.groupValues[2]),
-                inserted = columnList(insertRebuild.findAll(schema).firstOrNull { it.groupValues[1] == table }, 2),
-                selected = columnList(selectFrom.findAll(schema).firstOrNull { it.groupValues[2] == table }, 1),
-            )
-        }.toList()
+        return createRebuild
+            .findAll(schema)
+            .map { creation ->
+                val table = creation.groupValues[1]
+                Rebuild(
+                    location = "${file.name}: $table",
+                    created = createdColumnsOf(creation.groupValues[2]),
+                    inserted = columnList(insertRebuild.findAll(schema).firstOrNull { it.groupValues[1] == table }, 2),
+                    selected = columnList(selectFrom.findAll(schema).firstOrNull { it.groupValues[2] == table }, 1),
+                )
+            }
+            .toList()
     }
 
     /** The columns a `create table` body declares: the leading word of every line that is not a constraint. */

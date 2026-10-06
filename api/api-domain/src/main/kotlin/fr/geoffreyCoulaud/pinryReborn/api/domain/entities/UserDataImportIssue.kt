@@ -4,8 +4,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import java.util.UUID
 
 /**
- * One line of the import report. [subject] and [detail] are truncated before storage, so a hostile
- * archive line cannot make the report itself the payload.
+ * One line of the import report. [subject] and [detail] are truncated before storage, so a hostile archive line cannot
+ * make the report itself the payload.
  */
 data class UserDataImportIssue(
     override val id: UUID,

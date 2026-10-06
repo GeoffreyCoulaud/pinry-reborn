@@ -7,13 +7,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchNotFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.TooManyRedirectsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertArrayEquals
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ServerSocket
@@ -21,6 +14,13 @@ import java.net.UnknownHostException
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class HttpMediaFetcherTest {
     private lateinit var server: HttpServer
@@ -63,7 +63,8 @@ class HttpMediaFetcherTest {
 
     private fun theProxy(): GuardingProxy = proxies.single()
 
-    @BeforeEach fun start() {
+    @BeforeEach
+    fun start() {
         server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
         server.start()
     }
@@ -71,7 +72,8 @@ class HttpMediaFetcherTest {
     // Holds a stalling handler until the test ends, so the server can stop.
     private val stalled = CountDownLatch(1)
 
-    @AfterEach fun stop() {
+    @AfterEach
+    fun stop() {
         stalled.countDown()
         server.stop(0)
     }

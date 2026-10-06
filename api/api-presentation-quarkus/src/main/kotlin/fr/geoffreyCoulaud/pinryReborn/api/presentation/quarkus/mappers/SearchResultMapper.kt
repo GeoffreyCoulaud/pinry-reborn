@@ -6,7 +6,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.TagSe
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.TagMapper.toDto
 
 object SearchResultMapper {
-    fun List<Tag>.toTagSearchDto() = TagSearchOutputDto(
-        results = this.map { TagSearchResultOutputDto(tag = it.toDto()) }
-    )
+    fun List<Tag>.toTagSearchDto() =
+        TagSearchOutputDto(results = this.map { TagSearchResultOutputDto(tag = it.toDto()) })
 }

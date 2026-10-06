@@ -23,14 +23,13 @@ import jakarta.enterprise.inject.Produces
 import org.eclipse.microprofile.config.inject.ConfigProperty
 
 /**
- * CDI wiring for the export use cases, hosted in the composition root because it needs both
- * `exports.*` (owned by the worker module) and the `api-storage-filesystem` adapter, which the
- * worker module must not depend on. Companion to [MediaAdapterProducers].
+ * CDI wiring for the export use cases, hosted in the composition root because it needs both `exports.*` (owned by the
+ * worker module) and the `api-storage-filesystem` adapter, which the worker module must not depend on. Companion to
+ * [MediaAdapterProducers].
  *
- * `FilesystemZipExportArchiveStore`, [UserDataExportRequester], [UserDataExportBuilder] and
- * [ReapUserDataExports] are deliberately not `@ApplicationScoped` (see their kdoc) since
- * ARC cannot resolve their plain constructor parameters (`Duration`, `Int`, `Long`, `String`) on
- * its own. These producers are the single place that construct them.
+ * `FilesystemZipExportArchiveStore`, [UserDataExportRequester], [UserDataExportBuilder] and [ReapUserDataExports] are
+ * deliberately not `@ApplicationScoped` (see their kdoc) since ARC cannot resolve their plain constructor parameters
+ * (`Duration`, `Int`, `Long`, `String`) on its own. These producers are the single place that construct them.
  */
 @ApplicationScoped
 class ExportProducers {
@@ -52,7 +51,12 @@ class ExportProducers {
         config: ExportsConfig,
     ): UserDataExportRequester =
         UserDataExportRequester(
-            repository, archiveStore, enqueueTask, reauthenticator, clock, transactionRunner,
+            repository,
+            archiveStore,
+            enqueueTask,
+            reauthenticator,
+            clock,
+            transactionRunner,
             minimumInterval = config.minimumInterval(),
         )
 
@@ -74,8 +78,16 @@ class ExportProducers {
         @ConfigProperty(name = "quarkus.application.version") applicationVersion: String,
     ): UserDataExportBuilder =
         UserDataExportBuilder(
-            exportRepository, userRepository, pinRepository, mediaRepository, boardRepository, tagRepository,
-            mediaStore, archiveStore, transactionRunner, clock,
+            exportRepository,
+            userRepository,
+            pinRepository,
+            mediaRepository,
+            boardRepository,
+            tagRepository,
+            mediaStore,
+            archiveStore,
+            transactionRunner,
+            clock,
             applicationVersion = applicationVersion,
             pageSize = config.pageSize(),
             retention = config.retention(),
@@ -94,7 +106,11 @@ class ExportProducers {
         config: ExportsConfig,
     ): ReapUserDataExports =
         ReapUserDataExports(
-            repository, archiveStore, taskQueue, clock, transactionRunner,
+            repository,
+            archiveStore,
+            taskQueue,
+            clock,
+            transactionRunner,
             interruptedGrace = config.interruptedGrace(),
             stagedFileMaxAge = config.stagedFileMaxAge(),
             sweepBatchSize = config.sweepBatchSize(),

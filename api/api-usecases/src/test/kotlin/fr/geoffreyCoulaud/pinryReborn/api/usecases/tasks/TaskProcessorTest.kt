@@ -10,11 +10,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.TaskLeaseLos
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class TaskProcessorTest {
     private val queue: TaskQueueInterface = mockk(relaxed = true)
@@ -34,23 +34,27 @@ class TaskProcessorTest {
     private fun claimed(kind: String = "k", attempts: Int = 1, maxAttempts: Int = 3, cancelRequested: Boolean = false) =
         ClaimedTask(randomUUID(), kind, "{}", attempts, maxAttempts, "lease-1", cancelRequested)
 
-    private fun handler(kind: String, body: () -> Unit) = object : TaskHandler {
-        override val kind = kind
-        override fun handle(payload: String, context: TaskContext) = body()
-    }
+    private fun handler(kind: String, body: () -> Unit) =
+        object : TaskHandler {
+            override val kind = kind
 
-    private fun flooredHandler(kind: String, floor: Duration, body: () -> Unit) = object : TaskHandler {
-        override val kind = kind
-        override val retryFloor = floor
-        override fun handle(payload: String, context: TaskContext) = body()
-    }
+            override fun handle(payload: String, context: TaskContext) = body()
+        }
+
+    private fun flooredHandler(kind: String, floor: Duration, body: () -> Unit) =
+        object : TaskHandler {
+            override val kind = kind
+            override val retryFloor = floor
+
+            override fun handle(payload: String, context: TaskContext) = body()
+        }
 
     @Test
     fun `Given a successful handler, Then the task is marked succeeded`() {
         // Given
         every { clock.now() } returns now
         val c = claimed()
-        val p = processorWith(handler("k") { })
+        val p = processorWith(handler("k") {})
         // When
         p.execute(c, leaseDuration)
         // Then
@@ -89,7 +93,7 @@ class TaskProcessorTest {
         every { clock.now() } returns now
         every { queue.markCancelledIfRequested(any(), any(), any()) } returns true
         val c = claimed()
-        val p = processorWith(handler("k") { })
+        val p = processorWith(handler("k") {})
         // When
         p.execute(c, leaseDuration)
         // Then
@@ -157,10 +161,16 @@ class TaskProcessorTest {
         every { clock.now() } returns now
         var seen: TaskContext? = null
         val c = claimed(attempts = 2, maxAttempts = 3)
-        val p = processorWith(object : TaskHandler {
-            override val kind = "k"
-            override fun handle(payload: String, context: TaskContext) { seen = context }
-        })
+        val p =
+            processorWith(
+                object : TaskHandler {
+                    override val kind = "k"
+
+                    override fun handle(payload: String, context: TaskContext) {
+                        seen = context
+                    }
+                }
+            )
         // When
         p.execute(c, leaseDuration)
         // Then
@@ -201,17 +211,21 @@ class TaskProcessorTest {
         every { queue.renewLease(any(), any(), any()) } returns false
         val c = claimed()
         var told: TaskLeaseLostException? = null
-        val p = processorWith(object : TaskHandler {
-            override val kind = "k"
-            override fun handle(payload: String, context: TaskContext) {
-                try {
-                    context.renewLease()
-                } catch (e: TaskLeaseLostException) {
-                    told = e
-                    throw e
+        val p =
+            processorWith(
+                object : TaskHandler {
+                    override val kind = "k"
+
+                    override fun handle(payload: String, context: TaskContext) {
+                        try {
+                            context.renewLease()
+                        } catch (e: TaskLeaseLostException) {
+                            told = e
+                            throw e
+                        }
+                    }
                 }
-            }
-        })
+            )
         // When
         p.execute(c, leaseDuration)
         // Then
@@ -228,10 +242,16 @@ class TaskProcessorTest {
         every { clock.now() } returns now
         every { queue.renewLease(any(), any(), any()) } returns true
         val c = claimed()
-        val p = processorWith(object : TaskHandler {
-            override val kind = "k"
-            override fun handle(payload: String, context: TaskContext) { context.renewLease() }
-        })
+        val p =
+            processorWith(
+                object : TaskHandler {
+                    override val kind = "k"
+
+                    override fun handle(payload: String, context: TaskContext) {
+                        context.renewLease()
+                    }
+                }
+            )
         // When
         p.execute(c, Duration.ofMinutes(2))
         // Then
@@ -246,10 +266,14 @@ class TaskProcessorTest {
             listOf(now, now.plus(third).minusMillis(1), now.plus(third), now.plus(third).plusMillis(1), now)
         every { queue.renewLease(any(), any(), any()) } returns true
         val c = claimed()
-        val p = processorWith(object : TaskHandler {
-            override val kind = "k"
-            override fun handle(payload: String, context: TaskContext) = repeat(3) { context.renewLeaseIfDue() }
-        })
+        val p =
+            processorWith(
+                object : TaskHandler {
+                    override val kind = "k"
+
+                    override fun handle(payload: String, context: TaskContext) = repeat(3) { context.renewLeaseIfDue() }
+                }
+            )
         // When
         p.execute(c, leaseDuration)
         // Then

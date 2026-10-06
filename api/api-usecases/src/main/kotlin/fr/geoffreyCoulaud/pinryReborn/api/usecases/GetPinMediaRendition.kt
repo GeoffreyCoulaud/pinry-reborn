@@ -2,9 +2,9 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageTransformer
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaLimits
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionMode
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionSpec
@@ -23,6 +23,7 @@ import java.util.concurrent.Semaphore
 /** Descriptor of what to serve for a `GET .../media[?size=...]`: the original bytes, or a rendition. */
 sealed interface ServedMedia {
     data class Original(val media: Media) : ServedMedia
+
     data class Rendition(val mediaId: UUID, val key: String) : ServedMedia
 }
 

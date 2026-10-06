@@ -19,7 +19,8 @@ class QueryBeanConstructedByQualifiedNameTest {
                         .QPinModel()
                         .findList()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -45,7 +46,8 @@ class QueryBeanConstructedByQualifiedNameTest {
             class Repository {
                 fun find() = QPinModel().findList()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -62,7 +64,8 @@ class QueryBeanConstructedByQualifiedNameTest {
             class Repository {
                 fun find() = java.util.UUID.randomUUID()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -79,7 +82,8 @@ class QueryBeanConstructedByQualifiedNameTest {
             class Repository {
                 fun find() = com.example.QueueModel()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)

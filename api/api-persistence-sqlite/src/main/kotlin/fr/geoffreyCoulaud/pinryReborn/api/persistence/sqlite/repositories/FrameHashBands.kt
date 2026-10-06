@@ -3,8 +3,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PdqHash
 
 /**
- * The sixteen 16-bit bands of a frame hash (ADR 0051, decision 4), as `MediaFrameModel`'s indexes spell them.
- * The lookup's `raw(` literals spell them again, the detekt inventory taking plain literals alone.
+ * The sixteen 16-bit bands of a frame hash (ADR 0051, decision 4), as `MediaFrameModel`'s indexes spell them. The
+ * lookup's `raw(` literals spell them again, the detekt inventory taking plain literals alone.
  */
 object FrameHashBands {
     const val BAND_0 = "((hash_0 >> 48) & 65535)"
@@ -26,8 +26,22 @@ object FrameHashBands {
 
     val EXPRESSIONS =
         listOf(
-            BAND_0, BAND_1, BAND_2, BAND_3, BAND_4, BAND_5, BAND_6, BAND_7,
-            BAND_8, BAND_9, BAND_10, BAND_11, BAND_12, BAND_13, BAND_14, BAND_15,
+            BAND_0,
+            BAND_1,
+            BAND_2,
+            BAND_3,
+            BAND_4,
+            BAND_5,
+            BAND_6,
+            BAND_7,
+            BAND_8,
+            BAND_9,
+            BAND_10,
+            BAND_11,
+            BAND_12,
+            BAND_13,
+            BAND_14,
+            BAND_15,
         )
 
     private const val BITS = 16

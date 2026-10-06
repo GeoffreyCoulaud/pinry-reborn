@@ -14,11 +14,12 @@ class ExponentialBackoffWithJitter(
     private val random: () -> Double,
 ) : BackoffPolicy {
     override fun nextAttemptAt(attempts: Int, now: Instant, floor: Duration): Instant {
-        val exponent = when {
-            attempts <= 1 -> 0
-            attempts - 1 > MAX_EXPONENT -> MAX_EXPONENT
-            else -> attempts - 1
-        }
+        val exponent =
+            when {
+                attempts <= 1 -> 0
+                attempts - 1 > MAX_EXPONENT -> MAX_EXPONENT
+                else -> attempts - 1
+            }
         val window = base.multipliedBy(1L shl exponent)
         val bounded = if (window > cap) cap else window
         val delayNanos = (bounded.toNanos() * random()).toLong()

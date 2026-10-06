@@ -16,7 +16,8 @@ class SoftDeleteStateFilteredOutsideQueriesTest {
             class Repository {
                 fun find() = QPinModel().author.id.equalTo(id).softDeletedAt.isNull.findList()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -40,7 +41,8 @@ class SoftDeleteStateFilteredOutsideQueriesTest {
             class Repository {
                 fun find() = QPinModel().softDeletedAt.isNotNull.findList()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -58,7 +60,8 @@ class SoftDeleteStateFilteredOutsideQueriesTest {
             class Repository {
                 fun find(cutoff: Instant) = QUserModel().softDeletedAt.lessThan(cutoff).findList()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -75,7 +78,8 @@ class SoftDeleteStateFilteredOutsideQueriesTest {
             class Repository {
                 fun find() = this.softDeletedAt.isNull
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -94,7 +98,8 @@ class SoftDeleteStateFilteredOutsideQueriesTest {
                 fun recycledBefore(model: PinModel, cutoff: Instant) =
                     model.softDeletedAt?.isBefore(cutoff)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -113,7 +118,8 @@ class SoftDeleteStateFilteredOutsideQueriesTest {
 
                 fun sortUp(query: QPinModel) = query.orderBy().softDeletedAt.asc().id.asc()
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -132,7 +138,8 @@ class SoftDeleteStateFilteredOutsideQueriesTest {
                     model.softDeletedAt = at
                 }
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -152,7 +159,8 @@ class SoftDeleteStateFilteredOutsideQueriesTest {
 
                 fun toModel(pin: Pin) = PinModel(softDeletedAt = pin.softDeletedAt)
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)

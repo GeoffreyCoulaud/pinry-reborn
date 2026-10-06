@@ -23,12 +23,12 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class DuplicateResolverTest {
     private val pinRepository = mockk<PinRepositoryInterface>()
@@ -60,13 +60,14 @@ class DuplicateResolverTest {
     fun `Given not one kept pin, the open pin unnamed or rejected, or it alone, Then the decision is refused unread`() {
         // Given
         val (open, other, third) = List(3) { randomUUID() }
-        val refused = listOf(
-            mapOf(open to MERGE, other to MERGE),
-            mapOf(open to KEEP, other to KEEP),
-            mapOf(other to KEEP, third to MERGE),
-            mapOf(open to REJECT, other to KEEP),
-            mapOf(open to KEEP),
-        )
+        val refused =
+            listOf(
+                mapOf(open to MERGE, other to MERGE),
+                mapOf(open to KEEP, other to KEEP),
+                mapOf(other to KEEP, third to MERGE),
+                mapOf(open to REJECT, other to KEEP),
+                mapOf(open to KEEP),
+            )
 
         // When, Then
         refused.forEach { assertThrows<DuplicateResolutionInvalidError> { useCase.resolve(open, it, user) } }
@@ -136,8 +137,13 @@ class DuplicateResolverTest {
         val tag = Tag(randomUUID(), user, "absorbed", TestTime.now)
         val board = Board(randomUUID(), user, "Absorbed", "", TestTime.now, TestTime.now)
         val open = pin("Kept").copy(sourceContextUrl = "https://a.test/kept")
-        val absorbed = pin("Absorbed").copy(sourceContextUrl = "https://a.test/absorbed", tags = listOf(tag),
-            boards = listOf(board))
+        val absorbed =
+            pin("Absorbed")
+                .copy(
+                    sourceContextUrl = "https://a.test/absorbed",
+                    tags = listOf(tag),
+                    boards = listOf(board),
+                )
         stored(open, absorbed)
 
         // When

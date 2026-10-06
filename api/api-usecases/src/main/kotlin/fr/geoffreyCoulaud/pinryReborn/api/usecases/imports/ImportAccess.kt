@@ -32,8 +32,8 @@ internal fun UserDataImportRepositoryInterface.findAwaitingArchive(
     }
 
 /**
- * Reads the import, checks it, and saves [update] of it in one transaction; null when it is absent or
- * refused. The write is a lambda, not `::save`, so the detekt rule sees a call inside the fence.
+ * Reads the import, checks it, and saves [update] of it in one transaction; null when it is absent or refused. The
+ * write is a lambda, not `::save`, so the detekt rule sees a call inside the fence.
  */
 internal fun UserDataImportRepositoryInterface.saveFenced(
     transactionRunner: TransactionRunner,
@@ -51,16 +51,15 @@ internal fun UserDataImportRepositoryInterface.saveFencedOver(
 ): UserDataImport? = transactionRunner.fencedOver({ findById(importId) }, held, update) { save(it) }
 
 /**
- * The fence the upload writes take (spec §6): their windows are wide, a chunk streaming to disk and a
- * digest of up to twenty gigabytes, so a caller that lost the phase is refused as a late one is.
+ * The fence the upload writes take (spec §6): their windows are wide, a chunk streaming to disk and a digest of up to
+ * twenty gigabytes, so a caller that lost the phase is refused as a late one is.
  */
 internal fun UserDataImportRepositoryInterface.saveWhileAwaitingArchive(
     transactionRunner: TransactionRunner,
     importId: UUID,
     update: (UserDataImport) -> UserDataImport,
 ): UserDataImport =
-    saveFenced(transactionRunner, importId, { it.awaitsItsArchive() }, update)
-        ?: throw ImportNotAwaitingArchiveError()
+    saveFenced(transactionRunner, importId, { it.awaitsItsArchive() }, update) ?: throw ImportNotAwaitingArchiveError()
 
 /** The upload phase, spelled once: the completer opens its own transaction and reads it there too. */
 internal fun UserDataImport.awaitsItsArchive(): Boolean = state == UserDataImportState.AWAITING_ARCHIVE

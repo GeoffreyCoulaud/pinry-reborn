@@ -7,17 +7,18 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.quarkus.security.identity.SecurityIdentity
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 class TagSearchControllerTest {
     private val tagSearcher = mockk<TagSearcher>()
     private val securityIdentity = mockk<SecurityIdentity>()
-    private val controller = TagSearchController(
-        tagSearcher = tagSearcher,
-        securityIdentity = securityIdentity,
-    )
+    private val controller =
+        TagSearchController(
+            tagSearcher = tagSearcher,
+            securityIdentity = securityIdentity,
+        )
 
     @Test
     fun `Given no limit and a query, Then searchTags uses the default limit`() {

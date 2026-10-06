@@ -11,14 +11,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.exceptions.UserMode
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserDataImportRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import java.time.Instant
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 class UserDataImportRepositoryTest : RepositoryTest() {
     private val repository = UserDataImportRepository(persistor)
@@ -32,13 +32,14 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         userId: UUID,
         at: Instant = requestedAt,
         id: UUID = randomUUID(),
-    ) = UserDataImport(
-        id = id,
-        userId = userId,
-        state = UserDataImportState.AWAITING_ARCHIVE,
-        requestedAt = at,
-        lastActivityAt = at,
-    )
+    ) =
+        UserDataImport(
+            id = id,
+            userId = userId,
+            state = UserDataImportState.AWAITING_ARCHIVE,
+            requestedAt = at,
+            lastActivityAt = at,
+        )
 
     // --- save / findById ---
 
@@ -63,20 +64,21 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         val runToken = randomUUID()
         val stored =
             repository.save(
-                awaitingImport(user.id).copy(
-                    state = UserDataImportState.RUNNING,
-                    taskId = randomUUID(),
-                    runToken = runToken,
-                    uploadedBytes = 4096,
-                    lastActivityAt = requestedAt.plusSeconds(10),
-                    archiveCompletedAt = requestedAt.plusSeconds(20),
-                    startedAt = requestedAt.plusSeconds(30),
-                    storageKey = "imports/a.zip",
-                    byteSize = 4096,
-                    formatVersion = 1,
-                    issueCount = 2,
-                    issueDetailTruncated = true,
-                ),
+                awaitingImport(user.id)
+                    .copy(
+                        state = UserDataImportState.RUNNING,
+                        taskId = randomUUID(),
+                        runToken = runToken,
+                        uploadedBytes = 4096,
+                        lastActivityAt = requestedAt.plusSeconds(10),
+                        archiveCompletedAt = requestedAt.plusSeconds(20),
+                        startedAt = requestedAt.plusSeconds(30),
+                        storageKey = "imports/a.zip",
+                        byteSize = 4096,
+                        formatVersion = 1,
+                        issueCount = 2,
+                        issueDetailTruncated = true,
+                    )
             )
 
         // When
@@ -112,7 +114,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         // When
         val reSaved =
             repository.save(
-                stored.copy(state = UserDataImportState.FAILED, failureCode = UserDataImportFailure.IMPORT_FAILED),
+                stored.copy(state = UserDataImportState.FAILED, failureCode = UserDataImportFailure.IMPORT_FAILED)
             )
 
         // Then
@@ -221,8 +223,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
     fun `Given an upload idle since before the grace, Then it is abandonable`() {
         // Given
         val user = createAndSaveUser()
-        val stored =
-            repository.save(awaitingImport(user.id).copy(lastActivityAt = requestedAt.plusSeconds(60)))
+        val stored = repository.save(awaitingImport(user.id).copy(lastActivityAt = requestedAt.plusSeconds(60)))
 
         // When
         val abandonable = repository.findAbandonableBefore(requestedAt.plusSeconds(120), afterId = null, limit = 10)

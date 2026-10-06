@@ -5,9 +5,7 @@ import io.ebean.Database
 import jakarta.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
-class EbeanPersistor(
-    private val database: Database,
-) : Persistor {
+class EbeanPersistor(private val database: Database) : Persistor {
     override fun save(bean: Any) {
         database.save(bean)
     }

@@ -11,14 +11,14 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.exceptions.UserMode
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserDataExportRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import java.time.Instant
+import java.util.UUID
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID
-import java.util.UUID.randomUUID
 
 class UserDataExportRepositoryTest : RepositoryTest() {
     private val repository = UserDataExportRepository(persistor)
@@ -31,13 +31,14 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         userId: UUID,
         requestedAt: Instant = Instant.parse("2026-07-22T10:00:00Z"),
         id: UUID = randomUUID(),
-    ) = UserDataExport(
-        id = id,
-        userId = userId,
-        state = UserDataExportState.PENDING,
-        formatVersion = 1,
-        requestedAt = requestedAt,
-    )
+    ) =
+        UserDataExport(
+            id = id,
+            userId = userId,
+            state = UserDataExportState.PENDING,
+            formatVersion = 1,
+            requestedAt = requestedAt,
+        )
 
     // --- save / findById ---
 
@@ -116,13 +117,15 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         // so a state change must not re-resolve the active user: today resolve() throws
         // UserModelDoesNotExistError and aborts the whole sweep.
         val user = createAndSaveUser()
-        val export = repository.save(
-            pendingExport(user.id).copy(
-                state = UserDataExportState.READY,
-                expiresAt = Instant.parse("2026-07-22T00:00:00Z"),
-                storageKey = "archive.zip",
-            ),
-        )
+        val export =
+            repository.save(
+                pendingExport(user.id)
+                    .copy(
+                        state = UserDataExportState.READY,
+                        expiresAt = Instant.parse("2026-07-22T00:00:00Z"),
+                        storageKey = "archive.zip",
+                    )
+            )
         userRepository.markPendingDeletion(user, storableNow())
 
         // When
@@ -163,12 +166,14 @@ class UserDataExportRepositoryTest : RepositoryTest() {
     fun `Given a stored failure code that names no failure, Then reading the row throws`() {
         // Given
         val user = createAndSaveUser()
-        val saved = repository.save(
-            pendingExport(user.id).copy(
-                state = UserDataExportState.FAILED,
-                failureCode = UserDataExportFailure.BUILD_FAILED,
-            ),
-        )
+        val saved =
+            repository.save(
+                pendingExport(user.id)
+                    .copy(
+                        state = UserDataExportState.FAILED,
+                        failureCode = UserDataExportFailure.BUILD_FAILED,
+                    )
+            )
         database
             .sqlUpdate("update user_data_exports set failure_code = ? where id = ?")
             .setParameter(1, "NOT_A_FAILURE")
@@ -239,12 +244,14 @@ class UserDataExportRepositoryTest : RepositoryTest() {
     fun `Given a ready export past its expiry, Then it is listed as expired`() {
         // Given
         val user = createAndSaveUser()
-        val export = repository.save(
-            pendingExport(user.id).copy(
-                state = UserDataExportState.READY,
-                expiresAt = Instant.parse("2026-07-22T00:00:00Z"),
-            ),
-        )
+        val export =
+            repository.save(
+                pendingExport(user.id)
+                    .copy(
+                        state = UserDataExportState.READY,
+                        expiresAt = Instant.parse("2026-07-22T00:00:00Z"),
+                    )
+            )
         val now = Instant.parse("2026-07-23T00:00:00Z")
 
         // When
@@ -259,10 +266,11 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         // Given
         val user = createAndSaveUser()
         repository.save(
-            pendingExport(user.id).copy(
-                state = UserDataExportState.READY,
-                expiresAt = Instant.parse("2026-07-24T00:00:00Z"),
-            ),
+            pendingExport(user.id)
+                .copy(
+                    state = UserDataExportState.READY,
+                    expiresAt = Instant.parse("2026-07-24T00:00:00Z"),
+                )
         )
         val now = Instant.parse("2026-07-23T00:00:00Z")
 
@@ -276,12 +284,13 @@ class UserDataExportRepositoryTest : RepositoryTest() {
     // --- sweep selections ---
 
     // Enumerated rather than read off isTerminal: the expectation is the spec's, not the predicate's.
-    private val terminalStates = listOf(
-        UserDataExportState.FAILED,
-        UserDataExportState.EXPIRED,
-        UserDataExportState.DELETED,
-        UserDataExportState.SUPERSEDED,
-    )
+    private val terminalStates =
+        listOf(
+            UserDataExportState.FAILED,
+            UserDataExportState.EXPIRED,
+            UserDataExportState.DELETED,
+            UserDataExportState.SUPERSEDED,
+        )
 
     // One row per state on its own user: the partial unique index allows one PENDING per user.
     private fun saveExport(
@@ -299,9 +308,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
     fun `Given one export per state, Then findPending answers with the pending one alone`() {
         // Given: one row per state, so a predicate widened by accident is caught here
         val pending = saveExport(UserDataExportState.PENDING)
-        UserDataExportState.entries
-            .filterNot { it == UserDataExportState.PENDING }
-            .forEach { saveExport(it) }
+        UserDataExportState.entries.filterNot { it == UserDataExportState.PENDING }.forEach { saveExport(it) }
 
         // When
         val found = repository.findPending(limit = 10)
@@ -376,12 +383,17 @@ class UserDataExportRepositoryTest : RepositoryTest() {
     fun `Given more expired exports than the limit, Then the pages after each last id cover them once, by id`() {
         // Given: seeded in descending id order, as above
         val expiredAt = Instant.parse("2026-07-22T00:00:00Z")
-        val ids = (3 downTo 1).map { n ->
-            repository.save(
-                pendingExport(createAndSaveUser().id, id = orderedId(n))
-                    .copy(state = UserDataExportState.READY, expiresAt = expiredAt),
-            ).id
-        }.sorted()
+        val ids =
+            (3 downTo 1)
+                .map { n ->
+                    repository
+                        .save(
+                            pendingExport(createAndSaveUser().id, id = orderedId(n))
+                                .copy(state = UserDataExportState.READY, expiresAt = expiredAt)
+                        )
+                        .id
+                }
+                .sorted()
         val now = Instant.parse("2026-07-23T00:00:00Z")
 
         // When
@@ -450,9 +462,10 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         // Given
         val user = createAndSaveUser()
         val first = repository.save(pendingExport(user.id))
-        val second = repository.save(
-            pendingExport(user.id, Instant.parse("2026-07-22T11:00:00Z")).copy(state = UserDataExportState.READY),
-        )
+        val second =
+            repository.save(
+                pendingExport(user.id, Instant.parse("2026-07-22T11:00:00Z")).copy(state = UserDataExportState.READY)
+            )
 
         // When
         val ids = repository.findAllExportIdsForUser(user.id)
@@ -541,11 +554,15 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         // Given
         val user = createAndSaveUser()
         val base = Instant.parse("2026-07-22T10:00:00Z")
-        val ids = (0 until 5).map { index ->
-            repository.save(
-                pendingExport(user.id, base.plusSeconds(index.toLong())).copy(state = UserDataExportState.DELETED),
-            ).id
-        }
+        val ids =
+            (0 until 5).map { index ->
+                repository
+                    .save(
+                        pendingExport(user.id, base.plusSeconds(index.toLong()))
+                            .copy(state = UserDataExportState.DELETED)
+                    )
+                    .id
+            }
         val newestFirst = ids.reversed()
 
         // When

@@ -3,8 +3,17 @@ package fr.geoffreyCoulaud.pinryReborn.api.fetch.http
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.SocketAddress
+import java.net.UnknownHostException
+import java.nio.channels.SelectableChannel
+import java.time.Duration
+import java.util.concurrent.CopyOnWriteArrayList
 import org.eclipse.jetty.client.Destination
 import org.eclipse.jetty.client.HttpClient
+import org.eclipse.jetty.client.Request as UpstreamRequest
+import org.eclipse.jetty.client.Response as UpstreamResponse
 import org.eclipse.jetty.client.transport.HttpClientTransportDynamic
 import org.eclipse.jetty.http.HttpHeader
 import org.eclipse.jetty.http.HttpHeaderValue
@@ -22,15 +31,6 @@ import org.eclipse.jetty.server.handler.ConnectHandler
 import org.eclipse.jetty.util.Callback
 import org.eclipse.jetty.util.SocketAddressResolver
 import org.eclipse.jetty.util.thread.VirtualThreadPool
-import java.net.InetAddress
-import java.net.InetSocketAddress
-import java.net.SocketAddress
-import java.net.UnknownHostException
-import java.nio.channels.SelectableChannel
-import java.time.Duration
-import java.util.concurrent.CopyOnWriteArrayList
-import org.eclipse.jetty.client.Request as UpstreamRequest
-import org.eclipse.jetty.client.Response as UpstreamResponse
 
 /** One download's loopback HTTP proxy, which dials only addresses [addressPolicy] allows (ADR 0048, decision 2). */
 class GuardingProxy(
@@ -52,13 +52,16 @@ class GuardingProxy(
     val address = InetSocketAddress(LOOPBACK, connector.localPort)
 
     /** The addresses the policy refused, which make a failed download `URL_NOT_ALLOWED`. */
-    val refusedAddresses: List<InetAddress> get() = refused.toList()
+    val refusedAddresses: List<InetAddress>
+        get() = refused.toList()
 
     /** The hosts that did not resolve or did not accept the connection, which make it `UNREACHABLE`. */
-    val unreachableHosts: List<String> get() = unreachable.toList()
+    val unreachableHosts: List<String>
+        get() = unreachable.toList()
 
     /** Whether the proxy has stopped listening. */
-    internal val isClosed: Boolean get() = server.isStopped
+    internal val isClosed: Boolean
+        get() = server.isStopped
 
     /** The reason the record gives a failed download, if any: a refusal reaches neither client as such. */
     fun refusal(cause: Throwable? = null): FetchException? =

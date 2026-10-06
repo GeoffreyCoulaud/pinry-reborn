@@ -4,19 +4,19 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.BoardRepository
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 /**
- * `getBoardsForPin` deliberately filters out recycled boards from the API view, while
- * `softDeleteBoard` keeps the join row. The export needs the unfiltered read; this suite pins both
- * halves of that contract, split from `PinRepositoryTest` to keep it under detekt's `LargeClass`
- * threshold (mirrors `PinRepositoryPaginationTest`'s precedent for the same split).
+ * `getBoardsForPin` deliberately filters out recycled boards from the API view, while `softDeleteBoard` keeps the join
+ * row. The export needs the unfiltered read; this suite pins both halves of that contract, split from
+ * `PinRepositoryTest` to keep it under detekt's `LargeClass` threshold (mirrors `PinRepositoryPaginationTest`'s
+ * precedent for the same split).
  *
- * Its board is inserted as a raw model by the shared fixtures rather than through `BoardRepository.saveBoard`,
- * which is `merge` and not `save`: the arrangement needs an active row and its id, not the production write.
+ * Its board is inserted as a raw model by the shared fixtures rather than through `BoardRepository.saveBoard`, which is
+ * `merge` and not `save`: the arrangement needs an active row and its id, not the production write.
  */
 class PinRepositoryRecycledMembershipTest : PinRepositoryFixtures() {
     private val boardRepository = BoardRepository(persistor)
@@ -36,7 +36,7 @@ class PinRepositoryRecycledMembershipTest : PinRepositoryFixtures() {
                 boards = listOf(board),
                 createdAt = storableNow(),
                 updatedAt = storableNow(),
-            ),
+            )
         )
 
     @Test

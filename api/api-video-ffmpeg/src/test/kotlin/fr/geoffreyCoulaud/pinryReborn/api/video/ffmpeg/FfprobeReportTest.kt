@@ -5,11 +5,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoCodecUnsupportedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
+import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import java.time.Duration
 
 /** The cases no fixture reaches, written as ffprobe's JSON. */
 class FfprobeReportTest {
@@ -21,15 +21,14 @@ class FfprobeReportTest {
 
     private fun track(type: String, codec: String, vararg fields: Pair<String, Any>) =
         mapOf("codec_type" to type, "codec_name" to codec, "width" to 160, "height" to 120) +
-            ("nb_read_packets" to "10") + fields
+            ("nb_read_packets" to "10") +
+            fields
 
     private fun h264(vararg fields: Pair<String, Any>) =
         track("video", "h264", "extradata" to dump("0164000a"), *fields)
 
     private fun report(vararg tracks: Map<String, Any>) =
-        mapper.writeValueAsString(
-            mapOf("streams" to tracks.toList(), "format" to mapOf("duration" to "1.000000")),
-        )
+        mapper.writeValueAsString(mapOf("streams" to tracks.toList(), "format" to mapOf("duration" to "1.000000")))
 
     private fun read(json: String) = FfprobeReport.read(json, maxDuration, bytes = 2048)
 
@@ -184,8 +183,7 @@ class FfprobeReportTest {
         assertEquals("avc1.64000A,mp4a.40.42", codecsOf(h264(), track("audio", "aac", "extradata" to dump("f940"))))
     }
 
-    private fun alreadyRepackaged(vararg tracks: Map<String, Any>) =
-        read(report(*tracks)).alreadyRepackaged
+    private fun alreadyRepackaged(vararg tracks: Map<String, Any>) = read(report(*tracks)).alreadyRepackaged
 
     @Test
     fun `Given the kept tracks alone, tagged as their parameter names them, Then the file is already repackaged`() {

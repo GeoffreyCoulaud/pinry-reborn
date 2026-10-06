@@ -13,9 +13,9 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * Executes an already-claimed task through its registered [TaskHandler] and settles it
- * (succeeded / rescheduled with backoff / dead / cancelled) via the fenced [TaskQueueInterface]
- * operations. Does not itself claim tasks from the queue; that is the runtime's job.
+ * Executes an already-claimed task through its registered [TaskHandler] and settles it (succeeded / rescheduled with
+ * backoff / dead / cancelled) via the fenced [TaskQueueInterface] operations. Does not itself claim tasks from the
+ * queue; that is the runtime's job.
  */
 @ApplicationScoped
 class TaskProcessor(
@@ -25,9 +25,13 @@ class TaskProcessor(
     private val clock: Clock,
 ) {
     private sealed interface Outcome
+
     private sealed interface Settled : Outcome
+
     private data object Success : Settled
+
     private data class Retryable(val message: String) : Settled
+
     private data class Permanent(val message: String) : Settled
 
     /** The lease is another attempt's or nobody's: every mark would be refused by its own guard. */

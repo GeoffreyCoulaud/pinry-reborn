@@ -7,17 +7,18 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.Probl
 import io.mockk.every
 import io.mockk.mockk
 import jakarta.ws.rs.core.UriInfo
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Test
 import java.io.EOFException
 import java.io.IOException
 import java.nio.channels.ClosedChannelException
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
 
 class IOExceptionMapperTest {
-    private val mapper = IOExceptionMapper().apply {
-        uriInfo = mockk<UriInfo> { every { path } returns "/api/v1/pins" }
-    }
+    private val mapper =
+        IOExceptionMapper().apply {
+            uriInfo = mockk<UriInfo> { every { path } returns "/api/v1/pins" }
+        }
 
     private fun assertInternalError(exception: IOException) {
         val response = mapper.toResponse(exception)

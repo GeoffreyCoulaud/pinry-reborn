@@ -14,25 +14,32 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.quarkus.security.identity.SecurityIdentity
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.util.UUID.randomUUID
 
 class BoardRecycleBinControllerTest {
     private val boardRecycleBin = mockk<BoardRecycleBin>()
     private val boardGetter = mockk<BoardGetter>()
     private val securityIdentity = mockk<SecurityIdentity>()
-    private val controller = BoardRecycleBinController(
-        boardRecycleBin = boardRecycleBin,
-        boardGetter = boardGetter,
-        securityIdentity = securityIdentity,
-    )
+    private val controller =
+        BoardRecycleBinController(
+            boardRecycleBin = boardRecycleBin,
+            boardGetter = boardGetter,
+            securityIdentity = securityIdentity,
+        )
 
     private fun aUser() = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
 
     private fun aBoard(author: User) =
-        Board(id = randomUUID(), author = author, name = createRandomString(), description = createRandomString(),
-            createdAt = TestTime.now, updatedAt = TestTime.now)
+        Board(
+            id = randomUUID(),
+            author = author,
+            name = createRandomString(),
+            description = createRandomString(),
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
 
     @Test
     fun `Given recycled boards for the user, Then listRecycledBoards returns them without pin count`() {

@@ -5,12 +5,12 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import io.quarkus.runtime.StartupEvent
+import java.nio.file.Files
+import java.nio.file.Path
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.nio.file.Files
-import java.nio.file.Path
 
 class ExportDataDirectoryCheckTest {
     @TempDir lateinit var tempDir: Path
@@ -26,9 +26,10 @@ class ExportDataDirectoryCheckTest {
         val archiveDir = tempDir.resolve("exports")
 
         // When
-        val error = assertThrows(IllegalStateException::class.java) {
-            check().verifySameFileStore(stagingDir, archiveDir) { path -> path.fileName.toString() }
-        }
+        val error =
+            assertThrows(IllegalStateException::class.java) {
+                check().verifySameFileStore(stagingDir, archiveDir) { path -> path.fileName.toString() }
+            }
 
         // Then: an operator gets the two directories to reconcile, not a stalled promote under load
         val message = error.message.orEmpty()

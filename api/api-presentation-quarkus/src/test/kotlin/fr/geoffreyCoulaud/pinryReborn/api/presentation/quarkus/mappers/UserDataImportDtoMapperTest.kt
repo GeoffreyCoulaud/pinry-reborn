@@ -8,43 +8,46 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserDataImportStateDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDataImportDtoMapper.toDto
+import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.UUID.randomUUID
 
 class UserDataImportDtoMapperTest {
-    private fun awaitingImport() = UserDataImport(
-        id = randomUUID(),
-        userId = randomUUID(),
-        state = UserDataImportState.AWAITING_ARCHIVE,
-        requestedAt = Instant.parse("2026-08-14T10:00:00Z"),
-        lastActivityAt = Instant.parse("2026-08-14T10:00:00Z"),
-    )
+    private fun awaitingImport() =
+        UserDataImport(
+            id = randomUUID(),
+            userId = randomUUID(),
+            state = UserDataImportState.AWAITING_ARCHIVE,
+            requestedAt = Instant.parse("2026-08-14T10:00:00Z"),
+            lastActivityAt = Instant.parse("2026-08-14T10:00:00Z"),
+        )
 
-    private fun completedImport() = awaitingImport().copy(
-        state = UserDataImportState.COMPLETED,
-        uploadedBytes = 4096L,
-        byteSize = 4096L,
-        archiveCompletedAt = Instant.parse("2026-08-14T10:05:00Z"),
-        startedAt = Instant.parse("2026-08-14T10:06:00Z"),
-        completedAt = Instant.parse("2026-08-14T10:09:00Z"),
-        formatVersion = 1,
-        announcedPins = 12,
-        processedPins = 12,
-        createdPins = 9,
-        skippedPins = 3,
-        createdBoards = 2,
-        skippedBoards = 1,
-        createdTags = 5,
-        skippedTags = 4,
-        issueCount = 501,
-        issueDetailTruncated = true,
-    )
+    private fun completedImport() =
+        awaitingImport()
+            .copy(
+                state = UserDataImportState.COMPLETED,
+                uploadedBytes = 4096L,
+                byteSize = 4096L,
+                archiveCompletedAt = Instant.parse("2026-08-14T10:05:00Z"),
+                startedAt = Instant.parse("2026-08-14T10:06:00Z"),
+                completedAt = Instant.parse("2026-08-14T10:09:00Z"),
+                formatVersion = 1,
+                announcedPins = 12,
+                processedPins = 12,
+                createdPins = 9,
+                skippedPins = 3,
+                createdBoards = 2,
+                skippedBoards = 1,
+                createdTags = 5,
+                skippedTags = 4,
+                issueCount = 501,
+                issueDetailTruncated = true,
+            )
 
     @Test
     fun `Given an import awaiting its archive, Then toDto carries the state and leaves the run fields null`() {
@@ -156,11 +159,12 @@ class UserDataImportDtoMapperTest {
         // Given
         val previousCursor = Cursor(pivotId = randomUUID(), direction = CursorDirection.BACKWARD)
         val nextCursor = Cursor(pivotId = randomUUID(), direction = CursorDirection.FORWARD)
-        val page = Page(
-            items = listOf(awaitingImport()),
-            previousCursor = previousCursor,
-            nextCursor = nextCursor,
-        )
+        val page =
+            Page(
+                items = listOf(awaitingImport()),
+                previousCursor = previousCursor,
+                nextCursor = nextCursor,
+            )
 
         // When
         val result = page.toDto()

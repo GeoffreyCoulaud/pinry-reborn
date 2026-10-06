@@ -10,22 +10,22 @@ import org.hamcrest.Matchers.notNullValue
 import org.junit.jupiter.api.Test
 
 class MePasswordRateLimitTestProfile : QuarkusTestProfile {
-    override fun getConfigOverrides(): Map<String, String> =
-        mapOf("auth.password_change_minimum_interval" to "PT1H")
+    override fun getConfigOverrides(): Map<String, String> = mapOf("auth.password_change_minimum_interval" to "PT1H")
 }
 
 @QuarkusTest
 @TestProfile(MePasswordRateLimitTestProfile::class)
 class MePasswordRateLimitIntegrationTest : IntegrationTest() {
-    private fun changeBody(current: String, next: String) =
-        """{"currentPassword":"$current","newPassword":"$next"}"""
+    private fun changeBody(current: String, next: String) = """{"currentPassword":"$current","newPassword":"$next"}"""
 
     @Test
     fun `Given a change inside the minimum interval, Then 429 with Retry-After and PASSWORD_CHANGED_TOO_SOON`() {
         // Given: the seed hash from signup is fresh, and the profile pins a 1 h interval
         val auth = createAuthenticatedUser(password = "password123")
         // When / Then
-        given().authenticatedAs(auth).contentType("application/json")
+        given()
+            .authenticatedAs(auth)
+            .contentType("application/json")
             .body(changeBody("password123", "newpassword1"))
             .put("/api/v1/me/password")
             .then()
@@ -39,7 +39,9 @@ class MePasswordRateLimitIntegrationTest : IntegrationTest() {
         // Given: the seed hash from signup is fresh, and the profile pins a 1 h interval
         val auth = createAuthenticatedUser(password = "password123")
         // When / Then: a cross-origin browser client can read Retry-After on the 429
-        given().authenticatedAs(auth).contentType("application/json")
+        given()
+            .authenticatedAs(auth)
+            .contentType("application/json")
             .header("Origin", ALLOWED_ORIGIN)
             .body(changeBody("password123", "newpassword1"))
             .put("/api/v1/me/password")

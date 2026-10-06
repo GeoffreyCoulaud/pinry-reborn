@@ -19,8 +19,7 @@ import java.util.UUID
     columnNames = ["user_id"],
     unique = true,
     definition =
-        "create unique index uq_user_data_exports_pending " +
-            "on user_data_exports (user_id) where state = 'PENDING'",
+        "create unique index uq_user_data_exports_pending " + "on user_data_exports (user_id) where state = 'PENDING'",
 )
 class UserDataExportModel(
     id: UUID,

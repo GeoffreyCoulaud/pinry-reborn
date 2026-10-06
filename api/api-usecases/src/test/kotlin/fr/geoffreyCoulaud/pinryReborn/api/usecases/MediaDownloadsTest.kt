@@ -13,12 +13,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
 
 class MediaDownloadsTest {
     private val downloads: MediaDownloadRepositoryInterface = mockk(relaxed = true)
@@ -32,16 +32,17 @@ class MediaDownloadsTest {
         every { runner.inTransaction<Unit>(any()) } answers { firstArg<() -> Unit>().invoke() }
     }
 
-    private fun row(status: DownloadStatus, pin: UUID = pinId) = MediaDownload(
-        pinId = pin,
-        sourceUrl = "https://x/i.png",
-        status = status,
-        reasonCode = if (status == DownloadStatus.FAILED) DownloadReason.NOT_FOUND else null,
-        lastError = null,
-        taskId = randomUUID(),
-        requestedAt = Instant.EPOCH,
-        updatedAt = Instant.EPOCH,
-    )
+    private fun row(status: DownloadStatus, pin: UUID = pinId) =
+        MediaDownload(
+            pinId = pin,
+            sourceUrl = "https://x/i.png",
+            status = status,
+            reasonCode = if (status == DownloadStatus.FAILED) DownloadReason.NOT_FOUND else null,
+            lastError = null,
+            taskId = randomUUID(),
+            requestedAt = Instant.EPOCH,
+            updatedAt = Instant.EPOCH,
+        )
 
     @Test
     fun `Given rows the requester owns, Then list hands back the page the traversal found`() {

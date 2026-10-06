@@ -21,13 +21,12 @@ import kotlin.streams.asSequence
 /**
  * [ExportArchiveStore] adapter backed by the local filesystem, producing ZIP archives.
  *
- * Mirrors [FilesystemMediaStore]: bytes are staged under `<dataDir>/tmp/`, measured (size +
- * SHA-256) in a single streaming pass, then promoted (moved) to their final
- * `<dataDir>/<storageKey>` location.
+ * Mirrors [FilesystemMediaStore]: bytes are staged under `<dataDir>/tmp/`, measured (size + SHA-256) in a single
+ * streaming pass, then promoted (moved) to their final `<dataDir>/<storageKey>` location.
  *
- * [dataDir] is a plain string (not injected) for the same reason as [FilesystemMediaStore]: this
- * class stays framework-light and unit-testable with a temp directory. CDI wiring of the actual
- * data directory is done by a producer elsewhere.
+ * [dataDir] is a plain string (not injected) for the same reason as [FilesystemMediaStore]: this class stays
+ * framework-light and unit-testable with a temp directory. CDI wiring of the actual data directory is done by a
+ * producer elsewhere.
  */
 class FilesystemZipExportArchiveStore(private val dataDir: String) : ExportArchiveStore {
 
@@ -35,12 +34,12 @@ class FilesystemZipExportArchiveStore(private val dataDir: String) : ExportArchi
 
     // Internal, so a test can read its registered module ids: jackson-module-kotlin now sits on this
     // module's runtime classpath, and a stray registration here would move the published format.
-    internal val mapper = ObjectMapper()
-        .registerModule(JavaTimeModule())
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    internal val mapper =
+        ObjectMapper().registerModule(JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
     private val paths = DataDirPaths(dataDir)
-    private val tmpDir: Path get() = Path.of(dataDir).resolve(StorageLayout.STAGING_DIRECTORY)
+    private val tmpDir: Path
+        get() = Path.of(dataDir).resolve(StorageLayout.STAGING_DIRECTORY)
 
     override fun hasFreeSpace(requiredBytes: Long): Boolean {
         Files.createDirectories(tmpDir)
@@ -98,12 +97,14 @@ class FilesystemZipExportArchiveStore(private val dataDir: String) : ExportArchi
 
     override fun discardOrphanedStagedFiles(olderThan: Instant): Int {
         if (!Files.isDirectory(tmpDir)) return 0
-        return Files.list(tmpDir).use { stream ->
-            stream
-                .filter { it.fileName.toString().startsWith(TEMP_PREFIX) }
-                .filter { Files.getLastModifiedTime(it).toInstant().isBefore(olderThan) }
-                .toList()
-        }.count { Files.deleteIfExists(it) }
+        return Files.list(tmpDir)
+            .use { stream ->
+                stream
+                    .filter { it.fileName.toString().startsWith(TEMP_PREFIX) }
+                    .filter { Files.getLastModifiedTime(it).toInstant().isBefore(olderThan) }
+                    .toList()
+            }
+            .count { Files.deleteIfExists(it) }
     }
 
     override fun forEachStorageKeyOnDisk(block: (Sequence<String>) -> Unit) {
@@ -120,8 +121,10 @@ class FilesystemZipExportArchiveStore(private val dataDir: String) : ExportArchi
         }
         Files.list(exportsDir).use { stream ->
             block(
-                stream.asSequence().filter { Files.isRegularFile(it) }
-                    .map { "${StorageLayout.EXPORTS_DIRECTORY}/${it.fileName}" },
+                stream
+                    .asSequence()
+                    .filter { Files.isRegularFile(it) }
+                    .map { "${StorageLayout.EXPORTS_DIRECTORY}/${it.fileName}" }
             )
         }
     }

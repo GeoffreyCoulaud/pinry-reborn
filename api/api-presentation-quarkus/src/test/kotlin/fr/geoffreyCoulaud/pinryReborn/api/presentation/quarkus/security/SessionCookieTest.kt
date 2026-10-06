@@ -1,12 +1,12 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security
 
 import jakarta.ws.rs.core.NewCookie
+import java.time.Instant
+import java.util.Date
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.util.Date
 
 class SessionCookieTest {
     private val expiresAt = Instant.parse("2026-10-01T00:00:00Z")

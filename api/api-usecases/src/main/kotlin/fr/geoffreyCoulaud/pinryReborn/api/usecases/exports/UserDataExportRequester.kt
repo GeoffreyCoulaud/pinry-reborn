@@ -22,16 +22,14 @@ import java.util.UUID
 /**
  * Requests a user data export archive, behind step-up re-authentication.
  *
- * At most one live archive per user: a `PENDING` request is refused with
- * [ExportAlreadyInProgressError], and requests within [minimumInterval] of the last one (any state)
- * are refused with [ExportTooSoonError]. Any `READY` export is superseded (its bytes deleted only
- * after the transaction commits, never inside it, so a rollback never leaves a `READY` row pointing
- * at bytes that no longer exist).
+ * At most one live archive per user: a `PENDING` request is refused with [ExportAlreadyInProgressError], and requests
+ * within [minimumInterval] of the last one (any state) are refused with [ExportTooSoonError]. Any `READY` export is
+ * superseded (its bytes deleted only after the transaction commits, never inside it, so a rollback never leaves a
+ * `READY` row pointing at bytes that no longer exist).
  *
- * Deliberately not `@ApplicationScoped` yet: `minimumInterval` (a raw `Duration`) and
- * `ExportArchiveStore` have no CDI producer until the wiring task (`ExportProducers`), so annotating
- * this bean now would fail Quarkus's build-time bean validation in `api-application`. Same precedent
- * as `FilesystemZipExportArchiveStore` (Task 5).
+ * Deliberately not `@ApplicationScoped` yet: `minimumInterval` (a raw `Duration`) and `ExportArchiveStore` have no CDI
+ * producer until the wiring task (`ExportProducers`), so annotating this bean now would fail Quarkus's build-time bean
+ * validation in `api-application`. Same precedent as `FilesystemZipExportArchiveStore` (Task 5).
  */
 @Suppress("LongParameterList")
 class UserDataExportRequester(
@@ -55,42 +53,44 @@ class UserDataExportRequester(
     }
 
     // The function that saves is the function that opens the transaction: the fence is lexical, and so is the rule.
-    private fun createPending(user: User): Pair<UserDataExport, String?> =
-        transactionRunner.inTransaction {
-            val now = clock.now()
-            if (repository.findPendingForUser(user.id) != null) throw ExportAlreadyInProgressError()
-            val last = repository.findLastRequestedAtForUser(user.id)
-            val earliest = now.minus(minimumInterval)
-            if (last != null && last.isAfter(earliest)) {
-                throw ExportTooSoonError(ThrottledError.wholeSecondsBetween(earliest, last))
-            }
-            val ready = repository.findReadyForUser(user.id)
-            // The key stays: a delete that fails leaves the residue named by the only column pass 3 of
-            // the sweep can select on. Nulling it hid the bytes from every sweep (spec section 2.4).
-            ready?.let { repository.save(it.copy(state = UserDataExportState.SUPERSEDED)) }
-            val export = savePending(user, now)
-            val task =
-                enqueueTask.enqueue(
-                    kind = UserDataExportTask.KIND,
-                    payload = export.id.toString(),
-                    maxAttempts = UserDataExportTask.MAX_ATTEMPTS,
-                )
-            repository.save(export.copy(taskId = task.id)) to ready?.storageKey
+    private fun createPending(user: User): Pair<UserDataExport, String?> = transactionRunner.inTransaction {
+        val now = clock.now()
+        if (repository.findPendingForUser(user.id) != null) throw ExportAlreadyInProgressError()
+        val last = repository.findLastRequestedAtForUser(user.id)
+        val earliest = now.minus(minimumInterval)
+        if (last != null && last.isAfter(earliest)) {
+            throw ExportTooSoonError(ThrottledError.wholeSecondsBetween(earliest, last))
         }
+        val ready = repository.findReadyForUser(user.id)
+        // The key stays: a delete that fails leaves the residue named by the only column pass 3 of
+        // the sweep can select on. Nulling it hid the bytes from every sweep (spec section 2.4).
+        ready?.let { repository.save(it.copy(state = UserDataExportState.SUPERSEDED)) }
+        val export = savePending(user, now)
+        val task =
+            enqueueTask.enqueue(
+                kind = UserDataExportTask.KIND,
+                payload = export.id.toString(),
+                maxAttempts = UserDataExportTask.MAX_ATTEMPTS,
+            )
+        repository.save(export.copy(taskId = task.id)) to ready?.storageKey
+    }
 
     /**
-     * The `findPendingForUser` check above handles the ordinary case, but it loses the race between
-     * two concurrent requests: the partial unique index is what actually catches the second `PENDING`
-     * row in that case, and the persistence adapter surfaces it as the domain
-     * [ExportAlreadyInProgressException]. Translate it into the use-case error here.
+     * The `findPendingForUser` check above handles the ordinary case, but it loses the race between two concurrent
+     * requests: the partial unique index is what actually catches the second `PENDING` row in that case, and the
+     * persistence adapter surfaces it as the domain [ExportAlreadyInProgressException]. Translate it into the use-case
+     * error here.
      */
     private fun savePending(user: User, now: Instant): UserDataExport =
         try {
             repository.save(
                 UserDataExport(
-                    id = UUID.randomUUID(), userId = user.id, state = UserDataExportState.PENDING,
-                    formatVersion = EXPORT_FORMAT_VERSION, requestedAt = now,
-                ),
+                    id = UUID.randomUUID(),
+                    userId = user.id,
+                    state = UserDataExportState.PENDING,
+                    formatVersion = EXPORT_FORMAT_VERSION,
+                    requestedAt = now,
+                )
             )
         } catch (error: ExportAlreadyInProgressException) {
             throw ExportAlreadyInProgressError(error)

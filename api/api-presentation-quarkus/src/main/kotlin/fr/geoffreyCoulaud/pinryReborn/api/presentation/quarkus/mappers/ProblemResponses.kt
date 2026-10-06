@@ -41,8 +41,7 @@ object ProblemResponses {
         uriInfo: UriInfo,
         currentLength: Long? = null,
     ): Response.ResponseBuilder =
-        Response
-            .status(status)
+        Response.status(status)
             .entity(
                 ProblemDetail(
                     title = title,
@@ -51,7 +50,7 @@ object ProblemResponses {
                     instance = uriInfo.path,
                     code = code.name,
                     currentLength = currentLength,
-                ),
+                )
             )
             .type(PROBLEM_JSON_MEDIA_TYPE)
 

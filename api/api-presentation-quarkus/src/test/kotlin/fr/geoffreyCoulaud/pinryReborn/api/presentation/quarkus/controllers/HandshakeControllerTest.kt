@@ -67,8 +67,16 @@ class HandshakeControllerTest {
         assertEquals(MediaFormat.entries.map { it.mimeType } + HandshakeController.VIDEO_UPLOAD_TYPES, mediaTypes)
         assertEquals(
             listOf(
-                "image/png", "image/jpeg", "image/webp", "image/gif", "video/mp4", "video/webm", "video/quicktime",
-                "video/x-matroska", "video/x-m4v", "video/3gpp",
+                "image/png",
+                "image/jpeg",
+                "image/webp",
+                "image/gif",
+                "video/mp4",
+                "video/webm",
+                "video/quicktime",
+                "video/x-matroska",
+                "video/x-m4v",
+                "video/3gpp",
             ),
             mediaTypes,
         )

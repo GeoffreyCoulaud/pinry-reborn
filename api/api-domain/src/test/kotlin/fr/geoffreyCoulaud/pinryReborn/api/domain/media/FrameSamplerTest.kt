@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
+import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.Duration
 
 /** The adapters' tests hold the rest of the sampling, through real media. */
 class FrameSamplerTest {

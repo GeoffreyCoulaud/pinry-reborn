@@ -13,19 +13,19 @@ import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import jakarta.inject.Inject
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.Base64
 import java.util.UUID
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 /**
- * Isolated, writable data directories for the class run, as in [ModeBMediaHostingTestProfile], so the
- * mode-A upload can write, the import upload can stream, and the cleaner can erase both.
+ * Isolated, writable data directories for the class run, as in [ModeBMediaHostingTestProfile], so the mode-A upload can
+ * write, the import upload can stream, and the cleaner can erase both.
  */
 class MeDeleteCompletionTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> =
@@ -36,12 +36,11 @@ class MeDeleteCompletionTestProfile : QuarkusTestProfile {
 }
 
 /**
- * End-to-end coverage of the async account-deletion completeness path (spec §13): a real
- * `DELETE /api/v1/me` on an account that owns a pin with an uploaded image enqueues the deletion,
- * and the real async worker then erases everything (including the image row and on-disk bytes)
- * before hard-deleting the user as the last step of one transaction. Because the hard delete frees
- * the username only once that whole transaction has committed, a bounded poll that observes the
- * same username become registerable again is proof the full erasure ran end-to-end.
+ * End-to-end coverage of the async account-deletion completeness path (spec §13): a real `DELETE /api/v1/me` on an
+ * account that owns a pin with an uploaded image enqueues the deletion, and the real async worker then erases
+ * everything (including the image row and on-disk bytes) before hard-deleting the user as the last step of one
+ * transaction. Because the hard delete frees the username only once that whole transaction has committed, a bounded
+ * poll that observes the same username become registerable again is proof the full erasure ran end-to-end.
  */
 @QuarkusTest
 @TestProfile(MeDeleteCompletionTestProfile::class)
@@ -49,29 +48,28 @@ class MeDeleteCompletionTestProfile : QuarkusTestProfile {
 @Suppress("WallClockRead")
 class MeDeleteCompletionIntegrationTest : IntegrationTest() {
 
-    @Inject
-    lateinit var pinCreator: PinCreator
+    @Inject lateinit var pinCreator: PinCreator
 
-    @Inject
-    lateinit var userDataImportRepository: UserDataImportRepositoryInterface
+    @Inject lateinit var userDataImportRepository: UserDataImportRepositoryInterface
 
-    @Inject
-    lateinit var userDataImportIssueRepository: UserDataImportIssueRepositoryInterface
+    @Inject lateinit var userDataImportIssueRepository: UserDataImportIssueRepositoryInterface
 
-    @Inject
-    lateinit var importsConfig: ImportsConfig
+    @Inject lateinit var importsConfig: ImportsConfig
 
-    private fun stepUp(password: String) =
-        "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())
+    private fun stepUp(password: String) = "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())
 
     private fun fixture(name: String) = File("src/test/resources/fixtures/$name")
 
     private fun openImport(auth: AuthenticatedUser): UUID =
         given()
             .authenticatedAs(auth)
-            .`when`().post("/api/v1/me/imports")
-            .then().statusCode(202)
-            .extract().jsonPath().getString("id")
+            .`when`()
+            .post("/api/v1/me/imports")
+            .then()
+            .statusCode(202)
+            .extract()
+            .jsonPath()
+            .getString("id")
             .let(UUID::fromString)
 
     private fun uploadChunk(auth: AuthenticatedUser, importId: UUID) {
@@ -79,8 +77,10 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
             .authenticatedAs(auth)
             .contentType("application/octet-stream")
             .body("half an archive".toByteArray())
-            .`when`().put("/api/v1/me/imports/$importId/archive?offset=0")
-            .then().statusCode(200)
+            .`when`()
+            .put("/api/v1/me/imports/$importId/archive?offset=0")
+            .then()
+            .statusCode(200)
     }
 
     /** A terminal import whose promoted archive is on disk, which only the derived key names. */
@@ -98,7 +98,7 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
                 requestedAt = seededAt,
                 lastActivityAt = seededAt,
                 storageKey = "imports/$importId.zip",
-            ),
+            )
         )
         userDataImportIssueRepository.save(
             UserDataImportIssue(
@@ -108,7 +108,7 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
                 line = 1,
                 subject = null,
                 detail = "seeded",
-            ),
+            )
         )
         return importId
     }
@@ -143,7 +143,9 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
                     .contentType("application/json")
                     .body("""{"name":"$name","password":"$password"}""")
                     .post("/api/v1/users")
-                    .then().extract().statusCode()
+                    .then()
+                    .extract()
+                    .statusCode()
             if (status == 200) return true
             Thread.sleep(POLL_INTERVAL_MS)
         }
@@ -167,19 +169,19 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
         given()
             .authenticatedAs(auth)
             .multiPart("file", fixture("sample.png"), "image/png")
-            .`when`().put("/api/v1/pins/${pin.id}/media")
-            .then().statusCode(201)
-        given()
-            .authenticatedAs(auth)
-            .`when`().get("/api/v1/pins/${pin.id}/media")
-            .then().statusCode(200)
+            .`when`()
+            .put("/api/v1/pins/${pin.id}/media")
+            .then()
+            .statusCode(201)
+        given().authenticatedAs(auth).`when`().get("/api/v1/pins/${pin.id}/media").then().statusCode(200)
 
         // When: the account is deleted with a valid step-up
         given()
             .authenticatedAs(auth)
             .header("X-Reauthentication", stepUp(password))
             .delete("/api/v1/me")
-            .then().statusCode(202)
+            .then()
+            .statusCode(202)
 
         // Then: the worker fully erases the account, so the same username becomes registerable
         // again only once the hard delete (the last step of the cleaner's transaction) has run.
@@ -204,7 +206,8 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
             .authenticatedAs(auth)
             .header("X-Reauthentication", stepUp(password))
             .delete("/api/v1/me")
-            .then().statusCode(202)
+            .then()
+            .statusCode(202)
 
         // Then
         assertTrue(pollUntilImportsGone(auth.user.id), "both import rows should be erased")

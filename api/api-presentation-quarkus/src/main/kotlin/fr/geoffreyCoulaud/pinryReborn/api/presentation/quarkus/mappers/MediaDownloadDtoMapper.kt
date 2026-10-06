@@ -10,21 +10,24 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinMediaS
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinMediaStateMapper.toDto
 
 object MediaDownloadDtoMapper {
-    fun MediaDownload.toDto() = MediaDownloadOutputDto(
-        pinId = pinId,
-        sourceUrl = sourceUrl,
-        status = status.toDto(),
-        requestedAt = requestedAt,
-        updatedAt = updatedAt,
-        reasonCode = reasonCode?.toDto(),
-        message = reasonCode?.let { messageFor(it) },
-    )
+    fun MediaDownload.toDto() =
+        MediaDownloadOutputDto(
+            pinId = pinId,
+            sourceUrl = sourceUrl,
+            status = status.toDto(),
+            requestedAt = requestedAt,
+            updatedAt = updatedAt,
+            reasonCode = reasonCode?.toDto(),
+            message = reasonCode?.let { messageFor(it) },
+        )
 
-    fun Page<MediaDownload>.toDto() = MediaDownloadListOutputDto(
-        downloads = items.map { it.toDto() },
-        pagination = PaginationOutputDto(
-            previousCursor = previousCursor?.toDto(),
-            nextCursor = nextCursor?.toDto(),
-        ),
-    )
+    fun Page<MediaDownload>.toDto() =
+        MediaDownloadListOutputDto(
+            downloads = items.map { it.toDto() },
+            pagination =
+                PaginationOutputDto(
+                    previousCursor = previousCursor?.toDto(),
+                    nextCursor = nextCursor?.toDto(),
+                ),
+        )
 }

@@ -4,13 +4,22 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import java.time.Duration
 
-enum class VideoCodec { H264, H265, VP9, AV1 }
+enum class VideoCodec {
+    H264,
+    H265,
+    VP9,
+    AV1,
+}
 
-enum class AudioCodec { AAC, OPUS, MP3 }
+enum class AudioCodec {
+    AAC,
+    OPUS,
+    MP3,
+}
 
 /**
- * A video's first video track and first audio track, if any. [width] and [height] are what it displays at, and
- * [codecs] is the RFC 6381 `codecs` parameter of the two tracks (ADR 0047, decision 6), [demuxedAs] its container now.
+ * A video's first video track and first audio track, if any. [width] and [height] are what it displays at, and [codecs]
+ * is the RFC 6381 `codecs` parameter of the two tracks (ADR 0047, decision 6), [demuxedAs] its container now.
  */
 data class VideoProbeResult(
     val videoCodec: VideoCodec,

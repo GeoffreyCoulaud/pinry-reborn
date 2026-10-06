@@ -8,8 +8,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.fencedOver
 import java.util.UUID
 
 /**
- * Reads the export, checks it, and saves [update] of it in one transaction; null when it is absent or
- * refused. The write is a lambda, not `::save`, so the detekt rule sees a call inside the fence.
+ * Reads the export, checks it, and saves [update] of it in one transaction; null when it is absent or refused. The
+ * write is a lambda, not `::save`, so the detekt rule sees a call inside the fence.
  */
 internal fun UserDataExportRepositoryInterface.saveFenced(
     transactionRunner: TransactionRunner,

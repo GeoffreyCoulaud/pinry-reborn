@@ -19,24 +19,27 @@ class HandshakeController(
 ) {
     @GET
     @PermitAll
-    fun getHandshake(): HandshakeOutputDto = HandshakeOutputDto(
-        contractVersion = contractConfig.infoVersion(),
-        limits = HandshakeOutputDto.LimitsDto(
-            maxImageBytes = mediaConfig.maxImageBytes(),
-            maxVideoBytes = mediaConfig.maxVideoBytes(),
-            maxVideoSeconds = mediaConfig.maxVideoSeconds(),
-            maxPixelsPerFrame = mediaConfig.maxPixelsPerFrame(),
-            mediaTypes = MediaFormat.entries.map { it.mimeType } + VIDEO_UPLOAD_TYPES,
-            maxImportChunkBytes = importBounds.maxChunkBytes,
-            maxImportArchiveBytes = importBounds.maxArchiveBytes,
-        ),
-        renditionSizes = HandshakeOutputDto.RenditionSizesDto(
-            tiny = renditionsConfig.tiny(),
-            small = renditionsConfig.small(),
-            medium = renditionsConfig.medium(),
-            large = renditionsConfig.large(),
-        ),
-    )
+    fun getHandshake(): HandshakeOutputDto =
+        HandshakeOutputDto(
+            contractVersion = contractConfig.infoVersion(),
+            limits =
+                HandshakeOutputDto.LimitsDto(
+                    maxImageBytes = mediaConfig.maxImageBytes(),
+                    maxVideoBytes = mediaConfig.maxVideoBytes(),
+                    maxVideoSeconds = mediaConfig.maxVideoSeconds(),
+                    maxPixelsPerFrame = mediaConfig.maxPixelsPerFrame(),
+                    mediaTypes = MediaFormat.entries.map { it.mimeType } + VIDEO_UPLOAD_TYPES,
+                    maxImportChunkBytes = importBounds.maxChunkBytes,
+                    maxImportArchiveBytes = importBounds.maxArchiveBytes,
+                ),
+            renditionSizes =
+                HandshakeOutputDto.RenditionSizesDto(
+                    tiny = renditionsConfig.tiny(),
+                    small = renditionsConfig.small(),
+                    medium = renditionsConfig.medium(),
+                    large = renditionsConfig.large(),
+                ),
+        )
 
     companion object {
         /** The types a browser names a file the two demuxers read: the probe, not this list, decides. */

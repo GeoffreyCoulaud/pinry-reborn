@@ -11,21 +11,21 @@ import java.util.UUID
 @Suppress("TooManyFunctions")
 interface TaskQueueInterface {
     /**
-     * Insert a PENDING task. If [NewTask.dedupKey] matches a live (PENDING/RUNNING) task,
-     * returns that existing task without inserting.
+     * Insert a PENDING task. If [NewTask.dedupKey] matches a live (PENDING/RUNNING) task, returns that existing task
+     * without inserting.
      */
     fun enqueue(task: NewTask): Task
 
     /**
-     * Atomically claim the highest-priority, earliest-available PENDING task whose
-     * availableAt <= now, flipping it to RUNNING with a fresh lease. Returns null if none.
+     * Atomically claim the highest-priority, earliest-available PENDING task whose availableAt <= now, flipping it to
+     * RUNNING with a fresh lease. Returns null if none.
      */
     fun claimNext(now: Instant, leaseDuration: Duration): ClaimedTask?
 
     /**
-     * Fenced lease extension: push the running task's lease expiry to [until] so a long handler is
-     * not reclaimed from under itself. Returns false if the task is no longer running under
-     * [leaseId], which tells the caller it has lost the task and must stop working on it.
+     * Fenced lease extension: push the running task's lease expiry to [until] so a long handler is not reclaimed from
+     * under itself. Returns false if the task is no longer running under [leaseId], which tells the caller it has lost
+     * the task and must stop working on it.
      */
     fun renewLease(id: UUID, leaseId: String, until: Instant): Boolean
 
@@ -39,14 +39,13 @@ interface TaskQueueInterface {
     fun markDead(id: UUID, leaseId: String, now: Instant, lastError: String?): Boolean
 
     /**
-     * Fenced: if cancelRequested is set on the leased row, settle to CANCELLED and return
-     * true; otherwise return false.
+     * Fenced: if cancelRequested is set on the leased row, settle to CANCELLED and return true; otherwise return false.
      */
     fun markCancelledIfRequested(id: UUID, leaseId: String, now: Instant): Boolean
 
     /**
-     * Cancel a PENDING task (guarded WHERE state=PENDING), stamping [now] as its terminal instant.
-     * Returns true if it was cancelled.
+     * Cancel a PENDING task (guarded WHERE state=PENDING), stamping [now] as its terminal instant. Returns true if it
+     * was cancelled.
      */
     fun cancelPending(id: UUID, now: Instant): Boolean
 
@@ -54,14 +53,14 @@ interface TaskQueueInterface {
     fun requestCancel(id: UUID): Boolean
 
     /**
-     * Flip at most [limit] RUNNING rows whose lease expired back to PENDING, delayed by the queue's
-     * backoff floored at [retryFloors] for the row's kind (unnamed kinds unfloored). Returns the count.
+     * Flip at most [limit] RUNNING rows whose lease expired back to PENDING, delayed by the queue's backoff floored at
+     * [retryFloors] for the row's kind (unnamed kinds unfloored). Returns the count.
      */
     fun reapExpired(now: Instant, retryFloors: Map<String, Duration>, limit: Int): Int
 
     /**
-     * Of [ids], those whose task is still PENDING or RUNNING. A terminal task and an absent one are
-     * the same answer to the caller: nothing will advance whatever was waiting on it.
+     * Of [ids], those whose task is still PENDING or RUNNING. A terminal task and an absent one are the same answer to
+     * the caller: nothing will advance whatever was waiting on it.
      */
     fun findLiveIds(ids: Collection<UUID>): Set<UUID>
 
@@ -72,9 +71,8 @@ interface TaskQueueInterface {
     fun findById(id: UUID): Task?
 
     /**
-     * Delete tasks in a terminal state (`SUCCEEDED`, `DEAD`, `CANCELLED`) whose `terminalStateAt`
-     * is before [cutoff]. Returns the count of rows deleted. Non-terminal tasks and fresh
-     * terminals are untouched.
+     * Delete tasks in a terminal state (`SUCCEEDED`, `DEAD`, `CANCELLED`) whose `terminalStateAt` is before [cutoff].
+     * Returns the count of rows deleted. Non-terminal tasks and fresh terminals are untouched.
      */
     fun deleteTerminalBefore(cutoff: Instant): Int
 }

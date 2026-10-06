@@ -12,15 +12,13 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 /**
- * Reads user data exports: a single owner-checked lookup by id, and the owner's paginated history
- * (spec `docs/specs/2026-07-22-user-data-export.md` §6). [get] is the single place
- * [UserDataExportDownloader] and [UserDataExportDeleter] delegate their existence/ownership check
- * to, so that logic never gets duplicated across use cases.
+ * Reads user data exports: a single owner-checked lookup by id, and the owner's paginated history (spec
+ * `docs/specs/2026-07-22-user-data-export.md` §6). [get] is the single place [UserDataExportDownloader] and
+ * [UserDataExportDeleter] delegate their existence/ownership check to, so that logic never gets duplicated across use
+ * cases.
  */
 @ApplicationScoped
-class UserDataExportGetter(
-    private val repository: UserDataExportRepositoryInterface,
-) {
+class UserDataExportGetter(private val repository: UserDataExportRepositoryInterface) {
     fun get(user: User, exportId: UUID): UserDataExport {
         val export = repository.findById(exportId) ?: throw ExportDoesNotExistError()
         if (export.userId != user.id) throw ExportPermissionError()

@@ -13,8 +13,8 @@ class SessionTokenAuthenticator(
     private val clock: Clock,
 ) {
     fun authenticate(token: String): SessionToken {
-        val sessionToken = sessionTokenRepository.findByTokenHash(TokenHasher.sha256(token))
-            ?: throw SessionTokenInvalidError()
+        val sessionToken =
+            sessionTokenRepository.findByTokenHash(TokenHasher.sha256(token)) ?: throw SessionTokenInvalidError()
         if (!sessionToken.expiresAt.isAfter(clock.now())) throw SessionTokenExpiredError()
         return sessionToken
     }

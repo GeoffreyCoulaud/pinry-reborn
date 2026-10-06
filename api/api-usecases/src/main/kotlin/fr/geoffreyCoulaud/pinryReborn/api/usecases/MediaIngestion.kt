@@ -25,8 +25,8 @@ import java.util.UUID.randomUUID
 data class IngestedMedia(val media: Media, val staged: StagedFile)
 
 /**
- * The only way an original enters storage (ADR 0049, decision 2). Each caller saves the row in its own
- * transaction, so promotion and its undoing are separate steps.
+ * The only way an original enters storage (ADR 0049, decision 2). Each caller saves the row in its own transaction, so
+ * promotion and its undoing are separate steps.
  */
 @ApplicationScoped
 class MediaIngestion(
@@ -71,25 +71,49 @@ class MediaIngestion(
         val stored = found.stored
         val media =
             when (measured) {
-                is VideoProbeResult -> Media.Video(
-                    id = mediaId, pinId = pinId, mimeType = found.mimeType, width = measured.width,
-                    height = measured.height, byteSize = stored.byteSize, contentHash = stored.contentHash,
-                    storageKey = storageKey, createdAt = createdAt, frames = measured.frames,
-                    duration = measured.duration, videoBitRate = measured.videoBitRate, sound = measured.sound,
-                )
-                is ProbeResult -> if (measured.animated) {
-                    Media.AnimatedImage(
-                        id = mediaId, pinId = pinId, mimeType = found.mimeType, width = measured.width,
-                        height = measured.height, byteSize = stored.byteSize, contentHash = stored.contentHash,
-                        storageKey = storageKey, createdAt = createdAt, frames = measured.frames,
+                is VideoProbeResult ->
+                    Media.Video(
+                        id = mediaId,
+                        pinId = pinId,
+                        mimeType = found.mimeType,
+                        width = measured.width,
+                        height = measured.height,
+                        byteSize = stored.byteSize,
+                        contentHash = stored.contentHash,
+                        storageKey = storageKey,
+                        createdAt = createdAt,
+                        frames = measured.frames,
+                        duration = measured.duration,
+                        videoBitRate = measured.videoBitRate,
+                        sound = measured.sound,
                     )
-                } else {
-                    Media.StillImage(
-                        id = mediaId, pinId = pinId, mimeType = found.mimeType, width = measured.width,
-                        height = measured.height, byteSize = stored.byteSize, contentHash = stored.contentHash,
-                        storageKey = storageKey, createdAt = createdAt,
-                    )
-                }
+                is ProbeResult ->
+                    if (measured.animated) {
+                        Media.AnimatedImage(
+                            id = mediaId,
+                            pinId = pinId,
+                            mimeType = found.mimeType,
+                            width = measured.width,
+                            height = measured.height,
+                            byteSize = stored.byteSize,
+                            contentHash = stored.contentHash,
+                            storageKey = storageKey,
+                            createdAt = createdAt,
+                            frames = measured.frames,
+                        )
+                    } else {
+                        Media.StillImage(
+                            id = mediaId,
+                            pinId = pinId,
+                            mimeType = found.mimeType,
+                            width = measured.width,
+                            height = measured.height,
+                            byteSize = stored.byteSize,
+                            contentHash = stored.contentHash,
+                            storageKey = storageKey,
+                            createdAt = createdAt,
+                        )
+                    }
             }
         return IngestedMedia(media, stored)
     }
@@ -129,8 +153,10 @@ class MediaIngestion(
         // An archived MP4 alone is kept: repackaged again it would change, where a WebM keeps its bytes and one
         // demuxer reads both WebM and Matroska, so a file in any other container is made the one its codecs choose.
         val keptAsArchived =
-            keepArchivedMp4 && video.alreadyRepackaged &&
-                video.demuxedAs == VideoContainer.MP4 && container == VideoContainer.MP4
+            keepArchivedMp4 &&
+                video.alreadyRepackaged &&
+                video.demuxedAs == VideoContainer.MP4 &&
+                container == VideoContainer.MP4
         val stored =
             if (keptAsArchived) {
                 staged

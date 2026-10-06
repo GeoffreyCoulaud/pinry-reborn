@@ -14,9 +14,9 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.UUID.randomUUID
 
 class AccountDeleterTest : BaseTest() {
     private val reauth = mockk<Reauthenticator>(relaxed = true)

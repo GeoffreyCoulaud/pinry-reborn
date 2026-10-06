@@ -14,30 +14,31 @@ import java.util.UUID
 
 object PinMapper {
     /**
-     * [mediaStates] and [pendingDuplicates] are what `statesFor` and `pendingAmong` returned for the pins being
-     * mapped: parameters rather than defaults, so the compiler names every response that forgot to resolve them.
+     * [mediaStates] and [pendingDuplicates] are what `statesFor` and `pendingAmong` returned for the pins being mapped:
+     * parameters rather than defaults, so the compiler names every response that forgot to resolve them.
      */
-    fun Pin.toDto(mediaStates: Map<UUID, PinMediaState>, pendingDuplicates: Set<UUID>) = PinOutputDto(
-        id = id,
-        authorId = author.id,
-        sourceContextUrl = sourceContextUrl,
-        sourceMediaUrl = sourceMediaUrl,
-        description = description,
-        tags = tags.map { it.toDto() },
-        boards = boards.map { it.toRefDto() },
-        createdAt = createdAt,
-        softDeletedAt = softDeletedAt,
-        media = mediaStates[id]?.toDto(id),
-        hasPendingDuplicates = id in pendingDuplicates,
-    )
+    fun Pin.toDto(mediaStates: Map<UUID, PinMediaState>, pendingDuplicates: Set<UUID>) =
+        PinOutputDto(
+            id = id,
+            authorId = author.id,
+            sourceContextUrl = sourceContextUrl,
+            sourceMediaUrl = sourceMediaUrl,
+            description = description,
+            tags = tags.map { it.toDto() },
+            boards = boards.map { it.toRefDto() },
+            createdAt = createdAt,
+            softDeletedAt = softDeletedAt,
+            media = mediaStates[id]?.toDto(id),
+            hasPendingDuplicates = id in pendingDuplicates,
+        )
 
-    fun Page<Pin>.toDto(mediaStates: Map<UUID, PinMediaState>, pendingDuplicates: Set<UUID>) = PinListOutputDto(
-        pins = this.items.map { it.toDto(mediaStates, pendingDuplicates) },
-        pagination = PaginationOutputDto(
-            previousCursor = this.previousCursor?.toDto(),
-            nextCursor = this.nextCursor?.toDto(),
-        ),
-    )
+    fun Page<Pin>.toDto(mediaStates: Map<UUID, PinMediaState>, pendingDuplicates: Set<UUID>) =
+        PinListOutputDto(
+            pins = this.items.map { it.toDto(mediaStates, pendingDuplicates) },
+            pagination =
+                PaginationOutputDto(
+                    previousCursor = this.previousCursor?.toDto(),
+                    nextCursor = this.nextCursor?.toDto(),
+                ),
+        )
 }
-
-

@@ -18,12 +18,12 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
-import org.junit.jupiter.api.Assertions.assertDoesNotThrow
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
 
 class DeletePinMediaTest : BaseTest() {
     private val pins = mockk<PinRepositoryInterface>()
@@ -34,19 +34,42 @@ class DeletePinMediaTest : BaseTest() {
     private val duplicates = mockk<PinDuplicateRepositoryInterface>(relaxed = true)
     private val useCase = DeletePinMedia(pins, mediaRepository, duplicates, store, clearPinDownload, renditionCache)
 
-    init { every { renditionCache.evictMedia(any()) } returns Unit }
+    init {
+        every { renditionCache.evictMedia(any()) } returns Unit
+    }
 
     private val owner = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
-    private fun pin(author: User = owner) = Pin(randomUUID(), author, "https://c", null, "d", emptyList(), emptyList(),
-        createdAt = TestTime.now, updatedAt = TestTime.now)
-    private fun mediaFor(pinId: UUID, hash: String = "h") = Media.StillImage(
-        id = randomUUID(), pinId = pinId, mimeType = "image/png", width = 1, height = 1,
-        byteSize = 1, contentHash = hash, storageKey = "originals/x/$pinId/i.png",
-        createdAt = Instant.parse("2026-07-08T00:00:00Z"),
-    )
 
-    @Test fun `Given the owner and an image, Then delete removes the row and the file`() {
-        val p = pin(); val img = mediaFor(p.id)
+    private fun pin(author: User = owner) =
+        Pin(
+            randomUUID(),
+            author,
+            "https://c",
+            null,
+            "d",
+            emptyList(),
+            emptyList(),
+            createdAt = TestTime.now,
+            updatedAt = TestTime.now,
+        )
+
+    private fun mediaFor(pinId: UUID, hash: String = "h") =
+        Media.StillImage(
+            id = randomUUID(),
+            pinId = pinId,
+            mimeType = "image/png",
+            width = 1,
+            height = 1,
+            byteSize = 1,
+            contentHash = hash,
+            storageKey = "originals/x/$pinId/i.png",
+            createdAt = Instant.parse("2026-07-08T00:00:00Z"),
+        )
+
+    @Test
+    fun `Given the owner and an image, Then delete removes the row and the file`() {
+        val p = pin()
+        val img = mediaFor(p.id)
         every { pins.findPinById(p.id) } returns p
         every { mediaRepository.findByPinId(p.id) } returns img
 
@@ -61,18 +84,21 @@ class DeletePinMediaTest : BaseTest() {
         verify { renditionCache.evictMedia(img.id) }
     }
 
-    @Test fun `Given a missing pin, Then delete throws MediaPinDoesNotExistError`() {
+    @Test
+    fun `Given a missing pin, Then delete throws MediaPinDoesNotExistError`() {
         every { pins.findPinById(any()) } returns null
         assertThrows(MediaPinDoesNotExistError::class.java) { useCase.delete(randomUUID(), owner) }
     }
 
-    @Test fun `Given a non-owner, Then delete throws MediaPermissionError`() {
+    @Test
+    fun `Given a non-owner, Then delete throws MediaPermissionError`() {
         val p = pin(author = User(randomUUID(), createRandomString(), createdAt = TestTime.now))
         every { pins.findPinById(p.id) } returns p
         assertThrows(MediaPermissionError::class.java) { useCase.delete(p.id, owner) }
     }
 
-    @Test fun `Given a pin without an image, Then delete throws MediaDoesNotExistError`() {
+    @Test
+    fun `Given a pin without an image, Then delete throws MediaDoesNotExistError`() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { mediaRepository.findByPinId(p.id) } returns null
@@ -80,7 +106,8 @@ class DeletePinMediaTest : BaseTest() {
         assertThrows(MediaDoesNotExistError::class.java) { useCase.delete(p.id, owner) }
     }
 
-    @Test fun `Given no image but a pending download, Then delete cancels it and does not throw`() {
+    @Test
+    fun `Given no image but a pending download, Then delete cancels it and does not throw`() {
         val p = pin()
         every { pins.findPinById(p.id) } returns p
         every { mediaRepository.findByPinId(p.id) } returns null
@@ -94,9 +121,11 @@ class DeletePinMediaTest : BaseTest() {
         verify(exactly = 0) { renditionCache.evictMedia(any()) }
     }
 
-    @Test fun `Given the image store throws, Then the delete still succeeds`() {
+    @Test
+    fun `Given the image store throws, Then the delete still succeeds`() {
         // Given
-        val p = pin(); val img = mediaFor(p.id)
+        val p = pin()
+        val img = mediaFor(p.id)
         every { pins.findPinById(p.id) } returns p
         every { mediaRepository.findByPinId(p.id) } returns img
         every { store.delete(any()) } throws RuntimeException("disk down")

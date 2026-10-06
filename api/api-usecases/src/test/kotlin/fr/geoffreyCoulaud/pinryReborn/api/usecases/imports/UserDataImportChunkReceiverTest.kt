@@ -19,13 +19,13 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.io.ByteArrayInputStream
+import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayInputStream
-import java.time.Instant
-import java.util.UUID.randomUUID
 
 class UserDataImportChunkReceiverTest : BaseTest() {
     private val repository = mockk<UserDataImportRepositoryInterface>()
@@ -36,7 +36,12 @@ class UserDataImportChunkReceiverTest : BaseTest() {
     private val minimumFreeBytes = 64L
     private val receiver =
         UserDataImportChunkReceiver(
-            repository, archiveStore, clock, transactions, maxArchiveBytes, minimumFreeBytes,
+            repository,
+            archiveStore,
+            clock,
+            transactions,
+            maxArchiveBytes,
+            minimumFreeBytes,
         )
     private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
     private val stranger = User(id = randomUUID(), name = "mallory", createdAt = TestTime.now)
@@ -47,10 +52,15 @@ class UserDataImportChunkReceiverTest : BaseTest() {
     private fun importWith(
         state: UserDataImportState = UserDataImportState.AWAITING_ARCHIVE,
         uploadedBytes: Long = 0,
-    ) = UserDataImport(
-        id = importId, userId = user.id, state = state, requestedAt = now, lastActivityAt = now,
-        uploadedBytes = uploadedBytes,
-    )
+    ) =
+        UserDataImport(
+            id = importId,
+            userId = user.id,
+            state = state,
+            requestedAt = now,
+            lastActivityAt = now,
+            uploadedBytes = uploadedBytes,
+        )
 
     private fun receive(
         asUser: User = user,
@@ -126,7 +136,11 @@ class UserDataImportChunkReceiverTest : BaseTest() {
         every { archiveStore.appendChunk(importId, 512, any(), maxArchiveBytes) } returns 516
         every { clock.now() } returns now
         var savedInTransaction = false
-        every { repository.save(any()) } answers { savedInTransaction = transactions.inside; firstArg() }
+        every { repository.save(any()) } answers
+            {
+                savedInTransaction = transactions.inside
+                firstArg()
+            }
 
         // When
         receive(offset = 512)

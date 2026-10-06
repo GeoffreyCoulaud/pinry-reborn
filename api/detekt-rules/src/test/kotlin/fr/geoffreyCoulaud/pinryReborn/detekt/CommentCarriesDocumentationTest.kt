@@ -22,7 +22,8 @@ class CommentCarriesDocumentationTest {
              * Four.
              */
             class Subject
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -47,7 +48,8 @@ class CommentCarriesDocumentationTest {
             // Four.
             // Five.
             class Subject
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -71,7 +73,8 @@ class CommentCarriesDocumentationTest {
             // Three.
             // Four.
             class Subject
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -92,7 +95,8 @@ class CommentCarriesDocumentationTest {
             // Three.
             // Four.
             class Second
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -114,7 +118,8 @@ class CommentCarriesDocumentationTest {
             // Five.
             // Six.
             class Subject
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -135,7 +140,8 @@ class CommentCarriesDocumentationTest {
              Four.
              */
             class Subject
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = rule.lint(code)
@@ -156,7 +162,8 @@ class CommentCarriesDocumentationTest {
              * Four.
              */
             class Subject
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val signature = rule.lint(code).single().entity.signature
@@ -181,7 +188,8 @@ class CommentCarriesDocumentationTest {
                     val value = 1
                 }
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val signature = rule.lint(code).single().entity.signature
@@ -206,7 +214,8 @@ class CommentCarriesDocumentationTest {
                  */
                 val value: Int = 1
             }
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val signature = rule.lint(code).single().entity.signature
@@ -227,7 +236,8 @@ class CommentCarriesDocumentationTest {
             // Four.
             // Five.
             val topLevel = 1
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val signature = rule.lint(code).single().entity.signature
@@ -248,7 +258,8 @@ class CommentCarriesDocumentationTest {
             // Four.
             // Five.
             class Subject
-            """.trimIndent()
+            """
+                .trimIndent()
 
         // When
         val findings = CommentCarriesDocumentation(config).lint(code)

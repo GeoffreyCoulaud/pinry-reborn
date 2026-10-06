@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import java.time.Duration
 
 /** No boot: a refused configuration could not start the instance this module's suites share. */
 class OrphanGraceCheckTest {
@@ -19,9 +19,10 @@ class OrphanGraceCheckTest {
     @Test
     fun `Given an orphan grace equal to twice the extraction timeout, Then the boot is refused naming both keys`() {
         // Given / When: equal lets the sweep reach a file the last instant of the second run still writes
-        val error = assertThrows<IllegalStateException> {
-            OrphanGraceCheck.verify(orphanGrace = Duration.ofMinutes(10), extractionTimeout = Duration.ofMinutes(5))
-        }
+        val error =
+            assertThrows<IllegalStateException> {
+                OrphanGraceCheck.verify(orphanGrace = Duration.ofMinutes(10), extractionTimeout = Duration.ofMinutes(5))
+            }
 
         // Then
         assertEquals(
@@ -34,9 +35,10 @@ class OrphanGraceCheckTest {
     @Test
     fun `Given an orphan grace between one and two extraction timeouts, Then the boot is refused naming both keys`() {
         // Given / When: one extraction runs yt-dlp twice, each run bounded by the timeout
-        val error = assertThrows<IllegalStateException> {
-            OrphanGraceCheck.verify(orphanGrace = Duration.ofMinutes(6), extractionTimeout = Duration.ofMinutes(5))
-        }
+        val error =
+            assertThrows<IllegalStateException> {
+                OrphanGraceCheck.verify(orphanGrace = Duration.ofMinutes(6), extractionTimeout = Duration.ofMinutes(5))
+            }
 
         // Then
         assertEquals(

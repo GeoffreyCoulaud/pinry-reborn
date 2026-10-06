@@ -15,7 +15,8 @@ sealed interface Media : Identifiable {
     val storageKey: String
     val createdAt: Instant
     val frames: Int
-    val animated: Boolean get() = this !is StillImage
+    val animated: Boolean
+        get() = this !is StillImage
 
     data class StillImage(
         override val id: UUID,
@@ -28,7 +29,8 @@ sealed interface Media : Identifiable {
         override val storageKey: String,
         override val createdAt: Instant,
     ) : Media {
-        override val frames: Int get() = 1
+        override val frames: Int
+            get() = 1
     }
 
     data class AnimatedImage(

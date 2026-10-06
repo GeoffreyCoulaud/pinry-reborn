@@ -4,18 +4,17 @@ import fr.geoffreyCoulaud.pinryReborn.api.worker.ImportsConfig
 import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.config.WithDefault
 import jakarta.inject.Inject
+import java.time.Duration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.Duration
 
 /**
- * `imports.*` as the running instance reads it. Default profile, so this joins the running instance; the
- * chunk bound against the body limit is [BodyLimitCheck]'s.
+ * `imports.*` as the running instance reads it. Default profile, so this joins the running instance; the chunk bound
+ * against the body limit is [BodyLimitCheck]'s.
  */
 @QuarkusTest
 class ImportsConfigIntegrationTest {
-    @Inject
-    lateinit var config: ImportsConfig
+    @Inject lateinit var config: ImportsConfig
 
     @Test
     fun `Given no configuration, Then the import defaults are the specified ones`() {

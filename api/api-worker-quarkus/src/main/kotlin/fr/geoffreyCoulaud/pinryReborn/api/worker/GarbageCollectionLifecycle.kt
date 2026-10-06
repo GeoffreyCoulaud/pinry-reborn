@@ -14,16 +14,14 @@ import jakarta.enterprise.event.Observes
 import java.util.concurrent.TimeUnit
 
 /**
- * Drives the periodic garbage collection lifecycle: runs the `Reap*` sweeps on application
- * startup, keeps sweeping on a fixed delay so inert rows and orphaned files do not accumulate, and
- * stops the scheduler on shutdown. Mirrors [ExportRetentionLifecycle]; the only structural
- * difference is several sweeps instead of one, each isolated in its own try/catch inside [safeAll] so
- * one throwing sweep is logged and does not stop the others (spec
- * docs/specs/2026-07-27-periodic-gc.md, D4). The scheduler is a [PeriodicScheduler] wired as a
- * `@Dependent` producer (one instance per lifecycle injection, so one thread per role), so the
- * orphan disk scan and the tombstone re-drive do heavy filesystem and database work on a thread isolated
- * from task claiming, the lease reaper, and archive purging without relying on a distinct type or
- * a string qualifier.
+ * Drives the periodic garbage collection lifecycle: runs the `Reap*` sweeps on application startup, keeps sweeping on a
+ * fixed delay so inert rows and orphaned files do not accumulate, and stops the scheduler on shutdown. Mirrors
+ * [ExportRetentionLifecycle]; the only structural difference is several sweeps instead of one, each isolated in its own
+ * try/catch inside [safeAll] so one throwing sweep is logged and does not stop the others (spec
+ * docs/specs/2026-07-27-periodic-gc.md, D4). The scheduler is a [PeriodicScheduler] wired as a `@Dependent` producer
+ * (one instance per lifecycle injection, so one thread per role), so the orphan disk scan and the tombstone re-drive do
+ * heavy filesystem and database work on a thread isolated from task claiming, the lease reaper, and archive purging
+ * without relying on a distinct type or a string qualifier.
  */
 @ApplicationScoped
 // One injected collection of sweeps is the structural answer, and that refactor was not asked for.
@@ -38,13 +36,9 @@ class GarbageCollectionLifecycle(
     private val executor: PeriodicScheduler,
     private val config: GarbageCollectionConfig,
 ) {
-    fun onStart(
-        @Observes ignored: StartupEvent,
-    ) = start()
+    fun onStart(@Observes ignored: StartupEvent) = start()
 
-    fun onStop(
-        @Observes ignored: ShutdownEvent,
-    ) = stop()
+    fun onStop(@Observes ignored: ShutdownEvent) = stop()
 
     fun start() {
         safeAll()

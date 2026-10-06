@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output
 
 /**
- * What a client reads before its first call: the contract it negotiates on, and the numbers this
- * deployment configures (`docs/adr/0024-three-projects-share-one-repository.md`, decision 6).
+ * What a client reads before its first call: the contract it negotiates on, and the numbers this deployment configures
+ * (`docs/adr/0024-three-projects-share-one-repository.md`, decision 6).
  */
 data class HandshakeOutputDto(
     val contractVersion: String,

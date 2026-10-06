@@ -10,17 +10,30 @@ import java.util.UUID
 
 object MediaDownloadModelMapper {
     /** [id] is the row's surrogate key, which the domain does not carry: the pin identifies a download. */
-    fun MediaDownload.toModel(id: UUID) = MediaDownloadModel(
-        id = id, pinId = pinId, sourceUrl = sourceUrl, status = status.name, reasonCode = reasonCode?.name,
-        lastError = lastError, taskId = taskId, requestedAt = requestedAt, updatedAt = updatedAt,
-    )
+    fun MediaDownload.toModel(id: UUID) =
+        MediaDownloadModel(
+            id = id,
+            pinId = pinId,
+            sourceUrl = sourceUrl,
+            status = status.name,
+            reasonCode = reasonCode?.name,
+            lastError = lastError,
+            taskId = taskId,
+            requestedAt = requestedAt,
+            updatedAt = updatedAt,
+        )
 
-    fun ModelCursor<MediaDownloadModel>.toDomain(): Cursor =
-        Cursor(pivotId = this.pivot.id, direction = this.direction)
+    fun ModelCursor<MediaDownloadModel>.toDomain(): Cursor = Cursor(pivotId = this.pivot.id, direction = this.direction)
 
-    fun MediaDownloadModel.toDomain() = MediaDownload(
-        pinId = pinId, sourceUrl = sourceUrl, status = DownloadStatus.valueOf(status),
-        reasonCode = reasonCode?.let { DownloadReason.valueOf(it) }, lastError = lastError,
-        taskId = taskId, requestedAt = requestedAt, updatedAt = updatedAt,
-    )
+    fun MediaDownloadModel.toDomain() =
+        MediaDownload(
+            pinId = pinId,
+            sourceUrl = sourceUrl,
+            status = DownloadStatus.valueOf(status),
+            reasonCode = reasonCode?.let { DownloadReason.valueOf(it) },
+            lastError = lastError,
+            taskId = taskId,
+            requestedAt = requestedAt,
+            updatedAt = updatedAt,
+        )
 }
