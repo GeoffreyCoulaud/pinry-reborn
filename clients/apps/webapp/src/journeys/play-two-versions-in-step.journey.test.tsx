@@ -104,7 +104,7 @@ async function stageOf(open: Pin, candidate: Pin) {
 }
 
 describe("play two versions in step", () => {
-	it("Given two videos of 4 and 2.4 seconds, Then one bar plays both over 4 seconds, muted, and the shorter moves by up to 1.6 seconds", async () => {
+	it("Given two videos of 4 and 2.4 seconds, Then one bar plays both over 4 seconds, muted, and the shorter moves by up to 1.6 seconds, 10 ms at a step", async () => {
 		const open = lasting(videoPin("waves on the pier"), 4_000);
 		const shorter = lasting(videoPin("waves on the pier, cut"), 2_400);
 
@@ -134,7 +134,8 @@ describe("play two versions in step", () => {
 		await user.click(offset);
 		await user.keyboard("{ArrowRight}");
 
-		expect(offset).toHaveValue("100");
+		expect(offset).toHaveValue("10");
+		expect(within(dialog).getByText("0.01s")).toBeInTheDocument();
 		expect(
 			within(
 				within(dialog).getByRole("list", { name: m.compare_versions() }),

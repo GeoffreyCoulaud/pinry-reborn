@@ -60,6 +60,14 @@ function PlayerBar({
 		unitDisplay: "narrow",
 	});
 	const label = (millis: number) => seconds.format(millis / 1_000);
+	// Hundredths, so each 10 ms step of the offset shows.
+	const offsetLabel = new Intl.NumberFormat(getLocale(), {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+		style: "unit",
+		unit: "second",
+		unitDisplay: "narrow",
+	});
 	const total = `${number.format(length / 1_000)} / ${label(length)}`;
 	// One label width on both rows, so the slider ends where the bar ends; no wider, for a phone's bar.
 	const box = {
@@ -107,7 +115,7 @@ function PlayerBar({
 					<Slider
 						aria-label={m.compare_offset()}
 						maxValue={slack}
-						step={100}
+						step={10}
 						value={offset}
 						onChange={(value) => setOffset(Number(value))}
 						className="flex-1"
@@ -117,7 +125,7 @@ function PlayerBar({
 							<Slider.Thumb />
 						</Slider.Track>
 					</Slider>
-					<span {...box}>{label(offset)}</span>
+					<span {...box}>{offsetLabel.format(offset / 1_000)}</span>
 				</div>
 			) : null}
 		</div>

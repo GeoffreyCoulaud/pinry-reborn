@@ -68,24 +68,17 @@ function Tile({
 		window.devicePixelRatio,
 		smallRenditionPx,
 	);
-	const [hovered, setHovered] = useState(false);
 	const video = isVideo(media?.mimeType);
 	// Every column is as wide, so the viewer loads under the rendition any tile chose.
 	useEffect(() => onRendition(rendition), [onRendition, rendition]);
 
 	return (
-		<div
-			ref={ref}
-			className="relative w-full"
-			// A touch would fetch the animation for the instant before its tap opens the pin.
-			onPointerEnter={(event) => setHovered(event.pointerType !== "touch")}
-			onPointerLeave={() => setHovered(false)}
-		>
+		<div ref={ref} className="relative w-full">
 			{media?.url ? (
 				<>
 					<RenditionImage
 						src={
-							video && hovered
+							video
 								? tileAnimatedSource(media.url, rendition)
 								: tileMediaSource(media.url, rendition)
 						}
