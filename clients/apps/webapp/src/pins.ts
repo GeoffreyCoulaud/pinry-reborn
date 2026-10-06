@@ -18,7 +18,6 @@ export type Pin = Schemas["PinOutputDto"];
 export type PinPage = Schemas["PinListOutputDto"];
 export type PinUpdate = Schemas["PinUpdateInputDto"];
 export type Duplicate = Schemas["PinDuplicateOutputDto"];
-export type PinMerge = Schemas["PinMergeInputDto"];
 
 const PAGE_SIZE = 40;
 
@@ -175,68 +174,6 @@ export function useDuplicates(pinId: string | undefined) {
 	});
 }
 
-/** Rejects a duplicate or restores it. Both pins' markers move with it, so both are read again. */
-export function useRejectDuplicate(pinId: string) {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: async ({
-			otherPinId,
-			rejected,
-		}: {
-			otherPinId: string;
-			rejected: boolean;
-		}) => {
-			bodyOf(
-				await auth.client.PUT("/api/v1/pins/{pinId}/duplicates/{otherPinId}", {
-					params: { path: { pinId, otherPinId } },
-					body: { rejected },
-				}),
-				"the duplicate",
-			);
-			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
-			await rereadSettledPins(queryClient, [pinId, otherPinId]).catch(() =>
-				queryClient.invalidateQueries({ queryKey: PINS }),
-			);
-		},
-	});
-}
-
-/**
- * Merges a group into the pin it keeps, which the API answers with (specification 2026-10-05,
- * decision H). The absorbed pins leave every catalogue at once and the kept one is written in.
- */
-export function useMergePins(merged: (kept: Pin) => void) {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: async (body: PinMerge) => {
-			const kept = bodyOf(
-				await auth.client.POST("/api/v1/pins/merges", { body }),
-				"the merge",
-			);
-			// Before the open pin leaves the cache, in the same render: a dialog left with no pin closes.
-			queryClient.setQueryData([...PIN, kept.id], kept);
-			merged(kept);
-			queryClient.setQueriesData<InfiniteData<PinPage>>(
-				{ queryKey: PINS },
-				(catalogue) =>
-					catalogue === undefined
-						? catalogue
-						: {
-								...catalogue,
-								pages: removePins(catalogue.pages, body.absorbedPinIds).map(
-									(page) => ({ ...page, pins: replacePins(page.pins, [kept]) }),
-								),
-							},
-			);
-			// The kept pin gained the absorbed pins' boards, whose counts lost them.
-			await queryClient.invalidateQueries({ queryKey: BOARDS });
-			await queryClient.invalidateQueries({ queryKey: DUPLICATES });
-			// Every absorbed pin held a pending pair, whose other pin may now have none.
-			await queryClient.invalidateQueries({ queryKey: PINS });
-		},
-	});
-}
-
 /**
  * Applies the comparator's decision to the open pin's group in one call, which answers with the
  * kept pin (ADR 0052). The merged pins leave every catalogue at once and the kept one is written in.
@@ -280,6 +217,8 @@ export function useResolveDuplicates(
 			// Every pin named held a pending pair or a rejected one, whose other pin's marker may move.
 			await queryClient.invalidateQueries({ queryKey: PINS });
 		},
+		onError: () =>
+			queryClient.invalidateQueries({ queryKey: [...DUPLICATES, pinId] }),
 	});
 }
 

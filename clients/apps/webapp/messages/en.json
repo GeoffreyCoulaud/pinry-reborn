@@ -38,7 +38,7 @@
 	"compare_merge_count": "Merge {count} pins into one",
 	"compare_nothing": "Nothing to merge",
 	"compare_open_pin": "Open pin",
-	"compare_refused": "Those duplicates could not be resolved.",
+	"compare_refused": "Those duplicates could not be resolved. The list was read again.",
 	"compare_reject_count": [
 		{
 			"declarations": ["input count", "local countPlural = count: plural"],
@@ -80,12 +80,19 @@
 	"drop_reading": "Reading dropped files: {count}",
 	"drop_to_add": "Drop a media file here to add a pin",
 	"drop_unsupported": "Nothing in that drop could become a pin.",
-	"duplicate_refused": "That duplicate could not be changed.",
 	"duplicate_reject": "Not a duplicate",
-	"duplicate_restore": "Restore",
-	"duplicates": "Likely duplicates",
 	"duplicates_badge": "Has duplicates",
-	"duplicates_rejected": "Rejected ({count})",
+	"duplicates_pending": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} possible duplicate",
+				"countPlural=other": "{count} possible duplicates"
+			}
+		}
+	],
+	"duplicates_rejected": "{count} rejected",
 	"edit_pin": "Edit",
 	"empty_bin": "Empty the bin",
 	"empty_bin_question": "Empty the bin?",
@@ -181,14 +188,7 @@
 	"media_too_long": "This video lasts longer than this server accepts.",
 	"media_unsaved": "New media, not saved yet",
 	"membership_refused": "That board could not be changed.",
-	"merge": "Merge ({count})",
-	"merge_include": "Include",
-	"merge_include_pin": "Include {description}",
 	"merge_keep": "Keep",
-	"merge_keep_pin": "Keep {description}",
-	"merge_keep_this": "Keep this pin",
-	"merge_kept": "The pin to keep",
-	"merge_refused": "Those pins could not be merged.",
 	"name": "Name",
 	"new_board": "New board…",
 	"new_password": "New password",
@@ -229,6 +229,7 @@
 	"restore": "Restore {name}",
 	"restore_selection": "Restore",
 	"retry": "Try again",
+	"review": "Review",
 	"save": "Save",
 	"search_empty": "Nothing matches {term}.",
 	"search_everywhere": "Search all your pins",

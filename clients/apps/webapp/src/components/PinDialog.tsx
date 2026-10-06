@@ -19,13 +19,11 @@ function PinDetails({
 	pin,
 	close,
 	edit,
-	merged,
 	compare,
 }: {
 	pin: Pin;
 	close: () => void;
 	edit: () => void;
-	merged: (kept: Pin) => void;
 	compare: () => void;
 }) {
 	const recycle = useRecyclePins();
@@ -104,7 +102,7 @@ function PinDetails({
 					</div>
 				) : null}
 			</dl>
-			<PinDuplicates pinId={pin.id} merged={merged} compare={compare} />
+			<PinDuplicates pinId={pin.id} compare={compare} />
 		</>
 	);
 }
@@ -214,7 +212,6 @@ export function PinDialog({
 					pin={pin}
 					close={close}
 					edit={() => setEditing(true)}
-					merged={merged}
 					compare={() => setComparing(true)}
 				/>
 			}
