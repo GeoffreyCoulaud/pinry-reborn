@@ -22,11 +22,11 @@ import org.hamcrest.CoreMatchers.equalTo
 import org.junit.jupiter.api.Assertions.assertEquals
 
 /**
- * `/api/v1/me/imports` end to end (spec `docs/specs/2026-08-14-user-data-import.md` section 13), over the real REST
- * surface, archive store, libvips probe and async worker. The round trip is the point of it.
+ * The wire path and the seeding the `/api/v1/me/imports` suites share, each running end to end over the real REST
+ * surface, archive store, libvips probe and async worker (spec `docs/specs/2026-08-14-user-data-import.md` section 13).
  */
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: the wire path the import suites share.
-abstract class ImportIntegrationTest : IntegrationTest() {
+abstract class MeImportFixtures : IntegrationTest() {
     @Inject lateinit var pinCreator: PinCreator
 
     @Inject lateinit var boardCreator: BoardCreator

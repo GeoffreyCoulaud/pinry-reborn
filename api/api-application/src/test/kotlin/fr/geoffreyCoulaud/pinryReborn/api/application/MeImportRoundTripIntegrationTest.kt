@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test
 
 @QuarkusTest
 @TestProfile(MeImportTestProfile::class)
-class MeImportRoundTripIntegrationTest : ImportIntegrationTest() {
+class MeImportRoundTripIntegrationTest : MeImportFixtures() {
     // --- Seeding, and the real export the round trip pours back in ---
 
     private fun stepUp(password: String) = "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())

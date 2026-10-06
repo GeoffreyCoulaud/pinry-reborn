@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test
 
 @QuarkusTest
 @TestProfile(MeImportTestProfile::class)
-class MeImportArchiveContentIntegrationTest : ImportIntegrationTest() {
+class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
     @Inject lateinit var mediaConfig: MediaConfig
 
     // --- One archive, one of every anomaly ---

@@ -85,6 +85,8 @@ sits beside it, so `./api/gradlew` from the repository root finds no build at al
   `./gradlew --stop` before trusting a local gate after a rule change.
 - **detekt baselines are per module and source set** (`api/config/detekt/baseline-<module>-<sourceSet>.xml`):
   the gate runs `detekt<SourceSet>` alone, and `detektBaseline<SourceSet>` rewrites rather than merges.
+- **A ktfmt bump can fail the gate until `./gradlew spotlessApply` runs.** Dependabot opens it alone; its output
+  goes in a commit of its own, listed in `.git-blame-ignore-revs`.
 - **The daemon's metaspace is bound in `api/gradle.properties`, and the bound is load-bearing.** The
   gate runs the whole build in one JVM; at the default, a run with nothing cached dies with
   `OutOfMemoryError: Metaspace` on whichever task is unlucky, and Gradle then hangs instead of
