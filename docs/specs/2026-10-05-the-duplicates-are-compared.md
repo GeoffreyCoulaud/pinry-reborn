@@ -158,6 +158,14 @@ Block 20 makes the contract `22.4.0`, block 30 `22.5.0`, block 60 `23.0.0`.
 | 60 | `refactor/the-merge-and-reject-routes-go` | Section 4's removals. |
 
 Block 40 is the likeliest to pass a bound; it splits at a number between 40 and 50.
+*(Corrected on 2026-10-06: written whole, block 40 measured 1792 lines and 21 files, and splits in five, the old
+list keeping the old routes until block 60 and untouched until 48 deletes it. 40 `feat/the-dialog-compares-duplicates`:
+`lib/duplicates`, `useResolveDuplicates` and the test fixture's resolution route, whose consumer is 41.
+41 `feat/the-comparator-decides-each-version`: the comparator on a plain stage (the version under review), opened by a
+Compare button beside the list, with "merge a group of duplicates" through it. 43 `feat/the-stage-compares-and-zooms`:
+the line, the grip, the zoom and the arrow keys. 46 `feat/the-comparator-shows-the-facts`: the facts column and its
+format and sound lines. 48 `feat/the-row-replaces-the-list`: the row, the list, the two old hooks and "open a
+duplicate" deleted, "reject a duplicate" through Review and the refused submit. Block 50 stacks on 48.)*
 
 ### Block 10
 
