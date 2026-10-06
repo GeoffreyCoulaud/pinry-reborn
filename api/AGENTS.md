@@ -69,7 +69,9 @@ sits beside it, so `./api/gradlew` from the repository root finds no build at al
   CLI:
   `JAVA_TOOL_OPTIONS="-Dddl.migration.pendingDropsFor=<version>" ./gradlew :api-persistence-sqlite:generateDbMigration`.
   Commit both pairs together. Precedent: `1.13` and `1.14__dropsFor_1.13`.
-- No auto-fix task: detekt has no formatting rules, ktlint is IDE-only. Fix findings by hand.
+- **Format the Kotlin code**: `./gradlew spotlessApply`, ktfmt's `kotlinlang` style at 120 columns
+  (`docs/adr/0053-ktfmt-formats-the-kotlin-code.md`). The gate refuses what it would change. detekt's findings
+  have no auto-fix and are fixed by hand.
 
 ## Gotchas
 

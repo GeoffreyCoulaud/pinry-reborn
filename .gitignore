@@ -7,14 +7,13 @@ contract/openapi.yaml
 *.db-wal
 # IntelliJ : tout ignorer par defaut...
 # Anchored on api/, the project IntelliJ opens: an unanchored .idea/* would stop
-# re-including the six shared files below.
+# re-including the shared files below.
 api/.idea/*
 # ...sauf la config partagee volontairement
 !api/.idea/.name
 !api/.idea/conventionalCommit.xml
 !api/.idea/detekt.xml
 !api/.idea/inspectionProfiles/
-!api/.idea/ktlint-plugin.xml
 !api/.idea/vcs.xml
 # A root .idea/ is what an IDE opened on the repository instead of on api/ writes; nothing is
 # shared from there. The leading slash keeps this off api/.idea, whose re-inclusions are above.

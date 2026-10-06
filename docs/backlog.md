@@ -57,9 +57,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   See `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
 - **`.dagger/` is neither linted nor formatted**, the clients' Biome stopping at `clients/`.
   See `docs/specs/2026-09-28-knip-and-biome-keep-the-clients-clean.md`, decision F. New 2026-09-29.
-- **The Kotlin code has no formatter**, so a call chain half split across lines, or a comma with no space after it,
-  passes the gate. See `docs/handoffs/2026-10-06 - handoff - the-duplicates-are-compared.md`, The operator's review.
-  New 2026-10-06.
 
 ## Known limits
 
