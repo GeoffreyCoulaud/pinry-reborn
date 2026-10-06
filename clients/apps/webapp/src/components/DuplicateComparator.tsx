@@ -15,8 +15,8 @@ import {
 	storedDecisions,
 	submitOf,
 } from "../lib/duplicates";
-import { isVideo } from "../lib/media";
 import { tileStillSource } from "../lib/tiles";
+import { UNZOOMED } from "../lib/zoom";
 import { m } from "../paraglide/messages.js";
 import {
 	type Duplicate,
@@ -24,8 +24,10 @@ import {
 	useDuplicates,
 	useResolveDuplicates,
 } from "../pins";
+import { DuplicateStage } from "./DuplicateStage";
 import { IconButton } from "./IconButton";
 import { RenditionImage } from "./RenditionImage";
+import { useArrowKeys } from "./useArrowKeys";
 
 function submitLabel(submit: Submit) {
 	if (submit === null) {
@@ -34,11 +36,6 @@ function submitLabel(submit: Submit) {
 	return submit.kind === "MERGE"
 		? m.compare_merge_count({ count: submit.count })
 		: m.compare_reject_count({ count: submit.count });
-}
-
-/** A still image's original; a video's still rendition until block 50 plays it. */
-function stageSource(url: string, mimeType?: string | null) {
-	return isVideo(mimeType) ? tileStillSource(url, "LARGE") : url;
 }
 
 /** The group on one stage, opened on its stored state, with a decision per version (decision A). */
@@ -65,9 +62,17 @@ function Comparison({
 			versions.findIndex((one) => decisions[one.id] !== "KEEP"),
 		),
 	);
+	const [view, setView] = useState(UNZOOMED);
+	const [split, setSplit] = useState(50);
+	const step = (by: number) =>
+		setIndex((current) => (current + by + versions.length) % versions.length);
+	useArrowKeys(
+		() => step(-1),
+		() => step(1),
+	);
 
 	const under = versions[index] ?? pin;
-	const url = under.media?.url;
+	const kept = versions.find((one) => decisions[one.id] === "KEEP") ?? pin;
 	const decision = decisions[under.id];
 	const submit = submitOf(decisions, duplicates);
 
@@ -84,15 +89,14 @@ function Comparison({
 			</header>
 			{/* From `lg` the stage takes what is left, so the decision, the strip and the footer stay in view. */}
 			<div className="flex min-w-0 flex-col gap-3 lg:min-h-0 lg:flex-1">
-				<div className="relative h-80 shrink-0 bg-background-secondary lg:h-auto lg:min-h-0 lg:flex-1">
-					{url ? (
-						<img
-							src={stageSource(url, under.media?.mimeType)}
-							alt={under.description}
-							className="absolute inset-4 size-[calc(100%-2rem)] object-contain"
-						/>
-					) : null}
-				</div>
+				<DuplicateStage
+					under={under}
+					kept={kept}
+					view={view}
+					setView={setView}
+					split={split}
+					setSplit={setSplit}
+				/>
 				<ToggleButtonGroup
 					aria-label={m.compare_decision()}
 					selectionMode="single"

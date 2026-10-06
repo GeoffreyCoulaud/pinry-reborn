@@ -1,7 +1,7 @@
 import { Button, Chip, toast } from "@heroui/react";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react";
-import { type PointerEvent, useEffect, useRef, useState } from "react";
+import { type PointerEvent, useRef, useState } from "react";
 import { useMove } from "react-aria";
 import type { Rendition } from "../lib/tiles";
 import { m } from "../paraglide/messages.js";
@@ -12,6 +12,7 @@ import { PinDuplicates } from "./PinDuplicates";
 import { PinEditForm } from "./PinEditForm";
 import { PinMedia } from "./PinMedia";
 import { PinSides } from "./PinSides";
+import { useArrowKeys } from "./useArrowKeys";
 
 /** The column beside the image. */
 function PinDetails({
@@ -146,35 +147,6 @@ function useSwipe(previous?: () => void, next?: () => void) {
 			moveProps.onPointerDown?.(event);
 		}
 	};
-}
-
-/**
- * `←` and `→` on the document: the dialog holds the focus once open, and passes on no key handler.
- * A video's own arrows seek it.
- */
-function useArrowKeys(previous?: () => void, next?: () => void) {
-	useEffect(() => {
-		const step = (event: KeyboardEvent) => {
-			if (
-				event.altKey ||
-				event.ctrlKey ||
-				event.metaKey ||
-				event.shiftKey ||
-				event.defaultPrevented ||
-				event.target instanceof HTMLMediaElement
-			) {
-				return;
-			}
-			if (event.key === "ArrowLeft") {
-				previous?.();
-			}
-			if (event.key === "ArrowRight") {
-				next?.();
-			}
-		};
-		document.addEventListener("keydown", step);
-		return () => document.removeEventListener("keydown", step);
-	}, [previous, next]);
 }
 
 /** The pin read, edited or compared with its duplicates; nothing steps while either is open. */

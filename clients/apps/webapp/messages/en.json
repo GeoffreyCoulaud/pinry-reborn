@@ -30,6 +30,7 @@
 	"compare_back": "Back to the pin",
 	"compare_decision": "Decision for this version",
 	"compare_heading": "Which version to keep?",
+	"compare_kept": "Kept",
 	"compare_merge": "Merge",
 	"compare_merge_count": "Merge {count} pins into one",
 	"compare_nothing": "Nothing to merge",
@@ -44,7 +45,11 @@
 			}
 		}
 	],
+	"compare_split": "Move the line",
+	"compare_this_version": "This version",
 	"compare_versions": "Versions",
+	"compare_zoom_in": "Zoom in",
+	"compare_zoom_out": "Zoom out",
 	"create_board": "Add a board",
 	"create_pin": "Add a pin",
 	"creation_refused": "That pin could not be added.",
