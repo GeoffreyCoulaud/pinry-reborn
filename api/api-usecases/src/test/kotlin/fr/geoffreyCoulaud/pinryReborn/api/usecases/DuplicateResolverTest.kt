@@ -16,7 +16,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinUpdatePinDoesNo
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinUpdateSoftDeletedPinError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -41,7 +43,7 @@ class DuplicateResolverTest {
     private fun stored(open: Pin, vararg others: Pin) {
         every { pinRepository.findPinsByIds(any()) } returns listOf(open) + others
         every { duplicateRepository.findShownFor(open.id) } returns others.associate { it.id to false }
-        every { duplicateRepository.setRejected(any(), any(), any()) } returns true
+        every { duplicateRepository.setRejected(any(), any(), any()) } just Runs
         every { pinRepository.savePin(any()) } answers { firstArg() }
         every { pinRepository.softDeletePins(any(), any()) } returns Unit
     }

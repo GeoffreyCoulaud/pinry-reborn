@@ -308,12 +308,8 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         return body.getList<String>("duplicates.pin.id").zip(body.getList<Boolean>("duplicates.rejected"))
     }
 
-    private fun setRejected(auth: AuthenticatedUser, pinId: UUID, otherPinId: UUID, body: Map<String, Any>) =
-        given().authenticatedAs(auth).contentType(ContentType.JSON).body(body)
-            .put("/api/v1/pins/$pinId/duplicates/$otherPinId").then()
-
     @Test
-    fun `Given a pair, Then either side lists it, rejects it and restores it`() {
+    fun `Given a pair, Then either side lists it, and a rejection from one side shows on the other`() {
         // Given
         val auth = createAuthenticatedUser()
         val (pin, other) = pinsOf(auth, 2)
@@ -321,19 +317,17 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
 
         // When
         val listedPending = listOf(duplicatesOf(auth, pin), duplicatesOf(auth, other))
-        setRejected(auth, pin.id, other.id, mapOf("rejected" to true))
-            .statusCode(200).body("pin.id", equalTo("${other.id}")).body("rejected", equalTo(true))
-        val listedRejected = duplicatesOf(auth, other)
-        setRejected(auth, other.id, pin.id, mapOf("rejected" to false)).statusCode(200).body("rejected", equalTo(false))
+        given().authenticatedAs(auth).contentType(ContentType.JSON)
+            .body(mapOf("decisions" to mapOf("${pin.id}" to "KEEP", "${other.id}" to "REJECT")))
+            .post("/api/v1/pins/${pin.id}/duplicates/resolutions").then().statusCode(200)
 
         // Then
         assertEquals(listOf(listOf("${other.id}" to false), listOf("${pin.id}" to false)), listedPending)
-        assertEquals(listOf("${pin.id}" to true), listedRejected)
-        assertEquals(listOf("${other.id}" to false), duplicatesOf(auth, pin))
+        assertEquals(listOf("${pin.id}" to true), duplicatesOf(auth, other))
     }
 
     @Test
-    fun `Given a pair one of whose pins is recycled, Then neither lists it nor rejects it until the pin is restored`() {
+    fun `Given a pair one of whose pins is recycled, Then neither lists it until the pin is restored`() {
         // Given
         val auth = createAuthenticatedUser()
         val (pin, recycled) = pinsOf(auth, 2)
@@ -342,8 +336,6 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
 
         // When
         val listed = listOf(duplicatesOf(auth, pin), duplicatesOf(auth, recycled))
-        setRejected(auth, pin.id, recycled.id, mapOf("rejected" to true))
-            .statusCode(404).body("code", equalTo("DUPLICATE_DOES_NOT_EXIST"))
         pinRecycleBin.restore(recycled.id, auth.user)
 
         // Then
@@ -352,26 +344,15 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given an unknown, a foreign or an unpaired pin, or no body field, Then the duplicates routes refuse each`() {
+    fun `Given an unknown or a foreign pin, Then its duplicates are refused`() {
         // Given
         val auth = createAuthenticatedUser()
-        val (pin, unpaired) = pinsOf(auth, 2)
         val (foreign) = pinsOf(createAuthenticatedUser(), 1)
-        val unknown = UUID.randomUUID()
-        val rejection = mapOf("rejected" to true)
 
         // When, Then
-        given().authenticatedAs(auth).get("/api/v1/pins/$unknown/duplicates")
+        given().authenticatedAs(auth).get("/api/v1/pins/${UUID.randomUUID()}/duplicates")
             .then().statusCode(404).body("code", equalTo("PIN_DOES_NOT_EXIST"))
         given().authenticatedAs(auth).get("/api/v1/pins/${foreign.id}/duplicates")
             .then().statusCode(403).body("code", equalTo("PIN_INSUFFICIENT_PERMISSIONS"))
-        setRejected(auth, unknown, pin.id, rejection).statusCode(404).body("code", equalTo("PIN_DOES_NOT_EXIST"))
-        setRejected(auth, foreign.id, pin.id, rejection)
-            .statusCode(403).body("code", equalTo("PIN_INSUFFICIENT_PERMISSIONS"))
-        setRejected(auth, pin.id, unpaired.id, rejection)
-            .statusCode(404).body("code", equalTo("DUPLICATE_DOES_NOT_EXIST"))
-        setRejected(auth, pin.id, foreign.id, rejection)
-            .statusCode(404).body("code", equalTo("DUPLICATE_DOES_NOT_EXIST"))
-        setRejected(auth, pin.id, unpaired.id, emptyMap()).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
     }
 }

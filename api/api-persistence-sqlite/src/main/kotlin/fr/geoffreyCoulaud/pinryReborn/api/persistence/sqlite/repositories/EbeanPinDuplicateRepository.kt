@@ -52,10 +52,10 @@ class EbeanPinDuplicateRepository(
             .toSet()
     }
 
-    override fun setRejected(pinId: UUID, otherPinId: UUID, rejectedAt: Instant?): Boolean {
+    override fun setRejected(pinId: UUID, otherPinId: UUID, rejectedAt: Instant) {
         val (first, second) = ordered(pinId, otherPinId)
         val pair = QPinDuplicateModel().firstPinId.equalTo(first).secondPinId.equalTo(second).withActivePins()
-        return pair.asUpdate().set("rejectedAt", rejectedAt).update() > 0
+        pair.asUpdate().set("rejectedAt", rejectedAt).update()
     }
 
     private fun pairsOf(pinId: UUID) =
