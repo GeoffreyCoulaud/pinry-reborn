@@ -2,3 +2,6 @@
 
 # Biome formats the clients (lot 0.44.0, block 30)
 23d1567df090e9ba7af5c2141740dc38761d35f9
+
+# ktfmt formats the Kotlin code (lot 0.51.0, block 20)
+10faf503af0ebf70eb2a4612ba576a8e714bd061
