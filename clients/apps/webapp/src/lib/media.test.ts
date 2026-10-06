@@ -5,7 +5,7 @@ import {
 	isVideo,
 	soundLine,
 	videoFileName,
-	weightLine,
+	weightParts,
 } from "./media";
 
 const MP4 = 'video/mp4; codecs="avc1.640028,mp4a.40.2"';
@@ -32,7 +32,7 @@ describe("codecsOf", () => {
 	});
 });
 
-describe("weightLine", () => {
+describe("weightParts", () => {
 	it("Given a video, Then its weight, format, video codec and measured rate", () => {
 		const media = {
 			mimeType: MP4,
@@ -40,15 +40,25 @@ describe("weightLine", () => {
 			videoBitRate: 4_200_000,
 		};
 
-		expect(weightLine(media, "en")).toBe("8.4 MB · MP4 · H.264 · 4.2 Mb/s");
+		expect(weightParts(media, "en")).toEqual([
+			"8.4 MB",
+			"MP4",
+			"H.264",
+			"4.2 Mb/s",
+		]);
 		// French spaces a unit with a narrow no-break space.
-		expect(weightLine(media, "fr")).toBe("8,4 Mo · MP4 · H.264 · 4,2 Mbit/s");
+		expect(weightParts(media, "fr")).toEqual([
+			"8,4 Mo",
+			"MP4",
+			"H.264",
+			"4,2 Mbit/s",
+		]);
 	});
 
 	it("Given an image, Then its weight in kilobytes and its format alone", () => {
 		expect(
-			weightLine({ mimeType: "image/jpeg", byteSize: 412_300 }, "en"),
-		).toBe("412 kB · JPEG");
+			weightParts({ mimeType: "image/jpeg", byteSize: 412_300 }, "en"),
+		).toEqual(["412 kB", "JPEG"]);
 	});
 
 	it("Given a codec and a type this table does not name, Then they are shown as stored", () => {
@@ -57,11 +67,15 @@ describe("weightLine", () => {
 			videoBitRate: 640_000,
 		};
 
-		expect(weightLine(media, "en")).toBe("video/quicktime · ap4h · 640 kb/s");
+		expect(weightParts(media, "en")).toEqual([
+			"video/quicktime",
+			"ap4h",
+			"640 kb/s",
+		]);
 	});
 
-	it("Given a media with nothing measured, Then the line is empty", () => {
-		expect(weightLine({}, "en")).toBe("");
+	it("Given a media with nothing measured, Then it has no part", () => {
+		expect(weightParts({}, "en")).toEqual([]);
 	});
 });
 

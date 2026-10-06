@@ -103,8 +103,8 @@ function formatName(mimeType: string): string {
 	return FORMAT_NAMES[essence] ?? essence;
 }
 
-/** The weight, then the format, its video codec and that codec's rate: "8.4 MB · MP4 · H.264 · 4.2 Mb/s". */
-export function weightLine(media: Measured, locale: string): string {
+/** The weight, then the format, its video codec and that codec's rate: "8.4 MB", "MP4", "H.264", "4.2 Mb/s". */
+export function weightParts(media: Measured, locale: string): string[] {
 	const video = isVideo(media.mimeType)
 		? codecsOf(media.mimeType)[0]
 		: undefined;
@@ -114,7 +114,7 @@ export function weightLine(media: Measured, locale: string): string {
 		video === undefined ? undefined : codecName(video),
 		media.videoBitRate == null ? undefined : rate(media.videoBitRate, locale),
 	];
-	return parts.filter((part) => part !== undefined).join(" · ");
+	return parts.filter((part) => part !== undefined);
 }
 
 /** The words for a track's channels, which the catalogues hold. */
