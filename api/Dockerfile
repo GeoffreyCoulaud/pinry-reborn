@@ -10,7 +10,7 @@
 # The binary alone, linked against glibc: it runs once copied below, not in its own image.
 FROM denoland/deno:bin-2.9.7@sha256:bc5aa4466e21b6d3021226a85ba2e1911f7c386254d97b9d797903ab74edace2 AS deno
 
-FROM eclipse-temurin:25-jre@sha256:bb036ed6cfdc57e3da7c22634d15f1b840d2caf76183861c80e81ca4b5104abb
+FROM eclipse-temurin:25-jre@sha256:fcd7fd7b387f94bb2ac461478a7436ad8e349924c374ea8313919624dceae636
 
 # curl is used only by the HEALTHCHECK below. libvips-tools brings the
 # vipsheader and vips processes api-imaging-vips runs (ADR 0050). ffmpeg
