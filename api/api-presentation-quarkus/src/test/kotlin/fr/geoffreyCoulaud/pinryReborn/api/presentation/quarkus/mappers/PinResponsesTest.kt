@@ -28,7 +28,7 @@ class PinResponsesTest {
     private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
         every { it.statesFor(any()) } returns emptyMap()
     }
-    private val responses = PinResponses(resolvePinMediaState, PinDuplicates(duplicates, mockk(), mockk(), mockk()))
+    private val responses = PinResponses(resolvePinMediaState, PinDuplicates(duplicates, mockk(), mockk()))
 
     @Test
     fun `Given a page of three pins, Then their duplicates flags cost one repository call`() {
@@ -67,6 +67,6 @@ class PinResponsesTest {
 
         override fun findShownFor(pinId: UUID): Map<UUID, Boolean> = error("not used")
 
-        override fun setRejected(pinId: UUID, otherPinId: UUID, rejectedAt: Instant?): Boolean = error("not used")
+        override fun setRejected(pinId: UUID, otherPinId: UUID, rejectedAt: Instant) = error("not used")
     }
 }

@@ -33,8 +33,6 @@ class PinResponses(
         )
     }
 
-    fun duplicate(duplicate: PinDuplicate): PinDuplicateOutputDto = duplicates(listOf(duplicate)).duplicates.single()
-
     // The media states and the duplicates flags, each read once for all of [pins].
     private fun mapped(pins: List<Pin>): List<PinOutputDto> {
         val states = resolvePinMediaState.statesFor(pins)

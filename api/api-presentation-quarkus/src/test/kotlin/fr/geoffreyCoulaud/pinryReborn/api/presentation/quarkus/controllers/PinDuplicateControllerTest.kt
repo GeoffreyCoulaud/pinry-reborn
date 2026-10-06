@@ -7,7 +7,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DuplicateDecision.MERGE
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DuplicateDecision.REJECT
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.DuplicateDecisionInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinDuplicateResolutionInputDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinDuplicateUpdateInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinMergeInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.DuplicateResolver
@@ -59,19 +58,6 @@ class PinDuplicateControllerTest {
 
         // Then
         assertEquals(listOf(pending.id to false, rejected.id to true), answered.map { it.pin.id to it.rejected })
-    }
-
-    @Test
-    fun `Given a rejection, Then the duplicate is answered rejected`() {
-        // Given
-        val (pin, other) = List(2) { pin() }
-        every { pinDuplicates.setRejected(pin.id, other.id, true, user) } returns PinDuplicate(other, rejected = true)
-
-        // When
-        val answered = controller.updateDuplicate(pin.id, other.id, PinDuplicateUpdateInputDto(rejected = true)).entity
-
-        // Then
-        assertEquals(other.id to true, answered.pin.id to answered.rejected)
     }
 
     @Test

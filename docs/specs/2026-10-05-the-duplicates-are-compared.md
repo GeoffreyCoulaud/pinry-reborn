@@ -7,7 +7,8 @@ Lot: `0.49.0`.
 Branches: one stack: 10 `feat/a-media-records-its-tracks`, 15 `feat/the-worker-probes-stored-media` on 10,
 20 `feat/the-api-describes-a-media` on 15 *(corrected: 15 dropped, 20 on 10)*,
 30 `feat/the-api-resolves-duplicates` on 20, 40 `feat/the-dialog-compares-duplicates` on 30,
-50 `feat/the-comparator-plays-both-versions` on 40, 60 `refactor/the-merge-and-reject-routes-go` on 50.
+50 `feat/the-comparator-plays-both-versions` on 40, 60 `refactor/the-merge-and-reject-routes-go` on 50
+*(corrected: split in 60 `refactor/the-reject-route-goes` and 65 `refactor/the-merge-route-goes`, section 5)*.
 ADR: `docs/adr/0052-duplicates-are-resolved-in-one-call.md`, written in block 10, records decisions B and C and the
 refusals of section 4. Decision D needs none: it is confined to one component and a library can replace it there.
 Decision E needs none: three descriptive columns read at ingestion, as `frames` and `duration_millis` were.
@@ -155,7 +156,7 @@ Block 20 makes the contract `22.4.0`, block 30 `22.5.0`, block 60 `23.0.0`.
 | 30 | `feat/the-api-resolves-duplicates` | Decisions B and C. |
 | 40 | `feat/the-dialog-compares-duplicates` | Decision A. |
 | 50 | `feat/the-comparator-plays-both-versions` | Decision D. |
-| 60 | `refactor/the-merge-and-reject-routes-go` | Section 4's removals. |
+| 60 | `refactor/the-merge-and-reject-routes-go` | Section 4's removals. *(Corrected: split in 60 and 65, below.)* |
 
 Block 40 is the likeliest to pass a bound; it splits at a number between 40 and 50.
 *(Corrected on 2026-10-06: written whole, block 40 measured 1792 lines and 21 files, and splits in five, the old
@@ -174,6 +175,10 @@ duplicate" deleted, "reject a duplicate" through Review and the refused submit. 
 `ImageDecoder`, so a pair holding one has no bar. 55 `feat/the-comparator-plays-animated-images`, on 50:
 `ImageDecoder`, the canvas, the frames' durations and the animated image's duration in the facts column. 60 stacks
 on 55.)*
+*(Corrected on 2026-10-06: written whole, block 60 measured 526 lines and 19 files, and splits in two.
+60 `refactor/the-reject-route-goes`, on 55: the `PUT` route, its DTO and `PinDuplicates.setRejected`; the contract
+`23.0.0`. 65 `refactor/the-merge-route-goes`, on 60: `POST /api/v1/pins/merges`, its DTO and `PinMerger`, and the
+lot's handoff. The closing block stacks on 65.)*
 
 ### Block 10
 
