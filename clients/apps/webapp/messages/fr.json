@@ -37,7 +37,11 @@
 	"compare_merge": "Fusionner",
 	"compare_merge_count": "Fusionner {count} épingles en une",
 	"compare_nothing": "Rien à fusionner",
+	"compare_offset": "Décalage",
 	"compare_open_pin": "Épingle ouverte",
+	"compare_pause": "Pause",
+	"compare_play": "Lire",
+	"compare_position": "Position",
 	"compare_refused": "Ces doublons n’ont pas pu être traités. La liste a été relue.",
 	"compare_reject_count": [
 		{

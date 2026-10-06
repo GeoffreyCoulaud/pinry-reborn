@@ -1,0 +1,47 @@
+import { describe, expect, it } from "vitest";
+import { advance, localTimes, slackOf } from "./clock";
+
+describe("the shared clock", () => {
+	it("Given the shared time before the shorter version's span, Then it holds its first frame", () => {
+		expect(localTimes(500, 1_000, [4_000, 2_000])).toEqual([500, 0]);
+	});
+
+	it("Given the shared time past the shorter version's span, Then it holds its last frame", () => {
+		expect(localTimes(3_500, 1_000, [4_000, 2_000])).toEqual([3_500, 2_000]);
+	});
+
+	it("Given the shared time inside the shorter version's span, Then it plays from the offset on", () => {
+		expect(localTimes(1_500, 1_000, [2_000, 4_000])).toEqual([500, 1_500]);
+	});
+
+	it("Given two durations within 0.3 s, Then the offset moves neither", () => {
+		expect(localTimes(1_000, 200, [2_000, 2_200])).toEqual([1_000, 1_000]);
+	});
+
+	it("Given one version alone, Then it is held on its last frame past its end", () => {
+		expect(localTimes(5_000, 0, [4_000])).toEqual([4_000]);
+	});
+
+	it("Given the shared time reaching the longer's end, Then both start again at 0", () => {
+		expect(advance(3_990, 16, 4_000)).toBe(0);
+		expect(
+			localTimes(advance(3_990, 16, 4_000), 1_000, [4_000, 2_000]),
+		).toEqual([0, 0]);
+	});
+
+	it("Given the shared time short of the longer's end, Then it moves on by what elapsed", () => {
+		expect(advance(1_000, 16, 4_000)).toBe(1_016);
+	});
+
+	it("Given two durations 0.2 s apart, Then there is no slider", () => {
+		expect(slackOf([2_000, 2_200])).toBe(0);
+	});
+
+	it("Given two durations 0.4 s apart, Then the slider reaches their difference", () => {
+		expect(slackOf([2_400, 2_000])).toBe(400);
+	});
+
+	it("Given one version alone, Then there is no slider", () => {
+		expect(slackOf([4_000])).toBe(0);
+	});
+});

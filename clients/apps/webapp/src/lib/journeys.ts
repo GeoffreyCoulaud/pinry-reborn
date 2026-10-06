@@ -45,6 +45,7 @@ export const REQUIRED_JOURNEYS = [
 	"the boards screen shows each board's cover",
 	"reject a duplicate",
 	"merge a group of duplicates",
+	"play two versions in step",
 ];
 
 /** The file under `src/journeys/` that holds a journey's test. */
