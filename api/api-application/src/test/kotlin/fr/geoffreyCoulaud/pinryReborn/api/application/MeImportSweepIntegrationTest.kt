@@ -1,13 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapOrphanedStorage
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ReapUserDataImports
-import fr.geoffreyCoulaud.pinryReborn.api.worker.ImportsConfig
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
-import io.restassured.RestAssured.given
 import jakarta.inject.Inject
 import java.nio.file.Files
 import java.nio.file.Path
@@ -28,14 +25,10 @@ import org.junit.jupiter.api.Test
 @TestProfile(MeImportTestProfile::class)
 // The app under test runs the real SystemClock; these read the wall clock to backdate fixtures against it.
 @Suppress("WallClockRead")
-class MeImportSweepIntegrationTest : IntegrationTest() {
-    @Inject lateinit var repository: UserDataImportRepositoryInterface
-
+class MeImportSweepIntegrationTest : MeImportFixtures() {
     @Inject lateinit var reapUserDataImports: ReapUserDataImports
 
     @Inject lateinit var reapOrphanedStorage: ReapOrphanedStorage
-
-    @Inject lateinit var importsConfig: ImportsConfig
 
     private fun dataDir(): Path = Path.of(importsConfig.dataDir())
 
@@ -43,34 +36,11 @@ class MeImportSweepIntegrationTest : IntegrationTest() {
 
     private fun archivePathFor(importId: UUID): Path = dataDir().resolve("imports/$importId.zip")
 
-    private fun openImport(auth: AuthenticatedUser): UUID =
-        given()
-            .authenticatedAs(auth)
-            .`when`()
-            .post("/api/v1/me/imports")
-            .then()
-            .statusCode(202)
-            .extract()
-            .jsonPath()
-            .getString("id")
-            .let(UUID::fromString)
-
-    private fun uploadChunk(auth: AuthenticatedUser, importId: UUID, bytes: ByteArray) {
-        given()
-            .authenticatedAs(auth)
-            .contentType("application/octet-stream")
-            .body(bytes)
-            .`when`()
-            .put("/api/v1/me/imports/$importId/archive?offset=0")
-            .then()
-            .statusCode(200)
-    }
-
     /** Backdates the row's last activity past the grace, which is what makes the sweep select it. */
     private fun backdatePastGrace(importId: UUID) {
-        val stored = requireNotNull(repository.findById(importId))
+        val stored = requireNotNull(importRepository.findById(importId))
         val stale = Instant.now().minus(importsConfig.uploadGrace()).minus(Duration.ofHours(1))
-        repository.save(stored.copy(lastActivityAt = stale))
+        importRepository.save(stored.copy(lastActivityAt = stale))
     }
 
     private fun writeArchive(importId: UUID, bytes: ByteArray): Path {
@@ -85,7 +55,7 @@ class MeImportSweepIntegrationTest : IntegrationTest() {
         // Given: a real chunk on disk under the real data directory
         val auth = createAuthenticatedUser()
         val importId = openImport(auth)
-        uploadChunk(auth, importId, "half an archive".toByteArray())
+        uploadChunk(auth, importId, "half an archive".toByteArray(), 0).then().statusCode(200)
         val uploadPath = uploadPathFor(importId)
         assertTrue(Files.exists(uploadPath), "the chunk should be on disk under the import's tmp path")
         backdatePastGrace(importId)
@@ -94,7 +64,7 @@ class MeImportSweepIntegrationTest : IntegrationTest() {
         reapUserDataImports.reap()
 
         // Then
-        val reaped = requireNotNull(repository.findById(importId))
+        val reaped = requireNotNull(importRepository.findById(importId))
         assertEquals(UserDataImportState.ABANDONED, reaped.state)
         assertFalse(Files.exists(uploadPath), "the partial upload should be unlinked once abandoned")
     }
@@ -104,9 +74,9 @@ class MeImportSweepIntegrationTest : IntegrationTest() {
         // Given: the promoted archive of an import whose row went terminal without releasing it
         val auth = createAuthenticatedUser()
         val importId = openImport(auth)
-        val stored = requireNotNull(repository.findById(importId))
+        val stored = requireNotNull(importRepository.findById(importId))
         val archivePath = writeArchive(importId, "a promoted archive".toByteArray())
-        repository.save(
+        importRepository.save(
             stored.copy(
                 state = UserDataImportState.CANCELLED,
                 storageKey = "imports/$importId.zip",
@@ -118,7 +88,7 @@ class MeImportSweepIntegrationTest : IntegrationTest() {
 
         // Then: the row stops naming bytes that are gone, so the next hour reclaims nothing
         assertFalse(Files.exists(archivePath), "the archive should be reclaimed once the row is terminal")
-        assertNull(requireNotNull(repository.findById(importId)).storageKey)
+        assertNull(requireNotNull(importRepository.findById(importId)).storageKey)
     }
 
     @Test
@@ -141,7 +111,7 @@ class MeImportSweepIntegrationTest : IntegrationTest() {
         // chunk out from under a client between two requests
         val auth = createAuthenticatedUser()
         val importId = openImport(auth)
-        uploadChunk(auth, importId, "half an archive".toByteArray())
+        uploadChunk(auth, importId, "half an archive".toByteArray(), 0).then().statusCode(200)
         val uploadPath = uploadPathFor(importId)
 
         // When

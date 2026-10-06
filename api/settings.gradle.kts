@@ -12,30 +12,19 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
-include(":api-domain")
-
-include(":api-usecases")
-
-include(":api-persistence-sqlite")
-
-include(":api-presentation-quarkus")
-
-include(":api-application")
-
-include(":api-utilities")
-
-include(":api-storage-filesystem")
-
-include(":api-imaging-vips")
-
-include(":api-video-ffmpeg")
-
-include(":api-fetch-http")
-
-include(":api-fetch-ytdlp")
-
-include(":api-system")
-
-include(":api-worker-quarkus")
-
-include(":detekt-rules")
+include(
+    ":api-domain",
+    ":api-usecases",
+    ":api-persistence-sqlite",
+    ":api-presentation-quarkus",
+    ":api-application",
+    ":api-utilities",
+    ":api-storage-filesystem",
+    ":api-imaging-vips",
+    ":api-video-ffmpeg",
+    ":api-fetch-http",
+    ":api-fetch-ytdlp",
+    ":api-system",
+    ":api-worker-quarkus",
+    ":detekt-rules",
+)

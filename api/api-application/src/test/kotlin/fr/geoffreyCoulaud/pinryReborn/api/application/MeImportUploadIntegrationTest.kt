@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 
 @QuarkusTest
 @TestProfile(MeImportTestProfile::class)
-class MeImportUploadIntegrationTest : ImportIntegrationTest() {
+class MeImportUploadIntegrationTest : MeImportFixtures() {
     @ConfigProperty(name = "quarkus.http.limits.max-body-size") lateinit var maxBodySize: MemorySize
 
     // --- The upload itself ---

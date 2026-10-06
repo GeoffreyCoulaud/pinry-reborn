@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test
 
 @QuarkusTest
 @TestProfile(MeImportTestProfile::class)
-class MeImportCancellationIntegrationTest : ImportIntegrationTest() {
+class MeImportCancellationIntegrationTest : MeImportFixtures() {
     @Inject lateinit var taskQueue: TaskQueueInterface
 
     @Inject lateinit var enqueueTask: EnqueueTask

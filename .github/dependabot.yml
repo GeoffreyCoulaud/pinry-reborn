@@ -1,7 +1,7 @@
 version: 2
 updates:
-  # Gradle dependencies (libs.versions.toml + build scripts): one grouped
-  # weekly PR covering every update.
+  # Gradle dependencies (libs.versions.toml + build scripts): one grouped weekly PR covering every
+  # update but ktfmt's, which can reformat the code and arrives alone (api/AGENTS.md, Gotchas).
   - package-ecosystem: "gradle"
     directory: "/api"
     schedule:
@@ -12,6 +12,8 @@ updates:
       gradle:
         patterns:
           - "*"
+        exclude-patterns:
+          - "com.facebook:ktfmt"
 
   # GitHub Actions pinned to commit SHAs: one grouped weekly PR. Stays at "/" because
   # .github/workflows/ does; only the Gradle build and the Dockerfile moved under api/.

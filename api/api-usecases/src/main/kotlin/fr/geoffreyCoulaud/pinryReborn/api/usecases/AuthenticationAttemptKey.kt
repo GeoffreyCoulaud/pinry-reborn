@@ -22,7 +22,7 @@ private constructor(
     companion object {
         /**
          * The submitted name, whether or not that user exists, lower-cased with [Locale.ROOT] since the store ignores
-         * case, then digested (`docs/adr/0013-in-memory-authentication-attempt-limiting.md`, decision 4).
+         * case, then digested so an entry's size does not depend on what the caller sent (ADR 0013, decision 4).
          */
         fun forLogin(name: String) =
             AuthenticationAttemptKey(
