@@ -43,27 +43,28 @@ class DuplicateResolver(
             // Before any pin is recycled, so it is not the kept pin's candidate afterwards (ADR 0052, decision 5).
             rejected.forEach { rejectedId -> held.forEach { duplicateRepository.setRejected(rejectedId, it, now) } }
             val absorbed = held.filter { decisions[it] == DuplicateDecision.MERGE }.map(found::getValue)
-            absorb(found.getValue(keptId), absorbed.sortedBy { it.createdAt }, now)
+                .sortedBy { it.createdAt }
+            val kept = found.getValue(keptId)
+            if (absorbed.isEmpty()) {
+                kept
+            } else {
+                val merged = pinRepository.savePin(afterAbsorbing(kept, absorbed, now))
+                // Their pairs stay theirs, hidden while recycled: the kept media was not measured against them.
+                pinRepository.softDeletePins(pinIds = absorbed.map { it.id }, at = now)
+                merged
+            }
         }
     }
 
     /** [kept] gains what [absorbed] hold, its blank fields filling in [absorbed]'s order (ADR 0051, decision 8). */
-    @Suppress("RowMergedOutsideTransaction") // [resolve] reads [kept] in the transaction it calls this from.
-    private fun absorb(kept: Pin, absorbed: List<Pin>, now: Instant): Pin {
-        if (absorbed.isEmpty()) return kept
-        val merged = pinRepository.savePin(
-            kept.copy(
-                description = kept.description.ifBlank {
-                    absorbed.map { it.description }.firstOrNull { it.isNotBlank() } ?: kept.description
-                },
-                sourceContextUrl = kept.sourceContextUrl ?: absorbed.firstNotNullOfOrNull { it.sourceContextUrl },
-                tags = (kept.tags + absorbed.flatMap { it.tags }).distinct(),
-                boards = (kept.boards + absorbed.flatMap { it.boards }).distinct(),
-                updatedAt = now,
-            ),
+    private fun afterAbsorbing(kept: Pin, absorbed: List<Pin>, now: Instant): Pin =
+        kept.copy(
+            description = kept.description.ifBlank {
+                absorbed.map { it.description }.firstOrNull { it.isNotBlank() } ?: kept.description
+            },
+            sourceContextUrl = kept.sourceContextUrl ?: absorbed.firstNotNullOfOrNull { it.sourceContextUrl },
+            tags = (kept.tags + absorbed.flatMap { it.tags }).distinct(),
+            boards = (kept.boards + absorbed.flatMap { it.boards }).distinct(),
+            updatedAt = now,
         )
-        // Their pairs stay theirs, hidden while they are recycled: the kept media was not measured against them.
-        pinRepository.softDeletePins(pinIds = absorbed.map { it.id }, at = now)
-        return merged
-    }
 }
