@@ -26,6 +26,25 @@
 	"change_password_note": "Changing it closes every session, this one included. You will have to sign in again.",
 	"clear_selection": "Clear the selection",
 	"close": "Close",
+	"compare": "Compare",
+	"compare_back": "Back to the pin",
+	"compare_decision": "Decision for this version",
+	"compare_heading": "Which version to keep?",
+	"compare_merge": "Merge",
+	"compare_merge_count": "Merge {count} pins into one",
+	"compare_nothing": "Nothing to merge",
+	"compare_refused": "Those duplicates could not be resolved.",
+	"compare_reject_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Reject {count} duplicate",
+				"countPlural=other": "Reject {count} duplicates"
+			}
+		}
+	],
+	"compare_versions": "Versions",
 	"create_board": "Add a board",
 	"create_pin": "Add a pin",
 	"creation_refused": "That pin could not be added.",
