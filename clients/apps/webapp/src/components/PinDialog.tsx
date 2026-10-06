@@ -19,14 +19,12 @@ function PinDetails({
 	pin,
 	close,
 	edit,
-	openDuplicate,
 	merged,
 	compare,
 }: {
 	pin: Pin;
 	close: () => void;
 	edit: () => void;
-	openDuplicate: (pinId: string) => void;
 	merged: (kept: Pin) => void;
 	compare: () => void;
 }) {
@@ -106,12 +104,7 @@ function PinDetails({
 					</div>
 				) : null}
 			</dl>
-			<PinDuplicates
-				pinId={pin.id}
-				open={openDuplicate}
-				merged={merged}
-				compare={compare}
-			/>
+			<PinDuplicates pinId={pin.id} merged={merged} compare={compare} />
 		</>
 	);
 }
@@ -156,7 +149,6 @@ export function PinDialog({
 	placeholder,
 	previous,
 	next,
-	openDuplicate,
 	merged,
 }: {
 	pin: Pin;
@@ -164,7 +156,6 @@ export function PinDialog({
 	placeholder: Rendition;
 	previous?: () => void;
 	next?: () => void;
-	openDuplicate: (pinId: string) => void;
 	merged: (kept: Pin) => void;
 }) {
 	const [editing, setEditing] = useState(false);
@@ -223,7 +214,6 @@ export function PinDialog({
 					pin={pin}
 					close={close}
 					edit={() => setEditing(true)}
-					openDuplicate={openDuplicate}
 					merged={merged}
 					compare={() => setComparing(true)}
 				/>

@@ -166,6 +166,9 @@ Compare button beside the list, with "merge a group of duplicates" through it. 4
 the line, the grip, the zoom and the arrow keys. 46 `feat/the-comparator-shows-the-facts`: the facts column and its
 format and sound lines. 48 `feat/the-row-replaces-the-list`: the row, the list, the two old hooks and "open a
 duplicate" deleted, "reject a duplicate" through Review and the refused submit. Block 50 stacks on 48.)*
+*(Corrected on 2026-10-06: written whole, block 48 measured 558 lines and 12 files, and splits in two.
+47 `refactor/the-dialog-opens-no-duplicate`, on 46: "open a duplicate" deleted, the list's thumbnail opening nothing.
+48 on 47: the rest of its row above.)*
 
 ### Block 10
 

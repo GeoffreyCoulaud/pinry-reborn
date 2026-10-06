@@ -44,7 +44,6 @@ export const REQUIRED_JOURNEYS = [
 	"upload a video",
 	"the boards screen shows each board's cover",
 	"reject a duplicate",
-	"open a duplicate",
 	"merge a group of duplicates",
 ];
 
