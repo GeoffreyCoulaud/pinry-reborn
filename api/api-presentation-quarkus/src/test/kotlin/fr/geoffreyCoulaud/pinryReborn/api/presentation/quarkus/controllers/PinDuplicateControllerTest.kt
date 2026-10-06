@@ -7,12 +7,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DuplicateDecision.MERGE
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DuplicateDecision.REJECT
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.DuplicateDecisionInputEnum
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinDuplicateResolutionInputDto
-import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinMergeInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.DuplicateResolver
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicate
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicates
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMerger
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -34,11 +32,9 @@ class PinDuplicateControllerTest {
     private val resolvePinMediaState = mockk<ResolvePinMediaState>().also {
         every { it.statesFor(any()) } returns emptyMap()
     }
-    private val pinMerger = mockk<PinMerger>()
     private val duplicateResolver = mockk<DuplicateResolver>()
     private val controller = PinDuplicateController(
         pinDuplicates = pinDuplicates,
-        pinMerger = pinMerger,
         duplicateResolver = duplicateResolver,
         securityIdentity = securityIdentity,
         pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
@@ -61,19 +57,6 @@ class PinDuplicateControllerTest {
     }
 
     @Test
-    fun `Given a merge, Then the kept pin is answered`() {
-        // Given
-        val (kept, absorbed) = List(2) { pin() }
-        every { pinMerger.merge(kept.id, listOf(absorbed.id), user) } returns kept
-
-        // When
-        val answered = controller.mergePins(PinMergeInputDto(kept.id, listOf(absorbed.id))).entity
-
-        // Then
-        assertEquals(kept.id, answered.id)
-    }
-
-    @Test
     fun `Given a resolution, Then each decision reaches the resolver and the kept pin is answered`() {
         // Given
         val (open, kept, rejected) = List(3) { pin() }
@@ -86,18 +69,5 @@ class PinDuplicateControllerTest {
 
         // Then
         assertEquals(kept.id, answered.id)
-    }
-
-    @Test
-    fun `Given a merge body, Then it is valid only when it names each pin once`() {
-        // Given
-        val (kept, absorbed) = List(2) { randomUUID() }
-
-        // When
-        val validity = listOf(listOf(absorbed), listOf(absorbed, absorbed), listOf(kept, absorbed))
-            .map { PinMergeInputDto(kept, it).isEachPinNamedOnce }
-
-        // Then
-        assertEquals(listOf(true, false, false), validity)
     }
 }

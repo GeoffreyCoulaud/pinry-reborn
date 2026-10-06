@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DuplicateDecision
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DuplicateDecision.KEEP
@@ -117,8 +119,8 @@ class DuplicateResolverTest {
     fun `Given two absorbed pins with descriptions, the newer named first, Then a blank kept one takes the older's`() {
         // Given
         val open = pin()
-        val newer = pin("Newer", createdAt = TestTime.now.plusSeconds(1))
-        val older = pin("Older", createdAt = TestTime.now.minusSeconds(1))
+        val newer = pin("Newer", createdAt = TestTime.now.plusSeconds(1)).copy(sourceContextUrl = "https://a.test/n")
+        val older = pin("Older", createdAt = TestTime.now.minusSeconds(1)).copy(sourceContextUrl = "https://a.test/o")
         stored(open, newer, older)
         val decisions = linkedMapOf(open.id to KEEP, newer.id to MERGE, older.id to MERGE)
 
@@ -126,7 +128,24 @@ class DuplicateResolverTest {
         val answered = useCase.resolve(open.id, decisions, user)
 
         // Then
-        assertEquals("Older", answered.description)
+        assertEquals("Older" to "https://a.test/o", answered.description to answered.sourceContextUrl)
+    }
+
+    @Test
+    fun `Given a kept pin with a description and a page, Then it keeps both and gains the absorbed tags and boards`() {
+        // Given
+        val tag = Tag(randomUUID(), user, "absorbed", TestTime.now)
+        val board = Board(randomUUID(), user, "Absorbed", "", TestTime.now, TestTime.now)
+        val open = pin("Kept").copy(sourceContextUrl = "https://a.test/kept")
+        val absorbed = pin("Absorbed").copy(sourceContextUrl = "https://a.test/absorbed", tags = listOf(tag),
+            boards = listOf(board))
+        stored(open, absorbed)
+
+        // When
+        val answered = useCase.resolve(open.id, mapOf(open.id to KEEP, absorbed.id to MERGE), user)
+
+        // Then
+        assertEquals(open.copy(tags = listOf(tag), boards = listOf(board), updatedAt = TestTime.now), answered)
     }
 
     @Test
