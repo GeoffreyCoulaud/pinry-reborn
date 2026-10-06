@@ -11,9 +11,11 @@ Lot `0.49.0`, one stack of 13 code blocks, where the specification planned 7: 10
 `feat/the-comparator-shows-the-facts` (#344), 47 `refactor/the-dialog-opens-no-duplicate` (#345), 48
 `feat/the-row-replaces-the-list` (#346), 50 `feat/the-comparator-plays-both-versions` (#347), 55
 `feat/the-comparator-plays-animated-images` (#348), 60 `refactor/the-reject-route-goes` (#349), 65
-`refactor/the-merge-route-goes` (the pull request this file arrives in). Block 15 was dropped. Written in block 65
-from the block reports collapsed in those pull requests and the lead's notes; the closing block corrects it after the
-holistic review.
+`refactor/the-merge-route-goes` (#350, the pull request this file arrived in). Block 15 was dropped. The closing
+block is two pull requests, split on the file bound: `fix/the-resolver-rejects-in-one-statement`, the review's API
+findings, then `fix/the-duplicates-comparison-closes`, its client findings, the documents and this file's
+corrections. Written in block 65 from the block reports collapsed in those pull requests and the lead's notes;
+corrected by the closing block after the holistic review.
 
 ## Current state
 
@@ -25,7 +27,8 @@ holistic review.
   `durationMillis` (a video's, null for an image), `videoBitRate`, `audioChannels` and `audioBitRate`.
 - **One call resolves a group** (30, 60, 65), contract `23.0.0`: `POST /api/v1/pins/{pinId}/duplicates/resolutions`,
   `{decisions: {<pinId>: KEEP | MERGE | REJECT}}`, all or nothing, answering the kept pin. `DuplicateResolver`
-  applies the rejections against every kept or merged pin of the group first, then absorbs the `MERGE` pins into the
+  applies the rejections against every kept or merged pin of the group first, one statement per rejected pin, then
+  absorbs the `MERGE` pins into the
   `KEEP` pin, filling from the oldest. The group rules raise `DUPLICATE_RESOLUTION_INVALID`, on the wire 400
   `VALIDATION_ERROR`. `PUT /api/v1/pins/{pinId}/duplicates/{otherPinId}` (60) and `POST /api/v1/pins/merges` (65)
   are gone, with their DTOs, `PinDuplicates.setRejected` and `PinMerger`; no pair can be restored to pending.
@@ -38,9 +41,11 @@ holistic review.
   read again. A candidate is no longer opened from the dialog.
 - **Two versions play in step** (50, 55): `DuplicatePlayer` holds one clock, one bar over the longer duration and an
   *Offset* slider when the durations differ by more than 0.3 s; a version holds its first or last frame outside its
-  span; muted. A video is a `<video>` the clock seeks; an animated image is decoded with `ImageDecoder` and drawn on
-  a canvas, its duration the sum of its frames' (a zero or missing delay counting 100 ms). Without `ImageDecoder` an
-  image plays on its own as an `<img>` and a pair holding one has no bar.
+  span; muted. A video is a `<video>` the clock seeks; a GIF or a WebP is decoded with `ImageDecoder`, and drawn on
+  a canvas when it is animated, its duration the sum of its frames' (a missing delay, or one of 10 ms or less,
+  counting 100 ms); any other image is still and fetched once, by its `<img>`. A decoder is closed when the query
+  cache drops it. Without `ImageDecoder` an animated image plays on its own as an `<img>` and a pair holding one has
+  no bar.
 
 ## Evidence
 
@@ -76,9 +81,15 @@ holistic review.
   `refactor/the-reject-route-goes`. `oasdiff changelog` against the parent: 1 error
   `api-path-removed-without-deprecation` for `POST /api/v1/pins/merges`, 1 info `api-schema-removed` for
   `PinMergeInputDto`, 1 info `api-version-not-bumped`, the major having been raised against `main` by block 60.
-- Vitest at the top of the web application's blocks: 73 files, 400 tests, coverage 100 % of lines and branches over
-  `src/lib` (55). Every headless reading's screenshots and scripts are in the session's scratchpad,
-  `read{41,43,46,47,48,50,55}/`.
+- Closing block, API half: `dagger call gate` green at `61cfa50b`; budget 27 lines, 8 files against
+  `refactor/the-merge-route-goes`. Client half: gate green at `a7c59b2d` with these documents; budget 244 lines, 17 files against
+  `fix/the-resolver-rejects-in-one-statement`. A journey case asserting the JPEG never fetched fails with `image/jpeg`
+  added to the decoded types (3 runs of 3).
+- Closing block, read headless in Firefox 157, light and dark, 390x844 and 1280x800: two GIFs, a video beside a GIF
+  (one bar, the video without controls and in step, the GIF on a canvas, "2 sec" in the facts) and two JPEGs (two
+  `<img>`, no bar, each original requested once, by its `<img>`).
+- Vitest at the top of the stack: 74 files, 404 tests, coverage 100 % of lines and branches over `src/lib`. Every
+  headless reading's screenshots and scripts are in the session's scratchpad, `read{41,43,46,47,48,50,55,closing}/`.
 - Continuous integration: one red run, on #347, below.
 
 ## Pitfalls
@@ -86,7 +97,7 @@ holistic review.
 - **A dispatch while the previous teammate is still working races on the one working tree**: on 2026-10-06 around
   09:10 the lead dispatched block 55 while block 50 was answering a fix-back, and 50 committed its fix onto 55's
   branch with 55's uncommitted work (`7a7a0534`). The lead stopped 55 and reset the branch to `dc20a99f`; nothing was
-  pushed. The patches are in the scratchpad, `race-fix.patch` for the closing block.
+  pushed. The race fix reached the closing block as a patch in the scratchpad.
 - **`gh stack submit` pushes every branch of the stack and opens a pull request for each one without** (47): a branch
   above still holding unsplit work has to be reset, or taken out of the stack, first.
 - **A contract change needs `pnpm --filter @pinry-reborn/api-client run generate`** before the clients typecheck
@@ -106,9 +117,8 @@ holistic review.
 - **Headless Firefox paints every scrollbar white in dark theme**, a bare page included: not a finding (41).
   WebDriver BiDi in Firefox 156 refuses `setViewport` on the first listed context; a tab made with
   `browsingContext.create` accepts it, and `layout.css.prefers-color-scheme.content-override` picks the theme (41).
-- **The evidence guard refuses `sed -i`, a heredoc or stdin into `python3`, and a redirection outside `$TMPDIR`**:
-  export `TMPDIR` under the scratchpad first (48, 60, 65).
-
+- **The evidence guard refuses `sed -i`, `git apply`, a heredoc or stdin into `python3`, and a redirection outside
+  `$TMPDIR`**: export `TMPDIR` under the scratchpad first (48, 60, 65, closing); a patch is applied with the edit tool.
 ## Departures from the specification
 
 - **Decision F and block 15 dropped** (question I): the operator holds development data disposable, so no instance
@@ -125,15 +135,19 @@ holistic review.
   contract carrying no `animated` flag.
 - Block 48: the row stacks the pending candidates while any is pending, and every candidate under *Review*.
 - Block 50: the bar's time labels read "3.6 / 4.0s", the facts column keeping "2.4 sec".
-- Block 55: a still image beside a video gives the video the bar, alone and with no slider, where block 50 left it its
-  native controls; decoding is what tells a still image from an animated one.
+- Block 55: a still image beside a video gave the video the bar, alone and with no slider, where block 50 left it its
+  native controls. That pair is unreachable, a still image never pairing with a video (lot `0.48.0`'s decision F), and
+  the closing block records it in the specification as a correction to decision D.
+- Closing block: a frame of 10 ms or less counts 100 ms, where decision D said zero; corrected in the specification.
 - Block 65: the merge cases `PinMergerTest` held that the resolver did not already cover (a kept description and page
   kept, the absorbed tags and boards gained, the page filled from the older) moved into `DuplicateResolverTest`, and
   `absorb` became private.
 
 Tier-1 fixes: block 50's half-speed clock and the slider's start cap (found in its own reading); block 60's
 `PinDuplicateRepositoryInterface.setRejected`, narrowed to an `Instant` answering nothing once the restore and the
-caller reading its boolean had left.
+caller reading its boolean had left; in the closing block, the race in
+`a-video-this-browser-cannot-play-falls-back.journey.test.tsx` ("replaced by a playable one", red on #347's run
+37440107797 at `93419293` and predating the lot), whose replacing download now runs until the fallback has been seen.
 
 Fix-backs, from the lead's reading of the screenshots or the operator: block 10, `probe_version` removed (question I);
 block 41, the footer below the fold at 1280x800; block 50, the time labels overflowing a phone's dialog.
@@ -145,44 +159,64 @@ block 41, the footer below the fold at 1280x800; block 50, the time labels overf
 - J, block 40 at 1792 lines: split in four (40, 43, 46, 48). Answer: "reco ok".
 - K, block 40 still at 639 lines after J: split again into 40, the logic, and 41, the comparator. Answer: "reco ok".
 - Block 50's seam (videos, then animated images) was a bound question answered by the lead.
+- The closing block at 25 files, phase 6's seam not helping since the documents are outside the count: split into
+  the API findings, then the client findings and the documents. A bound question, answered by the lead ("(a)").
 
 ## What is not validated
 
 - The whole web application against the running API rather than a stub (41 to 55).
 - Safari and Chrome; touch on a real phone, where no pinch is implemented (43); arm64 (10).
-- A GIF with a zero or missing delay in a real browser; WebP, APNG and AVIF animations (55).
+- A GIF with a missing delay or one of 10 ms or less in a real browser; WebP animations (55). A long GIF's
+  up-front decode of every frame, which keeps it pending, its video partner on native controls, until it ends (55,
+  the review's second finding, left as it is).
+- A decoder closed when the query cache drops it, in a browser: unit-tested only (closing).
 - A long-GOP video's seeking cost while playing (50); the ffprobe report's size and parse time on a long video (10).
 - The dark scrollbars in a desktop Firefox with a window (41).
 
-## Items for the closing block
-
-- Tier 1, the race in `a-video-this-browser-cannot-play-falls-back.journey.test.tsx` ("replaced by a playable one"):
-  the second poll may settle before `expectTheFallback` reads the fallback, red on #347's run 37440107797 at
-  `93419293` and predating the lot. Gate the second poll on the fallback being seen; the patch is the scratchpad's
-  `race-fix.patch`.
-- Tier 1, `MediaHostingIntegrationTest.kt:400` holds `}        }` (block 10), found by block 20.
-- For the holistic review: every image on the stage is fetched again for `ImageDecoder`, a JPEG and a PNG included
-  (55); decoding only `image/gif` and `image/webp` would avoid it. The decoder is never `close()`d, dropped with its
-  query cache entry.
-
 ## The holistic review
 
-Not run yet: it reads the top of this stack at the head of Wrap, over
-`git diff lot/0.48.0-the-pin-knows-its-duplicates..origin/refactor/the-merge-route-goes`, and the closing block
-records its findings here.
+`.reviews/the-duplicates-are-compared-holistic.md`, over
+`git diff lot/0.48.0-the-pin-knows-its-duplicates..origin/refactor/the-merge-route-goes`: no CRITICAL, no MAJOR, 12
+MINOR. Every one is fixed in the closing block, the API half taking 5, 6 and 11 and the client half the rest.
+
+1. Every image fetched again for `ImageDecoder`, and a still image beside a video given the bar: only a GIF or a WebP
+   is decoded; the still-beside-a-video pair is recorded as unreachable in the specification. Fixed.
+2. A decoder never closed: `closeDroppedAnimations` closes it when the query cache drops it, wired in `main.tsx`. The
+   up-front decode of every frame is left as it is, as the review advised. Fixed.
+3. No test where blocks 50 and 55 meet: two journey cases, a video beside an animated image with `ImageDecoder`, and
+   a JPEG beside a GIF of one frame (the still path, the JPEG never fetched for decoding); the mixed pair read
+   headless. Fixed.
+4. A frame of 10 ms or less played ten times too fast: it counts 100 ms, checked against Firefox's and Chromium's
+   sources, with a case in `clock.test.ts` and a correction to decision D. Fixed.
+5. One `UPDATE` per (rejected, held) couple: `setRejected` takes the held pins, one statement per rejected pin; the
+   repository test adds a pair between two named pins that must stay pending. Fixed.
+6. `absorb`'s KDoc cited ADR 0051's superseded fill order: it cites ADR 0052, decision 3. Fixed.
+7. The refused submit's remount resting on a returned promise: one comment at `pins.ts`. Fixed.
+8. `Rendition`'s unused `"LARGE"`: reverted with its comment. Fixed.
+9. `PinGrid`'s comment naming an ambiguous "decision B", and `fromList`: the reference dropped, the flag renamed
+   `outsideGrid`. Fixed.
+10. Ten comments ending in a bare decision letter: dropped, except `clock.ts` and `zoom.ts`, which name the
+    specification. Fixed.
+11. Two closing braces on one line in `MediaHostingIntegrationTest.kt`: split. Fixed.
+12. `resolveDuplicates.test.tsx` asserting its own fixture: it asserts the request's path and body and the answer
+    handed on once, against a route of its own. Fixed.
 
 ## The backlog
 
-The specification names no adjacent item; "A video's excerpt is not found as such" stays open. No item changes in
-the code blocks.
+Reconciled, unchanged. The specification names no adjacent item; "A video's excerpt is not found as such" stays
+open, and no finding went to the backlog.
 
 ## The lot's counts
 
-Fix-backs 3 (blocks 10, 41 and 50); cascaded rebases, the runs they re-triggered and the operator's reading of the
-bodies: filled in by the closing block.
+Read with `gh run list --branch <branch>` for each of the 13 code blocks' branches.
+
+- Fix-backs: 3 (blocks 10, 41 and 50), each pushed before the next block, so none cascaded.
+- Cascaded rebases: 0, and so no run re-triggered on a branch above. The fix-backs ran their own branch again: 3 runs,
+  one of them (#342's first) cancelled by the fix-back's push. 16 runs for 13 branches before the closing block.
+- The operator's reading of the bodies: no remark so far.
 
 ## Next step
 
-Wrap: the holistic review over the diff above, then the closing block, the operator's review of the stack, and the
-tag `lot/0.49.0-the-duplicates-are-compared` once it merges. **Then reset the development database**: a media stored
-before this lot has no rates and no channels, and nothing fills them (decision F's correction).
+The operator's review of the stack, closing block included, then `gh stack merge --rebase` and the tag
+`lot/0.49.0-the-duplicates-are-compared`. **Then reset the development database**: a media stored before this lot
+has no rates and no channels, and nothing fills them (decision F's correction).

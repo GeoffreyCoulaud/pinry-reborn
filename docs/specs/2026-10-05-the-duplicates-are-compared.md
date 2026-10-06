@@ -92,6 +92,13 @@ merged.
 - Where `ImageDecoder` is missing, an animated image plays on its own as an `<img>` and shows no duration, and a pair
   holding one has no bar and no slider; a video beside it keeps its own controls. No library stands in (A).
 
+*(Corrected on 2026-10-06, in the closing block after the holistic review: a frame counts 100 ms when it states none
+or 10 ms or less, as Firefox (`image/FrameTimeout.h`) and Chromium (`deferred_image_decoder.cc`) play it. Only a GIF
+or a WebP is decoded, libvips reading no APNG animation, and every other image is still without being fetched again.
+Block 55 gave a still image beside a video the bar, where block 50 left the video its own controls; that pair is
+unreachable, a still image never pairing with a video (`docs/specs/2026-10-05-the-pin-knows-its-duplicates.md`,
+decision F).)*
+
 **E. A media records its rates and its sound** (E, and the operator's addition of the video's rate on 2026-10-06).
 `media` gains `video_bit_rate`, `audio_channels` and `audio_bit_rate`. A rate is measured, never read from a header:
 the sum of the track's packet sizes over the media's duration, from the `ffprobe` run that already reads every packet
