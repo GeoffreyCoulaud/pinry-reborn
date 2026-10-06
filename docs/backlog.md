@@ -43,6 +43,11 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   and its mirror **partial export**; **merging metadata onto a pin that already exists**, which is
   the option the v1 "skip" rule forecloses; and **making a pin with no medium travel**, which needs
   the export to carry `MediaDownload` so a pending or failed download survives the round trip.
+- **The comparator's offset is too coarse to align two short videos to the frame**, its slider stepping by 100 ms
+  (`DuplicatePlayer`). See `docs/handoffs/2026-10-06 - handoff - the-duplicates-are-compared.md`, The operator's
+  testing. New 2026-10-06.
+- **A video's tile plays its animated rendition only under the pointer**, where an animated image plays by default,
+  and hovering does nothing on a phone (`PinGrid`). Play it by default, with no hover. Same handoff. New 2026-10-06.
 
 ### P2: Operational debt
 

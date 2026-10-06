@@ -191,7 +191,8 @@ operator's review, block 30 (`eb23d57b`) and block 65 (`10fad5a9`), below; the c
 
 ## What is not validated
 
-- The whole web application against the running API rather than a stub (41 to 55).
+- The whole web application against the running API in a test, rather than a stub (41 to 55); the operator tested
+  the stack on the development instance by hand.
 - Safari and Chrome; touch on a real phone, where no pinch is implemented (43); arm64 (10).
 - A GIF with a missing delay or one of 10 ms or less in a real browser; WebP animations (55). A long GIF's
   up-front decode of every frame, which keeps it pending, its video partner on native controls, until it ends (55,
@@ -261,17 +262,30 @@ On GitHub, 2026-10-06, after the closing block's first push.
   "Peut devenir faux. On doit apporter une réponse structurelle pour l'empécher." Block 65's fix-back moved the writes
   inside the transaction, where the detekt rule sees them, and dropped the suppression.
 
+## The operator's testing
+
+The operator tested the whole stack on the development instance, after the review above, and proposed to merge with
+two cosmetic remarks sent to the backlog, verbatim:
+
+- "L'offset de vidéo dans le comparateur de fusion est trop grossier, il peut être impossible de synchroniser deux
+  vidéos courtes à la frame près." The slider steps by 100 ms. Exit: backlog, P1.
+- "Les images animées sont affichées animées par défaut dans la grille, mais les renditions animées des vidéos sont
+  animées uniquement au survol. On devrait avoir ces renditions animées en lecture par défaut, pas de système de
+  survol (ne marche de toute façon pas sur mobile)". Exit: backlog, P1.
+
 ## The backlog
 
-One item added, from the operator's review: "The Kotlin code has no formatter", under P2. The specification names no
-adjacent item; "A video's excerpt is not found as such" stays open.
+Three items added: "The Kotlin code has no formatter" under P2, from the operator's review; the comparator's coarse
+offset and the video tile animated only under the pointer under P1, from the operator's testing. The specification
+names no adjacent item; "A video's excerpt is not found as such" stays open.
 
 ## The lot's counts
 
-Read with `gh run list --branch <branch>` for each of the lot's 16 branches, before this fix-back's push.
+Read with `gh run list --branch <branch>` for each of the lot's 16 branches, before the closing block's fix-backs
+were pushed; each of those pushes runs the closing branches it moves once more, and no branch below them.
 
-- Fix-backs: 6. Blocks 10, 41 and 50 before the review, each pushed before the next block; blocks 30 and 65 from
-  the operator's review; the closing block for block 70's review, not yet pushed.
+- Fix-backs: 7. Blocks 10, 41 and 50 before the review, each pushed before the next block; blocks 30 and 65 from
+  the operator's review; the closing block twice, for block 70's review and for the operator's testing.
 - Cascaded rebases: 3. Block 30's fix-back and block 65's, pushed within a minute of each other, then block 70's
   insertion, which moved both closing branches.
 - Runs those cascades re-triggered: 24 on the branches above the one that moved, 10 of them cancelled by the next push,
