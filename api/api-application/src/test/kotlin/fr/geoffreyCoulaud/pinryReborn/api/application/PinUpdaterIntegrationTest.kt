@@ -237,7 +237,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
             .then()
             .statusCode(200)
 
-    // ==================== Merge ====================
+    // ==================== Resolution ====================
 
     @Inject
     lateinit var duplicateRepository: PinDuplicateRepositoryInterface
@@ -245,119 +245,9 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
     @Inject
     lateinit var pinRecycleBin: PinRecycleBin
 
-    private fun merge(auth: AuthenticatedUser, kept: UUID, absorbed: List<UUID>): ValidatableResponse =
-        mergeBody(auth, mapOf("keptPinId" to "$kept", "absorbedPinIds" to absorbed.map { "$it" }))
-
-    private fun mergeBody(auth: AuthenticatedUser, body: Map<String, Any>): ValidatableResponse =
-        given().authenticatedAs(auth).contentType(ContentType.JSON).body(body).post("/api/v1/pins/merges").then()
-
-    // Each pin as its owner reads it, so a refused merge is shown to have written nothing.
+    // Each pin as its owner reads it, so a refused resolution is shown to have written nothing.
     private fun bodiesOf(vararg pins: Pair<AuthenticatedUser, Pin>): List<String> =
         pins.map { (auth, pin) -> readPin(auth, pin).extract().asString() }
-
-    private fun pairCountOf(pin: Pin): Int =
-        QPinDuplicateModel().or().firstPinId.equalTo(pin.id).secondPinId.equalTo(pin.id).endOr().findCount()
-
-    @Test
-    fun `Given three pins merged, Then the kept one gains their boards, tags and description, and they are recycled`() {
-        // Given: a blank kept pin paired with the first absorbed, itself paired with an outsider
-        val auth = createAuthenticatedUser()
-        val (keptBoard, sharedBoard, absorbedBoard) = listOf("Kept", "Shared", "Absorbed")
-            .map { boardCreator.create(author = auth.user, name = it, description = "") }
-        val kept = createPin(auth, tags = listOf("kept", "shared"))
-        replacePin(auth, kept.copy(description = ""), boardIds = listOf(keptBoard.id, sharedBoard.id))
-        val blank = createPin(auth, tags = listOf("shared"))
-        replacePin(auth, blank.copy(description = " "), boardIds = listOf(sharedBoard.id))
-        val filled = createPin(auth, tags = listOf("absorbed"))
-        val filledCopy = filled.copy(description = "Filled", sourceMediaUrl = "https://example.com/filled.jpg")
-        replacePin(auth, filledCopy, boardIds = listOf(absorbedBoard.id))
-        val outsider = createPin(auth)
-        duplicateRepository.addMissing(kept.id, listOf(blank.id))
-        duplicateRepository.addMissing(blank.id, listOf(outsider.id))
-
-        // When
-        val merged = merge(auth, kept.id, listOf(blank.id, filled.id)).statusCode(200).extract().jsonPath()
-        val recycledAt = listOf(blank, filled).map { readPin(auth, it).extract().path<String?>("softDeletedAt") }
-        val listed = given().authenticatedAs(auth).get("/api/v1/pins/${kept.id}/duplicates")
-            .then().statusCode(200).extract().path<List<Any>>("duplicates")
-
-        // Then: the kept pin's one pair is hidden, and the outsider's is not carried over to it
-        assertEquals(listOf("${kept.id}", "Filled", kept.sourceMediaUrl, false),
-            listOf("id", "description", "sourceMediaUrl", "hasPendingDuplicates").map { merged.get<Any?>(it) })
-        assertEquals(setOf("kept", "shared", "absorbed"), merged.getList<String>("tags.name").toSet())
-        assertEquals(listOf(keptBoard, sharedBoard, absorbedBoard).map { "${it.id}" }.toSet(),
-            merged.getList<String>("boards.id").toSet())
-        assertNotNull(recycledAt.first())
-        assertEquals(recycledAt.first(), recycledAt.last())
-        assertEquals(emptyList<Any>(), listed)
-        assertEquals(1, pairCountOf(kept))
-    }
-
-    @Test
-    fun `Given an empty list, a repeated pin, the kept pin absorbed or no body field, Then the merge returns 400`() {
-        // Given
-        val auth = createAuthenticatedUser()
-        val (kept, absorbed) = List(2) { createPin(auth) }
-        val before = bodiesOf(auth to kept, auth to absorbed)
-
-        // When, Then
-        merge(auth, kept.id, emptyList()).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
-        merge(auth, kept.id, listOf(absorbed.id, absorbed.id)).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
-        merge(auth, kept.id, listOf(absorbed.id, kept.id)).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
-        mergeBody(auth, mapOf("absorbedPinIds" to listOf("${absorbed.id}"))).statusCode(400)
-        mergeBody(auth, mapOf("keptPinId" to "${kept.id}")).statusCode(400)
-        assertEquals(before, bodiesOf(auth to kept, auth to absorbed))
-    }
-
-    @Test
-    fun `Given another user's pin last in the list, Then the merge returns 403 and changes no pin`() {
-        // Given
-        val auth = createAuthenticatedUser()
-        val other = createAuthenticatedUser()
-        val (kept, absorbed) = List(2) { createPin(auth) }
-        val foreign = createPin(other)
-        val before = bodiesOf(auth to kept, auth to absorbed, other to foreign)
-
-        // When
-        merge(auth, kept.id, listOf(absorbed.id, foreign.id))
-            .statusCode(403).body("code", equalTo("PIN_INSUFFICIENT_PERMISSIONS"))
-
-        // Then
-        assertEquals(before, bodiesOf(auth to kept, auth to absorbed, other to foreign))
-    }
-
-    @Test
-    fun `Given an unknown pin last in the list, Then the merge returns 404 and changes no pin`() {
-        // Given
-        val auth = createAuthenticatedUser()
-        val (kept, absorbed) = List(2) { createPin(auth) }
-        val before = bodiesOf(auth to kept, auth to absorbed)
-
-        // When
-        merge(auth, kept.id, listOf(absorbed.id, UUID.randomUUID()))
-            .statusCode(404).body("code", equalTo("PIN_DOES_NOT_EXIST"))
-
-        // Then
-        assertEquals(before, bodiesOf(auth to kept, auth to absorbed))
-    }
-
-    @Test
-    fun `Given a recycled pin last in the list, Then the merge returns 409 and changes no pin`() {
-        // Given
-        val auth = createAuthenticatedUser()
-        val (kept, absorbed, recycled) = List(3) { createPin(auth) }
-        pinRecycleBin.softDelete(recycled.id, auth.user)
-        val before = bodiesOf(auth to kept, auth to absorbed, auth to recycled)
-
-        // When
-        merge(auth, kept.id, listOf(absorbed.id, recycled.id))
-            .statusCode(409).body("code", equalTo("PIN_ALREADY_SOFT_DELETED"))
-
-        // Then
-        assertEquals(before, bodiesOf(auth to kept, auth to absorbed, auth to recycled))
-    }
-
-    // ==================== Resolution ====================
 
     private fun postResolution(
         auth: AuthenticatedUser,
@@ -458,7 +348,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
 
     @Test
     fun `Given the open pin merged into a candidate with a third, Then a fourth stays rejected against the kept pin`() {
-        // Given: the open pin paired with the three others, and the rejected one with the kept one too
+        // Given: the open pin paired with the others, the rejected with the kept, the merged with an outsider
         val auth = createAuthenticatedUser()
         val (openBoard, mergedBoard) = listOf("Open", "Merged")
             .map { boardCreator.create(author = auth.user, name = it, description = "") }
@@ -469,6 +359,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         replacePin(auth, kept, tags = listOf("kept"))
         replacePin(auth, merged, tags = listOf("merged"), boardIds = listOf(mergedBoard.id))
         duplicateRepository.addMissing(rejected.id, listOf(kept.id))
+        duplicateRepository.addMissing(merged.id, listOf(createPin(auth).id))
         val decisions = mapOf(openPin to "MERGE", kept to "KEEP", merged to "MERGE", rejected to "REJECT")
 
         // When

@@ -48,8 +48,8 @@ class DuplicateResolver(
     }
 
     /** [kept] gains what [absorbed] hold, its blank fields filling in [absorbed]'s order (ADR 0051, decision 8). */
-    @Suppress("RowMergedOutsideTransaction") // Both callers read [kept] in the transaction they call this from.
-    internal fun absorb(kept: Pin, absorbed: List<Pin>, now: Instant): Pin {
+    @Suppress("RowMergedOutsideTransaction") // [resolve] reads [kept] in the transaction it calls this from.
+    private fun absorb(kept: Pin, absorbed: List<Pin>, now: Instant): Pin {
         if (absorbed.isEmpty()) return kept
         val merged = pinRepository.savePin(
             kept.copy(
