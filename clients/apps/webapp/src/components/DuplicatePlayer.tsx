@@ -2,7 +2,7 @@ import { Slider } from "@heroui/react";
 import { Pause, Play } from "lucide-react";
 import { type ComponentProps, useEffect, useState } from "react";
 import { advance, localTimes, slackOf } from "../lib/clock";
-import { isVideo } from "../lib/media";
+import { type Motion, useMotion } from "../motions";
 import { m } from "../paraglide/messages.js";
 import { getLocale } from "../paraglide/runtime.js";
 import type { Pin } from "../pins";
@@ -29,6 +29,12 @@ function useClock(length: number) {
 		return () => cancelAnimationFrame(frame);
 	}, [playing, length]);
 	return { time, setTime, playing, setPlaying };
+}
+
+function isTimed(
+	motion: Motion,
+): motion is Extract<Motion, { kind: "video" | "animation" }> {
+	return motion.kind === "video" || motion.kind === "animation";
 }
 
 /** One play and pause, the position over the longer duration, and the shorter's offset when it can move. */
@@ -127,34 +133,41 @@ export function DuplicatePlayer({
 	offset: number;
 	setOffset: (offset: number) => void;
 }) {
-	const shown =
+	const underMotion = useMotion(stage.under);
+	const keptMotion = useMotion(stage.kept);
+	const motions =
 		stage.under.id === stage.kept.id
-			? [stage.under]
-			: [stage.under, stage.kept];
-	const durations = shown.flatMap((version) =>
-		isVideo(version.media?.mimeType) && version.media.durationMillis != null
-			? [version.media.durationMillis]
-			: [],
+			? [underMotion]
+			: [underMotion, keptMotion];
+	// One version the clock cannot hold, or not yet, and every version plays on its own.
+	const clocked = motions.every(
+		(one) => one.kind !== "own" && one.kind !== "pending",
 	);
-	// An image, or a video with no duration, and every version plays on its own.
-	const clocked = durations.length === shown.length;
+	const timed = clocked ? motions.filter(isTimed) : [];
+	const durations = timed.map((one) => one.duration);
 	const clock = useClock(Math.max(0, ...durations));
 	const times = localTimes(clock.time, offset, durations);
-	const media = (version: Pin) =>
-		version.media?.url ? (
+	const timeOf = new Map<Motion, number>(
+		timed.map((one, at) => [one, times[at] ?? 0]),
+	);
+	const media = (version: Pin) => {
+		const motion = version.id === stage.under.id ? underMotion : keptMotion;
+		return version.media?.url ? (
 			<StageMedia
 				url={version.media.url}
 				mimeType={version.media.mimeType}
+				motion={motion}
 				clocked={clocked}
-				time={times[shown.indexOf(version)] ?? 0}
+				time={timeOf.get(motion) ?? 0}
 				playing={clock.playing}
 			/>
 		) : null;
+	};
 
 	return (
 		<>
 			<DuplicateStage {...stage} media={media} />
-			{clocked ? (
+			{timed.length > 0 ? (
 				<PlayerBar
 					clock={clock}
 					durations={durations}

@@ -1,6 +1,9 @@
 /** Two durations closer than this play together, with no offset to set (decision D). */
 const NO_SLIDER_UNDER_MS = 300;
 
+/** What the browsers play a frame stating no duration, or zero, for. */
+const UNSTATED_FRAME_MS = 100;
+
 /** How far the shorter version can be moved, in ms: the difference of durations, or 0 for no slider. */
 export function slackOf(durations: readonly number[]): number {
 	const slack = Math.max(...durations) - Math.min(...durations);
@@ -23,4 +26,19 @@ export function localTimes(
 export function advance(time: number, elapsed: number, length: number): number {
 	const next = time + elapsed;
 	return next >= length ? 0 : next;
+}
+
+/** An animated image's frame durations in ms, from the microseconds its decoder states. */
+export function frameMillis(micros: readonly (number | null)[]): number[] {
+	return micros.map((one) => (one ? one / 1_000 : UNSTATED_FRAME_MS));
+}
+
+/** The index of the frame shown at `time`, the last one from the end on. */
+export function frameAt(frames: readonly number[], time: number): number {
+	let end = 0;
+	const at = frames.findIndex((frame) => {
+		end += frame;
+		return time < end;
+	});
+	return at < 0 ? frames.length - 1 : at;
 }

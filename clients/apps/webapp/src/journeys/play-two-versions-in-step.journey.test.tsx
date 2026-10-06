@@ -1,6 +1,7 @@
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { HttpResponse, http } from "msw";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { m } from "../paraglide/messages.js";
 import type { Pin } from "../pins";
 import {
@@ -14,6 +15,11 @@ import {
 	videoPin,
 } from "../test/app";
 import { server } from "../test/server";
+
+afterEach(() => {
+	vi.unstubAllGlobals();
+	vi.restoreAllMocks();
+});
 
 const lasting = (pin: Pin, durationMillis: number): Pin => ({
 	...pin,
@@ -89,6 +95,86 @@ describe("play two versions in step", () => {
 				within(dialog).getByRole("list", { name: m.compare_versions() }),
 			).getByRole("button", { name: shorter.description }),
 		).toHaveAttribute("aria-current", "true");
+	});
+
+	it("Given two animated images and ImageDecoder, Then one bar plays both over the longer's frames, each drawn at the frame the time names", async () => {
+		const open = animated("a cat turning");
+		const slower = animated("a cat turning, slower");
+		// Microseconds per frame, as `VideoFrame.duration` states them: none and zero count 100 ms.
+		const frames: Record<string, (number | null)[]> = {
+			[open.id]: [1_000_000, 1_000_000, null],
+			[slower.id]: [500_000, 0, 1_000_000],
+		};
+		const drawn = new Map<string, number>();
+		vi.stubGlobal(
+			"ImageDecoder",
+			class {
+				readonly pin: string;
+				readonly completed = Promise.resolve();
+				readonly tracks;
+				constructor({ data }: { data: ArrayBuffer }) {
+					this.pin = new TextDecoder().decode(data);
+					const frameCount = frames[this.pin]?.length ?? 0;
+					this.tracks = {
+						ready: Promise.resolve(),
+						selectedTrack: { animated: true, frameCount },
+					};
+				}
+				decode({ frameIndex }: { frameIndex: number }) {
+					const image = {
+						pin: this.pin,
+						frameIndex,
+						duration: frames[this.pin]?.[frameIndex] ?? null,
+						displayWidth: 1,
+						displayHeight: 1,
+						close: () => {},
+					};
+					return Promise.resolve({ image, complete: true });
+				}
+			},
+		);
+		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+			drawImage: (image: { pin: string; frameIndex: number }) =>
+				drawn.set(image.pin, image.frameIndex),
+		} as unknown as CanvasRenderingContext2D);
+		server.use(
+			http.get("/api/v1/pins/:pinId/media", ({ params }) =>
+				HttpResponse.text(String(params.pinId)),
+			),
+		);
+
+		const { user, dialog, stage } = await stageOf(open, slower);
+
+		const position = await within(dialog).findByRole("slider", {
+			name: m.compare_position(),
+		});
+		expect(position).toHaveAttribute("max", "2100");
+		expect(
+			within(dialog).getByRole("slider", { name: m.compare_offset() }),
+		).toHaveAttribute("max", "500");
+		expect(stage.querySelectorAll("canvas")).toHaveLength(2);
+		expect(stage.querySelector("img")).toBeNull();
+		expect(within(dialog).getByText("1.6 sec")).toBeInTheDocument();
+		await waitFor(() => {
+			expect(drawn.get(open.id)).toBe(0);
+			expect(drawn.get(slower.id)).toBe(0);
+		});
+
+		fireEvent.change(position, { target: { value: "550" } });
+
+		// The shorter's frame stating zero lasts from 500 to 600 ms.
+		await waitFor(() => {
+			expect(drawn.get(open.id)).toBe(0);
+			expect(drawn.get(slower.id)).toBe(1);
+		});
+
+		await user.click(position);
+		await user.keyboard("{End}");
+
+		await waitFor(() => {
+			expect(drawn.get(open.id)).toBe(2);
+			expect(drawn.get(slower.id)).toBe(2);
+		});
 	});
 
 	it("Given two animated images and no ImageDecoder, Then each plays on its own as an image and there is no bar", async () => {
