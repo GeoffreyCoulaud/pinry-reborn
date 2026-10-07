@@ -15,8 +15,8 @@
 		"build": "pnpm --recursive run build"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.14",
-		"knip": "6.38.0",
-		"typescript": "6.0.3"
+		"@biomejs/biome": "2.5.15",
+		"knip": "6.39.0",
+		"typescript": "7.0.2"
 	}
 }
