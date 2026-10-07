@@ -108,21 +108,17 @@ Dated events. No session starts these early.
   See `docs/specs/2026-09-21-the-header-searches-and-wears-the-name.md`, decision G and section 6.
 - **A video's excerpt is not found as such**: frames sampled a quarter second apart are too far for PDQ. See
   `docs/specs/2026-10-05-the-pin-knows-its-duplicates.md`, decision E. New 2026-10-05.
-- **Import from 3rd party sites**
-  Initial candidates :
-    - Pinterest (board import),
-    - Danbooru / Gelbooru / Other booru (favorites import),
-    - Instagram (saved collection import),
-    - Reddit / Twitter / Pixiv (saved posts import).
-
-  On some of these sites, a post may contain multiple media. We're not changing our semantic 1 pin = 1 media rule.
-  Can be either a one-time import, or to sync a local pinry board with a remote source periodically, as the user
-  chooses.
-
-  Lead: gallery-dl, delegated to as yt-dlp is (ADR 0048), covers every candidate above and carries tags, author and
-  source. Reading favourites or saved posts needs the user's credentials whatever the tool (pixiv OAuth, Instagram
-  cookie), so the spec decides how they are stored, and weighs the ban risk of a periodic sync. A by-product: a public
-  post's address yields its image as a single pin, a fallback after yt-dlp. New 2026-10-04.
+- **Import from third-party sites**: whatever gallery-dl reads, through a companion tool that writes an archive; a
+  proof of concept comes first. See `docs/adr/0054-third-party-imports-are-manual-and-keep-no-credential.md`.
+- **Tags carry no origin**, so a source's tags cannot keep their name and category apart from the user's; the
+  third-party import waits on it. See ADR 0054, decision 18.
+- **Sensitive content is not classified**: no reason, intensity or viewing context hides a pin, for any entry path.
+  See ADR 0054, Consequences.
+- **Tags have no implications or aliases.** See ADR 0054, Consequences.
+- **Boards cannot be merged.** See ADR 0054, Consequences.
+- **A field cannot be applied to every pin of one post.** See ADR 0054, Consequences.
+- **An image post's address gives no pin**: adding by address reads what yt-dlp and the direct fetch read, not the
+  images of a post page. See ADR 0054, Consequences.
 - **RBAC and quota system** : Allow admins to toggle features and define quotas per-role, from the API
 - **Audience mechanics (public / private).** Until this lands everything stays `@Authenticated` and owner-scoped (
   non-owner → 403); no anonymous browsing, no public gallery, no shareable links. It will interact with boards (public /
