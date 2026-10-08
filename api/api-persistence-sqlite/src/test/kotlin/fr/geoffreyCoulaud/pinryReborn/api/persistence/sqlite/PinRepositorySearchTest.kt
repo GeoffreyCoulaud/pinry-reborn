@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -43,6 +44,9 @@ class PinRepositorySearchTest : PinRepositoryFixtures() {
             )
         )
 
+    private fun savePinCrediting(author: User, publisher: Person? = null, creators: List<Person> = emptyList()): Pin =
+        repository.savePin(createPin().copy(author = author, publisher = publisher, creators = creators))
+
     private fun search(
         author: User,
         query: String,
@@ -70,6 +74,39 @@ class PinRepositorySearchTest : PinRepositoryFixtures() {
 
         // Then: the tag is the metadata a pin board actually carries, so it matches beside the description
         assertEquals(setOf(tagged.id, described.id), found.items.map { it.id }.toSet())
+    }
+
+    @Test
+    fun `Given a pin crediting a creator and another its publisher, Then a term in their names finds both`() {
+        // Given
+        val author = createAndSaveUser()
+        val credited = savePinCrediting(author, creators = listOf(createAndSavePerson(author, name = "Alice Martin")))
+        val published = savePinCrediting(author, publisher = createAndSavePerson(author, name = "Bob Martin"))
+        savePinCrediting(author, creators = listOf(createAndSavePerson(author, name = "Carol")))
+
+        // When
+        val found = search(author, "martin")
+
+        // Then
+        assertEquals(setOf(credited.id, published.id), found.items.map { it.id }.toSet())
+    }
+
+    @Test
+    fun `Given a creator and a publisher whose addresses hold the term, Then the search finds neither pin`() {
+        // Given
+        val author = createAndSaveUser()
+        val address = listOf("https://zebra.test/profile")
+        savePinCrediting(
+            author,
+            publisher = createAndSavePerson(author, name = "Bob", urls = address),
+            creators = listOf(createAndSavePerson(author, name = "Alice", urls = address)),
+        )
+
+        // When
+        val found = search(author, "zebra")
+
+        // Then
+        assertTrue(found.items.isEmpty(), "${found.items}")
     }
 
     @Test

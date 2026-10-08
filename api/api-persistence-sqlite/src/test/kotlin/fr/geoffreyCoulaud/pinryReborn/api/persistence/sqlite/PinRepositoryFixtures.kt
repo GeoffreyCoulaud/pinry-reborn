@@ -1,11 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.BoardModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PersonRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.TagRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
@@ -25,6 +27,7 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
     protected val repository = PinRepository(persistor)
     private val userRepository = UserRepository(persistor)
     private val tagRepository = TagRepository(persistor)
+    private val personRepository = PersonRepository(persistor)
 
     // Cursor pagination breaks ties on the id, which is random, so a test asserting a deterministic
     // order stamps the pins itself rather than hoping two saves land on different milliseconds.
@@ -69,6 +72,21 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
         database.save(board.toModel())
         return board
     }
+
+    protected fun createAndSavePerson(
+        user: User,
+        name: String = createRandomString(),
+        urls: List<String> = listOf("https://a.test/${createRandomString()}"),
+    ): Person =
+        personRepository.savePerson(
+            Person(
+                id = randomUUID(),
+                author = user,
+                name = name,
+                urls = urls,
+                createdAt = storableNow(),
+            )
+        )
 
     protected fun softDeleteBoardModel(board: Board) {
         val model = database.find(BoardModel::class.java, board.id)!!

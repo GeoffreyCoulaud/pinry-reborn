@@ -34,7 +34,7 @@ interface PinRepositoryInterface {
      * @param cursor The cursor to find pins relative to
      * @param pageSize Number of pins to return (will be capped at server max)
      * @param sortStrategy The sort strategy
-     * @param query A term the description or one of the tag names contains; null is every pin
+     * @param query A term the description, a tag's name or a credited person's name contains; null is every pin
      * @return A page of pins with pagination information
      */
     fun findPinsForUser(
