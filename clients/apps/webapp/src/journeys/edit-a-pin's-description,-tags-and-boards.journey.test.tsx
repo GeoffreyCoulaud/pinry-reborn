@@ -101,10 +101,13 @@ describe("edit a pin's description, tags and boards", () => {
 		});
 		await user.clear(description);
 		await user.type(description, saved.description);
-		await user.type(
-			within(dialog).getByRole("textbox", { name: m.tags() }),
-			"Landscape",
+		const tags = within(dialog).getByRole("textbox", { name: m.tags() });
+		// The chosen tags are chips inside the field, which says how to add one.
+		expect(tags).toHaveAccessibleDescription(m.enter_to_add());
+		expect(tags.closest('[data-slot="input-group"]')).toContainElement(
+			within(dialog).getByRole("grid", { name: m.tags_chosen() }),
 		);
+		await user.type(tags, "Landscape");
 		await user.click(await screen.findByRole("button", { name: "landscape" }));
 		await user.click(
 			within(dialog).getByRole("button", { name: new RegExp(m.boards()) }),

@@ -4,8 +4,6 @@ import {
 	Label,
 	ListBox,
 	Select,
-	Tag,
-	TagGroup,
 	TextArea,
 	TextField,
 	ToggleButton,
@@ -13,91 +11,29 @@ import {
 } from "@heroui/react";
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { useBoards } from "../boards";
-import { useDebounced } from "../debounce";
 import { downloadReason } from "../downloadReasons";
 import type { KeptFile } from "../lib/drops";
 import { isVideo } from "../lib/media";
+import { personKey, personLabel, personNamed } from "../lib/persons";
 import { type MediaSource, useHandshake, useSetPinMedia } from "../media";
 import { mediaRefusal } from "../mediaRefusals";
 import { m } from "../paraglide/messages.js";
-import { type Pin, useTagSearch, useUpdatePin } from "../pins";
+import {
+	type Person,
+	type Pin,
+	usePersonSearch,
+	useTagSearch,
+	useUpdatePin,
+} from "../pins";
+import { ChipField } from "./ChipField";
 import { MediaDropBox } from "./MediaDropBox";
 import { PinSides } from "./PinSides";
 import { PublishedAtField } from "./PublishedAtField";
 import { PublisherField } from "./PublisherField";
 
-/**
- * Free text over the author's own names. The server decides which names are one tag, folding to
- * ASCII, so the field asks it and offers what it answers rather than deciding it is looking at a
- * new tag (specification 2026-09-20, decision L). It asks once the typing pauses, not once per
- * character (specification 2026-09-21, decision P).
- */
-function TagField({
-	names,
-	onChange,
-}: {
-	names: readonly string[];
-	onChange: (names: readonly string[]) => void;
-}) {
-	const [typed, setTyped] = useState("");
-	const asked = useDebounced(typed);
-	const offered = (useTagSearch(asked).data ?? []).filter(
-		(name) => !names.includes(name),
-	);
-
-	function add(name: string) {
-		const held = name.trim();
-		if (held !== "" && !names.includes(held)) {
-			onChange([...names, held]);
-		}
-		setTyped("");
-	}
-
-	return (
-		<div className="flex flex-col gap-2">
-			<TextField value={typed} onChange={setTyped} variant="secondary">
-				<Label>{m.tags()}</Label>
-				<Input
-					onKeyDown={(event) => {
-						// The field sits inside the pin's form, where Enter would save it: here it names a tag.
-						if (event.key !== "Enter") {
-							return;
-						}
-						event.preventDefault();
-						add(typed);
-					}}
-				/>
-			</TextField>
-			{names.length > 0 ? (
-				<TagGroup
-					aria-label={m.tags_chosen()}
-					onRemove={(keys) => onChange(names.filter((name) => !keys.has(name)))}
-				>
-					<TagGroup.List items={names.map((name) => ({ id: name }))}>
-						{(tag) => (
-							<Tag>
-								{String(tag.id)}
-								<Tag.RemoveButton />
-							</Tag>
-						)}
-					</TagGroup.List>
-				</TagGroup>
-			) : null}
-			{/* Last, and outlined: a suggestion appears and goes as the user types, so it moves nothing
-          above it, and a chip that reads as flat text is one nobody presses. */}
-			{offered.length > 0 ? (
-				<ul className="flex flex-wrap gap-2">
-					{offered.map((name) => (
-						<li key={name}>
-							<Button size="sm" variant="outline" onPress={() => add(name)}>
-								{name}
-							</Button>
-						</li>
-					))}
-				</ul>
-			) : null}
-		</div>
-	);
+/** A tag is its name: the server folds names to ASCII and says which are one tag (specification 2026-09-20, decision L). */
+function tagName(name: string): string {
+	return name;
 }
 
 /** The boards the pin is filed under. The list arrives whole, so there is no page to chase. */
@@ -205,6 +141,7 @@ export function PinEditForm({
 		pin.boards.map((board) => board.id),
 	);
 	const [publisher, setPublisher] = useState(pin.publisher);
+	const [creators, setCreators] = useState<readonly Person[]>(pin.creators);
 	const [publishedAt, setPublishedAt] = useState(pin.publishedAt);
 	// One value in one field at a time: the column's, or the selector's once the image is fetched from it.
 	const [address, setAddress] = useState(pin.sourceMediaUrl ?? "");
@@ -322,8 +259,7 @@ export function PinEditForm({
 									tags: [...tags],
 									boardIds: [...boardIds],
 									publisher,
-									// No field edits it yet, so it is sent as read.
-									creators: pin.creators,
+									creators: [...creators],
 									publishedAt,
 								},
 							},
@@ -378,9 +314,28 @@ export function PinEditForm({
 					</TextField>
 					{/* Not a ternary: `noNegationElse` inverts it, and `noLeakedRender` refuses a variable as the else. */}
 					{intent !== "fetch" && addressField}
-					<TagField names={tags} onChange={setTags} />
+					<ChipField
+						label={m.tags()}
+						chosenLabel={m.tags_chosen()}
+						values={tags}
+						onChange={setTags}
+						search={useTagSearch}
+						fromTyped={tagName}
+						keyOf={tagName}
+						labelOf={tagName}
+					/>
 					<BoardField ids={boardIds} onChange={setBoardIds} />
 					<PublisherField publisher={publisher} onChange={setPublisher} />
+					<ChipField
+						label={m.creators()}
+						chosenLabel={m.creators_chosen()}
+						values={creators}
+						onChange={setCreators}
+						search={usePersonSearch}
+						fromTyped={personNamed}
+						keyOf={personKey}
+						labelOf={personLabel}
+					/>
 					<PublishedAtField instant={publishedAt} onChange={setPublishedAt} />
 					{/* Two halves, two sentences: the pin is written before its image, so a refused image
               leaves the fields saved and only the image to try again. */}
