@@ -119,6 +119,8 @@ Dated events. No session starts these early.
   See ADR 0054, Consequences.
 - **Tags have no implications or aliases.** See ADR 0054, Consequences.
 - **Boards cannot be merged.** See ADR 0054, Consequences.
+- **People and tags have no management page**: the web application lists neither, so a person's addresses cannot
+  be corrected once for all their pins, and two people cannot be merged. See ADR 0055, decision 8.
 - **A field cannot be applied to every pin of one post.** See ADR 0054, Consequences.
 - **An image post's address gives no pin**: adding by address reads what yt-dlp and the direct fetch read, not the
   images of a post page. See ADR 0054, Consequences.
