@@ -113,8 +113,8 @@ Dated events. No session starts these early.
 - **A video's excerpt is not found as such**: frames sampled a quarter second apart are too far for PDQ. See
   `docs/specs/2026-10-05-the-pin-knows-its-duplicates.md`, decision E. New 2026-10-05.
 - **Import from third-party sites**: whatever gallery-dl reads, through a companion tool that writes the user data
-  archive. Two lots: the pin's source facts and the remote collections, then the importer. See
-  `docs/adr/0055-third-party-imports-write-the-user-data-archive.md`.
+  archive. Two lots: the first, the pin's people and the remote collections, is done (lot `0.52.0`); the importer
+  is still to come. See `docs/adr/0055-third-party-imports-write-the-user-data-archive.md`.
 - **Sensitive content is not classified**: no reason, intensity or viewing context hides a pin, for any entry path.
   See ADR 0054, Consequences.
 - **Tags have no implications or aliases.** See ADR 0054, Consequences.

@@ -9,7 +9,8 @@ Branches: one stack, each block on the one before it: 10 `feat/a-person-is-store
 30 `feat/the-api-credits-people`, 40 `feat/the-api-searches-people`, 50 `feat/the-catalogue-finds-people`,
 60 `feat/the-archive-carries-people`, 70 `feat/the-import-links-collections`, 80 `feat/the-export-carries-collections`,
 90 `feat/the-board-shows-its-collections`, 100 `feat/the-form-credits-people`, 110 `feat/the-form-dates-a-pin`.
-(Corrected: 75 `feat/the-import-walks-collections` and 120 `fix/the-stall-test-holds` were added mid-lot.)
+(Corrected: 75 `feat/the-import-walks-collections` and 120 `fix/the-stall-test-holds` were added mid-lot, and 130
+`fix/the-people-lot-closes` closes it.)
 ADR: `docs/adr/0055-third-party-imports-write-the-user-data-archive.md` (pull request #363), decisions 7, 8 and 11,
 is this lot's record; this document settles what it leaves to a specification. The routes follow
 `docs/adr/0040-search-is-a-parameter-of-the-catalogue.md` and `docs/adr/0044-a-response-code-declares-its-set.md`;
@@ -192,6 +193,7 @@ holding one.
 | 100 | `feat/the-form-credits-people` | Decision G. |
 | 110 | `feat/the-form-dates-a-pin` | Decision H. |
 | 120 | `fix/the-stall-test-holds` | A flaky stall case of `HttpMediaFetcherTest`, added mid-lot by the operator. |
+| 130 | `fix/the-people-lot-closes` | The holistic review's findings (Wrap), the backlog and the handoff. |
 
 Each block is measured after its first commit with the command of `agents/workflow.md`; one that passes a bound splits
 at a number between its own and the next.
@@ -292,7 +294,8 @@ at a number between its own and the next.
 - `BoardOutputDto.remoteCollections`; `info.version` is `24.2.0`.
 - The board page's list of decision E; the fixture `board()` answers `remoteCollections: []`.
 - Journey "see a board's linked collections": two collections answered in reverse order of name are shown sorted,
-  each name a link to its address.
+  each name a link to its address. (Corrected in block 130: the page shows the server's order, as answered. The
+  server already sorts by name, and a second sort with `localeCompare` put an accented name elsewhere.)
 - Read headless before the push, two themes by a phone's and a desktop's width.
 
 ### Block 100
@@ -321,7 +324,9 @@ at a number between its own and the next.
   proxy never answers.
 - The fix: that origin reads the request's head first. Its siblings answer through `HttpServer`, which reads the
   request before its handler runs, or answer nothing.
-- The case repeated under a busy loop per core fails before the fix and passes after.
+- The case repeated under a busy loop per core fails before the fix and passes after. (Corrected in block 130: it
+  passed 1199 of 1200 repetitions after the fix, the one failure of another kind and of unknown cause; the handoff
+  of 2026-10-08 carries it under what is not validated.)
 
 ## 5. Adjacent backlog items
 
