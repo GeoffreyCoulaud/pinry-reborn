@@ -1,3 +1,8 @@
+/** The host an address shows as a link, or the address itself when it is not one. */
+export function hostOf(address: string): string {
+	return URL.parse(address)?.hostname ?? address;
+}
+
 /** Only these become pins: the server fetches an address from its own position, and nothing else. */
 const FETCHABLE = /^https?:\/\//i;
 

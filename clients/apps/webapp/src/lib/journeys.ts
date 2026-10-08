@@ -47,6 +47,7 @@ export const REQUIRED_JOURNEYS = [
 	"merge a group of duplicates",
 	"play two versions in step",
 	"see a board's linked collections",
+	"credit a pin's people",
 ];
 
 /** The file under `src/journeys/` that holds a journey's test. */

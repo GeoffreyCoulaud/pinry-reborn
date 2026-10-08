@@ -18,11 +18,12 @@ export type Pin = Schemas["PinOutputDto"];
 export type PinPage = Schemas["PinListOutputDto"];
 export type PinUpdate = Schemas["PinUpdateInputDto"];
 export type Duplicate = Schemas["PinDuplicateOutputDto"];
+export type Person = Schemas["PersonOutputDto"];
 
 const PAGE_SIZE = 40;
 
 /** Enough names to choose from without a scroll, the field offering them under the input. */
-const TAG_SUGGESTIONS = 8;
+const SUGGESTIONS = 8;
 
 const PINS = ["pins"];
 const BOARDS = ["boards"];
@@ -251,12 +252,29 @@ export function useTagSearch(query: string) {
 		// The route refuses a blank `q`, and an empty field is not a search.
 		enabled: asked !== "",
 		queryFn: async () => {
-			const params = { query: { q: asked, limit: TAG_SUGGESTIONS } };
+			const params = { query: { q: asked, limit: SUGGESTIONS } };
 			const body = bodyOf(
 				await auth.client.GET("/api/v1/tags/search", { params }),
 				"the tags",
 			);
 			return body.results.map((result) => result.tag.name);
+		},
+	});
+}
+
+/** The author's own people, matched as the tags are; homonyms come back apart, by their addresses. */
+export function usePersonSearch(query: string) {
+	const asked = query.trim();
+	return useQuery({
+		queryKey: ["persons", asked],
+		enabled: asked !== "",
+		queryFn: async () => {
+			const params = { query: { q: asked, limit: SUGGESTIONS } };
+			const body = bodyOf(
+				await auth.client.GET("/api/v1/persons/search", { params }),
+				"the people",
+			);
+			return body.results.map((result) => result.person);
 		},
 	});
 }

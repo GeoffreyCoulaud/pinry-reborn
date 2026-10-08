@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { urisFromDrop } from "./uris";
+import { hostOf, urisFromDrop } from "./uris";
+
+describe("hostOf", () => {
+	it("reads the host of an address", () => {
+		expect(hostOf("https://art.example.test/ada/works")).toBe(
+			"art.example.test",
+		);
+	});
+
+	it("keeps an address it cannot parse whole", () => {
+		expect(hostOf("not an address")).toBe("not an address");
+	});
+});
 
 describe("urisFromDrop", () => {
 	it("reads the one address a picture dragged from another tab carries", () => {

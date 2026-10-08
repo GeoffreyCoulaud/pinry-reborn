@@ -3,9 +3,11 @@ import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react";
 import { type PointerEvent, useRef, useState } from "react";
 import { useMove } from "react-aria";
+import { personKey } from "../lib/persons";
 import type { Rendition } from "../lib/tiles";
+import { hostOf } from "../lib/uris";
 import { m } from "../paraglide/messages.js";
-import { type Pin, useRecyclePins } from "../pins";
+import { type Person, type Pin, useRecyclePins } from "../pins";
 import { DuplicateComparator } from "./DuplicateComparator";
 import { IconButton } from "./IconButton";
 import { PinDuplicates } from "./PinDuplicates";
@@ -13,6 +15,26 @@ import { PinEditForm } from "./PinEditForm";
 import { PinMedia } from "./PinMedia";
 import { PinSides } from "./PinSides";
 import { useArrowKeys } from "./useArrowKeys";
+
+/** A person's name, then each address as a link showing its host, as the source page is shown. */
+function PersonCredit({ person }: { person: Person }) {
+	return (
+		<p className="flex flex-wrap gap-x-3">
+			<span>{person.name}</span>
+			{person.urls.map((url) => (
+				<a
+					key={url}
+					href={url}
+					target="_blank"
+					rel="noreferrer"
+					className="text-accent hover:underline"
+				>
+					{hostOf(url)}
+				</a>
+			))}
+		</p>
+	);
+}
 
 /** The column beside the image. */
 function PinDetails({
@@ -69,8 +91,26 @@ function PinDetails({
 								rel="noreferrer"
 								className="text-accent hover:underline"
 							>
-								{URL.parse(source)?.hostname ?? source}
+								{hostOf(source)}
 							</a>
+						</dd>
+					</div>
+				) : null}
+				{pin.publisher ? (
+					<div>
+						<dt>{m.publisher()}</dt>
+						<dd>
+							<PersonCredit person={pin.publisher} />
+						</dd>
+					</div>
+				) : null}
+				{pin.creators.length > 0 ? (
+					<div>
+						<dt>{m.creators()}</dt>
+						<dd className="flex flex-col gap-1">
+							{pin.creators.map((person) => (
+								<PersonCredit key={personKey(person)} person={person} />
+							))}
 						</dd>
 					</div>
 				) : null}
