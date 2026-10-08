@@ -227,8 +227,8 @@ class MediaController(
     )
     fun getMedia(
         pinId: UUID,
-        @QueryParam("size") size: String?,
-        @QueryParam("animated") animated: Boolean?,
+        @QueryParam("size") size: String? = null,
+        @QueryParam("animated") animated: Boolean? = null,
         @HeaderParam("If-None-Match") ifNoneMatch: String?,
         @HeaderParam("Range") rangeHeader: String?,
     ): RestResponse<StreamingOutput> {

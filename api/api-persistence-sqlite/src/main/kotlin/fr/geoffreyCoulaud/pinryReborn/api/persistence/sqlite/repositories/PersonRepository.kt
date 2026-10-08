@@ -33,6 +33,36 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
             .findOne()
             ?.toDomain()
 
+    // The two queries of TagRepository.findTagsForUserMatching, for the reasons its comments give.
+    override fun findPersonsForUserMatching(
+        user: User,
+        query: String,
+        limit: Int,
+    ): List<Person> {
+        if (limit <= 0) return emptyList()
+
+        val prefixed = QPersonModel().author.id.equalTo(user.id).name.startsWith(query).setMaxRows(limit).findList()
+        val remaining = limit - prefixed.size
+        val contained =
+            if (remaining == 0) {
+                emptyList()
+            } else {
+                QPersonModel()
+                    .author
+                    .id
+                    .equalTo(user.id)
+                    .name
+                    .contains(query)
+                    .not()
+                    .name
+                    .startsWith(query)
+                    .endNot()
+                    .setMaxRows(remaining)
+                    .findList()
+            }
+        return (prefixed + contained).map { it.toDomain() }
+    }
+
     override fun deleteAllPersonsForUser(user: User) {
         QPersonModel().author.id.equalTo(user.id).delete()
     }

@@ -66,6 +66,9 @@ class PersonCreatorTest {
 
         override fun findUserPerson(user: User, name: String, urls: Collection<String>): Person? = found
 
+        override fun findPersonsForUserMatching(user: User, query: String, limit: Int) =
+            error("A creation searches no person")
+
         override fun deleteAllPersonsForUser(user: User) = error("A creation deletes no person")
     }
 
