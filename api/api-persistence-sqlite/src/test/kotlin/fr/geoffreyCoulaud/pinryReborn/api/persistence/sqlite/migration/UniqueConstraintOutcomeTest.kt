@@ -61,6 +61,10 @@ class UniqueConstraintOutcomeTest {
                     "ones through findOrCreate and the user data import through resolve, which differ only in " +
                     "the createdAt they stamp; so the violation is unreachable and a concurrent tagging " +
                     "converges on one row rather than a 500.",
+            "ix_persons_author_name_nocase_urls" to
+                "No translation, deliberately, for the tag's reason: PersonCreator.findOrCreate reads through " +
+                    "the same fold and the same canonical addresses before writing, holding the pair in one " +
+                    "transaction, so the violation is unreachable and a concurrent creation converges on one row.",
             "ux_pin_board_model_pin_board" to
                 "No translation, deliberately: every write in PinRepository reads the memberships already " +
                     "there and inserts the missing ones, each once, so the index fires only when two writes of " +

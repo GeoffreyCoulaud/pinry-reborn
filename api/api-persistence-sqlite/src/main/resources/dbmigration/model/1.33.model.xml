@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<migration xmlns="http://ebean-orm.github.io/xml/ns/dbmigration">
+    <changeSet type="apply">
+        <createTable name="persons" identityType="external" pkName="pk_persons">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_persons_author_id" foreignKeyIndex="ix_persons_author_id"/>
+            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="name" type="varchar" notnull="true"/>
+            <column name="urls" type="varchar" notnull="true"/>
+        </createTable>
+        <createIndex indexName="ix_persons_author_name_nocase_urls" tableName="persons" columns="" definition="create unique index ix_persons_author_name_nocase_urls on persons (author_id, name collate nocase, urls)"/>
+    </changeSet>
+</migration>
