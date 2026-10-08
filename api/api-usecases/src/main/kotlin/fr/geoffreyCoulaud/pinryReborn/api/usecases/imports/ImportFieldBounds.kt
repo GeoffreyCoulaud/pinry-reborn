@@ -8,6 +8,8 @@ object ImportFieldBounds {
     const val MAX_NAME_LENGTH = 200
     const val MAX_DESCRIPTION_LENGTH = 2000
     const val MAX_REFERENCES = 100
+    const val MAX_PERSON_URLS = 20
+    const val MAX_URL_LENGTH = 2000
 
     /** Spec section 4: anchored, so `elsewhere/media/x.png` is not a match, and never a `.` segment. */
     private val ENTRY_PATH = Regex("^media/[A-Za-z0-9._-]+$")
@@ -32,6 +34,23 @@ object ImportFieldBounds {
     /** The list is resolved inside one transaction, so its length is that transaction's size. */
     fun referenceCountFault(field: String, count: Int): String? =
         if (count > MAX_REFERENCES) "$field holds more than $MAX_REFERENCES entries" else null
+
+    /** `PersonInputDto`'s bounds. */
+    fun personFault(name: String, urls: List<String>): String? {
+        val nameFault = nameFault(name)
+        return when {
+            nameFault != null -> "a person's $nameFault"
+            urls.size > MAX_PERSON_URLS -> "a person holds more than $MAX_PERSON_URLS addresses"
+            else -> urls.firstNotNullOfOrNull { urlFault(it) }
+        }
+    }
+
+    private fun urlFault(url: String): String? =
+        when {
+            url.isBlank() -> "a person's address is blank"
+            url.length > MAX_URL_LENGTH -> "a person's address is longer than $MAX_URL_LENGTH characters"
+            else -> null
+        }
 
     /**
      * Traversal cannot reach the disk anyway: an entry name is only ever a ZIP lookup key. The check exists so a

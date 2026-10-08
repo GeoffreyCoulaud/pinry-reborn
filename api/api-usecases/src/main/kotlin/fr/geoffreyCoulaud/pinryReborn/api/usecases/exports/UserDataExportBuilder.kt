@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
@@ -301,7 +302,12 @@ class UserDataExportBuilder(
                     ExportedRef(board.id, board.name)
                 },
             media = exportedMedia(pin, writtenMediaPaths),
+            publisher = pin.publisher?.let { exportedPerson(it) },
+            creators = pin.creators.map { exportedPerson(it) },
+            publishedAt = pin.publishedAt,
         )
+
+    private fun exportedPerson(person: Person): ExportedPerson = ExportedPerson(person.name, person.urls)
 
     /**
      * `null` when the pin has no image **or** when its bytes could not be written (spec §4): the second condition is

@@ -1,10 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
+import jakarta.inject.Inject
 import java.io.File
 import java.time.Instant
 import java.util.Base64
@@ -18,13 +21,15 @@ import org.junit.jupiter.api.Test
 @QuarkusTest
 @TestProfile(MeImportTestProfile::class)
 class MeImportRoundTripIntegrationTest : MeImportFixtures() {
+    @Inject lateinit var personCreator: PersonCreator
+
     // --- Seeding, and the real export the round trip pours back in ---
 
     private fun stepUp(password: String) = "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())
 
     /**
      * Two active pins, one recycled pin naming no page, an active board, a recycled board holding a pin, two tags, and
-     * a fourth pin sharing the first one's medium byte for byte (spec section 13.1).
+     * a fourth pin sharing the first one's medium byte for byte (spec section 13.1). The first one credits its people.
      */
     private fun seedRoundTripContent(auth: AuthenticatedUser) {
         val alpha = createPin(auth, ALPHA, tags = listOf("nature", "travel"))
@@ -39,7 +44,17 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         uploadMedia(auth, delta.id, "sample.jpg", "image/jpeg")
         val activeBoard = boardCreator.create(auth.user, "Active board", "kept")
         val recycledBoard = boardCreator.create(auth.user, "Recycled board", "recycled")
-        replacePin(auth, alpha, boardIds = listOf(activeBoard.id, recycledBoard.id)).statusCode(200)
+        val credited =
+            alpha.copy(
+                publisher = personCreator.findOrCreate("Studio", listOf("https://studio.example"), auth.user),
+                creators =
+                    listOf(
+                        personCreator.findOrCreate("Ada", listOf("https://b.example", "https://a.example"), auth.user),
+                        personCreator.findOrCreate("Grace", emptyList(), auth.user),
+                    ),
+                publishedAt = PUBLISHED_AT,
+            )
+        replacePin(auth, credited, boardIds = listOf(activeBoard.id, recycledBoard.id)).statusCode(200)
         given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${recycledBoard.id}").then().statusCode(204)
         given().authenticatedAs(auth).`when`().delete("/api/v1/pins/${gamma.id}").then().statusCode(204)
     }
@@ -96,7 +111,12 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         val tagNames: Set<String>,
         val boardNames: Set<String>,
         val mediaBytes: ByteArray,
+        val publisher: PersonFacts?,
+        val creators: Set<PersonFacts>,
+        val publishedAt: Instant?,
     )
+
+    private data class PersonFacts(val name: String, val urls: List<String>)
 
     private data class AccountFacts(
         val pins: Map<String?, PinFacts>,
@@ -118,8 +138,13 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
             // Including the recycled ones, which is the membership the round trip is really about.
             boardNames = pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { it.name }.toSet(),
             mediaBytes = mediaStore.openStream(media.storageKey).use { it.readBytes() },
+            publisher = pin.publisher?.let { factsOf(it) },
+            creators = pin.creators.map { factsOf(it) }.toSet(),
+            publishedAt = pin.publishedAt,
         )
     }
+
+    private fun factsOf(person: Person): PersonFacts = PersonFacts(person.name, person.urls)
 
     private fun factsOf(user: User): AccountFacts {
         val pins = activePinsOf(user) + pinRepository.findAllSoftDeletedPinsForUser(user)
@@ -140,6 +165,9 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         assertEquals(source.deletedAt, imported.deletedAt)
         assertEquals(source.tagNames, imported.tagNames)
         assertEquals(source.boardNames, imported.boardNames)
+        assertEquals(source.publisher, imported.publisher)
+        assertEquals(source.creators, imported.creators)
+        assertEquals(source.publishedAt, imported.publishedAt)
         assertArrayEquals(source.mediaBytes, imported.mediaBytes, "the medium should survive byte for byte")
         assertNotEquals(source.id, imported.id, "the copy must be a new row, never the same identifier")
         assertNotEquals(source.mediaId, imported.mediaId)
@@ -176,6 +204,9 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
             setOf("Active board", "Recycled board"),
             copy.pins.getValue("https://example.test/$ALPHA").boardNames,
         )
+        val alphaCopy = copy.pins.getValue("https://example.test/$ALPHA")
+        assertEquals(PUBLISHED_AT, alphaCopy.publishedAt, "older than the account, and restored unclamped")
+        assertEquals(2, alphaCopy.creators.size)
         assertEquals(source.boards, copy.boards, "both boards, the recycled one still recycled")
         assertEquals(source.tags, copy.tags)
         // The whole report, not one kind: this is the one case where the real exporter's digest meets
@@ -281,5 +312,6 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         const val BETA = "beta"
         const val GAMMA = "gamma"
         const val DELTA = "delta"
+        val PUBLISHED_AT: Instant = Instant.parse("1999-12-31T23:00:00Z")
     }
 }

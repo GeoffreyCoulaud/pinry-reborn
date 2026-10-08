@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
@@ -12,6 +13,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.TaskLeaseLos
 import io.mockk.every
 import io.mockk.verify
 import java.io.ByteArrayInputStream
+import java.time.Instant
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -238,6 +240,44 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         assertTrue(manifest.entries.all { it.sha256.isNotBlank() && it.byteSize > 0 })
         assertEquals(entryPaths.size, manifest.entries.map { it.sha256 }.toSet().size, "digests must not collide")
     }
+
+    @Test
+    fun `Given a pin crediting its people, Then its line names them in full and the archive gains no entry`() {
+        // Given
+        stubArchiveStore()
+        every { clock.now() } returns now
+        val publisher = aPerson("Studio", "https://studio.example")
+        val creator = aPerson("Ada", "https://a.example", "https://b.example")
+        val publishedAt = Instant.parse("1999-12-31T23:00:00Z")
+        val pin = aPin().copy(publisher = publisher, creators = listOf(creator), publishedAt = publishedAt)
+        stubActivePins(listOf(pin))
+        stubRecycledPins(emptyList())
+        every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
+        every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
+        every { tagRepository.findAllTagsForUser(user) } returns emptyList()
+        every { mediaRepository.findByPinId(pin.id) } returns null
+        every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
+
+        // When
+        builder.stageArchive(anExport(), user, renewLease = {})
+
+        // Then: each person in full, and no file for persons
+        val exportedPin = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>().single()
+        assertEquals(ExportedPerson("Studio", listOf("https://studio.example")), exportedPin.publisher)
+        assertEquals(
+            listOf(ExportedPerson("Ada", listOf("https://a.example", "https://b.example"))),
+            exportedPin.creators,
+        )
+        assertEquals(publishedAt, exportedPin.publishedAt)
+        val manifest = sink.json.getValue("manifest.json") as ExportManifest
+        assertEquals(
+            setOf("README.md", "user.json", "boards.jsonl", "tags.jsonl", "pins.jsonl"),
+            manifest.entries.map { it.path }.toSet(),
+        )
+    }
+
+    private fun aPerson(name: String, vararg urls: String) =
+        Person(id = randomUUID(), author = user, name = name, urls = urls.toList(), createdAt = now)
 
     // -- build(): the entry guard ---------------------------------------------------------------
 

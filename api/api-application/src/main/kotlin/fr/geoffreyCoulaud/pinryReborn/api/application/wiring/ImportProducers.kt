@@ -13,6 +13,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInte
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.storage.filesystem.FilesystemZipImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ImportUploadBounds
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ReapUserDataImports
@@ -98,6 +99,7 @@ class ImportProducers {
         archiveStore: ImportArchiveStore,
         mediaIngestion: MediaIngestion,
         tagCreator: TagCreator,
+        personCreator: PersonCreator,
         transactionRunner: TransactionRunner,
         clock: Clock,
         config: ImportsConfig,
@@ -113,6 +115,7 @@ class ImportProducers {
             archiveStore,
             mediaIngestion,
             tagCreator,
+            personCreator,
             transactionRunner,
             clock,
             maxMetadataBytes = config.maxMetadataBytes(),

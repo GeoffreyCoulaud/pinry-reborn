@@ -33,7 +33,13 @@ internal data class ImportedRef(val name: String)
  */
 internal data class ImportedMedia(val path: String, val sha256: String)
 
-/** One `pins.jsonl` line. A null [media] is a pin with no medium, which has no identity to import. */
+/** A pin's publisher or creator, identified by its name and its addresses together. */
+internal data class ImportedPerson(val name: String, val urls: List<String>)
+
+/**
+ * One `pins.jsonl` line. A null [media] is a pin with no medium, which has no identity to import. The people and the
+ * publication instant default to none, so a line that predates them still reads.
+ */
 internal data class ImportedPin(
     val description: String,
     val sourceContextUrl: String?,
@@ -44,4 +50,7 @@ internal data class ImportedPin(
     val tags: List<ImportedRef>,
     val boards: List<ImportedRef>,
     val media: ImportedMedia?,
+    val publisher: ImportedPerson? = null,
+    val creators: List<ImportedPerson> = emptyList(),
+    val publishedAt: Instant? = null,
 )

@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryIn
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import jakarta.enterprise.context.ApplicationScoped
+import java.time.Instant
 import java.util.UUID.randomUUID
 
 /** A person as a caller names it, by its name and its addresses, before it is found or created. */
@@ -17,15 +18,25 @@ class PersonCreator(
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
 ) {
+    /** A person this instance invents, stamped from the clock as every use case stamps what it invents. */
+    // An overload, not a default: a default reading `clock` runs on the CDI client proxy, whose field is null.
+    fun findOrCreate(
+        name: String,
+        urls: List<String>,
+        user: User,
+    ): Person = findOrCreate(name = name, urls = urls, user = user, createdAt = clock.now())
+
     /** One transaction around the read and the write, for the reason TagCreator.resolve gives. */
     fun findOrCreate(
         name: String,
         urls: List<String>,
         user: User,
+        // Not the clock: the user data import stamps with its own instant (the spec's decision D).
+        createdAt: Instant,
     ): Person = transactionRunner.inTransaction {
         personRepository.findUserPerson(user = user, name = name, urls = urls)
             ?: personRepository.savePerson(
-                Person(id = randomUUID(), author = user, name = name, urls = urls, createdAt = clock.now())
+                Person(id = randomUUID(), author = user, name = name, urls = urls, createdAt = createdAt)
             )
     }
 }

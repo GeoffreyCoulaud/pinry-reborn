@@ -75,7 +75,12 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
                 "deletedAt" to deletedAt?.toString(),
             )
 
-        /** One `pins.jsonl` line. [mediaPath] null is a pin with no medium, which has no identity. */
+        fun personLine(name: String, vararg urls: String): Map<String, Any?> = mapOf("name" to name, "urls" to urls)
+
+        /**
+         * One `pins.jsonl` line. [mediaPath] null is a pin with no medium, which has no identity. The people and the
+         * publication instant are written only when given, so a line without them is the shape that predates them.
+         */
         @Suppress("LongParameterList") // The published line's shape; grouping it would invent a type.
         fun pinLine(
             sourceContextUrl: String,
@@ -86,6 +91,9 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
             mediaSha256: String = "",
             mediaMimeType: String = "image/png",
             deletedAt: Instant? = null,
+            publisher: Map<String, Any?>? = null,
+            creators: List<Map<String, Any?>>? = null,
+            publishedAt: Instant? = null,
         ): Map<String, Any?> =
             mapOf(
                 "id" to "22222222-2222-2222-2222-222222222222",
@@ -101,6 +109,18 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
                     mediaPath?.let {
                         mapOf("path" to it, "sha256" to mediaSha256, "mimeType" to mediaMimeType)
                     },
-            )
+            ) + optionalPeople(publisher, creators, publishedAt)
+
+        private fun optionalPeople(
+            publisher: Map<String, Any?>?,
+            creators: List<Map<String, Any?>>?,
+            publishedAt: Instant?,
+        ): Map<String, Any?> =
+            listOfNotNull(
+                    publisher?.let { "publisher" to it },
+                    creators?.let { "creators" to it },
+                    publishedAt?.let { "publishedAt" to it.toString() },
+                )
+                .toMap()
     }
 }

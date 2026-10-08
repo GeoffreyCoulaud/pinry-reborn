@@ -66,6 +66,9 @@ internal data class ExportedMedia(
     val createdAt: Instant,
 )
 
+/** A pin's publisher or creator: the archive carries no entry for persons, so a pin line names each in full. */
+internal data class ExportedPerson(val name: String, val urls: List<String>)
+
 /**
  * One `pins.jsonl` line. `media` is `null` when the pin has no image **or** when its bytes could not be written (spec
  * §4); `boards` lists memberships regardless of the board's state, since `boards.jsonl` (via `ExportedBoard.deletedAt`)
@@ -82,6 +85,9 @@ internal data class ExportedPin(
     val tags: List<ExportedRef>,
     val boards: List<ExportedRef>,
     val media: ExportedMedia?,
+    val publisher: ExportedPerson?,
+    val creators: List<ExportedPerson>,
+    val publishedAt: Instant?,
 )
 
 /** `manifest.json`'s `counts` object: incremented while writing, never re-derived by re-iterating. */
