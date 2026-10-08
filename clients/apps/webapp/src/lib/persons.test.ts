@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { personKey, personLabel } from "./persons";
+import { personKey, personLabel, personNamed } from "./persons";
 
 describe("personLabel", () => {
 	it("reads a person with no address as its name alone", () => {
@@ -13,6 +13,12 @@ describe("personLabel", () => {
 				urls: ["https://art.example.test/ada", "https://ada.test/"],
 			}),
 		).toBe("Ada (art.example.test, ada.test)");
+	});
+});
+
+describe("personNamed", () => {
+	it("makes a person of a name alone, with no address", () => {
+		expect(personNamed("Grace")).toEqual({ name: "Grace", urls: [] });
 	});
 });
 

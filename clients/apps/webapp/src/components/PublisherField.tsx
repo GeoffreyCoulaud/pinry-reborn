@@ -3,15 +3,10 @@ import { X } from "lucide-react";
 import { use, useEffect, useRef, useState } from "react";
 import { ButtonContext, ComboBoxStateContext } from "react-aria-components";
 import { useDebounced } from "../debounce";
-import { personKey, personLabel } from "../lib/persons";
+import { personKey, personLabel, personNamed } from "../lib/persons";
 import { m } from "../paraglide/messages.js";
 import { type Person, usePersonSearch } from "../pins";
 import { IconButton } from "./IconButton";
-
-/** A name entered is a person with no address: the form never edits a person's addresses (decision G). */
-function entered(name: string): Person {
-	return { name, urls: [] };
-}
 
 /** The combo box opens on typing alone, before the paused search answers: this opens it on the answer. */
 function OpensOnResults({ results }: { results?: readonly Person[] }) {
@@ -50,7 +45,7 @@ export function PublisherField({
 		setChosen(person);
 		setTyped(text);
 		const name = text.trim();
-		onChange(person ?? (name === "" ? null : entered(name)));
+		onChange(person ?? (name === "" ? null : personNamed(name)));
 	}
 
 	return (

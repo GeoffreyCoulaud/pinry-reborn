@@ -13,6 +13,11 @@ export function personLabel(person: Person): string {
 		: `${person.name} (${person.urls.map(hostOf).join(", ")})`;
 }
 
+/** A name entered is a person with no address: the form never edits a person's addresses (decision G). */
+export function personNamed(name: string): { name: string; urls: string[] } {
+	return { name, urls: [] };
+}
+
 /** One person chosen once: the name and the addresses together are what identifies it. */
 export function personKey(person: Person): string {
 	return JSON.stringify([person.name, person.urls]);

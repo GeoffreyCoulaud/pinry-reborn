@@ -77,7 +77,7 @@ describe("credit a pin's people", () => {
 		await user.type(publisher, "  Harbour Weekly {Enter}");
 		await user.click(within(dialog).getByRole("button", { name: m.save() }));
 
-		// A name typed is a person with none; no field edits the creators yet.
+		// A name typed is a person with none; the creators left alone are sent as read.
 		await waitFor(() => expect(record.bodies).toHaveLength(1));
 		expect(record.bodies[0]).toEqual(
 			expect.objectContaining({
@@ -85,6 +85,48 @@ describe("credit a pin's people", () => {
 				publisher: { name: "Harbour Weekly", urls: [] },
 			}),
 		);
+	});
+
+	it("Given a creator chosen and another entered, Then the write names each as chosen", async () => {
+		const original = readyPin("a harbour at dusk");
+		const record = recorder();
+		account(original, record);
+		const { user, dialog } = await openTheForm(original);
+
+		const field = within(dialog).getByRole("textbox", { name: m.creators() });
+		await user.type(field, "Ad");
+		// The homonyms read apart by the hosts of their addresses.
+		await user.click(
+			await within(dialog).findByRole("button", {
+				name: "Ada (art.example.test, ada.test)",
+			}),
+		);
+		await user.type(field, "  Grace {Enter}");
+		await user.click(within(dialog).getByRole("button", { name: m.save() }));
+
+		// The suggestion keeps the addresses the server knows; a name entered is a person with none.
+		await waitFor(() => expect(record.bodies).toHaveLength(1));
+		expect(record.bodies[0]).toEqual(
+			expect.objectContaining({
+				creators: [ADA, { name: "Grace", urls: [] }],
+			}),
+		);
+	});
+
+	it("Given two creators entered, Then each is a chip inside the field, which says how to add one", async () => {
+		const original = readyPin("a harbour at dusk");
+		account(original, recorder());
+		const { user, dialog } = await openTheForm(original);
+
+		const field = within(dialog).getByRole("textbox", { name: m.creators() });
+		await user.type(field, "Ada{Enter}Grace{Enter}");
+
+		const chips = within(dialog).getByRole("grid", {
+			name: m.creators_chosen(),
+		});
+		expect(within(chips).getAllByRole("row")).toHaveLength(2);
+		expect(field.closest('[data-slot="input-group"]')).toContainElement(chips);
+		expect(field).toHaveAccessibleDescription(m.enter_to_add());
 	});
 
 	it("Given a publisher chosen from a suggestion, Then the field holds it as its one value", async () => {
