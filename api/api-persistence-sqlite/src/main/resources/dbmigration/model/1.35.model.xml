@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<migration xmlns="http://ebean-orm.github.io/xml/ns/dbmigration">
+    <changeSet type="apply">
+        <createTable name="remote_collections" identityType="external" pkName="pk_remote_collections">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_remote_collections_author_id" foreignKeyIndex="ix_remote_collections_author_id"/>
+            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="url" type="varchar" notnull="true"/>
+            <column name="name" type="varchar" notnull="true"/>
+            <column name="board_id" type="uuid" notnull="true" references="boards.id" foreignKeyName="fk_remote_collections_board_id"/>
+        </createTable>
+        <createIndex indexName="ux_remote_collections_author_url" tableName="remote_collections" columns="" definition="create unique index ux_remote_collections_author_url on remote_collections (author_id, url)"/>
+        <createIndex indexName="ix_remote_collections_board" tableName="remote_collections" columns="board_id"/>
+    </changeSet>
+</migration>

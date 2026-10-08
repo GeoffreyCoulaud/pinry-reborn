@@ -65,6 +65,10 @@ class UniqueConstraintOutcomeTest {
                 "No translation, deliberately, for the tag's reason: PersonCreator.findOrCreate reads through " +
                     "the same fold and the same canonical addresses before writing, holding the pair in one " +
                     "transaction, so the violation is unreachable and a concurrent creation converges on one row.",
+            "ux_remote_collections_author_url" to
+                "No translation, deliberately, for the tag's reason: the user data import reads the address " +
+                    "before linking it and holds the pair in one transaction, and it is the only write path, so " +
+                    "the violation is unreachable.",
             "ux_pin_board_model_pin_board" to
                 "No translation, deliberately: every write in PinRepository reads the memberships already " +
                     "there and inserts the missing ones, each once, so the index fires only when two writes of " +

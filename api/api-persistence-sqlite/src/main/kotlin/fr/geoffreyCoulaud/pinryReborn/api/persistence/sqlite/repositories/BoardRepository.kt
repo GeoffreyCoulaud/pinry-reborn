@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelM
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.BoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinBoardModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QRemoteCollectionModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.BoardQueries
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActivePin
 import jakarta.enterprise.context.ApplicationScoped
@@ -83,6 +84,7 @@ class BoardRepository(private val persistor: Persistor) : BoardRepositoryInterfa
 
     override fun permanentlyDeleteBoard(board: Board) {
         QPinBoardModel().board.id.equalTo(board.id).delete()
+        QRemoteCollectionModel().board.id.equalTo(board.id).delete()
         BoardQueries.any().id.equalTo(board.id).delete()
     }
 
@@ -90,6 +92,7 @@ class BoardRepository(private val persistor: Persistor) : BoardRepositoryInterfa
         val recycledIds = BoardQueries.recycled().author.id.equalTo(user.id).findList().map { it.id }
         if (recycledIds.isEmpty()) return
         QPinBoardModel().board.id.isIn(recycledIds).delete()
+        QRemoteCollectionModel().board.id.isIn(recycledIds).delete()
         BoardQueries.any().id.isIn(recycledIds).delete()
     }
 
@@ -97,6 +100,7 @@ class BoardRepository(private val persistor: Persistor) : BoardRepositoryInterfa
         val boardIds = BoardQueries.any().author.id.equalTo(user.id).findList().map { it.id }
         if (boardIds.isEmpty()) return
         QPinBoardModel().board.id.isIn(boardIds).delete()
+        QRemoteCollectionModel().board.id.isIn(boardIds).delete()
         BoardQueries.any().id.isIn(boardIds).delete()
     }
 
