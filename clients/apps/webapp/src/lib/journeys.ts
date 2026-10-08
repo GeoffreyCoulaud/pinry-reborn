@@ -48,6 +48,7 @@ export const REQUIRED_JOURNEYS = [
 	"play two versions in step",
 	"see a board's linked collections",
 	"credit a pin's people",
+	"date a pin",
 ];
 
 /** The file under `src/journeys/` that holds a journey's test. */

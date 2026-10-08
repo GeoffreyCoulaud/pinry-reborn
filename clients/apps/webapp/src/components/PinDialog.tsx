@@ -7,6 +7,7 @@ import { personKey } from "../lib/persons";
 import type { Rendition } from "../lib/tiles";
 import { hostOf } from "../lib/uris";
 import { m } from "../paraglide/messages.js";
+import { getLocale } from "../paraglide/runtime.js";
 import { type Person, type Pin, useRecyclePins } from "../pins";
 import { DuplicateComparator } from "./DuplicateComparator";
 import { IconButton } from "./IconButton";
@@ -111,6 +112,17 @@ function PinDetails({
 							{pin.creators.map((person) => (
 								<PersonCredit key={personKey(person)} person={person} />
 							))}
+						</dd>
+					</div>
+				) : null}
+				{pin.publishedAt ? (
+					<div>
+						<dt>{m.published()}</dt>
+						<dd>
+							{new Intl.DateTimeFormat(getLocale(), {
+								dateStyle: "medium",
+								timeStyle: "short",
+							}).format(new Date(pin.publishedAt))}
 						</dd>
 					</div>
 				) : null}
