@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -25,12 +26,14 @@ class PinUpdaterTest {
     private val pinRepository = mockk<PinRepositoryInterface>()
     private val pinTagger = mockk<PinTagger>()
     private val pinBoardSetter = mockk<PinBoardSetter>()
+    private val personCreator = mockk<PersonCreator>()
     private val clockInstant = Instant.parse("2026-09-20T10:00:00Z")
     private val clock = mockk<Clock> { every { now() } returns clockInstant }
     private val useCase =
         PinUpdater(
             pinTagger = pinTagger,
             pinBoardSetter = pinBoardSetter,
+            personCreator = personCreator,
             pinRepository = pinRepository,
             clock = clock,
             transactionRunner = PassthroughTransactionRunner(),
@@ -67,6 +70,35 @@ class PinUpdaterTest {
         assertEquals(listOf(tag), result.tags)
         assertEquals(listOf(board), result.boards)
         assertEquals(clockInstant, result.updatedAt)
+    }
+
+    @Test
+    fun `Given a publisher, creators and an instant, Then update finds or creates each person and stores them`() {
+        // Given
+        val pin = pin(author = user)
+        val publisher = person("Alice", listOf("https://alice.test"))
+        val creator = person("Bob", emptyList())
+        val publishedAt = Instant.parse("2019-05-01T12:00:00Z")
+        every { pinRepository.findPinById(pin.id) } returns pin
+        every { pinTagger.resolveTags(emptyList(), user) } returns emptyList()
+        every { pinBoardSetter.resolveBoards(emptyList(), user) } returns emptyList()
+        every { personCreator.findOrCreate("Alice", listOf("https://alice.test"), user) } returns publisher
+        every { personCreator.findOrCreate("Bob", emptyList(), user) } returns creator
+        every { pinRepository.savePin(any()) } answers { firstArg() }
+
+        // When
+        val result =
+            update(
+                pin.id,
+                publisher = PersonReference(name = "Alice", urls = listOf("https://alice.test")),
+                creators = listOf(PersonReference(name = "Bob", urls = emptyList())),
+                publishedAt = publishedAt,
+            )
+
+        // Then
+        assertEquals(publisher, result.publisher)
+        assertEquals(listOf(creator), result.creators)
+        assertEquals(publishedAt, result.publishedAt)
     }
 
     @Test
@@ -125,10 +157,14 @@ class PinUpdaterTest {
         assertThrows<PinUpdatePinDoesNotExistError> { update(pin.id) }
     }
 
+    @Suppress("LongParameterList") // The whole pin, which is what the use case under test writes.
     private fun update(
         pinId: UUID,
         tagNames: List<String> = emptyList(),
         boardIds: List<UUID> = emptyList(),
+        publisher: PersonReference? = null,
+        creators: List<PersonReference> = emptyList(),
+        publishedAt: Instant? = null,
     ) =
         useCase.update(
             pinId = pinId,
@@ -137,8 +173,14 @@ class PinUpdaterTest {
             sourceMediaUrl = null,
             tagNames = tagNames,
             boardIds = boardIds,
+            publisher = publisher,
+            creators = creators,
+            publishedAt = publishedAt,
             user = user,
         )
+
+    private fun person(name: String, urls: List<String>) =
+        Person(id = randomUUID(), author = user, name = name, urls = urls, createdAt = TestTime.now)
 
     private fun pin(author: User) =
         Pin(

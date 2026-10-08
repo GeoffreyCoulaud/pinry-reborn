@@ -3,9 +3,11 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PersonOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinMediaStatusDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMediaState
@@ -116,6 +118,44 @@ class PinMapperTest {
         assertNull(result.media?.width)
         assertNull(result.media?.height)
     }
+
+    @Test
+    fun `Given a pin crediting people, Then toDto carries each by its name and addresses, and the instant`() {
+        // Given
+        val pin = createPin()
+        val alice = person(pin, "Alice", listOf("https://alice.test"))
+        val bob = person(pin, "Bob", emptyList())
+        val credited =
+            pin.copy(publisher = alice, creators = listOf(bob), publishedAt = Instant.parse("2019-05-01T12:00:00Z"))
+
+        // When
+        val result = credited.toDto(emptyMap(), emptySet())
+
+        // Then
+        assertEquals(PersonOutputDto(name = "Alice", urls = listOf("https://alice.test")), result.publisher)
+        assertEquals(listOf(PersonOutputDto(name = "Bob", urls = emptyList())), result.creators)
+        assertEquals(credited.publishedAt, result.publishedAt)
+    }
+
+    @Test
+    fun `Given a pin crediting no one, Then toDto carries no publisher, no creator and no instant`() {
+        // When
+        val result = createPin().toDto(emptyMap(), emptySet())
+
+        // Then
+        assertNull(result.publisher)
+        assertEquals(emptyList<PersonOutputDto>(), result.creators)
+        assertNull(result.publishedAt)
+    }
+
+    private fun person(pin: Pin, name: String, urls: List<String>) =
+        Person(
+            id = randomUUID(),
+            author = pin.author,
+            name = name,
+            urls = urls,
+            createdAt = TestTime.now,
+        )
 
     @Test
     fun `Given a pin absent from the resolved states, Then toDto carries no image at all`() {

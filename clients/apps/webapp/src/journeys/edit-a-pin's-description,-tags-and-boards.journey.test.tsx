@@ -19,12 +19,15 @@ import { server } from "../test/server";
 
 const EVENINGS = board("Evenings");
 
-/** What the account holds before the edit: one tag, no board. */
+/** What the account holds before the edit: one tag, no board, and the people the form leaves alone. */
 function held(): Pin {
 	return {
 		...readyPin("a harbour at dusk"),
 		tags: [{ name: "harbours" }],
 		boards: [],
+		publisher: { name: "Harbour Weekly", urls: ["https://harbour.test"] },
+		creators: [{ name: "Ada", urls: [] }],
+		publishedAt: "2019-05-01T12:00:00Z",
 	};
 }
 
@@ -121,6 +124,9 @@ describe("edit a pin's description, tags and boards", () => {
 				sourceMediaUrl: null,
 				tags: ["harbours", "landscape"],
 				boardIds: [EVENINGS.id],
+				publisher: original.publisher,
+				creators: original.creators,
+				publishedAt: original.publishedAt,
 			},
 		]);
 		// The dialog is back to reading, and the tile carries the new description.

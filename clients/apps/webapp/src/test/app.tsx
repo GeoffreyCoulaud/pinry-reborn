@@ -65,6 +65,9 @@ export function pin(description: string, media: Pin["media"] = null): Pin {
 		description,
 		tags: [],
 		boards: [],
+		publisher: null,
+		creators: [],
+		publishedAt: null,
 		// Each pin a second younger than the one made before it.
 		createdAt: new Date(Date.UTC(2026, 0, 1, 0, 0, made)).toISOString(),
 		media,
