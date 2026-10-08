@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonUrls
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.canonicalUrls
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PersonModel
@@ -21,7 +21,7 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
     override fun findUserPerson(
         user: User,
         name: String,
-        urls: PersonUrls,
+        urls: Collection<String>,
     ): Person? =
         QPersonModel()
             .author
@@ -29,7 +29,7 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
             .equalTo(user.id)
             .raw("name collate nocase = ?", name)
             .urls
-            .equalTo(urls.joined)
+            .equalTo(canonicalUrls(urls))
             .findOne()
             ?.toDomain()
 }

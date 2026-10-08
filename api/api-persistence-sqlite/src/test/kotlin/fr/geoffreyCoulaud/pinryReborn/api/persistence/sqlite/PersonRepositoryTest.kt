@@ -1,7 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonUrls
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PersonRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
@@ -22,17 +21,40 @@ class PersonRepositoryTest : RepositoryTest() {
 
     private fun savePerson(user: User, name: String, urls: List<String>): Person =
         repository.savePerson(
-            Person(id = randomUUID(), author = user, name = name, urls = PersonUrls.of(urls), createdAt = storableNow())
+            Person(id = randomUUID(), author = user, name = name, urls = urls, createdAt = storableNow())
         )
 
     private fun find(user: User, name: String, urls: List<String>): Person? =
-        repository.findUserPerson(user = user, name = name, urls = PersonUrls.of(urls))
+        repository.findUserPerson(user = user, name = name, urls = urls)
+
+    private fun storedUrls(person: Person): String? =
+        database.sqlQuery("select urls from persons where id = ?").setParameter(person.id).findOne()?.getString("urls")
 
     @Test
-    fun `Given a saved person with two addresses, Then findUserPerson reads it back equal`() {
+    fun `Given addresses out of order and repeated, Then they are stored as a sorted and distinct JSON array`() {
+        // When
+        val person = savePerson(createAndSaveUser(), "Alice", listOf(SECOND_URL, FIRST_URL, SECOND_URL))
+
+        // Then
+        assertEquals("""["$FIRST_URL","$SECOND_URL"]""", storedUrls(person))
+        assertEquals(listOf(FIRST_URL, SECOND_URL), person.urls)
+    }
+
+    @Test
+    fun `Given no address, Then an empty JSON array is stored and none read back`() {
+        // When
+        val person = savePerson(createAndSaveUser(), "Alice", emptyList())
+
+        // Then
+        assertEquals("[]", storedUrls(person))
+        assertEquals(emptyList<String>(), person.urls)
+    }
+
+    @Test
+    fun `Given a saved person, Then findUserPerson reads it back equal`() {
         // Given
         val user = createAndSaveUser()
-        val person = savePerson(user, "Alice", listOf(SECOND_URL, FIRST_URL))
+        val person = savePerson(user, "Alice", listOf(FIRST_URL, SECOND_URL))
 
         // When
         val found = find(user, "Alice", listOf(FIRST_URL, SECOND_URL))
@@ -42,26 +64,13 @@ class PersonRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given a saved person with no address, Then findUserPerson reads it back with none`() {
+    fun `Given a saved person, Then findUserPerson finds it in another ASCII case and address order`() {
         // Given
         val user = createAndSaveUser()
-        val person = savePerson(user, "Alice", emptyList())
+        val person = savePerson(user, "Alice", listOf(FIRST_URL, SECOND_URL))
 
         // When
-        val found = find(user, "Alice", emptyList())
-
-        // Then
-        assertEquals(person, found)
-    }
-
-    @Test
-    fun `Given a saved person, Then findUserPerson finds it in another ASCII case`() {
-        // Given
-        val user = createAndSaveUser()
-        val person = savePerson(user, "Alice", listOf(FIRST_URL))
-
-        // When
-        val found = find(user, "aLICE", listOf(FIRST_URL))
+        val found = find(user, "aLICE", listOf(SECOND_URL, FIRST_URL))
 
         // Then
         assertEquals(person.id, found?.id)
@@ -75,6 +84,19 @@ class PersonRepositoryTest : RepositoryTest() {
 
         // When
         val found = find(user, "Alice", listOf(FIRST_URL, SECOND_URL))
+
+        // Then
+        assertNull(found)
+    }
+
+    @Test
+    fun `Given a saved person, Then findUserPerson misses it with its address's trailing slash`() {
+        // Given: no normalisation beyond the canonical order
+        val user = createAndSaveUser()
+        savePerson(user, "Alice", listOf(FIRST_URL))
+
+        // When
+        val found = find(user, "Alice", listOf("$FIRST_URL/"))
 
         // Then
         assertNull(found)
@@ -107,8 +129,8 @@ class PersonRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given a person held up to ASCII case with the same addresses, Then saving it again is refused by the store`() {
-        // Given: no translation, deliberately. PersonCreator reads through the same fold first.
+    fun `Given a person held up to ASCII case and address order, Then saving it again is refused by the store`() {
+        // Given: no translation, deliberately. PersonCreator reads through the same identity first.
         val user = createAndSaveUser()
         savePerson(user, "Alice", listOf(FIRST_URL, SECOND_URL))
 

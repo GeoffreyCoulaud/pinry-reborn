@@ -1,7 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonUrls
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -18,15 +17,12 @@ class PersonCreator(
     /** One transaction around the read and the write, for the reason TagCreator.resolve gives. */
     fun findOrCreate(
         name: String,
-        urls: Collection<String>,
+        urls: List<String>,
         user: User,
-    ): Person {
-        val canonicalUrls = PersonUrls.of(urls)
-        return transactionRunner.inTransaction {
-            personRepository.findUserPerson(user = user, name = name, urls = canonicalUrls)
-                ?: personRepository.savePerson(
-                    Person(id = randomUUID(), author = user, name = name, urls = canonicalUrls, createdAt = clock.now())
-                )
-        }
+    ): Person = transactionRunner.inTransaction {
+        personRepository.findUserPerson(user = user, name = name, urls = urls)
+            ?: personRepository.savePerson(
+                Person(id = randomUUID(), author = user, name = name, urls = urls, createdAt = clock.now())
+            )
     }
 }

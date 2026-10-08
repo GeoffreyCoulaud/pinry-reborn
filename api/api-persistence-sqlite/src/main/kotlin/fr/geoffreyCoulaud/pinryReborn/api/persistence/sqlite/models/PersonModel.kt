@@ -19,7 +19,7 @@ class PersonModel(
     id: UUID,
     author: UserModel,
     val name: String,
-    // PersonUrls.joined: the addresses sorted, distinct and line-feed joined, empty for none.
+    // PersonModelMapper.canonicalUrls: a JSON array held as text, SQLite having no array type.
     val urls: String,
     createdAt: Instant,
 ) : AuthoredBaseModel(id = id, author = author, createdAt = createdAt)
