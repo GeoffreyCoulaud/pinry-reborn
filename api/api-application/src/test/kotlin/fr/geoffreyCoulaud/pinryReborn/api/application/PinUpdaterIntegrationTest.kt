@@ -2,9 +2,11 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPersonModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBin
 import io.quarkus.test.junit.QuarkusTest
@@ -15,6 +17,7 @@ import jakarta.inject.Inject
 import java.util.UUID
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
+import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.emptyIterable
 import org.hamcrest.Matchers.hasSize
@@ -194,6 +197,118 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         update(auth, pin, boardIds = listOf(null)).statusCode(400).body("code", equalTo("MALFORMED_BODY"))
     }
 
+    // ==================== People ====================
+
+    @Inject lateinit var personCreator: PersonCreator
+
+    private fun person(name: String, vararg urls: String) = mapOf("name" to name, "urls" to urls.toList())
+
+    private fun personRowsOf(auth: AuthenticatedUser): Int = QPersonModel().author.id.equalTo(auth.user.id).findCount()
+
+    @Test
+    fun `Given a new publisher and an existing creator, Then the write answers both and creates one person`() {
+        // Given: the creator already stored, its addresses in another order than the write sends them
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+        personCreator.findOrCreate(name = "Bob", urls = listOf(BOB_SHOP, BOB_GALLERY), user = auth.user)
+        val publishedAt = "2019-05-01T12:00:00Z"
+
+        // When
+        val answered =
+            update(
+                    auth,
+                    pin,
+                    publisher = person("Alice", ALICE_SITE),
+                    creators = listOf(person("bob", BOB_GALLERY, BOB_SHOP)),
+                    publishedAt = publishedAt,
+                )
+                .statusCode(200)
+
+        // Then: the creator is the stored one, its spelling and its sorted addresses
+        answered
+            .body("publisher.name", equalTo("Alice"))
+            .body("publisher.urls", contains(ALICE_SITE))
+            .body("creators.name", contains("Bob"))
+            .body("creators[0].urls", contains(BOB_GALLERY, BOB_SHOP))
+            .body("publishedAt", equalTo(publishedAt))
+        assertEquals(2, personRowsOf(auth))
+        readPin(auth, pin).body("publisher.name", equalTo("Alice")).body("creators.name", contains("Bob"))
+    }
+
+    @Test
+    fun `Given a pin crediting people, Then a write of none clears them`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+        update(
+                auth,
+                pin,
+                publisher = person("Alice"),
+                creators = listOf(person("Bob")),
+                publishedAt = "2019-05-01T12:00:00Z",
+            )
+            .statusCode(200)
+
+        // When
+        update(auth, pin, publisher = null, creators = emptyList(), publishedAt = null).statusCode(200)
+
+        // Then
+        readPin(auth, pin)
+            .body("publisher", nullValue())
+            .body("creators", emptyIterable<Any>())
+            .body("publishedAt", nullValue())
+    }
+
+    @Test
+    fun `Given a person at every bound, Then the write accepts it`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+        val longest = person("n".repeat(200), *Array(20) { "$it".padEnd(2000, 'u') })
+
+        // When, Then
+        update(auth, pin, publisher = longest, creators = listOf(longest)).statusCode(200)
+    }
+
+    @Test
+    fun `Given an address holding a line feed, Then the write stores it as sent`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+        val address = "https://alice.test/a\nhttps://alice.test/b"
+
+        // When
+        update(auth, pin, publisher = person("Alice", address)).statusCode(200)
+
+        // Then
+        readPin(auth, pin).body("publisher.urls", contains(address))
+    }
+
+    @Test
+    fun `Given a person past a bound, or 101 creators, Then the write returns 400 and stores no person`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+        val refused =
+            listOf(
+                person(" "),
+                person("n".repeat(201)),
+                person("Alice", *Array(21) { "https://alice.test/$it" }),
+                person("Alice", " "),
+                person("Alice", "u".repeat(2001)),
+            )
+
+        // When, Then: each as the publisher and as a creator
+        refused.forEach {
+            update(auth, pin, publisher = it).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
+            update(auth, pin, creators = listOf(it)).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
+        }
+        update(auth, pin, creators = List(101) { person("Creator $it") })
+            .statusCode(400)
+            .body("code", equalTo("VALIDATION_ERROR"))
+        assertEquals(0, personRowsOf(auth))
+    }
+
     @Suppress("LongParameterList") // The whole pin, which is what the route under test writes.
     private fun update(
         auth: AuthenticatedUser,
@@ -203,6 +318,9 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         sourceMediaUrl: String? = "https://example.com/img.jpg",
         tags: List<String> = emptyList(),
         boardIds: List<UUID?> = emptyList(),
+        publisher: Map<String, Any>? = null,
+        creators: List<Map<String, Any>> = emptyList(),
+        publishedAt: String? = null,
     ): ValidatableResponse =
         given()
             .authenticatedAs(auth)
@@ -214,6 +332,9 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
                     "sourceMediaUrl" to sourceMediaUrl,
                     "tags" to tags,
                     "boardIds" to boardIds.map { it?.toString() },
+                    "publisher" to publisher,
+                    "creators" to creators,
+                    "publishedAt" to publishedAt,
                 )
             )
             .`when`()
@@ -395,5 +516,11 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         val listed = listDuplicatesWithRejection(auth, openPin)
         assertEquals(setOf("${rejected.id}" to true, "${unnamed.id}" to false), listed)
         listOf(openPin, rejected, unnamed).forEach { readPin(auth, it).body("softDeletedAt", nullValue()) }
+    }
+
+    private companion object {
+        const val ALICE_SITE = "https://alice.test"
+        const val BOB_GALLERY = "https://bob.test/gallery"
+        const val BOB_SHOP = "https://bob.test/shop"
     }
 }

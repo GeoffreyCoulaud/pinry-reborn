@@ -91,6 +91,9 @@ abstract class IntegrationTest {
                     "sourceMediaUrl" to pin.sourceMediaUrl,
                     "tags" to tags,
                     "boardIds" to boardIds.map { it.toString() },
+                    "publisher" to pin.publisher?.let { mapOf("name" to it.name, "urls" to it.urls) },
+                    "creators" to pin.creators.map { mapOf("name" to it.name, "urls" to it.urls) },
+                    "publishedAt" to pin.publishedAt?.toString(),
                 )
             )
             .`when`()

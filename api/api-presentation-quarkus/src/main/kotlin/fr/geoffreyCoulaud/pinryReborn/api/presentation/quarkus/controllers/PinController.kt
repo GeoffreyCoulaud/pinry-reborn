@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinLi
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PersonMapper.toReference
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinSortStrategyMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
@@ -169,7 +170,9 @@ class PinController(
             "Every field is replaced by what is sent, so an unchanged field is sent as it was " +
                 "read and an empty list clears. A tag name is an identity per author under an ASCII fold: " +
                 "`Landscape` and `landscape` are one tag, and the response carries the stored spelling, not " +
-                "the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags.",
+                "the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags. A person is " +
+                "an identity per author by its name, under the same fold, and its addresses together, in any " +
+                "order: one more address names another person.",
     )
     @APIResponse(
         responseCode = "200",
@@ -232,6 +235,9 @@ class PinController(
                 sourceMediaUrl = updateDto.sourceMediaUrl.blankAsNone(),
                 tagNames = updateDto.tags,
                 boardIds = updateDto.boardIds,
+                publisher = updateDto.publisher?.toReference(),
+                creators = updateDto.creators.map { it.toReference() },
+                publishedAt = updateDto.publishedAt,
                 user = user,
             )
             .let { RestResponse.ok(pinResponses.pin(it)) }

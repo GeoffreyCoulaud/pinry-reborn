@@ -317,6 +317,10 @@ export function PinEditForm({
 									sourceMediaUrl: address || null,
 									tags: [...tags],
 									boardIds: [...boardIds],
+									// No field edits them yet, so they are sent as read.
+									publisher: pin.publisher,
+									creators: pin.creators,
+									publishedAt: pin.publishedAt,
 								},
 							},
 							{

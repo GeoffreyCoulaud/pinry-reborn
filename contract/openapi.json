@@ -317,6 +317,41 @@
           }
         }
       },
+      "PersonInputDto" : {
+        "type" : "object",
+        "required" : [ "name", "urls" ],
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "pattern" : "\\S",
+            "maxLength" : 200
+          },
+          "urls" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "pattern" : "\\S",
+              "maxLength" : 2000
+            },
+            "maxItems" : 20
+          }
+        }
+      },
+      "PersonOutputDto" : {
+        "type" : "object",
+        "required" : [ "name", "urls" ],
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "urls" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
       "PinCreationInputDto" : {
         "type" : "object",
         "required" : [ "sourceContextUrl", "sourceMediaUrl", "description" ],
@@ -477,7 +512,7 @@
       },
       "PinOutputDto" : {
         "type" : "object",
-        "required" : [ "id", "authorId", "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boards", "createdAt", "hasPendingDuplicates" ],
+        "required" : [ "id", "authorId", "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boards", "publisher", "creators", "publishedAt", "createdAt", "hasPendingDuplicates" ],
         "properties" : {
           "id" : {
             "$ref" : "#/components/schemas/UUID"
@@ -505,6 +540,26 @@
             "items" : {
               "$ref" : "#/components/schemas/BoardRefDto"
             }
+          },
+          "publisher" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/PersonOutputDto"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "creators" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PersonOutputDto"
+            }
+          },
+          "publishedAt" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/Instant"
+            }, {
+              "type" : "null"
+            } ]
           },
           "createdAt" : {
             "$ref" : "#/components/schemas/Instant"
@@ -538,7 +593,7 @@
       },
       "PinUpdateInputDto" : {
         "type" : "object",
-        "required" : [ "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boardIds" ],
+        "required" : [ "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boardIds", "publisher", "creators", "publishedAt" ],
         "properties" : {
           "sourceContextUrl" : {
             "type" : [ "string", "null" ]
@@ -564,6 +619,27 @@
               "format" : "uuid",
               "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
             }
+          },
+          "publisher" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/PersonInputDto"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "creators" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PersonInputDto"
+            },
+            "maxItems" : 100
+          },
+          "publishedAt" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/Instant"
+            }, {
+              "type" : "null"
+            } ]
           }
         }
       },
@@ -3411,7 +3487,7 @@
     "/api/v1/pins/{pinId}" : {
       "put" : {
         "summary" : "Replace the pin",
-        "description" : "Every field is replaced by what is sent, so an unchanged field is sent as it was read and an empty list clears. A tag name is an identity per author under an ASCII fold: `Landscape` and `landscape` are one tag, and the response carries the stored spelling, not the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags.",
+        "description" : "Every field is replaced by what is sent, so an unchanged field is sent as it was read and an empty list clears. A tag name is an identity per author under an ASCII fold: `Landscape` and `landscape` are one tag, and the response carries the stored spelling, not the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags. A person is an identity per author by its name, under the same fold, and its addresses together, in any order: one more address names another person.",
         "parameters" : [ {
           "name" : "pinId",
           "in" : "path",
@@ -4299,7 +4375,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "23.0.0"
+    "version" : "24.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

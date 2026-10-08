@@ -8,6 +8,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID.randomUUID
 
+/** A person as a caller names it, by its name and its addresses, before it is found or created. */
+data class PersonReference(val name: String, val urls: List<String>)
+
 @ApplicationScoped
 class PersonCreator(
     private val personRepository: PersonRepositoryInterface,

@@ -174,5 +174,8 @@ class PinTaggingIntegrationTest : IntegrationTest() {
             "sourceMediaUrl" to "https://example.com/media.jpg",
             "tags" to tags,
             "boardIds" to emptyList<String>(),
+            "publisher" to null,
+            "creators" to emptyList<Any>(),
+            "publishedAt" to null,
         )
 }

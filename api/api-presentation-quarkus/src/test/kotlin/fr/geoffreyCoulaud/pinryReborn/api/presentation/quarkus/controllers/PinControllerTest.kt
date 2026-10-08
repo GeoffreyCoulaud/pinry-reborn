@@ -6,13 +6,17 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDirectionDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PersonInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinCreationInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSortStrategyInputEnum
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinUpdateInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonReference
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicates
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinGetter
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinUpdater
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -27,6 +31,7 @@ import org.junit.jupiter.api.Test
 class PinControllerTest {
     private val pinCreator = mockk<PinCreator>()
     private val pinGetter = mockk<PinGetter>()
+    private val pinUpdater = mockk<PinUpdater>()
     private val securityIdentity = mockk<SecurityIdentity>()
     // The real assembler over a stubbed resolver: the responses under assertion are the mapped ones.
     private val resolvePinMediaState =
@@ -39,7 +44,7 @@ class PinControllerTest {
             pinCreator = pinCreator,
             pinGetter = pinGetter,
             pinRecycleBin = mockk(),
-            pinUpdater = mockk(),
+            pinUpdater = pinUpdater,
             securityIdentity = securityIdentity,
             pinResponses = PinResponses(resolvePinMediaState, pinDuplicates),
         )
@@ -111,6 +116,66 @@ class PinControllerTest {
     @Test
     fun `Given a source page url, Then the created pin carries it`() {
         assertEquals("https://example.test/page", createPinWith().sourceContextUrl)
+    }
+
+    /** Writes a pin through the controller, the use case answering only for the people it expects. */
+    private fun updatePinWith(publisher: PersonInputDto?, expectedPublisher: PersonReference?): Int {
+        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val pin =
+            Pin(
+                id = randomUUID(),
+                author = user,
+                sourceContextUrl = null,
+                sourceMediaUrl = null,
+                description = "",
+                tags = emptyList(),
+                boards = emptyList(),
+                createdAt = TestTime.now,
+                updatedAt = TestTime.now,
+            )
+        every { securityIdentity.getAttribute<User>("user") } returns user
+        every {
+            pinUpdater.update(
+                pinId = pin.id,
+                description = any(),
+                sourceContextUrl = any(),
+                sourceMediaUrl = any(),
+                tagNames = any(),
+                boardIds = any(),
+                publisher = expectedPublisher,
+                creators = listOf(PersonReference(name = "Bob", urls = emptyList())),
+                publishedAt = null,
+                user = user,
+            )
+        } returns pin
+        val dto =
+            PinUpdateInputDto(
+                sourceContextUrl = null,
+                sourceMediaUrl = null,
+                description = "",
+                tags = emptyList(),
+                boardIds = emptyList(),
+                publisher = publisher,
+                creators = listOf(PersonInputDto(name = "Bob", urls = emptyList())),
+                publishedAt = null,
+            )
+
+        return controller.updatePin(pin.id, dto).status
+    }
+
+    @Test
+    fun `Given a publisher and a creator, Then updatePin hands both to the use case by name and addresses`() {
+        val publisher = PersonInputDto(name = "Alice", urls = listOf("https://alice.test"))
+
+        assertEquals(
+            200,
+            updatePinWith(publisher, PersonReference(name = "Alice", urls = listOf("https://alice.test"))),
+        )
+    }
+
+    @Test
+    fun `Given no publisher, Then updatePin hands the use case none`() {
+        assertEquals(200, updatePinWith(publisher = null, expectedPublisher = null))
     }
 
     @Test

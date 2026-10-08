@@ -7,6 +7,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinLi
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BoardMapper.toRefDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PersonMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinMediaStateMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.TagMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinMediaState
@@ -26,6 +27,9 @@ object PinMapper {
             description = description,
             tags = tags.map { it.toDto() },
             boards = boards.map { it.toRefDto() },
+            publisher = publisher?.toDto(),
+            creators = creators.map { it.toDto() },
+            publishedAt = publishedAt,
             createdAt = createdAt,
             softDeletedAt = softDeletedAt,
             media = mediaStates[id]?.toDto(id),
