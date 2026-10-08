@@ -10,7 +10,8 @@ Branches: one stack, each block on the one before it: 10 `feat/a-person-is-store
 60 `feat/the-archive-carries-people`, 70 `feat/the-import-links-collections`, 80 `feat/the-export-carries-collections`,
 90 `feat/the-board-shows-its-collections`, 100 `feat/the-form-credits-people`, 110 `feat/the-form-dates-a-pin`.
 (Corrected: 75 `feat/the-import-walks-collections` and 120 `fix/the-stall-test-holds` were added mid-lot; 130
-`fix/the-people-lot-closes`, 135 `feat/the-fields-hold-their-chips` and 140 `docs/the-people-lot-is-recorded` close
+`fix/the-people-lot-closes` (#378), 135 `feat/the-fields-hold-their-chips` (#379) and 140
+`docs/the-people-lot-is-recorded` (#380) close
 it.)
 ADR: `docs/adr/0055-third-party-imports-write-the-user-data-archive.md` (pull request #363), decisions 7, 8 and 11,
 is this lot's record; this document settles what it leaves to a specification. The routes follow
