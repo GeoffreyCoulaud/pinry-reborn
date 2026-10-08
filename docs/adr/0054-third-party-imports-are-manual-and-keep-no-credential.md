@@ -1,6 +1,6 @@
 # 0054. Third-party imports are manual and keep no credential
 
-Status: Accepted
+Status: Superseded by `docs/adr/0055-third-party-imports-write-the-user-data-archive.md`
 Date: 2026-10-07
 Specification: none yet. The proof of concept below comes first, then a specification, then the implementation.
 

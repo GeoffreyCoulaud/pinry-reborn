@@ -43,6 +43,10 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   and its mirror **partial export**; **merging metadata onto a pin that already exists**, which is
   the option the v1 "skip" rule forecloses; and **making a pin with no medium travel**, which needs
   the export to carry `MediaDownload` so a pending or failed download survives the round trip.
+- **The import flow has no plan step and a poor screen**: nothing shows an archive's boards and remote collections
+  for the user to choose where each goes, which is also what would stop a collection linking to an unrelated board
+  of the same name; and the import screen is hard to find and to use. See
+  `docs/adr/0055-third-party-imports-write-the-user-data-archive.md`, decision 11.
 
 ### P2: Operational debt
 
@@ -108,10 +112,9 @@ Dated events. No session starts these early.
   See `docs/specs/2026-09-21-the-header-searches-and-wears-the-name.md`, decision G and section 6.
 - **A video's excerpt is not found as such**: frames sampled a quarter second apart are too far for PDQ. See
   `docs/specs/2026-10-05-the-pin-knows-its-duplicates.md`, decision E. New 2026-10-05.
-- **Import from third-party sites**: whatever gallery-dl reads, through a companion tool that writes an archive; a
-  proof of concept comes first. See `docs/adr/0054-third-party-imports-are-manual-and-keep-no-credential.md`.
-- **Tags carry no origin**, so a source's tags cannot keep their name and category apart from the user's; the
-  third-party import waits on it. See ADR 0054, decision 18.
+- **Import from third-party sites**: whatever gallery-dl reads, through a companion tool that writes the user data
+  archive. Two lots: the pin's source facts and the remote collections, then the importer. See
+  `docs/adr/0055-third-party-imports-write-the-user-data-archive.md`.
 - **Sensitive content is not classified**: no reason, intensity or viewing context hides a pin, for any entry path.
   See ADR 0054, Consequences.
 - **Tags have no implications or aliases.** See ADR 0054, Consequences.
