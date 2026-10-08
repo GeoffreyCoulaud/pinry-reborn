@@ -13,6 +13,15 @@ interface PersonRepositoryInterface {
         urls: Collection<String>,
     ): Person?
 
+    /**
+     * At most [limit] of the user's persons whose name holds [query], those beginning with it first, ASCII case folded.
+     */
+    fun findPersonsForUserMatching(
+        user: User,
+        query: String,
+        limit: Int,
+    ): List<Person>
+
     /** Called after the user's pins are deleted, which are what reference a person. */
     fun deleteAllPersonsForUser(user: User)
 }

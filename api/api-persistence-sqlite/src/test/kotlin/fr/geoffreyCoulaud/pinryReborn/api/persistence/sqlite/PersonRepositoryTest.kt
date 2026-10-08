@@ -154,6 +154,82 @@ class PersonRepositoryTest : RepositoryTest() {
         assertEquals(kept, find(otherUser, "Alice", listOf(FIRST_URL)))
     }
 
+    // --- Matching ---
+
+    private fun matching(user: User, query: String, limit: Int = 10) =
+        repository.findPersonsForUserMatching(user = user, query = query, limit = limit)
+
+    @Test
+    fun `Given a name beginning with the term and one merely holding it, Then the first is matched first`() {
+        // Given
+        val user = createAndSaveUser()
+        val contained = savePerson(user, "Malice", emptyList())
+        val prefixed = savePerson(user, "Alice", emptyList())
+        savePerson(user, "Bob", emptyList())
+
+        // When
+        val found = matching(user, "alice")
+
+        // Then
+        assertEquals(listOf(prefixed, contained), found)
+    }
+
+    @Test
+    fun `Given two homonyms with different addresses, Then both are matched with their addresses`() {
+        // Given
+        val user = createAndSaveUser()
+        val first = savePerson(user, "Alice", listOf(FIRST_URL))
+        val second = savePerson(user, "Alice", listOf(SECOND_URL))
+
+        // When
+        val found = matching(user, "Alice")
+
+        // Then
+        assertEquals(setOf(first, second), found.toSet())
+    }
+
+    @Test
+    fun `Given more prefix matches than the limit, Then findPersonsForUserMatching serves only those`() {
+        // Given
+        val user = createAndSaveUser()
+        savePerson(user, "Alice", listOf(FIRST_URL))
+        savePerson(user, "Alice", listOf(SECOND_URL))
+        savePerson(user, "Malice", emptyList())
+
+        // When
+        val found = matching(user, "Alice", limit = 2)
+
+        // Then
+        assertEquals(listOf("Alice", "Alice"), found.map { it.name })
+    }
+
+    @Test
+    fun `Given a limit of zero, Then findPersonsForUserMatching serves nothing`() {
+        // Given: Ebean's setMaxRows reads zero as unbounded
+        val user = createAndSaveUser()
+        savePerson(user, "Alice", emptyList())
+
+        // When
+        val found = matching(user, "Alice", limit = 0)
+
+        // Then
+        assertEquals(emptyList<Person>(), found)
+    }
+
+    @Test
+    fun `Given another author's matching person, Then findPersonsForUserMatching leaves it out`() {
+        // Given
+        val user = createAndSaveUser()
+        val own = savePerson(user, "Alice", emptyList())
+        savePerson(createAndSaveUser(), "Alice", emptyList())
+
+        // When
+        val found = matching(user, "Alice")
+
+        // Then
+        assertEquals(listOf(own), found)
+    }
+
     private companion object {
         const val FIRST_URL = "https://a.test/alice"
         const val SECOND_URL = "https://b.test/alice"

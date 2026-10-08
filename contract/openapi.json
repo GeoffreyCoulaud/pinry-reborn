@@ -352,6 +352,27 @@
           }
         }
       },
+      "PersonSearchOutputDto" : {
+        "type" : "object",
+        "required" : [ "results" ],
+        "properties" : {
+          "results" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PersonSearchResultOutputDto"
+            }
+          }
+        }
+      },
+      "PersonSearchResultOutputDto" : {
+        "type" : "object",
+        "required" : [ "person" ],
+        "properties" : {
+          "person" : {
+            "$ref" : "#/components/schemas/PersonOutputDto"
+          }
+        }
+      },
       "PinCreationInputDto" : {
         "type" : "object",
         "required" : [ "sourceContextUrl", "sourceMediaUrl", "description" ],
@@ -3124,6 +3145,52 @@
         } ]
       }
     },
+    "/api/v1/persons/search" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "limit",
+          "in" : "query",
+          "schema" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          }
+        }, {
+          "name" : "q",
+          "in" : "query",
+          "schema" : {
+            "type" : [ "string", "null" ]
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PersonSearchOutputDto"
+                }
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BlankQuery"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/UnreadableQuery"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          }
+        },
+        "summary" : "Search Persons",
+        "tags" : [ "Person Search Controller" ],
+        "security" : [ {
+          "BearerScheme" : [ ]
+        }, {
+          "CookieScheme" : [ ]
+        } ]
+      }
+    },
     "/api/v1/pins" : {
       "delete" : {
         "summary" : "Recycle several pins, all or nothing",
@@ -3941,15 +4008,13 @@
           "in" : "query",
           "schema" : {
             "type" : [ "boolean", "null" ]
-          },
-          "required" : true
+          }
         }, {
           "name" : "size",
           "in" : "query",
           "schema" : {
             "type" : [ "string", "null" ]
-          },
-          "required" : true
+          }
         }, {
           "name" : "If-None-Match",
           "in" : "header",
@@ -4278,15 +4343,13 @@
           "schema" : {
             "type" : [ "integer", "null" ],
             "format" : "int32"
-          },
-          "required" : true
+          }
         }, {
           "name" : "q",
           "in" : "query",
           "schema" : {
             "type" : [ "string", "null" ]
-          },
-          "required" : true
+          }
         } ],
         "responses" : {
           "200" : {
@@ -4375,7 +4438,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "24.0.0"
+    "version" : "24.1.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",
