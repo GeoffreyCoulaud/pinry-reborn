@@ -138,6 +138,22 @@ class PersonRepositoryTest : RepositoryTest() {
         assertThrows<PersistenceException> { savePerson(user, "ALICE", listOf(SECOND_URL, FIRST_URL)) }
     }
 
+    @Test
+    fun `Given persons of two users, Then deleteAllPersonsForUser removes only the user's`() {
+        // Given
+        val user = createAndSaveUser()
+        val otherUser = createAndSaveUser()
+        savePerson(user, "Alice", listOf(FIRST_URL))
+        val kept = savePerson(otherUser, "Alice", listOf(FIRST_URL))
+
+        // When
+        repository.deleteAllPersonsForUser(user)
+
+        // Then
+        assertNull(find(user, "Alice", listOf(FIRST_URL)))
+        assertEquals(kept, find(otherUser, "Alice", listOf(FIRST_URL)))
+    }
+
     private companion object {
         const val FIRST_URL = "https://a.test/alice"
         const val SECOND_URL = "https://b.test/alice"

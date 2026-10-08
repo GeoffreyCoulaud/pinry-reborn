@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<migration xmlns="http://ebean-orm.github.io/xml/ns/dbmigration">
+    <changeSet type="apply">
+        <createTable name="pin_creator_model" pkName="pk_pin_creator_model">
+            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_creator_model_pin_id" foreignKeyIndex="ix_pin_creator_model_pin_id"/>
+            <column name="person_id" type="uuid" notnull="true" references="persons.id" foreignKeyName="fk_pin_creator_model_person_id"/>
+        </createTable>
+        <addColumn tableName="pins">
+            <column name="publisher_id" type="uuid" references="persons.id" foreignKeyName="fk_pins_publisher_id" foreignKeyOnDelete="RESTRICT" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="published_at" type="timestamp"/>
+        </addColumn>
+        <createIndex indexName="ux_pin_creator_model_pin_person" tableName="pin_creator_model" columns="" definition="create unique index ux_pin_creator_model_pin_person on pin_creator_model (pin_id, person_id)"/>
+        <createIndex indexName="ix_pin_creator_model_person" tableName="pin_creator_model" columns="person_id"/>
+    </changeSet>
+</migration>
