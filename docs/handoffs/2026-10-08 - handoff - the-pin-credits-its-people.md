@@ -215,7 +215,9 @@ acceptable, the test class's name a finding; blocks 70 and 75 split cleanly. Eve
   review.)
 - Cascaded rebases: 1, blocks 20 and 30. (Corrected: 3, the second rebasing every branch from 20 to 130, the third
   110 to 130.)
-- Runs that cascade re-triggered: 2. (Corrected: to be counted after the cascades' push.)
+- Runs that cascade re-triggered: 2. (Corrected: 16, 2 by the first cascade and 14 by the push of the second and
+  third, every branch having moved. That passes the lot's 14 blocks, ADR 0043's failure criterion: the operator's two
+  fix-backs landed on blocks 10 and 100, at the bottom of the stack, so each rebased nearly every branch above.)
 - The operator's reading of the bodies: to be filled before the stack merges. (Corrected: no remark.)
 
 ## Next step
