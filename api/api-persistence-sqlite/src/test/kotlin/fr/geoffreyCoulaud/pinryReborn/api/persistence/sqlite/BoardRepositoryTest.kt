@@ -230,8 +230,7 @@ class BoardRepositoryTest : RepositoryTest() {
         val pin = createAndSavePin(user, boards = listOf(board))
 
         // When
-        // If the pin_board_model row were not deleted first, this would fail with a foreign
-        // key constraint violation (pin_board_model.board_id references boards on delete restrict).
+        // `foreign_keys` is off, so the store would not refuse a join row left behind.
         boardRepository.permanentlyDeleteBoard(board)
 
         // Then
@@ -253,8 +252,7 @@ class BoardRepositoryTest : RepositoryTest() {
         boardRepository.softDeleteBoard(recycledBoard2, storableNow())
 
         // When
-        // If the pin_board_model rows were not deleted first, this would fail with a foreign
-        // key constraint violation (pin_board_model.board_id references boards on delete restrict).
+        // `foreign_keys` is off, so the store would not refuse a join row left behind.
         boardRepository.permanentlyDeleteAllRecycledBoardsForUser(user)
 
         // Then
@@ -289,8 +287,7 @@ class BoardRepositoryTest : RepositoryTest() {
         boardRepository.softDeleteBoard(recycledBoard, storableNow())
 
         // When
-        // If the pin_board_model rows were not deleted first, this would fail with a foreign
-        // key constraint violation (pin_board_model.board_id references boards on delete restrict).
+        // `foreign_keys` is off, so the store would not refuse a join row left behind.
         boardRepository.permanentlyDeleteAllBoardsForUser(user)
 
         // Then

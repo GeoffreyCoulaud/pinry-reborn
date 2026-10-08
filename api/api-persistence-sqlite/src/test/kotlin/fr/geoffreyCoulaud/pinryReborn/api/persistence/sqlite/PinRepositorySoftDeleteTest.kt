@@ -229,8 +229,7 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
         val softDeleted = repository.softDeletePin(pin, storableNow())
 
         // When
-        // If the pin_board_model row were not deleted first, this would fail with a foreign
-        // key constraint violation (pin_board_model.pin_id references pins on delete restrict).
+        // `foreign_keys` is off, so the store would not refuse a join row left behind.
         repository.permanentlyDeletePin(softDeleted)
 
         // Then
@@ -267,8 +266,7 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
         repository.softDeletePin(pin2, storableNow())
 
         // When
-        // If the pin_board_model rows were not deleted first, this would fail with a foreign
-        // key constraint violation (pin_board_model.pin_id references pins on delete restrict).
+        // `foreign_keys` is off, so the store would not refuse a join row left behind.
         repository.permanentlyDeleteAllSoftDeletedPinsForUser(user)
 
         // Then
@@ -300,8 +298,7 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
         repository.softDeletePin(toSoftDelete, storableNow())
 
         // When
-        // If the pin_tag_model / pin_board_model rows were not deleted first, this would fail
-        // with a foreign key constraint violation (references pins on delete restrict).
+        // `foreign_keys` is off, so the store would not refuse a join row left behind.
         repository.permanentlyDeleteAllPinsForUser(user)
 
         // Then

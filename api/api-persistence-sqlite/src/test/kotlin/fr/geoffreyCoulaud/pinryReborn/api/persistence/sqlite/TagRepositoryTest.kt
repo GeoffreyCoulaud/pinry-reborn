@@ -119,8 +119,7 @@ class TagRepositoryTest : RepositoryTest() {
         val pin = createPinWithTag(author = user, tag = tag)
 
         // When
-        // If the pin_tag junction row were not deleted first, this would fail with a foreign
-        // key constraint violation (pin_tag_model.tag_id references tags on delete restrict).
+        // `foreign_keys` is off, so the store would not refuse a join row left behind.
         repository.deleteAllTagsForUser(user)
 
         // Then
