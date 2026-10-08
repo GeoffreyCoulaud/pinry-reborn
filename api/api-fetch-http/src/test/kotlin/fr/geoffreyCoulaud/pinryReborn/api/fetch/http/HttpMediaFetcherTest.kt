@@ -193,6 +193,9 @@ class HttpMediaFetcherTest {
         Thread.ofVirtual().start {
             runCatching {
                 stalling.accept().use { socket ->
+                    // Jetty's client drops a response that arrives before it has sent the request.
+                    val request = socket.getInputStream().bufferedReader()
+                    while (!request.readLine().isNullOrEmpty()) continue
                     socket.getOutputStream().write("HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n".toByteArray())
                     socket.getOutputStream().write(FIRST_BYTE)
                     stalled.await()
