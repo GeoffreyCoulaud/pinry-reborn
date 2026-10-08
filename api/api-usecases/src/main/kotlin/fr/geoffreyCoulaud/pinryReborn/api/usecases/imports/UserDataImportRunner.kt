@@ -64,6 +64,7 @@ class UserDataImportRunner(
     private val mediaIngestion: MediaIngestion,
     private val tagCreator: TagCreator,
     private val personCreator: PersonCreator,
+    private val remoteCollectionLinker: RemoteCollectionLinker,
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
     private val maxMetadataBytes: Long,
@@ -180,7 +181,10 @@ class UserDataImportRunner(
         val now = clock.now()
         val clamp = ImportInstantClamp(user.createdAt, now)
         walkTags(source, user, clamp, runnable, renewLeaseIfDue, recorder) ?: return
-        val walked = walkBoards(source, user, clamp, runnable, renewLeaseIfDue, recorder) ?: return
+        val walked =
+            walkBoards(source, user, clamp, runnable, renewLeaseIfDue, recorder)?.let {
+                walkCollections(source, user, now, runnable, renewLeaseIfDue, recorder)
+            } ?: return
         walkPins(PinWalk(source, runnable, user, clamp, now, entryNames, recorder, renewLeaseIfDue), walked)
     }
 
@@ -409,6 +413,51 @@ class UserDataImportRunner(
         tally.created++
     }
 
+    /** After the boards, so a collection links to a board the archive carries. Only its issues are counted. */
+    private fun walkCollections(
+        source: ArchiveSource,
+        user: User,
+        now: Instant,
+        runnable: RunnableImport,
+        renewLeaseIfDue: () -> Unit,
+        recorder: ImportIssueRecorder,
+    ): UserDataImport? {
+        val tally = MetadataTally(recorder)
+        walkLines(source, COLLECTIONS_ENTRY, ImportedCollection::class.java, renewLeaseIfDue) {
+            rejecting(tally, it.line) { importCollection(it, user, now, tally) }
+        }
+        return advance(runnable) {
+            it.copy(issueCount = it.issueCount + tally.issues, issueDetailTruncated = recorder.truncated)
+        }
+    }
+
+    private fun importCollection(
+        line: ArchiveLine<ImportedCollection>,
+        user: User,
+        now: Instant,
+        tally: MetadataTally,
+    ) {
+        val collection = line.value
+        val fault = collection?.let { collectionFault(it) }
+        when {
+            collection == null -> record(tally, UserDataImportIssueKind.LINE_MALFORMED, line.line, null, line.failure)
+            fault != null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, collection.url, fault)
+            else ->
+                remoteCollectionLinker.link(
+                    user,
+                    collection.url,
+                    collection.name,
+                    collection.board ?: collection.name,
+                    now,
+                )
+        }
+    }
+
+    private fun collectionFault(collection: ImportedCollection): String? =
+        ImportFieldBounds.addressFault(URL_FIELD, collection.url)
+            ?: ImportFieldBounds.nameFault(collection.name)
+            ?: collection.board?.let { board -> ImportFieldBounds.nameFault(board)?.let { "board $it" } }
+
     private fun record(
         tally: MetadataTally,
         kind: UserDataImportIssueKind,
@@ -500,8 +549,8 @@ class UserDataImportRunner(
     }
 
     /**
-     * Names are resolved here, inside the settling transaction. One that resolves to nothing is dropped: a name the
-     * metadata walk refused must not come back through a membership.
+     * Names and collection addresses are resolved here, inside the settling transaction. One that resolves to nothing
+     * is dropped: a name the metadata walk refused must not come back through a membership.
      */
     @Suppress("RowMergedOutsideTransaction")
     // An insert of a row this walk built two frames up, which the rule cannot see from here: it reads
@@ -510,7 +559,10 @@ class UserDataImportRunner(
         pinRepository.savePin(
             created.pin.copy(
                 tags = created.tagNames.mapNotNull { tagRepository.findUserTagByName(walk.user, it) },
-                boards = created.boardNames.mapNotNull { boardRepository.findBoardForUserByName(walk.user, it) },
+                boards =
+                    (created.boardNames.mapNotNull { boardRepository.findBoardForUserByName(walk.user, it) } +
+                            created.collectionUrls.mapNotNull { remoteCollectionLinker.boardOf(walk.user, it) })
+                        .distinctBy { it.id },
                 publisher = created.publisher?.let { resolvePerson(walk, it) },
                 creators = created.creators.map { resolvePerson(walk, it) },
             )
@@ -541,6 +593,7 @@ class UserDataImportRunner(
             ?: ImportFieldBounds.referenceCountFault(TAGS_FIELD, pin.tags.size)
             ?: ImportFieldBounds.referenceCountFault(BOARDS_FIELD, pin.boards.size)
             ?: ImportFieldBounds.referenceCountFault(CREATORS_FIELD, pin.creators.size)
+            ?: ImportFieldBounds.referenceCountFault(COLLECTIONS_FIELD, pin.collections.size)
             ?: (listOfNotNull(pin.publisher) + pin.creators).firstNotNullOfOrNull {
                 ImportFieldBounds.personFault(it.name, it.urls)
             }
@@ -654,6 +707,7 @@ class UserDataImportRunner(
                     boardNames = pin.boards.map { it.name },
                     publisher = pin.publisher,
                     creators = pin.creators,
+                    collectionUrls = pin.collections,
                 )
         )
     }
@@ -706,14 +760,18 @@ class UserDataImportRunner(
         val boardNames: List<String>,
         val publisher: ImportedPerson?,
         val creators: List<ImportedPerson>,
+        val collectionUrls: List<String>,
     )
 
     private companion object {
         const val MANIFEST_ENTRY = "manifest.json"
         const val TAGS_ENTRY = "tags.jsonl"
         const val BOARDS_ENTRY = "boards.jsonl"
+        const val COLLECTIONS_ENTRY = "collections.jsonl"
         const val PINS_ENTRY = "pins.jsonl"
         const val SOURCE_CONTEXT_URL = "sourceContextUrl"
+        const val URL_FIELD = "url"
+        const val COLLECTIONS_FIELD = "collections"
         const val TAGS_FIELD = "tags"
         const val BOARDS_FIELD = "boards"
         const val CREATORS_FIELD = "creators"

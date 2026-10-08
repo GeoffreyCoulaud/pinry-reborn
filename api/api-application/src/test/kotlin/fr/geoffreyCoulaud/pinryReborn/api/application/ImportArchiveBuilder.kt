@@ -25,6 +25,8 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
 
     fun boards(vararg lines: Map<String, Any?>) = apply { jsonLines("boards.jsonl", lines.toList()) }
 
+    fun collections(vararg lines: Map<String, Any?>) = apply { jsonLines("collections.jsonl", lines.toList()) }
+
     fun pins(vararg lines: Map<String, Any?>) = apply { jsonLines("pins.jsonl", lines.toList()) }
 
     /** Appends a raw line to an entry already written: a line cut in half is not JSON a writer emits. */
@@ -77,9 +79,13 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
 
         fun personLine(name: String, vararg urls: String): Map<String, Any?> = mapOf("name" to name, "urls" to urls)
 
+        /** One `collections.jsonl` line; a null [board] is absent from it. */
+        fun collectionLine(url: String, name: String, board: String? = null): Map<String, Any?> =
+            mapOf("url" to url, "name" to name) + listOfNotNull(board?.let { "board" to it }).toMap()
+
         /**
-         * One `pins.jsonl` line. [mediaPath] null is a pin with no medium, which has no identity. The people and the
-         * publication instant are written only when given, so a line without them is the shape that predates them.
+         * One `pins.jsonl` line. [mediaPath] null is a pin with no medium, which has no identity. The fields of this
+         * lot are written only when given, so a line without them is the shape that predates them.
          */
         @Suppress("LongParameterList") // The published line's shape; grouping it would invent a type.
         fun pinLine(
@@ -94,6 +100,7 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
             publisher: Map<String, Any?>? = null,
             creators: List<Map<String, Any?>>? = null,
             publishedAt: Instant? = null,
+            collections: List<String>? = null,
         ): Map<String, Any?> =
             mapOf(
                 "id" to "22222222-2222-2222-2222-222222222222",
@@ -109,17 +116,19 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
                     mediaPath?.let {
                         mapOf("path" to it, "sha256" to mediaSha256, "mimeType" to mediaMimeType)
                     },
-            ) + optionalPeople(publisher, creators, publishedAt)
+            ) + optionalFields(publisher, creators, publishedAt, collections)
 
-        private fun optionalPeople(
+        private fun optionalFields(
             publisher: Map<String, Any?>?,
             creators: List<Map<String, Any?>>?,
             publishedAt: Instant?,
+            collections: List<String>?,
         ): Map<String, Any?> =
             listOfNotNull(
                     publisher?.let { "publisher" to it },
                     creators?.let { "creators" to it },
                     publishedAt?.let { "publishedAt" to it.toString() },
+                    collections?.let { "collections" to it },
                 )
                 .toMap()
     }
