@@ -73,6 +73,10 @@ class UniqueConstraintOutcomeTest {
                 "No translation, deliberately: PinRepository.savePin reads the pin's tags and inserts the " +
                     "missing ones, each once, so the index fires only when two writes of one pin interleave " +
                     "outside a transaction, and 500 is the answer then.",
+            "ux_pin_creator_model_pin_person" to
+                "No translation, deliberately, as ux_pin_tag_model_pin_tag: PinRepository.savePin reads the " +
+                    "pin's creators and inserts the missing ones, each once, so the index fires only when two " +
+                    "writes of one pin interleave outside a transaction, and 500 is the answer then.",
             "ux_pin_duplicate_pins" to
                 "No translation, deliberately: one fingerprint drain runs at a time, its task having one dedup " +
                     "key, and it inserts only the pairs its pin does not hold; a rejection or a restore updates an " +

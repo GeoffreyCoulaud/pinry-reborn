@@ -12,4 +12,7 @@ interface PersonRepositoryInterface {
         name: String,
         urls: Collection<String>,
     ): Person?
+
+    /** Called after the user's pins are deleted, which are what reference a person. */
+    fun deleteAllPersonsForUser(user: User)
 }

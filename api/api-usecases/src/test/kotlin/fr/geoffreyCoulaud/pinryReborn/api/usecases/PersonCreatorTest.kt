@@ -65,6 +65,8 @@ class PersonCreatorTest {
         override fun savePerson(person: Person): Person = person.also { saved += it }
 
         override fun findUserPerson(user: User, name: String, urls: Collection<String>): Person? = found
+
+        override fun deleteAllPersonsForUser(user: User) = error("A creation deletes no person")
     }
 
     private companion object {

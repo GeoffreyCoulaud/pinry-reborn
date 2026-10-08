@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
@@ -31,6 +32,7 @@ class AccountDeletionCleaner(
     private val pinRepository: PinRepositoryInterface,
     private val boardRepository: BoardRepositoryInterface,
     private val tagRepository: TagRepositoryInterface,
+    private val personRepository: PersonRepositoryInterface,
     private val mediaRepository: MediaRepositoryInterface,
     private val sessionTokenRepository: SessionTokenRepositoryInterface,
     private val userPasswordRepository: UserPasswordHashRepositoryInterface,
@@ -59,6 +61,7 @@ class AccountDeletionCleaner(
                 mediaRepository.deleteByPinId(pinId)
             }
             pinRepository.permanentlyDeleteAllPinsForUser(user)
+            personRepository.deleteAllPersonsForUser(user)
             boardRepository.permanentlyDeleteAllBoardsForUser(user)
             tagRepository.deleteAllTagsForUser(user)
             sessionTokenRepository.deleteAllForUser(user.id)

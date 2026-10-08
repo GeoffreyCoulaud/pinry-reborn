@@ -2,8 +2,11 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
@@ -20,11 +23,14 @@ object PinModelMapper {
             createdAt = createdAt,
             updatedAt = updatedAt,
             softDeletedAt = softDeletedAt,
+            publisher = publisher?.toModel(),
+            publishedAt = publishedAt,
         )
 
     fun PinModel.toDomain(
         tags: List<Tag>,
         boards: List<Board>,
+        creators: List<Person>,
     ): Pin =
         Pin(
             id = id,
@@ -37,6 +43,9 @@ object PinModelMapper {
             createdAt = createdAt,
             updatedAt = updatedAt,
             softDeletedAt = softDeletedAt,
+            publisher = publisher?.toDomain(),
+            creators = creators,
+            publishedAt = publishedAt,
         )
 
     fun ModelCursor<PinModel>.toDomain(): Cursor =

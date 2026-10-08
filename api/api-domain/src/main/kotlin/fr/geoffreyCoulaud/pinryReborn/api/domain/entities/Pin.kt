@@ -15,4 +15,7 @@ data class Pin(
     val updatedAt: Instant,
     val softDeletedAt: Instant? = null,
     val media: Media? = null,
+    val publisher: Person? = null,
+    val creators: List<Person> = emptyList(),
+    val publishedAt: Instant? = null,
 ) : Identifiable

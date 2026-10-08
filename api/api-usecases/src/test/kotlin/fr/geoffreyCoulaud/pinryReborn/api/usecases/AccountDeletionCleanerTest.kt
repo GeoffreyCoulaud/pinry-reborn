@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
@@ -38,6 +39,7 @@ class AccountDeletionCleanerTest : BaseTest() {
     private val pins = mockk<PinRepositoryInterface>(relaxed = true)
     private val boards = mockk<BoardRepositoryInterface>(relaxed = true)
     private val tags = mockk<TagRepositoryInterface>(relaxed = true)
+    private val persons = mockk<PersonRepositoryInterface>(relaxed = true)
     private val mediaRepository = mockk<MediaRepositoryInterface>(relaxed = true)
     private val sessions = mockk<SessionTokenRepositoryInterface>(relaxed = true)
     private val passwords = mockk<UserPasswordHashRepositoryInterface>(relaxed = true)
@@ -56,6 +58,7 @@ class AccountDeletionCleanerTest : BaseTest() {
             pins,
             boards,
             tags,
+            persons,
             mediaRepository,
             sessions,
             passwords,
@@ -117,6 +120,7 @@ class AccountDeletionCleanerTest : BaseTest() {
             clearDownload.clear(pin.id)
             mediaRepository.deleteByPinId(pin.id)
             pins.permanentlyDeleteAllPinsForUser(user)
+            persons.deleteAllPersonsForUser(user)
             boards.permanentlyDeleteAllBoardsForUser(user)
             tags.deleteAllTagsForUser(user)
             sessions.deleteAllForUser(userId)

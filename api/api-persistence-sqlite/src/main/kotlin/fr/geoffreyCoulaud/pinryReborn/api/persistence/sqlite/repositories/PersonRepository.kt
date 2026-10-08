@@ -32,4 +32,8 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
             .equalTo(canonicalUrls(urls))
             .findOne()
             ?.toDomain()
+
+    override fun deleteAllPersonsForUser(user: User) {
+        QPersonModel().author.id.equalTo(user.id).delete()
+    }
 }

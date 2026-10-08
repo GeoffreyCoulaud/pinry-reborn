@@ -1,8 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.AuthoredBaseModel
+import io.ebean.annotation.DbForeignKey
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.Instant
 import java.util.UUID
@@ -20,6 +22,9 @@ class PinModel(
     // Written by the mapper from the domain entity, never generated. See AuthoredBaseModel.
     @Column(name = "when_modified") var updatedAt: Instant,
     override var softDeletedAt: Instant? = null,
+    // No read goes from a person to its pins, so its key brings no index.
+    @ManyToOne @DbForeignKey(noIndex = true) var publisher: PersonModel? = null,
+    var publishedAt: Instant? = null,
 ) :
     AuthoredBaseModel(
         id = id,
