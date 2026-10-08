@@ -12,13 +12,16 @@ Lot `0.52.0`, one stack of 13 code blocks, where the specification planned 11: 1
 `feat/the-board-shows-its-collections` (#374), 100 `feat/the-form-credits-people` (#375), 110
 `feat/the-form-dates-a-pin` (#376), 120 `fix/the-stall-test-holds` (the pull request this file arrives in, added by
 the operator mid-lot). Written in block 120 from the block reports collapsed in those pull requests and the lead's
-notes; to be corrected by the closing block.
+notes; to be corrected by the closing block. (Corrected: the closing block is 130, `fix/the-people-lot-closes`,
+which adds the holistic review's findings, their exits and the lot's counts.)
 
 ## Current state
 
 - **A person is stored per owner** (10): migration `1.33`, `persons`, unique on `(author_id, name collate nocase,
   urls)`. `PersonUrls` is the canonical form of the addresses (sorted, distinct, line-feed joined, empty for none);
-  `PersonCreator.findOrCreate` finds or creates in one transaction.
+  `PersonCreator.findOrCreate` finds or creates in one transaction. (Corrected: after the operator's review of #364,
+  `Person.urls` is a plain list and `PersonUrls` is gone; the column holds a sorted, distinct JSON array as text, `[]`
+  for none, which `PersonModelMapper.canonicalUrls` produces for every write and the lookup.)
 - **A pin holds a publisher, creators and a publication instant** (20): migration `1.34`, `pins.publisher_id`,
   `pins.published_at` and `pin_creator_model`. Each pin deletion path deletes its creator rows; account deletion
   deletes the user's persons after their pins. A person no pin names stays.
@@ -37,12 +40,16 @@ notes; to be corrected by the closing block.
   person search, in `components/CreditFields.tsx`; a native date and time field with the browser's zone and a clear
   button. `PinDialog` shows the people and the instant.
 - **`HttpMediaFetcherTest`'s close-delimited stall case holds** (120), below.
+- **The holistic review's findings are fixed** (130), below: an import now counts the boards its collection walk
+  creates in `createdBoards`.
 
 ## Evidence
 
 - Block 10: `dagger call gate` green at `19d6025b`; budget 473 lines, 13 files against `main` (#364).
+  (Corrected: then the fix-back `4e6a725f` on the operator's review, below.)
 - Block 20: gate green at `62160dc0`, then after the fix-back `b5a2316d`; budget 314 lines, 15 files (#365).
-- Block 30: gate green at `cf4ee86b`; budget 349 lines, 19 files (#367). `oasdiff changelog`
+- Block 30: gate green at `cf4ee86b` (Corrected: rebased unchanged as `9eab50f1`, `git range-diff` showing `=`);
+  budget 349 lines, 19 files (#367). `oasdiff changelog`
   (`tufin/oasdiff:v1.31.0`) from `main`: 3 errors, the three new required request properties, 27 infos;
   `info.version` `24.0.0`.
 - Block 40: gate green at `11e4af6a`; budget 388 lines, 14 files (#368). `oasdiff changelog` from its parent: 5
@@ -65,6 +72,10 @@ notes; to be corrected by the closing block.
   600: 1199 of 1200 passed, the slowest 1.022 s (`repro-after2.log`, `repro-after3.log`). The one failure, in the
   first run (`repro-after.log`), is of another kind, below. Logs in the session's scratchpad.
 - Continuous integration green on #364 to #376 (`gh pr view <n> --json statusCheckRollup`, 2026-10-08).
+  (Corrected: and on #377, read the same way in block 130.)
+- Block 130: gate green at the branch's tip, rebased onto block 10's fix-back; budget 92 lines, 16 files against
+  `fix/the-stall-test-holds`. It leaves `contract/openapi.json` unchanged. The board page read headless as in block
+  90, the stub answering four collections in the server's order, an accented name last (scratchpad `read130/`).
 
 ## Pitfalls
 
@@ -89,15 +100,19 @@ notes; to be corrected by the closing block.
 - **Biome's `noExcessiveLinesPerFile` (300) caps `PinEditForm.tsx`**: the credit fields live in their own file (100).
 - **Native date and time controls follow the browser's locale, not the interface's**; clearing the time alone sets
   it back to 00:00 (110). `firefox --headless --screenshot` captures before a query answers (90).
+- **SmallRye publishes one `pattern` per string**: of `@NotBlank` and `@Pattern` on one list element, only the
+  `@Pattern` reached the contract, which hid the blank refusal until block 10's fix-back dropped it (30, 130).
 
 ## Departures from the specification
 
 - Block 10: the creation column is `when_created`, as every authored model's; the canonical form is a type,
-  `PersonUrls`; decision A's bounds are enforced at the edges, blocks 30 and 60.
+  `PersonUrls`; decision A's bounds are enforced at the edges, blocks 30 and 60. (Corrected: `PersonUrls` left
+  with the fix-back; the canonical form is the persistence adapter's.)
 - Block 20: `pins.publisher_id` has no index.
-- Block 30: `PersonReference` is the use case's input; the line-feed refusal is an anchored `@Pattern`.
+- Block 30: `PersonReference` is the use case's input; the line-feed refusal is an anchored `@Pattern`. (Corrected:
+  the rule left with block 10's fix-back, the JSON form escaping a line feed; an address carries `@NotBlank` alone.)
 - Block 40: the prefix-then-contains query is copied from `TagRepository`, and the person search's integration cases
-  live in `TagSearchIntegrationTest`.
+  live in `TagSearchIntegrationTest`. (Corrected: renamed `TagAndPersonSearchIntegrationTest` in block 130.)
 - Block 60: `PersonCreator` takes the import instant through an overload, a default argument failing (pitfalls).
 - Block 70 split at its first commit, at 748 lines over 20 files, into 70 (storage and deletions) and 75 (the import);
   one teammate wrote both, the code having been written before the measurement.
@@ -128,6 +143,45 @@ The lead's notes, for the review to judge:
 - Blocks 70 and 75 were written by one teammate, against the fresh-teammate-per-block rule; the lead's brief allowed
   it.
 
+## The holistic review
+
+`.reviews/the-pin-credits-its-people-holistic.md`, over
+`git diff lot/0.51.0-ktfmt-formats-the-kotlin-code..origin/fix/the-stall-test-holds`: 0 CRITICAL, 1 MAJOR, 11 MINOR.
+It found every decision of the specification in the diff, and judged the lead's two notes: the copied query
+acceptable, the test class's name a finding; blocks 70 and 75 split cleanly. Every finding was fixed in block 130:
+
+- MAJOR, a board the collection walk creates was counted nowhere: `RemoteCollectionLinker.link` says whether it
+  created the board, and the walk adds it to `createdBoards`. `UserDataImportCollectionsTest` asserts the count.
+- Block 120's acceptance claimed no residual failure: a `(Corrected: ...)` in the specification records 1199 of 1200;
+  the cause stays under what is not validated.
+- `PinModel`'s reason for no index on `publisher_id` was false since block 50: it now names the scan the catalogue
+  filters inside.
+- Four comments sent the reader to another class: each states its reason in one line.
+- "the spec's decision" named no document beside the import's own specification: the API's comments say
+  "specification 2026-10-08", the two import test classes included.
+- The contract did not show that a blank address is refused: closed by block 10's fix-back, which dropped the
+  line-feed `@Pattern`, so `@NotBlank` alone publishes `\S`. Block 130's own pattern was dropped in the cascade.
+- The board page sorted the collections again with another collation: it shows the server's order, and the journey
+  asserts it as answered; a `(Corrected: ...)` on block 90's journey bullet.
+- A person invented by a refused `PUT` was not shown rolled back: the existing tag case sends a new publisher too and
+  counts no `persons` row.
+- The person search's cases were not findable by the route's name: the class is `TagAndPersonSearchIntegrationTest`.
+- ADR 0055 named no specification: a `(Corrected: ...)` names this one.
+- Block 30's evidence named a commit no branch holds: corrected above.
+- `instantOf` threw on a five-digit year: it returns null, and the date field ignores the change.
+
+## The operator's review
+
+- #364, on `PersonUrls`: « Pourquoi le domaine fait du parsing pour la DB ? Le domaine ne doit pas se soucier des
+  couches externes, une personne doit avoir une `List` d'URLs dans ce cas, pas un objet custom. »
+- #364, on `PersonModel.urls`: « Pourquoi pas utiliser un array, ou du json ? » SQLite has no array type, so the
+  addresses are a JSON array held as text, which the unique index still compares as one value and which escapes a
+  line feed, so the rule against one went too.
+- Both went to block 10 as the fix-back `4e6a725f`: `Person.urls` a plain list, `PersonUrls` deleted, the canonical
+  form and its serialisation in `PersonModelMapper`, the line-feed rule dropped from `PersonInputDto` and the import's
+  bounds. The specification and ADR 0055 carry it as `(Corrected: ...)`. The lead cascaded it: every branch from 20
+  to 130 was rebased, 130 resolving `PersonInputDto.kt` and `contract/openapi.json` in favour of its new parent.
+
 ## What is not validated
 
 - The web application against the running API: blocks 90, 100 and 110 were read against a stub.
@@ -139,16 +193,19 @@ The lead's notes, for the review to judge:
 - One repetition of the stall case after the fix passed its 5 s deadline under load, the read having already thrown
   and the thread closing the stream (120). Not reproduced in the 900 repetitions after it, 600 of them timed phase by phase; its cause is
   unknown, and the deadline was left as it is.
+- An imported `publishedAt` past the year 9999, restored unclamped, gives the date field a day it cannot show (130).
 
 ## The lot's counts
 
-- Fix-backs: 1, block 20's comments.
-- Cascaded rebases: 1, blocks 20 and 30.
-- Runs that cascade re-triggered: 2.
-- The operator's reading of the bodies: to be filled before the stack merges.
+- Fix-backs: 1, block 20's comments. (Corrected: 2, block 10's addresses on the operator's review.)
+- Cascaded rebases: 1, blocks 20 and 30. (Corrected: 2, the second rebasing every branch from 20 to 130.)
+- Runs that cascade re-triggered: 2. (Corrected: to be counted after the second cascade's push.)
+- The operator's reading of the bodies: to be filled before the stack merges. (Corrected: no remark.)
 
 ## Next step
 
 Wrap: the holistic review over `git diff lot/0.51.0-ktfmt-formats-the-kotlin-code..origin/fix/the-stall-test-holds`,
 then the closing block, then the operator's review and `gh stack merge --rebase`, and the tag
-`lot/0.52.0-the-pin-credits-its-people`.
+`lot/0.52.0-the-pin-credits-its-people`. (Corrected: the review and the closing block are done. The operator reviews
+the stack, #364 to the closing block's pull request; after the merge and the tag, the importer, ADR 0055's second
+lot, gets its specification.)

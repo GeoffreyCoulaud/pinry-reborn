@@ -3,7 +3,8 @@
 Status: Accepted
 Date: 2026-10-08
 Supersedes: `docs/adr/0054-third-party-imports-are-manual-and-keep-no-credential.md`
-Specification: none yet. Two lots follow, each with its own.
+Specification: none yet. Two lots follow, each with its own. (Corrected: the first lot's is
+`docs/specs/2026-10-08-the-pin-credits-its-people.md`.)
 
 ## Context
 
