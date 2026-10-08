@@ -23,6 +23,7 @@ import { m } from "../paraglide/messages.js";
 import { type Pin, useTagSearch, useUpdatePin } from "../pins";
 import { MediaDropBox } from "./MediaDropBox";
 import { PinSides } from "./PinSides";
+import { PublisherField } from "./PublisherField";
 
 /**
  * Free text over the author's own names. The server decides which names are one tag, folding to
@@ -202,6 +203,7 @@ export function PinEditForm({
 	const [boardIds, setBoardIds] = useState<readonly string[]>(
 		pin.boards.map((board) => board.id),
 	);
+	const [publisher, setPublisher] = useState(pin.publisher);
 	// One value in one field at a time: the column's, or the selector's once the image is fetched from it.
 	const [address, setAddress] = useState(pin.sourceMediaUrl ?? "");
 	const [intent, setIntent] = useState<MediaIntent>("keep");
@@ -317,8 +319,8 @@ export function PinEditForm({
 									sourceMediaUrl: address || null,
 									tags: [...tags],
 									boardIds: [...boardIds],
+									publisher,
 									// No field edits them yet, so they are sent as read.
-									publisher: pin.publisher,
 									creators: pin.creators,
 									publishedAt: pin.publishedAt,
 								},
@@ -376,6 +378,7 @@ export function PinEditForm({
 					{intent !== "fetch" && addressField}
 					<TagField names={tags} onChange={setTags} />
 					<BoardField ids={boardIds} onChange={setBoardIds} />
+					<PublisherField publisher={publisher} onChange={setPublisher} />
 					{/* Two halves, two sentences: the pin is written before its image, so a refused image
               leaves the fields saved and only the image to try again. */}
 					{save.isError ? <p role="alert">{m.pin_refused()}</p> : null}
