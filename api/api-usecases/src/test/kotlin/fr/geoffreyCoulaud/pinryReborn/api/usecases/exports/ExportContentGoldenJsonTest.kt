@@ -190,6 +190,10 @@ class ExportContentGoldenJsonTest {
                         sha256 = "deadbeef",
                         createdAt = Instant.parse("2026-01-05T00:00:00Z"),
                     ),
+                publisher = ExportedPerson(name = "Studio", urls = listOf("https://studio.example")),
+                creators =
+                    listOf(ExportedPerson(name = "Ada", urls = listOf("https://a.example", "https://b.example"))),
+                publishedAt = Instant.parse("1999-12-31T23:00:00Z"),
             )
 
         // When
@@ -206,7 +210,10 @@ class ExportContentGoldenJsonTest {
                 """"media":{"id":"55555555-5555-5555-5555-555555555555",""" +
                 """"path":"media/55555555-5555-5555-5555-555555555555.jpg","mimeType":"image/jpeg",""" +
                 """"width":1920,"height":1080,"animated":false,"byteSize":482913,"sha256":"deadbeef",""" +
-                """"createdAt":"2026-01-05T00:00:00Z"}}""",
+                """"createdAt":"2026-01-05T00:00:00Z"},""" +
+                """"publisher":{"name":"Studio","urls":["https://studio.example"]},""" +
+                """"creators":[{"name":"Ada","urls":["https://a.example","https://b.example"]}],""" +
+                """"publishedAt":"1999-12-31T23:00:00Z"}""",
             json,
         )
     }
@@ -226,6 +233,9 @@ class ExportContentGoldenJsonTest {
                 tags = emptyList(),
                 boards = emptyList(),
                 media = null,
+                publisher = null,
+                creators = emptyList(),
+                publishedAt = null,
             )
 
         // When
@@ -237,7 +247,7 @@ class ExportContentGoldenJsonTest {
                 """"sourceContextUrl":null,"sourceMediaUrl":null,""" +
                 """"createdAt":"2026-01-06T00:00:00Z","updatedAt":"2026-01-07T00:00:00Z",""" +
                 """"deletedAt":"2026-01-08T00:00:00Z",""" +
-                """"tags":[],"boards":[],"media":null}""",
+                """"tags":[],"boards":[],"media":null,"publisher":null,"creators":[],"publishedAt":null}""",
             json,
         )
     }

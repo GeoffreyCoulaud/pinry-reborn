@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPersonModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
@@ -11,6 +12,7 @@ import java.util.UUID
 import kotlin.io.path.exists
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -196,6 +198,82 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         assertEquals(recycled, boardRepository.findRecycledBoardsForUser(auth.user).single())
     }
 
+    // --- A pin line's people ---
+
+    @Test
+    fun `Given one person named in two cases and two orders, Then one row, and one address more makes a second`() {
+        // Given: three media, so no line is skipped as one the account already holds
+        val auth = createAuthenticatedUser()
+        val creatorByMedium =
+            mapOf(
+                "sample.png" to ImportArchiveBuilder.personLine("Ada Lovelace", A_URL, B_URL),
+                "sample.jpg" to ImportArchiveBuilder.personLine("ada LOVELACE", B_URL, A_URL),
+                "animated.gif" to ImportArchiveBuilder.personLine("Ada Lovelace", A_URL, B_URL, "https://c.example"),
+            )
+        val builder = ImportArchiveBuilder(objectMapper).manifest(announcedPins = creatorByMedium.size)
+        val lines = creatorByMedium.map { (medium, creator) ->
+            val bytes = fixture(medium).readBytes()
+            builder.entry("media/$medium", bytes)
+            ImportArchiveBuilder.pinLine(
+                sourceContextUrl = "https://example.test/$medium",
+                mediaPath = "media/$medium",
+                mediaSha256 = ImportArchiveBuilder.sha256(bytes),
+                creators = listOf(creator),
+            )
+        }
+
+        // When
+        val importId = importArchive(auth, builder.pins(*lines.toTypedArray()).bytes())
+
+        // Then
+        assertEquals(emptyList<String>(), issueKinds(auth, importId))
+        val creatorOf = activePinsOf(auth.user).associate { it.sourceContextUrl to it.creators.single() }
+        assertEquals(
+            creatorOf.getValue("https://example.test/sample.png").id,
+            creatorOf.getValue("https://example.test/sample.jpg").id,
+        )
+        assertEquals(3, creatorOf.getValue("https://example.test/animated.gif").urls.size)
+        assertEquals(2, QPersonModel().author.id.equalTo(auth.user.id).findCount())
+    }
+
+    @Test
+    fun `Given lines naming no people, a blank name and 101 creators, Then only the first imports, with none`() {
+        // Given: the two refused lines are refused before their medium is read, so they share the first's
+        val auth = createAuthenticatedUser()
+        val png = fixture("sample.png").readBytes()
+        val line = { slug: String, publisher: Map<String, Any?>?, creators: List<Map<String, Any?>>? ->
+            ImportArchiveBuilder.pinLine(
+                sourceContextUrl = "https://example.test/$slug",
+                mediaPath = "media/only.png",
+                mediaSha256 = ImportArchiveBuilder.sha256(png),
+                publisher = publisher,
+                creators = creators,
+            )
+        }
+        val archive =
+            ImportArchiveBuilder(objectMapper)
+                .manifest(announcedPins = 3)
+                .entry("media/only.png", png)
+                .pins(
+                    line("blank", ImportArchiveBuilder.personLine(" "), null),
+                    line("crowd", null, List(OVER_LONG_REFS) { ImportArchiveBuilder.personLine("p$it") }),
+                    line("none", null, null),
+                )
+                .bytes()
+
+        // When
+        val importId = importArchive(auth, archive)
+
+        // Then
+        assertEquals(listOf("FIELD_INVALID", "FIELD_INVALID"), issueKinds(auth, importId))
+        val pin = activePinsOf(auth.user).single()
+        assertEquals("https://example.test/none", pin.sourceContextUrl)
+        assertNull(pin.publisher)
+        assertTrue(pin.creators.isEmpty())
+        assertNull(pin.publishedAt)
+        assertEquals(0, QPersonModel().author.id.equalTo(auth.user.id).findCount())
+    }
+
     /** Scoped to the account: the data directory outlives a case, since only the database is truncated. */
     private fun storedObjectCount(userId: UUID): Int =
         countFiles(Path.of(mediaConfig.dataDir()).resolve("originals").resolve(userId.toString()))
@@ -212,6 +290,9 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
 
     private companion object {
         const val OVER_LONG_NAME = 300
+        const val OVER_LONG_REFS = 101
+        const val A_URL = "https://a.example"
+        const val B_URL = "https://b.example"
         val EXPECTED_ANOMALIES =
             listOf(
                 "ENTRY_PATH_INVALID",

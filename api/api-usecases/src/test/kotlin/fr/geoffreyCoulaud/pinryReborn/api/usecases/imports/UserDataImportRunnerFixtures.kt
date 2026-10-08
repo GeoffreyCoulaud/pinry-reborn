@@ -20,6 +20,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -29,6 +30,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInte
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
@@ -161,6 +163,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
     protected val issueRepository = mockk<UserDataImportIssueRepositoryInterface>()
     protected val userRepository = mockk<UserRepositoryInterface>()
     protected val tagRepository = mockk<TagRepositoryInterface>()
+    protected val personRepository = mockk<PersonRepositoryInterface>()
     protected val boardRepository = mockk<BoardRepositoryInterface>()
     protected val pinRepository = mockk<PinRepositoryInterface>()
     protected val mediaRepository = mockk<MediaRepositoryInterface>()
@@ -216,6 +219,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
                 ),
             // The real one over the same fake repository: the boundary it owns is what the walk needs.
             tagCreator = TagCreator(tagRepository, transactions, clock),
+            personCreator = PersonCreator(personRepository, transactions, clock),
             transactionRunner = transactions,
             clock = clock,
             maxMetadataBytes = MAX_METADATA_BYTES,

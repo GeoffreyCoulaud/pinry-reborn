@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
@@ -34,6 +35,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInte
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.IngestedMedia
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.deleteQuietly
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.UserDataExportRequester
@@ -61,6 +63,7 @@ class UserDataImportRunner(
     private val archiveStore: ImportArchiveStore,
     private val mediaIngestion: MediaIngestion,
     private val tagCreator: TagCreator,
+    private val personCreator: PersonCreator,
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
     private val maxMetadataBytes: Long,
@@ -508,10 +511,16 @@ class UserDataImportRunner(
             created.pin.copy(
                 tags = created.tagNames.mapNotNull { tagRepository.findUserTagByName(walk.user, it) },
                 boards = created.boardNames.mapNotNull { boardRepository.findBoardForUserByName(walk.user, it) },
+                publisher = created.publisher?.let { resolvePerson(walk, it) },
+                creators = created.creators.map { resolvePerson(walk, it) },
             )
         )
         mediaRepository.save(created.ingested.media)
     }
+
+    /** Found or created inside the settling transaction, stamped with the import instant (the spec's decision D). */
+    private fun resolvePerson(walk: PinWalk, person: ImportedPerson): Person =
+        personCreator.findOrCreate(person.name, person.urls, walk.user, createdAt = walk.importInstant)
 
     private fun outcomeFor(walk: PinWalk, line: ArchiveLine<ImportedPin>): PinOutcome {
         val pin = line.value
@@ -531,6 +540,10 @@ class UserDataImportRunner(
             ?: pin.sourceContextUrl?.let { ImportFieldBounds.blankFault(SOURCE_CONTEXT_URL, it) }
             ?: ImportFieldBounds.referenceCountFault(TAGS_FIELD, pin.tags.size)
             ?: ImportFieldBounds.referenceCountFault(BOARDS_FIELD, pin.boards.size)
+            ?: ImportFieldBounds.referenceCountFault(CREATORS_FIELD, pin.creators.size)
+            ?: (listOfNotNull(pin.publisher) + pin.creators).firstNotNullOfOrNull {
+                ImportFieldBounds.personFault(it.name, it.urls)
+            }
 
     private fun reported(kind: UserDataImportIssueKind, subject: String?, detail: String?): PinOutcome =
         PinOutcome(issues = listOf(PendingIssue(kind, subject, detail)))
@@ -633,10 +646,14 @@ class UserDataImportRunner(
                             createdAt = createdAt,
                             updatedAt = walk.clamp.clampUpdate(pin.updatedAt, createdAt),
                             softDeletedAt = pin.deletedAt?.let { walk.clamp.clamp(it) },
+                            // Not clamped: a work is often older than the account (the spec's decision D).
+                            publishedAt = pin.publishedAt,
                         ),
                     ingested = ingested,
                     tagNames = pin.tags.map { it.name },
                     boardNames = pin.boards.map { it.name },
+                    publisher = pin.publisher,
+                    creators = pin.creators,
                 )
         )
     }
@@ -687,6 +704,8 @@ class UserDataImportRunner(
         val ingested: IngestedMedia,
         val tagNames: List<String>,
         val boardNames: List<String>,
+        val publisher: ImportedPerson?,
+        val creators: List<ImportedPerson>,
     )
 
     private companion object {
@@ -697,5 +716,6 @@ class UserDataImportRunner(
         const val SOURCE_CONTEXT_URL = "sourceContextUrl"
         const val TAGS_FIELD = "tags"
         const val BOARDS_FIELD = "boards"
+        const val CREATORS_FIELD = "creators"
     }
 }
