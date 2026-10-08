@@ -41,6 +41,7 @@ class ExportReadmeTest {
         assertTrue(readme.contains("pins.jsonl"))
         assertTrue(readme.contains("boards.jsonl"))
         assertTrue(readme.contains("tags.jsonl"))
+        assertTrue(readme.contains("collections.jsonl"))
         assertTrue(readme.contains("media/"))
         for (exclusion in excluded) {
             assertTrue(readme.contains(exclusion.what), "expected README to mention '${exclusion.what}'")

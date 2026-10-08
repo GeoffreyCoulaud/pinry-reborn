@@ -49,6 +49,9 @@ internal data class ExportedBoard(
     val deletedAt: Instant?,
 )
 
+/** One `collections.jsonl` line: `board` names the board the collection links to, whatever its state. */
+internal data class ExportedCollection(val url: String, val name: String, val board: String)
+
 /**
  * A pin's `media` object. `path` is the archive-relative entry path (`media/<mediaId>.<ext>`, from
  * [ExportMediaExtension]), never a bare id, so the file only needs `path` to be located inside the archive. `sha256` is

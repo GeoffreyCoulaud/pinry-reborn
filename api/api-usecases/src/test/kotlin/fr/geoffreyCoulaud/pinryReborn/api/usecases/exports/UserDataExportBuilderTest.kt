@@ -1,8 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
@@ -37,6 +39,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(any()) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(any()) } returns emptyList()
 
@@ -62,6 +65,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(pin.id) } returns media
         every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(byteArrayOf(1, 2, 3))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
@@ -90,6 +94,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(pin.id) } returnsMany listOf(media, null)
         every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(byteArrayOf(9))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
@@ -116,6 +121,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(pin.id) } returnsMany listOf(writtenMedia, staleMedia)
         every { mediaStore.openStream(writtenMedia.storageKey) } returns ByteArrayInputStream(byteArrayOf(1))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
@@ -140,6 +146,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns listOf(recycledBoard)
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(pin.id) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns listOf(recycledBoard)
 
@@ -173,6 +180,43 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
     }
 
     @Test
+    fun `Given collections on an active and a recycled board, Then collections jsonl names each one's board`() {
+        // Given
+        stubArchiveStore()
+        every { clock.now() } returns now
+        stubEmptyCollections()
+        val active = aBoard(name = "Active")
+        val recycled = aBoard(name = "Gone", softDeletedAt = now)
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns
+            listOf(
+                aRemoteCollection("https://remote.example/1", active),
+                aRemoteCollection("https://remote.example/2", recycled),
+            )
+
+        // When
+        builder.stageArchive(anExport(), user, renewLease = {})
+
+        // Then
+        assertEquals(
+            listOf(
+                ExportedCollection("https://remote.example/1", "collection", "Active"),
+                ExportedCollection("https://remote.example/2", "collection", "Gone"),
+            ),
+            sink.jsonLines.getValue("collections.jsonl"),
+        )
+    }
+
+    private fun aRemoteCollection(url: String, board: Board) =
+        RemoteCollection(
+            id = randomUUID(),
+            author = user,
+            url = url,
+            name = "collection",
+            board = board,
+            createdAt = now,
+        )
+
+    @Test
     fun `Given several pages of pins, Then every page is walked`() {
         // Given
         stubArchiveStore()
@@ -188,6 +232,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(any()) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(any()) } returns emptyList()
         var renewCount = 0
@@ -215,6 +260,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns listOf(board)
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns listOf(tag)
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(pin.id) } returns media
         every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(byteArrayOf(5, 6))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
@@ -234,7 +280,15 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         assertEquals(3, manifest.excluded.size)
         val entryPaths = manifest.entries.map { it.path }.toSet()
         assertEquals(
-            setOf("README.md", "user.json", "boards.jsonl", "tags.jsonl", "media/${media.id}.jpg", "pins.jsonl"),
+            setOf(
+                "README.md",
+                "user.json",
+                "boards.jsonl",
+                "collections.jsonl",
+                "tags.jsonl",
+                "media/${media.id}.jpg",
+                "pins.jsonl",
+            ),
             entryPaths,
         )
         assertTrue(manifest.entries.all { it.sha256.isNotBlank() && it.byteSize > 0 })
@@ -255,6 +309,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(pin.id) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
 
@@ -271,7 +326,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         assertEquals(publishedAt, exportedPin.publishedAt)
         val manifest = sink.json.getValue("manifest.json") as ExportManifest
         assertEquals(
-            setOf("README.md", "user.json", "boards.jsonl", "tags.jsonl", "pins.jsonl"),
+            setOf("README.md", "user.json", "boards.jsonl", "collections.jsonl", "tags.jsonl", "pins.jsonl"),
             manifest.entries.map { it.path }.toSet(),
         )
     }
@@ -508,6 +563,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
 
         // When / Then: the net rethrows it before its FAILED arm, the winner still building this row
         assertThrows(TaskLeaseLostException::class.java) {

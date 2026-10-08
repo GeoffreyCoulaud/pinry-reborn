@@ -1,8 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
@@ -23,13 +26,15 @@ import org.junit.jupiter.api.Test
 class MeImportRoundTripIntegrationTest : MeImportFixtures() {
     @Inject lateinit var personCreator: PersonCreator
 
+    @Inject lateinit var remoteCollectionRepository: RemoteCollectionRepositoryInterface
+
     // --- Seeding, and the real export the round trip pours back in ---
 
     private fun stepUp(password: String) = "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())
 
     /**
-     * Two active pins, one recycled pin naming no page, an active board, a recycled board holding a pin, two tags, and
-     * a fourth pin sharing the first one's medium byte for byte (spec section 13.1). The first one credits its people.
+     * Two active pins, one recycled pin naming no page, two boards (one recycled) each holding a pin and a collection,
+     * two tags, and a fourth pin sharing a medium (spec section 13.1). The first one credits its people.
      */
     private fun seedRoundTripContent(auth: AuthenticatedUser) {
         val alpha = createPin(auth, ALPHA, tags = listOf("nature", "travel"))
@@ -55,8 +60,23 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
                 publishedAt = PUBLISHED_AT,
             )
         replacePin(auth, credited, boardIds = listOf(activeBoard.id, recycledBoard.id)).statusCode(200)
+        linkCollection(activeBoard, "https://remote.example/active")
+        linkCollection(recycledBoard, "https://remote.example/recycled")
         given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${recycledBoard.id}").then().statusCode(204)
         given().authenticatedAs(auth).`when`().delete("/api/v1/pins/${gamma.id}").then().statusCode(204)
+    }
+
+    private fun linkCollection(board: Board, url: String) {
+        remoteCollectionRepository.saveRemoteCollection(
+            RemoteCollection(
+                id = UUID.randomUUID(),
+                author = board.author,
+                url = url,
+                name = "Collection of ${board.name}",
+                board = board,
+                createdAt = board.createdAt,
+            )
+        )
     }
 
     /** A real export, built by the real worker and downloaded over the wire. */
@@ -122,7 +142,10 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         val pins: Map<String?, PinFacts>,
         val boards: Map<String, Instant?>,
         val tags: Set<String>,
+        val collections: Set<CollectionFacts>,
     )
+
+    private data class CollectionFacts(val url: String, val name: String, val boardName: String)
 
     private fun factsOf(pin: Pin): PinFacts {
         val media = requireNotNull(mediaRepository.findByPinId(pin.id)) { "pin ${pin.id} carries no image" }
@@ -153,6 +176,11 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
             pins = pins.associate { it.sourceContextUrl to factsOf(it) },
             boards = boards.associate { it.name to it.softDeletedAt },
             tags = tagRepository.findAllTagsForUser(user).map { it.name }.toSet(),
+            collections =
+                remoteCollectionRepository
+                    .findAllRemoteCollectionsForUser(user)
+                    .map { CollectionFacts(it.url, it.name, it.board.name) }
+                    .toSet(),
         )
     }
 
@@ -209,6 +237,8 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         assertEquals(2, alphaCopy.creators.size)
         assertEquals(source.boards, copy.boards, "both boards, the recycled one still recycled")
         assertEquals(source.tags, copy.tags)
+        assertEquals(2, copy.collections.size)
+        assertEquals(source.collections, copy.collections, "each collection linked to its board, recycled or not")
         // The whole report, not one kind: this is the one case where the real exporter's digest meets
         // the real importer's, so any anomaly at all is a disagreement between the two halves.
         assertEquals(emptyList<String>(), issueKinds(destination, importId))

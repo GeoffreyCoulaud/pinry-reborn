@@ -19,4 +19,7 @@ class RemoteCollectionRepository(persistor: Persistor) : RemoteCollectionReposit
 
     override fun findUserRemoteCollectionByUrl(user: User, url: String): RemoteCollection? =
         QRemoteCollectionModel().author.id.equalTo(user.id).url.equalTo(url).findOne()?.toDomain()
+
+    override fun findAllRemoteCollectionsForUser(user: User): List<RemoteCollection> =
+        QRemoteCollectionModel().author.id.equalTo(user.id).findList().map { it.toDomain() }
 }

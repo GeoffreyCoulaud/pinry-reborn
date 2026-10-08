@@ -32,14 +32,16 @@ internal object ExportReadme {
             |- `boards.jsonl` - every board you created, active and recycled, one JSON object per
             |  line.
             |- `tags.jsonl` - every tag you have used, one JSON object per line.
+            |- `collections.jsonl` - every remote collection linked to one of your boards, with that
+            |  board's name, one JSON object per line.
             |- `media/` - the original media bytes (images and videos) referenced from `pins.jsonl`,
             |  one file per media, named `<mediaId>.<ext>`.
             |
             |## The `.jsonl` convention
             |
-            |`pins.jsonl`, `boards.jsonl` and `tags.jsonl` are "JSON Lines" files: one complete JSON
-            |object per line, not one big JSON array. Read them line by line rather than parsing the
-            |whole file as a single JSON document.
+            |The `.jsonl` files are "JSON Lines" files: one complete JSON object per line, not one big
+            |JSON array. Read them line by line rather than parsing the whole file as a single JSON
+            |document.
             |
             |## Verifying integrity
             |

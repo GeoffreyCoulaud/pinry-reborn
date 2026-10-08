@@ -16,6 +16,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
@@ -50,6 +51,7 @@ class UserDataExportBuilder(
     private val mediaRepository: MediaRepositoryInterface,
     private val boardRepository: BoardRepositoryInterface,
     private val tagRepository: TagRepositoryInterface,
+    private val remoteCollectionRepository: RemoteCollectionRepositoryInterface,
     private val mediaStore: MediaStore,
     private val archiveStore: ExportArchiveStore,
     private val transactionRunner: TransactionRunner,
@@ -181,9 +183,9 @@ class UserDataExportBuilder(
 
     /**
      * Writes every archive entry for [export]/[user] into a freshly staged file, in the load-bearing order from spec
-     * §3: `README.md`, `user.json`, `boards.jsonl`, `tags.jsonl`, the image entries (first pin walk), `pins.jsonl`
-     * (second pin walk, referencing only images actually written), and `manifest.json` last. [renewLease] is threaded
-     * down to the pin walks so a long build keeps its task lease alive (spec §15).
+     * §3: `README.md`, `user.json`, `boards.jsonl`, `collections.jsonl`, `tags.jsonl`, the image entries (first pin
+     * walk), `pins.jsonl` (second pin walk, referencing only images actually written), and `manifest.json` last.
+     * [renewLease] is threaded down to the pin walks so a long build keeps its task lease alive (spec §15).
      */
     internal fun stageArchive(export: UserDataExport, user: User, renewLease: () -> Unit): StagedFile {
         val createdAt = clock.now()
@@ -219,6 +221,10 @@ class UserDataExportBuilder(
                     board.softDeletedAt,
                 )
             }
+        val collections = remoteCollectionRepository.findAllRemoteCollectionsForUser(user)
+        writeCollection(sink, entries, "collections.jsonl", collections) { collection ->
+            ExportedCollection(collection.url, collection.name, collection.board.name)
+        }
         val tagCount =
             writeCollection(sink, entries, "tags.jsonl", tagRepository.findAllTagsForUser(user)) { tag ->
                 ExportedTag(tag.id, tag.name, tag.createdAt)
