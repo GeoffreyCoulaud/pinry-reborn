@@ -22,6 +22,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInt
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportIssueRepositoryInterface
@@ -89,6 +90,7 @@ internal data class FakeArchiveSource(
     val manifest: ImportedManifest?,
     val tags: List<ArchiveLine<ImportedTag>> = emptyList(),
     val boards: List<ArchiveLine<ImportedBoard>> = emptyList(),
+    val collections: List<ArchiveLine<ImportedCollection>> = emptyList(),
     val pins: List<ArchiveLine<ImportedPin>> = emptyList(),
     val media: Map<String, ByteArray?> = emptyMap(),
     val readFailure: Exception? = null,
@@ -103,7 +105,7 @@ internal data class FakeArchiveSource(
     override fun entryNames(maxEntries: Int): Set<String> {
         entryBound = maxEntries
         entriesFailure?.let { throw it }
-        return setOf(MANIFEST, TAGS, BOARDS, PINS) + media.keys
+        return setOf(MANIFEST, TAGS, BOARDS, COLLECTIONS, PINS) + media.keys
     }
 
     /** Keyed on the entry, so asking for the wrong one is a failure rather than the manifest again. */
@@ -120,6 +122,7 @@ internal data class FakeArchiveSource(
             when (name) {
                 TAGS -> tags.asSequence()
                 BOARDS -> boards.asSequence()
+                COLLECTIONS -> collections.asSequence()
                 PINS -> pinLines()
                 else -> error("no JSONL entry named $name")
             }
@@ -149,6 +152,7 @@ internal data class FakeArchiveSource(
         const val MANIFEST = "manifest.json"
         const val TAGS = "tags.jsonl"
         const val BOARDS = "boards.jsonl"
+        const val COLLECTIONS = "collections.jsonl"
         const val PINS = "pins.jsonl"
     }
 }
@@ -165,6 +169,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
     protected val tagRepository = mockk<TagRepositoryInterface>()
     protected val personRepository = mockk<PersonRepositoryInterface>()
     protected val boardRepository = mockk<BoardRepositoryInterface>()
+    protected val remoteCollectionRepository = mockk<RemoteCollectionRepositoryInterface>()
     protected val pinRepository = mockk<PinRepositoryInterface>()
     protected val mediaRepository = mockk<MediaRepositoryInterface>()
     protected val archiveStore = mockk<ImportArchiveStore>()
@@ -220,6 +225,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             // The real one over the same fake repository: the boundary it owns is what the walk needs.
             tagCreator = TagCreator(tagRepository, transactions, clock),
             personCreator = PersonCreator(personRepository, transactions, clock),
+            remoteCollectionLinker = RemoteCollectionLinker(remoteCollectionRepository, boardRepository, transactions),
             transactionRunner = transactions,
             clock = clock,
             maxMetadataBytes = MAX_METADATA_BYTES,

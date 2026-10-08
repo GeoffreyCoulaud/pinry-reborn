@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPersonModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QRemoteCollectionModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
@@ -274,6 +275,99 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         assertEquals(0, QPersonModel().author.id.equalTo(auth.user.id).findCount())
     }
 
+    // --- Collections ---
+
+    @Test
+    fun `Given collections naming no board or an absent one, Then each board is created, linked and joined`() {
+        // Given: the second and third collections share the board `Shared`, which the account lacks
+        val auth = createAuthenticatedUser()
+        val builder =
+            ImportArchiveBuilder(objectMapper)
+                .manifest(announcedPins = 2)
+                .collections(
+                    ImportArchiveBuilder.collectionLine(FEED_URL, "Feed"),
+                    ImportArchiveBuilder.collectionLine(OTHER_URL, "Other", board = "Shared"),
+                    ImportArchiveBuilder.collectionLine(THIRD_URL, "Third", board = "Shared"),
+                )
+        builder.pins(pinNaming(builder, "sample.png", FEED_URL), pinNaming(builder, "sample.jpg", THIRD_URL))
+
+        // When
+        val importId = importArchive(auth, builder.bytes())
+
+        // Then
+        assertEquals(emptyList<String>(), issueKinds(auth, importId))
+        assertEquals(listOf("Feed", "Shared"), boardRepository.findActiveBoardsForUser(auth.user).map { it.name })
+        assertEquals(
+            mapOf(FEED_URL to "Feed", OTHER_URL to "Shared", THIRD_URL to "Shared"),
+            QRemoteCollectionModel().findList().associate { it.url to it.board.name },
+        )
+        assertEquals(
+            mapOf("https://example.test/sample.png" to "Feed", "https://example.test/sample.jpg" to "Shared"),
+            activePinsOf(auth.user).associate { it.sourceContextUrl to it.boards.single().name },
+        )
+    }
+
+    @Test
+    fun `Given a collection imported again after its board is renamed, Then a new pin line joins the renamed board`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val collection = ImportArchiveBuilder.collectionLine(FEED_URL, "Feed")
+        importArchive(
+            auth,
+            ImportArchiveBuilder(objectMapper).manifest(announcedPins = 0).collections(collection).bytes(),
+        )
+        val board = boardRepository.findActiveBoardsForUser(auth.user).single()
+        boardRepository.saveBoard(board.copy(name = "Renamed"))
+        val builder = ImportArchiveBuilder(objectMapper).manifest(announcedPins = 1).collections(collection)
+        builder.pins(pinNaming(builder, "sample.png", FEED_URL))
+
+        // When
+        val importId = importArchive(auth, builder.bytes())
+
+        // Then
+        assertEquals(emptyList<String>(), issueKinds(auth, importId))
+        assertEquals(listOf("Renamed"), boardRepository.findActiveBoardsForUser(auth.user).map { it.name })
+        assertEquals(listOf(board.id), activePinsOf(auth.user).single().boards.map { it.id })
+    }
+
+    @Test
+    fun `Given a collection naming a recycled board, Then it is linked with no issue and a pin line joins the board`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(auth.user, "Bin", "")
+        given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${board.id}").then().statusCode(204)
+        val builder =
+            ImportArchiveBuilder(objectMapper)
+                .manifest(announcedPins = 1)
+                .collections(ImportArchiveBuilder.collectionLine(FEED_URL, "Feed", board = "Bin"))
+        builder.pins(pinNaming(builder, "sample.png", FEED_URL))
+
+        // When
+        val importId = importArchive(auth, builder.bytes())
+
+        // Then
+        assertEquals(emptyList<String>(), issueKinds(auth, importId))
+        assertEquals(board.id, QRemoteCollectionModel().findList().single().board.id)
+        val pin = activePinsOf(auth.user).single()
+        assertEquals(listOf(board.id), pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { it.id })
+    }
+
+    /** A pin line over its own medium, so no line is skipped as one the account already holds. */
+    private fun pinNaming(
+        builder: ImportArchiveBuilder,
+        medium: String,
+        vararg collections: String,
+    ): Map<String, Any?> {
+        val bytes = fixture(medium).readBytes()
+        builder.entry("media/$medium", bytes)
+        return ImportArchiveBuilder.pinLine(
+            sourceContextUrl = "https://example.test/$medium",
+            mediaPath = "media/$medium",
+            mediaSha256 = ImportArchiveBuilder.sha256(bytes),
+            collections = collections.toList(),
+        )
+    }
+
     /** Scoped to the account: the data directory outlives a case, since only the database is truncated. */
     private fun storedObjectCount(userId: UUID): Int =
         countFiles(Path.of(mediaConfig.dataDir()).resolve("originals").resolve(userId.toString()))
@@ -293,6 +387,9 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         const val OVER_LONG_REFS = 101
         const val A_URL = "https://a.example"
         const val B_URL = "https://b.example"
+        const val FEED_URL = "https://remote.test/feed"
+        const val OTHER_URL = "https://remote.test/other"
+        const val THIRD_URL = "https://remote.test/third"
         val EXPECTED_ANOMALIES =
             listOf(
                 "ENTRY_PATH_INVALID",

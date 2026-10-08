@@ -41,14 +41,15 @@ object ImportFieldBounds {
         return when {
             nameFault != null -> "a person's $nameFault"
             urls.size > MAX_PERSON_URLS -> "a person holds more than $MAX_PERSON_URLS addresses"
-            else -> urls.firstNotNullOfOrNull { urlFault(it) }
+            else -> urls.firstNotNullOfOrNull { addressFault("a person's address", it) }
         }
     }
 
-    private fun urlFault(url: String): String? =
+    /** A person's address or a collection's, under the same bounds (the spec's decision A). */
+    fun addressFault(field: String, url: String): String? =
         when {
-            url.isBlank() -> "a person's address is blank"
-            url.length > MAX_URL_LENGTH -> "a person's address is longer than $MAX_URL_LENGTH characters"
+            url.isBlank() -> "$field is blank"
+            url.length > MAX_URL_LENGTH -> "$field is longer than $MAX_URL_LENGTH characters"
             else -> null
         }
 

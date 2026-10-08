@@ -24,6 +24,9 @@ internal data class ImportedBoard(
     val deletedAt: Instant?,
 )
 
+/** One `collections.jsonl` line. A null [board] links the collection to the board of its own name. */
+internal data class ImportedCollection(val url: String, val name: String, val board: String? = null)
+
 /** A pin's tag or board membership; the archive's `id` is dropped, since identity is the name. */
 internal data class ImportedRef(val name: String)
 
@@ -37,8 +40,8 @@ internal data class ImportedMedia(val path: String, val sha256: String)
 internal data class ImportedPerson(val name: String, val urls: List<String>)
 
 /**
- * One `pins.jsonl` line. A null [media] is a pin with no medium, which has no identity to import. The people and the
- * publication instant default to none, so a line that predates them still reads.
+ * One `pins.jsonl` line. A null [media] is a pin with no medium, which has no identity to import. The people, the
+ * publication instant and the [collections]' addresses default to none, so a line that predates them still reads.
  */
 internal data class ImportedPin(
     val description: String,
@@ -53,4 +56,5 @@ internal data class ImportedPin(
     val publisher: ImportedPerson? = null,
     val creators: List<ImportedPerson> = emptyList(),
     val publishedAt: Instant? = null,
+    val collections: List<String> = emptyList(),
 )
