@@ -47,6 +47,8 @@ category, a plan step, a server call per batch, a source identity beside the med
    homonyms or one person seen with different addresses; **a management screen will merge them** and edit a person
    once for all its pins. That screen is not part of either lot. The addresses are stored sorted, distinct and
    joined by a line feed, which the identity's unique index compares as one text: an address never holds a line feed.
+   *(Corrected: on the operator's review of pull request #364, they are stored as a JSON array text, sorted and
+   distinct, which the index compares as one text; no rule on line feeds remains.)*
 9. **Tags stay plain names**: no origin, no category.
 10. **The source's title, text, upstream address and content classification are not stored**, and `description`
     keeps its name.

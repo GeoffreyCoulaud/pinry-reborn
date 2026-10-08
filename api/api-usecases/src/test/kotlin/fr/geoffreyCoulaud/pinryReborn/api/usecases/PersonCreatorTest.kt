@@ -1,7 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonUrls
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -10,12 +9,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import java.time.Instant
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 
 class PersonCreatorTest {
     private val clockInstant = Instant.parse("2026-10-08T10:00:00Z")
-    private val repository = FoldingPersonRepository()
+    private val repository = RecordingPersonRepository()
     private val creator =
         PersonCreator(
             personRepository = repository,
@@ -25,39 +23,29 @@ class PersonCreatorTest {
     private val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
 
     @Test
-    fun `Given a person in another ASCII case and its addresses in another order, Then findOrCreate finds it`() {
+    fun `Given a person the store finds, Then findOrCreate returns it and saves nothing`() {
         // Given
-        val existing = creator.findOrCreate(name = "Alice", urls = listOf(FIRST_URL, SECOND_URL), user = user)
+        val existing =
+            Person(id = randomUUID(), author = user, name = "Alice", urls = listOf(URL), createdAt = TestTime.now)
+        repository.found = existing
 
         // When
-        val found = creator.findOrCreate(name = "aLICE", urls = listOf(SECOND_URL, FIRST_URL), user = user)
+        val found = creator.findOrCreate(name = "Alice", urls = listOf(URL), user = user)
 
         // Then
         assertEquals(existing, found)
-        assertEquals(1, repository.rowCount)
+        assertEquals(emptyList<Person>(), repository.saved)
     }
 
     @Test
-    fun `Given a person, Then findOrCreate with one address more creates a second row`() {
-        // Given
-        val existing = creator.findOrCreate(name = "Alice", urls = listOf(FIRST_URL), user = user)
-
+    fun `Given no such person, Then findOrCreate saves one stamped from the clock`() {
         // When
-        val created = creator.findOrCreate(name = "Alice", urls = listOf(FIRST_URL, SECOND_URL), user = user)
+        val created = creator.findOrCreate(name = "Alice", urls = listOf(URL), user = user)
 
         // Then
-        assertNotEquals(existing.id, created.id)
-        assertEquals(2, repository.rowCount)
-    }
-
-    @Test
-    fun `Given no such person, Then findOrCreate stamps the new row from the clock with canonical addresses`() {
-        // When
-        val created = creator.findOrCreate(name = "Alice", urls = listOf(SECOND_URL, FIRST_URL), user = user)
-
-        // Then
+        assertEquals(listOf(created), repository.saved)
         assertEquals(clockInstant, created.createdAt)
-        assertEquals(PersonUrls.of(listOf(FIRST_URL, SECOND_URL)), created.urls)
+        assertEquals(listOf(URL), created.urls)
     }
 
     private fun clock() =
@@ -69,24 +57,17 @@ class PersonCreatorTest {
         override fun <T> inTransaction(block: () -> T): T = block()
     }
 
-    /** Folds the name as `ix_persons_author_name_nocase_urls` does, on the ASCII names these tests use. */
-    private class FoldingPersonRepository : PersonRepositoryInterface {
-        private val rows = mutableMapOf<String, Person>()
+    /** The identity itself is the store's, held by PersonRepositoryTest against SQLite. */
+    private class RecordingPersonRepository : PersonRepositoryInterface {
+        var found: Person? = null
+        val saved = mutableListOf<Person>()
 
-        val rowCount: Int
-            get() = rows.size
+        override fun savePerson(person: Person): Person = person.also { saved += it }
 
-        override fun savePerson(person: Person): Person = person.also {
-            rows[key(person.author, person.name, person.urls)] = it
-        }
-
-        override fun findUserPerson(user: User, name: String, urls: PersonUrls): Person? = rows[key(user, name, urls)]
-
-        private fun key(user: User, name: String, urls: PersonUrls) = "${user.id}:${name.lowercase()}:${urls.joined}"
+        override fun findUserPerson(user: User, name: String, urls: Collection<String>): Person? = found
     }
 
     private companion object {
-        const val FIRST_URL = "https://a.test/alice"
-        const val SECOND_URL = "https://b.test/alice"
+        const val URL = "https://a.test/alice"
     }
 }

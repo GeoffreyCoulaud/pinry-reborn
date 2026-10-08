@@ -80,7 +80,9 @@ unless it says it is the lead's.
 **A. A person is an entity per owner, identified by its name and its addresses together** (H, O, U, W).
 - `persons(id, author_id, name, urls text not null, created_at)`. `urls` is the addresses sorted and distinct, joined
   by a line feed, empty for none (ADR 0055, decision 8). One function of the domain produces this form, and every
-  write path goes through it.
+  write path goes through it. *(Corrected: on the operator's review of pull request #364, `urls` is a JSON array held
+  as text, sorted and distinct, `[]` for none. `Person` holds a plain list; the canonical form and its serialisation
+  are the persistence adapter's, `PersonModelMapper.canonicalUrls`, which every write and the lookup go through.)*
 - Unique index `(author_id, name collate nocase, urls)`. A person is found with the existing literal
   `"name collate nocase = ?"` and an equality on `urls`. Two people may share a name when their addresses differ.
 - No normalisation beyond the ASCII fold of the name and the canonical order of the addresses: the server trims
@@ -89,7 +91,8 @@ unless it says it is the lead's.
   deliberately", for the tag's reason.
 - A person no pin references stays, as a tag does (the lead's default, announced and not refused).
 - Bounds, the lead's: a name non-blank and at most 200 characters, as a board's; at most 20 addresses, each non-blank,
-  at most 2000 characters, holding no line feed.
+  at most 2000 characters, holding no line feed. *(Corrected: no rule on line feeds, the JSON form escaping them;
+  pull request #364.)*
 
 **B. A pin holds a publisher, creators and a publication instant** (L, D, Y).
 - `pins.publisher_id`, nullable; `pin_creator_model(pin_id, person_id)`, unordered, unique on the pair; and
@@ -194,10 +197,12 @@ at a number between its own and the next.
 
 - Migration `1.33`: `persons` with its unique index; `urls` reads `not null` in `1.33.sql`.
 - `Person` and its repository port in `api-domain`, the canonical `urls` function, the Ebean adapter, and
-  `PersonCreator.findOrCreate`. Their consumers are blocks 20 and 30.
+  `PersonCreator.findOrCreate`. Their consumers are blocks 20 and 30. *(Corrected: the canonical function lives in
+  the Ebean adapter, not in `api-domain`; pull request #364.)*
 - Found or created: a person with the same name in another ASCII case and the same addresses in another order is the
   same row; one with an address more is a second row; another author's person of the same name is not found.
-- The canonical form: sorted, distinct, line-feed joined, empty for none.
+- The canonical form: sorted, distinct, line-feed joined, empty for none. *(Corrected: a sorted and distinct JSON
+  array, `[]` for none; pull request #364.)*
 - `UniqueConstraintOutcomeTest` names the index's outcome.
 - Carries this specification.
 
