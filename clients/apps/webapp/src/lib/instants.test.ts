@@ -22,8 +22,12 @@ describe("a day and a time read in the browser's zone", () => {
 		expect(instantOf("2026-07-15", "")).toBe("2026-07-14T22:00:00.000Z");
 	});
 
+	it("Given a five-digit year a date field accepts, Then there is no instant", () => {
+		expect(instantOf("27576-01-01", "00:00")).toBeNull();
+	});
+
 	it("Given an instant read back, Then it gives the same day and time", () => {
-		expect(dayAndTimeOf(instantOf("2026-03-05", "09:07"))).toEqual({
+		expect(dayAndTimeOf(instantOf("2026-03-05", "09:07") ?? "")).toEqual({
 			day: "2026-03-05",
 			time: "09:07",
 		});

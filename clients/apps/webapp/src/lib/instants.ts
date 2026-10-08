@@ -5,11 +5,12 @@ function twoDigits(value: number): string {
 
 /**
  * The instant of a date field's day and a time field's time, read in the browser's zone; no time
- * is 00:00 (specification 2026-10-08, decision H).
+ * is 00:00 (specification 2026-10-08, decision H). Null for a day `Date` cannot read, a five-digit year.
  */
-export function instantOf(day: string, time: string): string {
+export function instantOf(day: string, time: string): string | null {
 	// A date and a time with no offset are local time to `Date`, where a date alone would be UTC.
-	return new Date(`${day}T${time || "00:00"}`).toISOString();
+	const at = new Date(`${day}T${time || "00:00"}`);
+	return Number.isNaN(at.getTime()) ? null : at.toISOString();
 }
 
 /** The day and the time a date field and a time field show for an instant, in the browser's zone. */

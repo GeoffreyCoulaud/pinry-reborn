@@ -48,20 +48,19 @@ export function Board() {
 						aria-labelledby={collectionsLabel}
 						className="flex flex-wrap gap-x-3 gap-y-1"
 					>
-						{board.remoteCollections
-							.toSorted((a, b) => a.name.localeCompare(b.name))
-							.map((collection) => (
-								<li key={collection.url}>
-									<a
-										href={collection.url}
-										target="_blank"
-										rel="noreferrer"
-										className="text-accent hover:underline"
-									>
-										{collection.name}
-									</a>
-								</li>
-							))}
+						{/* The server sorts them, and a sort here would collate otherwise. */}
+						{board.remoteCollections.map((collection) => (
+							<li key={collection.url}>
+								<a
+									href={collection.url}
+									target="_blank"
+									rel="noreferrer"
+									className="text-accent hover:underline"
+								>
+									{collection.name}
+								</a>
+							</li>
+						))}
 					</ul>
 				</div>
 			) : null}

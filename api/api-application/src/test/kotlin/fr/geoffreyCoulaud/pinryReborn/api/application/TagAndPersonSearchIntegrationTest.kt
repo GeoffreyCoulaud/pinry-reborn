@@ -11,8 +11,9 @@ import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Test
 
+/** `GET /api/v1/tags/search` and `GET /api/v1/persons/search`, one search over two of the user's names. */
 @QuarkusTest
-class TagSearchIntegrationTest : IntegrationTest() {
+class TagAndPersonSearchIntegrationTest : IntegrationTest() {
 
     @Inject lateinit var tagCreator: TagCreator
 

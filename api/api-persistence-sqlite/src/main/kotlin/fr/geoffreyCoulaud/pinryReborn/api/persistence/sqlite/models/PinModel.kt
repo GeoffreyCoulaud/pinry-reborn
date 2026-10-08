@@ -22,7 +22,7 @@ class PinModel(
     // Written by the mapper from the domain entity, never generated. See AuthoredBaseModel.
     @Column(name = "when_modified") var updatedAt: Instant,
     override var softDeletedAt: Instant? = null,
-    // No read goes from a person to its pins, so its key brings no index.
+    // The catalogue filters by publisher inside a scan of the author's pins, so the key brings no index.
     @ManyToOne @DbForeignKey(noIndex = true) var publisher: PersonModel? = null,
     var publishedAt: Instant? = null,
 ) :

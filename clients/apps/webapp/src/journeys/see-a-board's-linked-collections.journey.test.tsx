@@ -23,7 +23,7 @@ const HARBOURS = {
 };
 
 describe("see a board's linked collections", () => {
-	it("Given a board linked to two collections, Then its page lists them by name, each linking to its address", async () => {
+	it("Given a board linked to two collections, Then its page lists them in the server's order, each linking to its address", async () => {
 		server.use(
 			sessionRoute(() => true),
 			onePinPage(() => []),
@@ -40,11 +40,11 @@ describe("see a board's linked collections", () => {
 		});
 		const links = within(list).getAllByRole("link");
 		expect(links.map((link) => link.textContent)).toEqual([
-			LIGHTHOUSES.name,
 			WRECKS.name,
+			LIGHTHOUSES.name,
 		]);
-		expect(links[0]).toHaveAttribute("href", LIGHTHOUSES.url);
+		expect(links[0]).toHaveAttribute("href", WRECKS.url);
 		expect(links[0]).toHaveAttribute("target", "_blank");
-		expect(links[1]).toHaveAttribute("href", WRECKS.url);
+		expect(links[1]).toHaveAttribute("href", LIGHTHOUSES.url);
 	});
 });

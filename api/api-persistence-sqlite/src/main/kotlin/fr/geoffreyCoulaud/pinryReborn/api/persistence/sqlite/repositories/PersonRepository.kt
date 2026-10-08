@@ -17,7 +17,7 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
 
     override fun savePerson(person: Person): Person = sqlRepository.saveAndReturn(person.toModel()).toDomain()
 
-    // The name through the column's collation, as TagRepository.findUserTagByName says why.
+    // `collate nocase` folds ASCII alone, as the unique index does, where Ebean's `ieq` would fold Unicode.
     override fun findUserPerson(
         user: User,
         name: String,
@@ -33,7 +33,7 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
             .findOne()
             ?.toDomain()
 
-    // The two queries of TagRepository.findTagsForUserMatching, for the reasons its comments give.
+    // The names starting with the query first, then those containing it, up to what is left of the limit.
     override fun findPersonsForUserMatching(
         user: User,
         query: String,
