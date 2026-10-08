@@ -45,7 +45,7 @@ object ImportFieldBounds {
         }
     }
 
-    /** A person's address or a collection's, under the same bounds (the spec's decision A). */
+    /** A person's address or a collection's, under the same bounds (specification 2026-10-08, decision A). */
     fun addressFault(field: String, url: String): String? =
         when {
             url.isBlank() -> "$field is blank"

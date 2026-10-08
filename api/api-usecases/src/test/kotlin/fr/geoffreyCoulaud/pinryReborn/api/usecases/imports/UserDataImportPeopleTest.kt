@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** A pin line's publisher, creators and publication instant (the spec's decision D). Split off for `LargeClass`. */
+/** A pin line's people and publication instant (specification 2026-10-08, decision D); split for `LargeClass`. */
 internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
     private val savedPersons = mutableListOf<Person>()
 

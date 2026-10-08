@@ -14,6 +14,13 @@ export function PublishedAtField({
 }) {
 	const { day, time } =
 		instant === null ? { day: "", time: "" } : dayAndTimeOf(instant);
+	// A day with no instant changes nothing, so the field keeps showing the pin's date.
+	const choose = (chosenDay: string, chosenTime: string) => {
+		const chosen = instantOf(chosenDay, chosenTime);
+		if (chosen !== null) {
+			onChange(chosen);
+		}
+	};
 
 	return (
 		<div className="flex flex-wrap items-end gap-2">
@@ -21,7 +28,7 @@ export function PublishedAtField({
 				type="date"
 				value={day}
 				onChange={(chosen) =>
-					onChange(chosen === "" ? null : instantOf(chosen, time))
+					chosen === "" ? onChange(null) : choose(chosen, time)
 				}
 				variant="secondary"
 			>
@@ -34,7 +41,7 @@ export function PublishedAtField({
 					type="time"
 					value={time}
 					isDisabled={day === ""}
-					onChange={(chosen) => onChange(instantOf(day, chosen))}
+					onChange={(chosen) => choose(day, chosen)}
 					variant="secondary"
 				>
 					<Label>{m.published_time()}</Label>

@@ -116,17 +116,25 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given a refused board id, Then a tag the same write names is not created either`() {
-        // Given: a name the author holds no tag for
+    fun `Given a refused board id, Then a tag or a person the same write names is not created either`() {
+        // Given: a name the author holds no tag for, and no person at all
         val auth = createAuthenticatedUser()
         val pin = createPin(auth)
         val newTag = "atagnobodyholds"
 
-        // When: the write invents that tag and then meets a board that refuses the whole call
-        update(auth, pin, tags = listOf(newTag), boardIds = listOf(UUID.randomUUID())).statusCode(404)
+        // When: the write invents that tag and a publisher, then meets a board that refuses the whole call
+        update(
+                auth,
+                pin,
+                tags = listOf(newTag),
+                boardIds = listOf(UUID.randomUUID()),
+                publisher = person("Alice", ALICE_SITE),
+            )
+            .statusCode(404)
 
-        // Then: the tag was rolled back with the rest. Resolved outside the transaction it would
-        // stand here for good, nothing in the API sweeping an orphan tag.
+        // Then: both were rolled back with the rest. Resolved outside the transaction they would
+        // stand here for good, nothing in the API sweeping an orphan tag or person.
+        assertEquals(0, personRowsOf(auth))
         given()
             .authenticatedAs(auth)
             .queryParam("q", newTag)

@@ -26,12 +26,12 @@ class PersonCreator(
         user: User,
     ): Person = findOrCreate(name = name, urls = urls, user = user, createdAt = clock.now())
 
-    /** One transaction around the read and the write, for the reason TagCreator.resolve gives. */
+    /** The read and the write in one transaction, so a concurrent creation converges on one row. */
     fun findOrCreate(
         name: String,
         urls: List<String>,
         user: User,
-        // Not the clock: the user data import stamps with its own instant (the spec's decision D).
+        // Not the clock: the user data import stamps with its own instant (specification 2026-10-08, decision D).
         createdAt: Instant,
     ): Person = transactionRunner.inTransaction {
         personRepository.findUserPerson(user = user, name = name, urls = urls)

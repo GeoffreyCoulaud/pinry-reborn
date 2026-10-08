@@ -413,7 +413,7 @@ class UserDataImportRunner(
         tally.created++
     }
 
-    /** After the boards, so a collection links to a board the archive carries. Only its issues are counted. */
+    /** After the boards, so a collection links to a board the archive carries; a board it creates is counted. */
     private fun walkCollections(
         source: ArchiveSource,
         user: User,
@@ -427,7 +427,11 @@ class UserDataImportRunner(
             rejecting(tally, it.line) { importCollection(it, user, now, tally) }
         }
         return advance(runnable) {
-            it.copy(issueCount = it.issueCount + tally.issues, issueDetailTruncated = recorder.truncated)
+            it.copy(
+                createdBoards = it.createdBoards + tally.created,
+                issueCount = it.issueCount + tally.issues,
+                issueDetailTruncated = recorder.truncated,
+            )
         }
     }
 
@@ -442,14 +446,10 @@ class UserDataImportRunner(
         when {
             collection == null -> record(tally, UserDataImportIssueKind.LINE_MALFORMED, line.line, null, line.failure)
             fault != null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, collection.url, fault)
-            else ->
-                remoteCollectionLinker.link(
-                    user,
-                    collection.url,
-                    collection.name,
-                    collection.board ?: collection.name,
-                    now,
-                )
+            else -> {
+                val boardName = collection.board ?: collection.name
+                if (remoteCollectionLinker.link(user, collection.url, collection.name, boardName, now)) tally.created++
+            }
         }
     }
 
@@ -570,7 +570,7 @@ class UserDataImportRunner(
         mediaRepository.save(created.ingested.media)
     }
 
-    /** Found or created inside the settling transaction, stamped with the import instant (the spec's decision D). */
+    /** Found or created in the settling transaction, at the import instant (specification 2026-10-08, decision D). */
     private fun resolvePerson(walk: PinWalk, person: ImportedPerson): Person =
         personCreator.findOrCreate(person.name, person.urls, walk.user, createdAt = walk.importInstant)
 
@@ -699,7 +699,7 @@ class UserDataImportRunner(
                             createdAt = createdAt,
                             updatedAt = walk.clamp.clampUpdate(pin.updatedAt, createdAt),
                             softDeletedAt = pin.deletedAt?.let { walk.clamp.clamp(it) },
-                            // Not clamped: a work is often older than the account (the spec's decision D).
+                            // A work often predates the account: not clamped (specification 2026-10-08, decision D).
                             publishedAt = pin.publishedAt,
                         ),
                     ingested = ingested,

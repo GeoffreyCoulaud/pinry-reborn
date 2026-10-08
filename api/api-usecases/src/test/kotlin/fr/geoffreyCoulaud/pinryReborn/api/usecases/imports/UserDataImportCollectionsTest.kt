@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** `collections.jsonl` and a pin line's `collections` (the spec's decision F). Split off for `LargeClass`. */
+/** `collections.jsonl`, a pin line's `collections` (specification 2026-10-08, decision F); split for `LargeClass`. */
 internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
     private val linked = mutableListOf<RemoteCollection>()
 
@@ -41,6 +41,7 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         assertEquals(listOf(FEED_URL to board), linked.map { it.url to it.board })
         assertEquals(now, linked.single().createdAt)
         assertEquals(listOf(board), savedPins.single().boards)
+        assertEquals(1, stored.createdBoards)
     }
 
     @Test
