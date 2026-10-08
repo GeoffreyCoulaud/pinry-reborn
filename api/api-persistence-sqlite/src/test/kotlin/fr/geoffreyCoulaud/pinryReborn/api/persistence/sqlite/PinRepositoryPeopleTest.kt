@@ -5,28 +5,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPersonModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinCreatorModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PersonRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
-import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 /** A pin's publisher, creators and publication instant, saved and read by `PinRepository`. */
 class PinRepositoryPeopleTest : PinRepositoryFixtures() {
-    private val personRepository = PersonRepository(persistor)
-
-    private fun createAndSavePerson(user: User): Person =
-        personRepository.savePerson(
-            Person(
-                id = randomUUID(),
-                author = user,
-                name = createRandomString(),
-                urls = listOf("https://a.test/${createRandomString()}"),
-                createdAt = storableNow(),
-            )
-        )
-
     private fun savePinWithCreators(user: User, vararg creators: Person): Pin =
         repository.savePin(createPin().copy(author = user, creators = creators.toList()))
 

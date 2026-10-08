@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -18,6 +19,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinUpdatePinDoesNo
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinUpdateSoftDeletedPinError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
+import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -40,6 +42,8 @@ class DuplicateResolverTest {
 
     private fun pin(description: String = "", createdAt: Instant = TestTime.now, author: User = user) =
         Pin(randomUUID(), author, null, null, description, emptyList(), emptyList(), createdAt, createdAt)
+
+    private fun person() = Person(randomUUID(), user, createRandomString(), emptyList(), TestTime.now)
 
     // [open] lists every other pin as a shown duplicate.
     private fun stored(open: Pin, vararg others: Pin) {
@@ -154,6 +158,41 @@ class DuplicateResolverTest {
     }
 
     @Test
+    fun `Given two absorbed pins with people, the newer named first, Then a kept pin with none takes the older's`() {
+        // Given
+        val (shared, keptOwn, newerOwn) = List(3) { person() }
+        val open = pin().copy(creators = listOf(shared, keptOwn))
+        val newer =
+            pin(createdAt = TestTime.now.plusSeconds(1))
+                .copy(publisher = person(), creators = listOf(shared, newerOwn), publishedAt = NEWER_PUBLISHED_AT)
+        val older =
+            pin(createdAt = TestTime.now.minusSeconds(1)).copy(publisher = person(), publishedAt = OLDER_PUBLISHED_AT)
+        stored(open, newer, older)
+        val decisions = linkedMapOf(open.id to KEEP, newer.id to MERGE, older.id to MERGE)
+
+        // When
+        val answered = useCase.resolve(open.id, decisions, user)
+
+        // Then
+        assertEquals(older.publisher to OLDER_PUBLISHED_AT, answered.publisher to answered.publishedAt)
+        assertEquals(listOf(shared, keptOwn, newerOwn), answered.creators)
+    }
+
+    @Test
+    fun `Given a kept pin with a publisher and a date, Then it keeps both over the absorbed pin's`() {
+        // Given
+        val open = pin().copy(publisher = person(), publishedAt = OLDER_PUBLISHED_AT)
+        val absorbed = pin().copy(publisher = person(), publishedAt = NEWER_PUBLISHED_AT)
+        stored(open, absorbed)
+
+        // When
+        val answered = useCase.resolve(open.id, mapOf(open.id to KEEP, absorbed.id to MERGE), user)
+
+        // Then
+        assertEquals(open.publisher to OLDER_PUBLISHED_AT, answered.publisher to answered.publishedAt)
+    }
+
+    @Test
     fun `Given rejections alone, Then the open pin is answered as it was and no pin is saved or recycled`() {
         // Given
         val (open, rejected, unnamed) = List(3) { pin() }
@@ -168,5 +207,10 @@ class DuplicateResolverTest {
         verify { duplicateRepository.setRejected(rejected.id, listOf(open.id), TestTime.now) }
         verify(exactly = 0) { pinRepository.savePin(any()) }
         verify(exactly = 0) { pinRepository.softDeletePins(any(), any()) }
+    }
+
+    private companion object {
+        val OLDER_PUBLISHED_AT: Instant = Instant.parse("2019-05-01T12:00:00Z")
+        val NEWER_PUBLISHED_AT: Instant = Instant.parse("2021-05-01T12:00:00Z")
     }
 }

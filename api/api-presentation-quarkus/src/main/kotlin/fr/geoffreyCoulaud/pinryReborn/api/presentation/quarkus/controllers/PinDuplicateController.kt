@@ -63,8 +63,9 @@ class PinDuplicateController(
         summary = "Apply a decision to every version of the pin's group of duplicates, all or nothing",
         description =
             "A rejected pin's pairs with the kept and merged pins are rejected first. The kept pin " +
-                "gains the merged pins' boards and tags, and fills a blank description or page address from the " +
-                "oldest that has one; they go to the recycle bin. A duplicate the body does not name is left as is.",
+                "gains the merged pins' boards, tags and creators, and fills a blank description, page " +
+                "address, publisher or publication instant from the oldest that has one; they go to the " +
+                "recycle bin. A duplicate the body does not name is left as is.",
     )
     @APIResponse(
         responseCode = "200",

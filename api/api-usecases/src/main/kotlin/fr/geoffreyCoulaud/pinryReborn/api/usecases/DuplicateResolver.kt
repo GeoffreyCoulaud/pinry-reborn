@@ -66,6 +66,9 @@ class DuplicateResolver(
             sourceContextUrl = kept.sourceContextUrl ?: absorbed.firstNotNullOfOrNull { it.sourceContextUrl },
             tags = (kept.tags + absorbed.flatMap { it.tags }).distinct(),
             boards = (kept.boards + absorbed.flatMap { it.boards }).distinct(),
+            publisher = kept.publisher ?: absorbed.firstNotNullOfOrNull { it.publisher },
+            creators = (kept.creators + absorbed.flatMap { it.creators }).distinct(),
+            publishedAt = kept.publishedAt ?: absorbed.firstNotNullOfOrNull { it.publishedAt },
             updatedAt = now,
         )
 }
