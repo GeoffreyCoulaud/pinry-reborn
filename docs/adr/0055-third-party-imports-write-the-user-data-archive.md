@@ -41,7 +41,9 @@ category, a plan step, a server call per batch, a source identity beside the med
    catalogue's `q` (ADR 0040) matches the publisher's and the creators' names. No sort reads the date yet.
 8. **A person is `{name, urls}`**, one shape for the publisher and for every creator. `urls` is a list: someone who
    publishes on several sites has several addresses, and a person with none is normal (a pin typed by hand,
-   Danbooru naming an artist, a deleted Reddit account).
+   Danbooru naming an artist, a deleted Reddit account). **A person is an entity per owner, identified by its
+   name**, as tags and boards are (ADR 0015): pins reference it, and a management screen edits it once for all its
+   pins. Two people sharing a name are taken for one, an optimistic choice for this first version.
 9. **Tags stay plain names**: no origin, no category.
 10. **The source's title, text, upstream address and content classification are not stored**, and `description`
     keeps its name.
