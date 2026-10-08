@@ -14,8 +14,8 @@ Lot `0.52.0`, one stack of 13 code blocks, where the specification planned 11: 1
 the operator mid-lot). Written in block 120 from the block reports collapsed in those pull requests and the lead's
 notes; to be corrected by the closing block. (Corrected: the stack ends with three more blocks. 130
 `fix/the-people-lot-closes` (#378) fixes the holistic review's code findings; 135 `feat/the-fields-hold-their-chips`
-gives the creators and the tags their chip field, after the operator's review of #375; 140
-`docs/the-people-lot-is-recorded` corrects this file, the specification, ADR 0055 and the backlog.)
+(#379) gives the creators and the tags their chip field, after the operator's review of #375; 140
+`docs/the-people-lot-is-recorded` (#380) corrects this file, the specification, ADR 0055 and the backlog.)
 
 ## Current state
 
@@ -86,10 +86,10 @@ gives the creators and the tags their chip field, after the operator's review of
   15 files against `fix/the-stall-test-holds` (#378). It leaves `contract/openapi.json` unchanged. The board page read
   headless as in block 90, the stub answering four collections in the server's order, an accented name last
   (scratchpad `read130/`).
-- Block 135: gate green at `7e6bc893`; budget 284 lines, 9 files against `fix/the-people-lot-closes`. Read headless
+- Block 135: gate green at `7e6bc893`; budget 284 lines, 9 files against `fix/the-people-lot-closes` (#379). Read headless
   in English and French, light and dark, 390x844 and 1280x800, 24 screenshots (scratchpad `read135/`).
 - Block 140: `dagger call prose` green at the branch's tip; budget 2 lines, 1 file against
-  `feat/the-fields-hold-their-chips`, the backlog alone, the dated documents being outside the count.
+  `feat/the-fields-hold-their-chips`, the backlog alone, the dated documents being outside the count (#380).
 
 ## Pitfalls
 
@@ -236,12 +236,14 @@ block 130 and the documents in block 140:
 
 ## The lot's counts
 
-- Fix-backs: 1, block 20's comments. (Corrected: FIXBACKS.)
-- Cascaded rebases: 1, blocks 20 and 30. (Corrected: CASCADES.)
-- Runs that cascade re-triggered: 2. (Corrected: RUNS. Already 16 before the publisher's rework, 2 by the first
-  cascade and 14 by the push of the second and third, every branch having moved, which passes the lot's 14 blocks,
-  ADR 0043's failure criterion: the operator's fix-backs landed on blocks 10 and 100, at the bottom of the stack, so
-  each rebased nearly every branch above.)
+- Fix-backs: 1, block 20's comments. (Corrected: 4: block 20's comments `b5a2316d`, block 10's addresses
+  `4e6a725f`, block 100's chips `e7f20e5b`, and block 100's rework `9634256a`.)
+- Cascaded rebases: 1, blocks 20 and 30. (Corrected: 4: 20 and 30; every branch from 20 to 130; 110 to 130; and
+  110 to 130 again onto the rework.)
+- Runs that cascade re-triggered: 2. (Corrected: 20: 2 by the first cascade, 14 by the push of the second and
+  third, every branch having moved, and 4 by the push of the fourth, for 100, 110, 120 and 130; #379 and #380 are
+  new pull requests, not re-runs. That passes the lot's 16 blocks, ADR 0043's failure criterion: the operator's
+  fix-backs landed on blocks 10 and 100, at the bottom of the stack, so each rebased nearly every branch above.)
 - The operator's reading of the bodies: to be filled before the stack merges. (Corrected: no remark.)
 
 ## Next step
@@ -249,5 +251,5 @@ block 130 and the documents in block 140:
 Wrap: the holistic review over `git diff lot/0.51.0-ktfmt-formats-the-kotlin-code..origin/fix/the-stall-test-holds`,
 then the closing block, then the operator's review and `gh stack merge --rebase`, and the tag
 `lot/0.52.0-the-pin-credits-its-people`. (Corrected: the review and the closing blocks 130 and 140 are done. The
-operator reviews the stack, #364 to block 140's pull request; after the merge and the tag, the importer, ADR 0055's
+operator reviews the stack, #364 to #380; after the merge and the tag, the importer, ADR 0055's
 second lot, gets its specification.)
