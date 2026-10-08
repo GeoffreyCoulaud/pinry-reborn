@@ -257,6 +257,7 @@ export function board(name: string, description = "", pinCount = 0): Board {
 		description,
 		pinCount,
 		coverUrl: null,
+		remoteCollections: [],
 	};
 }
 

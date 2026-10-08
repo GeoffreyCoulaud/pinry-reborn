@@ -1,8 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardRetrievalBoardDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardRetrievalPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
@@ -17,7 +19,9 @@ import org.junit.jupiter.api.assertThrows
 
 class BoardGetterTest {
     private val boardRepository: BoardRepositoryInterface = mockk()
-    private val useCase = BoardGetter(boardRepository = boardRepository)
+    private val remoteCollectionRepository: RemoteCollectionRepositoryInterface = mockk()
+    private val useCase =
+        BoardGetter(boardRepository = boardRepository, remoteCollectionRepository = remoteCollectionRepository)
 
     @Test
     fun `Given an owned active board, Then getActiveBoardForUser returns it`() {
@@ -101,7 +105,7 @@ class BoardGetterTest {
     }
 
     @Test
-    fun `Given an owned active board, Then summarizeActiveBoardForUser returns its count and cover`() {
+    fun `Given an owned active board, Then summarizeActiveBoardForUser returns its count, cover and collections`() {
         // Given
         val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         val board =
@@ -117,12 +121,24 @@ class BoardGetterTest {
         every { boardRepository.findActiveBoardById(board.id) } returns board
         every { boardRepository.countActivePinsInBoard(board.id) } returns 42
         every { boardRepository.findCoverPinId(board.id) } returns coverPinId
+        val collections =
+            listOf(
+                RemoteCollection(
+                    id = randomUUID(),
+                    author = reader,
+                    url = "https://remote.test/${createRandomString()}",
+                    name = createRandomString(),
+                    board = board,
+                    createdAt = TestTime.now,
+                )
+            )
+        every { remoteCollectionRepository.findRemoteCollectionsForBoard(board.id) } returns collections
 
         // When
         val summary = useCase.summarizeActiveBoardForUser(boardId = board.id, reader = reader)
 
         // Then
-        assertEquals(BoardSummary(pinCount = 42, coverPinId = coverPinId), summary)
+        assertEquals(BoardSummary(pinCount = 42, coverPinId = coverPinId, remoteCollections = collections), summary)
     }
 
     @Test

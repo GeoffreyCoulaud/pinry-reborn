@@ -71,7 +71,7 @@
       },
       "BoardOutputDto" : {
         "type" : "object",
-        "required" : [ "id", "name", "description", "pinCount", "coverUrl" ],
+        "required" : [ "id", "name", "description", "pinCount", "coverUrl", "remoteCollections" ],
         "properties" : {
           "id" : {
             "$ref" : "#/components/schemas/UUID"
@@ -88,6 +88,12 @@
           },
           "coverUrl" : {
             "type" : [ "string", "null" ]
+          },
+          "remoteCollections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RemoteCollectionOutputDto"
+            }
           }
         }
       },
@@ -717,6 +723,18 @@
             "items" : {
               "$ref" : "#/components/schemas/RecycledBoardDto"
             }
+          }
+        }
+      },
+      "RemoteCollectionOutputDto" : {
+        "type" : "object",
+        "required" : [ "name", "url" ],
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
           }
         }
       },
@@ -4438,7 +4456,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "24.1.0"
+    "version" : "24.2.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

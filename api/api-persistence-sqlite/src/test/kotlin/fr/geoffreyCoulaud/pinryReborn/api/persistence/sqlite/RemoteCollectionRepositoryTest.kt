@@ -33,13 +33,13 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
             )
         )
 
-    private fun link(board: Board, url: String = "https://remote.test/${createRandomString()}"): RemoteCollection =
+    private fun link(board: Board, name: String = createRandomString()): RemoteCollection =
         repository.saveRemoteCollection(
             RemoteCollection(
                 id = randomUUID(),
                 author = board.author,
-                url = url,
-                name = createRandomString(),
+                url = "https://remote.test/${createRandomString()}",
+                name = name,
                 board = board,
                 createdAt = storableNow(),
             )
@@ -100,6 +100,22 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
         // Then
         assertEquals(setOf(onActive.url, onRecycled.url), found.map { it.url }.toSet())
         assertEquals(recycled.id, found.single { it.url == onRecycled.url }.board.id)
+    }
+
+    @Test
+    fun `Given collections on two boards, Then findRemoteCollectionsForBoard sorts one board's by folded name`() {
+        // Given
+        val user = createAndSaveUser()
+        val board = createAndSaveBoard(user)
+        val zebra = link(board, name = "Zebras")
+        val apple = link(board, name = "apples")
+        link(createAndSaveBoard(user))
+
+        // When
+        val found = repository.findRemoteCollectionsForBoard(board.id)
+
+        // Then
+        assertEquals(listOf(apple, zebra), found)
     }
 
     @Test
