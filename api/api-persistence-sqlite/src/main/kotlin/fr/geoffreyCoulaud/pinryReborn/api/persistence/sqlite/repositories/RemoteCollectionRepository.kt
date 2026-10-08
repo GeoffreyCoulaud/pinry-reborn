@@ -9,6 +9,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.RemoteColle
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.RemoteCollectionModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QRemoteCollectionModel
 import jakarta.enterprise.context.ApplicationScoped
+import java.util.UUID
 
 @ApplicationScoped
 class RemoteCollectionRepository(persistor: Persistor) : RemoteCollectionRepositoryInterface {
@@ -19,6 +20,15 @@ class RemoteCollectionRepository(persistor: Persistor) : RemoteCollectionReposit
 
     override fun findUserRemoteCollectionByUrl(user: User, url: String): RemoteCollection? =
         QRemoteCollectionModel().author.id.equalTo(user.id).url.equalTo(url).findOne()?.toDomain()
+
+    override fun findRemoteCollectionsForBoard(boardId: UUID): List<RemoteCollection> =
+        QRemoteCollectionModel()
+            .board
+            .id
+            .equalTo(boardId)
+            .findList()
+            .sortedWith(compareBy({ it.name.lowercase() }, { it.id }))
+            .map { it.toDomain() }
 
     override fun findAllRemoteCollectionsForUser(user: User): List<RemoteCollection> =
         QRemoteCollectionModel().author.id.equalTo(user.id).findList().map { it.toDomain() }

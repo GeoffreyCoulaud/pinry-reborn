@@ -9,4 +9,6 @@ data class BoardOutputDto(
     val pinCount: Int,
     /** The media of the board's newest active pin holding one, or null when no pin does. */
     val coverUrl: String?,
+    /** The remote collections linked to the board, sorted by name with its case folded. */
+    val remoteCollections: List<RemoteCollectionOutputDto>,
 )

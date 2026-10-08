@@ -1,4 +1,5 @@
 import { useParams, useSearch } from "@tanstack/react-router";
+import { useId } from "react";
 import { useBoards } from "../boards";
 import { AppHeader } from "../components/AppHeader";
 import { AppNav } from "../components/AppNav";
@@ -24,6 +25,7 @@ export function Board() {
 	// An address is whatever the bar holds. A board the account does not hold says so where the
 	// grid would be, so the screen keeps the navigation that leads back out of it.
 	const unknown = boards.isSuccess && board === undefined;
+	const collectionsLabel = useId();
 
 	return (
 		<main className="flex h-screen flex-col gap-4 px-4 pt-4">
@@ -36,6 +38,32 @@ export function Board() {
 			</AppHeader>
 			{board?.description ? (
 				<p className="text-muted">{board.description}</p>
+			) : null}
+			{board?.remoteCollections.length ? (
+				<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+					<span id={collectionsLabel} className="text-muted">
+						{m.board_collections()}
+					</span>
+					<ul
+						aria-labelledby={collectionsLabel}
+						className="flex flex-wrap gap-x-3 gap-y-1"
+					>
+						{board.remoteCollections
+							.toSorted((a, b) => a.name.localeCompare(b.name))
+							.map((collection) => (
+								<li key={collection.url}>
+									<a
+										href={collection.url}
+										target="_blank"
+										rel="noreferrer"
+										className="text-accent hover:underline"
+									>
+										{collection.name}
+									</a>
+								</li>
+							))}
+					</ul>
+				</div>
 			) : null}
 			{/* Full bleed: the scrollbar belongs to the viewport edge, not inside the shell's padding. */}
 			<div className="-mx-4 min-h-0 flex-1">

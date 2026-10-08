@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDirectionDto
@@ -13,6 +14,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinSor
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.RemoteCollectionOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardGetter
@@ -88,7 +90,7 @@ class BoardControllerTest {
             )
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardCreator.create(user, dto.name, dto.description, emptyList()) } returns board
-        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(0, null)
+        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(0, null, emptyList())
 
         // When
         val response = controller.createBoard(dto)
@@ -112,7 +114,7 @@ class BoardControllerTest {
         val dto = BoardCreationInputDto(name = board.name, description = board.description, pinIds = pinIds)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardCreator.create(user, board.name, board.description, pinIds) } returns board
-        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(2, null)
+        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(2, null, emptyList())
 
         // When
         val response = controller.createBoard(dto)
@@ -130,8 +132,9 @@ class BoardControllerTest {
         val coverPinId = randomUUID()
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardGetter.listActiveBoardsForUser(user) } returns listOf(boardA, boardB)
-        every { boardGetter.summarizeActiveBoardForUser(boardA.id, user) } returns BoardSummary(3, coverPinId)
-        every { boardGetter.summarizeActiveBoardForUser(boardB.id, user) } returns BoardSummary(0, null)
+        every { boardGetter.summarizeActiveBoardForUser(boardA.id, user) } returns
+            BoardSummary(3, coverPinId, emptyList())
+        every { boardGetter.summarizeActiveBoardForUser(boardB.id, user) } returns BoardSummary(0, null, emptyList())
 
         // When
         val response = controller.listBoards()
@@ -147,6 +150,7 @@ class BoardControllerTest {
                     description = boardA.description,
                     pinCount = 3,
                     coverUrl = "/api/v1/pins/$coverPinId/media",
+                    remoteCollections = emptyList(),
                 ),
                 BoardOutputDto(
                     id = boardB.id,
@@ -154,6 +158,7 @@ class BoardControllerTest {
                     description = boardB.description,
                     pinCount = 0,
                     coverUrl = null,
+                    remoteCollections = emptyList(),
                 ),
             ),
             body.boards,
@@ -161,13 +166,23 @@ class BoardControllerTest {
     }
 
     @Test
-    fun `Given an existing board, Then getBoard returns it with its pin count`() {
+    fun `Given an existing board, Then getBoard returns it with its pin count and collections`() {
         // Given
         val user = aUser()
         val board = aBoard(user)
+        val collection =
+            RemoteCollection(
+                id = randomUUID(),
+                author = user,
+                url = "https://remote.test/${createRandomString()}",
+                name = createRandomString(),
+                board = board,
+                createdAt = TestTime.now,
+            )
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardGetter.getActiveBoardForUser(boardId = board.id, reader = user) } returns board
-        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(5, null)
+        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns
+            BoardSummary(5, null, listOf(collection))
 
         // When
         val response = controller.getBoard(board.id)
@@ -177,6 +192,10 @@ class BoardControllerTest {
         val body = response.entity as BoardOutputDto
         assertEquals(board.id, body.id)
         assertEquals(5, body.pinCount)
+        assertEquals(
+            listOf(RemoteCollectionOutputDto(name = collection.name, url = collection.url)),
+            body.remoteCollections,
+        )
     }
 
     @Test
@@ -198,7 +217,7 @@ class BoardControllerTest {
         every {
             boardUpdater.update(boardId = boardId, name = dto.name, description = dto.description, user = user)
         } returns updated
-        every { boardGetter.summarizeActiveBoardForUser(boardId, user) } returns BoardSummary(2, null)
+        every { boardGetter.summarizeActiveBoardForUser(boardId, user) } returns BoardSummary(2, null, emptyList())
 
         // When
         val response = controller.updateBoard(boardId, dto)

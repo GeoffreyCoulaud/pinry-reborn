@@ -1,8 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
@@ -15,6 +18,7 @@ import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.Matchers.contains
+import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.hasKey
 import org.junit.jupiter.api.Test
 
@@ -26,6 +30,8 @@ class BoardsIntegrationTest : IntegrationTest() {
     @Inject lateinit var pinCreator: PinCreator
 
     @Inject lateinit var mediaRepository: MediaRepositoryInterface
+
+    @Inject lateinit var remoteCollectionRepository: RemoteCollectionRepositoryInterface
 
     // --- Create ---
 
@@ -124,6 +130,39 @@ class BoardsIntegrationTest : IntegrationTest() {
             .body("name", equalTo("Recipes"))
             .body("description", equalTo("Cooking ideas"))
             .body("pinCount", equalTo(0))
+            .body("remoteCollections", empty<Any>())
+    }
+
+    @Test
+    fun `Given a board with two linked collections, Then GET by id returns them sorted by name`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = "Harbours", description = "")
+        linkCollection(board, name = "Zeeland ports", url = "https://remote.example/zeeland")
+        linkCollection(board, name = "breton ports", url = "https://remote.example/breton")
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/boards/${board.id}")
+            .then()
+            .statusCode(200)
+            .body("remoteCollections.name", contains("breton ports", "Zeeland ports"))
+            .body("remoteCollections.url", contains("https://remote.example/breton", "https://remote.example/zeeland"))
+    }
+
+    private fun linkCollection(board: Board, name: String, url: String) {
+        remoteCollectionRepository.saveRemoteCollection(
+            RemoteCollection(
+                id = UUID.randomUUID(),
+                author = board.author,
+                url = url,
+                name = name,
+                board = board,
+                createdAt = board.createdAt,
+            )
+        )
     }
 
     // --- List ---

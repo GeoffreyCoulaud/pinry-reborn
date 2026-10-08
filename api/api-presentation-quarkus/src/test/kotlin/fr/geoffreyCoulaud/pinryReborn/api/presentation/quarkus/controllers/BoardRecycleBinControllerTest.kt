@@ -72,7 +72,7 @@ class BoardRecycleBinControllerTest {
         val board = aBoard(user)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardRecycleBin.restore(boardId = board.id, user = user) } returns board
-        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(4, null)
+        every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(4, null, emptyList())
 
         // When
         val response = controller.restoreBoard(board.id)

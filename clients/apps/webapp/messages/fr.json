@@ -7,6 +7,7 @@
 	"account_unreadable": "Ce compte n’a pas pu être lu. Réessayez dans un instant.",
 	"add_to_board": "Ajouter à un tableau",
 	"app_name": "Pinry Reborn",
+	"board_collections": "Collections liées",
 	"board_deletion_refused": "Ce tableau n’a pas pu être supprimé.",
 	"board_name_taken": "Vous avez déjà un tableau de ce nom.",
 	"board_pin_count": "Épingles : {count}",
