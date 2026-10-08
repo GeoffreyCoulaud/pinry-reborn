@@ -85,6 +85,24 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun `Given collections on an active and a recycled board, Then findAll returns both and no other user's`() {
+        // Given
+        val user = createAndSaveUser()
+        val recycled = createAndSaveBoard(user)
+        val onActive = link(createAndSaveBoard(user))
+        val onRecycled = link(recycled)
+        boardRepository.softDeleteBoard(recycled, storableNow())
+        link(createAndSaveBoard(createAndSaveUser()))
+
+        // When
+        val found = repository.findAllRemoteCollectionsForUser(user)
+
+        // Then
+        assertEquals(setOf(onActive.url, onRecycled.url), found.map { it.url }.toSet())
+        assertEquals(recycled.id, found.single { it.url == onRecycled.url }.board.id)
+    }
+
+    @Test
     fun `Given two collections linked to one board, Then both are stored`() {
         // Given
         val board = createAndSaveBoard(createAndSaveUser())

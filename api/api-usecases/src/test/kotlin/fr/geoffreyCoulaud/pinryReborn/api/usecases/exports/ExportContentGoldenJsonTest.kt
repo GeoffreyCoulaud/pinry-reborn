@@ -134,6 +134,18 @@ class ExportContentGoldenJsonTest {
     }
 
     @Test
+    fun `Given a fully populated ExportedCollection, Then it serializes to the published JSON shape`() {
+        // Given
+        val collection = ExportedCollection(url = "https://remote.example/c/1", name = "Sketches", board = "Summer")
+
+        // When
+        val json = mapper.writeValueAsString(collection)
+
+        // Then
+        assertEquals("""{"url":"https://remote.example/c/1","name":"Sketches","board":"Summer"}""", json)
+    }
+
+    @Test
     fun `Given a fully populated ExportedMedia, Then it serializes to the published JSON shape`() {
         // Given
         val media =

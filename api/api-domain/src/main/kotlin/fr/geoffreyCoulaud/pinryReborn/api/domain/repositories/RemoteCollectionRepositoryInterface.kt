@@ -9,4 +9,7 @@ interface RemoteCollectionRepositoryInterface {
 
     /** The user's collection at exactly this address, whatever its board's state, or null. */
     fun findUserRemoteCollectionByUrl(user: User, url: String): RemoteCollection?
+
+    /** Every collection of the user, whatever its board's state. */
+    fun findAllRemoteCollectionsForUser(user: User): List<RemoteCollection>
 }

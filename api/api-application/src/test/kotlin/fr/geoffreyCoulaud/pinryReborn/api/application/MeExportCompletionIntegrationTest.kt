@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -507,6 +508,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
                 mediaRepository = arc.instance(MediaRepositoryInterface::class.java).get(),
                 boardRepository = arc.instance(BoardRepositoryInterface::class.java).get(),
                 tagRepository = arc.instance(TagRepositoryInterface::class.java).get(),
+                remoteCollectionRepository = arc.instance(RemoteCollectionRepositoryInterface::class.java).get(),
                 mediaStore = arc.instance(MediaStore::class.java).get(),
                 archiveStore = arc.instance(ExportArchiveStore::class.java).get(),
                 transactionRunner = arc.instance(TransactionRunner::class.java).get(),

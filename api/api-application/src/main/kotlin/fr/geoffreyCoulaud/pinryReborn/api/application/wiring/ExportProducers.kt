@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -70,6 +71,7 @@ class ExportProducers {
         mediaRepository: MediaRepositoryInterface,
         boardRepository: BoardRepositoryInterface,
         tagRepository: TagRepositoryInterface,
+        remoteCollectionRepository: RemoteCollectionRepositoryInterface,
         mediaStore: MediaStore,
         archiveStore: ExportArchiveStore,
         transactionRunner: TransactionRunner,
@@ -84,6 +86,7 @@ class ExportProducers {
             mediaRepository,
             boardRepository,
             tagRepository,
+            remoteCollectionRepository,
             mediaStore,
             archiveStore,
             transactionRunner,
