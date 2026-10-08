@@ -9,8 +9,9 @@ Branches: one stack, each block on the one before it: 10 `feat/a-person-is-store
 30 `feat/the-api-credits-people`, 40 `feat/the-api-searches-people`, 50 `feat/the-catalogue-finds-people`,
 60 `feat/the-archive-carries-people`, 70 `feat/the-import-links-collections`, 80 `feat/the-export-carries-collections`,
 90 `feat/the-board-shows-its-collections`, 100 `feat/the-form-credits-people`, 110 `feat/the-form-dates-a-pin`.
-(Corrected: 75 `feat/the-import-walks-collections` and 120 `fix/the-stall-test-holds` were added mid-lot, and 130
-`fix/the-people-lot-closes` closes it.)
+(Corrected: 75 `feat/the-import-walks-collections` and 120 `fix/the-stall-test-holds` were added mid-lot; 130
+`fix/the-people-lot-closes`, 135 `feat/the-fields-hold-their-chips` and 140 `docs/the-people-lot-is-recorded` close
+it.)
 ADR: `docs/adr/0055-third-party-imports-write-the-user-data-archive.md` (pull request #363), decisions 7, 8 and 11,
 is this lot's record; this document settles what it leaves to a specification. The routes follow
 `docs/adr/0040-search-is-a-parameter-of-the-catalogue.md` and `docs/adr/0044-a-response-code-declares-its-set.md`;
@@ -157,9 +158,10 @@ unless it says it is the lead's.
 - `PinEditForm` gains a publisher field (one person) and a creators field (several), each built as `TagField` is: a
   text field, suggestions from `GET /api/v1/persons/search` after the same pause, the chosen people as removable
   chips. A suggestion shows the name and the host of each address, so homonyms read apart. (Corrected: on the
-  operator's review of pull request #375, one multi-value field, `ChipField`, serves the people and the tags: the
-  chosen values are chips inside the field, which says that Enter adds one. Block 100 built it for the people, block
-  130 moved the tags onto it.)
+  operator's reviews of pull request #375, the publisher is a single-value combo box, a suggestion chosen or a name
+  typed, cleared with a button; the creators and the tags share one multi-value field, `ChipField`, the chosen values
+  as chips inside it and a description saying that Enter adds one. Block 100 holds the publisher and the dialog,
+  block 135 the chip field.)
 - Enter creates a person with the name typed, trimmed, and no address. The form never edits an existing person's
   addresses.
 - `PinDialog` shows the publisher and the creators: the name, then each address as a link showing its host, in a new
@@ -169,7 +171,8 @@ unless it says it is the lead's.
 - A date field and a time field, HeroUI's `Input` with `type="date"` and `type="time"`: native controls, no new
   dependency. Choosing a day fills the time with 00:00 when it is empty; the time field is disabled while no day is
   chosen. The browser's time zone (`Intl.DateTimeFormat().resolvedOptions().timeZone`) is shown beside them. A clear
-  button empties both, and the pin's `publishedAt` becomes null.
+  button empties both, and the pin's `publishedAt` becomes null. (Corrected: an X icon button, shown only while a
+  date is set, beside the time field so that a phone wraps them together; `f0ae5851`.)
 - The instant is the day and time read in the browser's zone, through the platform's `Date`, and back. The two
   conversions are pure functions under `src/lib/`; their tests set `process.env.TZ`.
 - `PinDialog` shows the instant with `Intl.DateTimeFormat`, `dateStyle: "medium"` and `timeStyle: "short"`, in the
@@ -193,10 +196,12 @@ holding one.
 | 75 | `feat/the-import-walks-collections` | Decision F's import, split from block 70. |
 | 80 | `feat/the-export-carries-collections` | Decision F's export. |
 | 90 | `feat/the-board-shows-its-collections` | Decision E's API and board page. |
-| 100 | `feat/the-form-credits-people` | Decision G. |
+| 100 | `feat/the-form-credits-people` | Decision G. (Corrected: its publisher and its dialog; the chip field is 135's.) |
 | 110 | `feat/the-form-dates-a-pin` | Decision H. |
 | 120 | `fix/the-stall-test-holds` | A flaky stall case of `HttpMediaFetcherTest`, added mid-lot by the operator. |
-| 130 | `fix/the-people-lot-closes` | The holistic review's findings (Wrap), the tags field on `ChipField`, the backlog and the handoff. |
+| 130 | `fix/the-people-lot-closes` | The holistic review's code findings (Wrap). |
+| 135 | `feat/the-fields-hold-their-chips` | Decision G's chip field, for the creators and the tags. |
+| 140 | `docs/the-people-lot-is-recorded` | The documents (Wrap): specification, handoff, ADR 0055 and backlog. |
 
 Each block is measured after its first commit with the command of `agents/workflow.md`; one that passes a bound splits
 at a number between its own and the next.
@@ -308,9 +313,9 @@ at a number between its own and the next.
   publisher typed and entered is sent with no address, and one person search runs per pause.
 - The dialog shows a creator's two addresses as two links showing their hosts.
 - Read headless before the push.
-- (Corrected: the fix-back `e7f20e5b` adds `ChipField` for both people's fields; the journey asserts the chips inside
-  the field and its "Enter to add" description. Block 100 then measures 454 lines over 13 files, so the tags' move
-  goes to block 130.)
+- (Corrected: after the operator's reviews of pull request #375, block 100 is `9634256a`, 423 lines over 12 files:
+  the publisher's single-value field and the dialog, the creators sent as read. The journey's creator chosen from a
+  suggestion moves to block 135, with the creators' field.)
 
 ### Block 110
 
@@ -330,9 +335,27 @@ at a number between its own and the next.
   proxy never answers.
 - The fix: that origin reads the request's head first. Its siblings answer through `HttpServer`, which reads the
   request before its handler runs, or answer nothing.
-- The case repeated under a busy loop per core fails before the fix and passes after. (Corrected in block 130: it
+- The case repeated under a busy loop per core fails before the fix and passes after. (Corrected at Wrap: it
   passed 1199 of 1200 repetitions after the fix, the one failure of another kind and of unknown cause; the handoff
   of 2026-10-08 carries it under what is not validated.)
+
+### Block 130
+
+- (Corrected: added at Wrap.) The holistic review's code findings, `.reviews/the-pin-credits-its-people-holistic.md`.
+
+### Block 135
+
+- (Corrected: added after the operator's reviews of pull request #375.) `ChipField`, for the creators and the tags.
+- Journey "credit a pin's people": a creator chosen from a suggestion and another entered are sent as chosen; two
+  creators entered are two chips inside the field, which says how to add one.
+- Journey "edit a pin's description, tags and boards": the chosen tags sit inside the field, which says how to add
+  one.
+- Read headless before the push.
+
+### Block 140
+
+- (Corrected: added at Wrap.) The specification, the handoff, ADR 0055 and the backlog, brought up to date with the
+  stack.
 
 ## 5. Adjacent backlog items
 

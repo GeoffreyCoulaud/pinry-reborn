@@ -12,8 +12,10 @@ Lot `0.52.0`, one stack of 13 code blocks, where the specification planned 11: 1
 `feat/the-board-shows-its-collections` (#374), 100 `feat/the-form-credits-people` (#375), 110
 `feat/the-form-dates-a-pin` (#376), 120 `fix/the-stall-test-holds` (the pull request this file arrives in, added by
 the operator mid-lot). Written in block 120 from the block reports collapsed in those pull requests and the lead's
-notes; to be corrected by the closing block. (Corrected: the closing block is 130, `fix/the-people-lot-closes`,
-which adds the holistic review's findings, their exits and the lot's counts.)
+notes; to be corrected by the closing block. (Corrected: the stack ends with three more blocks. 130
+`fix/the-people-lot-closes` (#378) fixes the holistic review's code findings; 135 `feat/the-fields-hold-their-chips`
+gives the creators and the tags their chip field, after the operator's review of #375; 140
+`docs/the-people-lot-is-recorded` corrects this file, the specification, ADR 0055 and the backlog.)
 
 ## Current state
 
@@ -38,12 +40,13 @@ which adds the holistic review's findings, their exits and the lot's counts.)
   contract `24.2.0`, shown read only under the board's description.
 - **The form credits people and dates a pin** (100, 110): a publisher and a creators field with suggestions from the
   person search, in `components/CreditFields.tsx`; a native date and time field with the browser's zone and a clear
-  button. `PinDialog` shows the people and the instant. (Corrected: after the operator's review of #375, the people's
-  fields and the tags' are one `ChipField`, the chosen values as chips inside the field, which says that Enter adds
-  one; block 100 for the people, block 130 for the tags.)
+  button. `PinDialog` shows the people and the instant. (Corrected: after the operator's reviews of #375, the
+  publisher is a single-value combo box, `PublisherField`, cleared with an X button (100); the creators and the tags
+  share `ChipField`, the chosen values as chips inside the field, which says that Enter adds one (135); the date's
+  clear button is an X shown only while a date is set (110).)
 - **`HttpMediaFetcherTest`'s close-delimited stall case holds** (120), below.
-- **The holistic review's findings are fixed** (130), below: an import now counts the boards its collection walk
-  creates in `createdBoards`.
+- **The holistic review's findings are fixed** (130, 140), below: an import now counts the boards its collection
+  walk creates in `createdBoards`.
 
 ## Evidence
 
@@ -65,22 +68,28 @@ which adds the holistic review's findings, their exits and the lot's counts.)
 - Block 90: gate green at `ada7fcc9`; budget 218 lines, 18 files (#374). Read headless in Firefox over WebDriver
   BiDi against a Node stub API, light and dark, 390x844 and 1280x800 (scratchpad `read90/`).
 - Block 100: gate green at `4236e5a2`; budget 385 lines, 12 files (#375). Read headless the same way, in English and
-  French (scratchpad `read100/`). (Corrected: then the fix-back `e7f20e5b`, below, after which block 100 measures
-  454 lines, 13 files against `feat/the-board-shows-its-collections`.)
+  French (scratchpad `read100/`). (Corrected: reworked after the operator's reviews, below, as the single
+  commit `9634256a`: 423 lines, 12 files against `feat/the-board-shows-its-collections`.)
 - Block 110: gate green at `cbac741b`; budget 256 lines, 9 files (#376). Read headless the same way, 24 screenshots
-  (scratchpad `read110/`); the conversion tests pass with the host at `TZ=America/New_York`.
+  (scratchpad `read110/`); the conversion tests pass with the host at `TZ=America/New_York`. (Corrected: rebased
+  onto the reworked block 100 as `f0ae5851`, with the clear button an X shown only while a date is set and grouped
+  with the time field, so a phone wraps them together: 265 lines, 9 files.)
 - Block 120: gate green at the branch's tip; budget 3 lines, 1 file against `feat/the-form-dates-a-pin`. The stall case
   repeated 100 times in one JVM (`@RepeatedTest`, not committed) under twelve busy loops on twelve cores: 2 failures
   before the fix, each `HttpTimeoutException` in `send` (`repro-before.log`). After it, three runs of 300, 300 and
   600: 1199 of 1200 passed, the slowest 1.022 s (`repro-after2.log`, `repro-after3.log`). The one failure, in the
-  first run (`repro-after.log`), is of another kind, below. Logs in the session's scratchpad.
+  first run (`repro-after.log`), is of another kind, below. Logs in the session's scratchpad. (Corrected: rebased
+  unchanged with every cascade, still 3 lines, 1 file.)
 - Continuous integration green on #364 to #376 (`gh pr view <n> --json statusCheckRollup`, 2026-10-08).
   (Corrected: and on #377, read the same way in block 130.)
-- Block 130: gate green at the branch's tip, rebased onto blocks 10's and 100's fix-backs; budget 184 lines, 18 files against
-  `fix/the-stall-test-holds`. It leaves `contract/openapi.json` unchanged. The board page read headless as in block
-  90, the stub answering four collections in the server's order, an accented name last (scratchpad `read130/`). The
-  form's tags field read headless the same way, English and French, light and dark, 390x844 and 1280x800, chips
-  inside the field and suggestions under it, no horizontal overflow (24 screenshots, scratchpad `read130b/`).
+- Block 130: gate green at `68c7fe9e` (`gate130d.log`), the code findings alone after every rebase; budget 90 lines,
+  15 files against `fix/the-stall-test-holds` (#378). It leaves `contract/openapi.json` unchanged. The board page read
+  headless as in block 90, the stub answering four collections in the server's order, an accented name last
+  (scratchpad `read130/`).
+- Block 135: gate green at `7e6bc893`; budget 284 lines, 9 files against `fix/the-people-lot-closes`. Read headless
+  in English and French, light and dark, 390x844 and 1280x800, 24 screenshots (scratchpad `read135/`).
+- Block 140: `dagger call prose` green at the branch's tip; budget 2 lines, 1 file against
+  `feat/the-fields-hold-their-chips`, the backlog alone, the dated documents being outside the count.
 
 ## Pitfalls
 
@@ -103,6 +112,8 @@ which adds the holistic review's findings, their exits and the lot's counts.)
   a gate.
 - **`BaseTest`'s `checkUnnecessaryStub` fails a default `@BeforeEach` stub** a case never uses (80).
 - **Biome's `noExcessiveLinesPerFile` (300) caps `PinEditForm.tsx`**: the credit fields live in their own file (100).
+  (Corrected: `PublisherField.tsx` (100) and `ChipField.tsx` (135); `CreditFields.tsx` is gone.)
+- **HeroUI's `Tag` accepts `variant` and ignores it**: only `TagGroup`'s is read, and passed to each chip (135).
 - **Native date and time controls follow the browser's locale, not the interface's**; clearing the time alone sets
   it back to 00:00 (110). `firefox --headless --screenshot` captures before a query answers (90).
 - **SmallRye publishes one `pattern` per string**: of `@NotBlank` and `@Pattern` on one list element, only the
@@ -122,8 +133,13 @@ which adds the holistic review's findings, their exits and the lot's counts.)
 - Block 70 split at its first commit, at 748 lines over 20 files, into 70 (storage and deletions) and 75 (the import);
   one teammate wrote both, the code having been written before the measurement.
 - Block 75: `ImportFieldBounds.addressFault` is shared by persons and collections.
-- Block 100: the fields live in `components/CreditFields.tsx`; `TAG_SUGGESTIONS` became `SUGGESTIONS`.
+- Block 100: the fields live in `components/CreditFields.tsx`; `TAG_SUGGESTIONS` became `SUGGESTIONS`. (Corrected:
+  after the rework, the publisher is a combo box in `PublisherField.tsx`, and the creators are sent as read.)
 - Block 120: not in the specification, added by the operator mid-lot.
+- (Corrected: blocks 130, 135 and 140 split the closing work after the operator's reviews of #375, below. Block 135
+  started from block 100's teammate's patch, written by hand onto the form, the patch tool being refused by the
+  repository's hook; `personNamed` moved to `lib/persons.ts`, shared by both people's fields. Block 130 renamed
+  `TagSearchIntegrationTest` rather than open a new `@QuarkusTest` class, as `agents/engineering.md` asks.)
 
 Tier-1 fixes: block 40, the `= null` defaults on `TagSearchController`'s `q` and `limit` and `MediaController`'s
 `size` and `animated`, which the contract read as required; block 50, the repository's `@param query` and the merge
@@ -153,7 +169,8 @@ The lead's notes, for the review to judge:
 `.reviews/the-pin-credits-its-people-holistic.md`, over
 `git diff lot/0.51.0-ktfmt-formats-the-kotlin-code..origin/fix/the-stall-test-holds`: 0 CRITICAL, 1 MAJOR, 11 MINOR.
 It found every decision of the specification in the diff, and judged the lead's two notes: the copied query
-acceptable, the test class's name a finding; blocks 70 and 75 split cleanly. Every finding was fixed in block 130:
+acceptable, the test class's name a finding; blocks 70 and 75 split cleanly. Every finding was fixed, the code in
+block 130 and the documents in block 140:
 
 - MAJOR, a board the collection walk creates was counted nowhere: `RemoteCollectionLinker.link` says whether it
   created the board, and the walk adds it to `createdBoards`. `UserDataImportCollectionsTest` asserts the count.
@@ -165,7 +182,7 @@ acceptable, the test class's name a finding; blocks 70 and 75 split cleanly. Eve
 - "the spec's decision" named no document beside the import's own specification: the API's comments say
   "specification 2026-10-08", the two import test classes included.
 - The contract did not show that a blank address is refused: closed by block 10's fix-back, which dropped the
-  line-feed `@Pattern`, so `@NotBlank` alone publishes `\S`. Block 130's own pattern was dropped in the cascade.
+  line-feed `@Pattern`, so `@NotBlank` alone publishes `\S`. Block 130's own pattern was dropped in the rebase.
 - The board page sorted the collections again with another collation: it shows the server's order, and the journey
   asserts it as answered; a `(Corrected: ...)` on block 90's journey bullet.
 - A person invented by a refused `PUT` was not shown rolled back: the existing tag case sends a new publisher too and
@@ -190,15 +207,23 @@ acceptable, the test class's name a finding; blocks 70 and 75 split cleanly. Eve
   n'indique comment créer plusieurs créateurs, il faudrait amener un système de champ multi-string, possiblement
   comment on fait pour les tags. » Asked for one multi-value component shared by tags and people, chips inside the
   field with the hint « Entrée pour ajouter », the operator answered « a ok ». Asked, once block 100 passed the line
-  bound, whether block 100 keeps it for the people and the closing block moves the tags, « a ok ».
-- The fix-back `e7f20e5b` gave block 100 `ChipField` for the publisher and the creators, at 454 lines. The lead
-  cascaded it onto 110 and 120, and 130 rebased its own commits. Block 130 then deleted `TagField` and put the tags
-  on `ChipField`, the journey "edit a pin's description, tags and boards" asserting the chips inside the field and
-  its "Enter to add" description.
+  bound, whether block 100 keeps it for the people and the closing block moves the tags, « a ok ». The fix-back
+  `e7f20e5b`, no longer on the stack, put the publisher and the creators on `ChipField`, at 454 lines, and the lead
+  cascaded it.
+- #375, on that fix-back: « Tu as utilisé le champ multi valeur pour Publisher, qui est mono-valeur, c'est une
+  erreur. » The error was the lead's: its brief put the publisher, one person, on the multi-value field. The
+  operator chose the lead's recommended plan (« reco ok »): block 100 keeps only the publisher's single-value combo
+  box and the dialog, the chip field for the creators and the tags becomes block 135, and the closing work splits
+  into 130 (the code findings) and 140 (the documents), on top of 135.
+- Block 100 was reworked as the single commit `9634256a`, 423 lines; 110 was rebased onto it as `f0ae5851`, its
+  clear button now an X shown only while a date is set and grouped with the time field for a phone; 120 was rebased
+  unchanged; 130 was cut back to its code commit, `68c7fe9e`, keeping 110's field and `instantOf`'s null; 135,
+  `7e6bc893`, carries the chip field; 140 carries the documents, cherry-picked from 130.
 
 ## What is not validated
 
-- The web application against the running API: blocks 90, 100 and 110 were read against a stub.
+- The web application against the running API: blocks 90, 100 and 110 were read against a stub. (Corrected: and
+  130 and 135.)
 - Chrome and Safari's native date and time controls (110).
 - The interface's new labels, in English and French, which the operator has not read (100, 110).
 - A third-party archive, which only the next lot produces (60, 75).
@@ -211,19 +236,18 @@ acceptable, the test class's name a finding; blocks 70 and 75 split cleanly. Eve
 
 ## The lot's counts
 
-- Fix-backs: 1, block 20's comments. (Corrected: 3, block 10's addresses and block 100's chips on the operator's
-  review.)
-- Cascaded rebases: 1, blocks 20 and 30. (Corrected: 3, the second rebasing every branch from 20 to 130, the third
-  110 to 130.)
-- Runs that cascade re-triggered: 2. (Corrected: 16, 2 by the first cascade and 14 by the push of the second and
-  third, every branch having moved. That passes the lot's 14 blocks, ADR 0043's failure criterion: the operator's two
-  fix-backs landed on blocks 10 and 100, at the bottom of the stack, so each rebased nearly every branch above.)
+- Fix-backs: 1, block 20's comments. (Corrected: FIXBACKS.)
+- Cascaded rebases: 1, blocks 20 and 30. (Corrected: CASCADES.)
+- Runs that cascade re-triggered: 2. (Corrected: RUNS. Already 16 before the publisher's rework, 2 by the first
+  cascade and 14 by the push of the second and third, every branch having moved, which passes the lot's 14 blocks,
+  ADR 0043's failure criterion: the operator's fix-backs landed on blocks 10 and 100, at the bottom of the stack, so
+  each rebased nearly every branch above.)
 - The operator's reading of the bodies: to be filled before the stack merges. (Corrected: no remark.)
 
 ## Next step
 
 Wrap: the holistic review over `git diff lot/0.51.0-ktfmt-formats-the-kotlin-code..origin/fix/the-stall-test-holds`,
 then the closing block, then the operator's review and `gh stack merge --rebase`, and the tag
-`lot/0.52.0-the-pin-credits-its-people`. (Corrected: the review and the closing block are done. The operator reviews
-the stack, #364 to the closing block's pull request; after the merge and the tag, the importer, ADR 0055's second
-lot, gets its specification.)
+`lot/0.52.0-the-pin-credits-its-people`. (Corrected: the review and the closing blocks 130 and 140 are done. The
+operator reviews the stack, #364 to block 140's pull request; after the merge and the tag, the importer, ADR 0055's
+second lot, gets its specification.)
