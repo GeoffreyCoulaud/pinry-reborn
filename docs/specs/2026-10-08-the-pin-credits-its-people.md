@@ -272,6 +272,10 @@ at a number between its own and the next.
 - Each of the three board deletion paths and account deletion leave no `remote_collections` row of the deleted
   boards; recycling and restoring a board keeps its rows.
 - `UniqueConstraintOutcomeTest` names the index's outcome.
+- (Corrected: measured at 748 lines over 20 files after its first commit, block 70 splits. Block 70 keeps the
+  migration, the domain type, port and adapter, the deletions and the index's outcome; block 75,
+  `feat/the-import-walks-collections`, takes the import's walk, the pin line's `collections`, `ImportArchiveBuilder`
+  and the bullets above about importing, and is the port's consumer.)
 
 ### Block 80
 
