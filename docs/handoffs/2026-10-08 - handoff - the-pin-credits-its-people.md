@@ -38,7 +38,9 @@ which adds the holistic review's findings, their exits and the lot's counts.)
   contract `24.2.0`, shown read only under the board's description.
 - **The form credits people and dates a pin** (100, 110): a publisher and a creators field with suggestions from the
   person search, in `components/CreditFields.tsx`; a native date and time field with the browser's zone and a clear
-  button. `PinDialog` shows the people and the instant.
+  button. `PinDialog` shows the people and the instant. (Corrected: after the operator's review of #375, the people's
+  fields and the tags' are one `ChipField`, the chosen values as chips inside the field, which says that Enter adds
+  one; block 100 for the people, block 130 for the tags.)
 - **`HttpMediaFetcherTest`'s close-delimited stall case holds** (120), below.
 - **The holistic review's findings are fixed** (130), below: an import now counts the boards its collection walk
   creates in `createdBoards`.
@@ -63,7 +65,8 @@ which adds the holistic review's findings, their exits and the lot's counts.)
 - Block 90: gate green at `ada7fcc9`; budget 218 lines, 18 files (#374). Read headless in Firefox over WebDriver
   BiDi against a Node stub API, light and dark, 390x844 and 1280x800 (scratchpad `read90/`).
 - Block 100: gate green at `4236e5a2`; budget 385 lines, 12 files (#375). Read headless the same way, in English and
-  French (scratchpad `read100/`).
+  French (scratchpad `read100/`). (Corrected: then the fix-back `e7f20e5b`, below, after which block 100 measures
+  454 lines, 13 files against `feat/the-board-shows-its-collections`.)
 - Block 110: gate green at `cbac741b`; budget 256 lines, 9 files (#376). Read headless the same way, 24 screenshots
   (scratchpad `read110/`); the conversion tests pass with the host at `TZ=America/New_York`.
 - Block 120: gate green at the branch's tip; budget 3 lines, 1 file against `feat/the-form-dates-a-pin`. The stall case
@@ -73,9 +76,11 @@ which adds the holistic review's findings, their exits and the lot's counts.)
   first run (`repro-after.log`), is of another kind, below. Logs in the session's scratchpad.
 - Continuous integration green on #364 to #376 (`gh pr view <n> --json statusCheckRollup`, 2026-10-08).
   (Corrected: and on #377, read the same way in block 130.)
-- Block 130: gate green at the branch's tip, rebased onto block 10's fix-back; budget 92 lines, 16 files against
+- Block 130: gate green at the branch's tip, rebased onto blocks 10's and 100's fix-backs; budget 184 lines, 18 files against
   `fix/the-stall-test-holds`. It leaves `contract/openapi.json` unchanged. The board page read headless as in block
-  90, the stub answering four collections in the server's order, an accented name last (scratchpad `read130/`).
+  90, the stub answering four collections in the server's order, an accented name last (scratchpad `read130/`). The
+  form's tags field read headless the same way, English and French, light and dark, 390x844 and 1280x800, chips
+  inside the field and suggestions under it, no horizontal overflow (24 screenshots, scratchpad `read130b/`).
 
 ## Pitfalls
 
@@ -181,6 +186,15 @@ acceptable, the test class's name a finding; blocks 70 and 75 split cleanly. Eve
   form and its serialisation in `PersonModelMapper`, the line-feed rule dropped from `PersonInputDto` and the import's
   bounds. The specification and ADR 0055 carry it as `(Corrected: ...)`. The lead cascaded it: every branch from 20
   to 130 was rebased, 130 resolving `PersonInputDto.kt` and `contract/openapi.json` in favour of its new parent.
+- #375, on the creators field: « Dans la UI, le champ "creators" est confus. Le texte est au pluriel, mais rien
+  n'indique comment créer plusieurs créateurs, il faudrait amener un système de champ multi-string, possiblement
+  comment on fait pour les tags. » Asked for one multi-value component shared by tags and people, chips inside the
+  field with the hint « Entrée pour ajouter », the operator answered « a ok ». Asked, once block 100 passed the line
+  bound, whether block 100 keeps it for the people and the closing block moves the tags, « a ok ».
+- The fix-back `e7f20e5b` gave block 100 `ChipField` for the publisher and the creators, at 454 lines. The lead
+  cascaded it onto 110 and 120, and 130 rebased its own commits. Block 130 then deleted `TagField` and put the tags
+  on `ChipField`, the journey "edit a pin's description, tags and boards" asserting the chips inside the field and
+  its "Enter to add" description.
 
 ## What is not validated
 
@@ -197,9 +211,11 @@ acceptable, the test class's name a finding; blocks 70 and 75 split cleanly. Eve
 
 ## The lot's counts
 
-- Fix-backs: 1, block 20's comments. (Corrected: 2, block 10's addresses on the operator's review.)
-- Cascaded rebases: 1, blocks 20 and 30. (Corrected: 2, the second rebasing every branch from 20 to 130.)
-- Runs that cascade re-triggered: 2. (Corrected: to be counted after the second cascade's push.)
+- Fix-backs: 1, block 20's comments. (Corrected: 3, block 10's addresses and block 100's chips on the operator's
+  review.)
+- Cascaded rebases: 1, blocks 20 and 30. (Corrected: 3, the second rebasing every branch from 20 to 130, the third
+  110 to 130.)
+- Runs that cascade re-triggered: 2. (Corrected: to be counted after the cascades' push.)
 - The operator's reading of the bodies: to be filled before the stack merges. (Corrected: no remark.)
 
 ## Next step

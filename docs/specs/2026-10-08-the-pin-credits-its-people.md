@@ -156,7 +156,10 @@ unless it says it is the lead's.
 **G. The form credits people** (X).
 - `PinEditForm` gains a publisher field (one person) and a creators field (several), each built as `TagField` is: a
   text field, suggestions from `GET /api/v1/persons/search` after the same pause, the chosen people as removable
-  chips. A suggestion shows the name and the host of each address, so homonyms read apart.
+  chips. A suggestion shows the name and the host of each address, so homonyms read apart. (Corrected: on the
+  operator's review of pull request #375, one multi-value field, `ChipField`, serves the people and the tags: the
+  chosen values are chips inside the field, which says that Enter adds one. Block 100 built it for the people, block
+  130 moved the tags onto it.)
 - Enter creates a person with the name typed, trimmed, and no address. The form never edits an existing person's
   addresses.
 - `PinDialog` shows the publisher and the creators: the name, then each address as a link showing its host, in a new
@@ -193,7 +196,7 @@ holding one.
 | 100 | `feat/the-form-credits-people` | Decision G. |
 | 110 | `feat/the-form-dates-a-pin` | Decision H. |
 | 120 | `fix/the-stall-test-holds` | A flaky stall case of `HttpMediaFetcherTest`, added mid-lot by the operator. |
-| 130 | `fix/the-people-lot-closes` | The holistic review's findings (Wrap), the backlog and the handoff. |
+| 130 | `fix/the-people-lot-closes` | The holistic review's findings (Wrap), the tags field on `ChipField`, the backlog and the handoff. |
 
 Each block is measured after its first commit with the command of `agents/workflow.md`; one that passes a bound splits
 at a number between its own and the next.
@@ -305,6 +308,9 @@ at a number between its own and the next.
   publisher typed and entered is sent with no address, and one person search runs per pause.
 - The dialog shows a creator's two addresses as two links showing their hosts.
 - Read headless before the push.
+- (Corrected: the fix-back `e7f20e5b` adds `ChipField` for both people's fields; the journey asserts the chips inside
+  the field and its "Enter to add" description. Block 100 then measures 454 lines over 13 files, so the tags' move
+  goes to block 130.)
 
 ### Block 110
 
