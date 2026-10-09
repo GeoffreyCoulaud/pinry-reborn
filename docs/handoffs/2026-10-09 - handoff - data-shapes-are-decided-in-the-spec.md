@@ -66,7 +66,7 @@ a `@JvmInline value class` when it wraps one field, a `data class` otherwise.
 ## The lot's counts
 
 - Fix-backs: 0. Fixes on top: 0. Cascaded rebases: 0. Runs re-triggered: 0.
-- The operator's reading of the bodies: to be filled before the stack merges.
+- The operator's reading of the bodies: no remark.
 
 ## Next step
 
