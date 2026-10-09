@@ -1,6 +1,7 @@
 # 0043. Blocks stack, and a pull request is written for a tech lead
 
-Status: Accepted
+Status: Accepted; decisions 3 and 7 are amended by `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`,
+decision 6: an operator's correction may land as a block on top of the stack, below the closing block.
 Date: 2026-09-25
 Amends: `docs/adr/0018-a-block-is-a-pull-request.md`, decision 2 (in series, no stacking);
 `docs/adr/0023-act-in-a-teammate-per-block.md`, decision 1 (a teammate spawned from `main` after the

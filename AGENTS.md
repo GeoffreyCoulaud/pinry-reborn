@@ -8,6 +8,8 @@ Process, engineering norms and writing conventions live in separate documents; r
 
 - `agents/workflow.md` : phases, tiers, the reviews (mandates under `agents/reviews/`), backlog rules.
 - `agents/engineering.md` : TDD, coverage, gate perimeter, Kotlin and backend norms.
+- `agents/data-modelling.md` : the rules a datum's shape follows, for the lead writing a specification and for the
+  specification's reviewer.
 - `agents/writing.md` : documentation regimes, language and style rules.
 - `docs/handoffs/` : the newest file is the entry point (current state, pitfalls, next step).
 - `docs/backlog.md` : open items only.

@@ -1,7 +1,7 @@
 # Workflow
 
 How work moves through this repository: scope, evidence, design judgement, phases, reviews, integration. Engineering
-norms are in `agents/engineering.md`; writing rules in
+norms are in `agents/engineering.md`; data-modelling rules in `agents/data-modelling.md`; writing rules in
 `agents/writing.md`.
 
 **This document states its mandate before its argument**
@@ -153,14 +153,19 @@ measures what a human rereads, which in a stack is one pull request's diff again
 - **Reviewed once by an adversarial agent** the lead dispatches by name on `agents/reviews/spec.md`, its findings
   closed, then by the user.
 - **Delivered in the first block's pull request**, and frozen when the lot's last block merges (`agents/writing.md`).
+- **A specification that adds or changes a datum has a `Data shape` section**, decided against
+  `agents/data-modelling.md`: for each datum, its domain type, its optionality, its identity and uniqueness, its
+  storage encoding, its shape on the wire, and its place in the archive. "None", with its reason, completes a fact.
 - **A lot whose subject is this process writes its ADR and no separate spec.**
 - **The block table numbers its blocks by tens.** The block count is the table's rows, not its last number; a gap means
   a block was dropped or a number left free, which the table says in the row it keeps or in the line that removes it.
 - **A journey's numeric threshold names the measurement that sets it.** Otherwise it is comparative, or it carries no
   number at all.
 
-**Detail.** Numbering by tens (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 2) is what lets a block
-inserted mid-lot take a number between two existing ones, so no number already written in the prose goes stale. The
+**Detail.** The `Data shape` section is `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 5:
+lot `0.52.0`'s fix-back on block 10 corrected a data shape, a domain type carrying the database's encoding.
+Numbering by tens (`docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 2) is what lets a block inserted
+mid-lot take a number between two existing ones, so no number already written in the prose goes stale. The
 threshold rule is `docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md`, decision 4: lot
 `0.17.0` wrote "under seven minutes" into a journey against a measurement of 8 m 26 s that the same document already
 carried three sections above, and no implementation of that block could have passed it.
@@ -215,6 +220,12 @@ Wrap, not here.
 - **A red run, or a change the human asks for, is fixed in the layer it concerns, one at a time**: the lead forwards
   it by name, and the block's teammate checks its branch out (`gh stack checkout <branch>`), commits the fix, runs the
   gate and stops.
+- **An operator's correction to a block low in the stack may land as a new block on top of the stack instead**, only
+  when all three hold: it fits in one block, the operator approves it, and it costs less than the rebase.
+- **That cost is counted as Wrap counts it**: the branches a fix-back would move, each a run re-triggered, against the
+  one run of the new block.
+- **Once the closing block is on the stack, the fix on top goes below it**, and the closing block is rebased onto it,
+  one more run.
 - **The lead then cascades with `gh stack rebase --upstack` and pushes with `gh stack push`**, which re-runs
   continuous integration on every branch above.
 - **On a conflict, the lead aborts the cascade (`gh stack rebase --abort`)**: the teammate of the branch in conflict
@@ -240,8 +251,10 @@ Wrap, not here.
 **Detail.** The stops this phase operates are phase 3's, which carries the list. A pull request opens ready for review
 and stays so, a red run going back to Verify alone: what is ready to review is the stack, not one pull request
 (`docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decision 6). The fix-back is decision
-3, the path GitHub documents ("Reviewing stacked pull requests"), which no lot has run yet. The waiting rules are `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 3: no run of the measured lot finished
-under the ten-minute ceiling and the median was 14.2 minutes, so the foreground branch never applies to continuous
+3, the path GitHub documents ("Reviewing stacked pull requests"), which lot `0.52.0` ran four times; the fix on top
+is `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 6, after that lot's fix-backs re-triggered
+20 runs for 16 blocks. The waiting rules are `docs/adr/0028-the-budget-follows-the-ecosystem.md`, decision 3: no run
+of the measured lot finished under the ten-minute ceiling and the median was 14.2 minutes, so the foreground branch never applies to continuous
 integration. That decision's third claim, that a background command's completion does not re-invoke an idle agent, is
 amended by `docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md`, decision 6: the Bash tool
 re-invokes the lead when a background command exits, which is what the watch above rests on. ADR 0028 observed the
@@ -279,8 +292,8 @@ called unreadable.
   deleted in that block's own pull request; (d) the handoff in `docs/handoffs/<ISO date> - handoff - <context>.md`,
   written in the last code block from the block reports of the lot's pull requests and corrected here: current state,
   what was built, pitfalls, what is not validated, next step.
-- **(d) also counts, for the lot, the fix-backs, the cascaded rebases, the runs they re-triggered, and the operator's
-  reading of the bodies**, filled in before the stack merges.
+- **(d) also counts, for the lot, the fix-backs, the fixes on top, the cascaded rebases, the runs they re-triggered,
+  and the operator's reading of the bodies**, filled in before the stack merges.
 - **(e) After the operator merges the whole stack, the lead tags the lot**, an annotated `lot/X.Y.Z-<slug>` on the
   closing merge, pushed. This step is not optional.
 - **(f) Report what was done and the friction points, and every tier-2 question asked with the answer it got.** That

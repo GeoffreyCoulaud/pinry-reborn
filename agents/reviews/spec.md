@@ -79,6 +79,17 @@ both mentioning the name. "The repository test passes" names an instrument, whic
 test is edited. A bound on entries is not a bound on memory; a unique index is not uniqueness if the
 column is nullable; a grep is not a structural test.
 
+## Data shape
+
+- **Read `agents/data-modelling.md` before the specification.**
+- **A specification that adds or changes a datum without a `Data shape` section is a finding**, citing that document.
+- **So is a datum missing one of the facts the Spec phase of `agents/workflow.md` lists**, and a "None" without its
+  reason.
+- **So is a shape that breaks one of its rules**, citing the rule.
+
+**Detail.** `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 5: a shape the specification
+leaves open is decided by the block, where the operator's correction costs a fix-back.
+
 ## Decision record
 
 - **Say whether the decisions this specification settles were recorded as an ADR.**
