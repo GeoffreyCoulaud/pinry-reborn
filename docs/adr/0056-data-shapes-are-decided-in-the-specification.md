@@ -159,7 +159,8 @@ Every decision below is the operator's, taken in Discuss on 2026-10-09.
 - **`api/AGENTS.md`** states decision 3's rule, its Konsist test to land with the first value class.
 - **The backlog**: the foreign keys item (P2) and the third-party import item (Features) point to this ADR for their
   order; the Before-beta "Flatten the migration history" item is folded into the foreign keys item; one item is filed
-  for decision 7.4's three lots, pointing to `inventory.md`. The first lot is the handoff's next step.
+  per lot of decision 7.4, each pointing to the sections of `inventory.md` it covers. The first lot is the handoff's
+  next step.
 - **Overturned in part by the next lot**, whose documents mark them `(Corrected: ...)` or supersede them:
   `docs/specs/2026-10-08-the-pin-credits-its-people.md` decisions A (the server normalises no address) and D (a
   person travels only inside pin lines), and decision E with
