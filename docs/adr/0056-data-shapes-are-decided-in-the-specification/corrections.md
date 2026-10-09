@@ -78,8 +78,9 @@ S = `docs/specs/`, A = `docs/adr/`. Line numbers are that commit's.
 ## 6. Archive
 
 - **A person travels inside the pin lines** (S 2026-10-08 decision D): overturned by ADR 0056.
-- **`publishedAt` restored unclamped**, and **`formatVersion` stays 2**: « Cette question n'a pas de sens... on ne serait
-  même pas obligé de bump le format ».
+- **`publishedAt` restored unclamped**, and **`formatVersion` stays 2** (S 2026-10-08 decision D). The operator's words,
+  « Cette question n'a pas de sens... on ne serait même pas obligé de bump le format », survive only in the lead's
+  notes of 2026-10-08, outside the repository.
 - **Tags stay plain names; source title, text, address and classification not stored** (A 0055 decisions 9, 10). No
   post entity (A 0054 decision 19).
 

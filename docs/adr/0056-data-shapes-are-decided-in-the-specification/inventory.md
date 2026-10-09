@@ -76,13 +76,13 @@ needs a migration, **[client]** forces a web client change.
 **I2.** Clean.
 
 **I3. Read-before-write, or a unique violation left untranslated**
-- `U/exports/UserDataExportRequester.kt:58`: `findPendingForUser` answers uniqueness before the insert (the partial index already does, and `savePending` translates it); `D/repositories/UserDataExportRepositoryInterface.kt:23` exists for it. Fix: drop the read, order the refusals after the insert. Reach: usecases, domain port.
+- `U/exports/UserDataExportRequester.kt:58`: `findPendingForUser` answers uniqueness before the insert (the partial index already does, and `savePending` translates it); `D/repositories/UserDataExportRepositoryInterface.kt:23` exists for it. Fix: drop the read, order the refusals after the insert. Reach: usecases, domain port. (Corrected: not a violation, ADR 0056 decision 4 keeping this read as the rule's written exception.)
 - `P/repositories/EbeanPinDuplicateRepository.kt:22-25`: reads held pairs, then inserts the rest. Fix: insert and let `ux_pin_duplicate_pins` refuse (insert-or-ignore). Reach: persistence.
 - `P/repositories/EbeanTaskQueue.kt:51-52`: reads the live dedup task before an insert that already converges on the unique violation. Fix: drop the read. Reach: persistence.
 - Saves that never translate their unique index: `P/repositories/TagRepository.kt:18`, `PersonRepository.kt:18`, `RemoteCollectionRepository.kt:18`. Safe today only because each caller reads first in a transaction. Fix: translate, or make the find-or-create converge on the violation. Reach: persistence, domain exceptions.
 - Judgement call: the import identifies a pin by its media digest (`U/imports/UserDataImportRunner.kt` `digested`/`matched`, `MEDIA_AMBIGUOUS`) with no unique index behind it, by product decision (`P/models/MediaModel.kt:17-18`).
 
-**I4.** Clean (`boards` and `users` indexes cover recycled and tombstoned rows; nothing else is recyclable).
+**I4.** Clean (`boards` and `users` indexes cover recycled and tombstoned rows; pins are recyclable and carry no unique index).
 
 **I5.** Clean (`pin_tag_model`, `pin_board_model`, `pin_creator_model`, `pin_duplicate`: unique pair plus an index on the other side).
 
@@ -126,7 +126,7 @@ needs a migration, **[client]** forces a web client change.
 ### Nullability
 
 **N1. Annotation restating nullability**
-- `@Valid @NotNull` on non-null Kotlin body parameters, 13 sites (`Q/controllers/BoardController.kt:94,176,255,271`, `BoardRecycleBinController.kt:86`, `MeController.kt:108`, `PinRecycleBinController.kt:91`, `SessionController.kt:79`, `UserController.kt:48`, `PinController.kt:87,158,228`, `PinDuplicateController.kt:123`, `MediaController.kt:172,370`). `ArchitectureKonsistTest.kt:79` mandates them, because RESTEasy does not read Kotlin nullability. Fix: a Kotlin-aware refusal of a missing body, then drop the annotations and invert the test. Reach: presentation, one test. Flagged for decision.
+- `@Valid @NotNull` on non-null Kotlin body parameters, 15 sites (`Q/controllers/BoardController.kt:94,176,255,271`, `BoardRecycleBinController.kt:86`, `MeController.kt:108`, `PinRecycleBinController.kt:91`, `SessionController.kt:79`, `UserController.kt:48`, `PinController.kt:87,158,228`, `PinDuplicateController.kt:123`, `MediaController.kt:172,370`). `ArchitectureKonsistTest.kt:79` mandates them, because RESTEasy does not read Kotlin nullability. Fix: a Kotlin-aware refusal of a missing body, then drop the annotations and invert the test. Reach: presentation, one test. Flagged for decision.
 
 **N2. Null as a third state, or an entity built with something it did not load**
 - `D/repositories/PinRepositoryInterface.kt:45,100`, `U/PinGetter.kt:31`, `U/BoardPinLister.kt:26`, `P/queries/PinQueries.kt:20`: `query: String? = null` means "no filter". Fix: a search-term shape. Reach: domain, usecases, persistence, presentation.

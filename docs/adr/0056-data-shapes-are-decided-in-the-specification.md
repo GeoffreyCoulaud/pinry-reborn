@@ -2,14 +2,16 @@
 
 Status: Accepted
 Date: 2026-10-09
-Amends: `docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decision 3 (the fix-back).
+Amends: `docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decisions 3 (the fix-back)
+and 7 (the closing block on top); `agents/engineering.md`, Design invariants, "The migration history is append-only
+until beta".
 
 ## Context
 
 Lot `0.52.0` met ADR 0043's failure criterion: 20 continuous integration runs re-triggered for 16 blocks
-(`docs/handoffs/2026-10-08 - handoff - the-pin-credits-its-people.md`, The lot's counts). The operator's fix-backs
-landed on blocks 10 and 100, at the bottom of the stack, and each rebased nearly every branch above. Block 10's was a
-data-modelling correction: a domain type, `PersonUrls`, carried the database's encoding.
+(`docs/handoffs/2026-10-08 - handoff - the-pin-credits-its-people.md`, The lot's counts). An operator's fix-back
+landed on block 10, at the bottom of the stack, and rebased every branch above it; two more landed on block 100. Block
+10's was a data-modelling correction: a domain type, `PersonUrls`, carried the database's encoding.
 
 That correction was not the first. `corrections.md`, beside this file, lists the operator's data-modelling corrections
 found across the handoffs, specifications, ADRs and pull request comments. No document gathers the rules they imply;
@@ -23,13 +25,16 @@ Every decision below is the operator's, taken in Discuss on 2026-10-09.
 
 1. **`agents/data-modelling.md` gathers the data-modelling rules.** Its readers are the lead writing a specification
    and the specification's reviewer. It is not put in a teammate's brief: a teammate acts on a specification that has
-   decided.
+   decided. Root `AGENTS.md` lists it with its two readers.
 2. **It covers the domain, storage, the contract and the archive**, not the interface. The publisher given a
    multi-value field (#375) was an interface design error: the model had it right.
 3. **It states principles, in no language.** Each ecosystem root says in its own `AGENTS.md` how it applies them. The
-   API's states that **no inline value class appears in a persistence model**, Ebean silently breaking the migration
-   generation; the mapper converts, and a Konsist test holds it.
-4. **The rules are the following**, which the document carries and this ADR does not keep alive:
+   API's states that **no inline value class appears in a persistence model**: the operator observed Ebean's
+   migration generation break on one in silence, as `agents/engineering.md`'s "Verify every inline value class"
+   rule, from the installed baseline (`c802a509`), already warned. The mapper converts. A Konsist test holds the rule
+   from the first value class on, in the next lot.
+4. **The rules are the following, 35 of them**, which the document carries one bullet each and this ADR does not keep
+   alive:
    - **Types.**
      - A standard type that names the concept first (`UUID`, `Instant`, `URI`); a value class only for an invariant
        the standard type lacks. Never a bare string or integer for a concept.
@@ -41,9 +46,12 @@ Every decision below is the operator's, taken in Discuss on 2026-10-09.
      - Elements distinct by nature form a set.
      - A concept's name says what it is, and a rename crosses every layer.
    - **Identity.**
-     - A natural key identifies; an identifier supplied by a client or an archive never does.
+     - A natural key decides whether a datum already exists; an identifier an archive or a client supplies never
+       decides it, and a client never chooses a new row's identifier.
      - A matching identity reuses the row; a differing one creates a row; no existing row is modified to reconcile.
-     - The database is the authority on uniqueness, and only the unique violation is translated, told apart by its type.
+     - The database is the authority on uniqueness, and only the unique violation is translated, told apart by its
+       type. The written exception survives: `UserDataExportRequester.createPending`'s `findPendingForUser`, which
+       orders its refusals, 409 ahead of 429.
      - A unique index covers recycled rows.
      - A join table is unique on its pair and indexed on each side.
      - A symmetric pair is stored in a canonical order.
@@ -59,7 +67,8 @@ Every decision below is the operator's, taken in Discuss on 2026-10-09.
      - A write over many rows reads in one query and writes in one batch.
      - Alpha data is disposable: no backfill, no version column to heal old rows.
    - **Nullability.**
-     - Nullability comes from the type, and no annotation restates it; refusing a blank value is not nullability.
+     - Nullability comes from the type, and no annotation restates it; refusing a blank value is not nullability. The
+       document notes under this rule the open question of decision 8 on request bodies.
      - A collection is never nullable: its absence is empty. A third state (unchanged, unknown, no filter, not loaded)
        takes a shape of its own, never null. An entity is never built with a collection it did not load.
      - An optional datum is optional whatever its entry path.
@@ -85,14 +94,18 @@ Every decision below is the operator's, taken in Discuss on 2026-10-09.
 ### The specification
 
 5. **A specification that adds or changes a datum has a `Data shape` section**: for each datum, its domain type, its
-   identity and uniqueness, its storage encoding, its shape on the wire, and its place in the archive. The
-   specification's reviewer refuses one left incomplete, citing `agents/data-modelling.md`.
+   optionality, its identity and uniqueness, its storage encoding, its shape on the wire, and its place in the
+   archive. "None", with its reason, completes a fact. The specification's reviewer refuses a section with a fact
+   missing, citing `agents/data-modelling.md`.
 
 ### The fix on top
 
 6. **An operator's correction to a block low in the stack may land as a new block on top of the stack** instead of a
    fix-back, only when all three hold: it fits in one block, the operator approves it, and it costs less than the
-   rebase. Otherwise ADR 0043's fix-back stands.
+   rebase. The cost is counted as ADR 0043's criterion counts it: the branches a fix-back would move, each a run
+   re-triggered, against the one run of the new block. Once the closing block is on the stack, the fix goes below it
+   and the closing block is rebased onto it, one more run. Wrap's counts record the fixes on top beside the fix-backs.
+   Otherwise ADR 0043's fix-back stands.
 
 ### What follows
 
@@ -100,18 +113,21 @@ Every decision below is the operator's, taken in Discuss on 2026-10-09.
    found in the code, with a proposed grouping:
    1. **`HttpUrl`, the person and the archive**: everything that changes the archive the importer will write. A value
       class over `java.net.URI`, absolute and http(s) only, normalised in its factory to RFC 3986's equivalences
-      (sections 6.2.2 and 6.2.3: lower-case scheme and host, default port dropped, empty path as `/`, dot segments
-      removed, percent-encoding in upper case), the trailing slash kept; every address of the domain takes it, and
-      `Person.urls` becomes a `Set<HttpUrl>`. `persons.jsonl` enters the archive, every person in it, pin lines
-      naming theirs by `{name, urls}`. The Konsist test of decision 3.
-   2. **Foreign keys**: the migration history flattened into one baseline that declares `ON DELETE CASCADE`, then
-      `foreign_keys` turned on, the development data being disposable. It takes the inventory's items that need a
-      migration: derived and unread columns, column and table renames, `CHECK` constraints.
+      (sections 6.2.2 and 6.2.3: lower-case scheme and host, percent-encoding in upper case, percent-encoded
+      unreserved characters decoded, dot segments removed, default port dropped, empty path as `/`), the trailing
+      slash kept; every address of the domain takes it, and `Person.urls` becomes a `Set<HttpUrl>`. `persons.jsonl`
+      enters the archive, every person in it, pin lines naming theirs by `{name, urls}`. The Konsist test of
+      decision 3.
+   2. **Foreign keys**: the migration history flattened now, rather than before beta, into one baseline that declares
+      `ON DELETE CASCADE`, then `foreign_keys` turned on, the development data being disposable. The history is
+      append-only again from that baseline. It takes the inventory's items that need a migration: derived and unread
+      columns, column and table renames, the legacy `when_created` and `when_modified` names included, and `CHECK`
+      constraints.
    3. **The importer** of `docs/adr/0055-third-party-imports-write-the-user-data-archive.md`.
-   4. **The rest of the inventory, in thematic lots**: types, sealed states, batch writes and transactions.
+   4. **The rest of the inventory, in three thematic lots**: types; sealed states; batch writes and transactions.
 8. **Two questions wait for their lot**: `@NotNull` on request bodies, which `ArchitectureKonsistTest` requires because
-   RESTEasy does not read Kotlin's nullability, against the nullability rule; and whether SmallRye publishes the sealed
-   wire states as `oneOf`.
+   RESTEasy hands a null body to a Kotlin parameter that is not nullable (ADR 0039), against the nullability rule; and
+   whether SmallRye publishes the sealed wire states as `oneOf`.
 
 ### Rejected
 
@@ -130,20 +146,33 @@ Every decision below is the operator's, taken in Discuss on 2026-10-09.
 
 ## Consequences
 
-- `agents/workflow.md`'s Spec phase names the `Data shape` section, and its Integrate phase the fix on top.
-  `agents/reviews/spec.md` refuses an incomplete section. `agents/engineering.md` keeps what is not data modelling
-  and points to the new document for what moved. `api/AGENTS.md` states decision 3's rule.
-- `docs/specs/2026-10-08-the-pin-credits-its-people.md`, decision D, is overturned by the next lot: a person no pin
-  names no longer leaves an export.
-- The backlog gains one item per lot of decision 7 but the first, each pointing to `inventory.md`. The foreign keys
-  item already open is that lot's.
+- **`agents/workflow.md`**: the Spec phase requires the `Data shape` section of decision 5; Integrate carries the fix
+  on top of decision 6, and its Detail no longer says no lot has run a fix-back (lot `0.52.0` ran four); Wrap's
+  counts gain the fixes on top. **`agents/reviews/spec.md`** makes a section with a fact missing a finding.
+- **`agents/engineering.md`** keeps its language and backend norms and points to `agents/data-modelling.md`. These
+  bullets leave it for the new document, each becoming one of decision 4's rules: "Closed unions are `sealed`"
+  (its exhaustive `when` stays), "Value objects are `data class` or `@JvmInline value class`", "Nullability at the
+  boundary is resolved at the boundary", "Anything a client depends on is versioned or additive" (rewritten as the
+  alpha rule), "The wire format is not the domain model", "Identifiers, casing and normalisation are decided once",
+  and "The database is the authority on uniqueness". "The migration history is append-only until beta" is rewritten
+  to decision 7.2. Every other bullet stays.
+- **`api/AGENTS.md`** states decision 3's rule, its Konsist test to land with the first value class.
+- **The backlog**: the foreign keys item (P2) and the third-party import item (Features) point to this ADR for their
+  order; the Before-beta "Flatten the migration history" item is folded into the foreign keys item; one item is filed
+  for decision 7.4's three lots, pointing to `inventory.md`. The first lot is the handoff's next step.
+- **Overturned in part by the next lot**, whose documents mark them `(Corrected: ...)` or supersede them:
+  `docs/specs/2026-10-08-the-pin-credits-its-people.md` decisions A (the server normalises no address) and D (a
+  person travels only inside pin lines), and decision E with
+  `docs/adr/0055-third-party-imports-write-the-user-data-archive.md` decisions 8 and 11 (addresses become a set of
+  normalised `HttpUrl`, a collection's identity a normalised address).
 - `inventory.md` holds line numbers of `1fc81bdc`; each lot re-reads the code before its specification.
 
 ## Block table
 
 | Block | Branch | What its checks have to fail on |
 |---|---|---|
-| 10 | `docs/data-shapes-are-decided-in-the-spec` | `agents/data-modelling.md` exists, states its mandate before its argument (`agents/writing.md`, Style), and carries every rule of decision 4, the interface absent. `agents/workflow.md`'s Spec phase requires the `Data shape` section with its five facts, and the fix on top with its three conditions. `agents/reviews/spec.md` makes an incomplete section a finding. `grep -n 'versioned or additive' agents/engineering.md` prints nothing, and the modelling rules moved out of it appear in the new document. `api/AGENTS.md` forbids a value class in a persistence model. ADR 0043's `Status:` line names this ADR. The backlog holds the items of the Consequences. `dagger call prose` green. This block carries this ADR |
+| 10 | `docs/data-shapes-are-decided-in-the-spec` | `agents/data-modelling.md` exists, states its mandate before its argument (`agents/writing.md`, Style), and carries the 35 rules of decision 4, one bullet each, the interface absent; root `AGENTS.md` lists it with its two readers. `agents/workflow.md`'s Spec phase requires the `Data shape` section with its six facts, Integrate the fix on top with its three conditions, its cost and its place below the closing block, and Wrap counts the fixes on top. `agents/reviews/spec.md` makes a missing fact a finding. Each `agents/engineering.md` bullet the Consequences list as leaving is absent from it by its bold lead and present in the new document; `grep -n 'versioned or additive' agents/engineering.md` prints nothing. `api/AGENTS.md` forbids a value class in a persistence model. ADR 0043's `Status:` line names this ADR. The backlog holds the changes of the Consequences. `dagger call prose` green. This block carries this ADR and the lot's handoff, with its counts |
 
-**Adjacent backlog items**: the foreign keys item (`foreign_keys` is off), taken by decision 7's second lot. A lot of
-one block: the holistic review is waived.
+**Adjacent backlog items**: the foreign keys item and the Before-beta flattening item, taken by decision 7.2's lot, and
+the third-party import item, decision 7.3's. A lot of one block: the operator waived the holistic review in Discuss on
+2026-10-09.
