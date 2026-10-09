@@ -22,7 +22,8 @@ in block 10 from its own report.
 
 ## Evidence
 
-- Block 10: budget 177 lines, 7 files against `main` at `ac3de3e8`, the dated documents outside the count.
+- Block 10: budget 177 lines, 7 files against `main` at `ac3de3e8`, the dated documents outside the count; 178 lines,
+  7 files at `bbea9ff5`, with the tier-1 fix from the lead's review.
 - `command grep -n 'versioned or additive' agents/engineering.md` prints nothing, nor does a grep of the seven bold
   leads and of "append-only until beta". `agents/data-modelling.md` counts 35 bullets from `## Types` on.
 - `dagger call prose` green at the branch's tip.
