@@ -31,7 +31,8 @@ in block 10 from its own report.
 
 - Decision 7.4 names three lots and not which inventory unit each takes. This block assigned the units left over by
   decisions 7.1 and 7.2: 11, 22 and 23 (nullability) to the sealed states lot, which also carries decision 8's two
-  questions; 25 (contract wording) to the types lot; unit 20's database renames to the foreign keys item.
+  questions; 25 (contract wording) to the types lot; unit 20's database renames to the foreign keys item. The operator
+  approved it (Tier-2 questions).
 - "Closed unions are `sealed`" left `agents/engineering.md`, and its exhaustive `when` stays there as a bullet of its
   own.
 - The uniqueness rule keeps engineering's "no read-before-write answers what an index already answers".
@@ -41,7 +42,9 @@ in block 10 from its own report.
   `gh stack submit` had nothing to submit.
 
 Tier-1 fixes: `agents/workflow.md`'s opening line names the new document, and one pre-existing line of Integrate's
-Detail over 120 columns was reflowed with the edit beside it.
+Detail over 120 columns was reflowed with the edit beside it. From the lead's review, `api/AGENTS.md` says how the API
+builds a value type, "Value objects are `data class` or `@JvmInline value class`" having left `agents/engineering.md`:
+a `@JvmInline value class` when it wraps one field, a `data class` otherwise.
 
 ## Pitfalls
 
@@ -49,15 +52,15 @@ Detail over 120 columns was reflowed with the edit beside it.
 
 ## Tier-2 questions
 
-- Discuss settled every decision of ADR 0056 with the operator. None in Act.
+- Discuss settled every decision of ADR 0056 with the operator.
+- Block 10's assignment of the leftover inventory units to the thematic lots, under departures. Answer: « Oui ok ».
 
 ## What is not validated
 
 - The holistic review, waived by the operator in Discuss on 2026-10-09, the lot being one block.
 - No test holds a rule of `agents/data-modelling.md` yet: the Konsist test of decision 3 lands with the first value
   class, in the next lot.
-- The assignment of the leftover inventory units, above, is this block's reading; each lot's specification re-reads
-  the code, `inventory.md` holding the line numbers of `1fc81bdc`.
+- Each lot's specification re-reads the code, `inventory.md` holding the line numbers of `1fc81bdc`.
 
 ## The lot's counts
 
