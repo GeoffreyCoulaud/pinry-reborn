@@ -1,7 +1,7 @@
 # Engineering
 
 Norms, the gate perimeter, Kotlin and backend rules, and the design decisions already settled. Process is in
-`agents/workflow.md`.
+`agents/workflow.md`; the data-modelling rules in `agents/data-modelling.md`.
 
 **This document states its mandate before its argument**
 (`docs/adr/0029-a-workflow-phase-states-its-mandate-before-its-argument.md`, decision 1). The bullets bind. The
@@ -41,14 +41,11 @@ measured entity class reports coverage nobody can write a test for.
 
 - **`!!` is forbidden**: model non-nullable, or handle the null.
 - **`lateinit` only for framework-injected fields.**
-- **Closed unions are `sealed`**, `when` over them exhaustive without an `else`.
-- **Value objects are `data class` or `@JvmInline value class`**, never a bare `String` or `Int`.
+- **A `when` over a sealed type is exhaustive, without an `else`.**
 - **Verify every inline value class against the libraries that reflect over it**: generate the artefact, read it, pin
   the result in a test. Where a library cannot handle it, keep the IVC in the domain and convert at the adapter.
 - **Immutability by default**: `val` over `var`, read-only collection types in signatures,
   `copy()` over mutation.
-- **Nullability at the boundary is resolved at the boundary**: a nullable wire field is converted to a validated domain
-  type in the adapter, never carried inward.
 
 ### Errors and coroutines
 
@@ -89,15 +86,11 @@ how Ebean's migration generation was caught; the artefact is the only place that
   unhandled media types, malformed payloads, method not allowed, the fallback handler).
 - **A partial failure is a specified behaviour**: for any batch operation, the spec states what the client receives and
   what state persists when step N of M fails.
-- **Anything a client depends on is versioned or additive**: removing a field, narrowing a type, making an optional
-  parameter required, or changing a default are breaking changes.
 
 ### Boundaries
 
 - **Validate at the edge, then trust inward**: the domain never receives a raw body, query string, or a nullable it has
   to re-check.
-- **The wire format is not the domain model**: DTOs are separate types.
-- **Identifiers, casing and normalisation are decided once**, in the spec, applied at one place, tested.
 
 ### Configuration and secrets
 
@@ -174,8 +167,9 @@ client the other is refused.
 - **Domain data is stamped by use cases, never invented by adapters**: instants, ids, state transitions come from ports;
   the adapter stores what it is given.
 - **All code is English**; documents predating the decision keep their language.
-- **The migration history is append-only until beta**, then flattened into a generated baseline. Accepted cost
-  meanwhile: legacy `when_created`/`when_modified` column names.
+- **The migration history is flattened once, by the foreign keys lot**, into one baseline that declares
+  `ON DELETE CASCADE`, then `foreign_keys` turned on; it is append-only again from that baseline
+  (`docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.2). Until then it is append-only.
 - **A query rooted on a recyclable model is built by its `Queries` object**: models implementing
   `SoftDeletableModel` are queried through `active()`, `recycled()` or `any()`; queries rooted elsewhere filter through
   extensions (`withActiveBoard()` etc.). Held by Konsist assertions and the `SoftDeleteStateFilteredOutsideQueries`
@@ -187,9 +181,6 @@ client the other is refused.
   to 1, WAL, `synchronous=NORMAL`, `busy_timeout=5000`, no `transaction_mode=IMMEDIATE`.
 - **A pair of statements that must not interleave holds a transaction**, as `EbeanTaskQueue.enqueue` does; a new pair
   that does not is a defect.
-- **The database is the authority on uniqueness**: no read-before-write exists solely to answer a uniqueness question an
-  index already answers; the adapter translates the violation into a domain exception. One written exception:
-  `UserDataExportRequester.createPending`'s `findPendingForUser`, which orders its refusals (409 ahead of 429).
 - **A unique constraint is not complete until its outcome is named**: every one appears in
   `UniqueConstraintOutcomeTest`'s table with the answer a client gets, "no translation, deliberately" included.
 

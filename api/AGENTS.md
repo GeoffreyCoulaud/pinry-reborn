@@ -73,6 +73,14 @@ sits beside it, so `./api/gradlew` from the repository root finds no build at al
   (`docs/adr/0053-ktfmt-formats-the-kotlin-code.md`). The gate refuses what it would change. detekt's findings
   have no auto-fix and are fixed by hand.
 
+## Data modelling
+
+How this build applies `agents/data-modelling.md`
+(`docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 3):
+
+- **No inline value class appears in a persistence model.** Ebean's migration generation breaks on one in silence; the
+  mapper converts. A Konsist test holds the rule, landing with the first value class.
+
 ## Gotchas
 
 - **Never edit an applied migration**: the checksum changes and Ebean refuses the history. A correction is a new
