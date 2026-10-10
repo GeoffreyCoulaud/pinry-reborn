@@ -132,7 +132,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         val sourceMediaUrl: String?,
         val createdAt: Instant,
         val updatedAt: Instant,
-        val deletedAt: Instant?,
+        val softDeletedAt: Instant?,
         val tagNames: Set<String>,
         val boardNames: Set<String>,
         val mediaBytes: ByteArray,
@@ -141,7 +141,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         val publishedAt: Instant?,
     )
 
-    private data class PersonFacts(val name: String, val urls: Set<HttpUrl>)
+    private data class PersonFacts(val name: String, val urls: Set<HttpUrl>, val createdAt: Instant)
 
     private data class AccountFacts(
         val pins: Map<String?, PinFacts>,
@@ -162,7 +162,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
             sourceMediaUrl = pin.sourceMediaUrl?.toString(),
             createdAt = pin.createdAt,
             updatedAt = pin.updatedAt,
-            deletedAt = pin.softDeletedAt,
+            softDeletedAt = pin.softDeletedAt,
             tagNames = pin.tags.map { it.name }.toSet(),
             // Including the recycled ones, which is the membership the round trip is really about.
             boardNames = pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { it.name }.toSet(),
@@ -173,7 +173,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         )
     }
 
-    private fun factsOf(person: Person): PersonFacts = PersonFacts(person.name.text, person.urls)
+    private fun factsOf(person: Person): PersonFacts = PersonFacts(person.name.text, person.urls, person.createdAt)
 
     private fun factsOf(user: User): AccountFacts {
         val pins = activePinsOf(user) + pinRepository.findAllSoftDeletedPinsForUser(user)
@@ -197,7 +197,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         assertEquals(source.sourceMediaUrl, imported.sourceMediaUrl)
         assertEquals(source.createdAt, imported.createdAt)
         assertEquals(source.updatedAt, imported.updatedAt)
-        assertEquals(source.deletedAt, imported.deletedAt)
+        assertEquals(source.softDeletedAt, imported.softDeletedAt)
         assertEquals(source.tagNames, imported.tagNames)
         assertEquals(source.boardNames, imported.boardNames)
         assertEquals(source.publisher, imported.publisher)
