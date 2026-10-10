@@ -61,4 +61,16 @@ class ExportReadmeTest {
         // Then
         assertTrue(readme.contains("`media/` - the original media bytes (images and videos)"))
     }
+
+    @Test
+    fun `Given a manifest, Then the README says how a pin names its collections`() {
+        // Given
+        val manifest = sampleManifest(excluded = emptyList())
+
+        // When
+        val readme = ExportReadme.render(manifest)
+
+        // Then
+        assertTrue(readme.contains("its collections by `url`"))
+    }
 }
