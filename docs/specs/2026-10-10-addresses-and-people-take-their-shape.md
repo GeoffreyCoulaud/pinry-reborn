@@ -6,8 +6,8 @@ CRITICAL, 5 MAJOR and 15 MINOR closed in this document and ADR 0057. Frozen when
 Lot: `0.54.0`.
 Branches: one stack, each block on the one before it: 10 `feat/an-address-is-typed`, 20
 `feat/a-pin-source-is-an-address`, 30 `feat/a-download-fetches-an-address`, 40 `feat/a-collection-is-an-address`,
-50 `feat/a-person-is-its-name-and-addresses`, 60 `feat/the-archive-lists-people`, 70
-`feat/the-archive-names-by-key`, 80 `chore/the-shapes-lot-closes`.
+50 `feat/a-person-is-its-name-and-addresses`, 60 `feat/the-archive-lists-people`, 63
+`feat/an-import-reports-an-unknown-person`, 66 `feat/a-pin-names-its-people-by-id`, 70 `feat/the-archive-names-by-key`, 80 `chore/the-shapes-lot-closes`.
 ADR: `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.1, records decisions B and E below;
 `docs/adr/0057-the-archive-references-by-key-and-an-address-is-refused-alike.md` records C, F and G, and supersedes
 ADR 0056's decision 13 and 7.1's `{name, urls}` reference.
@@ -185,7 +185,9 @@ recorded departure for a composite value, its identifier deciding nothing (ADR 0
 | 30 | `feat/a-download-fetches-an-address` | Decisions B and C on downloads and fetchers. |
 | 40 | `feat/a-collection-is-an-address` | Decision B on remote collections. |
 | 50 | `feat/a-person-is-its-name-and-addresses` | Decisions D and E. |
-| 60 | `feat/the-archive-lists-people` | Decision F. |
+| 60 | `feat/the-archive-lists-people` | Decision F's `persons.jsonl`. |
+| 63 | `feat/an-import-reports-an-unknown-person` | Decision F's `PERSON_UNKNOWN` kind. |
+| 66 | `feat/a-pin-names-its-people-by-id` | Decision F's `{id}` references. |
 | 70 | `feat/the-archive-names-by-key` | Decision G. |
 | 80 | `chore/the-shapes-lot-closes` | The holistic review's findings and the documents (Wrap). |
 
@@ -247,20 +249,34 @@ Storage): a development database holding an address the factory refuses is reset
 - An import pin line naming a person with 21 addresses is `FIELD_INVALID`.
 - `PersonOutputDto.urls` declares `uniqueItems`; `PersonInputDto`'s items declare `format: uri`.
 
+Block 60 measured about 28 files with both halves of decision F; it splits into 60, 63 and 66. The `{id}` reference
+cannot split further: the export and the import change together, or the round trip breaks.
+
 ### Block 60
 
-- `persons.jsonl`, written and read as decision F says; a port listing a user's persons; `PERSON_UNKNOWN` in the
-  domain, the contract, and `importIssues.ts` with its sentence in English and French; `ImportArchiveBuilder` writes
-  the entry; the README and the counts; `agents/data-modelling.md`'s Archive rules gain ADR 0057's exception.
+- `persons.jsonl`, written and read as decision F says, its pin lines still naming `{name, urls}`; a port listing a
+  user's persons; `ImportArchiveBuilder` writes the entry; the README and the counts; `agents/data-modelling.md`'s
+  Archive rules gain ADR 0057's exception.
 - The round trip carries a person no pin names, and the issue list is empty.
+- A second line reusing an `id`, and a line whose `id` has 201 characters, are `FIELD_INVALID`.
+- A `persons.jsonl` of 100 001 lines: the last is `FIELD_INVALID`, and the one before it imports.
+- A person line's `createdAt` earlier than the account's creation is clamped as a tag's.
+- `ExportContentGoldenJsonTest` shows a person line and the two new counts.
+
+### Block 63
+
+- `PERSON_UNKNOWN` in the domain, the contract, and `importIssues.ts` with its sentence in English and French. Its
+  producer arrives in block 66.
+
+### Block 66
+
+- A pin line's `publisher` and `creators` become `{id}` on export and import; the import keeps the identifier of each
+  person line and reads the persons back by identifier when it creates the pin.
 - One archive whose two `persons.jsonl` lines carry one name in two ASCII cases with the same addresses creates one
   `persons` row, and two pin lines naming each identifier credit that one row.
 - A pin line naming two identifiers absent from `persons.jsonl` creates the pin without them and reports two
-  `PERSON_UNKNOWN`, each naming its identifier; a second line reusing an `id`, and a line whose `id` has 201
-  characters, are `FIELD_INVALID`.
-- A `persons.jsonl` of 100 001 lines: the last is `FIELD_INVALID`, and the one before it imports.
-- A person line's `createdAt` earlier than the account's creation is clamped as a tag's.
-- `ExportContentGoldenJsonTest` shows a person line, a pin line's `{id}` references and the two new counts.
+  `PERSON_UNKNOWN`, each naming its identifier.
+- `ExportContentGoldenJsonTest` shows a pin line's `{id}` references.
 
 ### Block 70
 
