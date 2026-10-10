@@ -104,4 +104,9 @@ class HttpUrlTest {
     fun `Given a non-ASCII host, Then it is refused`() {
         assertNull(HttpUrl.parse("https://éx.test/"))
     }
+
+    @Test
+    fun `Given a host holding an underscore, Then it is refused`() {
+        assertNull(HttpUrl.parse("https://a_b.example.test/x"))
+    }
 }

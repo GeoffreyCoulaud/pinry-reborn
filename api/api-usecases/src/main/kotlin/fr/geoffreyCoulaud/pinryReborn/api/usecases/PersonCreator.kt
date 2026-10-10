@@ -33,7 +33,7 @@ class PersonCreator(
         name: PersonName,
         urls: Set<HttpUrl>,
         user: User,
-        // Not the clock: the user data import stamps with its own instant (specification 2026-10-08, decision D).
+        // Not the clock: the user data import restores a person line's own instant, clamped.
         createdAt: Instant,
     ): Person = transactionRunner.inTransaction {
         personRepository.findUserPerson(user = user, name = name, urls = urls)
