@@ -13,7 +13,7 @@ internal class PinCredits(val publisher: UUID?, val creators: List<UUID>, val un
         get() = (listOfNotNull(publisher) + creators).toSet()
 }
 
-/** One attempt's walk of `persons.jsonl` (specification 2026-10-10, decision F). */
+/** Maps each accepted `persons.jsonl` id to its row, for the pin walk of the same attempt. */
 internal class PersonLineImporter(
     private val personCreator: PersonCreator,
     private val user: User,
