@@ -462,7 +462,7 @@ class UserDataImportRunner(
             ?: ImportFieldBounds.nameFault(collection.name)
             ?: collection.board?.let { board -> ImportFieldBounds.nameFault(board.name)?.let { "board $it" } }
 
-    /** After the collections and before the pins (specification 2026-10-10, decision F). */
+    /** Before the pins, which read the archive ids this walk maps to rows. */
     private fun walkPersons(
         source: ArchiveSource,
         importer: PersonLineImporter,
@@ -579,7 +579,7 @@ class UserDataImportRunner(
     // An insert of a row this walk built two frames up, which the rule cannot see from here: it reads
     // one call and the argument is a property. The transaction is `advance`'s, one frame out.
     private fun createPin(walk: PinWalk, created: CreatedPin) {
-        val people = personRepository.findPersonsByIds(created.credits.rowIds).associateBy { it.id }
+        val people = personRepository.findUserPersonsByIds(walk.user, created.credits.rowIds).associateBy { it.id }
         pinRepository.savePin(
             created.pin.copy(
                 tags = created.tagNames.mapNotNull { tagRepository.findUserTagByName(walk.user, it) },

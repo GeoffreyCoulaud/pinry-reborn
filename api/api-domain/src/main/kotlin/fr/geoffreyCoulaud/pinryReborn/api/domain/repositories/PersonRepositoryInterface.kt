@@ -25,8 +25,8 @@ interface PersonRepositoryInterface {
         limit: Int,
     ): List<Person>
 
-    /** The persons of these identifiers, which the user data import found or created. */
-    fun findPersonsByIds(ids: Set<UUID>): List<Person>
+    /** The user's persons of these identifiers, which the user data import found or created. */
+    fun findUserPersonsByIds(user: User, ids: Set<UUID>): List<Person>
 
     /** Every person of the user, which the user data export lists. */
     fun findAllPersonsForUser(user: User): List<Person>

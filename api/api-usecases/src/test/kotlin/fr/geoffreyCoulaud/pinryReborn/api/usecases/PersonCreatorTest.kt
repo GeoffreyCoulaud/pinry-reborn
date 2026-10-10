@@ -71,7 +71,7 @@ class PersonCreatorTest {
         override fun findPersonsForUserMatching(user: User, query: String, limit: Int) =
             error("A creation searches no person")
 
-        override fun findPersonsByIds(ids: Set<UUID>) = error("A creation reads no person back")
+        override fun findUserPersonsByIds(user: User, ids: Set<UUID>) = error("A creation reads no person back")
 
         override fun findAllPersonsForUser(user: User) = error("A creation lists no person")
 

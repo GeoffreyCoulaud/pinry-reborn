@@ -66,8 +66,13 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
         return (prefixed + contained).map { it.toDomain() }
     }
 
-    override fun findPersonsByIds(ids: Set<UUID>): List<Person> =
-        QPersonModel().id.isIn(ids).findList().map { it.toDomain() }
+    // Asked once per imported pin, most crediting nobody: no identifier is no query.
+    override fun findUserPersonsByIds(user: User, ids: Set<UUID>): List<Person> =
+        if (ids.isEmpty()) {
+            emptyList()
+        } else {
+            QPersonModel().author.id.equalTo(user.id).id.isIn(ids).findList().map { it.toDomain() }
+        }
 
     override fun findAllPersonsForUser(user: User): List<Person> =
         QPersonModel().author.id.equalTo(user.id).findList().map { it.toDomain() }

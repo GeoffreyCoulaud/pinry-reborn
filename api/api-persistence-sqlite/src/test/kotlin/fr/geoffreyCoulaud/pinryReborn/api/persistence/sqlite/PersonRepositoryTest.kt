@@ -166,18 +166,32 @@ class PersonRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given three persons, Then findPersonsByIds reads back the two asked for`() {
+    fun `Given three persons of the user and one of another, Then findUserPersonsByIds reads back the user's asked for`() {
         // Given
         val user = createAndSaveUser()
         val alice = savePerson(user, "Alice", listOf(FIRST_URL))
         val bob = savePerson(user, "Bob", emptyList())
         savePerson(user, "Carol", listOf(SECOND_URL))
+        val foreign = savePerson(createAndSaveUser(), "Dan", emptyList())
 
         // When
-        val found = repository.findPersonsByIds(setOf(alice.id, bob.id))
+        val found = repository.findUserPersonsByIds(user, setOf(alice.id, bob.id, foreign.id))
 
         // Then
         assertEquals(setOf(alice, bob), found.toSet())
+    }
+
+    @Test
+    fun `Given no identifier, Then findUserPersonsByIds reads back nothing`() {
+        // Given
+        val user = createAndSaveUser()
+        savePerson(user, "Alice", listOf(FIRST_URL))
+
+        // When
+        val found = repository.findUserPersonsByIds(user, emptySet())
+
+        // Then
+        assertEquals(emptyList<Any>(), found)
     }
 
     @Test
