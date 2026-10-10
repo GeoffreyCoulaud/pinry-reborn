@@ -18,6 +18,12 @@ class PersonNameTest {
     }
 
     @Test
+    fun `Given two names holding characters below the ASCII letters, Then those characters fold to themselves`() {
+        assertEquals(PersonName.parse("Ada Lovelace 2"), PersonName.parse("ada lovelace 2"))
+        assertNotEquals(PersonName.parse("Ada Lovelace"), PersonName.parse("Ada-Lovelace"))
+    }
+
+    @Test
     fun `Given two names differing by a non-ASCII letter's case, Then they are not equal`() {
         assertNotEquals(PersonName.parse("Élodie"), PersonName.parse("élodie"))
     }
