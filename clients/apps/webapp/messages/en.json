@@ -179,6 +179,7 @@
 	"issue_media_too_many_pixels": "This media has more pixels than this server accepts.",
 	"issue_media_unreadable": "This media could not be read.",
 	"issue_name_taken_by_recycled": "A board in the recycle bin already has this name, so this one was not added.",
+	"issue_person_unknown": "This pin names a person the import could not find. The pin was added without that person.",
 	"issue_pin_has_no_media": "This pin has no media, so it was not added.",
 	"issue_unknown": "Something on this line was not imported.",
 	"media": "Media",
