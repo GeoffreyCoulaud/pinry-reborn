@@ -166,7 +166,7 @@ class PersonRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given three persons of the user and one of another, Then findUserPersonsByIds reads back the user's asked for`() {
+    fun `Given persons of two users, Then findUserPersonsByIds reads back the user's asked for`() {
         // Given
         val user = createAndSaveUser()
         val alice = savePerson(user, "Alice", listOf(FIRST_URL))
