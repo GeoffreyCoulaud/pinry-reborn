@@ -161,6 +161,9 @@ Tier-1 fix: a malformed `Location` header made `URI.resolve` throw an uncaught `
 
 - Fix-backs: 0. Fixes on top: 0. Cascaded rebases: 0. Runs re-triggered by them: 0. One run re-run by hand, PR
   #390's flaky journey.
+- `gh stack merge` merged #382 to #391 alone: #392 and #393, opened with `gh pr create`, were not members of the
+  stack on GitHub. Both were rebased onto `main` and merged after, two runs re-triggered. Open a split's pull request
+  with `gh stack submit`.
 - The operator's reading of the bodies: no remark on the bodies. One code comment, on #383's `HttpAddress`: why null
   is valid. Answered without a change: the field's type decides absence, the constraint checks the address alone.
 
