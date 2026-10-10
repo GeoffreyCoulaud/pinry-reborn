@@ -224,9 +224,8 @@ class ExportContentGoldenJsonTest {
                         sha256 = "deadbeef",
                         createdAt = Instant.parse("2026-01-05T00:00:00Z"),
                     ),
-                publisher = ExportedPerson(name = "Studio", urls = listOf("https://studio.example")),
-                creators =
-                    listOf(ExportedPerson(name = "Ada", urls = listOf("https://a.example", "https://b.example"))),
+                publisher = ExportedPersonRef(id = UUID.fromString("77777777-7777-7777-7777-777777777777")),
+                creators = listOf(ExportedPersonRef(id = UUID.fromString("88888888-8888-8888-8888-888888888888"))),
                 publishedAt = Instant.parse("1999-12-31T23:00:00Z"),
             )
 
@@ -245,8 +244,8 @@ class ExportContentGoldenJsonTest {
                 """"path":"media/55555555-5555-5555-5555-555555555555.jpg","mimeType":"image/jpeg",""" +
                 """"width":1920,"height":1080,"animated":false,"byteSize":482913,"sha256":"deadbeef",""" +
                 """"createdAt":"2026-01-05T00:00:00Z"},""" +
-                """"publisher":{"name":"Studio","urls":["https://studio.example"]},""" +
-                """"creators":[{"name":"Ada","urls":["https://a.example","https://b.example"]}],""" +
+                """"publisher":{"id":"77777777-7777-7777-7777-777777777777"},""" +
+                """"creators":[{"id":"88888888-8888-8888-8888-888888888888"}],""" +
                 """"publishedAt":"1999-12-31T23:00:00Z"}""",
             json,
         )

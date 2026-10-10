@@ -38,15 +38,8 @@ internal data class ImportedRef(val name: String)
  */
 internal data class ImportedMedia(val path: String, val sha256: String)
 
-/** A pin's publisher or creator, identified by its name and its addresses together. */
-internal data class ImportedPerson(val name: String, val urls: List<String>) {
-    /** Read once the line's check passed, so a refused name here is a defect. */
-    fun toReference(): PersonReference =
-        PersonReference(
-            name = checkNotNull(PersonName.parse(name)) { "the line's check let a refused name through: $name" },
-            urls = urls.map(ImportedAddress::read).toSet(),
-        )
-}
+/** A pin's publisher or creator, named by the [id] of its `persons.jsonl` line. */
+internal data class ImportedPersonRef(val id: String)
 
 /** One `persons.jsonl` line. Its [id] only links the lines of one archive, so no row ever carries it. */
 internal data class ImportedPersonLine(
@@ -55,7 +48,12 @@ internal data class ImportedPersonLine(
     val urls: List<String>,
     val createdAt: Instant,
 ) {
-    fun toReference(): PersonReference = ImportedPerson(name, urls).toReference()
+    /** Read once the line's check passed, so a refused name here is a defect. */
+    fun toReference(): PersonReference =
+        PersonReference(
+            name = checkNotNull(PersonName.parse(name)) { "the line's check let a refused name through: $name" },
+            urls = urls.map(ImportedAddress::read).toSet(),
+        )
 }
 
 /**
@@ -72,8 +70,8 @@ internal data class ImportedPin(
     val tags: List<ImportedRef>,
     val boards: List<ImportedRef>,
     val media: ImportedMedia?,
-    val publisher: ImportedPerson? = null,
-    val creators: List<ImportedPerson> = emptyList(),
+    val publisher: ImportedPersonRef? = null,
+    val creators: List<ImportedPersonRef> = emptyList(),
     val publishedAt: Instant? = null,
     val collections: List<String> = emptyList(),
 )

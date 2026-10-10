@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application.wiring
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
@@ -97,6 +98,7 @@ class ImportProducers {
         boardRepository: BoardRepositoryInterface,
         pinRepository: PinRepositoryInterface,
         mediaRepository: MediaRepositoryInterface,
+        personRepository: PersonRepositoryInterface,
         archiveStore: ImportArchiveStore,
         mediaIngestion: MediaIngestion,
         tagCreator: TagCreator,
@@ -114,6 +116,7 @@ class ImportProducers {
             boardRepository,
             pinRepository,
             mediaRepository,
+            personRepository,
             archiveStore,
             mediaIngestion,
             tagCreator,

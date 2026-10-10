@@ -95,6 +95,8 @@ internal class FakePersonRepository : PersonRepositoryInterface {
     override fun findPersonsForUserMatching(user: User, query: String, limit: Int) =
         error("An import searches no person")
 
+    override fun findPersonsByIds(ids: Set<UUID>) = known.values.filter { it.id in ids }
+
     override fun findAllPersonsForUser(user: User) = error("An import lists no person")
 
     override fun deleteAllPersonsForUser(user: User) = error("An import deletes no person")
@@ -232,6 +234,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             boardRepository = boardRepository,
             pinRepository = pinRepository,
             mediaRepository = mediaRepository,
+            personRepository = personRepository,
             archiveStore = archiveStore,
             mediaIngestion =
                 MediaIngestion(
