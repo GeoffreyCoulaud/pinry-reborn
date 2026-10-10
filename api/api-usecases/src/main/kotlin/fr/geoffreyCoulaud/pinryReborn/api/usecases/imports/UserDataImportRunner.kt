@@ -450,7 +450,7 @@ class UserDataImportRunner(
             collection == null -> record(tally, UserDataImportIssueKind.LINE_MALFORMED, line.line, null, line.failure)
             fault != null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, collection.url, fault)
             else -> {
-                val boardName = collection.board?.name ?: collection.name
+                val boardName = (collection.board ?: ImportedRef(collection.name)).name
                 val url = ImportedAddress.read(collection.url)
                 if (remoteCollectionLinker.link(user, url, collection.name, boardName, now)) tally.created++
             }
