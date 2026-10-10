@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -35,7 +36,7 @@ class MediaDownloadsTest {
     private fun row(status: DownloadStatus, pin: UUID = pinId) =
         MediaDownload(
             pinId = pin,
-            sourceUrl = "https://x/i.png",
+            sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png")),
             status = status,
             reasonCode = if (status == DownloadStatus.FAILED) DownloadReason.NOT_FOUND else null,
             lastError = null,

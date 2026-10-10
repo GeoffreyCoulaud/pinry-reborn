@@ -75,6 +75,7 @@ class DownloadPinMediaTest {
     private val enqueueTask: EnqueueTask = mockk(relaxed = true)
     private val now = Instant.parse("2026-07-10T00:00:00Z")
     private val pinId = randomUUID()
+    private val sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png"))
     private val user = User(randomUUID(), "u", createdAt = TestTime.now)
 
     private val imageLimits = MediaLimits(100, 0, Duration.ZERO, 100, 100, 1, Duration.ZERO, 0)
@@ -103,7 +104,7 @@ class DownloadPinMediaTest {
     private fun pendingRow() =
         MediaDownload(
             pinId,
-            "https://x/i.png",
+            sourceUrl,
             DownloadStatus.PENDING,
             null,
             null,
@@ -115,7 +116,7 @@ class DownloadPinMediaTest {
     private fun failedRow() =
         MediaDownload(
             pinId,
-            "https://x/i.png",
+            sourceUrl,
             DownloadStatus.FAILED,
             DownloadReason.NOT_FOUND,
             null,
@@ -321,9 +322,8 @@ class DownloadPinMediaTest {
                     }
                 }
             val video = byteArrayOf(7, 8, 9)
-            every { fetcher.openStream("https://x/i.png") } returns FetchedMedia(page, pageType)
-            every { pageExtractor.extract("https://x/i.png", any()) } returns
-                FetchedMedia(ByteArrayInputStream(video), null)
+            every { fetcher.openStream(sourceUrl) } returns FetchedMedia(page, pageType)
+            every { pageExtractor.extract(sourceUrl, any()) } returns FetchedMedia(ByteArrayInputStream(video), null)
             var stagedBytes = byteArrayOf()
             every { store.stage(any(), any()) } answers
                 {

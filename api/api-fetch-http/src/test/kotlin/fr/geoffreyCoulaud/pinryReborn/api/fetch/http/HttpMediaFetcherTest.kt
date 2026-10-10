@@ -1,10 +1,12 @@
 package fr.geoffreyCoulaud.pinryReborn.api.fetch.http
 
 import com.sun.net.httpserver.HttpServer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchAccessDeniedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchFailedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchNotFoundException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaFetcher
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.TooManyRedirectsException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
 import java.net.InetAddress
@@ -62,6 +64,9 @@ class HttpMediaFetcherTest {
     }
 
     private fun theProxy(): GuardingProxy = proxies.single()
+
+    // The suite names its addresses as text, which the port takes parsed.
+    private fun MediaFetcher.openStream(sourceUrl: String) = openStream(checkNotNull(HttpUrl.parse(sourceUrl)))
 
     @BeforeEach
     fun start() {
@@ -336,27 +341,30 @@ class HttpMediaFetcherTest {
     }
 
     @Test
-    fun `Given a file scheme, Then it throws UrlNotAllowed`() {
+    fun `Given a redirect to a file scheme, Then it throws UrlNotAllowed`() {
+        // Given
+        handle("/redirect", 302, headers = mapOf("Location" to "file:///etc/passwd"))
+
         // When / Then
-        assertThrows(UrlNotAllowedException::class.java) { fetcher.openStream("file:///etc/passwd") }
+        assertThrows(UrlNotAllowedException::class.java) { fetcher.openStream("${base()}/redirect") }
     }
 
     @Test
-    fun `Given a schemeless url, Then it throws UrlNotAllowed`() {
+    fun `Given a redirect to a malformed url, Then it throws UrlNotAllowed`() {
+        // Given
+        handle("/redirect", 302, headers = mapOf("Location" to "http://exa mple/i.png"))
+
         // When / Then
-        assertThrows(UrlNotAllowedException::class.java) { fetcher.openStream("//example.com/i.png") }
+        assertThrows(UrlNotAllowedException::class.java) { fetcher.openStream("${base()}/redirect") }
     }
 
     @Test
-    fun `Given a malformed url, Then it throws UrlNotAllowed`() {
-        // When / Then
-        assertThrows(UrlNotAllowedException::class.java) { fetcher.openStream("http://exa mple/i.png") }
-    }
+    fun `Given a redirect to a url without a host, Then it throws UrlNotAllowed`() {
+        // Given
+        handle("/redirect", 302, headers = mapOf("Location" to "http:///i.png"))
 
-    @Test
-    fun `Given a url without a host, Then it throws UrlNotAllowed`() {
         // When / Then
-        assertThrows(UrlNotAllowedException::class.java) { fetcher.openStream("http:///i.png") }
+        assertThrows(UrlNotAllowedException::class.java) { fetcher.openStream("${base()}/redirect") }
     }
 
     @Test

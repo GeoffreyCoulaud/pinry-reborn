@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
@@ -16,7 +17,7 @@ class MediaDownloadModelMapperTest {
         val download =
             MediaDownload(
                 pinId = randomUUID(),
-                sourceUrl = "https://x/i.png",
+                sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png")),
                 status = DownloadStatus.PENDING,
                 reasonCode = null,
                 lastError = null,
@@ -32,7 +33,7 @@ class MediaDownloadModelMapperTest {
         val download =
             MediaDownload(
                 pinId = randomUUID(),
-                sourceUrl = "https://x/i.png",
+                sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png")),
                 status = DownloadStatus.FAILED,
                 reasonCode = DownloadReason.ACCESS_DENIED,
                 lastError = "403",

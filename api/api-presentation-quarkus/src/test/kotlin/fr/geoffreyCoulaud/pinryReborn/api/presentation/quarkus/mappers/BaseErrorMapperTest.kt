@@ -128,11 +128,6 @@ class BaseErrorMapperTest {
     }
 
     @Test
-    fun `Given MEDIA_SOURCE_URL_INVALID, Then status is BAD_REQUEST`() {
-        assertEquals(Response.Status.BAD_REQUEST, statusFor(ErrorCode.MEDIA_SOURCE_URL_INVALID))
-    }
-
-    @Test
     fun `Given MEDIA_DOWNLOAD_IN_PROGRESS, Then status is CONFLICT`() {
         assertEquals(Response.Status.CONFLICT, statusFor(ErrorCode.MEDIA_DOWNLOAD_IN_PROGRESS))
     }

@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
@@ -9,7 +10,7 @@ import java.util.UUID
 
 interface MediaDownloadRepositoryInterface {
     /** Create-or-replace the pin's download row as PENDING with a fresh sourceUrl + taskId. */
-    fun upsertPending(pinId: UUID, sourceUrl: String, taskId: UUID, now: Instant): MediaDownload
+    fun upsertPending(pinId: UUID, sourceUrl: HttpUrl, taskId: UUID, now: Instant): MediaDownload
 
     fun findByPinId(pinId: UUID): MediaDownload?
 

@@ -3,9 +3,11 @@ package fr.geoffreyCoulaud.pinryReborn.api.fetch.ytdlp
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.NoMediaFoundException
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaExtractor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UrlNotAllowedException
@@ -83,6 +85,10 @@ class YtDlpPageMediaExtractorTest {
     }
 
     private fun url(path: String) = "http://127.0.0.1:${server.address.port}$path"
+
+    // The suite names its pages as text, which the port takes parsed.
+    private fun PageMediaExtractor.extract(pageUrl: String, heartbeat: () -> Unit) =
+        extract(checkNotNull(HttpUrl.parse(pageUrl)), heartbeat)
 
     private fun serve(path: String, body: ByteArray, contentType: String) {
         routes[path] = { exchange ->

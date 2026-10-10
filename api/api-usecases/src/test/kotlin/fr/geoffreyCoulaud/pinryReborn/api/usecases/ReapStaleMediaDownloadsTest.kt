@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
@@ -36,7 +37,7 @@ class ReapStaleMediaDownloadsTest : BaseTest() {
     private fun pending(pinId: UUID, taskId: UUID) =
         MediaDownload(
             pinId = pinId,
-            sourceUrl = "https://x/i.png",
+            sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png")),
             status = DownloadStatus.PENDING,
             reasonCode = null,
             lastError = null,

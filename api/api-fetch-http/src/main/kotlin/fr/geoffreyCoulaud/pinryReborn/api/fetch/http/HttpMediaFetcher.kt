@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.fetch.http
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchAccessDeniedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchFailedException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchNotFoundException
@@ -13,7 +14,6 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.ProxySelector
 import java.net.URI
-import java.net.URISyntaxException
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -28,8 +28,8 @@ class HttpMediaFetcher(
     private val openProxy: () -> GuardingProxy,
 ) : MediaFetcher {
     // Each download gets its own proxy, the client's only route out (ADR 0048, decision 2).
-    override fun openStream(sourceUrl: String): FetchedMedia {
-        val url = httpUri(sourceUrl)
+    override fun openStream(sourceUrl: HttpUrl): FetchedMedia {
+        val url = sourceUrl.uri
         val deadline = System.nanoTime() + bodyTimeout.toNanos()
         val proxy = openProxy()
         val client =
@@ -70,7 +70,7 @@ class HttpMediaFetcher(
                     val location =
                         response.headers().firstValue("location").orElse(null)
                             ?: throw FetchFailedException("redirect without a location header")
-                    url = httpUri(url.resolve(location).toString())
+                    url = redirectTarget(url, location)
                     redirects += 1
                 }
                 status == UNAUTHORIZED || status == FORBIDDEN ->
@@ -100,14 +100,13 @@ class HttpMediaFetcher(
         }
     }
 
-    // Each throw rejects a distinct unsafe-URL condition (malformed, bad scheme, no host); the
-    // address itself is the proxy's to check.
+    // A redirect target is no address the API holds, so it is checked here; the address itself is the proxy's.
     @Suppress("ThrowsCount")
-    private fun httpUri(raw: String): URI {
+    private fun redirectTarget(from: URI, location: String): URI {
         val uri =
             try {
-                URI(raw)
-            } catch (e: URISyntaxException) {
+                from.resolve(location)
+            } catch (e: IllegalArgumentException) {
                 throw UrlNotAllowedException("malformed url", e)
             }
         val scheme = uri.scheme?.lowercase()

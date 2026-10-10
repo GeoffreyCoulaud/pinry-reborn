@@ -1,5 +1,5 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input
 
-import jakarta.validation.constraints.NotBlank
+import org.eclipse.microprofile.openapi.annotations.media.Schema
 
-data class PinMediaDownloadInputDto(@field:NotBlank val sourceUrl: String)
+data class PinMediaDownloadInputDto(@field:HttpAddress @field:Schema(format = "uri") val sourceUrl: String)

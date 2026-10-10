@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.fetch.ytdlp
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchTooLargeException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchUnreachableException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchedMedia
@@ -28,10 +29,10 @@ class YtDlpPageMediaExtractor(
 
     // The broad catch rethrows: any failure, a lost lease included, first deletes what the runs wrote.
     @Suppress("TooGenericExceptionCaught")
-    override fun extract(pageUrl: String, heartbeat: () -> Unit): FetchedMedia {
+    override fun extract(pageUrl: HttpUrl, heartbeat: () -> Unit): FetchedMedia {
         val directory = Files.createTempDirectory(Files.createDirectories(stagingDirectory), "yt-dlp-")
         try {
-            val file = openProxy().use { Extraction(pageUrl, directory, it, heartbeat).download() }
+            val file = openProxy().use { Extraction(pageUrl.toString(), directory, it, heartbeat).download() }
             return FetchedMedia(DeletingStream(file, directory), contentType = null)
         } catch (error: Throwable) {
             directory.toFile().deleteRecursively()

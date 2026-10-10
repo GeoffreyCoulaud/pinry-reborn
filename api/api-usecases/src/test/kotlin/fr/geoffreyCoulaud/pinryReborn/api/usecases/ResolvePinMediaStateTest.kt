@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
@@ -99,7 +100,7 @@ class ResolvePinMediaStateTest {
         val pending =
             MediaDownload(
                 pinId,
-                "https://example.com/new.png",
+                checkNotNull(HttpUrl.parse("https://example.com/new.png")),
                 DownloadStatus.PENDING,
                 null,
                 null,
@@ -136,7 +137,7 @@ class ResolvePinMediaStateTest {
         val pending =
             MediaDownload(
                 downloading.id,
-                "https://example.com/i.png",
+                checkNotNull(HttpUrl.parse("https://example.com/i.png")),
                 DownloadStatus.PENDING,
                 null,
                 null,
@@ -228,7 +229,7 @@ class ResolvePinMediaStateTest {
             return stored.filterKeys { it in pinIds }
         }
 
-        override fun upsertPending(pinId: UUID, sourceUrl: String, taskId: UUID, now: Instant): MediaDownload =
+        override fun upsertPending(pinId: UUID, sourceUrl: HttpUrl, taskId: UUID, now: Instant): MediaDownload =
             error("not used")
 
         override fun findByPinId(pinId: UUID): MediaDownload? = error("not used")

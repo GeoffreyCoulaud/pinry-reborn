@@ -234,7 +234,8 @@
             "$ref" : "#/components/schemas/UUID"
           },
           "sourceUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "format" : "uri"
           },
           "status" : {
             "$ref" : "#/components/schemas/DownloadStatusDto"
@@ -471,7 +472,7 @@
         "properties" : {
           "sourceUrl" : {
             "type" : "string",
-            "pattern" : "\\S"
+            "format" : "uri"
           }
         }
       },
@@ -3934,7 +3935,7 @@
                   } ],
                   "properties" : {
                     "code" : {
-                      "enum" : [ "MEDIA_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY" ]
+                      "enum" : [ "VALIDATION_ERROR", "MALFORMED_BODY" ]
                     }
                   }
                 }

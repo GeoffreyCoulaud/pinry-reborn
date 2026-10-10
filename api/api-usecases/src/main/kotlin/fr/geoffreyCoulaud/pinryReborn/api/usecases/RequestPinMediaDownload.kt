@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
@@ -8,12 +9,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPinDoesNotExistError
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaSourceUrlInvalidError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.PinDownloadTask
 import jakarta.enterprise.context.ApplicationScoped
-import java.net.URI
-import java.net.URISyntaxException
 import java.util.UUID
 
 @ApplicationScoped
@@ -24,10 +22,9 @@ class RequestPinMediaDownload(
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
 ) {
-    fun request(pinId: UUID, requester: User, sourceUrl: String): MediaDownload {
+    fun request(pinId: UUID, requester: User, sourceUrl: HttpUrl): MediaDownload {
         val pin = pinRepository.findPinById(pinId) ?: throw MediaPinDoesNotExistError()
         if (pin.author.id != requester.id) throw MediaPermissionError()
-        validate(sourceUrl)
         return transactionRunner.inTransaction {
             val now = clock.now()
             val task =
@@ -39,15 +36,5 @@ class RequestPinMediaDownload(
                 )
             mediaDownloadRepository.upsertPending(pinId, sourceUrl, task.id, now)
         }
-    }
-
-    private fun validate(sourceUrl: String) {
-        val scheme =
-            try {
-                URI(sourceUrl).scheme?.lowercase()
-            } catch (e: URISyntaxException) {
-                throw MediaSourceUrlInvalidError(e)
-            }
-        if (scheme != "http" && scheme != "https") throw MediaSourceUrlInvalidError()
     }
 }

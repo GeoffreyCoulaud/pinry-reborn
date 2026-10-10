@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.HttpUrlModelMapper.toHttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.MediaDownloadModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
 import java.util.UUID
@@ -14,7 +15,7 @@ object MediaDownloadModelMapper {
         MediaDownloadModel(
             id = id,
             pinId = pinId,
-            sourceUrl = sourceUrl,
+            sourceUrl = sourceUrl.toString(),
             status = status.name,
             reasonCode = reasonCode?.name,
             lastError = lastError,
@@ -28,7 +29,7 @@ object MediaDownloadModelMapper {
     fun MediaDownloadModel.toDomain() =
         MediaDownload(
             pinId = pinId,
-            sourceUrl = sourceUrl,
+            sourceUrl = sourceUrl.toHttpUrl(),
             status = DownloadStatus.valueOf(status),
             reasonCode = reasonCode?.let { DownloadReason.valueOf(it) },
             lastError = lastError,

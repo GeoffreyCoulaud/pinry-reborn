@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinMe
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.http.ByteRangeResponse
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.http.RangeHeader
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.HttpUrlMapper.toHttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.MediaMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinMediaStateMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
@@ -102,13 +103,7 @@ class MediaController(
                         Schema(
                             allOf = [ProblemDetail::class],
                             properties =
-                                [
-                                    SchemaProperty(
-                                        name = "code",
-                                        enumeration =
-                                            ["MEDIA_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY"],
-                                    )
-                                ],
+                                [SchemaProperty(name = "code", enumeration = ["VALIDATION_ERROR", "MALFORMED_BODY"])],
                         ),
                 )
             ],
@@ -316,13 +311,7 @@ class MediaController(
                         Schema(
                             allOf = [ProblemDetail::class],
                             properties =
-                                [
-                                    SchemaProperty(
-                                        name = "code",
-                                        enumeration =
-                                            ["MEDIA_SOURCE_URL_INVALID", "VALIDATION_ERROR", "MALFORMED_BODY"],
-                                    )
-                                ],
+                                [SchemaProperty(name = "code", enumeration = ["VALIDATION_ERROR", "MALFORMED_BODY"])],
                         ),
                 )
             ],
@@ -370,7 +359,7 @@ class MediaController(
         @Valid @NotNull body: PinMediaDownloadInputDto,
     ): RestResponse<PinMediaStateDto> {
         val requester = securityIdentity.getUser()
-        requestPinMediaDownload.request(pinId, requester, body.sourceUrl)
+        requestPinMediaDownload.request(pinId, requester, body.sourceUrl.toHttpUrl())
         val dto = PinMediaState(PinMediaStatus.PENDING, null, null, null).toDto(pinId)
         return ResponseBuilder.create<PinMediaStateDto>(RestResponse.Status.ACCEPTED, dto)
             .header(HttpHeaders.LOCATION, "/api/v1/pins/$pinId/media/status")
