@@ -85,9 +85,6 @@ right.
   lines that carry it.
 - **A concept has one shape, on the wire and in the archive.**
 - **A fact about the work is restored as written**; what the server stamps follows the server's rules.
-- **Except a composite value the archive references many times**: it has its own section, and its lines are referenced
-  by an identifier that only links them within the archive and decides nothing
-  (`docs/adr/0057-the-archive-references-by-key-and-an-address-is-refused-alike.md`, decisions 5 to 7).
 
 ## Cross-cutting
 
