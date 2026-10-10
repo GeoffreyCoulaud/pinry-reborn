@@ -8,7 +8,8 @@ Lot `0.54.0`, one stack: 10 `feat/an-address-is-typed` (#382), 20 `feat/a-pin-so
 `feat/a-person-is-its-name-and-addresses` (#387), 60 `feat/the-archive-lists-people` (#388), 63
 `feat/an-import-reports-an-unknown-person` (#389), 66 `feat/a-pin-names-its-people-by-id` (#390), 70
 `feat/the-archive-names-by-key` (#391), then the closing block 80. Written in block 70 from the block reports of
-#382 to #391.
+#382 to #391. (Corrected: the closing blocks are 80 `chore/the-shapes-lot-closes` (#392) and 85
+`chore/the-shapes-lot-documents`; completed in block 85 from #392's report.)
 
 ## Current state
 
@@ -29,6 +30,9 @@ Lot `0.54.0`, one stack: 10 `feat/an-address-is-typed` (#382), 20 `feat/a-pin-so
 - **Every other reference of the archive is an object holding its natural key**: `{name}` for a tag, a board and the
   manifest's `user`, `{url}` for a pin's collection. No record but a person line carries a database identifier, and a
   pin's and a board's recycling instant is `softDeletedAt`. `formatVersion` stays 2.
+- **A person's name is refused by its own factory**: `@PersonNameText`'s validator calls `PersonName.parse`, as
+  `@HttpAddress` calls `HttpUrl.parse`. Every address the contract answers declares `format: uri`, which
+  `ContractSchemaDeclarationTest` holds. The import reads back its own user's persons alone (`findUserPersonsByIds`).
 - **`ModelsPackageArchTest` refuses a value class in a persistence model**, against a fixture under
   `api-persistence-sqlite/src/test/resources/konsist/`.
 - The contract is `25.0.0`. The last migration is still `1.35`.
@@ -46,6 +50,8 @@ Lot `0.54.0`, one stack: 10 `feat/an-address-is-typed` (#382), 20 `feat/a-pin-so
 | 63 | green at `f7f7dbc9` | 9 lines, 7 files |
 | 66 | green at `d7a4dd1b` | 230 lines, 19 files |
 | 70 | green at `fec47b7d` | 199 lines, 15 files |
+| 80 | `dagger call gate` green at `c12dcb6c` | 143 lines, 19 files |
+| 85 | `dagger call gate` green at the branch's tip | 22 lines, 7 files |
 
 - Block 10's mutation, pasted in `87188505`: an `HttpUrl?` property in `RemoteCollectionModel` fails the Konsist rule.
 - `git grep -n MEDIA_SOURCE_URL_INVALID -- api contract clients` prints nothing (#385).
@@ -58,13 +64,16 @@ Lot `0.54.0`, one stack: 10 `feat/an-address-is-typed` (#382), 20 `feat/a-pin-so
 
 - **Block 60 split into 60, 63 and 66** at about 28 files (spec commit `c32b4324`), then handed `agents/data-modelling.md`'s
   exception and `ImportArchiveBuilder`'s `persons.jsonl` entry to block 66 at 20 files (`792ea1cc`).
+- **Block 80 split into 80 and 85** at 25 files with the code findings alone: 80 the API's findings (#392), 85 the
+  web application's flaky journey, `api/AGENTS.md` and the documents. The lead chose; the operator was not consulted.
 - **The Konsist rule lives in `ModelsPackageArchTest`** (`api-persistence-sqlite`), beside the models' other rules,
   not in `ArchitectureKonsistTest`.
 - **Block 20 measured 74 files** against the spec's upper bound of 59, and folded tests to get under 500 lines from 546.
 - **`PersonInputDto.urls` declares `@Schema(type = ARRAY, implementation = URI::class)`**: `@Schema` has no type-use
   target, and meta-annotating `@HttpAddress` registered a bogus component (#387).
 - **New code outside the plan**: `PersonLineImporter`, since `UserDataImportRunner` sits at detekt's `LargeClass`
-  bound; `PersonRepositoryInterface.findPersonsByIds`, for decision F's read back by identifier.
+  bound; `PersonRepositoryInterface.findPersonsByIds`, for decision F's read back by identifier. (Corrected: now
+  `findUserPersonsByIds(user, ids)`, holistic finding 7.)
 - **Block 70's export tests** find records by page address and board name, the identifier being gone.
 
 Tier-1 fix: a malformed `Location` header made `URI.resolve` throw an uncaught `IllegalArgumentException`, retried as
@@ -89,10 +98,16 @@ Tier-1 fix: a malformed `Location` header made `URI.resolve` throw an uncaught `
   first.
 - **A hand-edited message catalogue line can lose the space after its key**; `pnpm exec biome check --write` fixes it.
 - **The rule against a value class in a model reads the file's imports**: a fully qualified `HttpUrl?` passes it.
-  Accepted, ktfmt and the IDE importing.
+  Accepted, ktfmt and the IDE importing. (Corrected: proposed as accepted, the operator's to decide; see the open
+  question below.)
 - **A flaky web application journey**: PR #390's first run failed "Given a name the account holds under another case,
   Then the tag it holds is offered", the query recording "L" rather than "Landscape"; the re-run passed. Unrelated to
-  the block, and the closing block's to treat.
+  the block, and the closing block's to treat. (Corrected: treated in block 85. user-event's default `delay: 0` puts
+  a `setTimeout(0)` between keys; on a loaded runner one key outlasts `useDebounced`'s 300 ms pause, the term "L" is
+  asked, and the mock answers "landscape" to any term. Reproduced with a keyup listener busy for 400 ms; fixed by
+  `typeInOneGo` (`delay: null`) at the five sites that count requests, `a6ca4cf3`.)
+- **A constraint that restates a factory's rule drifts from it**: `@NotBlank` trims up to U+0020 where Kotlin's
+  `isBlank` also counts U+00A0, so a name of a no-break space passed validation and answered 500. Call the factory.
 
 ## Tier-2 questions
 
@@ -100,9 +115,41 @@ Tier-1 fix: a malformed `Location` header made `URI.resolve` throw an uncaught `
 - Block 60 did not fit 20 files. Answer: split into 60, 63 and 66.
 - Block 60 reached 20 files. Answer: the modelling exception and the archive builder's entry move to block 66.
 
+## Open question to the operator
+
+- `ModelsPackageArchTest` resolves a property's type through the file's imports, so a fully qualified type escapes it.
+  The lead proposes accepting that limit, as `api/AGENTS.md` now records it.
+
+## The holistic review
+
+`.reviews/addresses-and-people-take-their-shape-holistic.md`, over
+`git diff lot/0.53.0-data-shapes-are-decided-in-the-spec..origin/feat/the-archive-names-by-key`: 0 CRITICAL, 1 MAJOR,
+9 MINOR. It found every case the specification asks for in the diff. Each finding and its exit:
+
+1. MAJOR, a name of Unicode spaces passed `@NotBlank` and answered 500: fixed in block 80, `@PersonNameText` calls
+   `PersonName.parse`; a name of U+00A0 now answers 400 `VALIDATION_ERROR`.
+2. A remote collection's `url` and a person's `urls` declared no `format: uri`: fixed in block 80, with a
+   `ContractSchemaDeclarationTest` case. The contract stays `25.0.0`, an output gaining a format breaking no client;
+   the specification's Data shape table is aligned in block 85.
+3. A host holding an underscore is refused: an accepted limit, observed by `HttpUrlTest` in block 80 and recorded in
+   the specification's section 7 in block 85.
+4. `PersonCreator`'s comment still said the import stamps its own instant: fixed in block 80.
+5. The 2026-10-08 specification's `Status:` line missed two halves of its decision D, "stamped with the import
+   instant" and a person's fault refusing the pin line: fixed in block 85.
+6. `api/AGENTS.md` said the Konsist test was still to land: fixed in block 85, naming `ModelsPackageArchTest` and its
+   limit.
+7. `findPersonsByIds` read persons with no account scope: fixed in block 80 as `findUserPersonsByIds(user, ids)`;
+   `PersonRepository` skips the query on an empty set, the runner being at detekt's `LargeClass` bound.
+8. The archive's README did not say a pin names its collections by `url`: fixed in block 80, with an
+   `ExportReadmeTest` case.
+9. The round trip compared no person's `createdAt`, and `PinFacts.deletedAt` kept the retired name: fixed in block 80
+   (`PersonFacts.createdAt`, `PinFacts.softDeletedAt`).
+10. Two comments pointed at a decision letter rather than saying why: fixed in block 80.
+
 ## What is not validated
 
-- The holistic review, still to come at the head of Wrap.
+- The holistic review, still to come at the head of Wrap. (Corrected: it ran; see The holistic review.)
+- A person stored before this lot whose name is Unicode spaces alone still cannot be read: rows are reset, not healed.
 - The web application by hand against the new 400 on a whitespace-only source address and on a download request;
   its fields are `type="url"`, and its gate is green.
 - A real third-party archive: third-party person ids are covered by unit tests only.
@@ -119,4 +166,5 @@ Tier-1 fix: a malformed `Location` header made `URI.resolve` throw an uncaught `
 
 The holistic review, then the closing block 80: its findings, the flaky journey, the documents' `Status:` lines and
 the backlog (specification, block 80). After the merge and the tag `lot/0.54.0-addresses-and-people-take-their-shape`,
-ADR 0056's foreign keys lot, then the third-party importer.
+ADR 0056's foreign keys lot, then the third-party importer. (Corrected: the review and the closing blocks 80 and 85
+are done. The operator reviews the stack, #382 to block 85's pull request, and answers the open question.)
