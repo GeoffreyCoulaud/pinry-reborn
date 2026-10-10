@@ -112,11 +112,7 @@ class PinControllerTest {
     }
 
     /** Writes a pin through the controller, the use case answering only for the people it expects. */
-    private fun updatePinWith(
-        publisher: PersonInputDto?,
-        expectedPublisher: PersonReference?,
-        address: String? = null,
-    ): Int {
+    private fun updatePinWith(publisher: PersonInputDto?, expectedPublisher: PersonReference?, address: String?): Int {
         val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         val pin =
             Pin(
@@ -170,7 +166,7 @@ class PinControllerTest {
 
     @Test
     fun `Given no publisher, Then updatePin hands the use case none`() {
-        assertEquals(200, updatePinWith(publisher = null, expectedPublisher = null))
+        assertEquals(200, updatePinWith(publisher = null, expectedPublisher = null, address = null))
     }
 
     @Test

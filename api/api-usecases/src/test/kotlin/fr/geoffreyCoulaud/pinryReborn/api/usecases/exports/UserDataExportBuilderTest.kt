@@ -304,16 +304,9 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         val publisher = aPerson("Studio", "https://studio.example")
         val creator = aPerson("Ada", "https://a.example", "https://b.example")
         val publishedAt = Instant.parse("1999-12-31T23:00:00Z")
-        val pin =
-            aPin()
-                .copy(
-                    sourceContextUrl = null,
-                    sourceMediaUrl = HttpUrl.parse("https://x.test/i.png"),
-                    publisher = publisher,
-                    creators = listOf(creator),
-                    publishedAt = publishedAt,
-                )
-        stubActivePins(listOf(pin))
+        val pin = aPin().copy(publisher = publisher, creators = listOf(creator), publishedAt = publishedAt)
+        val noPage = pin.copy(sourceContextUrl = null, sourceMediaUrl = HttpUrl.parse("https://x.test/i.png"))
+        stubActivePins(listOf(noPage))
         stubRecycledPins(emptyList())
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
