@@ -7,7 +7,8 @@ Lot: `0.54.0`.
 Branches: one stack, each block on the one before it: 10 `feat/an-address-is-typed`, 20
 `feat/a-pin-source-is-an-address`, 30 `feat/a-download-fetches-an-address`, 40 `feat/a-collection-is-an-address`,
 50 `feat/a-person-is-its-name-and-addresses`, 60 `feat/the-archive-lists-people`, 63
-`feat/an-import-reports-an-unknown-person`, 66 `feat/a-pin-names-its-people-by-id`, 70 `feat/the-archive-names-by-key`, 80 `chore/the-shapes-lot-closes`.
+`feat/an-import-reports-an-unknown-person`, 66 `feat/a-pin-names-its-people-by-id`, 70 `feat/the-archive-names-by-key`, 80 `chore/the-shapes-lot-closes`,
+85 `chore/the-shapes-lot-documents`.
 ADR: `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.1, records decisions B and E below;
 `docs/adr/0057-the-archive-references-by-key-and-an-address-is-refused-alike.md` records C, F and G, and supersedes
 ADR 0056's decision 13 and 7.1's `{name, urls}` reference.
@@ -157,9 +158,9 @@ in unit 7 (G). Unit 20's archive renames and A3's medium stay in the types lot (
 |---|---|---|---|---|---|---|
 | A pin's source page and source medium | `HttpUrl?` each | yes, null for none | None: a fact of the pin | `pins.source_context_url`, `source_media_url`, the normalised text | `string`, nullable, `format: uri` | the normalised text, null for none |
 | A download's source | `HttpUrl` | no | None: one row per pin | `media_download.source_url`, the normalised text | `sourceUrl`, `string`, `format: uri` | None: downloads are not exported |
-| A remote collection's address | `HttpUrl` | no | its address, per author | `remote_collections.url`, the normalised text | `string`, unchanged | `{url}` and a collection line's `url` |
+| A remote collection's address | `HttpUrl` | no | its address, per author | `remote_collections.url`, the normalised text | `string`, unchanged *(Corrected: `string`, `format: uri`, as decision C asks; holistic finding 2, block 80)* | `{url}` and a collection line's `url` |
 | A person's name | `PersonName` | no | with its addresses, per author | `persons.name`, as written | `string`, unchanged | as written |
-| A person's addresses | `Set<HttpUrl>` | no, empty for none | with its name, per author | `persons.urls`, a sorted JSON array | `array`, `uniqueItems`, sorted | sorted array |
+| A person's addresses | `Set<HttpUrl>` | no, empty for none | with its name, per author | `persons.urls`, a sorted JSON array | `array`, `uniqueItems`, sorted *(Corrected: its items `format: uri`; holistic finding 2, block 80)* | sorted array |
 | A person line | `Person` | no | name and addresses; the archive `id` only links lines | None: it is the person row | None: no route lists persons in full | `persons.jsonl`, `{id, name, urls, createdAt}` |
 | A person's archive identifier | None: the import holds it as text in a map, then forgets it | no | unique within `persons.jsonl`, at most 200 characters, deciding nothing | None: never stored | None: never on the wire | a person line's `id`, a pin line's `{id}` |
 | A pin's or board's recycling instant | `Instant?`, unchanged | yes, null while active | None: a fact of the row | unchanged | `softDeletedAt` | `softDeletedAt`, was `deletedAt` |
@@ -190,6 +191,7 @@ recorded departure for a composite value, its identifier deciding nothing (ADR 0
 | 66 | `feat/a-pin-names-its-people-by-id` | Decision F's `{id}` references. |
 | 70 | `feat/the-archive-names-by-key` | Decision G. |
 | 80 | `chore/the-shapes-lot-closes` | The holistic review's findings and the documents (Wrap). |
+| 85 | `chore/the-shapes-lot-documents` | The flaky journey, `api/AGENTS.md` and the documents (Wrap). |
 
 Each block is measured after its first commit with the command of `agents/workflow.md`; one that passes a bound
 splits at a number between its own and the next. **Blocks 20, 30 and 50 cannot hold the file bound**: a type change
@@ -292,7 +294,17 @@ cannot split further: the export and the import change together, or the round tr
 - The holistic review's findings, then the documents: this specification, the handoff, ADR 0056's and ADR 0055's
   `Status:` lines naming ADR 0057 and this lot, `docs/specs/2026-10-08-the-pin-credits-its-people.md`'s `Status:`
   line naming the decisions this lot overturns (A's "the server normalises no address", D's persons only inside pin
-  lines, E's collection identity now a normalised address), and the backlog.
+  lines, E's collection identity now a normalised address), and the backlog. *(Corrected: D's "stamped with the import
+  instant" and its person fault refusing the pin line as `FIELD_INVALID` are overturned too; holistic finding 5.)*
+
+Block 80 measured 25 files with the holistic review's code findings alone; it splits into 80, the API's findings, and
+85, the web application's flaky journey, `api/AGENTS.md` and the documents. The lead chose the split; the operator was
+not consulted.
+
+### Block 85
+
+- The journeys that count a field's requests type a term with no pause between its keys (`typeInOneGo`).
+- `api/AGENTS.md`'s value class rule names `ModelsPackageArchTest` and its limit; the documents of block 80's list.
 
 ## 6. Adjacent backlog items
 
@@ -307,6 +319,9 @@ cannot split further: the export and the import change together, or the round tr
 
 - **A non-ASCII host.** `URI` reads one as a registry authority with no host, so the factory refuses it; an IDN
   conversion is not made. Observed in block 10's tests: `https://éx.test/` is refused.
+- **A host holding an underscore**, which `URI` reads as a registry authority with no host too, so the factory refuses
+  it, where a pin stored it before this lot. Observed in block 80's `HttpUrlTest`: `https://a_b.example.test/x` is
+  refused (holistic finding 3).
 - **Credentials in an address** (`https://user:pass@x.test/`) are kept as written. Observed in block 10: one parses.
 - **The other names** (`TagName`, `BoardName`, `Username`): the types lot. Observed as `TagCreator.resolve` taking a
   `String` at the lot's tip.
