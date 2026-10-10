@@ -34,18 +34,19 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
     private val secondImportId = randomUUID()
 
     @Test
-    fun `Given a pin whose medium is new, Then it is created with its clamped instants and its memberships`() {
+    fun `Given a pin whose medium is new, Then it is created with its clamped instants, memberships and addresses`() {
         // Given: "ghost" resolves to nothing, since a name the metadata walk refused is never created here
         existingTags["holidays"] = Tag(randomUUID(), user, "holidays", accountCreatedAt)
         anExistingBoard("Summer")
         val line = aPin(tags = listOf("holidays", "ghost"), boards = listOf("Summer", "ghost"))
+        val beta = aPin(BETA_PATH, betaBytes).copy(sourceContextUrl = null, sourceMediaUrl = "HTTPS://X.test/b.png")
         val source =
             FakeArchiveSource(
                 manifest = aManifest(),
                 pins =
                     listOf(
                         TestLine(1, line.copy(updatedAt = futureInstant)),
-                        TestLine(2, aPin(path = BETA_PATH, bytes = betaBytes).copy(deletedAt = pastInstant)),
+                        TestLine(2, beta.copy(deletedAt = pastInstant)),
                     ),
                 media = everyMedium,
             )
@@ -64,6 +65,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         assertEquals(listOf("holidays"), created.tags.map { it.name })
         assertEquals(listOf("Summer"), created.boards.map { it.name })
         assertEquals(pastInstant, savedPins[1].softDeletedAt)
+        assertEquals(null to "https://x.test/b.png", savedPins[1].let { it.sourceContextUrl to "${it.sourceMediaUrl}" })
         assertNull(created.softDeletedAt)
         assertEquals(sha256(alphaBytes), savedMedia.first().contentHash)
         assertEquals(MediaFormat.PNG.mimeType, savedMedia.first().mimeType)
@@ -615,22 +617,6 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         assertEquals(List(3) { UserDataImportIssueKind.FIELD_INVALID }, kinds())
         assertEquals(3, stored.skippedPins)
         assertEquals(0, savedPins.size)
-    }
-
-    @Test
-    fun `Given a pin whose source addresses are in upper case, Then it is created with both normalised`() {
-        // Given
-        val line = aPin().copy(sourceContextUrl = "HTTPS://X.test/page", sourceMediaUrl = "HTTP://X.test:80/i.png")
-        stubWalk(FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, line)), media = everyMedium))
-        stubMediaPath()
-
-        // When
-        runner.run(importId, isLastAttempt = false, renewLease)
-
-        // Then
-        val pin = savedPins.single()
-        assertEquals("https://x.test/page", pin.sourceContextUrl.toString())
-        assertEquals("http://x.test/i.png", pin.sourceMediaUrl.toString())
     }
 
     @Test

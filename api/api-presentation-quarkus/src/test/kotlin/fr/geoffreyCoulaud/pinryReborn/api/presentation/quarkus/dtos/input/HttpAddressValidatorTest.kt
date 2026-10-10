@@ -5,22 +5,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class HttpAddressValidatorTest {
-    private val validator = HttpAddressValidator()
-
-    private fun accepts(value: String?) = validator.isValid(value, mockk())
-
     @Test
-    fun `Given no address, Then the validator leaves its absence to the type`() {
-        assertEquals(true, accepts(null))
-    }
+    fun `Given null, an https address, a blank, a non-address and an ftp address, Then only the first two pass`() {
+        val values = listOf(null, "HTTPS://X.test/a", "", "not an address", "ftp://x.test/")
 
-    @Test
-    fun `Given an absolute https address in upper case, Then the validator accepts it`() {
-        assertEquals(true, accepts("HTTPS://X.test/a"))
-    }
+        val accepted = values.map { HttpAddressValidator().isValid(it, mockk()) }
 
-    @Test
-    fun `Given a blank text, a text that is no address, or an ftp address, Then the validator refuses each`() {
-        assertEquals(listOf(false, false, false), listOf("", "not an address", "ftp://x.test/").map(::accepts))
+        assertEquals(listOf(true, true, false, false, false), accepted)
     }
 }
