@@ -38,8 +38,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
 
     /**
      * Two active pins, one recycled pin naming no page, two boards (one recycled) each holding a pin and a collection,
-     * two tags, and a fourth pin sharing a medium (spec section 13.1). The first one credits its people, and one person
-     * is credited by no pin.
+     * two tags, a fourth pin sharing a medium (spec section 13.1), the first pin's people and one no pin credits.
      */
     private fun seedRoundTripContent(auth: AuthenticatedUser) {
         val alpha = createPin(auth, ALPHA, tags = listOf("nature", "travel"))
