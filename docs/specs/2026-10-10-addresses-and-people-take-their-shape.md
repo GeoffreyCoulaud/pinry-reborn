@@ -139,7 +139,7 @@ in unit 7 (G). Unit 20's archive renames and A3's medium stay in the types lot (
   references.
 - This reverses ADR 0056's decision 13, recorded in ADR 0057: a person is a composite value, and repeating its
   addresses on every pin line that names it is the duplication an identifier avoids. A tag or a board is named by one
-  text, so it repeats nothing. `agents/data-modelling.md` gains the exception in block 60.
+  text, so it repeats nothing. `agents/data-modelling.md` gains the exception in block 66.
 
 **G. Every other reference of the archive is an object holding its natural key** (D).
 - A tag and a board are `{name}`, in a pin line's `tags` and `boards` and in a collection line's `board`; a collection
@@ -255,8 +255,7 @@ cannot split further: the export and the import change together, or the round tr
 ### Block 60
 
 - `persons.jsonl`, written and read as decision F says, its pin lines still naming `{name, urls}`; a port listing a
-  user's persons; `ImportArchiveBuilder` writes the entry; the README and the counts; `agents/data-modelling.md`'s
-  Archive rules gain ADR 0057's exception.
+  user's persons; the README and the counts.
 - The round trip carries a person no pin names, and the issue list is empty.
 - A second line reusing an `id`, and a line whose `id` has 201 characters, are `FIELD_INVALID`.
 - A `persons.jsonl` of 100 001 lines: the last is `FIELD_INVALID`, and the one before it imports.
@@ -271,7 +270,8 @@ cannot split further: the export and the import change together, or the round tr
 ### Block 66
 
 - A pin line's `publisher` and `creators` become `{id}` on export and import; the import keeps the identifier of each
-  person line and reads the persons back by identifier when it creates the pin.
+  person line and reads the persons back by identifier when it creates the pin. `ImportArchiveBuilder` writes the
+  `persons.jsonl` entry; `agents/data-modelling.md`'s Archive rules gain ADR 0057's exception.
 - One archive whose two `persons.jsonl` lines carry one name in two ASCII cases with the same addresses creates one
   `persons` row, and two pin lines naming each identifier credit that one row.
 - A pin line naming two identifiers absent from `persons.jsonl` creates the pin without them and reports two
