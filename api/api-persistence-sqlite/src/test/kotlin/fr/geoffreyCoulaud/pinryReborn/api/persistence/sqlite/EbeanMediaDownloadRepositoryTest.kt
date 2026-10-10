@@ -1,7 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
@@ -37,19 +36,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     }
 
     private fun savePin(author: User): Pin =
-        pins.savePin(
-            Pin(
-                randomUUID(),
-                author,
-                HttpUrl.parse("https://example.com"),
-                null,
-                "d",
-                emptyList(),
-                emptyList(),
-                now,
-                now,
-            )
-        )
+        pins.savePin(Pin(randomUUID(), author, null, null, "d", emptyList(), emptyList(), now, now))
 
     @Test
     fun `Given upsertPending, Then findByPinId returns a PENDING row`() {

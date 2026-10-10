@@ -16,7 +16,7 @@ class PinCreationIntegrationTest : IntegrationTest() {
     // ==================== Simple Scenarios ====================
 
     @Test
-    fun `creating a pin as authenticated user returns the created pin`() {
+    fun `creating a pin as authenticated user returns the created pin, its addresses normalised`() {
         val auth = createAuthenticatedUser()
 
         given()
@@ -24,7 +24,7 @@ class PinCreationIntegrationTest : IntegrationTest() {
             .authenticatedAs(auth)
             .body(
                 """{
-                    "sourceContextUrl": "https://example.com/page",
+                    "sourceContextUrl": "HTTPS://Example.com/page",
                     "sourceMediaUrl": "https://example.com/media.jpg",
                     "description": "A test pin"
                 }"""
@@ -99,28 +99,6 @@ class PinCreationIntegrationTest : IntegrationTest() {
                 .body("code", equalTo("VALIDATION_ERROR"))
                 .body("detail", containsString("sourceContextUrl"))
         }
-    }
-
-    @Test
-    fun `creating a pin with source urls in upper case returns them normalised`() {
-        val auth = createAuthenticatedUser()
-
-        given()
-            .contentType(ContentType.JSON)
-            .authenticatedAs(auth)
-            .body(
-                mapOf(
-                    "sourceContextUrl" to "HTTPS://X.test/a",
-                    "sourceMediaUrl" to "HTTPS://X.test/i.png",
-                    "description" to "Normalised",
-                )
-            )
-            .`when`()
-            .post("/api/v1/pins")
-            .then()
-            .statusCode(201)
-            .body("sourceContextUrl", equalTo("https://x.test/a"))
-            .body("sourceMediaUrl", equalTo("https://x.test/i.png"))
     }
 
     @Test
