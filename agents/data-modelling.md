@@ -84,6 +84,9 @@ right.
 - **An entity, with an identity and managed for itself, has its own section**; a value without one travels inside the
   lines that carry it.
 - **A concept has one shape, on the wire and in the archive.**
+- **Except a composite value the archive references many times**: it has its own section, and is referenced by an
+  identifier that only links the archive's lines and decides nothing, as a person is from a pin line
+  (`docs/adr/0057-the-archive-references-by-key-and-an-address-is-refused-alike.md`, decisions 5 to 7).
 - **A fact about the work is restored as written**; what the server stamps follows the server's rules.
 
 ## Cross-cutting

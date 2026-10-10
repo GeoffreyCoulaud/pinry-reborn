@@ -310,7 +310,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
     }
 
     @Test
-    fun `Given a pin crediting its people from no page, Then its line names them in full and with no page`() {
+    fun `Given a pin crediting its people from no page, Then its line names them by id and with no page`() {
         // Given
         stubArchiveStore()
         every { clock.now() } returns now
@@ -332,13 +332,10 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         // When
         builder.stageArchive(anExport(), user, renewLease = {})
 
-        // Then: each person in full, its addresses sorted
+        // Then: each person by the id of its line
         val exportedPin = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>().single()
-        assertEquals(ExportedPerson("Studio", listOf("https://studio.example/")), exportedPin.publisher)
-        assertEquals(
-            listOf(ExportedPerson("Ada", listOf("https://a.example/", "https://b.example/"))),
-            exportedPin.creators,
-        )
+        assertEquals(ExportedPersonRef(publisher.id), exportedPin.publisher)
+        assertEquals(listOf(ExportedPersonRef(creator.id)), exportedPin.creators)
         assertEquals(publishedAt, exportedPin.publishedAt)
         assertEquals(null to "https://x.test/i.png", exportedPin.sourceContextUrl to exportedPin.sourceMediaUrl)
     }

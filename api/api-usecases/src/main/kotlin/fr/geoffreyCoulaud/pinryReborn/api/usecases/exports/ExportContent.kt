@@ -69,8 +69,8 @@ internal data class ExportedMedia(
     val createdAt: Instant,
 )
 
-/** A pin's publisher or creator, named in full. */
-internal data class ExportedPerson(val name: String, val urls: List<String>)
+/** A pin's publisher or creator, named by its `persons.jsonl` line's [id]. */
+internal data class ExportedPersonRef(val id: UUID)
 
 /** One `persons.jsonl` line: [id] only links the lines of one archive, and the import forgets it. */
 internal data class ExportedPersonLine(val id: UUID, val name: String, val urls: List<String>, val createdAt: Instant)
@@ -91,8 +91,8 @@ internal data class ExportedPin(
     val tags: List<ExportedRef>,
     val boards: List<ExportedRef>,
     val media: ExportedMedia?,
-    val publisher: ExportedPerson?,
-    val creators: List<ExportedPerson>,
+    val publisher: ExportedPersonRef?,
+    val creators: List<ExportedPersonRef>,
     val publishedAt: Instant?,
 )
 

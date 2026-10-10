@@ -27,6 +27,8 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
 
     fun collections(vararg lines: Map<String, Any?>) = apply { jsonLines("collections.jsonl", lines.toList()) }
 
+    fun persons(vararg lines: Map<String, Any?>) = apply { jsonLines("persons.jsonl", lines.toList()) }
+
     fun pins(vararg lines: Map<String, Any?>) = apply { jsonLines("pins.jsonl", lines.toList()) }
 
     /** Appends a raw line to an entry already written: a line cut in half is not JSON a writer emits. */
@@ -77,7 +79,11 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
                 "deletedAt" to deletedAt?.toString(),
             )
 
-        fun personLine(name: String, vararg urls: String): Map<String, Any?> = mapOf("name" to name, "urls" to urls)
+        fun personLine(id: String, name: String, vararg urls: String): Map<String, Any?> =
+            mapOf("id" to id, "name" to name, "urls" to urls, "createdAt" to PAST.toString())
+
+        /** A pin line's `{id}` reference to a person line. */
+        fun personRef(id: String): Map<String, Any?> = mapOf("id" to id)
 
         /** One `collections.jsonl` line; a null [board] is absent from it. */
         fun collectionLine(url: String, name: String, board: String? = null): Map<String, Any?> =

@@ -314,12 +314,10 @@ class UserDataExportBuilder(
                     ExportedRef(board.id, board.name)
                 },
             media = exportedMedia(pin, writtenMediaPaths),
-            publisher = pin.publisher?.let { exportedPerson(it) },
-            creators = pin.creators.map { exportedPerson(it) },
+            publisher = pin.publisher?.let { ExportedPersonRef(it.id) },
+            creators = pin.creators.map { ExportedPersonRef(it.id) },
             publishedAt = pin.publishedAt,
         )
-
-    private fun exportedPerson(person: Person): ExportedPerson = ExportedPerson(person.name.text, sortedUrls(person))
 
     private fun sortedUrls(person: Person): List<String> = person.urls.map { it.toString() }.sorted()
 

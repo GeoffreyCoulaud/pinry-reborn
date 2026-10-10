@@ -166,6 +166,21 @@ class PersonRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun `Given three persons, Then findPersonsByIds reads back the two asked for`() {
+        // Given
+        val user = createAndSaveUser()
+        val alice = savePerson(user, "Alice", listOf(FIRST_URL))
+        val bob = savePerson(user, "Bob", emptyList())
+        savePerson(user, "Carol", listOf(SECOND_URL))
+
+        // When
+        val found = repository.findPersonsByIds(setOf(alice.id, bob.id))
+
+        // Then
+        assertEquals(setOf(alice, bob), found.toSet())
+    }
+
+    @Test
     fun `Given persons of two users, Then deleteAllPersonsForUser removes only the user's`() {
         // Given
         val user = createAndSaveUser()

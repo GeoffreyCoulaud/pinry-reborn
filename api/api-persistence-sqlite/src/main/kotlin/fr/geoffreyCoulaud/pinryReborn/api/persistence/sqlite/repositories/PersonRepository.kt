@@ -12,6 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PersonModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPersonModel
 import jakarta.enterprise.context.ApplicationScoped
+import java.util.UUID
 
 @ApplicationScoped
 class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
@@ -64,6 +65,9 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
             }
         return (prefixed + contained).map { it.toDomain() }
     }
+
+    override fun findPersonsByIds(ids: Set<UUID>): List<Person> =
+        QPersonModel().id.isIn(ids).findList().map { it.toDomain() }
 
     override fun findAllPersonsForUser(user: User): List<Person> =
         QPersonModel().author.id.equalTo(user.id).findList().map { it.toDomain() }

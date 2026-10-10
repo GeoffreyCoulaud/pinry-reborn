@@ -3,7 +3,6 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
@@ -27,6 +26,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -37,7 +37,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.IngestedMedia
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonReference
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.deleteQuietly
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.UserDataExportRequester
@@ -62,6 +61,7 @@ class UserDataImportRunner(
     private val boardRepository: BoardRepositoryInterface,
     private val pinRepository: PinRepositoryInterface,
     private val mediaRepository: MediaRepositoryInterface,
+    private val personRepository: PersonRepositoryInterface,
     private val archiveStore: ImportArchiveStore,
     private val mediaIngestion: MediaIngestion,
     private val tagCreator: TagCreator,
@@ -182,12 +182,13 @@ class UserDataImportRunner(
     ) {
         val now = clock.now()
         val clamp = ImportInstantClamp(user.createdAt, now)
+        val persons = PersonLineImporter(personCreator, user, clamp)
         walkTags(source, user, clamp, runnable, renewLeaseIfDue, recorder) ?: return
         val walked =
             walkBoards(source, user, clamp, runnable, renewLeaseIfDue, recorder)
                 ?.let { walkCollections(source, user, now, runnable, renewLeaseIfDue, recorder) }
-                ?.let { walkPersons(source, user, clamp, runnable, renewLeaseIfDue, recorder) } ?: return
-        walkPins(PinWalk(source, runnable, user, clamp, now, entryNames, recorder, renewLeaseIfDue), walked)
+                ?.let { walkPersons(source, persons, runnable, renewLeaseIfDue, recorder) } ?: return
+        walkPins(PinWalk(source, runnable, user, clamp, now, entryNames, recorder, renewLeaseIfDue, persons), walked)
     }
 
     /**
@@ -464,14 +465,12 @@ class UserDataImportRunner(
     /** After the collections and before the pins (specification 2026-10-10, decision F). */
     private fun walkPersons(
         source: ArchiveSource,
-        user: User,
-        clamp: ImportInstantClamp,
+        importer: PersonLineImporter,
         runnable: RunnableImport,
         renewLeaseIfDue: () -> Unit,
         recorder: ImportIssueRecorder,
     ): UserDataImport? {
         val tally = MetadataTally(recorder)
-        val importer = PersonLineImporter(personCreator, user, clamp)
         walkLines(source, PERSONS_ENTRY, ImportedPersonLine::class.java, renewLeaseIfDue) { line ->
             rejecting(tally, line.line) {
                 importer.import(line) { kind, subject, detail -> record(tally, kind, line.line, subject, detail) }
@@ -580,6 +579,7 @@ class UserDataImportRunner(
     // An insert of a row this walk built two frames up, which the rule cannot see from here: it reads
     // one call and the argument is a property. The transaction is `advance`'s, one frame out.
     private fun createPin(walk: PinWalk, created: CreatedPin) {
+        val people = personRepository.findPersonsByIds(created.credits.rowIds).associateBy { it.id }
         pinRepository.savePin(
             created.pin.copy(
                 tags = created.tagNames.mapNotNull { tagRepository.findUserTagByName(walk.user, it) },
@@ -587,16 +587,12 @@ class UserDataImportRunner(
                     (created.boardNames.mapNotNull { boardRepository.findBoardForUserByName(walk.user, it) } +
                             created.collectionUrls.mapNotNull { remoteCollectionLinker.boardOf(walk.user, it) })
                         .distinctBy { it.id },
-                publisher = created.publisher?.let { resolvePerson(walk, it) },
-                creators = created.creators.map { resolvePerson(walk, it) },
+                publisher = created.credits.publisher?.let(people::getValue),
+                creators = created.credits.creators.map(people::getValue),
             )
         )
         mediaRepository.save(created.ingested.media)
     }
-
-    /** Found or created in the settling transaction, at the import instant (specification 2026-10-08, decision D). */
-    private fun resolvePerson(walk: PinWalk, person: PersonReference): Person =
-        personCreator.findOrCreate(person.name, person.urls, walk.user, createdAt = walk.importInstant)
 
     private fun outcomeFor(walk: PinWalk, line: ArchiveLine<ImportedPin>): PinOutcome {
         val pin = line.value
@@ -620,9 +616,6 @@ class UserDataImportRunner(
             ?: ImportFieldBounds.referenceCountFault(CREATORS_FIELD, pin.creators.size)
             ?: ImportFieldBounds.referenceCountFault(COLLECTIONS_FIELD, pin.collections.size)
             ?: pin.collections.firstNotNullOfOrNull { ImportFieldBounds.httpAddressFault(COLLECTIONS_FIELD, it) }
-            ?: (listOfNotNull(pin.publisher) + pin.creators).firstNotNullOfOrNull {
-                PersonLineImporter.personFault(it.name, it.urls)
-            }
 
     private fun reported(kind: UserDataImportIssueKind, subject: String?, detail: String?): PinOutcome =
         PinOutcome(issues = listOf(PendingIssue(kind, subject, detail)))
@@ -710,7 +703,10 @@ class UserDataImportRunner(
     /** The probe is the authority on the stored media type and dimensions, never the archive. */
     private fun created(walk: PinWalk, pin: ImportedPin, ingested: IngestedMedia): PinOutcome {
         val createdAt = walk.clamp.clamp(pin.createdAt)
+        val credits = walk.persons.credits(pin.publisher, pin.creators)
         return PinOutcome(
+            // Reported, and the pin created without them, as a digest mismatch is (specification 2026-10-10, F).
+            issues = credits.unknown.map { PendingIssue(UserDataImportIssueKind.PERSON_UNKNOWN, it, null) },
             created =
                 CreatedPin(
                     pin =
@@ -731,10 +727,9 @@ class UserDataImportRunner(
                     ingested = ingested,
                     tagNames = pin.tags.map { it.name },
                     boardNames = pin.boards.map { it.name },
-                    publisher = pin.publisher?.toReference(),
-                    creators = pin.creators.map { it.toReference() },
+                    credits = credits,
                     collectionUrls = pin.collections.map(ImportedAddress::read),
-                )
+                ),
         )
     }
 
@@ -764,6 +759,7 @@ class UserDataImportRunner(
         val entryNames: Set<String>,
         val recorder: ImportIssueRecorder,
         val renewLeaseIfDue: () -> Unit,
+        val persons: PersonLineImporter,
     )
 
     /** What one `pins.jsonl` line settles into: one transaction writes all of it, or none of it. */
@@ -784,8 +780,7 @@ class UserDataImportRunner(
         val ingested: IngestedMedia,
         val tagNames: List<String>,
         val boardNames: List<String>,
-        val publisher: PersonReference?,
-        val creators: List<PersonReference>,
+        val credits: PinCredits,
         val collectionUrls: List<HttpUrl>,
     )
 

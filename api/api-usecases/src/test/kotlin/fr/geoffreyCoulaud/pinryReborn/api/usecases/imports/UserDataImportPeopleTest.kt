@@ -15,56 +15,94 @@ import org.junit.jupiter.api.Test
 /** `persons.jsonl`, and a pin line's people and publication instant; split for `LargeClass`. */
 internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
     @Test
-    fun `Given a pin line crediting people, Then each is found or created at the import instant, its date unclamped`() {
-        // Given: the creator is already the account's, the publisher is not
+    fun `Given a pin line naming its people by id, Then each is the row its person line found or created`() {
+        // Given: Ada is already the account's, Studio is not
         val existing =
             Person(
                 id = randomUUID(),
                 author = user,
                 name = checkNotNull(PersonName.parse("Ada")),
-                urls = setOfNotNull(HttpUrl.parse("https://a.example")),
+                urls = setOfNotNull(HttpUrl.parse("https://ada.example")),
                 createdAt = accountCreatedAt,
             )
+        val persons = listOf(TestLine(1, aPersonLine("studio", "Studio")), TestLine(2, aPersonLine("ada", "Ada")))
         val line =
             aPin()
                 .copy(
-                    publisher = ImportedPerson("Studio", listOf("https://studio.example")),
-                    creators = listOf(ImportedPerson("Ada", listOf("https://a.example"))),
+                    publisher = ImportedPersonRef("studio"),
+                    creators = listOf(ImportedPersonRef("ada")),
                     publishedAt = beforeAccount,
                 )
-        stubWalk(FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, line)), media = everyMedium))
+        stubWalk(
+            FakeArchiveSource(
+                manifest = aManifest(),
+                persons = persons,
+                pins = listOf(TestLine(1, line)),
+                media = everyMedium,
+            )
+        )
         stubMediaPath()
         personRepository.seed(existing)
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)
 
-        // Then
+        // Then: the publisher carries its line's creation, not the import instant
         val created = savedPins.single()
         assertEquals("Studio", created.publisher?.name?.text)
-        assertEquals(now, created.publisher?.createdAt)
+        assertEquals(pastInstant, created.publisher?.createdAt)
         assertEquals(listOf(existing), created.creators)
         assertEquals(beforeAccount, created.publishedAt)
         assertEquals(1, personRepository.saved.size)
     }
 
     @Test
-    fun `Given people past their bounds, Then each line is reported invalid and no pin or person is created`() {
-        // Given: one line per bound of a person, then the creator count
-        val withAddress = { url: String -> aPin().copy(publisher = ImportedPerson("Ada", listOf(url))) }
-        val lines =
-            listOf(
-                aPin().copy(publisher = ImportedPerson(" ", emptyList())),
-                aPin().copy(creators = listOf(ImportedPerson("n".repeat(OVER_LONG_NAME), emptyList()))),
-                aPin().copy(publisher = ImportedPerson("Ada", List(OVER_LONG_URLS) { "https://$it.example" })),
-                withAddress(" "),
-                withAddress("https://a.example/" + "x".repeat(OVER_LONG_URL)),
-                aPin().copy(creators = List(OVER_LONG_REFS) { ImportedPerson("p$it", emptyList()) }),
+    fun `Given a pin naming two absent ids and a refused line's, Then it is created without them, each reported`() {
+        // Given: ghost is named twice, and blank's line is refused
+        val persons = listOf(TestLine(1, aPersonLine("ada", "Ada")), TestLine(2, aPersonLine("blank", " ")))
+        val names = listOf("ada", "blank", "phantom", "ghost", "ada").map(::ImportedPersonRef)
+        val line = aPin().copy(publisher = ImportedPersonRef("ghost"), creators = names)
+        stubWalk(
+            FakeArchiveSource(
+                manifest = aManifest(),
+                persons = persons,
+                pins = listOf(TestLine(1, line)),
+                media = everyMedium,
             )
+        )
+        stubMediaPath()
+        stubIssues()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        val created = savedPins.single()
+        assertEquals(null, created.publisher)
+        assertEquals(listOf("Ada"), created.creators.map { it.name.text })
+        val unknown = savedIssues.filter { it.kind == UserDataImportIssueKind.PERSON_UNKNOWN }
+        assertEquals(listOf("ghost", "blank", "phantom"), unknown.map { it.subject })
+        assertEquals(listOf(1, 1, 1), unknown.map { it.line })
+    }
+
+    @Test
+    fun `Given person lines past their bounds and a pin of 101 creators, Then each is refused, creating nothing`() {
+        // Given: one person line per bound of a person
+        val withAddress = { id: String, url: String -> aPersonLine(id, "Ada").copy(urls = listOf(url)) }
+        val persons =
+            listOf(
+                aPersonLine("blank", " "),
+                aPersonLine("long", "n".repeat(OVER_LONG_NAME)),
+                aPersonLine("many", "Ada").copy(urls = List(OVER_LONG_URLS) { "https://$it.example" }),
+                withAddress("blank-url", " "),
+                withAddress("long-url", "https://a.example/" + "x".repeat(OVER_LONG_URL)),
+            )
+        val crowd = aPin().copy(creators = List(OVER_LONG_REFS) { ImportedPersonRef("p$it") })
         val source =
             FakeArchiveSource(
                 manifest = aManifest(),
-                pins = lines.mapIndexed { index, line -> TestLine(index + 1, line) },
+                persons = persons.mapIndexed { index, line -> TestLine(index + 1, line) },
+                pins = listOf(TestLine(1, crowd)),
                 media = everyMedium,
             )
         stubWalk(source)
@@ -74,7 +112,7 @@ internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
         runner.run(importId, isLastAttempt = false, renewLease)
 
         // Then
-        assertEquals(List(lines.size) { UserDataImportIssueKind.FIELD_INVALID }, kinds())
+        assertEquals(List(persons.size + 1) { UserDataImportIssueKind.FIELD_INVALID }, kinds())
         assertTrue(savedPins.isEmpty())
         assertTrue(personRepository.saved.isEmpty())
         verify(exactly = 0) { mediaStore.digest(any(), any()) }

@@ -202,16 +202,18 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
     // --- A pin line's people ---
 
     @Test
-    fun `Given one person named in two cases and two orders, Then one row, and one address more makes a second`() {
+    fun `Given person lines in two cases and two orders, Then one row, and one address more makes a second`() {
         // Given: three media, so no line is skipped as one the account already holds
         val auth = createAuthenticatedUser()
-        val creatorByMedium =
-            mapOf(
-                "sample.png" to ImportArchiveBuilder.personLine("Ada Lovelace", A_URL, B_URL),
-                "sample.jpg" to ImportArchiveBuilder.personLine("ada LOVELACE", B_URL, A_URL),
-                "animated.gif" to ImportArchiveBuilder.personLine("Ada Lovelace", A_URL, B_URL, "https://c.example"),
-            )
-        val builder = ImportArchiveBuilder(objectMapper).manifest(announcedPins = creatorByMedium.size)
+        val creatorByMedium = mapOf("sample.png" to "ada", "sample.jpg" to "ADA", "animated.gif" to "ada-c")
+        val builder =
+            ImportArchiveBuilder(objectMapper)
+                .manifest(announcedPins = creatorByMedium.size)
+                .persons(
+                    ImportArchiveBuilder.personLine("ada", "Ada Lovelace", A_URL, B_URL),
+                    ImportArchiveBuilder.personLine("ADA", "ada LOVELACE", B_URL, A_URL),
+                    ImportArchiveBuilder.personLine("ada-c", "Ada Lovelace", A_URL, B_URL, "https://c.example"),
+                )
         val lines = creatorByMedium.map { (medium, creator) ->
             val bytes = fixture(medium).readBytes()
             builder.entry("media/$medium", bytes)
@@ -219,7 +221,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
                 sourceContextUrl = "https://example.test/$medium",
                 mediaPath = "media/$medium",
                 mediaSha256 = ImportArchiveBuilder.sha256(bytes),
-                creators = listOf(creator),
+                creators = listOf(ImportArchiveBuilder.personRef(creator)),
             )
         }
 
@@ -238,11 +240,11 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
     }
 
     @Test
-    fun `Given lines naming no people, a blank name and 101 creators, Then only the first imports, with none`() {
-        // Given: the two refused lines are refused before their medium is read, so they share the first's
+    fun `Given a pin of 101 creators and one of two absent ids, Then the first is refused, the second reported`() {
+        // Given: the refused line is refused before its medium is read, so it shares the second's
         val auth = createAuthenticatedUser()
         val png = fixture("sample.png").readBytes()
-        val line = { slug: String, publisher: Map<String, Any?>?, creators: List<Map<String, Any?>>? ->
+        val line = { slug: String, publisher: Map<String, Any?>?, creators: List<Map<String, Any?>> ->
             ImportArchiveBuilder.pinLine(
                 sourceContextUrl = "https://example.test/$slug",
                 mediaPath = "media/only.png",
@@ -253,12 +255,15 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         }
         val archive =
             ImportArchiveBuilder(objectMapper)
-                .manifest(announcedPins = 3)
+                .manifest(announcedPins = 2)
                 .entry("media/only.png", png)
                 .pins(
-                    line("blank", ImportArchiveBuilder.personLine(" "), null),
-                    line("crowd", null, List(OVER_LONG_REFS) { ImportArchiveBuilder.personLine("p$it") }),
-                    line("none", null, null),
+                    line("crowd", null, List(OVER_LONG_REFS) { ImportArchiveBuilder.personRef("p$it") }),
+                    line(
+                        "ghosts",
+                        ImportArchiveBuilder.personRef("ghost"),
+                        listOf(ImportArchiveBuilder.personRef("phantom")),
+                    ),
                 )
                 .bytes()
 
@@ -266,12 +271,12 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         val importId = importArchive(auth, archive)
 
         // Then
-        assertEquals(listOf("FIELD_INVALID", "FIELD_INVALID"), issueKinds(auth, importId))
+        assertEquals(listOf("FIELD_INVALID", "PERSON_UNKNOWN", "PERSON_UNKNOWN"), issueKinds(auth, importId).sorted())
+        assertEquals(setOf("ghost", "phantom"), unknownPersons(auth, importId).toSet())
         val pin = activePinsOf(auth.user).single()
-        assertEquals("https://example.test/none", pin.sourceContextUrl.toString())
+        assertEquals("https://example.test/ghosts", pin.sourceContextUrl.toString())
         assertNull(pin.publisher)
         assertTrue(pin.creators.isEmpty())
-        assertNull(pin.publishedAt)
         assertEquals(0, QPersonModel().author.id.equalTo(auth.user.id).findCount())
     }
 
@@ -386,6 +391,18 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
             collections = collections.toList(),
         )
     }
+
+    /** The subjects of the `PERSON_UNKNOWN` issues, which the report does not order within a line. */
+    private fun unknownPersons(auth: AuthenticatedUser, importId: UUID): List<String> =
+        given()
+            .authenticatedAs(auth)
+            .`when`()
+            .get("/api/v1/me/imports/$importId/issues?pageSize=$ISSUE_PAGE_SIZE")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath()
+            .getList("issues.findAll { it.kind == 'PERSON_UNKNOWN' }.subject", String::class.java)
 
     /** Scoped to the account: the data directory outlives a case, since only the database is truncated. */
     private fun storedObjectCount(userId: UUID): Int =

@@ -9,6 +9,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import java.time.Instant
+import java.util.UUID
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -69,6 +70,8 @@ class PersonCreatorTest {
 
         override fun findPersonsForUserMatching(user: User, query: String, limit: Int) =
             error("A creation searches no person")
+
+        override fun findPersonsByIds(ids: Set<UUID>) = error("A creation reads no person back")
 
         override fun findAllPersonsForUser(user: User) = error("A creation lists no person")
 

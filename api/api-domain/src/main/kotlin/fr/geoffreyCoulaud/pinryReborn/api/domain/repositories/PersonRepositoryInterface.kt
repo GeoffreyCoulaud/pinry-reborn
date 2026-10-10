@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import java.util.UUID
 
 interface PersonRepositoryInterface {
     fun savePerson(person: Person): Person
@@ -23,6 +24,9 @@ interface PersonRepositoryInterface {
         query: String,
         limit: Int,
     ): List<Person>
+
+    /** The persons of these identifiers, which the user data import found or created. */
+    fun findPersonsByIds(ids: Set<UUID>): List<Person>
 
     /** Every person of the user, which the user data export lists. */
     fun findAllPersonsForUser(user: User): List<Person>
