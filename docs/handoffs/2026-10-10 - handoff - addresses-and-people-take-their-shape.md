@@ -132,7 +132,8 @@ Tier-1 fix: a malformed `Location` header made `URI.resolve` throw an uncaught `
    `ContractSchemaDeclarationTest` case. The contract stays `25.0.0`, an output gaining a format breaking no client;
    the specification's Data shape table is aligned in block 85.
 3. A host holding an underscore is refused: an accepted limit, observed by `HttpUrlTest` in block 80 and recorded in
-   the specification's section 7 in block 85.
+   the specification's section 7 in block 85. The operator agreed on 2026-10-10: host names (RFC 952, RFC 1123) hold
+   no underscore.
 4. `PersonCreator`'s comment still said the import stamps its own instant: fixed in block 80.
 5. The 2026-10-08 specification's `Status:` line missed two halves of its decision D, "stamped with the import
    instant" and a person's fault refusing the pin line: fixed in block 85.
@@ -160,11 +161,12 @@ Tier-1 fix: a malformed `Location` header made `URI.resolve` throw an uncaught `
 
 - Fix-backs: 0. Fixes on top: 0. Cascaded rebases: 0. Runs re-triggered by them: 0. One run re-run by hand, PR
   #390's flaky journey.
-- The operator's reading of the bodies: still to come.
+- The operator's reading of the bodies: no remark on the bodies. One code comment, on #383's `HttpAddress`: why null
+  is valid. Answered without a change: the field's type decides absence, the constraint checks the address alone.
 
 ## Next step
 
 The holistic review, then the closing block 80: its findings, the flaky journey, the documents' `Status:` lines and
 the backlog (specification, block 80). After the merge and the tag `lot/0.54.0-addresses-and-people-take-their-shape`,
 ADR 0056's foreign keys lot, then the third-party importer. (Corrected: the review and the closing blocks 80 and 85
-are done. The operator reviews the stack, #382 to block 85's pull request, and answers the open question.)
+are done, and the operator reviewed the stack, #382 to #393. The open question waits for the operator.)
