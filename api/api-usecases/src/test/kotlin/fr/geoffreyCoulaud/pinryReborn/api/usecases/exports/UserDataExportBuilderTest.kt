@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
@@ -296,14 +297,22 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
     }
 
     @Test
-    fun `Given a pin crediting its people, Then its line names them in full and the archive gains no entry`() {
+    fun `Given a pin crediting its people from no page, Then its line names them in full, no page, and no new entry`() {
         // Given
         stubArchiveStore()
         every { clock.now() } returns now
         val publisher = aPerson("Studio", "https://studio.example")
         val creator = aPerson("Ada", "https://a.example", "https://b.example")
         val publishedAt = Instant.parse("1999-12-31T23:00:00Z")
-        val pin = aPin().copy(publisher = publisher, creators = listOf(creator), publishedAt = publishedAt)
+        val pin =
+            aPin()
+                .copy(
+                    sourceContextUrl = null,
+                    sourceMediaUrl = HttpUrl.parse("https://x.test/i.png"),
+                    publisher = publisher,
+                    creators = listOf(creator),
+                    publishedAt = publishedAt,
+                )
         stubActivePins(listOf(pin))
         stubRecycledPins(emptyList())
         every { boardRepository.findActiveBoardsForUser(user) } returns emptyList()
@@ -324,6 +333,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
             exportedPin.creators,
         )
         assertEquals(publishedAt, exportedPin.publishedAt)
+        assertEquals(null to "https://x.test/i.png", exportedPin.sourceContextUrl to exportedPin.sourceMediaUrl)
         val manifest = sink.json.getValue("manifest.json") as ExportManifest
         assertEquals(
             setOf("README.md", "user.json", "boards.jsonl", "collections.jsonl", "tags.jsonl", "pins.jsonl"),
