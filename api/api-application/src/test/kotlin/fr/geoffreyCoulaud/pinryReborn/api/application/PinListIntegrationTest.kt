@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
@@ -53,8 +54,8 @@ class PinListIntegrationTest : IntegrationTest() {
             pinCreator
                 .createPin(
                     author = user,
-                    sourceContextUrl = "https://example.com/page$i",
-                    sourceMediaUrl = "https://example.com/media$i.jpg",
+                    sourceContextUrl = HttpUrl.parse("https://example.com/page$i"),
+                    sourceMediaUrl = HttpUrl.parse("https://example.com/media$i.jpg"),
                     description = "Pin $i",
                     tags = emptyList(),
                 )

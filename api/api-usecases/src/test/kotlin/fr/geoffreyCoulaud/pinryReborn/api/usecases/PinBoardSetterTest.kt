@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
@@ -214,8 +215,8 @@ class PinBoardSetterTest {
         Pin(
             id = randomUUID(),
             author = author,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
+            sourceContextUrl = HttpUrl.parse("https://example.com"),
+            sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
             description = "A pin",
             tags = emptyList(),
             boards = emptyList(),

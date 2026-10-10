@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -80,7 +81,7 @@ class AccountDeletionCleanerTest : BaseTest() {
         Pin(
             id = randomUUID(),
             author = user,
-            sourceContextUrl = "https://ctx",
+            sourceContextUrl = HttpUrl.parse("https://ctx"),
             sourceMediaUrl = null,
             description = "desc",
             tags = emptyList(),

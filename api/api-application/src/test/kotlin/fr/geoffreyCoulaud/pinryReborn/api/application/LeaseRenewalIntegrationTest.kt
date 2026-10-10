@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.sun.net.httpserver.HttpServer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveLine
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveSource
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
@@ -130,8 +131,8 @@ class LeaseRenewalIntegrationTest : IntegrationTest() {
             pinCreator
                 .createPin(
                     author = auth.user,
-                    sourceContextUrl = "https://example.com",
-                    sourceMediaUrl = "https://example.com/img.png",
+                    sourceContextUrl = HttpUrl.parse("https://example.com"),
+                    sourceMediaUrl = HttpUrl.parse("https://example.com/img.png"),
                     description = "Lease renewal test pin",
                     tags = emptyList(),
                 )

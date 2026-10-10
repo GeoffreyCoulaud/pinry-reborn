@@ -22,8 +22,8 @@ object PinMapper {
         PinOutputDto(
             id = id,
             authorId = author.id,
-            sourceContextUrl = sourceContextUrl,
-            sourceMediaUrl = sourceMediaUrl,
+            sourceContextUrl = sourceContextUrl?.toString(),
+            sourceMediaUrl = sourceMediaUrl?.toString(),
             description = description,
             tags = tags.map { it.toDto() },
             boards = boards.map { it.toRefDto() },

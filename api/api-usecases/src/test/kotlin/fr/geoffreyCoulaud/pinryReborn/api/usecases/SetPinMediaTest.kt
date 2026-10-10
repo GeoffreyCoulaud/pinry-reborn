@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -72,7 +73,7 @@ class SetPinMediaTest : BaseTest() {
         Pin(
             randomUUID(),
             author,
-            "https://c",
+            HttpUrl.parse("https://c"),
             null,
             "d",
             emptyList(),

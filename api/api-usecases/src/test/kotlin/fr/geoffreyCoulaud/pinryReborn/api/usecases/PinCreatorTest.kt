@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -28,8 +29,8 @@ class PinCreatorTest {
     fun `When creating a pin, then should succeed`() {
         // Given
         val user = User(randomUUID(), "John Doe", createdAt = TestTime.now)
-        val sourceUrl = "https://example.com/article"
-        val mediaUrl = "https://example.com/media.jpeg"
+        val sourceUrl = HttpUrl.parse("https://example.com/article")
+        val mediaUrl = HttpUrl.parse("https://example.com/media.jpeg")
         val description = "some description"
         val tags = listOf("blue", "landscape", "water")
         every { tagCreator.findOrCreate(any(), any()) } answers

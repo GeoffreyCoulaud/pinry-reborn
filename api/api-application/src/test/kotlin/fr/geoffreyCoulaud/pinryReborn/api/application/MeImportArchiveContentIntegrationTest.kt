@@ -228,7 +228,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
 
         // Then
         assertEquals(emptyList<String>(), issueKinds(auth, importId))
-        val creatorOf = activePinsOf(auth.user).associate { it.sourceContextUrl to it.creators.single() }
+        val creatorOf = activePinsOf(auth.user).associate { it.sourceContextUrl.toString() to it.creators.single() }
         assertEquals(
             creatorOf.getValue("https://example.test/sample.png").id,
             creatorOf.getValue("https://example.test/sample.jpg").id,

@@ -48,7 +48,7 @@ class ResolvePinMediaStateTest {
             Pin(
                 pinId,
                 otherUser,
-                "c",
+                null,
                 null,
                 "d",
                 emptyList(),
@@ -65,7 +65,7 @@ class ResolvePinMediaStateTest {
             Pin(
                 pinId,
                 owner,
-                "c",
+                null,
                 null,
                 "d",
                 emptyList(),
@@ -86,7 +86,7 @@ class ResolvePinMediaStateTest {
             Pin(
                 pinId,
                 owner,
-                "c",
+                null,
                 null,
                 "d",
                 emptyList(),
@@ -180,7 +180,7 @@ class ResolvePinMediaStateTest {
         Pin(
             randomUUID(),
             owner,
-            "c",
+            null,
             null,
             "d",
             emptyList(),

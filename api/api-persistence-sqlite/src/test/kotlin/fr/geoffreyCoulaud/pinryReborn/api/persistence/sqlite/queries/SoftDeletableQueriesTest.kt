@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.RepositoryTest
@@ -53,8 +54,8 @@ class SoftDeletableQueriesTest : RepositoryTest() {
             Pin(
                 id = randomUUID(),
                 author = author,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/media.jpeg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpeg"),
                 description = "Something",
                 tags = emptyList(),
                 boards = boards,

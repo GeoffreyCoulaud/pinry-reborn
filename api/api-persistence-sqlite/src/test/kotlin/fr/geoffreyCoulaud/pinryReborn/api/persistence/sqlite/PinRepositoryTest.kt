@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
@@ -31,8 +32,8 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         assertNotNull(model)
         assertEquals(pin.id, model!!.id)
         assertEquals(pin.author.id, model.author.id)
-        assertEquals(pin.sourceContextUrl, model.sourceContextUrl)
-        assertEquals(pin.sourceMediaUrl, model.sourceMediaUrl)
+        assertEquals(pin.sourceContextUrl.toString(), model.sourceContextUrl)
+        assertEquals(pin.sourceMediaUrl.toString(), model.sourceMediaUrl)
         assertEquals(pin.description, model.description)
     }
 
@@ -43,8 +44,8 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         repository.savePin(pin)
         val updatedPin =
             pin.copy(
-                sourceContextUrl = "https://new-example.com/new.jpeg",
-                sourceMediaUrl = "https://new-example.com/new_media.jpeg",
+                sourceContextUrl = HttpUrl.parse("https://new-example.com/new.jpeg"),
+                sourceMediaUrl = HttpUrl.parse("https://new-example.com/new_media.jpeg"),
                 description = "New description",
             )
 
@@ -55,8 +56,8 @@ class PinRepositoryTest : PinRepositoryFixtures() {
         val model = database.find(PinModel::class.java, pin.id)
         assertNotNull(model)
         assertEquals(pin.id, model!!.id)
-        assertEquals(updatedPin.sourceContextUrl, model.sourceContextUrl)
-        assertEquals(updatedPin.sourceMediaUrl, model.sourceMediaUrl)
+        assertEquals(updatedPin.sourceContextUrl.toString(), model.sourceContextUrl)
+        assertEquals(updatedPin.sourceMediaUrl.toString(), model.sourceMediaUrl)
         assertEquals(updatedPin.description, model.description)
     }
 

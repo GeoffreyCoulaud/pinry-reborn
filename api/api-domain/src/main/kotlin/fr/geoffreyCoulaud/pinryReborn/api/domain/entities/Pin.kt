@@ -6,8 +6,8 @@ import java.util.UUID
 data class Pin(
     override val id: UUID,
     val author: User,
-    val sourceContextUrl: String?,
-    val sourceMediaUrl: String?,
+    val sourceContextUrl: HttpUrl?,
+    val sourceMediaUrl: HttpUrl?,
     val description: String,
     val tags: List<Tag>,
     val boards: List<Board>,

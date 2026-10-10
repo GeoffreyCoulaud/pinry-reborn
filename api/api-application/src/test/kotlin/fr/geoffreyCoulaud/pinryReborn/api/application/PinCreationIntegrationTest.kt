@@ -84,6 +84,46 @@ class PinCreationIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `creating a pin with a blank, a non-address or an ftp source context url returns 400 naming the field`() {
+        val auth = createAuthenticatedUser()
+
+        listOf("", "not an address", "ftp://x.test/").forEach { refused ->
+            given()
+                .contentType(ContentType.JSON)
+                .authenticatedAs(auth)
+                .body(mapOf("sourceContextUrl" to refused, "sourceMediaUrl" to null, "description" to "Refused"))
+                .`when`()
+                .post("/api/v1/pins")
+                .then()
+                .statusCode(400)
+                .body("code", equalTo("VALIDATION_ERROR"))
+                .body("detail", containsString("sourceContextUrl"))
+        }
+    }
+
+    @Test
+    fun `creating a pin with source urls in upper case returns them normalised`() {
+        val auth = createAuthenticatedUser()
+
+        given()
+            .contentType(ContentType.JSON)
+            .authenticatedAs(auth)
+            .body(
+                mapOf(
+                    "sourceContextUrl" to "HTTPS://X.test/a",
+                    "sourceMediaUrl" to "HTTPS://X.test/i.png",
+                    "description" to "Normalised",
+                )
+            )
+            .`when`()
+            .post("/api/v1/pins")
+            .then()
+            .statusCode(201)
+            .body("sourceContextUrl", equalTo("https://x.test/a"))
+            .body("sourceMediaUrl", equalTo("https://x.test/i.png"))
+    }
+
+    @Test
     fun `creating a pin returns 201 Created status`() {
         val auth = createAuthenticatedUser()
 

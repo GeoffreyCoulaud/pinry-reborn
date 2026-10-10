@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPersonModel
@@ -15,6 +16,7 @@ import io.restassured.http.ContentType
 import io.restassured.response.ValidatableResponse
 import jakarta.inject.Inject
 import java.util.UUID
+import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.Matchers.contains
@@ -46,18 +48,32 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given new source addresses, Then the write replaces both, a blank one reading as none`() {
+    fun `Given new source addresses, Then the write replaces both, normalised, a null one reading as none`() {
         // Given
         val auth = createAuthenticatedUser()
         val pin = createPin(auth)
 
         // When
-        update(auth, pin, sourceContextUrl = "https://example.com/other", sourceMediaUrl = "  ").statusCode(200)
+        update(auth, pin, sourceContextUrl = "HTTPS://X.test/a", sourceMediaUrl = null).statusCode(200)
 
         // Then
-        readPin(auth, pin)
-            .body("sourceContextUrl", equalTo("https://example.com/other"))
-            .body("sourceMediaUrl", nullValue())
+        readPin(auth, pin).body("sourceContextUrl", equalTo("https://x.test/a")).body("sourceMediaUrl", nullValue())
+    }
+
+    @Test
+    fun `Given a blank, a non-address or an ftp source url, Then the write returns 400 naming the field`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+
+        // When / Then
+        listOf("", "not an address", "ftp://x.test/").forEach { refused ->
+            update(auth, pin, sourceContextUrl = refused)
+                .statusCode(400)
+                .body("code", equalTo("VALIDATION_ERROR"))
+                .body("detail", containsString("sourceContextUrl"))
+        }
+        readPin(auth, pin).body("sourceContextUrl", equalTo(pin.sourceContextUrl.toString()))
     }
 
     @Test
@@ -163,8 +179,8 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
     private fun createPin(auth: AuthenticatedUser, tags: List<String> = emptyList()): Pin =
         pinCreator.createPin(
             author = auth.user,
-            sourceContextUrl = "https://example.com/page",
-            sourceMediaUrl = "https://example.com/img.jpg",
+            sourceContextUrl = HttpUrl.parse("https://example.com/page"),
+            sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
             description = "A pin",
             tags = tags,
         )

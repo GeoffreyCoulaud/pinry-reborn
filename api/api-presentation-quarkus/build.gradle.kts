@@ -42,6 +42,8 @@ dependencies {
     testImplementation(libs.quarkus.micrometer)
     // The OpenAPI model SessionSecurityRequirementFilter rewrites: compileOnly at main scope.
     testImplementation(libs.quarkus.smallrye.openapi)
+    // The constraint API HttpAddressValidator implements: compileOnly at main scope.
+    testImplementation(libs.quarkus.hibernate.validator)
     testImplementation(libs.bundles.testing)
     testRuntimeOnly(libs.bundles.testing.runtime)
 }

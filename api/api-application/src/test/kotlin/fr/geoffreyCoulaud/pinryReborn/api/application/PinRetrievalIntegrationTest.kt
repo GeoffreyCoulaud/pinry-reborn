@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
@@ -30,8 +31,8 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/page",
-                sourceMediaUrl = "https://example.com/media.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/page"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "My pin",
                 tags = emptyList(),
             )
@@ -57,8 +58,8 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://author.com",
-                sourceMediaUrl = "https://author.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://author.com"),
+                sourceMediaUrl = HttpUrl.parse("https://author.com/img.jpg"),
                 description = "Author test",
                 tags = emptyList(),
             )
@@ -90,8 +91,8 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://unauth.com",
-                sourceMediaUrl = "https://unauth.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://unauth.com"),
+                sourceMediaUrl = HttpUrl.parse("https://unauth.com/img.jpg"),
                 description = "Unauth test",
                 tags = emptyList(),
             )
@@ -109,8 +110,8 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = owner.user,
-                sourceContextUrl = "https://owned.com",
-                sourceMediaUrl = "https://owned.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://owned.com"),
+                sourceMediaUrl = HttpUrl.parse("https://owned.com/img.jpg"),
                 description = "User1's pin",
                 tags = emptyList(),
             )
@@ -128,8 +129,8 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         val pin1 =
             pinCreator.createPin(
                 author = auth1.user,
-                sourceContextUrl = "https://user1.com",
-                sourceMediaUrl = "https://user1.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://user1.com"),
+                sourceMediaUrl = HttpUrl.parse("https://user1.com/img.jpg"),
                 description = "User1's pin",
                 tags = emptyList(),
             )
@@ -138,8 +139,8 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         val pin2 =
             pinCreator.createPin(
                 author = auth2.user,
-                sourceContextUrl = "https://user2.com",
-                sourceMediaUrl = "https://user2.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://user2.com"),
+                sourceMediaUrl = HttpUrl.parse("https://user2.com/img.jpg"),
                 description = "User2's pin",
                 tags = emptyList(),
             )
@@ -176,8 +177,8 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://wrongpass.com",
-                sourceMediaUrl = "https://wrongpass.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://wrongpass.com"),
+                sourceMediaUrl = HttpUrl.parse("https://wrongpass.com/img.jpg"),
                 description = "Wrong pass test",
                 tags = emptyList(),
             )
@@ -198,8 +199,8 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         val pin1 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://multi1.com",
-                sourceMediaUrl = "https://multi1.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://multi1.com"),
+                sourceMediaUrl = HttpUrl.parse("https://multi1.com/img.jpg"),
                 description = "First pin",
                 tags = emptyList(),
             )
@@ -207,8 +208,8 @@ class PinRetrievalIntegrationTest : IntegrationTest() {
         val pin2 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://multi2.com",
-                sourceMediaUrl = "https://multi2.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://multi2.com"),
+                sourceMediaUrl = HttpUrl.parse("https://multi2.com/img.jpg"),
                 description = "Second pin",
                 tags = emptyList(),
             )

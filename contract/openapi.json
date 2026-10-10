@@ -384,10 +384,12 @@
         "required" : [ "sourceContextUrl", "sourceMediaUrl", "description" ],
         "properties" : {
           "sourceContextUrl" : {
-            "type" : [ "string", "null" ]
+            "type" : [ "string", "null" ],
+            "format" : "uri"
           },
           "sourceMediaUrl" : {
-            "type" : [ "string", "null" ]
+            "type" : [ "string", "null" ],
+            "format" : "uri"
           },
           "description" : {
             "type" : "string",
@@ -548,10 +550,12 @@
             "$ref" : "#/components/schemas/UUID"
           },
           "sourceContextUrl" : {
-            "type" : [ "string", "null" ]
+            "type" : [ "string", "null" ],
+            "format" : "uri"
           },
           "sourceMediaUrl" : {
-            "type" : [ "string", "null" ]
+            "type" : [ "string", "null" ],
+            "format" : "uri"
           },
           "description" : {
             "type" : "string"
@@ -623,10 +627,12 @@
         "required" : [ "sourceContextUrl", "sourceMediaUrl", "description", "tags", "boardIds", "publisher", "creators", "publishedAt" ],
         "properties" : {
           "sourceContextUrl" : {
-            "type" : [ "string", "null" ]
+            "type" : [ "string", "null" ],
+            "format" : "uri"
           },
           "sourceMediaUrl" : {
-            "type" : [ "string", "null" ]
+            "type" : [ "string", "null" ],
+            "format" : "uri"
           },
           "description" : {
             "type" : "string",
@@ -4456,7 +4462,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "24.2.0"
+    "version" : "25.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

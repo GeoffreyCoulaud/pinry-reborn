@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
@@ -104,8 +105,8 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
         Pin(
             id = randomUUID(),
             author = createAndSaveUser(),
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/media.jpeg",
+            sourceContextUrl = HttpUrl.parse("https://example.com"),
+            sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpeg"),
             description = "Something",
             tags = emptyList(),
             boards = emptyList(),
@@ -125,8 +126,8 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
             Pin(
                 id = randomUUID(),
                 author = author,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/media.jpeg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpeg"),
                 description = "Something",
                 tags = emptyList(),
                 boards = emptyList(),

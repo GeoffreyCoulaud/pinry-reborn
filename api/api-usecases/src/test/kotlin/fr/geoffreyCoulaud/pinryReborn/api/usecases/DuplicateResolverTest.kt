@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
@@ -123,8 +124,12 @@ class DuplicateResolverTest {
     fun `Given two absorbed pins with descriptions, the newer named first, Then a blank kept one takes the older's`() {
         // Given
         val open = pin()
-        val newer = pin("Newer", createdAt = TestTime.now.plusSeconds(1)).copy(sourceContextUrl = "https://a.test/n")
-        val older = pin("Older", createdAt = TestTime.now.minusSeconds(1)).copy(sourceContextUrl = "https://a.test/o")
+        val newer =
+            pin("Newer", createdAt = TestTime.now.plusSeconds(1))
+                .copy(sourceContextUrl = HttpUrl.parse("https://a.test/n"))
+        val older =
+            pin("Older", createdAt = TestTime.now.minusSeconds(1))
+                .copy(sourceContextUrl = HttpUrl.parse("https://a.test/o"))
         stored(open, newer, older)
         val decisions = linkedMapOf(open.id to KEEP, newer.id to MERGE, older.id to MERGE)
 
@@ -132,7 +137,7 @@ class DuplicateResolverTest {
         val answered = useCase.resolve(open.id, decisions, user)
 
         // Then
-        assertEquals("Older" to "https://a.test/o", answered.description to answered.sourceContextUrl)
+        assertEquals("Older" to "https://a.test/o", answered.description to answered.sourceContextUrl.toString())
     }
 
     @Test
@@ -140,11 +145,11 @@ class DuplicateResolverTest {
         // Given
         val tag = Tag(randomUUID(), user, "absorbed", TestTime.now)
         val board = Board(randomUUID(), user, "Absorbed", "", TestTime.now, TestTime.now)
-        val open = pin("Kept").copy(sourceContextUrl = "https://a.test/kept")
+        val open = pin("Kept").copy(sourceContextUrl = HttpUrl.parse("https://a.test/kept"))
         val absorbed =
             pin("Absorbed")
                 .copy(
-                    sourceContextUrl = "https://a.test/absorbed",
+                    sourceContextUrl = HttpUrl.parse("https://a.test/absorbed"),
                     tags = listOf(tag),
                     boards = listOf(board),
                 )

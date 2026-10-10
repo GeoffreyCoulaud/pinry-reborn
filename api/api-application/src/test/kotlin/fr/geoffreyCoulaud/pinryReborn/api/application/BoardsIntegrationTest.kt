@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
@@ -299,7 +300,7 @@ class BoardsIntegrationTest : IntegrationTest() {
 
     /** A pin holding a media, all a cover asks of it. */
     private fun imagedPin(auth: AuthenticatedUser): Pin {
-        val pin = pinCreator.createPin(auth.user, "https://example.com", null, "Pin", emptyList())
+        val pin = pinCreator.createPin(auth.user, HttpUrl.parse("https://example.com"), null, "Pin", emptyList())
         mediaRepository.save(
             Media.StillImage(
                 id = UUID.randomUUID(),

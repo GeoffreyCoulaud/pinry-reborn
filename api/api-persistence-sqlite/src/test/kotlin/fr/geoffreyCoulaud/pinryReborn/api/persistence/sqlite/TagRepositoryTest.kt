@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -32,8 +33,8 @@ class TagRepositoryTest : RepositoryTest() {
             Pin(
                 id = randomUUID(),
                 author = author,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/media.jpeg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpeg"),
                 description = "Something",
                 tags = listOf(tag),
                 boards = emptyList(),

@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.BoardRepository
@@ -29,8 +30,8 @@ class PinRepositoryRecycledMembershipTest : PinRepositoryFixtures() {
             Pin(
                 id = randomUUID(),
                 author = user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/media.jpeg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpeg"),
                 description = "Something",
                 tags = emptyList(),
                 boards = listOf(board),

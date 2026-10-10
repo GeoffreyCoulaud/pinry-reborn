@@ -589,7 +589,8 @@ class UserDataImportRunner(
 
     private fun pinFault(pin: ImportedPin): String? =
         ImportFieldBounds.descriptionFault(pin.description)
-            ?: pin.sourceContextUrl?.let { ImportFieldBounds.blankFault(SOURCE_CONTEXT_URL, it) }
+            ?: pin.sourceContextUrl?.let { ImportFieldBounds.httpAddressFault(SOURCE_CONTEXT_URL, it) }
+            ?: pin.sourceMediaUrl?.let { ImportFieldBounds.httpAddressFault(SOURCE_MEDIA_URL, it) }
             ?: ImportFieldBounds.referenceCountFault(TAGS_FIELD, pin.tags.size)
             ?: ImportFieldBounds.referenceCountFault(BOARDS_FIELD, pin.boards.size)
             ?: ImportFieldBounds.referenceCountFault(CREATORS_FIELD, pin.creators.size)
@@ -691,8 +692,8 @@ class UserDataImportRunner(
                         Pin(
                             id = ingested.media.pinId,
                             author = walk.user,
-                            sourceContextUrl = pin.sourceContextUrl,
-                            sourceMediaUrl = pin.sourceMediaUrl,
+                            sourceContextUrl = pin.sourceContextUrl?.let(ImportedAddress::read),
+                            sourceMediaUrl = pin.sourceMediaUrl?.let(ImportedAddress::read),
                             description = pin.description,
                             tags = emptyList(),
                             boards = emptyList(),
@@ -770,6 +771,7 @@ class UserDataImportRunner(
         const val COLLECTIONS_ENTRY = "collections.jsonl"
         const val PINS_ENTRY = "pins.jsonl"
         const val SOURCE_CONTEXT_URL = "sourceContextUrl"
+        const val SOURCE_MEDIA_URL = "sourceMediaUrl"
         const val URL_FIELD = "url"
         const val COLLECTIONS_FIELD = "collections"
         const val TAGS_FIELD = "tags"

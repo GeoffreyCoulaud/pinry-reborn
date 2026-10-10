@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -23,6 +24,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.quarkus.security.identity.SecurityIdentity
+import java.net.URI
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -69,8 +71,9 @@ class PinControllerTest {
                 Pin(
                     id = randomUUID(),
                     author = user,
-                    sourceContextUrl = arg(1),
-                    sourceMediaUrl = arg(2),
+                    // MockK hands a value class over unboxed.
+                    sourceContextUrl = arg<URI?>(1)?.let { HttpUrl.parse(it.toString()) },
+                    sourceMediaUrl = arg<URI?>(2)?.let { HttpUrl.parse(it.toString()) },
                     description = arg(3),
                     tags = emptyList(),
                     boards = emptyList(),
@@ -94,23 +97,13 @@ class PinControllerTest {
     }
 
     @Test
-    fun `Given a blank source media url, Then the created pin carries none`() {
-        assertNull(createPinWith("   ").sourceMediaUrl)
-    }
-
-    @Test
-    fun `Given a source media url, Then the created pin carries it`() {
-        assertEquals("https://example.test/i.png", createPinWith("https://example.test/i.png").sourceMediaUrl)
+    fun `Given a source media url in upper case, Then the created pin carries it normalised`() {
+        assertEquals("https://example.test/i.png", createPinWith("HTTPS://Example.test/i.png").sourceMediaUrl)
     }
 
     @Test
     fun `Given no source page url, Then the created pin carries none`() {
         assertNull(createPinWith(sourceContextUrl = null).sourceContextUrl)
-    }
-
-    @Test
-    fun `Given a blank source page url, Then the created pin carries none`() {
-        assertNull(createPinWith(sourceContextUrl = "   ").sourceContextUrl)
     }
 
     @Test

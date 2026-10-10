@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
@@ -127,8 +128,8 @@ class DownloadPinMediaTest {
         Pin(
             pinId,
             user,
-            "https://ctx",
-            "https://x/i.png",
+            HttpUrl.parse("https://ctx"),
+            HttpUrl.parse("https://x/i.png"),
             "d",
             emptyList(),
             emptyList(),

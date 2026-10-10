@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -47,7 +48,7 @@ class RequestPinMediaDownloadTest {
         Pin(
             pinId,
             author,
-            "https://ctx",
+            HttpUrl.parse("https://ctx"),
             null,
             "d",
             emptyList(),

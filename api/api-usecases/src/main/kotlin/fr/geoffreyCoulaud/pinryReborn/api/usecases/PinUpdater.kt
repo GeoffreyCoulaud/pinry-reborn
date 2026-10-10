@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -26,8 +27,8 @@ class PinUpdater(
     fun update(
         pinId: UUID,
         description: String,
-        sourceContextUrl: String?,
-        sourceMediaUrl: String?,
+        sourceContextUrl: HttpUrl?,
+        sourceMediaUrl: HttpUrl?,
         tagNames: List<String>,
         boardIds: List<UUID>,
         publisher: PersonReference?,

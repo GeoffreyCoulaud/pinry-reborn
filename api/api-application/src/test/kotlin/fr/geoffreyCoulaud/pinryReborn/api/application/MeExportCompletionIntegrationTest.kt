@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
@@ -204,8 +205,8 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
     private fun createPin(auth: IntegrationTest.AuthenticatedUser, slug: String, tags: List<String> = emptyList()) =
         pinCreator.createPin(
             author = auth.user,
-            sourceContextUrl = "https://example.com/$slug",
-            sourceMediaUrl = "https://example.com/$slug.jpg",
+            sourceContextUrl = HttpUrl.parse("https://example.com/$slug"),
+            sourceMediaUrl = HttpUrl.parse("https://example.com/$slug.jpg"),
             description = "Pin $slug",
             tags = tags,
         )

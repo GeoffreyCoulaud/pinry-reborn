@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.HttpUrlModelMapper.toHttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserModelMapper.toDomain
@@ -17,8 +18,8 @@ object PinModelMapper {
         PinModel(
             id = id,
             author = author.toModel(),
-            sourceContextUrl = sourceContextUrl,
-            sourceMediaUrl = sourceMediaUrl,
+            sourceContextUrl = sourceContextUrl?.toString(),
+            sourceMediaUrl = sourceMediaUrl?.toString(),
             description = description,
             createdAt = createdAt,
             updatedAt = updatedAt,
@@ -35,8 +36,8 @@ object PinModelMapper {
         Pin(
             id = id,
             author = author.toDomain(),
-            sourceContextUrl = sourceContextUrl,
-            sourceMediaUrl = sourceMediaUrl,
+            sourceContextUrl = sourceContextUrl?.toHttpUrl(),
+            sourceMediaUrl = sourceMediaUrl?.toHttpUrl(),
             description = description,
             tags = tags,
             boards = boards,

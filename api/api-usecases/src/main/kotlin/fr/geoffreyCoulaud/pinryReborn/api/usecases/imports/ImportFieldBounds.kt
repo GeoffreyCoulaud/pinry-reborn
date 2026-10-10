@@ -1,5 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
+
 /**
  * Spec section 4.1's bounds, restated because the import is a second write path into tables whose only invariants live
  * on REST input DTOs. Each answers null when the field passes, else the reported reason.
@@ -29,7 +31,8 @@ object ImportFieldBounds {
             null
         }
 
-    fun blankFault(field: String, value: String): String? = if (value.isBlank()) "$field is blank" else null
+    fun httpAddressFault(field: String, url: String): String? =
+        if (HttpUrl.parse(url) == null) "$field is not an absolute http(s) address" else null
 
     /** The list is resolved inside one transaction, so its length is that transaction's size. */
     fun referenceCountFault(field: String, count: Int): String? =

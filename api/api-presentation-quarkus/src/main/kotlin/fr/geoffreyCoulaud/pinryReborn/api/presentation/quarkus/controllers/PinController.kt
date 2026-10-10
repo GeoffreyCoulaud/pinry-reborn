@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinLi
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.HttpUrlMapper.toHttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PersonMapper.toReference
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinSortStrategyMapper.toDomain
@@ -89,8 +90,8 @@ class PinController(
         val pin =
             pinCreator.createPin(
                 author = author,
-                sourceContextUrl = creationDto.sourceContextUrl.blankAsNone(),
-                sourceMediaUrl = creationDto.sourceMediaUrl.blankAsNone(),
+                sourceContextUrl = creationDto.sourceContextUrl?.toHttpUrl(),
+                sourceMediaUrl = creationDto.sourceMediaUrl?.toHttpUrl(),
                 description = creationDto.description,
                 tags = emptyList(),
             )
@@ -231,8 +232,8 @@ class PinController(
             .update(
                 pinId = pinId,
                 description = updateDto.description,
-                sourceContextUrl = updateDto.sourceContextUrl.blankAsNone(),
-                sourceMediaUrl = updateDto.sourceMediaUrl.blankAsNone(),
+                sourceContextUrl = updateDto.sourceContextUrl?.toHttpUrl(),
+                sourceMediaUrl = updateDto.sourceMediaUrl?.toHttpUrl(),
                 tagNames = updateDto.tags,
                 boardIds = updateDto.boardIds,
                 publisher = updateDto.publisher?.toReference(),
@@ -242,9 +243,6 @@ class PinController(
             )
             .let { RestResponse.ok(pinResponses.pin(it)) }
     }
-
-    /** A blank address is no address, on the write of one pin as on its creation. */
-    private fun String?.blankAsNone(): String? = this?.takeIf { it.isNotBlank() }
 
     companion object {
         const val DEFAULT_PAGE_SIZE = 20
