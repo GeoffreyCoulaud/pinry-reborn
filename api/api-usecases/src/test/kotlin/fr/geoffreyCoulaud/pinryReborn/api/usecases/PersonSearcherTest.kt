@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SearchEmptyQueryError
@@ -22,8 +23,8 @@ class PersonSearcherTest {
         Person(
             id = randomUUID(),
             author = user,
-            name = name,
-            urls = emptyList(),
+            name = checkNotNull(PersonName.parse(name)),
+            urls = emptySet(),
             createdAt = TestTime.now,
         )
 

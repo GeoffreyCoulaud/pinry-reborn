@@ -7,7 +7,11 @@ import java.util.UUID
 data class Person(
     override val id: UUID,
     val author: User,
-    val name: String,
-    val urls: List<String>,
+    val name: PersonName,
+    val urls: Set<HttpUrl>,
     val createdAt: Instant,
-) : Identifiable
+) : Identifiable {
+    companion object {
+        const val MAX_URLS = 20
+    }
+}

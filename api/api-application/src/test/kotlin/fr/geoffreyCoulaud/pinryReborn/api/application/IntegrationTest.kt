@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
@@ -91,14 +92,16 @@ abstract class IntegrationTest {
                     "sourceMediaUrl" to pin.sourceMediaUrl?.toString(),
                     "tags" to tags,
                     "boardIds" to boardIds.map { it.toString() },
-                    "publisher" to pin.publisher?.let { mapOf("name" to it.name, "urls" to it.urls) },
-                    "creators" to pin.creators.map { mapOf("name" to it.name, "urls" to it.urls) },
+                    "publisher" to pin.publisher?.let(::personBody),
+                    "creators" to pin.creators.map(::personBody),
                     "publishedAt" to pin.publishedAt?.toString(),
                 )
             )
             .`when`()
             .put("/api/v1/pins/${pin.id}")
             .then()
+
+    private fun personBody(person: Person) = mapOf("name" to person.name.text, "urls" to person.urls.map { "$it" })
 
     /** Attach `Authorization: Bearer <token>` to a REST-Assured request. */
     protected fun RequestSpecification.authenticatedAs(auth: AuthenticatedUser): RequestSpecification =

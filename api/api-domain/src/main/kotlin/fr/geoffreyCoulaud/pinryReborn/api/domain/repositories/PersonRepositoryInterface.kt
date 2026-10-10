@@ -1,16 +1,18 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.repositories
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 
 interface PersonRepositoryInterface {
     fun savePerson(person: Person): Person
 
-    /** The user's person of this name, folded on ASCII case, holding these addresses in any order. */
+    /** The user's person of this name, folded on ASCII case, holding these addresses. */
     fun findUserPerson(
         user: User,
-        name: String,
-        urls: Collection<String>,
+        name: PersonName,
+        urls: Set<HttpUrl>,
     ): Person?
 
     /**

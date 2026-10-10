@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PersonRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
@@ -21,11 +23,21 @@ class PersonRepositoryTest : RepositoryTest() {
 
     private fun savePerson(user: User, name: String, urls: List<String>): Person =
         repository.savePerson(
-            Person(id = randomUUID(), author = user, name = name, urls = urls, createdAt = storableNow())
+            Person(
+                id = randomUUID(),
+                author = user,
+                name = name(name),
+                urls = addresses(urls),
+                createdAt = storableNow(),
+            )
         )
 
     private fun find(user: User, name: String, urls: List<String>): Person? =
-        repository.findUserPerson(user = user, name = name, urls = urls)
+        repository.findUserPerson(user = user, name = name(name), urls = addresses(urls))
+
+    private fun name(text: String) = checkNotNull(PersonName.parse(text))
+
+    private fun addresses(texts: List<String>) = texts.map { checkNotNull(HttpUrl.parse(it)) }.toSet()
 
     private fun storedUrls(person: Person): String? =
         database.sqlQuery("select urls from persons where id = ?").setParameter(person.id).findOne()?.getString("urls")
@@ -37,7 +49,7 @@ class PersonRepositoryTest : RepositoryTest() {
 
         // Then
         assertEquals("""["$FIRST_URL","$SECOND_URL"]""", storedUrls(person))
-        assertEquals(listOf(FIRST_URL, SECOND_URL), person.urls)
+        assertEquals(addresses(listOf(FIRST_URL, SECOND_URL)), person.urls)
     }
 
     @Test
@@ -47,7 +59,7 @@ class PersonRepositoryTest : RepositoryTest() {
 
         // Then
         assertEquals("[]", storedUrls(person))
-        assertEquals(emptyList<String>(), person.urls)
+        assertEquals(emptySet<HttpUrl>(), person.urls)
     }
 
     @Test
@@ -91,7 +103,7 @@ class PersonRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given a saved person, Then findUserPerson misses it with its address's trailing slash`() {
-        // Given: no normalisation beyond the canonical order
+        // Given: an address keeps its trailing slash
         val user = createAndSaveUser()
         savePerson(user, "Alice", listOf(FIRST_URL))
 
@@ -200,7 +212,7 @@ class PersonRepositoryTest : RepositoryTest() {
         val found = matching(user, "Alice", limit = 2)
 
         // Then
-        assertEquals(listOf("Alice", "Alice"), found.map { it.name })
+        assertEquals(listOf("Alice", "Alice"), found.map { it.name.text })
     }
 
     @Test

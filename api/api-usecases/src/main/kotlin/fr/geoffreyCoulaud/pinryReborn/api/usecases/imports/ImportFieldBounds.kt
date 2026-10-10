@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 
 /**
  * Spec section 4.1's bounds, restated because the import is a second write path into tables whose only invariants live
@@ -10,8 +11,6 @@ object ImportFieldBounds {
     const val MAX_NAME_LENGTH = 200
     const val MAX_DESCRIPTION_LENGTH = 2000
     const val MAX_REFERENCES = 100
-    const val MAX_PERSON_URLS = 20
-    const val MAX_URL_LENGTH = 2000
 
     /** Spec section 4: anchored, so `elsewhere/media/x.png` is not a match, and never a `.` segment. */
     private val ENTRY_PATH = Regex("^media/[A-Za-z0-9._-]+$")
@@ -38,23 +37,9 @@ object ImportFieldBounds {
     fun referenceCountFault(field: String, count: Int): String? =
         if (count > MAX_REFERENCES) "$field holds more than $MAX_REFERENCES entries" else null
 
-    /** `PersonInputDto`'s bounds. */
-    fun personFault(name: String, urls: List<String>): String? {
-        val nameFault = nameFault(name)
-        return when {
-            nameFault != null -> "a person's $nameFault"
-            urls.size > MAX_PERSON_URLS -> "a person holds more than $MAX_PERSON_URLS addresses"
-            else -> urls.firstNotNullOfOrNull { addressFault("a person's address", it) }
-        }
-    }
-
-    /** A person's address or a collection's, under the same bounds (specification 2026-10-08, decision A). */
-    fun addressFault(field: String, url: String): String? =
-        when {
-            url.isBlank() -> "$field is blank"
-            url.length > MAX_URL_LENGTH -> "$field is longer than $MAX_URL_LENGTH characters"
-            else -> null
-        }
+    /** `PersonInputDto`'s count; the name and each address go through their own factories. */
+    fun personFault(urls: List<String>): String? =
+        if (urls.size > Person.MAX_URLS) "a person holds more than ${Person.MAX_URLS} addresses" else null
 
     /**
      * Traversal cannot reach the disk anyway: an entry name is only ever a ZIP lookup key. The check exists so a

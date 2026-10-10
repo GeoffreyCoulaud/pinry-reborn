@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -25,12 +27,11 @@ class PersonCreatorTest {
     @Test
     fun `Given a person the store finds, Then findOrCreate returns it and saves nothing`() {
         // Given
-        val existing =
-            Person(id = randomUUID(), author = user, name = "Alice", urls = listOf(URL), createdAt = TestTime.now)
+        val existing = Person(id = randomUUID(), author = user, name = NAME, urls = URLS, createdAt = TestTime.now)
         repository.found = existing
 
         // When
-        val found = creator.findOrCreate(name = "Alice", urls = listOf(URL), user = user)
+        val found = creator.findOrCreate(name = NAME, urls = URLS, user = user)
 
         // Then
         assertEquals(existing, found)
@@ -40,12 +41,12 @@ class PersonCreatorTest {
     @Test
     fun `Given no such person, Then findOrCreate saves one stamped from the clock`() {
         // When
-        val created = creator.findOrCreate(name = "Alice", urls = listOf(URL), user = user)
+        val created = creator.findOrCreate(name = NAME, urls = URLS, user = user)
 
         // Then
         assertEquals(listOf(created), repository.saved)
         assertEquals(clockInstant, created.createdAt)
-        assertEquals(listOf(URL), created.urls)
+        assertEquals(URLS, created.urls)
     }
 
     private fun clock() =
@@ -64,7 +65,7 @@ class PersonCreatorTest {
 
         override fun savePerson(person: Person): Person = person.also { saved += it }
 
-        override fun findUserPerson(user: User, name: String, urls: Collection<String>): Person? = found
+        override fun findUserPerson(user: User, name: PersonName, urls: Set<HttpUrl>): Person? = found
 
         override fun findPersonsForUserMatching(user: User, query: String, limit: Int) =
             error("A creation searches no person")
@@ -73,6 +74,7 @@ class PersonCreatorTest {
     }
 
     private companion object {
-        const val URL = "https://a.test/alice"
+        val NAME = checkNotNull(PersonName.parse("Alice"))
+        val URLS = setOf(checkNotNull(HttpUrl.parse("https://a.test/alice")))
     }
 }

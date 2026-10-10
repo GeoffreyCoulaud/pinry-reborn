@@ -313,7 +313,8 @@ class UserDataExportBuilder(
             publishedAt = pin.publishedAt,
         )
 
-    private fun exportedPerson(person: Person): ExportedPerson = ExportedPerson(person.name, person.urls)
+    private fun exportedPerson(person: Person): ExportedPerson =
+        ExportedPerson(person.name.text, person.urls.map { it.toString() }.sorted())
 
     /**
      * `null` when the pin has no image **or** when its bytes could not be written (spec §4): the second condition is

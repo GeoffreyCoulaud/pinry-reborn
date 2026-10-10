@@ -337,8 +337,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "pattern" : "\\S",
-              "maxLength" : 2000
+              "format" : "uri"
             },
             "maxItems" : 20
           }
@@ -355,7 +354,8 @@
             "type" : "array",
             "items" : {
               "type" : "string"
-            }
+            },
+            "uniqueItems" : true
           }
         }
       },
