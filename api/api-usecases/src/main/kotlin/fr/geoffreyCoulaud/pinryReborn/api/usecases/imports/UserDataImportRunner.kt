@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -448,13 +449,14 @@ class UserDataImportRunner(
             fault != null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, collection.url, fault)
             else -> {
                 val boardName = collection.board ?: collection.name
-                if (remoteCollectionLinker.link(user, collection.url, collection.name, boardName, now)) tally.created++
+                val url = ImportedAddress.read(collection.url)
+                if (remoteCollectionLinker.link(user, url, collection.name, boardName, now)) tally.created++
             }
         }
     }
 
     private fun collectionFault(collection: ImportedCollection): String? =
-        ImportFieldBounds.addressFault(URL_FIELD, collection.url)
+        ImportFieldBounds.httpAddressFault(URL_FIELD, collection.url)
             ?: ImportFieldBounds.nameFault(collection.name)
             ?: collection.board?.let { board -> ImportFieldBounds.nameFault(board)?.let { "board $it" } }
 
@@ -595,6 +597,7 @@ class UserDataImportRunner(
             ?: ImportFieldBounds.referenceCountFault(BOARDS_FIELD, pin.boards.size)
             ?: ImportFieldBounds.referenceCountFault(CREATORS_FIELD, pin.creators.size)
             ?: ImportFieldBounds.referenceCountFault(COLLECTIONS_FIELD, pin.collections.size)
+            ?: pin.collections.firstNotNullOfOrNull { ImportFieldBounds.httpAddressFault(COLLECTIONS_FIELD, it) }
             ?: (listOfNotNull(pin.publisher) + pin.creators).firstNotNullOfOrNull {
                 ImportFieldBounds.personFault(it.name, it.urls)
             }
@@ -708,7 +711,7 @@ class UserDataImportRunner(
                     boardNames = pin.boards.map { it.name },
                     publisher = pin.publisher,
                     creators = pin.creators,
-                    collectionUrls = pin.collections,
+                    collectionUrls = pin.collections.map(ImportedAddress::read),
                 )
         )
     }
@@ -761,7 +764,7 @@ class UserDataImportRunner(
         val boardNames: List<String>,
         val publisher: ImportedPerson?,
         val creators: List<ImportedPerson>,
-        val collectionUrls: List<String>,
+        val collectionUrls: List<HttpUrl>,
     )
 
     private companion object {

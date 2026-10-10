@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
@@ -71,7 +72,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
             RemoteCollection(
                 id = UUID.randomUUID(),
                 author = board.author,
-                url = url,
+                url = checkNotNull(HttpUrl.parse(url)),
                 name = "Collection of ${board.name}",
                 board = board,
                 createdAt = board.createdAt,
@@ -179,7 +180,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
             collections =
                 remoteCollectionRepository
                     .findAllRemoteCollectionsForUser(user)
-                    .map { CollectionFacts(it.url, it.name, it.board.name) }
+                    .map { CollectionFacts(it.url.toString(), it.name, it.board.name) }
                     .toSet(),
         )
     }

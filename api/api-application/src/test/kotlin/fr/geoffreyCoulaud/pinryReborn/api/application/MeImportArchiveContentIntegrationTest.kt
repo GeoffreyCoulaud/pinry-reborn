@@ -352,6 +352,25 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         assertEquals(listOf(board.id), pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { it.id })
     }
 
+    @Test
+    fun `Given a collection line in capitals, Then a pin line naming its normalised address joins its board`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val builder =
+            ImportArchiveBuilder(objectMapper)
+                .manifest(announcedPins = 1)
+                .collections(ImportArchiveBuilder.collectionLine("HTTPS://X.test/c", "Feed"))
+        builder.pins(pinNaming(builder, "sample.png", "https://x.test/c"))
+
+        // When
+        val importId = importArchive(auth, builder.bytes())
+
+        // Then
+        assertEquals(emptyList<String>(), issueKinds(auth, importId))
+        assertEquals(listOf("https://x.test/c"), QRemoteCollectionModel().findList().map { it.url })
+        assertEquals(listOf("Feed"), activePinsOf(auth.user).single().boards.map { it.name })
+    }
+
     /** A pin line over its own medium, so no line is skipped as one the account already holds. */
     private fun pinNaming(
         builder: ImportArchiveBuilder,

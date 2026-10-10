@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
@@ -18,8 +19,8 @@ class RemoteCollectionRepository(persistor: Persistor) : RemoteCollectionReposit
     override fun saveRemoteCollection(collection: RemoteCollection): RemoteCollection =
         sqlRepository.saveAndReturn(collection.toModel()).toDomain()
 
-    override fun findUserRemoteCollectionByUrl(user: User, url: String): RemoteCollection? =
-        QRemoteCollectionModel().author.id.equalTo(user.id).url.equalTo(url).findOne()?.toDomain()
+    override fun findUserRemoteCollectionByUrl(user: User, url: HttpUrl): RemoteCollection? =
+        QRemoteCollectionModel().author.id.equalTo(user.id).url.equalTo(url.toString()).findOne()?.toDomain()
 
     override fun findRemoteCollectionsForBoard(boardId: UUID): List<RemoteCollection> =
         QRemoteCollectionModel()

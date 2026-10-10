@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
@@ -21,7 +22,7 @@ class RemoteCollectionLinker(
      * The reads and the writes in one transaction, so a concurrent import converges on one row. An address the user
      * already holds keeps its link; a board name nobody holds is created, empty, at [createdAt]. True when it was.
      */
-    fun link(user: User, url: String, name: String, boardName: String, createdAt: Instant): Boolean =
+    fun link(user: User, url: HttpUrl, name: String, boardName: String, createdAt: Instant): Boolean =
         transactionRunner.inTransaction {
             if (remoteCollectionRepository.findUserRemoteCollectionByUrl(user, url) != null) {
                 false
@@ -36,7 +37,7 @@ class RemoteCollectionLinker(
         }
 
     /** The board the user's collection at [url] links to, or null for an address the user does not hold. */
-    fun boardOf(user: User, url: String): Board? =
+    fun boardOf(user: User, url: HttpUrl): Board? =
         remoteCollectionRepository.findUserRemoteCollectionByUrl(user, url)?.board
 
     private fun createBoard(user: User, name: String, createdAt: Instant): Board =

@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.HttpUrlModelMapper.toHttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.RemoteCollectionModel
@@ -12,7 +13,7 @@ object RemoteCollectionModelMapper {
         RemoteCollectionModel(
             id = id,
             author = author.toModel(),
-            url = url,
+            url = url.toString(),
             name = name,
             board = board.toModel(),
             createdAt = createdAt,
@@ -22,7 +23,7 @@ object RemoteCollectionModelMapper {
         RemoteCollection(
             id = id,
             author = author.toDomain(),
-            url = url,
+            url = url.toHttpUrl(),
             name = name,
             board = board.toDomain(),
             createdAt = createdAt,

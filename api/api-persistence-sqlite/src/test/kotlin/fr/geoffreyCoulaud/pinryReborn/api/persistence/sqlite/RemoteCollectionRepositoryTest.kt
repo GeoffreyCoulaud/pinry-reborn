@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QRemoteCollectionModel
@@ -38,7 +39,7 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
             RemoteCollection(
                 id = randomUUID(),
                 author = board.author,
-                url = "https://remote.test/${createRandomString()}",
+                url = checkNotNull(HttpUrl.parse("https://remote.test/${createRandomString()}")),
                 name = name,
                 board = board,
                 createdAt = storableNow(),
@@ -78,7 +79,11 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
         val collection = link(createAndSaveBoard(createAndSaveUser()))
 
         // When
-        val found = repository.findUserRemoteCollectionByUrl(collection.author, collection.url + "/")
+        val found =
+            repository.findUserRemoteCollectionByUrl(
+                collection.author,
+                checkNotNull(HttpUrl.parse("${collection.url}/")),
+            )
 
         // Then
         assertNull(found)
@@ -129,7 +134,7 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
         val urls = storedUrls()
 
         // Then
-        assertEquals(listOf(first.url, second.url).sorted(), urls)
+        assertEquals(listOf(first.url, second.url).map { it.toString() }.sorted(), urls)
     }
 
     @Test
@@ -162,7 +167,7 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
         boardRepository.permanentlyDeleteBoard(deleted)
 
         // Then
-        assertEquals(listOf(kept.url), storedUrls())
+        assertEquals(listOf(kept.url.toString()), storedUrls())
     }
 
     @Test
@@ -178,7 +183,7 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
         boardRepository.permanentlyDeleteAllRecycledBoardsForUser(user)
 
         // Then
-        assertEquals(listOf(kept.url), storedUrls())
+        assertEquals(listOf(kept.url.toString()), storedUrls())
     }
 
     @Test
@@ -195,6 +200,6 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
         boardRepository.permanentlyDeleteAllBoardsForUser(user)
 
         // Then
-        assertEquals(listOf(kept.url), storedUrls())
+        assertEquals(listOf(kept.url.toString()), storedUrls())
     }
 }

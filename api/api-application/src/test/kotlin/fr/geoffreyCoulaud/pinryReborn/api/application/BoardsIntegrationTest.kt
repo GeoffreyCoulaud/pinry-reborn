@@ -158,7 +158,7 @@ class BoardsIntegrationTest : IntegrationTest() {
             RemoteCollection(
                 id = UUID.randomUUID(),
                 author = board.author,
-                url = url,
+                url = checkNotNull(HttpUrl.parse(url)),
                 name = name,
                 board = board,
                 createdAt = board.createdAt,
