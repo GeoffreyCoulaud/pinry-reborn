@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -35,7 +36,7 @@ class MeMediaDownloadControllerTest {
                     listOf(
                         MediaDownload(
                             pinId,
-                            "https://x/i.png",
+                            checkNotNull(HttpUrl.parse("https://x/i.png")),
                             DownloadStatus.PENDING,
                             null,
                             null,

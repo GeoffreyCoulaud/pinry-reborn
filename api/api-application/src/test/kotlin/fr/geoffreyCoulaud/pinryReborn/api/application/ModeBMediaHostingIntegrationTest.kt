@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
 import org.junit.jupiter.api.AfterAll
@@ -366,12 +367,16 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given a non-http source URL, Then the request is rejected 400 before any async work`() {
+    fun `Given a source URL without a host, Then the request is rejected VALIDATION_ERROR before any async work`() {
         // Given
         val (auth, pinId) = createUserAndPin()
 
-        // When / Then: an ftp scheme is rejected synchronously as an invalid source URL
-        requestDownload(pinId, auth, "ftp://example.com/media.png").then().statusCode(400)
+        // When / Then: the request refuses it, not the worker
+        requestDownload(pinId, auth, "https:///path")
+            .then()
+            .statusCode(400)
+            .body("code", equalTo("VALIDATION_ERROR"))
+            .body("detail", containsString("sourceUrl"))
 
         // Then: no download was created, so the pin stays NONE
         assertTrue(statusOf(pinId, auth).getString("status") == "NONE", "no download should exist")

@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
@@ -24,7 +25,7 @@ import java.util.UUID
 class EbeanMediaDownloadRepository(private val persistor: Persistor) : MediaDownloadRepositoryInterface {
     // No explicit beginTransaction here: delete+save and the bulk CAS updates run under the ambient
     // transaction when TransactionRunner opened one (Ebean binds it to the thread), else auto-commit.
-    override fun upsertPending(pinId: UUID, sourceUrl: String, taskId: UUID, now: Instant): MediaDownload {
+    override fun upsertPending(pinId: UUID, sourceUrl: HttpUrl, taskId: UUID, now: Instant): MediaDownload {
         QMediaDownloadModel().pinId.equalTo(pinId).delete()
         val model =
             MediaDownload(

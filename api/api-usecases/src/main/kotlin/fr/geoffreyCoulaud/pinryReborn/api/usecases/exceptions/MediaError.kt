@@ -19,9 +19,6 @@ class MediaTooLongError(cause: Throwable) : MediaError("The video lasts too long
 class MediaCodecUnsupportedError(message: String, cause: Throwable) :
     MediaError(message, ErrorCode.MEDIA_CODEC_UNSUPPORTED, cause)
 
-class MediaSourceUrlInvalidError(cause: Throwable? = null) :
-    MediaError("Invalid source URL", ErrorCode.MEDIA_SOURCE_URL_INVALID, cause)
-
 // The image family's 404, as for a pin nobody can reach: the message names the case, the code names
 // the family, and a requester learns nothing about another account's rows.
 class MediaDownloadDoesNotExistError : MediaError("Pin has no media download", ErrorCode.MEDIA_DOES_NOT_EXIST)

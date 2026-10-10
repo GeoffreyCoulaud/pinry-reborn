@@ -13,7 +13,7 @@ object MediaDownloadDtoMapper {
     fun MediaDownload.toDto() =
         MediaDownloadOutputDto(
             pinId = pinId,
-            sourceUrl = sourceUrl,
+            sourceUrl = sourceUrl.toString(),
             status = status.toDto(),
             requestedAt = requestedAt,
             updatedAt = updatedAt,

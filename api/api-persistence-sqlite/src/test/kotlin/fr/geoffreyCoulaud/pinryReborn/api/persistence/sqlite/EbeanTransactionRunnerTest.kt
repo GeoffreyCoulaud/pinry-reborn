@@ -33,6 +33,7 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
     private val userRepository = UserRepository(persistor)
     private val pinRepository = PinRepository(persistor)
     private val now = Instant.parse("2026-07-10T00:00:00Z")
+    private val sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png"))
 
     private fun newDownloadTask(pinId: UUID) = NewTask("pin.download", pinId.toString(), now, maxAttempts = 5)
 
@@ -71,7 +72,7 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
         val pinId = randomUUID()
         val taskId = runner.inTransaction {
             val task = queue.enqueue(newDownloadTask(pinId))
-            downloads.upsertPending(pinId, "https://x/i.png", task.id, now)
+            downloads.upsertPending(pinId, sourceUrl, task.id, now)
             task.id
         }
         assertNotNull(queue.findById(taskId))
@@ -84,7 +85,7 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
         assertThrows(IllegalStateException::class.java) {
             runner.inTransaction {
                 val task = queue.enqueue(newDownloadTask(pinId))
-                downloads.upsertPending(pinId, "https://x/i.png", task.id, now)
+                downloads.upsertPending(pinId, sourceUrl, task.id, now)
                 error("boom")
             }
         }

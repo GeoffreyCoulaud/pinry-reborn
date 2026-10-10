@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
@@ -22,7 +23,7 @@ class MediaDownloadDtoMapperTest {
     private fun download(status: DownloadStatus, reason: DownloadReason?) =
         MediaDownload(
             pinId = pinId,
-            sourceUrl = "https://x/i.png",
+            sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png")),
             status = status,
             reasonCode = reason,
             lastError = "a transient error nobody outside the server reads",

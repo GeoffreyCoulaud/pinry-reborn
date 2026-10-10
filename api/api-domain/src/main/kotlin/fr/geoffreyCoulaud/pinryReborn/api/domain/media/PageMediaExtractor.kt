@@ -1,11 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.media
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
+
 interface PageMediaExtractor {
     /**
      * The video the page at [pageUrl] shows, its file deleted once the stream closes, [heartbeat] called while the
      * extraction runs. Else a [PageExtractionException], or a [FetchException] for what the network refused.
      */
-    fun extract(pageUrl: String, heartbeat: () -> Unit): FetchedMedia
+    fun extract(pageUrl: HttpUrl, heartbeat: () -> Unit): FetchedMedia
 }
 
 /** Base for what the page itself makes the extractor refuse (ADR 0048, decision 3). */

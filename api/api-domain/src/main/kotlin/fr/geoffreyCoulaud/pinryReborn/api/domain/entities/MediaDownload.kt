@@ -7,7 +7,7 @@ import java.util.UUID
 
 data class MediaDownload(
     val pinId: UUID,
-    val sourceUrl: String,
+    val sourceUrl: HttpUrl,
     val status: DownloadStatus,
     val reasonCode: DownloadReason?,
     val lastError: String?,

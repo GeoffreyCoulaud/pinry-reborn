@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
@@ -12,12 +13,13 @@ import org.junit.jupiter.api.Test
 
 class PinMediaStateTest {
     private val pinId = randomUUID()
+    private val sourceUrl = checkNotNull(HttpUrl.parse("https://x"))
 
     private fun media() =
         Media.StillImage(randomUUID(), pinId, "image/png", 1, 1, 1, "h", "originals/x/$pinId/i.png", Instant.EPOCH)
 
     private fun download(status: DownloadStatus, reason: DownloadReason? = null) =
-        MediaDownload(pinId, "https://x", status, reason, null, randomUUID(), Instant.EPOCH, Instant.EPOCH)
+        MediaDownload(pinId, sourceUrl, status, reason, null, randomUUID(), Instant.EPOCH, Instant.EPOCH)
 
     @Test
     fun `Given no image and no download, Then NONE`() {

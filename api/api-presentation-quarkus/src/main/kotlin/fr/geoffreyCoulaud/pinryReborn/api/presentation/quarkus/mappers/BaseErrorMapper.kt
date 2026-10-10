@@ -74,7 +74,6 @@ class BaseErrorMapper : ExceptionMapper<BaseError> {
             ErrorCode.MEDIA_TOO_LONG -> ProblemCode.MEDIA_TOO_LONG to UNPROCESSABLE_ENTITY_STATUS_CODE
             ErrorCode.MEDIA_CODEC_UNSUPPORTED ->
                 ProblemCode.MEDIA_CODEC_UNSUPPORTED to UNSUPPORTED_MEDIA_TYPE.statusCode
-            ErrorCode.MEDIA_SOURCE_URL_INVALID -> ProblemCode.MEDIA_SOURCE_URL_INVALID to BAD_REQUEST.statusCode
             ErrorCode.MEDIA_DOWNLOAD_IN_PROGRESS -> ProblemCode.MEDIA_DOWNLOAD_IN_PROGRESS to CONFLICT.statusCode
             ErrorCode.MEDIA_RENDITION_SIZE_INVALID -> ProblemCode.MEDIA_RENDITION_SIZE_INVALID to BAD_REQUEST.statusCode
             ErrorCode.MEDIA_RENDITION_UNAVAILABLE ->

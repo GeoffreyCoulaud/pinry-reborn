@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.FetchAccessDeniedException
@@ -67,7 +68,7 @@ class DownloadPinMedia(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun stageFromSource(pinId: UUID, sourceUrl: String, context: TaskContext): StagedFile =
+    private fun stageFromSource(pinId: UUID, sourceUrl: HttpUrl, context: TaskContext): StagedFile =
         try {
             openSource(sourceUrl, context).use { mediaIngestion.stage(LeaseRenewingStream(it.stream, context)) }
         } catch (e: FetchException) {
@@ -90,7 +91,7 @@ class DownloadPinMedia(
         }
 
     // A page goes to the extractor, anything else down the direct path, where the probe judges (ADR 0048, decision 1).
-    private fun openSource(sourceUrl: String, context: TaskContext): FetchedMedia {
+    private fun openSource(sourceUrl: HttpUrl, context: TaskContext): FetchedMedia {
         val fetched = mediaFetcher.openStream(sourceUrl)
         val mediaType = fetched.contentType.orEmpty().substringBefore(';').trim().lowercase()
         if (mediaType !in PAGE_TYPES) return fetched

@@ -94,7 +94,7 @@ class PinListIntegrationTest : IntegrationTest() {
         )
         mediaDownloadRepository.upsertPending(
             pinId = downloading,
-            sourceUrl = "https://example.com/i.png",
+            sourceUrl = checkNotNull(HttpUrl.parse("https://example.com/i.png")),
             taskId = UUID.randomUUID(),
             now = FIXED_INSTANT,
         )

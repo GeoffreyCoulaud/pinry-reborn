@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
@@ -25,6 +26,10 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     private val pins = PinRepository(persistor)
     private val users = UserRepository(persistor)
     private val now = Instant.parse("2026-07-10T00:00:00Z")
+
+    // The suite names its addresses as text, which the port takes parsed.
+    private fun EbeanMediaDownloadRepository.upsertPending(pinId: UUID, sourceUrl: String, taskId: UUID, now: Instant) =
+        upsertPending(pinId, checkNotNull(HttpUrl.parse(sourceUrl)), taskId, now)
 
     private fun saveUser(): User = users.saveUser(User(randomUUID(), createRandomString(), createdAt = now))
 
@@ -52,7 +57,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
         repository.upsertPending(pinId, "https://x/a.png", randomUUID(), now)
         repository.markFailed(pinId, DownloadReason.NOT_FOUND, now)
         val replaced = repository.upsertPending(pinId, "https://x/b.png", randomUUID(), now)
-        assertEquals("https://x/b.png", replaced.sourceUrl)
+        assertEquals("https://x/b.png", replaced.sourceUrl.toString())
         assertEquals(DownloadStatus.PENDING, repository.findByPinId(pinId)?.status)
         assertNull(repository.findByPinId(pinId)?.reasonCode)
     }
