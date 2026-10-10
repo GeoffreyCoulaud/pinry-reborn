@@ -12,6 +12,7 @@ import {
 	readyPin,
 	renderApp,
 	sessionRoute,
+	typeInOneGo,
 } from "../test/app";
 import { server } from "../test/server";
 
@@ -135,7 +136,7 @@ describe("credit a pin's people", () => {
 		account(original, record);
 		const { user, dialog, publisher } = await openTheForm(original);
 
-		await user.type(publisher, "Ad");
+		await typeInOneGo(publisher, "Ad");
 		// The homonyms read apart by the hosts of their addresses.
 		await user.click(
 			await screen.findByRole("option", {

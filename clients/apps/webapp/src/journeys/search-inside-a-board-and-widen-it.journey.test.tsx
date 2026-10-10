@@ -11,6 +11,7 @@ import {
 	renderApp,
 	searchedPage,
 	sessionRoute,
+	typeInOneGo,
 } from "../test/app";
 import { server } from "../test/server";
 
@@ -50,7 +51,7 @@ describe("search inside a board and widen it", () => {
 		expect(
 			await screen.findByRole("img", { name: ALSO_HELD.description }),
 		).toBeVisible();
-		await userEvent.type(field(), "cat");
+		await typeInOneGo(field(), "cat");
 
 		// Both at once: the grid is pending between the two pages and holds neither tile then.
 		await waitFor(() => {

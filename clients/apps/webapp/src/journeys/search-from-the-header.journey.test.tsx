@@ -9,6 +9,7 @@ import {
 	renderApp,
 	searchedPage,
 	sessionRoute,
+	typeInOneGo,
 } from "../test/app";
 import { server } from "../test/server";
 
@@ -41,7 +42,7 @@ describe("search from the header", () => {
 		expect(
 			await screen.findByRole("img", { name: HARBOUR.description }),
 		).toBeVisible();
-		await userEvent.type(field(), "cat");
+		await typeInOneGo(field(), "cat");
 
 		expect(
 			await screen.findByRole("heading", { name: "Search results" }),
