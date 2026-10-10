@@ -18,7 +18,7 @@ object BoardMapper {
             pinCount = summary.pinCount,
             coverUrl = summary.coverPinId?.let { PinMediaStateMapper.mediaUrl(it) },
             remoteCollections =
-                summary.remoteCollections.map { RemoteCollectionOutputDto(name = it.name, url = it.url) },
+                summary.remoteCollections.map { RemoteCollectionOutputDto(name = it.name, url = it.url.toString()) },
         )
 
     fun Board.toRecycledDto() = RecycledBoardDto(id = id, name = name, description = description)

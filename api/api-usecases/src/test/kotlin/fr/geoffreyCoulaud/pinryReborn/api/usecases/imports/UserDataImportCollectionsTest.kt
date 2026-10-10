@@ -1,9 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import io.mockk.every
 import io.mockk.verify
+import java.net.URI
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -38,7 +40,7 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         assertEquals("", board.description)
         assertEquals(now, board.createdAt)
         assertNull(board.softDeletedAt)
-        assertEquals(listOf(FEED_URL to board), linked.map { it.url to it.board })
+        assertEquals(listOf(FEED_URL to board), linked.map { it.url.toString() to it.board })
         assertEquals(now, linked.single().createdAt)
         assertEquals(listOf(board), savedPins.single().boards)
         assertEquals(1, stored.createdBoards)
@@ -90,7 +92,8 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
     fun `Given an address already held, Then its link is kept and a pin line naming it and its board joins once`() {
         // Given
         val held = anExistingBoard("Held")
-        val existing = RemoteCollection(randomUUID(), user, FEED_URL, "Feed", held, accountCreatedAt)
+        val existing =
+            RemoteCollection(randomUUID(), user, checkNotNull(HttpUrl.parse(FEED_URL)), "Feed", held, accountCreatedAt)
         val line = ImportedCollection(url = FEED_URL, name = "Renamed", board = "Other")
         val source =
             FakeArchiveSource(
@@ -119,6 +122,7 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         val lines =
             listOf(
                 ImportedCollection(url = " ", name = "Feed"),
+                ImportedCollection(url = "ftp://remote.test/feed", name = "Feed"),
                 ImportedCollection(url = FEED_URL + "x".repeat(OVER_LONG_URL), name = "Feed"),
                 ImportedCollection(url = FEED_URL, name = " "),
                 ImportedCollection(url = FEED_URL, name = "n".repeat(OVER_LONG_NAME)),
@@ -140,8 +144,9 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         assertEquals(expected.size, stored.issueCount)
         assertEquals(
             listOf(
-                "url is blank",
-                "url is longer than 2000 characters",
+                "url is not an absolute http(s) address",
+                "url is not an absolute http(s) address",
+                "url is not an absolute http(s) address",
                 "name is blank",
                 "name is longer than 200 characters",
                 "board name is blank",
@@ -166,10 +171,26 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         assertTrue(savedPins.isEmpty())
     }
 
+    @Test
+    fun `Given a pin line naming an ftp collection, Then it is reported invalid and no pin is created`() {
+        // Given
+        val line = aPin().copy(collections = listOf("ftp://remote.test/feed"))
+        stubWalk(FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, line)), media = everyMedium))
+        stubIssues()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(listOf("collections is not an absolute http(s) address"), savedIssues.map { it.detail })
+        assertTrue(savedPins.isEmpty())
+    }
+
     private fun stubCollectionLookup(vararg existing: RemoteCollection) {
+        // MockK hands the value class over unboxed, as its URI.
         every { remoteCollectionRepository.findUserRemoteCollectionByUrl(user, any()) } answers
             {
-                (existing.toList() + linked).firstOrNull { collection -> collection.url == secondArg<String>() }
+                (existing.toList() + linked).firstOrNull { collection -> collection.url.uri == secondArg<URI>() }
             }
     }
 

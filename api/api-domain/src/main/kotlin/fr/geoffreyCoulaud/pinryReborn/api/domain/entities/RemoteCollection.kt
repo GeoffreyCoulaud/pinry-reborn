@@ -7,7 +7,7 @@ import java.util.UUID
 data class RemoteCollection(
     override val id: UUID,
     val author: User,
-    val url: String,
+    val url: HttpUrl,
     val name: String,
     val board: Board,
     val createdAt: Instant,

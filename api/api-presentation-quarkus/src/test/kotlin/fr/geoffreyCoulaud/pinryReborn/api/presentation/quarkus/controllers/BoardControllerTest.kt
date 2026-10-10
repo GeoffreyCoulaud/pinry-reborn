@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
@@ -174,7 +175,7 @@ class BoardControllerTest {
             RemoteCollection(
                 id = randomUUID(),
                 author = user,
-                url = "https://remote.test/${createRandomString()}",
+                url = checkNotNull(HttpUrl.parse("https://remote.test/${createRandomString()}")),
                 name = createRandomString(),
                 board = board,
                 createdAt = TestTime.now,
@@ -193,7 +194,7 @@ class BoardControllerTest {
         assertEquals(board.id, body.id)
         assertEquals(5, body.pinCount)
         assertEquals(
-            listOf(RemoteCollectionOutputDto(name = collection.name, url = collection.url)),
+            listOf(RemoteCollectionOutputDto(name = collection.name, url = collection.url.toString())),
             body.remoteCollections,
         )
     }

@@ -10,7 +10,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "remote_collections")
-// An address is an identity per author, compared exactly: the server normalises no address.
+// An address is an identity per author, stored as `HttpUrl` normalises it.
 @Index(
     name = "ux_remote_collections_author_url",
     definition = "create unique index ux_remote_collections_author_url on remote_collections (author_id, url)",

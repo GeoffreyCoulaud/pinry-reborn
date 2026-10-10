@@ -211,7 +211,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         RemoteCollection(
             id = randomUUID(),
             author = user,
-            url = url,
+            url = checkNotNull(HttpUrl.parse(url)),
             name = "collection",
             board = board,
             createdAt = now,
