@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
@@ -65,7 +66,7 @@ class PinUpdaterTest {
 
         // Then
         assertEquals("A new description", result.description)
-        assertEquals("https://example.com/new", result.sourceContextUrl)
+        assertEquals("https://example.com/new", result.sourceContextUrl.toString())
         assertEquals(null, result.sourceMediaUrl)
         assertEquals(listOf(tag), result.tags)
         assertEquals(listOf(board), result.boards)
@@ -169,7 +170,7 @@ class PinUpdaterTest {
         useCase.update(
             pinId = pinId,
             description = "A new description",
-            sourceContextUrl = "https://example.com/new",
+            sourceContextUrl = HttpUrl.parse("https://example.com/new"),
             sourceMediaUrl = null,
             tagNames = tagNames,
             boardIds = boardIds,
@@ -186,8 +187,8 @@ class PinUpdaterTest {
         Pin(
             id = randomUUID(),
             author = author,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
+            sourceContextUrl = HttpUrl.parse("https://example.com"),
+            sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
             description = "A pin",
             tags = emptyList(),
             boards = emptyList(),

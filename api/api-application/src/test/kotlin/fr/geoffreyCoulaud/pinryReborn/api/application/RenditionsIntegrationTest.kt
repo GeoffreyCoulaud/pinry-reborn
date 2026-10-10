@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ImageProbe
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.ProbeResult
@@ -62,8 +63,8 @@ class RenditionsIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "rendition test",
                 tags = emptyList(),
             )

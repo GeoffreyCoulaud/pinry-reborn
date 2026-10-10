@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImportIssue
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
@@ -161,8 +162,8 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.png",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.png"),
                 description = "Account deletion completeness test pin",
                 tags = emptyList(),
             )

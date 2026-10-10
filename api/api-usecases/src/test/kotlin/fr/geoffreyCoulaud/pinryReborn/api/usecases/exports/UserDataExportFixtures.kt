@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
@@ -213,7 +214,7 @@ internal abstract class UserDataExportFixtures : BaseTest() {
         Pin(
             id = id,
             author = user,
-            sourceContextUrl = "https://example.org/a",
+            sourceContextUrl = HttpUrl.parse("https://example.org/a"),
             sourceMediaUrl = null,
             description = "desc",
             tags = tags,

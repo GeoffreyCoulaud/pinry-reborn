@@ -153,7 +153,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
             id = pin.id,
             mediaId = media.id,
             description = pin.description,
-            sourceMediaUrl = pin.sourceMediaUrl,
+            sourceMediaUrl = pin.sourceMediaUrl?.toString(),
             createdAt = pin.createdAt,
             updatedAt = pin.updatedAt,
             deletedAt = pin.softDeletedAt,
@@ -173,7 +173,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         val pins = activePinsOf(user) + pinRepository.findAllSoftDeletedPinsForUser(user)
         val boards = boardRepository.findActiveBoardsForUser(user) + boardRepository.findRecycledBoardsForUser(user)
         return AccountFacts(
-            pins = pins.associate { it.sourceContextUrl to factsOf(it) },
+            pins = pins.associate { it.sourceContextUrl?.toString() to factsOf(it) },
             boards = boards.associate { it.name to it.softDeletedAt },
             tags = tagRepository.findAllTagsForUser(user).map { it.name }.toSet(),
             collections =

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -15,8 +16,8 @@ class PinCreator(
 ) {
     fun createPin(
         author: User,
-        sourceContextUrl: String?,
-        sourceMediaUrl: String?,
+        sourceContextUrl: HttpUrl?,
+        sourceMediaUrl: HttpUrl?,
         description: String,
         tags: List<String>,
     ): Pin {

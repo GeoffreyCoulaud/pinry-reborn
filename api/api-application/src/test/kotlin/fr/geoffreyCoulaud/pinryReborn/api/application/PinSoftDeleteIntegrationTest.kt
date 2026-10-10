@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -41,8 +42,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "To be deleted",
                 tags = emptyList(),
             )
@@ -67,8 +68,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Still accessible",
                 tags = emptyList(),
             )
@@ -93,8 +94,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Recycled",
                 tags = emptyList(),
             )
@@ -120,8 +121,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Beautiful landscape painting",
                 tags = emptyList(),
             )
@@ -146,8 +147,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Double delete",
                 tags = emptyList(),
             )
@@ -166,8 +167,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = owner.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Not yours",
                 tags = emptyList(),
             )
@@ -182,8 +183,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Unauth",
                 tags = emptyList(),
             )
@@ -200,16 +201,16 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin1 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/1",
-                sourceMediaUrl = "https://example.com/img1.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/1"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img1.jpg"),
                 description = "Deleted 1",
                 tags = emptyList(),
             )
         val pin2 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/2",
-                sourceMediaUrl = "https://example.com/img2.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/2"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img2.jpg"),
                 description = "Deleted 2",
                 tags = emptyList(),
             )
@@ -234,16 +235,16 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin1 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/1",
-                sourceMediaUrl = "https://example.com/img1.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/1"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img1.jpg"),
                 description = "Deleted first",
                 tags = emptyList(),
             )
         val pin2 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/2",
-                sourceMediaUrl = "https://example.com/img2.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/2"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img2.jpg"),
                 description = "Deleted second",
                 tags = emptyList(),
             )
@@ -271,16 +272,16 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin1 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/1",
-                sourceMediaUrl = "https://example.com/img1.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/1"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img1.jpg"),
                 description = "Deleted first",
                 tags = emptyList(),
             )
         val pin2 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/2",
-                sourceMediaUrl = "https://example.com/img2.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/2"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img2.jpg"),
                 description = "Deleted second",
                 tags = emptyList(),
             )
@@ -309,8 +310,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin1 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/1",
-                sourceMediaUrl = "https://example.com/img1.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/1"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img1.jpg"),
                 description = "Created first",
                 tags = emptyList(),
             )
@@ -318,8 +319,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin2 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/2",
-                sourceMediaUrl = "https://example.com/img2.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/2"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img2.jpg"),
                 description = "Created second",
                 tags = emptyList(),
             )
@@ -349,8 +350,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "To restore",
                 tags = emptyList(),
             )
@@ -378,8 +379,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Restored",
                 tags = emptyList(),
             )
@@ -404,8 +405,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Active",
                 tags = emptyList(),
             )
@@ -423,8 +424,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Permanent delete",
                 tags = emptyList(),
             )
@@ -445,8 +446,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Still active",
                 tags = emptyList(),
             )
@@ -464,16 +465,16 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin1 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/1",
-                sourceMediaUrl = "https://example.com/img1.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/1"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img1.jpg"),
                 description = "Bin 1",
                 tags = emptyList(),
             )
         val pin2 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/2",
-                sourceMediaUrl = "https://example.com/img2.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/2"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img2.jpg"),
                 description = "Bin 2",
                 tags = emptyList(),
             )
@@ -503,8 +504,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Tag deleted",
                 tags = emptyList(),
             )
@@ -520,8 +521,8 @@ class PinSoftDeleteIntegrationTest : IntegrationTest() {
     private fun createPin(author: User, description: String = "A pin"): Pin =
         pinCreator.createPin(
             author = author,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
+            sourceContextUrl = HttpUrl.parse("https://example.com"),
+            sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
             description = description,
             tags = emptyList(),
         )

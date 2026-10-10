@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
@@ -58,8 +59,8 @@ class MediaHostingIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Image hosting test pin",
                 tags = emptyList(),
             )

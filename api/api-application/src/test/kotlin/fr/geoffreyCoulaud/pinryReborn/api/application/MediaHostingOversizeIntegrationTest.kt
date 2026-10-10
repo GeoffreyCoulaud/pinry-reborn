@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
@@ -76,8 +77,8 @@ class MediaHostingOversizeIntegrationTest : IntegrationTest() {
     private fun aPin(auth: AuthenticatedUser) =
         pinCreator.createPin(
             author = auth.user,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
+            sourceContextUrl = HttpUrl.parse("https://example.com"),
+            sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
             description = "Oversize test pin",
             tags = emptyList(),
         )

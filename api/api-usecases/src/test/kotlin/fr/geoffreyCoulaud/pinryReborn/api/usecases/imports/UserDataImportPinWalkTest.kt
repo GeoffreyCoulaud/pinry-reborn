@@ -592,6 +592,48 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
     }
 
     @Test
+    fun `Given pins whose source addresses are blank or not http(s), Then each is reported invalid and none created`() {
+        // Given
+        val source =
+            FakeArchiveSource(
+                manifest = aManifest(),
+                pins =
+                    listOf(
+                        TestLine(1, aPin().copy(sourceMediaUrl = "")),
+                        TestLine(2, aPin().copy(sourceMediaUrl = "ftp://x.test/i.png")),
+                        TestLine(3, aPin().copy(sourceContextUrl = "not an address")),
+                    ),
+                media = everyMedium,
+            )
+        stubWalk(source)
+        stubIssues()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(List(3) { UserDataImportIssueKind.FIELD_INVALID }, kinds())
+        assertEquals(3, stored.skippedPins)
+        assertEquals(0, savedPins.size)
+    }
+
+    @Test
+    fun `Given a pin whose source addresses are in upper case, Then it is created with both normalised`() {
+        // Given
+        val line = aPin().copy(sourceContextUrl = "HTTPS://X.test/page", sourceMediaUrl = "HTTP://X.test:80/i.png")
+        stubWalk(FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, line)), media = everyMedium))
+        stubMediaPath()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        val pin = savedPins.single()
+        assertEquals("https://x.test/page", pin.sourceContextUrl.toString())
+        assertEquals("http://x.test/i.png", pin.sourceMediaUrl.toString())
+    }
+
+    @Test
     fun `Given a source announcing an entry it will not open, Then the line is rejected and the walk goes on`() {
         // Given: the catch-all, so no unenumerated per-line failure can fail a whole import
         val source =

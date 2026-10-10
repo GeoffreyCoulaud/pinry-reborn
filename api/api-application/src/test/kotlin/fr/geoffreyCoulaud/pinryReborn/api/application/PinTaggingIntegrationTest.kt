@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
@@ -24,8 +25,8 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/page",
-                sourceMediaUrl = "https://example.com/media.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/page"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "My pin",
                 tags = emptyList(),
             )
@@ -44,8 +45,8 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/page",
-                sourceMediaUrl = "https://example.com/media.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/page"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "My pin",
                 tags = listOf("landscape"),
             )
@@ -54,8 +55,8 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val other =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/other",
-                sourceMediaUrl = "https://example.com/other.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/other"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/other.jpg"),
                 description = "Another pin",
                 tags = emptyList(),
             )
@@ -83,8 +84,8 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/page",
-                sourceMediaUrl = "https://example.com/media.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/page"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "My pin",
                 tags = listOf("oldtag1", "oldtag2"),
             )
@@ -102,8 +103,8 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/page",
-                sourceMediaUrl = "https://example.com/media.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/page"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "My pin",
                 tags = listOf("tag1", "tag2"),
             )
@@ -119,8 +120,8 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = owner.user,
-                sourceContextUrl = "https://example.com/page",
-                sourceMediaUrl = "https://example.com/media.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/page"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "Owner's pin",
                 tags = emptyList(),
             )
@@ -151,8 +152,8 @@ class PinTaggingIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/page",
-                sourceMediaUrl = "https://example.com/media.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/page"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "My pin",
                 tags = emptyList(),
             )

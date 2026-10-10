@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
@@ -59,8 +60,8 @@ class ModelPaginationHelperTest : RepositoryTest() {
                 Pin(
                     id = randomUUID(),
                     author = user,
-                    sourceContextUrl = "https://example.com/$index",
-                    sourceMediaUrl = "https://example.com/media-$index.jpeg",
+                    sourceContextUrl = HttpUrl.parse("https://example.com/$index"),
+                    sourceMediaUrl = HttpUrl.parse("https://example.com/media-$index.jpeg"),
                     description = "Pin $index",
                     tags = emptyList(),
                     boards = emptyList(),

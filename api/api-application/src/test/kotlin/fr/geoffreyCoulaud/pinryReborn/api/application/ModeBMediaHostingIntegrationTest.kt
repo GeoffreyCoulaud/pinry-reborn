@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PageMediaExtractor
 import fr.geoffreyCoulaud.pinryReborn.api.fetch.ytdlp.YtDlpPageMediaExtractor
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
@@ -64,8 +65,8 @@ class ModeBMediaHostingIntegrationTest : IntegrationTest() {
         pinCreator
             .createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Mode-B image hosting test pin",
                 tags = emptyList(),
             )

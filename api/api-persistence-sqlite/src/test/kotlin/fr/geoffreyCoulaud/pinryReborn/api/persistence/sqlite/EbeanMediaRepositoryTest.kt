@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -29,7 +30,7 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
             Pin(
                 randomUUID(),
                 user,
-                "https://ctx",
+                HttpUrl.parse("https://ctx"),
                 null,
                 "desc",
                 emptyList(),

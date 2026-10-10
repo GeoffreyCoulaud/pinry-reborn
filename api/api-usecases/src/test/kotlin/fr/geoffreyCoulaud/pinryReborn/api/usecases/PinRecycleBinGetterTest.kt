@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -112,8 +113,8 @@ class PinRecycleBinGetterTest {
             Pin(
                 id = randomUUID(),
                 author = otherUser,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "A pin",
                 tags = emptyList(),
                 boards = emptyList(),

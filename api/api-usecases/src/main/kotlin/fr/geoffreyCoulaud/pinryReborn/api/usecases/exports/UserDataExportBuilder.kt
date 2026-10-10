@@ -297,8 +297,8 @@ class UserDataExportBuilder(
         ExportedPin(
             id = pin.id,
             description = pin.description,
-            sourceContextUrl = pin.sourceContextUrl,
-            sourceMediaUrl = pin.sourceMediaUrl,
+            sourceContextUrl = pin.sourceContextUrl?.toString(),
+            sourceMediaUrl = pin.sourceMediaUrl?.toString(),
             createdAt = pin.createdAt,
             updatedAt = pin.updatedAt,
             deletedAt = pin.softDeletedAt,

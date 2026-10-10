@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
@@ -33,8 +34,8 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Pin",
                 tags = emptyList(),
             )
@@ -64,16 +65,16 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         val pin1 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/1",
-                sourceMediaUrl = "https://example.com/img1.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/1"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img1.jpg"),
                 description = "Pin 1",
                 tags = emptyList(),
             )
         val pin2 =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com/2",
-                sourceMediaUrl = "https://example.com/img2.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com/2"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img2.jpg"),
                 description = "Pin 2",
                 tags = emptyList(),
             )
@@ -126,8 +127,8 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = auth.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Pin",
                 tags = emptyList(),
             )
@@ -145,8 +146,8 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         val pin =
             pinCreator.createPin(
                 author = owner.user,
-                sourceContextUrl = "https://example.com",
-                sourceMediaUrl = "https://example.com/img.jpg",
+                sourceContextUrl = HttpUrl.parse("https://example.com"),
+                sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
                 description = "Pin",
                 tags = emptyList(),
             )
@@ -160,8 +161,8 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     private fun createPin(author: User, description: String = "A pin"): Pin =
         pinCreator.createPin(
             author = author,
-            sourceContextUrl = "https://example.com",
-            sourceMediaUrl = "https://example.com/img.jpg",
+            sourceContextUrl = HttpUrl.parse("https://example.com"),
+            sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
             description = description,
             tags = emptyList(),
         )

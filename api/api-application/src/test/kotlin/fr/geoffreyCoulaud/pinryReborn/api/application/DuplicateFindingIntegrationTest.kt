@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaFrameModel
@@ -42,7 +43,7 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
     @TempDir lateinit var directory: Path
 
     private fun pinned(user: User, file: Path): Media {
-        val pin = pinCreator.createPin(user, "https://example.com", null, "", emptyList())
+        val pin = pinCreator.createPin(user, HttpUrl.parse("https://example.com"), null, "", emptyList())
         return Files.newInputStream(file).use { setPinMedia.set(pin.id, user, it).media }
     }
 
