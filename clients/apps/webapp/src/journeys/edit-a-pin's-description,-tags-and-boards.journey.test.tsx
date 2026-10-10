@@ -14,6 +14,7 @@ import {
 	readyPin,
 	renderApp,
 	sessionRoute,
+	typeInOneGo,
 } from "../test/app";
 import { server } from "../test/server";
 
@@ -107,7 +108,7 @@ describe("edit a pin's description, tags and boards", () => {
 		expect(tags.closest('[data-slot="input-group"]')).toContainElement(
 			within(dialog).getByRole("grid", { name: m.tags_chosen() }),
 		);
-		await user.type(tags, "Landscape");
+		await typeInOneGo(tags, "Landscape");
 		await user.click(await screen.findByRole("button", { name: "landscape" }));
 		await user.click(
 			within(dialog).getByRole("button", { name: new RegExp(m.boards()) }),
@@ -151,7 +152,7 @@ describe("edit a pin's description, tags and boards", () => {
 		const user = userEvent.setup();
 
 		const dialog = await openTheForm(user, original.description);
-		await user.type(
+		await typeInOneGo(
 			within(dialog).getByRole("textbox", { name: m.tags() }),
 			"Landscape",
 		);

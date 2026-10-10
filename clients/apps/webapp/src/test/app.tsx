@@ -3,6 +3,7 @@ import type { Schemas } from "@pinry-reborn/auth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { I18nProvider } from "react-aria-components";
 import { getLocale } from "../paraglide/runtime.js";
@@ -12,6 +13,11 @@ type Pin = Schemas["PinOutputDto"];
 type Board = Schemas["BoardOutputDto"];
 type BoardInput = Schemas["BoardInputDto"];
 type BoardCreationInput = Schemas["BoardCreationInputDto"];
+
+/** Types with no macrotask between keys, so a field's pause cannot fall mid-term on a slow runner. */
+export function typeInOneGo(field: Element, text: string) {
+	return userEvent.type(field, text, { delay: null });
+}
 
 /** The refusal as the API sends one: a problem body whose `code` is what the screen reads. */
 export function refused(status: number, code: string) {
