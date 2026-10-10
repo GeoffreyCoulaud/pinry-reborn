@@ -95,7 +95,7 @@ internal class FakePersonRepository : PersonRepositoryInterface {
     override fun findPersonsForUserMatching(user: User, query: String, limit: Int) =
         error("An import searches no person")
 
-    override fun findPersonsByIds(ids: Set<UUID>) = known.values.filter { it.id in ids }
+    override fun findUserPersonsByIds(user: User, ids: Set<UUID>) = known.values.filter { it.id in ids }
 
     override fun findAllPersonsForUser(user: User) = error("An import lists no person")
 
