@@ -326,8 +326,8 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
         description: String = "",
         createdAt: Instant = pastInstant,
         updatedAt: Instant = pastInstant,
-        deletedAt: Instant? = null,
-    ) = ImportedBoard(name, description, createdAt, updatedAt, deletedAt)
+        softDeletedAt: Instant? = null,
+    ) = ImportedBoard(name, description, createdAt, updatedAt, softDeletedAt)
 
     protected fun anExistingBoard(name: String, softDeletedAt: Instant? = null) =
         Board(
@@ -354,7 +354,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             sourceMediaUrl = null,
             createdAt = pastInstant,
             updatedAt = pastInstant,
-            deletedAt = null,
+            softDeletedAt = null,
             tags = tags.map { ImportedRef(it) },
             boards = boards.map { ImportedRef(it) },
             media = path?.let { ImportedMedia(path = it, sha256 = sha256(bytes)) },

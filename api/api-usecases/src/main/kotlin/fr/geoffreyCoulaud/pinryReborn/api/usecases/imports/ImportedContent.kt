@@ -14,23 +14,26 @@ internal data class ImportedCounts(val pins: Int?)
 
 internal data class ImportedManifest(val formatVersion: Int, val counts: ImportedCounts?)
 
-/** One `tags.jsonl` line; its `id` is read and discarded, since identity is the name. */
+/** One `tags.jsonl` line. */
 internal data class ImportedTag(val name: String, val createdAt: Instant)
 
-/** One `boards.jsonl` line. `deletedAt` carries the recycled state a created board is given. */
+/** One `boards.jsonl` line. `softDeletedAt` carries the recycled state a created board is given. */
 internal data class ImportedBoard(
     val name: String,
     val description: String,
     val createdAt: Instant,
     val updatedAt: Instant,
-    val deletedAt: Instant?,
+    val softDeletedAt: Instant?,
 )
 
 /** One `collections.jsonl` line. A null [board] links the collection to the board of its own name. */
-internal data class ImportedCollection(val url: String, val name: String, val board: String? = null)
+internal data class ImportedCollection(val url: String, val name: String, val board: ImportedRef? = null)
 
-/** A pin's tag or board membership; the archive's `id` is dropped, since identity is the name. */
+/** A `{name}` reference: a pin's tag or board, a collection's board. */
 internal data class ImportedRef(val name: String)
+
+/** A pin's `{url}` reference to a collection. */
+internal data class ImportedCollectionRef(val url: String)
 
 /**
  * A pin's `media` object. `mimeType` and the dimensions are deliberately absent: the manifest is never trusted for
@@ -66,12 +69,12 @@ internal data class ImportedPin(
     val sourceMediaUrl: String?,
     val createdAt: Instant,
     val updatedAt: Instant,
-    val deletedAt: Instant?,
+    val softDeletedAt: Instant?,
     val tags: List<ImportedRef>,
     val boards: List<ImportedRef>,
     val media: ImportedMedia?,
     val publisher: ImportedPersonRef? = null,
     val creators: List<ImportedPersonRef> = emptyList(),
     val publishedAt: Instant? = null,
-    val collections: List<String> = emptyList(),
+    val collections: List<ImportedCollectionRef> = emptyList(),
 )

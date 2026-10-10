@@ -23,7 +23,7 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
             FakeArchiveSource(
                 manifest = aManifest(),
                 collections = listOf(TestLine(1, ImportedCollection(url = FEED_URL, name = "Feed"))),
-                pins = listOf(TestLine(1, aPin().copy(collections = listOf(FEED_URL, UNKNOWN_URL)))),
+                pins = listOf(TestLine(1, aPin().inCollections(FEED_URL, UNKNOWN_URL))),
                 media = everyMedium,
             )
         stubWalk(source)
@@ -49,7 +49,7 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given a collection naming an absent board, Then that board is created rather than one of its own name`() {
         // Given
-        val line = ImportedCollection(url = FEED_URL, name = "Feed", board = "Elsewhere")
+        val line = ImportedCollection(url = FEED_URL, name = "Feed", board = ImportedRef("Elsewhere"))
         stubWalk(FakeArchiveSource(manifest = aManifest(), collections = listOf(TestLine(1, line))))
         stubBoardLookup()
         stubBoardCreation()
@@ -70,8 +70,9 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         val source =
             FakeArchiveSource(
                 manifest = aManifest(),
-                collections = listOf(TestLine(1, ImportedCollection(url = FEED_URL, name = "Feed", board = "Bin"))),
-                pins = listOf(TestLine(1, aPin().copy(collections = listOf(FEED_URL)))),
+                collections =
+                    listOf(TestLine(1, ImportedCollection(url = FEED_URL, name = "Feed", board = ImportedRef("Bin")))),
+                pins = listOf(TestLine(1, aPin().inCollections(FEED_URL))),
                 media = everyMedium,
             )
         stubWalk(source)
@@ -94,12 +95,12 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         val held = anExistingBoard("Held")
         val existing =
             RemoteCollection(randomUUID(), user, checkNotNull(HttpUrl.parse(FEED_URL)), "Feed", held, accountCreatedAt)
-        val line = ImportedCollection(url = FEED_URL, name = "Renamed", board = "Other")
+        val line = ImportedCollection(url = FEED_URL, name = "Renamed", board = ImportedRef("Other"))
         val source =
             FakeArchiveSource(
                 manifest = aManifest(),
                 collections = listOf(TestLine(1, line)),
-                pins = listOf(TestLine(1, aPin(boards = listOf("Held")).copy(collections = listOf(FEED_URL)))),
+                pins = listOf(TestLine(1, aPin(boards = listOf("Held")).inCollections(FEED_URL))),
                 media = everyMedium,
             )
         stubWalk(source)
@@ -126,8 +127,8 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
                 ImportedCollection(url = FEED_URL + "x".repeat(OVER_LONG_URL), name = "Feed"),
                 ImportedCollection(url = FEED_URL, name = " "),
                 ImportedCollection(url = FEED_URL, name = "n".repeat(OVER_LONG_NAME)),
-                ImportedCollection(url = FEED_URL, name = "Feed", board = " "),
-                ImportedCollection(url = FEED_URL, name = "Feed", board = "b".repeat(OVER_LONG_NAME)),
+                ImportedCollection(url = FEED_URL, name = "Feed", board = ImportedRef(" ")),
+                ImportedCollection(url = FEED_URL, name = "Feed", board = ImportedRef("b".repeat(OVER_LONG_NAME))),
             )
         val malformed = TestLine<ImportedCollection>(lines.size + 1, null, "not a collection")
         val collections = lines.mapIndexed { index, line -> TestLine(index + 1, line) } + malformed
@@ -159,7 +160,7 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given a pin line naming 101 collections, Then it is reported invalid and no pin is created`() {
         // Given
-        val line = aPin().copy(collections = List(OVER_LONG_REFS) { "https://remote.test/$it" })
+        val line = aPin().inCollections(*Array(OVER_LONG_REFS) { "https://remote.test/$it" })
         stubWalk(FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, line)), media = everyMedium))
         stubIssues()
 
@@ -174,7 +175,7 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given a pin line naming an ftp collection, Then it is reported invalid and no pin is created`() {
         // Given
-        val line = aPin().copy(collections = listOf("ftp://remote.test/feed"))
+        val line = aPin().inCollections("ftp://remote.test/feed")
         stubWalk(FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, line)), media = everyMedium))
         stubIssues()
 
@@ -185,6 +186,8 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         assertEquals(listOf("collections is not an absolute http(s) address"), savedIssues.map { it.detail })
         assertTrue(savedPins.isEmpty())
     }
+
+    private fun ImportedPin.inCollections(vararg urls: String) = copy(collections = urls.map(::ImportedCollectionRef))
 
     private fun stubCollectionLookup(vararg existing: RemoteCollection) {
         // MockK hands the value class over unboxed, as its URI.

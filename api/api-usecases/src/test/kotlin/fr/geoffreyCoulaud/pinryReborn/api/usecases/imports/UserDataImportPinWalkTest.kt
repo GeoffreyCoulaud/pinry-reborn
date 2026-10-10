@@ -46,7 +46,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
                 pins =
                     listOf(
                         TestLine(1, line.copy(updatedAt = futureInstant)),
-                        TestLine(2, beta.copy(deletedAt = pastInstant)),
+                        TestLine(2, beta.copy(softDeletedAt = pastInstant)),
                     ),
                 media = everyMedium,
             )

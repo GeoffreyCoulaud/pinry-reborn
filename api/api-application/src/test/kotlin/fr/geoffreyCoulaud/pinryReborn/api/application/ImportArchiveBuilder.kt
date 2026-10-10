@@ -68,15 +68,14 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
         fun boardLine(
             name: String,
             description: String = "",
-            deletedAt: Instant? = null,
+            softDeletedAt: Instant? = null,
         ): Map<String, Any?> =
             mapOf(
-                "id" to "11111111-1111-1111-1111-111111111111",
                 "name" to name,
                 "description" to description,
                 "createdAt" to PAST.toString(),
                 "updatedAt" to PAST.toString(),
-                "deletedAt" to deletedAt?.toString(),
+                "softDeletedAt" to softDeletedAt?.toString(),
             )
 
         fun personLine(id: String, name: String, vararg urls: String): Map<String, Any?> =
@@ -87,7 +86,7 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
 
         /** One `collections.jsonl` line; a null [board] is absent from it. */
         fun collectionLine(url: String, name: String, board: String? = null): Map<String, Any?> =
-            mapOf("url" to url, "name" to name) + listOfNotNull(board?.let { "board" to it }).toMap()
+            mapOf("url" to url, "name" to name) + listOfNotNull(board?.let { "board" to mapOf("name" to it) }).toMap()
 
         /**
          * One `pins.jsonl` line. [mediaPath] null is a pin with no medium, which has no identity. The fields of this
@@ -102,20 +101,19 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
             mediaPath: String? = null,
             mediaSha256: String = "",
             mediaMimeType: String = "image/png",
-            deletedAt: Instant? = null,
+            softDeletedAt: Instant? = null,
             publisher: Map<String, Any?>? = null,
             creators: List<Map<String, Any?>>? = null,
             publishedAt: Instant? = null,
             collections: List<String>? = null,
         ): Map<String, Any?> =
             mapOf(
-                "id" to "22222222-2222-2222-2222-222222222222",
                 "description" to description,
                 "sourceContextUrl" to sourceContextUrl,
                 "sourceMediaUrl" to null,
                 "createdAt" to PAST.toString(),
                 "updatedAt" to PAST.toString(),
-                "deletedAt" to deletedAt?.toString(),
+                "softDeletedAt" to softDeletedAt?.toString(),
                 "tags" to tags.map { mapOf("name" to it) },
                 "boards" to boards.map { mapOf("name" to it) },
                 "media" to
@@ -134,7 +132,7 @@ internal class ImportArchiveBuilder(private val mapper: ObjectMapper) {
                     publisher?.let { "publisher" to it },
                     creators?.let { "creators" to it },
                     publishedAt?.let { "publishedAt" to it.toString() },
-                    collections?.let { "collections" to it },
+                    collections?.let { "collections" to it.map { url -> mapOf("url" to url) } },
                 )
                 .toMap()
     }

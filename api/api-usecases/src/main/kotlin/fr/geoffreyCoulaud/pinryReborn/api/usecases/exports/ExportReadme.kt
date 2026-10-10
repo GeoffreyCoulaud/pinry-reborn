@@ -27,9 +27,10 @@ internal object ExportReadme {
             |- `README.md` - this file.
             |- `manifest.json` - format version, generator, record counts, and the byte size and
             |  SHA-256 digest of every other file in this archive.
-            |- `user.json` - your account: id, name, creation date.
-            |- `pins.jsonl` - every pin you created, one JSON object per line. A pin names its
-            |  publisher and creators by the `id` of their line in `persons.jsonl`.
+            |- `user.json` - your account: name, creation date.
+            |- `pins.jsonl` - every pin you created, one JSON object per line. A pin names its tags
+            |  and boards by `name`, and its publisher and creators by the `id` of their line in
+            |  `persons.jsonl`.
             |- `boards.jsonl` - every board you created, active and recycled, one JSON object per
             |  line.
             |- `tags.jsonl` - every tag you have used, one JSON object per line.

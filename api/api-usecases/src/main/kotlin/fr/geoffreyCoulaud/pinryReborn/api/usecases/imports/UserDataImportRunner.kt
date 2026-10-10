@@ -409,7 +409,7 @@ class UserDataImportRunner(
                     description = board.description,
                     createdAt = createdAt,
                     updatedAt = clamp.clampUpdate(board.updatedAt, createdAt),
-                    softDeletedAt = board.deletedAt?.let { clamp.clamp(it) },
+                    softDeletedAt = board.softDeletedAt?.let { clamp.clamp(it) },
                 )
             )
         if (created.softDeletedAt != null) tally.recycled += created.id
@@ -450,7 +450,7 @@ class UserDataImportRunner(
             collection == null -> record(tally, UserDataImportIssueKind.LINE_MALFORMED, line.line, null, line.failure)
             fault != null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, collection.url, fault)
             else -> {
-                val boardName = collection.board ?: collection.name
+                val boardName = collection.board?.name ?: collection.name
                 val url = ImportedAddress.read(collection.url)
                 if (remoteCollectionLinker.link(user, url, collection.name, boardName, now)) tally.created++
             }
@@ -460,7 +460,7 @@ class UserDataImportRunner(
     private fun collectionFault(collection: ImportedCollection): String? =
         ImportFieldBounds.httpAddressFault(URL_FIELD, collection.url)
             ?: ImportFieldBounds.nameFault(collection.name)
-            ?: collection.board?.let { board -> ImportFieldBounds.nameFault(board)?.let { "board $it" } }
+            ?: collection.board?.let { board -> ImportFieldBounds.nameFault(board.name)?.let { "board $it" } }
 
     /** After the collections and before the pins (specification 2026-10-10, decision F). */
     private fun walkPersons(
@@ -615,7 +615,7 @@ class UserDataImportRunner(
             ?: ImportFieldBounds.referenceCountFault(BOARDS_FIELD, pin.boards.size)
             ?: ImportFieldBounds.referenceCountFault(CREATORS_FIELD, pin.creators.size)
             ?: ImportFieldBounds.referenceCountFault(COLLECTIONS_FIELD, pin.collections.size)
-            ?: pin.collections.firstNotNullOfOrNull { ImportFieldBounds.httpAddressFault(COLLECTIONS_FIELD, it) }
+            ?: pin.collections.firstNotNullOfOrNull { ImportFieldBounds.httpAddressFault(COLLECTIONS_FIELD, it.url) }
 
     private fun reported(kind: UserDataImportIssueKind, subject: String?, detail: String?): PinOutcome =
         PinOutcome(issues = listOf(PendingIssue(kind, subject, detail)))
@@ -720,7 +720,7 @@ class UserDataImportRunner(
                             boards = emptyList(),
                             createdAt = createdAt,
                             updatedAt = walk.clamp.clampUpdate(pin.updatedAt, createdAt),
-                            softDeletedAt = pin.deletedAt?.let { walk.clamp.clamp(it) },
+                            softDeletedAt = pin.softDeletedAt?.let { walk.clamp.clamp(it) },
                             // A work often predates the account: not clamped (specification 2026-10-08, decision D).
                             publishedAt = pin.publishedAt,
                         ),
@@ -728,7 +728,7 @@ class UserDataImportRunner(
                     tagNames = pin.tags.map { it.name },
                     boardNames = pin.boards.map { it.name },
                     credits = credits,
-                    collectionUrls = pin.collections.map(ImportedAddress::read),
+                    collectionUrls = pin.collections.map { ImportedAddress.read(it.url) },
                 ),
         )
     }

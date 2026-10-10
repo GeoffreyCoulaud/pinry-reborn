@@ -376,6 +376,21 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         assertEquals(listOf("Feed"), activePinsOf(auth.user).single().boards.map { it.name })
     }
 
+    @Test
+    fun `Given a collection line whose board is a bare string, Then it is malformed and nothing is linked`() {
+        // Given: the shape before the board became a `{name}` reference
+        val auth = createAuthenticatedUser()
+        val line = mapOf("url" to FEED_URL, "name" to "Feed", "board" to "Bin")
+        val archive = ImportArchiveBuilder(objectMapper).manifest(announcedPins = 0).collections(line).bytes()
+
+        // When
+        val importId = importArchive(auth, archive)
+
+        // Then
+        assertEquals(listOf("LINE_MALFORMED"), issueKinds(auth, importId))
+        assertEquals(0, QRemoteCollectionModel().findCount())
+    }
+
     /** A pin line over its own medium, so no line is skipped as one the account already holds. */
     private fun pinNaming(
         builder: ImportArchiveBuilder,

@@ -19,38 +19,36 @@ import java.util.UUID
 /** `manifest.json`'s `generator` object: identifies what produced the archive. */
 internal data class ExportGenerator(val name: String, val version: String)
 
-/**
- * A lightweight `{ id, name }` reference. Reused for `manifest.json`'s `user` and for a pin's `tags` and `boards`
- * memberships in `pins.jsonl` -- the full record lives in `user.json`/`tags.jsonl`/ `boards.jsonl` respectively, so a
- * membership only needs enough to point at it.
- */
-internal data class ExportedRef(val id: UUID, val name: String)
+/** A `{name}` reference by natural key: `manifest.json`'s `user`, a pin's tags and boards, a collection's board. */
+internal data class ExportedRef(val name: String)
+
+/** A pin's `{url}` reference to a `collections.jsonl` line. */
+internal data class ExportedCollectionRef(val url: String)
 
 /** One `manifest.json` `excluded` entry: what was left out of the archive, and why. */
 internal data class ExportExclusion(val what: String, val why: String)
 
 /** `user.json`: the exporting user's own account, in full (unlike the [ExportedRef] used elsewhere). */
-internal data class ExportedUser(val id: UUID, val name: String, val createdAt: Instant)
+internal data class ExportedUser(val name: String, val createdAt: Instant)
 
 /** One `tags.jsonl` line. */
-internal data class ExportedTag(val id: UUID, val name: String, val createdAt: Instant)
+internal data class ExportedTag(val name: String, val createdAt: Instant)
 
 /**
- * One `boards.jsonl` line. Active *and* recycled boards are written; `deletedAt` carries the state, so a pin's `boards`
- * membership (an [ExportedRef]) never needs to be cross-checked against this file to tell whether the board still
- * exists.
+ * One `boards.jsonl` line. Active *and* recycled boards are written; `softDeletedAt` carries the state, so a pin's
+ * `boards` membership (an [ExportedRef]) never needs to be cross-checked against this file to tell whether the board
+ * still exists.
  */
 internal data class ExportedBoard(
-    val id: UUID,
     val name: String,
     val description: String,
     val createdAt: Instant,
     val updatedAt: Instant,
-    val deletedAt: Instant?,
+    val softDeletedAt: Instant?,
 )
 
 /** One `collections.jsonl` line: `board` names the board the collection links to, whatever its state. */
-internal data class ExportedCollection(val url: String, val name: String, val board: String)
+internal data class ExportedCollection(val url: String, val name: String, val board: ExportedRef)
 
 /**
  * A pin's `media` object. `path` is the archive-relative entry path (`media/<mediaId>.<ext>`, from
@@ -58,7 +56,6 @@ internal data class ExportedCollection(val url: String, val name: String, val bo
  * [fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media.contentHash] under its published name.
  */
 internal data class ExportedMedia(
-    val id: UUID,
     val path: String,
     val mimeType: String,
     val width: Int,
@@ -77,19 +74,20 @@ internal data class ExportedPersonLine(val id: UUID, val name: String, val urls:
 
 /**
  * One `pins.jsonl` line. `media` is `null` when the pin has no image **or** when its bytes could not be written (spec
- * §4); `boards` lists memberships regardless of the board's state, since `boards.jsonl` (via `ExportedBoard.deletedAt`)
- * is the authority on whether a board is recycled.
+ * §4); `boards` lists memberships regardless of the board's state, since `boards.jsonl` (via
+ * `ExportedBoard.softDeletedAt`) is the authority on whether a board is recycled. [collections] is written empty: the
+ * pin's boards already say where it is.
  */
 internal data class ExportedPin(
-    val id: UUID,
     val description: String,
     val sourceContextUrl: String?,
     val sourceMediaUrl: String?,
     val createdAt: Instant,
     val updatedAt: Instant,
-    val deletedAt: Instant?,
+    val softDeletedAt: Instant?,
     val tags: List<ExportedRef>,
     val boards: List<ExportedRef>,
+    val collections: List<ExportedCollectionRef>,
     val media: ExportedMedia?,
     val publisher: ExportedPersonRef?,
     val creators: List<ExportedPersonRef>,
