@@ -4,17 +4,16 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
-import io.mockk.every
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import io.mockk.verify
+import java.time.Instant
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** A pin line's people and publication instant (specification 2026-10-08, decision D); split for `LargeClass`. */
+/** `persons.jsonl`, and a pin line's people and publication instant; split for `LargeClass`. */
 internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
-    private val savedPersons = mutableListOf<Person>()
-
     @Test
     fun `Given a pin line crediting people, Then each is found or created at the import instant, its date unclamped`() {
         // Given: the creator is already the account's, the publisher is not
@@ -35,7 +34,7 @@ internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
                 )
         stubWalk(FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, line)), media = everyMedium))
         stubMediaPath()
-        stubPersons(existing)
+        personRepository.seed(existing)
 
         // When
         runner.run(importId, isLastAttempt = false, renewLease)
@@ -46,7 +45,7 @@ internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
         assertEquals(now, created.publisher?.createdAt)
         assertEquals(listOf(existing), created.creators)
         assertEquals(beforeAccount, created.publishedAt)
-        assertEquals(1, savedPersons.size)
+        assertEquals(1, personRepository.saved.size)
     }
 
     @Test
@@ -77,28 +76,118 @@ internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
         // Then
         assertEquals(List(lines.size) { UserDataImportIssueKind.FIELD_INVALID }, kinds())
         assertTrue(savedPins.isEmpty())
-        verify(exactly = 0) { personRepository.savePerson(any()) }
+        assertTrue(personRepository.saved.isEmpty())
         verify(exactly = 0) { mediaStore.digest(any(), any()) }
     }
 
-    /** A created person is one the lookup answers with from then on, as a repository would. */
-    private fun stubPersons(vararg existing: Person) {
-        val known = existing.toMutableList()
-        every { personRepository.findUserPerson(user, any(), any()) } answers
-            {
-                known.firstOrNull { person -> person.name == secondArg() && person.urls == thirdArg<Set<HttpUrl>>() }
-            }
-        every { personRepository.savePerson(any()) } answers
-            {
-                firstArg<Person>().also { person ->
-                    savedPersons += person
-                    known += person
-                }
-            }
+    // --- persons.jsonl ---
+
+    @Test
+    fun `Given person lines reusing an id, with a blank or over-long id or malformed, Then only the first imports`() {
+        // Given
+        val lines =
+            listOf(
+                TestLine(1, aPersonLine("ada", "Ada")),
+                TestLine(2, aPersonLine("ada", "Grace")),
+                TestLine(3, aPersonLine("x".repeat(OVER_LONG_ID), "Hedy")),
+                TestLine(4, null, failure = "not JSON"),
+                TestLine(5, aPersonLine("blank", " ")),
+                TestLine(6, aPersonLine(" ", "Hedy")),
+            )
+        stubWalk(FakeArchiveSource(manifest = aManifest(), persons = lines))
+        stubIssues()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then: each refusal names the line's id
+        assertEquals(listOf("Ada"), personRepository.saved.map { it.name.text })
+        val invalid = UserDataImportIssueKind.FIELD_INVALID
+        assertEquals(listOf(invalid, invalid, UserDataImportIssueKind.LINE_MALFORMED, invalid, invalid), kinds())
+        assertEquals(listOf("ada", "x".repeat(ISSUE_TEXT_LIMIT), null, "blank", " "), savedIssues.map { it.subject })
+        assertEquals(5, stored.issueCount)
     }
+
+    @Test
+    fun `Given a cancellation landing during the collection walk, Then no person line is imported`() {
+        // Given: the collection walk's one write is its report of the malformed line
+        val source =
+            FakeArchiveSource(
+                manifest = aManifest(),
+                collections = listOf(TestLine(1, null, failure = "not JSON")),
+                persons = listOf(TestLine(1, aPersonLine("ada", "Ada"))),
+            )
+        stubWalk(source)
+        stubIssues()
+        cancelWhen { savedIssues.isNotEmpty() }
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(UserDataImportState.CANCELLED, stored.state)
+        assertTrue(personRepository.saved.isEmpty())
+    }
+
+    @Test
+    fun `Given a cancellation landing during the person walk, Then the pin walk never starts`() {
+        // Given: the person walk's one write is its report of the malformed line
+        val source =
+            FakeArchiveSource(
+                manifest = aManifest(),
+                persons = listOf(TestLine(1, null, failure = "not JSON")),
+                pins = listOf(TestLine(1, aPin())),
+                media = everyMedium,
+            )
+        stubWalk(source)
+        stubIssues()
+        cancelWhen { savedIssues.isNotEmpty() }
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(UserDataImportState.CANCELLED, stored.state)
+        assertEquals(0, stored.processedPins)
+        verify(exactly = 0) { mediaStore.digest(any(), any()) }
+    }
+
+    @Test
+    fun `Given a person line created before the account, Then its creation is clamped to the account's`() {
+        // Given
+        val line = aPersonLine("ada", "Ada", createdAt = beforeAccount)
+        stubWalk(FakeArchiveSource(manifest = aManifest(), persons = listOf(TestLine(1, line))))
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(accountCreatedAt, personRepository.saved.single().createdAt)
+    }
+
+    @Test
+    fun `Given 100 001 person lines, Then the last is refused and the one before it imports`() {
+        // Given
+        val lines = List(MAX_PERSON_LINES + 1) { index -> TestLine(index + 1, aPersonLine("p$index", "Person $index")) }
+        stubWalk(FakeArchiveSource(manifest = aManifest(), persons = lines))
+        stubIssues()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(MAX_PERSON_LINES, personRepository.saved.size)
+        assertEquals("Person ${MAX_PERSON_LINES - 1}", personRepository.saved.last().name.text)
+        assertEquals(MAX_PERSON_LINES + 1, savedIssues.single { it.kind == UserDataImportIssueKind.FIELD_INVALID }.line)
+    }
+
+    private fun aPersonLine(id: String, name: String, createdAt: Instant = pastInstant) =
+        ImportedPersonLine(id = id, name = name, urls = listOf("https://$id.example"), createdAt = createdAt)
 
     private companion object {
         const val OVER_LONG_URLS = 21
         const val OVER_LONG_URL = 2000
+        const val OVER_LONG_ID = 201
+        const val MAX_PERSON_LINES = 100_000
     }
 }

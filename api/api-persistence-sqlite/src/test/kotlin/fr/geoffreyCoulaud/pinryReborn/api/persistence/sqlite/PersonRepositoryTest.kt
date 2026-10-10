@@ -151,6 +151,21 @@ class PersonRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun `Given persons of two users, Then findAllPersonsForUser lists only the user's`() {
+        // Given
+        val user = createAndSaveUser()
+        val alice = savePerson(user, "Alice", listOf(FIRST_URL))
+        val bob = savePerson(user, "Bob", emptyList())
+        savePerson(createAndSaveUser(), "Carol", listOf(SECOND_URL))
+
+        // When
+        val found = repository.findAllPersonsForUser(user)
+
+        // Then
+        assertEquals(setOf(alice, bob), found.toSet())
+    }
+
+    @Test
     fun `Given persons of two users, Then deleteAllPersonsForUser removes only the user's`() {
         // Given
         val user = createAndSaveUser()

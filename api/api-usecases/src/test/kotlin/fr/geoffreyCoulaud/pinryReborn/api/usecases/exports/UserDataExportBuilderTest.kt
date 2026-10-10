@@ -42,6 +42,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
         every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
+        every { personRepository.findAllPersonsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(any()) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(any()) } returns emptyList()
 
@@ -68,6 +69,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
         every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
+        every { personRepository.findAllPersonsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(pin.id) } returns media
         every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(byteArrayOf(1, 2, 3))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
@@ -97,6 +99,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
         every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
+        every { personRepository.findAllPersonsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(pin.id) } returnsMany listOf(media, null)
         every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(byteArrayOf(9))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
@@ -124,6 +127,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
         every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
+        every { personRepository.findAllPersonsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(pin.id) } returnsMany listOf(writtenMedia, staleMedia)
         every { mediaStore.openStream(writtenMedia.storageKey) } returns ByteArrayInputStream(byteArrayOf(1))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
@@ -149,6 +153,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findRecycledBoardsForUser(user) } returns listOf(recycledBoard)
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
         every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
+        every { personRepository.findAllPersonsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(pin.id) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns listOf(recycledBoard)
 
@@ -235,6 +240,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
         every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
+        every { personRepository.findAllPersonsForUser(user) } returns emptyList()
         every { mediaRepository.findByPinId(any()) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(any()) } returns emptyList()
         var renewCount = 0
@@ -262,7 +268,9 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findActiveBoardsForUser(user) } returns listOf(board)
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns listOf(tag)
-        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
+        every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns
+            listOf(aRemoteCollection("https://remote.example/1", board))
+        every { personRepository.findAllPersonsForUser(user) } returns listOf(aPerson("Ada"), aPerson("Grace"))
         every { mediaRepository.findByPinId(pin.id) } returns media
         every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(byteArrayOf(5, 6))
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
@@ -273,7 +281,10 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
 
         // Then
         val manifest = sink.json.getValue("manifest.json") as ExportManifest
-        assertEquals(ExportCounts(pins = 1, boards = 1, tags = 1, media = 1), manifest.counts)
+        assertEquals(
+            ExportCounts(pins = 1, boards = 1, tags = 1, media = 1, persons = 2, collections = 1),
+            manifest.counts,
+        )
         assertEquals(export.id, manifest.exportId)
         assertEquals(export.formatVersion, manifest.formatVersion)
         assertEquals(now, manifest.createdAt)
@@ -288,6 +299,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
                 "boards.jsonl",
                 "collections.jsonl",
                 "tags.jsonl",
+                "persons.jsonl",
                 "media/${media.id}.jpg",
                 "pins.jsonl",
             ),
@@ -298,7 +310,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
     }
 
     @Test
-    fun `Given a pin crediting its people from no page, Then its line names them in full, no page, and no new entry`() {
+    fun `Given a pin crediting its people from no page, Then its line names them in full and with no page`() {
         // Given
         stubArchiveStore()
         every { clock.now() } returns now
@@ -313,13 +325,14 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
         every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
+        every { personRepository.findAllPersonsForUser(user) } returns listOf(publisher, creator)
         every { mediaRepository.findByPinId(pin.id) } returns null
         every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
 
         // When
         builder.stageArchive(anExport(), user, renewLease = {})
 
-        // Then: each person in full, its addresses sorted, and no file for persons
+        // Then: each person in full, its addresses sorted
         val exportedPin = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>().single()
         assertEquals(ExportedPerson("Studio", listOf("https://studio.example/")), exportedPin.publisher)
         assertEquals(
@@ -328,11 +341,36 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         )
         assertEquals(publishedAt, exportedPin.publishedAt)
         assertEquals(null to "https://x.test/i.png", exportedPin.sourceContextUrl to exportedPin.sourceMediaUrl)
-        val manifest = sink.json.getValue("manifest.json") as ExportManifest
+    }
+
+    @Test
+    fun `Given a person no pin credits, Then persons jsonl lists it after the tags and before the media`() {
+        // Given
+        stubArchiveStore()
+        every { clock.now() } returns now
+        stubEmptyCollections()
+        val pin = aPin()
+        val media = aMedia(pinId = pin.id)
+        stubActivePins(listOf(pin))
+        every { mediaRepository.findByPinId(pin.id) } returns media
+        every { mediaStore.openStream(media.storageKey) } returns ByteArrayInputStream(byteArrayOf(7))
+        every { pinRepository.findBoardsForPinIncludingRecycled(pin.id) } returns emptyList()
+        val uncredited = aPerson("Grace", "https://g.example/b", "https://g.example/a")
+        every { personRepository.findAllPersonsForUser(user) } returns listOf(uncredited)
+
+        // When
+        builder.stageArchive(anExport(), user, renewLease = {})
+
+        // Then: its database identifier, its addresses sorted
         assertEquals(
-            setOf("README.md", "user.json", "boards.jsonl", "collections.jsonl", "tags.jsonl", "pins.jsonl"),
-            manifest.entries.map { it.path }.toSet(),
+            listOf(
+                ExportedPersonLine(uncredited.id, "Grace", listOf("https://g.example/a", "https://g.example/b"), now)
+            ),
+            sink.jsonLines.getValue("persons.jsonl"),
         )
+        val order = sink.order
+        assertEquals(order.indexOf("tags.jsonl") + 1, order.indexOf("persons.jsonl"))
+        assertEquals(order.indexOf("persons.jsonl") + 1, order.indexOf("media/${media.id}.jpg"))
     }
 
     private fun aPerson(name: String, vararg urls: String) =
@@ -574,6 +612,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
         every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
+        every { personRepository.findAllPersonsForUser(user) } returns emptyList()
 
         // When / Then: the net rethrows it before its FAILED arm, the winner still building this row
         assertThrows(TaskLeaseLostException::class.java) {

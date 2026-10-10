@@ -146,6 +146,28 @@ class ExportContentGoldenJsonTest {
     }
 
     @Test
+    fun `Given a fully populated ExportedPersonLine, Then it serializes to the published JSON shape`() {
+        // Given
+        val person =
+            ExportedPersonLine(
+                id = UUID.fromString("88888888-8888-8888-8888-888888888888"),
+                name = "Ada",
+                urls = listOf("https://a.example/", "https://b.example/"),
+                createdAt = Instant.parse("2026-01-02T00:00:00Z"),
+            )
+
+        // When
+        val json = mapper.writeValueAsString(person)
+
+        // Then
+        assertEquals(
+            """{"id":"88888888-8888-8888-8888-888888888888","name":"Ada",""" +
+                """"urls":["https://a.example/","https://b.example/"],"createdAt":"2026-01-02T00:00:00Z"}""",
+            json,
+        )
+    }
+
+    @Test
     fun `Given a fully populated ExportedMedia, Then it serializes to the published JSON shape`() {
         // Given
         val media =
@@ -275,7 +297,7 @@ class ExportContentGoldenJsonTest {
                 createdAt = Instant.parse("2026-07-22T10:15:30Z"),
                 expiresAt = Instant.parse("2026-07-29T10:15:30Z"),
                 user = ExportedRef(id = UUID.fromString("22222222-2222-2222-2222-222222222222"), name = "alice"),
-                counts = ExportCounts(pins = 1234, boards = 12, tags = 90, media = 1180),
+                counts = ExportCounts(pins = 1234, boards = 12, tags = 90, media = 1180, persons = 34, collections = 5),
                 entries = listOf(ArchiveEntryDigest(path = "pins.jsonl", byteSize = 918273, sha256 = "cafef00d")),
                 excluded =
                     listOf(
@@ -295,7 +317,7 @@ class ExportContentGoldenJsonTest {
                 """"exportId":"77777777-7777-7777-7777-777777777777",""" +
                 """"createdAt":"2026-07-22T10:15:30Z","expiresAt":"2026-07-29T10:15:30Z",""" +
                 """"user":{"id":"22222222-2222-2222-2222-222222222222","name":"alice"},""" +
-                """"counts":{"pins":1234,"boards":12,"tags":90,"media":1180},""" +
+                """"counts":{"pins":1234,"boards":12,"tags":90,"media":1180,"persons":34,"collections":5},""" +
                 """"entries":[{"path":"pins.jsonl","byteSize":918273,"sha256":"cafef00d"}],""" +
                 """"excluded":[{"what":"password hashes",""" +
                 """"why":"secrets; useless to you, dangerous if this archive leaks"}]}""",

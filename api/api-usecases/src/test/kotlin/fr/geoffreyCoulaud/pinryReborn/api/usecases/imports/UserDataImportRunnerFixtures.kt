@@ -1,7 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -76,6 +79,27 @@ internal class PassthroughTransactionRunner : TransactionRunner {
     }
 }
 
+/** A fake rather than a mock: MockK would record every one of a 100 000-line walk's calls. */
+internal class FakePersonRepository : PersonRepositoryInterface {
+    val saved = mutableListOf<Person>()
+    private val known = mutableMapOf<Pair<PersonName, Set<HttpUrl>>, Person>()
+
+    fun seed(person: Person) {
+        known[person.name to person.urls] = person
+    }
+
+    override fun savePerson(person: Person): Person = person.also { saved += it }.also(::seed)
+
+    override fun findUserPerson(user: User, name: PersonName, urls: Set<HttpUrl>): Person? = known[name to urls]
+
+    override fun findPersonsForUserMatching(user: User, query: String, limit: Int) =
+        error("An import searches no person")
+
+    override fun findAllPersonsForUser(user: User) = error("An import lists no person")
+
+    override fun deleteAllPersonsForUser(user: User) = error("An import deletes no person")
+}
+
 internal data class TestLine<out T>(
     override val line: Int,
     override val value: T?,
@@ -91,6 +115,7 @@ internal data class FakeArchiveSource(
     val tags: List<ArchiveLine<ImportedTag>> = emptyList(),
     val boards: List<ArchiveLine<ImportedBoard>> = emptyList(),
     val collections: List<ArchiveLine<ImportedCollection>> = emptyList(),
+    val persons: List<ArchiveLine<ImportedPersonLine>> = emptyList(),
     val pins: List<ArchiveLine<ImportedPin>> = emptyList(),
     val media: Map<String, ByteArray?> = emptyMap(),
     val readFailure: Exception? = null,
@@ -105,7 +130,7 @@ internal data class FakeArchiveSource(
     override fun entryNames(maxEntries: Int): Set<String> {
         entryBound = maxEntries
         entriesFailure?.let { throw it }
-        return setOf(MANIFEST, TAGS, BOARDS, COLLECTIONS, PINS) + media.keys
+        return setOf(MANIFEST, TAGS, BOARDS, COLLECTIONS, PERSONS, PINS) + media.keys
     }
 
     /** Keyed on the entry, so asking for the wrong one is a failure rather than the manifest again. */
@@ -123,6 +148,7 @@ internal data class FakeArchiveSource(
                 TAGS -> tags.asSequence()
                 BOARDS -> boards.asSequence()
                 COLLECTIONS -> collections.asSequence()
+                PERSONS -> persons.asSequence()
                 PINS -> pinLines()
                 else -> error("no JSONL entry named $name")
             }
@@ -153,6 +179,7 @@ internal data class FakeArchiveSource(
         const val TAGS = "tags.jsonl"
         const val BOARDS = "boards.jsonl"
         const val COLLECTIONS = "collections.jsonl"
+        const val PERSONS = "persons.jsonl"
         const val PINS = "pins.jsonl"
     }
 }
@@ -167,7 +194,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
     protected val issueRepository = mockk<UserDataImportIssueRepositoryInterface>()
     protected val userRepository = mockk<UserRepositoryInterface>()
     protected val tagRepository = mockk<TagRepositoryInterface>()
-    protected val personRepository = mockk<PersonRepositoryInterface>()
+    protected val personRepository = FakePersonRepository()
     protected val boardRepository = mockk<BoardRepositoryInterface>()
     protected val remoteCollectionRepository = mockk<RemoteCollectionRepositoryInterface>()
     protected val pinRepository = mockk<PinRepositoryInterface>()

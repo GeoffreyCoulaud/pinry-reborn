@@ -4,7 +4,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenExc
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
@@ -185,9 +184,9 @@ class UserDataImportRunner(
         val clamp = ImportInstantClamp(user.createdAt, now)
         walkTags(source, user, clamp, runnable, renewLeaseIfDue, recorder) ?: return
         val walked =
-            walkBoards(source, user, clamp, runnable, renewLeaseIfDue, recorder)?.let {
-                walkCollections(source, user, now, runnable, renewLeaseIfDue, recorder)
-            } ?: return
+            walkBoards(source, user, clamp, runnable, renewLeaseIfDue, recorder)
+                ?.let { walkCollections(source, user, now, runnable, renewLeaseIfDue, recorder) }
+                ?.let { walkPersons(source, user, clamp, runnable, renewLeaseIfDue, recorder) } ?: return
         walkPins(PinWalk(source, runnable, user, clamp, now, entryNames, recorder, renewLeaseIfDue), walked)
     }
 
@@ -462,6 +461,27 @@ class UserDataImportRunner(
             ?: ImportFieldBounds.nameFault(collection.name)
             ?: collection.board?.let { board -> ImportFieldBounds.nameFault(board)?.let { "board $it" } }
 
+    /** After the collections and before the pins (specification 2026-10-10, decision F). */
+    private fun walkPersons(
+        source: ArchiveSource,
+        user: User,
+        clamp: ImportInstantClamp,
+        runnable: RunnableImport,
+        renewLeaseIfDue: () -> Unit,
+        recorder: ImportIssueRecorder,
+    ): UserDataImport? {
+        val tally = MetadataTally(recorder)
+        val importer = PersonLineImporter(personCreator, user, clamp)
+        walkLines(source, PERSONS_ENTRY, ImportedPersonLine::class.java, renewLeaseIfDue) { line ->
+            rejecting(tally, line.line) {
+                importer.import(line) { kind, subject, detail -> record(tally, kind, line.line, subject, detail) }
+            }
+        }
+        return advance(runnable) {
+            it.copy(issueCount = it.issueCount + tally.issues, issueDetailTruncated = recorder.truncated)
+        }
+    }
+
     private fun record(
         tally: MetadataTally,
         kind: UserDataImportIssueKind,
@@ -600,12 +620,9 @@ class UserDataImportRunner(
             ?: ImportFieldBounds.referenceCountFault(CREATORS_FIELD, pin.creators.size)
             ?: ImportFieldBounds.referenceCountFault(COLLECTIONS_FIELD, pin.collections.size)
             ?: pin.collections.firstNotNullOfOrNull { ImportFieldBounds.httpAddressFault(COLLECTIONS_FIELD, it) }
-            ?: (listOfNotNull(pin.publisher) + pin.creators).firstNotNullOfOrNull { personFault(it) }
-
-    private fun personFault(person: ImportedPerson): String? =
-        (if (PersonName.parse(person.name) == null) PERSON_NAME_FAULT else null)
-            ?: ImportFieldBounds.personFault(person.urls)
-            ?: person.urls.firstNotNullOfOrNull { ImportFieldBounds.httpAddressFault(PERSON_URL_FIELD, it) }
+            ?: (listOfNotNull(pin.publisher) + pin.creators).firstNotNullOfOrNull {
+                PersonLineImporter.personFault(it.name, it.urls)
+            }
 
     private fun reported(kind: UserDataImportIssueKind, subject: String?, detail: String?): PinOutcome =
         PinOutcome(issues = listOf(PendingIssue(kind, subject, detail)))
@@ -785,7 +802,6 @@ class UserDataImportRunner(
         const val TAGS_FIELD = "tags"
         const val BOARDS_FIELD = "boards"
         const val CREATORS_FIELD = "creators"
-        const val PERSON_URL_FIELD = "a person's address"
-        const val PERSON_NAME_FAULT = "a person's name is blank or longer than ${PersonName.MAX_LENGTH} characters"
+        const val PERSONS_ENTRY = "persons.jsonl"
     }
 }
