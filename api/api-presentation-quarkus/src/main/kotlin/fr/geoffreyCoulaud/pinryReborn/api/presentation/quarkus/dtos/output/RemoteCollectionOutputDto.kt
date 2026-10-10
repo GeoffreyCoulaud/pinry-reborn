@@ -1,3 +1,5 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output
 
-data class RemoteCollectionOutputDto(val name: String, val url: String)
+import org.eclipse.microprofile.openapi.annotations.media.Schema
+
+data class RemoteCollectionOutputDto(val name: String, @field:Schema(format = "uri") val url: String)

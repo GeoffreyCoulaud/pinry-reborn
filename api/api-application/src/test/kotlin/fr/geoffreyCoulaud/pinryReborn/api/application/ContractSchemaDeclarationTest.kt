@@ -89,6 +89,22 @@ class ContractSchemaDeclarationTest {
             ),
         )
 
+    /** Each field holding an `HttpUrl`'s text, as `schema.property`; a list's items carry the format. */
+    private val addressFields =
+        listOf(
+            "PinCreationInputDto.sourceContextUrl",
+            "PinCreationInputDto.sourceMediaUrl",
+            "PinUpdateInputDto.sourceContextUrl",
+            "PinUpdateInputDto.sourceMediaUrl",
+            "PinMediaDownloadInputDto.sourceUrl",
+            "PersonInputDto.urls",
+            "PinOutputDto.sourceContextUrl",
+            "PinOutputDto.sourceMediaUrl",
+            "MediaDownloadOutputDto.sourceUrl",
+            "PersonOutputDto.urls",
+            "RemoteCollectionOutputDto.url",
+        )
+
     @Test
     fun `Given the published contract, Then every cursor query parameter is declared a nullable string`() {
         // Given
@@ -194,6 +210,19 @@ class ContractSchemaDeclarationTest {
             emptyList<OpenCodePosition>(),
             wrong,
             "These fields no longer reference their open code's component. Regenerate: $regenerate",
+        )
+    }
+
+    @Test
+    fun `Given the published contract, Then every field holding an address declares format uri`() {
+        // When
+        val wrong = addressFields.filter { "uri" !in formatsOf(it) }
+
+        // Then
+        assertEquals(
+            emptyList<String>(),
+            wrong,
+            "Each holds an address HttpUrl's factory accepted, so it declares format uri. Regenerate: $regenerate",
         )
     }
 
@@ -534,6 +563,13 @@ class ContractSchemaDeclarationTest {
                 if (type.isArray) type.map { it.asText() }.toSet() else setOf(type.asText())
             }
         }
+
+    private fun formatsOf(field: String): Set<String> {
+        val property =
+            PublishedContract.schema(field.substringBefore('.')).path("properties").path(field.substringAfter('.'))
+        val value = if (property.has("items")) property.path("items") else property
+        return resolve(value) { node -> setOf(node.path("format").asText()) }
+    }
 
     private fun enumeration(schema: JsonNode): Set<String> =
         resolve(schema) { node -> node.path("enum").map { it.asText() }.toSet() }

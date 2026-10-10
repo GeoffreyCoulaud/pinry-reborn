@@ -330,8 +330,8 @@
         "properties" : {
           "name" : {
             "type" : "string",
-            "pattern" : "\\S",
-            "maxLength" : 200
+            "maxLength" : 200,
+            "pattern" : "\\S"
           },
           "urls" : {
             "type" : "array",
@@ -352,10 +352,11 @@
           },
           "urls" : {
             "type" : "array",
+            "uniqueItems" : true,
             "items" : {
-              "type" : "string"
-            },
-            "uniqueItems" : true
+              "type" : "string",
+              "format" : "uri"
+            }
           }
         }
       },
@@ -741,7 +742,8 @@
             "type" : "string"
           },
           "url" : {
-            "type" : "string"
+            "type" : "string",
+            "format" : "uri"
           }
         }
       },
