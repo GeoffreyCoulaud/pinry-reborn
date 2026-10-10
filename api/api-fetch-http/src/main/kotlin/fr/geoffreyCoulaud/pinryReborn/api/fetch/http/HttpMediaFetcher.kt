@@ -109,7 +109,8 @@ class HttpMediaFetcher(
             } catch (e: IllegalArgumentException) {
                 throw UrlNotAllowedException("malformed url", e)
             }
-        val scheme = uri.scheme?.lowercase()
+        // Resolved against an absolute address, a target always has a scheme.
+        val scheme = uri.scheme.lowercase()
         if (scheme != "http" && scheme != "https") throw UrlNotAllowedException("scheme not allowed")
         if (uri.host == null) throw UrlNotAllowedException("missing host")
         return uri
