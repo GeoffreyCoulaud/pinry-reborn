@@ -118,7 +118,8 @@ Tier-1 fix: a malformed `Location` header made `URI.resolve` throw an uncaught `
 ## Open question to the operator
 
 - `ModelsPackageArchTest` resolves a property's type through the file's imports, so a fully qualified type escapes it.
-  The lead proposes accepting that limit, as `api/AGENTS.md` now records it.
+  The lead proposes accepting that limit, as `api/AGENTS.md` now records it. (Corrected: the operator accepted it on
+  2026-10-10, after the merge.)
 
 ## The holistic review
 
