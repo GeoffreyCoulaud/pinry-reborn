@@ -317,6 +317,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         val refused =
             listOf(
                 person(" "),
+                person(" "),
                 person("n".repeat(201)),
                 person("Alice", *Array(21) { "https://alice.test/$it" }),
                 person("Alice", " "),
