@@ -2,14 +2,18 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.declaration.KoClassDeclaration
+import com.lemonappdev.konsist.api.declaration.KoPropertyDeclaration
+import com.lemonappdev.konsist.api.ext.list.properties
 import com.lemonappdev.konsist.api.ext.list.withFunctions
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import com.lemonappdev.konsist.api.ext.list.withProperty
+import com.lemonappdev.konsist.api.ext.list.withType
 import com.lemonappdev.konsist.api.ext.list.withoutAnnotationOf
 import com.lemonappdev.konsist.api.verify.assertEmpty
 import com.lemonappdev.konsist.api.verify.assertNotEmpty
 import jakarta.persistence.Entity
 import jakarta.persistence.MappedSuperclass
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 /**
@@ -48,5 +52,23 @@ class ModelsPackageArchTest {
     @Test
     fun `Given the coverage-excluded models package, Then no class has a custom property accessor`() {
         modelClasses.withProperty { it.hasGetter || it.hasSetter }.assertEmpty()
+    }
+
+    /** Ebean's migration generation breaks in silence on an inline value class (`api/AGENTS.md`, Data modelling). */
+    private fun valueClassProperties(models: List<KoClassDeclaration>): List<KoPropertyDeclaration> =
+        models.properties().withType { it.sourceDeclaration?.asClassDeclaration()?.hasValueModifier == true }
+
+    @Test
+    fun `Given a fixture model holding a value class, Then the value class rule flags its property`() {
+        val fixture =
+            Konsist.scopeFromFile("api-persistence-sqlite/src/test/resources/konsist/ValueClassPropertyModel.kt")
+                .classes()
+                .withPackage("..persistence.sqlite.models..")
+        assertEquals(listOf("address"), valueClassProperties(fixture).map { it.name })
+    }
+
+    @Test
+    fun `Given the models package, Then no property's type is a value class`() {
+        valueClassProperties(modelClasses).assertEmpty()
     }
 }
