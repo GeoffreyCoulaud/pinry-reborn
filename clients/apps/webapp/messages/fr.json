@@ -188,6 +188,7 @@
 	"issue_media_too_many_pixels": "Ce média a plus de pixels que ce que ce serveur accepte.",
 	"issue_media_unreadable": "Ce média n’a pas pu être lu.",
 	"issue_name_taken_by_recycled": "Un tableau de la corbeille porte déjà ce nom : celui-ci n’a pas été ajouté.",
+	"issue_person_unknown": "Cette épingle cite une personne que l’import n’a pas trouvée. L’épingle a été ajoutée sans elle.",
 	"issue_pin_has_no_media": "Cette épingle n’a pas de média : elle n’a pas été ajoutée.",
 	"issue_unknown": "Un élément de cette ligne n’a pas été importé.",
 	"media": "Média",

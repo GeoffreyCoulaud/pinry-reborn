@@ -28,6 +28,7 @@ object UserDataImportIssueDtoMapper {
             UserDataImportIssueKind.MEDIA_TOO_MANY_PIXELS -> UserDataImportIssueKindDto.MEDIA_TOO_MANY_PIXELS
             UserDataImportIssueKind.MEDIA_AMBIGUOUS -> UserDataImportIssueKindDto.MEDIA_AMBIGUOUS
             UserDataImportIssueKind.MEDIA_DIGEST_MISMATCH -> UserDataImportIssueKindDto.MEDIA_DIGEST_MISMATCH
+            UserDataImportIssueKind.PERSON_UNKNOWN -> UserDataImportIssueKindDto.PERSON_UNKNOWN
             UserDataImportIssueKind.LINE_MALFORMED -> UserDataImportIssueKindDto.LINE_MALFORMED
             UserDataImportIssueKind.FIELD_INVALID -> UserDataImportIssueKindDto.FIELD_INVALID
             UserDataImportIssueKind.ENTRY_PATH_INVALID -> UserDataImportIssueKindDto.ENTRY_PATH_INVALID

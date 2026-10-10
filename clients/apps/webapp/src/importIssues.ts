@@ -13,6 +13,7 @@ const KINDS: Record<Known<"UserDataImportIssueKindDto">, () => string> = {
 	MEDIA_TOO_MANY_PIXELS: m.issue_media_too_many_pixels,
 	MEDIA_AMBIGUOUS: m.issue_media_ambiguous,
 	MEDIA_DIGEST_MISMATCH: m.issue_media_digest_mismatch,
+	PERSON_UNKNOWN: m.issue_person_unknown,
 	LINE_MALFORMED: m.issue_line_malformed,
 	FIELD_INVALID: m.issue_field_invalid,
 	ENTRY_PATH_INVALID: m.issue_entry_path_invalid,
