@@ -153,6 +153,8 @@ class ArchitectureKonsistTest {
                 "java.util.UUID",
                 // Byte-stream boundary type on the image ports; adapters perform the actual I/O.
                 "java.io.InputStream",
+                "java.net.URI",
+                "java.net.URISyntaxException",
             )
             .assertEmpty()
     }
