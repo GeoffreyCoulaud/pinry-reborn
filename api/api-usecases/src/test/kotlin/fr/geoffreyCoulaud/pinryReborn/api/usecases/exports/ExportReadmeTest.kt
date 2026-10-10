@@ -15,7 +15,7 @@ class ExportReadmeTest {
             createdAt = Instant.parse("2026-07-22T10:15:30Z"),
             expiresAt = Instant.parse("2026-07-29T10:15:30Z"),
             user = ExportedRef(id = UUID.fromString("22222222-2222-2222-2222-222222222222"), name = "alice"),
-            counts = ExportCounts(pins = 1, boards = 1, tags = 1, media = 1),
+            counts = ExportCounts(pins = 1, boards = 1, tags = 1, media = 1, persons = 1, collections = 1),
             entries = listOf(ArchiveEntryDigest(path = "pins.jsonl", byteSize = 918273, sha256 = "cafef00d")),
             excluded = excluded,
         )
@@ -42,6 +42,7 @@ class ExportReadmeTest {
         assertTrue(readme.contains("boards.jsonl"))
         assertTrue(readme.contains("tags.jsonl"))
         assertTrue(readme.contains("collections.jsonl"))
+        assertTrue(readme.contains("persons.jsonl"))
         assertTrue(readme.contains("media/"))
         for (exclusion in excluded) {
             assertTrue(readme.contains(exclusion.what), "expected README to mention '${exclusion.what}'")

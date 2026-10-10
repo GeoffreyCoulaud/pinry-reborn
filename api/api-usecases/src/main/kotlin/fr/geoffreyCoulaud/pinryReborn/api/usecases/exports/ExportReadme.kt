@@ -34,6 +34,8 @@ internal object ExportReadme {
             |- `tags.jsonl` - every tag you have used, one JSON object per line.
             |- `collections.jsonl` - every remote collection linked to one of your boards, with that
             |  board's name, one JSON object per line.
+            |- `persons.jsonl` - every person your pins can credit as publisher or creator: a name, its
+            |  addresses and an `id` that only links the lines of this archive, one JSON object per line.
             |- `media/` - the original media bytes (images and videos) referenced from `pins.jsonl`,
             |  one file per media, named `<mediaId>.<ext>`.
             |

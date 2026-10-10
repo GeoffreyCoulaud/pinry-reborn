@@ -15,6 +15,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
@@ -52,6 +53,7 @@ class UserDataExportBuilder(
     private val boardRepository: BoardRepositoryInterface,
     private val tagRepository: TagRepositoryInterface,
     private val remoteCollectionRepository: RemoteCollectionRepositoryInterface,
+    private val personRepository: PersonRepositoryInterface,
     private val mediaStore: MediaStore,
     private val archiveStore: ExportArchiveStore,
     private val transactionRunner: TransactionRunner,
@@ -183,9 +185,10 @@ class UserDataExportBuilder(
 
     /**
      * Writes every archive entry for [export]/[user] into a freshly staged file, in the load-bearing order from spec
-     * §3: `README.md`, `user.json`, `boards.jsonl`, `collections.jsonl`, `tags.jsonl`, the image entries (first pin
-     * walk), `pins.jsonl` (second pin walk, referencing only images actually written), and `manifest.json` last.
-     * [renewLease] is threaded down to the pin walks so a long build keeps its task lease alive (spec §15).
+     * §3: `README.md`, `user.json`, `boards.jsonl`, `collections.jsonl`, `tags.jsonl`, `persons.jsonl`, the image
+     * entries (first pin walk), `pins.jsonl` (second pin walk, referencing only images actually written), and
+     * `manifest.json` last. [renewLease] is threaded down to the pin walks so a long build keeps its task lease alive
+     * (spec §15).
      */
     internal fun stageArchive(export: UserDataExport, user: User, renewLease: () -> Unit): StagedFile {
         val createdAt = clock.now()
@@ -197,7 +200,7 @@ class UserDataExportBuilder(
                 createdAt = createdAt,
                 expiresAt = createdAt.plus(retention),
                 user = ExportedRef(user.id, user.name),
-                counts = ExportCounts(pins = 0, boards = 0, tags = 0, media = 0),
+                counts = ExportCounts(pins = 0, boards = 0, tags = 0, media = 0, persons = 0, collections = 0),
                 entries = emptyList(),
                 excluded = EXCLUSIONS,
             )
@@ -222,25 +225,28 @@ class UserDataExportBuilder(
                 )
             }
         val collections = remoteCollectionRepository.findAllRemoteCollectionsForUser(user)
-        writeCollection(sink, entries, "collections.jsonl", collections) { collection ->
-            ExportedCollection(collection.url.toString(), collection.name, collection.board.name)
-        }
+        val collectionCount =
+            writeCollection(sink, entries, "collections.jsonl", collections) { collection ->
+                ExportedCollection(collection.url.toString(), collection.name, collection.board.name)
+            }
         val tagCount =
             writeCollection(sink, entries, "tags.jsonl", tagRepository.findAllTagsForUser(user)) { tag ->
                 ExportedTag(tag.id, tag.name, tag.createdAt)
             }
+        val personCount = writePersons(sink, entries, user)
 
         val writtenMediaPaths = mutableSetOf<String>()
         val mediaCount = writeMedia(sink, entries, user, renewLease, writtenMediaPaths)
         val pinCount = writePins(sink, entries, user, renewLease, writtenMediaPaths)
 
-        val manifest =
-            header.copy(
-                counts = ExportCounts(pins = pinCount, boards = boardCount, tags = tagCount, media = mediaCount),
-                entries = entries.toList(),
-            )
-        sink.putJsonEntry("manifest.json", manifest)
+        val counts = ExportCounts(pinCount, boardCount, tagCount, mediaCount, personCount, collectionCount)
+        sink.putJsonEntry("manifest.json", header.copy(counts = counts, entries = entries.toList()))
     }
+
+    private fun writePersons(sink: ArchiveSink, entries: MutableList<ArchiveEntryDigest>, user: User): Int =
+        writeCollection(sink, entries, "persons.jsonl", personRepository.findAllPersonsForUser(user)) { person ->
+            ExportedPersonLine(person.id, person.name.text, sortedUrls(person), person.createdAt)
+        }
 
     /** Writes one JSONL entry from [items], counting them as they are mapped and consumed by the sink. */
     private fun <T> writeCollection(
@@ -313,8 +319,9 @@ class UserDataExportBuilder(
             publishedAt = pin.publishedAt,
         )
 
-    private fun exportedPerson(person: Person): ExportedPerson =
-        ExportedPerson(person.name.text, person.urls.map { it.toString() }.sorted())
+    private fun exportedPerson(person: Person): ExportedPerson = ExportedPerson(person.name.text, sortedUrls(person))
+
+    private fun sortedUrls(person: Person): List<String> = person.urls.map { it.toString() }.sorted()
 
     /**
      * `null` when the pin has no image **or** when its bytes could not be written (spec §4): the second condition is

@@ -48,6 +48,16 @@ internal data class ImportedPerson(val name: String, val urls: List<String>) {
         )
 }
 
+/** One `persons.jsonl` line. Its [id] only links the lines of one archive, so no row ever carries it. */
+internal data class ImportedPersonLine(
+    val id: String,
+    val name: String,
+    val urls: List<String>,
+    val createdAt: Instant,
+) {
+    fun toReference(): PersonReference = ImportedPerson(name, urls).toReference()
+}
+
 /**
  * One `pins.jsonl` line. A null [media] is a pin with no medium, which has no identity to import. The people, the
  * publication instant and the [collections]' addresses default to none, so a line that predates them still reads.

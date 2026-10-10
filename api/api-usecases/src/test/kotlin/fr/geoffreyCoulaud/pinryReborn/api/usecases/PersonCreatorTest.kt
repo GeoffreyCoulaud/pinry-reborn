@@ -70,6 +70,8 @@ class PersonCreatorTest {
         override fun findPersonsForUserMatching(user: User, query: String, limit: Int) =
             error("A creation searches no person")
 
+        override fun findAllPersonsForUser(user: User) = error("A creation lists no person")
+
         override fun deleteAllPersonsForUser(user: User) = error("A creation deletes no person")
     }
 

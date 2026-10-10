@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
 import io.quarkus.test.junit.QuarkusTest
@@ -29,13 +30,16 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
 
     @Inject lateinit var remoteCollectionRepository: RemoteCollectionRepositoryInterface
 
+    @Inject lateinit var personRepository: PersonRepositoryInterface
+
     // --- Seeding, and the real export the round trip pours back in ---
 
     private fun stepUp(password: String) = "password " + Base64.getUrlEncoder().encodeToString(password.toByteArray())
 
     /**
      * Two active pins, one recycled pin naming no page, two boards (one recycled) each holding a pin and a collection,
-     * two tags, and a fourth pin sharing a medium (spec section 13.1). The first one credits its people.
+     * two tags, and a fourth pin sharing a medium (spec section 13.1). The first one credits its people, and one person
+     * is credited by no pin.
      */
     private fun seedRoundTripContent(auth: AuthenticatedUser) {
         val alpha = createPin(auth, ALPHA, tags = listOf("nature", "travel"))
@@ -61,6 +65,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
                 publishedAt = PUBLISHED_AT,
             )
         replacePin(auth, credited, boardIds = listOf(activeBoard.id, recycledBoard.id)).statusCode(200)
+        personCreator.findOrCreate("Hedy", listOf("https://hedy.example"), auth.user)
         linkCollection(activeBoard, "https://remote.example/active")
         linkCollection(recycledBoard, "https://remote.example/recycled")
         given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${recycledBoard.id}").then().statusCode(204)
@@ -144,6 +149,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         val boards: Map<String, Instant?>,
         val tags: Set<String>,
         val collections: Set<CollectionFacts>,
+        val persons: Set<PersonFacts>,
     )
 
     private data class CollectionFacts(val url: String, val name: String, val boardName: String)
@@ -182,6 +188,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
                     .findAllRemoteCollectionsForUser(user)
                     .map { CollectionFacts(it.url.toString(), it.name, it.board.name) }
                     .toSet(),
+            persons = personRepository.findAllPersonsForUser(user).map { factsOf(it) }.toSet(),
         )
     }
 
@@ -240,6 +247,8 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         assertEquals(source.tags, copy.tags)
         assertEquals(2, copy.collections.size)
         assertEquals(source.collections, copy.collections, "each collection linked to its board, recycled or not")
+        assertEquals(4, copy.persons.size)
+        assertEquals(source.persons, copy.persons, "every person, the one no pin credits included")
         // The whole report, not one kind: this is the one case where the real exporter's digest meets
         // the real importer's, so any anomaly at all is a disagreement between the two halves.
         assertEquals(emptyList<String>(), issueKinds(destination, importId))

@@ -16,6 +16,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
@@ -96,6 +97,7 @@ internal abstract class UserDataExportFixtures : BaseTest() {
     protected val boardRepository = mockk<BoardRepositoryInterface>()
     protected val tagRepository = mockk<TagRepositoryInterface>()
     protected val remoteCollectionRepository = mockk<RemoteCollectionRepositoryInterface>()
+    protected val personRepository = mockk<PersonRepositoryInterface>()
     protected val mediaStore = mockk<MediaStore>()
     protected val clock = mockk<Clock>()
 
@@ -125,6 +127,7 @@ internal abstract class UserDataExportFixtures : BaseTest() {
             boardRepository,
             tagRepository,
             remoteCollectionRepository,
+            personRepository,
             mediaStore,
             store,
             transactions,
@@ -269,5 +272,6 @@ internal abstract class UserDataExportFixtures : BaseTest() {
         every { boardRepository.findRecycledBoardsForUser(user) } returns emptyList()
         every { tagRepository.findAllTagsForUser(user) } returns emptyList()
         every { remoteCollectionRepository.findAllRemoteCollectionsForUser(user) } returns emptyList()
+        every { personRepository.findAllPersonsForUser(user) } returns emptyList()
     }
 }

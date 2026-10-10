@@ -69,8 +69,11 @@ internal data class ExportedMedia(
     val createdAt: Instant,
 )
 
-/** A pin's publisher or creator: the archive carries no entry for persons, so a pin line names each in full. */
+/** A pin's publisher or creator, named in full. */
 internal data class ExportedPerson(val name: String, val urls: List<String>)
+
+/** One `persons.jsonl` line: [id] only links the lines of one archive, and the import forgets it. */
+internal data class ExportedPersonLine(val id: UUID, val name: String, val urls: List<String>, val createdAt: Instant)
 
 /**
  * One `pins.jsonl` line. `media` is `null` when the pin has no image **or** when its bytes could not be written (spec
@@ -94,7 +97,14 @@ internal data class ExportedPin(
 )
 
 /** `manifest.json`'s `counts` object: incremented while writing, never re-derived by re-iterating. */
-internal data class ExportCounts(val pins: Int, val boards: Int, val tags: Int, val media: Int)
+internal data class ExportCounts(
+    val pins: Int,
+    val boards: Int,
+    val tags: Int,
+    val media: Int,
+    val persons: Int,
+    val collections: Int,
+)
 
 /**
  * `manifest.json` in full, written last, once every other entry's [ArchiveEntryDigest] is known. `entries` reuses the
