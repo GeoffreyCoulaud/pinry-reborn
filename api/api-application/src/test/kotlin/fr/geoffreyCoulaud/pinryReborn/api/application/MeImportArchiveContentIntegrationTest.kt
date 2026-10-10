@@ -62,7 +62,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         // Then: the whole report, so a seventh issue no one asked for fails here. Sorted rather than
         // in the walk's order, which is the report's paging to decide and not what this case is about.
         assertEquals(EXPECTED_ANOMALIES.sorted(), issueKinds(auth, importId).sorted())
-        assertEquals(listOf("https://example.test/good"), activePinsOf(auth.user).map { it.sourceContextUrl })
+        assertEquals(listOf("https://example.test/good"), activePinsOf(auth.user).map { "${it.sourceContextUrl}" })
         assertTrue(boardRepository.findActiveBoardsForUser(auth.user).isEmpty(), "the over-long name is refused")
     }
 
@@ -268,7 +268,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         // Then
         assertEquals(listOf("FIELD_INVALID", "FIELD_INVALID"), issueKinds(auth, importId))
         val pin = activePinsOf(auth.user).single()
-        assertEquals("https://example.test/none", pin.sourceContextUrl)
+        assertEquals("https://example.test/none", pin.sourceContextUrl.toString())
         assertNull(pin.publisher)
         assertTrue(pin.creators.isEmpty())
         assertNull(pin.publishedAt)
@@ -303,7 +303,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         )
         assertEquals(
             mapOf("https://example.test/sample.png" to "Feed", "https://example.test/sample.jpg" to "Shared"),
-            activePinsOf(auth.user).associate { it.sourceContextUrl to it.boards.single().name },
+            activePinsOf(auth.user).associate { it.sourceContextUrl.toString() to it.boards.single().name },
         )
     }
 

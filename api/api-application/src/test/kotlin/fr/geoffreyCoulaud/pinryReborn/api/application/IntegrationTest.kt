@@ -87,8 +87,8 @@ abstract class IntegrationTest {
             .body(
                 mapOf(
                     "description" to pin.description,
-                    "sourceContextUrl" to pin.sourceContextUrl,
-                    "sourceMediaUrl" to pin.sourceMediaUrl,
+                    "sourceContextUrl" to pin.sourceContextUrl?.toString(),
+                    "sourceMediaUrl" to pin.sourceMediaUrl?.toString(),
                     "tags" to tags,
                     "boardIds" to boardIds.map { it.toString() },
                     "publisher" to pin.publisher?.let { mapOf("name" to it.name, "urls" to it.urls) },

@@ -72,8 +72,8 @@ class PinControllerTest {
                     id = randomUUID(),
                     author = user,
                     // MockK hands a value class over unboxed.
-                    sourceContextUrl = arg<URI?>(1)?.let { HttpUrl.parse(it.toString()) },
-                    sourceMediaUrl = arg<URI?>(2)?.let { HttpUrl.parse(it.toString()) },
+                    sourceContextUrl = arg<URI?>(1)?.let { uri -> HttpUrl.parse(uri.toString()) },
+                    sourceMediaUrl = arg<URI?>(2)?.let { uri -> HttpUrl.parse(uri.toString()) },
                     description = arg(3),
                     tags = emptyList(),
                     boards = emptyList(),
@@ -112,7 +112,11 @@ class PinControllerTest {
     }
 
     /** Writes a pin through the controller, the use case answering only for the people it expects. */
-    private fun updatePinWith(publisher: PersonInputDto?, expectedPublisher: PersonReference?): Int {
+    private fun updatePinWith(
+        publisher: PersonInputDto?,
+        expectedPublisher: PersonReference?,
+        address: String? = null,
+    ): Int {
         val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
         val pin =
             Pin(
@@ -143,8 +147,8 @@ class PinControllerTest {
         } returns pin
         val dto =
             PinUpdateInputDto(
-                sourceContextUrl = null,
-                sourceMediaUrl = null,
+                sourceContextUrl = address,
+                sourceMediaUrl = address,
                 description = "",
                 tags = emptyList(),
                 boardIds = emptyList(),
@@ -157,13 +161,11 @@ class PinControllerTest {
     }
 
     @Test
-    fun `Given a publisher and a creator, Then updatePin hands both to the use case by name and addresses`() {
+    fun `Given source addresses, a publisher and a creator, Then updatePin hands the people by name and addresses`() {
         val publisher = PersonInputDto(name = "Alice", urls = listOf("https://alice.test"))
+        val expected = PersonReference(name = "Alice", urls = listOf("https://alice.test"))
 
-        assertEquals(
-            200,
-            updatePinWith(publisher, PersonReference(name = "Alice", urls = listOf("https://alice.test"))),
-        )
+        assertEquals(200, updatePinWith(publisher, expected, address = "https://alice.test/pin"))
     }
 
     @Test
