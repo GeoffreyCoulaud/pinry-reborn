@@ -3,7 +3,11 @@
 Date: 2026-10-08
 Status: Accepted by the operator on 2026-10-08. One specification review ran,
 `.reviews/the-pin-credits-its-people-spec.md`, its 4 MAJOR and 15 MINOR closed in this document. Frozen when the lot's
-last block merges.
+last block merges. Partially superseded by `docs/specs/2026-10-10-addresses-and-people-take-their-shape.md` (lot
+`0.54.0`): decision A's "no normalisation" (every address is normalised); decision D's persons travelling only inside
+pin lines (`persons.jsonl` lists them), stamped with the import instant (a person line's `createdAt`, clamped), and a
+person's fault refusing the pin line (the pin is created and `PERSON_UNKNOWN` reported); decision E's collection
+identity, now a normalised address.
 Lot: `0.52.0`.
 Branches: one stack, each block on the one before it: 10 `feat/a-person-is-stored`, 20 `feat/the-pin-holds-its-people`,
 30 `feat/the-api-credits-people`, 40 `feat/the-api-searches-people`, 50 `feat/the-catalogue-finds-people`,

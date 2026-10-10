@@ -1,6 +1,8 @@
 # 0056. Data shapes are decided in the specification
 
-Status: Accepted
+Status: Accepted; decision 13 and decision 7.1's "pin lines naming theirs by `{name, urls}`" are superseded by
+`docs/adr/0057-the-archive-references-by-key-and-an-address-is-refused-alike.md`; decision 7.1 is delivered by lot
+`0.54.0` (`docs/specs/2026-10-10-addresses-and-people-take-their-shape.md`).
 Date: 2026-10-09
 Amends: `docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decisions 3 (the fix-back)
 and 7 (the closing block on top); `agents/engineering.md`, Design invariants, "The migration history is append-only

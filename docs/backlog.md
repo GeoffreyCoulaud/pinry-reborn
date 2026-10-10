@@ -60,7 +60,8 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   `inventory.md` tags [migration]. See also `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
 - **The domain names concepts with bare strings, and its types carry storage formats**: the types lot, after the
   importer. `docs/adr/0056-data-shapes-are-decided-in-the-specification/inventory.md`, T1, T2 and T4 to T7, section 2,
-  and units 8 to 10, 17 to 20 (the database renames left to the foreign keys item) and 25. New 2026-10-09.
+  and units 8 to 10, 17 to 20 (the database renames left to the foreign keys item) and 25. Lot `0.54.0` typed the
+  addresses and a person's name (`docs/specs/2026-10-10-addresses-and-people-take-their-shape.md`). New 2026-10-09.
 - **Domain and wire states are independent nullable fields, not sealed variants**, null standing for a third state: the
   sealed states lot, after the types. Same `inventory.md`, T3, N1, N2, C3 and C5, and units 11 to 13, 22 and 23; it
   answers the two questions of ADR 0056, decision 8. New 2026-10-09.
@@ -116,8 +117,9 @@ Dated events. No session starts these early.
   `docs/specs/2026-10-05-the-pin-knows-its-duplicates.md`, decision E. New 2026-10-05.
 - **Import from third-party sites**: whatever gallery-dl reads, through a companion tool that writes the user data
   archive. Two lots: the first, the pin's people and the remote collections, is done (lot `0.52.0`); the importer
-  is still to come, third in the order of `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.
-  See `docs/adr/0055-third-party-imports-write-the-user-data-archive.md`.
+  is still to come, third in the order of `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7,
+  the first being done (lot `0.54.0`). See `docs/adr/0055-third-party-imports-write-the-user-data-archive.md`, and
+  `docs/adr/0057-the-archive-references-by-key-and-an-address-is-refused-alike.md` for the archive it writes.
 - **Sensitive content is not classified**: no reason, intensity or viewing context hides a pin, for any entry path.
   See ADR 0054, Consequences.
 - **Tags have no implications or aliases.** See ADR 0054, Consequences.

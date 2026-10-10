@@ -1,6 +1,9 @@
 # 0055. Third-party imports write the user data archive
 
-Status: Accepted
+Status: Accepted; an archive's pin line names decision 8's person by the `{id}` of its `persons.jsonl` line, and every
+address, decision 11's collection included, is compared normalised:
+`docs/adr/0057-the-archive-references-by-key-and-an-address-is-refused-alike.md`, decisions 5 and 6, and lot `0.54.0`
+(`docs/specs/2026-10-10-addresses-and-people-take-their-shape.md`).
 Date: 2026-10-08
 Supersedes: `docs/adr/0054-third-party-imports-are-manual-and-keep-no-credential.md`
 Specification: none yet. Two lots follow, each with its own. (Corrected: the first lot's is
