@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -44,7 +45,8 @@ class DuplicateResolverTest {
     private fun pin(description: String = "", createdAt: Instant = TestTime.now, author: User = user) =
         Pin(randomUUID(), author, null, null, description, emptyList(), emptyList(), createdAt, createdAt)
 
-    private fun person() = Person(randomUUID(), user, createRandomString(), emptyList(), TestTime.now)
+    private fun person() =
+        Person(randomUUID(), user, checkNotNull(PersonName.parse(createRandomString())), emptySet(), TestTime.now)
 
     // [open] lists every other pin as a shown duplicate.
     private fun stored(open: Pin, vararg others: Pin) {

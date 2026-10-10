@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
@@ -20,14 +22,14 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
     // `collate nocase` folds ASCII alone, as the unique index does, where Ebean's `ieq` would fold Unicode.
     override fun findUserPerson(
         user: User,
-        name: String,
-        urls: Collection<String>,
+        name: PersonName,
+        urls: Set<HttpUrl>,
     ): Person? =
         QPersonModel()
             .author
             .id
             .equalTo(user.id)
-            .raw("name collate nocase = ?", name)
+            .raw("name collate nocase = ?", name.text)
             .urls
             .equalTo(canonicalUrls(urls))
             .findOne()

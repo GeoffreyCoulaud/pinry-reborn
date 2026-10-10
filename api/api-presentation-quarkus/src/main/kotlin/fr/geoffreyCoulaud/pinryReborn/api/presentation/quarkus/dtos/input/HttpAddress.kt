@@ -8,7 +8,7 @@ import jakarta.validation.Payload
 import kotlin.reflect.KClass
 
 /** An address [HttpUrl]'s factory accepts; null passes, the type deciding whether it may be absent. */
-@Target(AnnotationTarget.FIELD)
+@Target(AnnotationTarget.FIELD, AnnotationTarget.TYPE)
 @Retention(AnnotationRetention.RUNTIME)
 @Constraint(validatedBy = [HttpAddressValidator::class])
 annotation class HttpAddress(

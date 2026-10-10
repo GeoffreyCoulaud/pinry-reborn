@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import io.mockk.every
 import io.mockk.verify
@@ -20,8 +22,8 @@ internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
             Person(
                 id = randomUUID(),
                 author = user,
-                name = "Ada",
-                urls = listOf("https://a.example"),
+                name = checkNotNull(PersonName.parse("Ada")),
+                urls = setOfNotNull(HttpUrl.parse("https://a.example")),
                 createdAt = accountCreatedAt,
             )
         val line =
@@ -40,7 +42,7 @@ internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
 
         // Then
         val created = savedPins.single()
-        assertEquals("Studio", created.publisher?.name)
+        assertEquals("Studio", created.publisher?.name?.text)
         assertEquals(now, created.publisher?.createdAt)
         assertEquals(listOf(existing), created.creators)
         assertEquals(beforeAccount, created.publishedAt)
@@ -84,9 +86,7 @@ internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
         val known = existing.toMutableList()
         every { personRepository.findUserPerson(user, any(), any()) } answers
             {
-                known.firstOrNull { person ->
-                    person.name == secondArg<String>() && person.urls.toSet() == thirdArg<Collection<String>>().toSet()
-                }
+                known.firstOrNull { person -> person.name == secondArg() && person.urls == thirdArg<Set<HttpUrl>>() }
             }
         every { personRepository.savePerson(any()) } answers
             {

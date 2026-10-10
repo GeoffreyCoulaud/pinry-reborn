@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PersonOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonSearcher
@@ -21,15 +23,15 @@ class PersonSearchControllerTest {
     private val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
 
     @Test
-    fun `Given no limit, Then the searcher is asked the tag search's default and the addresses are answered`() {
+    fun `Given no limit, Then the searcher is asked the tag search's default and the addresses are answered sorted`() {
         // Given
         val query = createRandomString()
         val person =
             Person(
                 id = randomUUID(),
                 author = user,
-                name = "Alice",
-                urls = listOf(URL),
+                name = checkNotNull(PersonName.parse("Alice")),
+                urls = listOf(LATER_URL, URL).map { checkNotNull(HttpUrl.parse(it)) }.toSet(),
                 createdAt = TestTime.now,
             )
         every { securityIdentity.getAttribute<User>("user") } returns user
@@ -42,7 +44,7 @@ class PersonSearchControllerTest {
 
         // Then
         assertEquals(
-            listOf(PersonOutputDto(name = "Alice", urls = listOf(URL))),
+            listOf(PersonOutputDto(name = "Alice", urls = listOf(URL, LATER_URL))),
             response.entity.results.map { it.person },
         )
     }
@@ -64,5 +66,6 @@ class PersonSearchControllerTest {
 
     private companion object {
         const val URL = "https://a.test/alice"
+        const val LATER_URL = "https://b.test/alice"
     }
 }

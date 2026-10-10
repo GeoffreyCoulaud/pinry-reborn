@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
@@ -136,7 +137,7 @@ class PinControllerTest {
                 tagNames = any(),
                 boardIds = any(),
                 publisher = expectedPublisher,
-                creators = listOf(PersonReference(name = "Bob", urls = emptyList())),
+                creators = listOf(PersonReference(name = checkNotNull(PersonName.parse("Bob")), urls = emptySet())),
                 publishedAt = null,
                 user = user,
             )
@@ -157,9 +158,10 @@ class PinControllerTest {
     }
 
     @Test
-    fun `Given source addresses, a publisher and a creator, Then updatePin hands the people by name and addresses`() {
-        val publisher = PersonInputDto(name = "Alice", urls = listOf("https://alice.test"))
-        val expected = PersonReference(name = "Alice", urls = listOf("https://alice.test"))
+    fun `Given a publisher naming one address twice, Then updatePin hands the people with that address once`() {
+        val publisher = PersonInputDto(name = "Alice", urls = listOf("https://alice.test", "HTTPS://Alice.test/"))
+        val expected =
+            PersonReference(checkNotNull(PersonName.parse("Alice")), setOfNotNull(HttpUrl.parse("https://alice.test/")))
 
         assertEquals(200, updatePinWith(publisher, expected, address = "https://alice.test/pin"))
     }

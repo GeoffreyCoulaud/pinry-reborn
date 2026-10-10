@@ -288,24 +288,25 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val pin = createPin(auth)
-        val longest = person("n".repeat(200), *Array(20) { "$it".padEnd(2000, 'u') })
+        val longest = person("n".repeat(200), *Array(20) { "https://a.test/$it".padEnd(2000, 'u') })
 
         // When, Then
         update(auth, pin, publisher = longest, creators = listOf(longest)).statusCode(200)
     }
 
     @Test
-    fun `Given an address holding a line feed, Then the write stores it as sent`() {
+    fun `Given a creator naming one address in two spellings, Then it is stored once and found by a third spelling`() {
         // Given
         val auth = createAuthenticatedUser()
         val pin = createPin(auth)
-        val address = "https://alice.test/a\nhttps://alice.test/b"
 
         // When
-        update(auth, pin, publisher = person("Alice", address)).statusCode(200)
+        val first = update(auth, pin, creators = listOf(person("Alice", "HTTPS://A.test", "https://a.test/")))
+        update(auth, pin, creators = listOf(person("alice", "https://a.test"))).statusCode(200)
 
         // Then
-        readPin(auth, pin).body("publisher.urls", contains(address))
+        first.statusCode(200).body("creators[0].urls", contains("https://a.test/"))
+        assertEquals(1, personRowsOf(auth))
     }
 
     @Test
@@ -319,7 +320,9 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
                 person("n".repeat(201)),
                 person("Alice", *Array(21) { "https://alice.test/$it" }),
                 person("Alice", " "),
-                person("Alice", "u".repeat(2001)),
+                person("Alice", "https://a.test/".padEnd(2001, 'u')),
+                person("Alice", "ftp://alice.test/"),
+                person("Alice", "https://alice.test/a\nhttps://alice.test/b"),
             )
 
         // When, Then: each as the publisher and as a creator
@@ -543,7 +546,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
     }
 
     private companion object {
-        const val ALICE_SITE = "https://alice.test"
+        const val ALICE_SITE = "https://alice.test/"
         const val BOB_GALLERY = "https://bob.test/gallery"
         const val BOB_SHOP = "https://bob.test/shop"
     }

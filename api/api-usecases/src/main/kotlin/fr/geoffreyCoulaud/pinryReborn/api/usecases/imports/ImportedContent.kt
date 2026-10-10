@@ -1,5 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonReference
 import java.time.Instant
 
 /**
@@ -37,7 +39,14 @@ internal data class ImportedRef(val name: String)
 internal data class ImportedMedia(val path: String, val sha256: String)
 
 /** A pin's publisher or creator, identified by its name and its addresses together. */
-internal data class ImportedPerson(val name: String, val urls: List<String>)
+internal data class ImportedPerson(val name: String, val urls: List<String>) {
+    /** Read once the line's check passed, so a refused name here is a defect. */
+    fun toReference(): PersonReference =
+        PersonReference(
+            name = checkNotNull(PersonName.parse(name)) { "the line's check let a refused name through: $name" },
+            urls = urls.map(ImportedAddress::read).toSet(),
+        )
+}
 
 /**
  * One `pins.jsonl` line. A null [media] is a pin with no medium, which has no identity to import. The people, the

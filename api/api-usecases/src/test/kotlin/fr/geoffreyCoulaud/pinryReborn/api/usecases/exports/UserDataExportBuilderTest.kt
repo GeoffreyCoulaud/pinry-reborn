@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
@@ -301,8 +302,8 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         // Given
         stubArchiveStore()
         every { clock.now() } returns now
-        val publisher = aPerson("Studio", "https://studio.example")
-        val creator = aPerson("Ada", "https://a.example", "https://b.example")
+        val publisher = aPerson("Studio", "https://studio.example/")
+        val creator = aPerson("Ada", "https://b.example/", "https://a.example/")
         val publishedAt = Instant.parse("1999-12-31T23:00:00Z")
         val pin = aPin().copy(publisher = publisher, creators = listOf(creator), publishedAt = publishedAt)
         val noPage = pin.copy(sourceContextUrl = null, sourceMediaUrl = HttpUrl.parse("https://x.test/i.png"))
@@ -318,11 +319,11 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         // When
         builder.stageArchive(anExport(), user, renewLease = {})
 
-        // Then: each person in full, and no file for persons
+        // Then: each person in full, its addresses sorted, and no file for persons
         val exportedPin = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>().single()
-        assertEquals(ExportedPerson("Studio", listOf("https://studio.example")), exportedPin.publisher)
+        assertEquals(ExportedPerson("Studio", listOf("https://studio.example/")), exportedPin.publisher)
         assertEquals(
-            listOf(ExportedPerson("Ada", listOf("https://a.example", "https://b.example"))),
+            listOf(ExportedPerson("Ada", listOf("https://a.example/", "https://b.example/"))),
             exportedPin.creators,
         )
         assertEquals(publishedAt, exportedPin.publishedAt)
@@ -335,7 +336,13 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
     }
 
     private fun aPerson(name: String, vararg urls: String) =
-        Person(id = randomUUID(), author = user, name = name, urls = urls.toList(), createdAt = now)
+        Person(
+            id = randomUUID(),
+            author = user,
+            name = checkNotNull(PersonName.parse(name)),
+            urls = urls.map { checkNotNull(HttpUrl.parse(it)) }.toSet(),
+            createdAt = now,
+        )
 
     // -- build(): the entry guard ---------------------------------------------------------------
 

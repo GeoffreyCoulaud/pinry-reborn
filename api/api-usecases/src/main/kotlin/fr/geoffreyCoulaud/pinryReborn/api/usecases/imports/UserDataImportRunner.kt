@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenExc
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
@@ -37,6 +38,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.IngestedMedia
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaIngestion
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonReference
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.deleteQuietly
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.UserDataExportRequester
@@ -573,7 +575,7 @@ class UserDataImportRunner(
     }
 
     /** Found or created in the settling transaction, at the import instant (specification 2026-10-08, decision D). */
-    private fun resolvePerson(walk: PinWalk, person: ImportedPerson): Person =
+    private fun resolvePerson(walk: PinWalk, person: PersonReference): Person =
         personCreator.findOrCreate(person.name, person.urls, walk.user, createdAt = walk.importInstant)
 
     private fun outcomeFor(walk: PinWalk, line: ArchiveLine<ImportedPin>): PinOutcome {
@@ -598,9 +600,12 @@ class UserDataImportRunner(
             ?: ImportFieldBounds.referenceCountFault(CREATORS_FIELD, pin.creators.size)
             ?: ImportFieldBounds.referenceCountFault(COLLECTIONS_FIELD, pin.collections.size)
             ?: pin.collections.firstNotNullOfOrNull { ImportFieldBounds.httpAddressFault(COLLECTIONS_FIELD, it) }
-            ?: (listOfNotNull(pin.publisher) + pin.creators).firstNotNullOfOrNull {
-                ImportFieldBounds.personFault(it.name, it.urls)
-            }
+            ?: (listOfNotNull(pin.publisher) + pin.creators).firstNotNullOfOrNull { personFault(it) }
+
+    private fun personFault(person: ImportedPerson): String? =
+        (if (PersonName.parse(person.name) == null) PERSON_NAME_FAULT else null)
+            ?: ImportFieldBounds.personFault(person.urls)
+            ?: person.urls.firstNotNullOfOrNull { ImportFieldBounds.httpAddressFault(PERSON_URL_FIELD, it) }
 
     private fun reported(kind: UserDataImportIssueKind, subject: String?, detail: String?): PinOutcome =
         PinOutcome(issues = listOf(PendingIssue(kind, subject, detail)))
@@ -709,8 +714,8 @@ class UserDataImportRunner(
                     ingested = ingested,
                     tagNames = pin.tags.map { it.name },
                     boardNames = pin.boards.map { it.name },
-                    publisher = pin.publisher,
-                    creators = pin.creators,
+                    publisher = pin.publisher?.toReference(),
+                    creators = pin.creators.map { it.toReference() },
                     collectionUrls = pin.collections.map(ImportedAddress::read),
                 )
         )
@@ -762,8 +767,8 @@ class UserDataImportRunner(
         val ingested: IngestedMedia,
         val tagNames: List<String>,
         val boardNames: List<String>,
-        val publisher: ImportedPerson?,
-        val creators: List<ImportedPerson>,
+        val publisher: PersonReference?,
+        val creators: List<PersonReference>,
         val collectionUrls: List<HttpUrl>,
     )
 
@@ -780,5 +785,7 @@ class UserDataImportRunner(
         const val TAGS_FIELD = "tags"
         const val BOARDS_FIELD = "boards"
         const val CREATORS_FIELD = "creators"
+        const val PERSON_URL_FIELD = "a person's address"
+        const val PERSON_NAME_FAULT = "a person's name is blank or longer than ${PersonName.MAX_LENGTH} characters"
     }
 }

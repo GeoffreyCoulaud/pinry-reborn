@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
@@ -124,7 +125,7 @@ class PinMapperTest {
     fun `Given a pin crediting people, Then toDto carries each by its name and addresses, and the instant`() {
         // Given
         val pin = createPin()
-        val alice = person(pin, "Alice", listOf("https://alice.test"))
+        val alice = person(pin, "Alice", listOf("https://alice.test/"))
         val bob = person(pin, "Bob", emptyList())
         val credited =
             pin.copy(publisher = alice, creators = listOf(bob), publishedAt = Instant.parse("2019-05-01T12:00:00Z"))
@@ -133,7 +134,7 @@ class PinMapperTest {
         val result = credited.toDto(emptyMap(), emptySet())
 
         // Then
-        assertEquals(PersonOutputDto(name = "Alice", urls = listOf("https://alice.test")), result.publisher)
+        assertEquals(PersonOutputDto(name = "Alice", urls = listOf("https://alice.test/")), result.publisher)
         assertEquals(listOf(PersonOutputDto(name = "Bob", urls = emptyList())), result.creators)
         assertEquals(credited.publishedAt, result.publishedAt)
     }
@@ -153,8 +154,8 @@ class PinMapperTest {
         Person(
             id = randomUUID(),
             author = pin.author,
-            name = name,
-            urls = urls,
+            name = checkNotNull(PersonName.parse(name)),
+            urls = urls.map { checkNotNull(HttpUrl.parse(it)) }.toSet(),
             createdAt = TestTime.now,
         )
 

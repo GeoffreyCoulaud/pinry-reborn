@@ -80,7 +80,9 @@ How this build applies `agents/data-modelling.md`
 
 - **No inline value class appears in a persistence model.** Ebean's migration generation breaks on one in silence; the
   mapper converts. A Konsist test holds the rule, landing with the first value class.
-- **A value type is a `@JvmInline value class` when it wraps one field, a `data class` otherwise.**
+- **A value type is a `@JvmInline value class` when it wraps one field, a `data class` otherwise.** Except a type whose
+  equality is not its field's, which an inline value class cannot declare: a plain `class` with `equals` and
+  `hashCode`, as `PersonName` folds ASCII case as `collate nocase` does.
 
 ## Gotchas
 

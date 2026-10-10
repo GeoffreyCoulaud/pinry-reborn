@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -77,22 +78,24 @@ class PinUpdaterTest {
     fun `Given a publisher, creators and an instant, Then update finds or creates each person and stores them`() {
         // Given
         val pin = pin(author = user)
-        val publisher = person("Alice", listOf("https://alice.test"))
-        val creator = person("Bob", emptyList())
+        val publisherReference = reference("Alice", "https://alice.test")
+        val creatorReference = reference("Bob")
+        val publisher = person(publisherReference)
+        val creator = person(creatorReference)
         val publishedAt = Instant.parse("2019-05-01T12:00:00Z")
         every { pinRepository.findPinById(pin.id) } returns pin
         every { pinTagger.resolveTags(emptyList(), user) } returns emptyList()
         every { pinBoardSetter.resolveBoards(emptyList(), user) } returns emptyList()
-        every { personCreator.findOrCreate("Alice", listOf("https://alice.test"), user) } returns publisher
-        every { personCreator.findOrCreate("Bob", emptyList(), user) } returns creator
+        every { personCreator.findOrCreate(publisher.name, publisher.urls, user) } returns publisher
+        every { personCreator.findOrCreate(creator.name, creator.urls, user) } returns creator
         every { pinRepository.savePin(any()) } answers { firstArg() }
 
         // When
         val result =
             update(
                 pin.id,
-                publisher = PersonReference(name = "Alice", urls = listOf("https://alice.test")),
-                creators = listOf(PersonReference(name = "Bob", urls = emptyList())),
+                publisher = publisherReference,
+                creators = listOf(creatorReference),
                 publishedAt = publishedAt,
             )
 
@@ -180,8 +183,11 @@ class PinUpdaterTest {
             user = user,
         )
 
-    private fun person(name: String, urls: List<String>) =
-        Person(id = randomUUID(), author = user, name = name, urls = urls, createdAt = TestTime.now)
+    private fun reference(name: String, vararg urls: String) =
+        PersonReference(checkNotNull(PersonName.parse(name)), urls.map { checkNotNull(HttpUrl.parse(it)) }.toSet())
+
+    private fun person(reference: PersonReference) =
+        Person(randomUUID(), author = user, reference.name, reference.urls, createdAt = TestTime.now)
 
     private fun pin(author: User) =
         Pin(

@@ -137,7 +137,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         val publishedAt: Instant?,
     )
 
-    private data class PersonFacts(val name: String, val urls: List<String>)
+    private data class PersonFacts(val name: String, val urls: Set<HttpUrl>)
 
     private data class AccountFacts(
         val pins: Map<String?, PinFacts>,
@@ -168,7 +168,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         )
     }
 
-    private fun factsOf(person: Person): PersonFacts = PersonFacts(person.name, person.urls)
+    private fun factsOf(person: Person): PersonFacts = PersonFacts(person.name.text, person.urls)
 
     private fun factsOf(user: User): AccountFacts {
         val pins = activePinsOf(user) + pinRepository.findAllSoftDeletedPinsForUser(user)

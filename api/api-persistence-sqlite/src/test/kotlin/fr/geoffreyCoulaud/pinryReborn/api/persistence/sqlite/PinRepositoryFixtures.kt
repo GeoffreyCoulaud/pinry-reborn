@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -83,8 +84,8 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
             Person(
                 id = randomUUID(),
                 author = user,
-                name = name,
-                urls = urls,
+                name = checkNotNull(PersonName.parse(name)),
+                urls = urls.map { checkNotNull(HttpUrl.parse(it)) }.toSet(),
                 createdAt = storableNow(),
             )
         )
