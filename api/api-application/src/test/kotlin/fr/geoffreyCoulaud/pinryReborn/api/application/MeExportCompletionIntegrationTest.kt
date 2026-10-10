@@ -195,12 +195,13 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
     // --- Seeding: two active pins (one tagged and boarded), one recycled pin, an active board, a
     // recycled board holding a pin, a tag, and one real uploaded image (spec §13.1) ---
 
+    /** Each record by its natural key, which is all the archive names it by. */
     private data class SeededContent(
-        val taggedPinId: UUID,
-        val mediaPinId: UUID,
-        val recycledPinId: UUID,
-        val activeBoardId: UUID,
-        val recycledBoardId: UUID,
+        val taggedPinUrl: String,
+        val mediaPinUrl: String,
+        val recycledPinUrl: String,
+        val activeBoardName: String,
+        val recycledBoardName: String,
     )
 
     private fun createPin(auth: IntegrationTest.AuthenticatedUser, slug: String, tags: List<String> = emptyList()) =
@@ -231,15 +232,19 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${recycledBoard.id}").then().statusCode(204)
 
         return SeededContent(
-            taggedPinId = taggedPin.id,
-            mediaPinId = mediaPin.id,
-            recycledPinId = recycledPin.id,
-            activeBoardId = activeBoard.id,
-            recycledBoardId = recycledBoard.id,
+            taggedPinUrl = taggedPin.sourceContextUrl.toString(),
+            mediaPinUrl = mediaPin.sourceContextUrl.toString(),
+            recycledPinUrl = recycledPin.sourceContextUrl.toString(),
+            activeBoardName = activeBoard.name,
+            recycledBoardName = recycledBoard.name,
         )
     }
 
     // --- Archive-content assertions ---
+
+    private fun lineNamed(lines: List<JsonNode>, key: String, value: String): JsonNode = lines.first {
+        it.get(key).asText() == value
+    }
 
     private fun assertManifestCounts(manifest: JsonNode) {
         assertEquals(2, manifest.get("formatVersion").asInt())
@@ -250,17 +255,17 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         assertEquals(1, counts.get("media").asInt())
     }
 
-    private fun assertRecycledPinCarriesDeletedAt(pinLines: List<JsonNode>, recycledPinId: UUID) {
-        val line = pinLines.first { it.get("id").asText() == recycledPinId.toString() }
-        assertFalse(line.get("deletedAt").isNull, "the recycled pin should carry a non-null deletedAt")
+    private fun assertRecycledPinCarriesSoftDeletedAt(pinLines: List<JsonNode>, recycledPinUrl: String) {
+        val line = lineNamed(pinLines, "sourceContextUrl", recycledPinUrl)
+        assertFalse(line.get("softDeletedAt").isNull, "the recycled pin should carry a non-null softDeletedAt")
     }
 
     /** The single most important assertion: a recycled board still appears in its pin's `boards`. */
     private fun assertRecycledBoardMembershipSurvives(pinLines: List<JsonNode>, seeded: SeededContent) {
-        val line = pinLines.first { it.get("id").asText() == seeded.taggedPinId.toString() }
-        val boardIds = line.get("boards").map { it.get("id").asText() }
+        val line = lineNamed(pinLines, "sourceContextUrl", seeded.taggedPinUrl)
+        val boardNames = line.get("boards").map { it.get("name").asText() }
         assertTrue(
-            seeded.recycledBoardId.toString() in boardIds,
+            seeded.recycledBoardName in boardNames,
             "the recycled board should stay listed in its pin's boards even though it is recycled",
         )
         val tagNames = line.get("tags").map { it.get("name").asText() }
@@ -270,15 +275,15 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
     private fun assertBoardsJsonl(zip: ZipFile, seeded: SeededContent) {
         val boardLines = readJsonLines(zip, "boards.jsonl")
         assertEquals(2, boardLines.size)
-        val recycled = boardLines.first { it.get("id").asText() == seeded.recycledBoardId.toString() }
-        assertFalse(recycled.get("deletedAt").isNull, "the recycled board should carry a non-null deletedAt")
-        val active = boardLines.first { it.get("id").asText() == seeded.activeBoardId.toString() }
-        assertTrue(active.get("deletedAt").isNull, "the active board should carry a null deletedAt")
+        val recycled = lineNamed(boardLines, "name", seeded.recycledBoardName)
+        assertFalse(recycled.get("softDeletedAt").isNull, "the recycled board should carry a non-null softDeletedAt")
+        val active = lineNamed(boardLines, "name", seeded.activeBoardName)
+        assertTrue(active.get("softDeletedAt").isNull, "the active board should carry a null softDeletedAt")
     }
 
     /** Downloads REAL bytes and compares them byte-for-byte to the uploaded fixture. */
-    private fun assertMediaEntryIsByteIdentical(zip: ZipFile, pinLines: List<JsonNode>, mediaPinId: UUID) {
-        val line = pinLines.first { it.get("id").asText() == mediaPinId.toString() }
+    private fun assertMediaEntryIsByteIdentical(zip: ZipFile, pinLines: List<JsonNode>, mediaPinUrl: String) {
+        val line = lineNamed(pinLines, "sourceContextUrl", mediaPinUrl)
         val mediaNode = line.get("media")
         assertFalse(mediaNode.isNull, "the pin with an uploaded image should carry a non-null image")
         val path = mediaNode.get("path").asText()
@@ -315,10 +320,10 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
             assertManifestCounts(manifest)
             val pinLines = readJsonLines(zip, "pins.jsonl")
             assertEquals(3, pinLines.size, "one pins.jsonl line per pin")
-            assertRecycledPinCarriesDeletedAt(pinLines, seeded.recycledPinId)
+            assertRecycledPinCarriesSoftDeletedAt(pinLines, seeded.recycledPinUrl)
             assertRecycledBoardMembershipSurvives(pinLines, seeded)
             assertBoardsJsonl(zip, seeded)
-            assertMediaEntryIsByteIdentical(zip, pinLines, seeded.mediaPinId)
+            assertMediaEntryIsByteIdentical(zip, pinLines, seeded.mediaPinUrl)
             assertEveryEntryDigestMatches(zip, manifest)
         } finally {
             zip.close()

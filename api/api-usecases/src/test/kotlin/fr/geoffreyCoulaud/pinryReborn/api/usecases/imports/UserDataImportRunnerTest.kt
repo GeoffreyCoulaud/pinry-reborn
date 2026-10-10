@@ -285,7 +285,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
                     listOf(
                         TestLine(1, aBoard("old", updatedAt = pastInstant.minusSeconds(HOUR_SECONDS))),
                         TestLine(2, aBoard("ancient", createdAt = beforeAccount, updatedAt = beforeAccount)),
-                        TestLine(3, aBoard("archived", deletedAt = futureInstant)),
+                        TestLine(3, aBoard("archived", softDeletedAt = futureInstant)),
                     ),
             )
         stubWalk(source)
@@ -312,7 +312,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         val source =
             FakeArchiveSource(
                 manifest = aManifest(),
-                boards = listOf(TestLine(1, aBoard("Summer", description = "from the archive", deletedAt = now))),
+                boards = listOf(TestLine(1, aBoard("Summer", description = "from the archive", softDeletedAt = now))),
             )
         stubWalk(source)
         stubBoardLookup()
@@ -554,7 +554,8 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         val source =
             FakeArchiveSource(
                 manifest = aManifest(),
-                boards = listOf(TestLine(1, aBoard("Winter", deletedAt = pastInstant)), TestLine(2, aBoard("Winter"))),
+                boards =
+                    listOf(TestLine(1, aBoard("Winter", softDeletedAt = pastInstant)), TestLine(2, aBoard("Winter"))),
             )
         stubWalk(source)
         stubBoardLookup()

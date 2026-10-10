@@ -199,7 +199,7 @@ class UserDataExportBuilder(
                 exportId = export.id,
                 createdAt = createdAt,
                 expiresAt = createdAt.plus(retention),
-                user = ExportedRef(user.id, user.name),
+                user = ExportedRef(user.name),
                 counts = ExportCounts(pins = 0, boards = 0, tags = 0, media = 0, persons = 0, collections = 0),
                 entries = emptyList(),
                 excluded = EXCLUSIONS,
@@ -210,28 +210,21 @@ class UserDataExportBuilder(
     private fun writeArchive(sink: ArchiveSink, header: ExportManifest, user: User, renewLease: () -> Unit) {
         val entries = mutableListOf<ArchiveEntryDigest>()
         entries += sink.putTextEntry("README.md", ExportReadme.render(header))
-        entries += sink.putJsonEntry("user.json", ExportedUser(user.id, user.name, user.createdAt))
+        entries += sink.putJsonEntry("user.json", ExportedUser(user.name, user.createdAt))
 
         val boards = boardRepository.findActiveBoardsForUser(user) + boardRepository.findRecycledBoardsForUser(user)
         val boardCount =
             writeCollection(sink, entries, "boards.jsonl", boards) { board ->
-                ExportedBoard(
-                    board.id,
-                    board.name,
-                    board.description,
-                    board.createdAt,
-                    board.updatedAt,
-                    board.softDeletedAt,
-                )
+                ExportedBoard(board.name, board.description, board.createdAt, board.updatedAt, board.softDeletedAt)
             }
         val collections = remoteCollectionRepository.findAllRemoteCollectionsForUser(user)
         val collectionCount =
             writeCollection(sink, entries, "collections.jsonl", collections) { collection ->
-                ExportedCollection(collection.url.toString(), collection.name, collection.board.name)
+                ExportedCollection(collection.url.toString(), collection.name, ExportedRef(collection.board.name))
             }
         val tagCount =
             writeCollection(sink, entries, "tags.jsonl", tagRepository.findAllTagsForUser(user)) { tag ->
-                ExportedTag(tag.id, tag.name, tag.createdAt)
+                ExportedTag(tag.name, tag.createdAt)
             }
         val personCount = writePersons(sink, entries, user)
 
@@ -301,18 +294,15 @@ class UserDataExportBuilder(
 
     private fun exportedPin(pin: Pin, writtenMediaPaths: Set<String>): ExportedPin =
         ExportedPin(
-            id = pin.id,
             description = pin.description,
             sourceContextUrl = pin.sourceContextUrl?.toString(),
             sourceMediaUrl = pin.sourceMediaUrl?.toString(),
             createdAt = pin.createdAt,
             updatedAt = pin.updatedAt,
-            deletedAt = pin.softDeletedAt,
-            tags = pin.tags.map { tag -> ExportedRef(tag.id, tag.name) },
-            boards =
-                pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { board ->
-                    ExportedRef(board.id, board.name)
-                },
+            softDeletedAt = pin.softDeletedAt,
+            tags = pin.tags.map { tag -> ExportedRef(tag.name) },
+            boards = pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { board -> ExportedRef(board.name) },
+            collections = emptyList(),
             media = exportedMedia(pin, writtenMediaPaths),
             publisher = pin.publisher?.let { ExportedPersonRef(it.id) },
             creators = pin.creators.map { ExportedPersonRef(it.id) },
@@ -331,7 +321,6 @@ class UserDataExportBuilder(
         val path = mediaPath(media)
         return if (path in writtenMediaPaths) {
             ExportedMedia(
-                id = media.id,
                 path = path,
                 mimeType = media.mimeType,
                 width = media.width,

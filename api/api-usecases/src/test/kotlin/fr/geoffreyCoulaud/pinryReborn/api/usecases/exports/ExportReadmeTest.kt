@@ -14,7 +14,7 @@ class ExportReadmeTest {
             exportId = UUID.fromString("77777777-7777-7777-7777-777777777777"),
             createdAt = Instant.parse("2026-07-22T10:15:30Z"),
             expiresAt = Instant.parse("2026-07-29T10:15:30Z"),
-            user = ExportedRef(id = UUID.fromString("22222222-2222-2222-2222-222222222222"), name = "alice"),
+            user = ExportedRef(name = "alice"),
             counts = ExportCounts(pins = 1, boards = 1, tags = 1, media = 1, persons = 1, collections = 1),
             entries = listOf(ArchiveEntryDigest(path = "pins.jsonl", byteSize = 918273, sha256 = "cafef00d")),
             excluded = excluded,

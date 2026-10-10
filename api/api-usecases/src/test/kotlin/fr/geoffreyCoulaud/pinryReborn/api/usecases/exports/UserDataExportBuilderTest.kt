@@ -51,9 +51,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
 
         // Then
         val pins = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>()
-        assertEquals(2, pins.size)
-        assertNull(pins.first { it.id == activePin.id }.deletedAt)
-        assertEquals(now, pins.first { it.id == recycledPin.id }.deletedAt)
+        assertEquals(listOf(null, now), pins.map { it.softDeletedAt }, "the active pin first, then the recycled one")
     }
 
     @Test
@@ -162,7 +160,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
 
         // Then
         val exportedPin = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>().single()
-        assertEquals(listOf(ExportedRef(recycledBoard.id, recycledBoard.name)), exportedPin.boards)
+        assertEquals(listOf(ExportedRef(recycledBoard.name)), exportedPin.boards)
     }
 
     @Test
@@ -181,9 +179,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
 
         // Then
         val boards = sink.jsonLines.getValue("boards.jsonl").filterIsInstance<ExportedBoard>()
-        assertEquals(2, boards.size)
-        assertNull(boards.first { it.id == activeBoard.id }.deletedAt)
-        assertEquals(now, boards.first { it.id == recycledBoard.id }.deletedAt)
+        assertEquals(mapOf("Active" to null, "Gone" to now), boards.associate { it.name to it.softDeletedAt })
     }
 
     @Test
@@ -206,8 +202,8 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         // Then
         assertEquals(
             listOf(
-                ExportedCollection("https://remote.example/1", "collection", "Active"),
-                ExportedCollection("https://remote.example/2", "collection", "Gone"),
+                ExportedCollection("https://remote.example/1", "collection", ExportedRef("Active")),
+                ExportedCollection("https://remote.example/2", "collection", ExportedRef("Gone")),
             ),
             sink.jsonLines.getValue("collections.jsonl"),
         )
@@ -250,7 +246,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
 
         // Then
         val pins = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>()
-        assertEquals(setOf(pinA.id, pinB.id), pins.map { it.id }.toSet())
+        assertEquals(2, pins.size, "one pin from each page")
         assertTrue(renewCount > 1, "a multi-page walk must renew the lease more than once")
     }
 
@@ -289,7 +285,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         assertEquals(export.formatVersion, manifest.formatVersion)
         assertEquals(now, manifest.createdAt)
         assertEquals(now.plus(retention), manifest.expiresAt)
-        assertEquals(ExportedRef(user.id, user.name), manifest.user)
+        assertEquals(ExportedRef(user.name), manifest.user)
         assertEquals(3, manifest.excluded.size)
         val entryPaths = manifest.entries.map { it.path }.toSet()
         assertEquals(
