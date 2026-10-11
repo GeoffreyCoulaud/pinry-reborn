@@ -95,9 +95,6 @@ class EbeanMediaDownloadRepository(private val persistor: Persistor) : MediaDown
             .set("updatedAt", now)
             .update() > 0
 
-    override fun recordLastError(pinId: UUID, lastError: String, now: Instant): Boolean =
-        pendingRows(pinId).asUpdate().set("lastError", lastError).set("updatedAt", now).update() > 0
-
     override fun deleteIfPending(pinId: UUID): Int = pendingRows(pinId).delete()
 
     override fun deleteByPinId(pinId: UUID) {

@@ -150,8 +150,8 @@ class DownloadPinMedia(
                 mediaStore.deleteQuietly(media.storageKey)
             }
         } catch (e: Exception) {
-            // Best-effort: a cleanup failure must not mask `e`, which the retry policy records
-            // and rethrows. The orphan (if any) is reclaimed by the periodic garbage collection.
+            // Best-effort: a cleanup failure must not mask `e`, which the retry policy
+            // rethrows. The orphan (if any) is reclaimed by the periodic garbage collection.
             mediaIngestion.discard(ingested)
             failRetryable(pinId, DownloadReason.INTERNAL_ERROR, context, e)
         }
@@ -191,7 +191,6 @@ class DownloadPinMedia(
             mediaDownloadRepository.markFailed(pinId, reason, clock.now())
             throw PermanentTaskException(reason.name)
         }
-        mediaDownloadRepository.recordLastError(pinId, cause.message ?: reason.name, clock.now())
         throw cause
     }
 

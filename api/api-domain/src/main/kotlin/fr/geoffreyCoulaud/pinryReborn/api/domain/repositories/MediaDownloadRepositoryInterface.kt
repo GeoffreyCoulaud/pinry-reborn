@@ -35,9 +35,6 @@ interface MediaDownloadRepositoryInterface {
     /** CAS on PENDING: set FAILED + reason. Returns true if a PENDING row was updated. */
     fun markFailed(pinId: UUID, reason: DownloadReason, now: Instant): Boolean
 
-    /** CAS on PENDING: record the last transient error, keep PENDING. Returns true if updated. */
-    fun recordLastError(pinId: UUID, lastError: String, now: Instant): Boolean
-
     /** CAS on PENDING: delete the row only if still PENDING. Returns the number of rows deleted (0 or 1). */
     fun deleteIfPending(pinId: UUID): Int
 
