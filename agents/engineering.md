@@ -167,9 +167,8 @@ client the other is refused.
 - **Domain data is stamped by use cases, never invented by adapters**: instants, ids, state transitions come from ports;
   the adapter stores what it is given.
 - **All code is English**; documents predating the decision keep their language.
-- **The migration history is flattened once, by the foreign keys lot**, into one baseline that declares
-  `ON DELETE CASCADE`, then `foreign_keys` turned on; it is append-only again from that baseline
-  (`docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.2). Until then it is append-only.
+- **The migration history is append-only from its baseline**, `1.0__initial`, generated from the models
+  (`docs/adr/0058-the-database-enforces-its-references.md`, decision 7).
 - **A query rooted on a recyclable model is built by its `Queries` object**: models implementing
   `SoftDeletableModel` are queried through `active()`, `recycled()` or `any()`; queries rooted elsewhere filter through
   extensions (`withActiveBoard()` etc.). Held by Konsist assertions and the `SoftDeleteStateFilteredOutsideQueries`

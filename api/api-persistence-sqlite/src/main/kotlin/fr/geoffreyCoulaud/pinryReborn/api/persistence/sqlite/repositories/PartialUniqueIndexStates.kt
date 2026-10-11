@@ -16,12 +16,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
  * nothing binds those three until someone runs `generateDbMigration`.
  */
 internal object PartialUniqueIndexStates {
-    /** `ux_tasks_dedup` (`1.3.sql:27`): a dedup key is unique among the tasks in these states. */
+    /** `ux_tasks_dedup`: a dedup key is unique among the tasks in these states. */
     val liveTaskStates: Set<String> = setOf(TaskState.PENDING.name, TaskState.RUNNING.name)
 
-    /** `uq_user_data_exports_pending` (`1.11.sql:2`): a user has at most one export in these states. */
+    /** `uq_user_data_exports_pending`: a user has at most one export in these states. */
     val pendingExportStates: Set<String> = setOf(UserDataExportState.PENDING.name)
 
-    /** `uq_user_data_imports_active` (`1.21.sql:46`): a user has at most one import in these states. */
+    /** `uq_user_data_imports_active`: a user has at most one import in these states. */
     val activeImportStates: Set<String> = UserDataImportState.entries.filter { it.isActive }.map { it.name }.toSet()
 }

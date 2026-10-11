@@ -68,7 +68,7 @@ sits beside it, so `./api/gradlew` from the repository root finds no build at al
 - Destructive migration (drop): re-run the generator with the property **in the generator's JVM**, not on the Gradle
   CLI:
   `JAVA_TOOL_OPTIONS="-Dddl.migration.pendingDropsFor=<version>" ./gradlew :api-persistence-sqlite:generateDbMigration`.
-  Commit both pairs together. Precedent: `1.13` and `1.14__dropsFor_1.13`.
+  Commit both pairs together.
 - **Format the Kotlin code**: `./gradlew spotlessApply`, ktfmt's `kotlinlang` style at 120 columns
   (`docs/adr/0053-ktfmt-formats-the-kotlin-code.md`). The gate refuses what it would change. detekt's findings
   have no auto-fix and are fixed by hand.

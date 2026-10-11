@@ -6,8 +6,7 @@ The OpenAPI contract it generates lives in `contract/`, which is what a client i
 The clients live in `clients/`, a pnpm workspace: the web application in `clients/apps/webapp`, and the
 browser extension when it arrives.
 
-> **Alpha. Do not deploy this yet.** Breaking changes and data loss are expected between versions, and the
-> database migration history will be flattened before beta.
+> **Alpha. Do not deploy this yet.** Breaking changes and data loss are expected between versions.
 
 ## Running
 

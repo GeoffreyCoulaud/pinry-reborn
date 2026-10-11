@@ -50,10 +50,6 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 
 ### P2: Operational debt
 
-- **A table rebuild's row-carrying path is exercised by nothing.** `TableRebuildColumnsTest` compares
-  the column lists as text against an empty database, so a statement filling a new `not null`
-  column before the copy (`1.24.sql`, and the same shape in `1.22.sql`) is covered by no test at all.
-  See `docs/handoffs/2026-09-14 - handoff - the-download-sweep.md`. New 2026-09-14.
 - **`foreign_keys` is off, so every declared key is unenforced**, and the legacy `when_created`/`when_modified`
   names stay. The second lot of `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.2,
   flattens the history into one baseline with `ON DELETE CASCADE`, turns the pragma on, and takes the items its

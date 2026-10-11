@@ -1,31 +1,184 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <migration xmlns="http://ebean-orm.github.io/xml/ns/dbmigration">
     <changeSet type="apply">
+        <createTable name="boards" identityType="external" pkName="pk_boards">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_boards_author_id" foreignKeyIndex="ix_boards_author_id"/>
+            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="name" type="varchar" notnull="true"/>
+            <column name="description" type="varchar" notnull="true"/>
+            <column name="when_modified" type="timestamp" notnull="true"/>
+            <column name="soft_deleted_at" type="timestamp"/>
+        </createTable>
+        <createTable name="media_download" identityType="external" pkName="pk_media_download">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_media_download_pin_id" foreignKeyOnDelete="RESTRICT" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="source_url" type="varchar" notnull="true"/>
+            <column name="status" type="varchar" notnull="true"/>
+            <column name="reason_code" type="varchar"/>
+            <column name="last_error" type="varchar"/>
+            <column name="task_id" type="uuid" notnull="true"/>
+            <column name="requested_at" type="timestamp" notnull="true"/>
+            <column name="updated_at" type="timestamp" notnull="true"/>
+        </createTable>
+        <createTable name="media_frame" identityType="external" pkName="pk_media_frame">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="media_id" type="uuid" notnull="true"/>
+            <column name="hash_0" type="bigint" notnull="true"/>
+            <column name="hash_1" type="bigint" notnull="true"/>
+            <column name="hash_2" type="bigint" notnull="true"/>
+            <column name="hash_3" type="bigint" notnull="true"/>
+        </createTable>
+        <createTable name="media" identityType="external" pkName="pk_media">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="pin_id" type="uuid" notnull="true" unique="uq_media_pin_id" references="pins.id" foreignKeyName="fk_media_pin_id" foreignKeyOnDelete="RESTRICT" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="mime_type" type="varchar" notnull="true"/>
+            <column name="width" type="integer" notnull="true"/>
+            <column name="height" type="integer" notnull="true"/>
+            <column name="animated" type="boolean" defaultValue="false" notnull="true"/>
+            <column name="byte_size" type="bigint" notnull="true"/>
+            <column name="content_hash" type="varchar" notnull="true"/>
+            <column name="storage_key" type="varchar" notnull="true"/>
+            <column name="created_at" type="timestamp" notnull="true"/>
+            <column name="frames" type="integer" defaultValue="1" notnull="true"/>
+            <column name="duration_millis" type="bigint"/>
+            <column name="video_bit_rate" type="bigint"/>
+            <column name="audio_channels" type="integer"/>
+            <column name="audio_bit_rate" type="bigint"/>
+            <column name="fingerprint_version" type="integer"/>
+        </createTable>
+        <createTable name="persons" identityType="external" pkName="pk_persons">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_persons_author_id" foreignKeyIndex="ix_persons_author_id"/>
+            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="name" type="varchar" notnull="true"/>
+            <column name="urls" type="varchar" notnull="true"/>
+        </createTable>
+        <createTable name="pin_board_model" pkName="pk_pin_board_model">
+            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_board_model_pin_id" foreignKeyIndex="ix_pin_board_model_pin_id"/>
+            <column name="board_id" type="uuid" notnull="true" references="boards.id" foreignKeyName="fk_pin_board_model_board_id"/>
+        </createTable>
+        <createTable name="pin_creator_model" pkName="pk_pin_creator_model">
+            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_creator_model_pin_id" foreignKeyIndex="ix_pin_creator_model_pin_id"/>
+            <column name="person_id" type="uuid" notnull="true" references="persons.id" foreignKeyName="fk_pin_creator_model_person_id"/>
+        </createTable>
+        <createTable name="pin_duplicate" identityType="external" pkName="pk_pin_duplicate">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="first_pin_id" type="uuid" notnull="true"/>
+            <column name="second_pin_id" type="uuid" notnull="true"/>
+            <column name="rejected_at" type="timestamp"/>
+        </createTable>
         <createTable name="pins" identityType="external" pkName="pk_pins">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
             <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_pins_author_id" foreignKeyIndex="ix_pins_author_id"/>
-            <column name="source_context_url" type="varchar" notnull="true"/>
-            <column name="source_media_url" type="varchar" notnull="true"/>
-            <column name="description" type="varchar" notnull="true"/>
             <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="source_context_url" type="varchar"/>
+            <column name="source_media_url" type="varchar"/>
+            <column name="description" type="varchar" notnull="true"/>
             <column name="when_modified" type="timestamp" notnull="true"/>
+            <column name="soft_deleted_at" type="timestamp"/>
+            <column name="publisher_id" type="uuid" references="persons.id" foreignKeyName="fk_pins_publisher_id" foreignKeyOnDelete="RESTRICT" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="published_at" type="timestamp"/>
         </createTable>
         <createTable name="pin_tag_model" pkName="pk_pin_tag_model">
             <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_tag_model_pin_id" foreignKeyIndex="ix_pin_tag_model_pin_id"/>
-            <column name="tag_id" type="uuid" notnull="true" references="tags.id" foreignKeyName="fk_pin_tag_model_tag_id" foreignKeyIndex="ix_pin_tag_model_tag_id"/>
+            <column name="tag_id" type="uuid" notnull="true" references="tags.id" foreignKeyName="fk_pin_tag_model_tag_id"/>
+        </createTable>
+        <createTable name="remote_collections" identityType="external" pkName="pk_remote_collections">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_remote_collections_author_id" foreignKeyIndex="ix_remote_collections_author_id"/>
+            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="url" type="varchar" notnull="true"/>
+            <column name="name" type="varchar" notnull="true"/>
+            <column name="board_id" type="uuid" notnull="true" references="boards.id" foreignKeyName="fk_remote_collections_board_id"/>
+        </createTable>
+        <createTable name="session_tokens" identityType="external" pkName="pk_session_tokens">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_session_tokens_user_id" foreignKeyIndex="ix_session_tokens_user_id"/>
+            <column name="token_hash" type="varchar" notnull="true" unique="uq_session_tokens_token_hash"/>
+            <column name="expires_at" type="timestamp" notnull="true"/>
+            <column name="persistent" type="boolean" defaultValue="false" notnull="true"/>
+            <column name="when_created" type="timestamp" notnull="true"/>
         </createTable>
         <createTable name="tags" identityType="external" pkName="pk_tags">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
             <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_tags_author_id" foreignKeyIndex="ix_tags_author_id"/>
-            <column name="name" type="varchar" notnull="true"/>
             <column name="when_created" type="timestamp" notnull="true"/>
-            <column name="when_modified" type="timestamp" notnull="true"/>
+            <column name="name" type="varchar" notnull="true"/>
+        </createTable>
+        <createTable name="tasks" identityType="external" pkName="pk_tasks">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="kind" type="varchar" notnull="true"/>
+            <column name="payload" type="varchar" notnull="true"/>
+            <column name="state" type="varchar" notnull="true"/>
+            <column name="priority" type="integer" notnull="true"/>
+            <column name="available_at" type="timestamp" notnull="true"/>
+            <column name="attempts" type="integer" notnull="true"/>
+            <column name="max_attempts" type="integer" notnull="true"/>
+            <column name="lease_id" type="varchar"/>
+            <column name="lease_expires_at" type="timestamp"/>
+            <column name="cancel_requested" type="boolean" defaultValue="false" notnull="true"/>
+            <column name="dedup_key" type="varchar"/>
+            <column name="last_error" type="varchar"/>
+            <column name="terminal_state_at" type="timestamp"/>
+            <column name="version" type="bigint" notnull="true"/>
+        </createTable>
+        <createTable name="user_data_exports" identityType="external" pkName="pk_user_data_exports">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_user_data_exports_user_id"/>
+            <column name="state" type="varchar" notnull="true"/>
+            <column name="format_version" type="integer" notnull="true"/>
+            <column name="requested_at" type="timestamp" notnull="true"/>
+            <column name="task_id" type="uuid"/>
+            <column name="completed_at" type="timestamp"/>
+            <column name="expires_at" type="timestamp"/>
+            <column name="storage_key" type="varchar"/>
+            <column name="byte_size" type="bigint"/>
+            <column name="sha256" type="varchar"/>
+            <column name="media_type" type="varchar"/>
+            <column name="file_extension" type="varchar"/>
+            <column name="failure_code" type="varchar"/>
+        </createTable>
+        <createTable name="user_data_import_issues" identityType="external" pkName="pk_user_data_import_issues">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="import_id" type="uuid" notnull="true" references="user_data_imports.id" foreignKeyName="fk_user_data_import_issues_import_id"/>
+            <column name="kind" type="varchar" notnull="true"/>
+            <column name="line" type="integer"/>
+            <column name="subject" type="varchar"/>
+            <column name="detail" type="varchar"/>
+        </createTable>
+        <createTable name="user_data_imports" identityType="external" pkName="pk_user_data_imports">
+            <column name="id" type="uuid" primaryKey="true" identity="true"/>
+            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_user_data_imports_user_id" foreignKeyIndex="ix_user_data_imports_user_id"/>
+            <column name="state" type="varchar" notnull="true"/>
+            <column name="requested_at" type="timestamp" notnull="true"/>
+            <column name="last_activity_at" type="timestamp" notnull="true"/>
+            <column name="task_id" type="uuid"/>
+            <column name="run_token" type="uuid"/>
+            <column name="uploaded_bytes" type="bigint" notnull="true"/>
+            <column name="archive_completed_at" type="timestamp"/>
+            <column name="started_at" type="timestamp"/>
+            <column name="completed_at" type="timestamp"/>
+            <column name="storage_key" type="varchar"/>
+            <column name="byte_size" type="bigint"/>
+            <column name="format_version" type="integer"/>
+            <column name="announced_pins" type="integer"/>
+            <column name="processed_pins" type="integer" notnull="true"/>
+            <column name="created_pins" type="integer" notnull="true"/>
+            <column name="skipped_pins" type="integer" notnull="true"/>
+            <column name="created_boards" type="integer" notnull="true"/>
+            <column name="skipped_boards" type="integer" notnull="true"/>
+            <column name="created_tags" type="integer" notnull="true"/>
+            <column name="skipped_tags" type="integer" notnull="true"/>
+            <column name="issue_count" type="integer" notnull="true"/>
+            <column name="issue_detail_truncated" type="boolean" defaultValue="false" notnull="true"/>
+            <column name="failure_code" type="varchar"/>
         </createTable>
         <createTable name="users" identityType="external" pkName="pk_users">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
             <column name="name" type="varchar" notnull="true"/>
             <column name="when_created" type="timestamp" notnull="true"/>
-            <column name="when_modified" type="timestamp" notnull="true"/>
+            <column name="soft_deleted_at" type="timestamp"/>
         </createTable>
         <createTable name="user_password_hashes" identityType="external" pkName="pk_user_password_hashes">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
@@ -33,7 +186,48 @@
             <column name="hash" type="varchar" notnull="true"/>
             <column name="algorithm" type="varchar(6)" notnull="true" checkConstraint="check ( algorithm in ('BCRYPT'))" checkConstraintName="ck_user_password_hashes_algorithm"/>
             <column name="when_created" type="timestamp" notnull="true"/>
-            <column name="when_modified" type="timestamp" notnull="true"/>
         </createTable>
+        <createIndex indexName="ix_boards_author_name_nocase" tableName="boards" columns="" definition="create unique index ix_boards_author_name_nocase on boards (author_id, name collate nocase)"/>
+        <createIndex indexName="ux_media_download_pin" tableName="media_download" columns="" definition="create unique index ux_media_download_pin on media_download (pin_id)"/>
+        <createIndex indexName="ix_media_frame_media" tableName="media_frame" columns="media_id"/>
+        <createIndex indexName="ix_media_frame_band_0" tableName="media_frame" columns="" definition="create index ix_media_frame_band_0 on media_frame (((hash_0 &gt;&gt; 48) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_1" tableName="media_frame" columns="" definition="create index ix_media_frame_band_1 on media_frame (((hash_0 &gt;&gt; 32) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_2" tableName="media_frame" columns="" definition="create index ix_media_frame_band_2 on media_frame (((hash_0 &gt;&gt; 16) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_3" tableName="media_frame" columns="" definition="create index ix_media_frame_band_3 on media_frame (((hash_0 &gt;&gt; 0) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_4" tableName="media_frame" columns="" definition="create index ix_media_frame_band_4 on media_frame (((hash_1 &gt;&gt; 48) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_5" tableName="media_frame" columns="" definition="create index ix_media_frame_band_5 on media_frame (((hash_1 &gt;&gt; 32) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_6" tableName="media_frame" columns="" definition="create index ix_media_frame_band_6 on media_frame (((hash_1 &gt;&gt; 16) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_7" tableName="media_frame" columns="" definition="create index ix_media_frame_band_7 on media_frame (((hash_1 &gt;&gt; 0) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_8" tableName="media_frame" columns="" definition="create index ix_media_frame_band_8 on media_frame (((hash_2 &gt;&gt; 48) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_9" tableName="media_frame" columns="" definition="create index ix_media_frame_band_9 on media_frame (((hash_2 &gt;&gt; 32) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_10" tableName="media_frame" columns="" definition="create index ix_media_frame_band_10 on media_frame (((hash_2 &gt;&gt; 16) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_11" tableName="media_frame" columns="" definition="create index ix_media_frame_band_11 on media_frame (((hash_2 &gt;&gt; 0) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_12" tableName="media_frame" columns="" definition="create index ix_media_frame_band_12 on media_frame (((hash_3 &gt;&gt; 48) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_13" tableName="media_frame" columns="" definition="create index ix_media_frame_band_13 on media_frame (((hash_3 &gt;&gt; 32) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_14" tableName="media_frame" columns="" definition="create index ix_media_frame_band_14 on media_frame (((hash_3 &gt;&gt; 16) &amp; 65535))"/>
+        <createIndex indexName="ix_media_frame_band_15" tableName="media_frame" columns="" definition="create index ix_media_frame_band_15 on media_frame (((hash_3 &gt;&gt; 0) &amp; 65535))"/>
+        <createIndex indexName="ix_media_content_hash" tableName="media" columns="content_hash"/>
+        <createIndex indexName="ix_persons_author_name_nocase_urls" tableName="persons" columns="" definition="create unique index ix_persons_author_name_nocase_urls on persons (author_id, name collate nocase, urls)"/>
+        <createIndex indexName="ux_pin_board_model_pin_board" tableName="pin_board_model" columns="" definition="create unique index ux_pin_board_model_pin_board on pin_board_model (pin_id, board_id)"/>
+        <createIndex indexName="ix_pin_board_model_board" tableName="pin_board_model" columns="board_id"/>
+        <createIndex indexName="ux_pin_creator_model_pin_person" tableName="pin_creator_model" columns="" definition="create unique index ux_pin_creator_model_pin_person on pin_creator_model (pin_id, person_id)"/>
+        <createIndex indexName="ix_pin_creator_model_person" tableName="pin_creator_model" columns="person_id"/>
+        <createIndex indexName="ux_pin_duplicate_pins" tableName="pin_duplicate" columns="" definition="create unique index ux_pin_duplicate_pins on pin_duplicate (first_pin_id, second_pin_id)"/>
+        <createIndex indexName="ix_pin_duplicate_second_pin" tableName="pin_duplicate" columns="second_pin_id"/>
+        <createIndex indexName="ux_pin_tag_model_pin_tag" tableName="pin_tag_model" columns="" definition="create unique index ux_pin_tag_model_pin_tag on pin_tag_model (pin_id, tag_id)"/>
+        <createIndex indexName="ix_pin_tag_model_tag" tableName="pin_tag_model" columns="tag_id"/>
+        <createIndex indexName="ux_remote_collections_author_url" tableName="remote_collections" columns="" definition="create unique index ux_remote_collections_author_url on remote_collections (author_id, url)"/>
+        <createIndex indexName="ix_remote_collections_board" tableName="remote_collections" columns="board_id"/>
+        <createIndex indexName="ix_session_tokens_expires_at" tableName="session_tokens" columns="expires_at"/>
+        <createIndex indexName="ix_tags_author_name_nocase" tableName="tags" columns="" definition="create unique index ix_tags_author_name_nocase on tags (author_id, name collate nocase)"/>
+        <createIndex indexName="ix_tasks_state_terminal_state_at" tableName="tasks" columns="state,terminal_state_at"/>
+        <createIndex indexName="ix_tasks_claim" tableName="tasks" columns="" definition="create index ix_tasks_claim on tasks (state, priority desc, available_at asc, id asc)"/>
+        <createIndex indexName="ux_tasks_dedup" tableName="tasks" columns="" definition="create unique index ux_tasks_dedup on tasks (dedup_key) where dedup_key is not null and state in ('PENDING','RUNNING')"/>
+        <createIndex indexName="uq_user_data_exports_pending" tableName="user_data_exports" columns="user_id" unique="true" definition="create unique index uq_user_data_exports_pending on user_data_exports (user_id) where state = 'PENDING'"/>
+        <createIndex indexName="ix_user_data_import_issues_import" tableName="user_data_import_issues" columns="import_id"/>
+        <createIndex indexName="uq_user_data_imports_active" tableName="user_data_imports" columns="" definition="create unique index uq_user_data_imports_active on user_data_imports (user_id) where state in ('AWAITING_ARCHIVE','PENDING','RUNNING')"/>
+        <createIndex indexName="ix_user_data_imports_user_state" tableName="user_data_imports" columns="user_id,state"/>
+        <createIndex indexName="ix_users_name_nocase" tableName="users" columns="" definition="create unique index ix_users_name_nocase on users (name collate nocase)"/>
+        <createIndex indexName="ix_user_password_hashes_user_created" tableName="user_password_hashes" columns="" definition="create unique index ix_user_password_hashes_user_created on user_password_hashes (user_id, when_created)"/>
     </changeSet>
 </migration>
