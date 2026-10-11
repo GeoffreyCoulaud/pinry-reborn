@@ -51,7 +51,7 @@ class FingerprintMediaTest : BaseTest() {
     private fun deletedWhileHashing(vararg ids: UUID) {
         every { mediaRepository.findMissingMediaIds(any()) } answers
             {
-                if (runner.inside) firstArg<Collection<UUID>>().filter { it in ids }.toSet() else emptySet()
+                if (runner.inside) firstArg<Collection<UUID>>().intersect(ids.toSet()) else emptySet()
             }
     }
 
