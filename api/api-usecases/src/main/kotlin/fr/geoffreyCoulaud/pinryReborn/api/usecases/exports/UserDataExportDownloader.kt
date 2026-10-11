@@ -15,10 +15,10 @@ import java.util.UUID
  * purge racing the download fails right here, before any status line is sent, instead of truncating an
  * already-committed `200`.
  *
- * The six nullable fields a `READY` row carries (`storageKey`, `mediaType`, `fileExtension`, `byteSize`, `sha256`,
- * `completedAt`) collapse into a SINGLE reachable branch (`presentFieldCount` below), instead of one null check per
- * field: dereferencing each of them separately would create branches whose "impossible" side no test could ever reach,
- * which breaks the 100% branch gate. See spec §5.
+ * The five nullable fields a `READY` row carries (`mediaType`, `fileExtension`, `byteSize`, `sha256`, `completedAt`)
+ * collapse into a SINGLE reachable branch (`presentFieldCount` below), instead of one null check per field:
+ * dereferencing each of them separately would create branches whose "impossible" side no test could ever reach, which
+ * breaks the 100% branch gate. See spec §5.
  */
 @ApplicationScoped
 @Suppress("UnsafeCallOnNullableType")
@@ -39,14 +39,13 @@ class UserDataExportDownloader(
     }
 
     /**
-     * The single validation site for the six nullable fields a `READY` row carries: their presence collapses into ONE
+     * The single validation site for the five nullable fields a `READY` row carries: their presence collapses into ONE
      * reachable branch (`presentFieldCount`), instead of one null check per field.
      */
     private fun requireReady(export: UserDataExport) {
         if (export.state != UserDataExportState.READY) throw ExportNotReadyError()
         val presentFieldCount =
             listOfNotNull(
-                    export.storageKey,
                     export.mediaType,
                     export.fileExtension,
                     export.byteSize,
@@ -70,10 +69,14 @@ class UserDataExportDownloader(
             totalByteSize = export.byteSize!!,
             sha256 = export.sha256!!,
             completedAt = export.completedAt!!,
-            stream = archiveStore.openStream(export.storageKey!!, skipBytes),
+            stream =
+                archiveStore.openStream(
+                    ExportArchiveKey.forExport(export.id, archiveStore.format.fileExtension),
+                    skipBytes,
+                ),
         )
 
     private companion object {
-        const val REQUIRED_FIELD_COUNT = 6
+        const val REQUIRED_FIELD_COUNT = 5
     }
 }

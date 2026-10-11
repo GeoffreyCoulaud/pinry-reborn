@@ -661,7 +661,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         val exportId = UUID.randomUUID()
         val content = "hello divergent export".toByteArray()
-        val storageKey = "exports/$exportId.txt"
+        val storageKey = "exports/$exportId.zip"
         val archivePath = Path.of(exportsConfig.dataDir()).resolve(storageKey)
         Files.createDirectories(archivePath.parent)
         Files.write(archivePath, content)

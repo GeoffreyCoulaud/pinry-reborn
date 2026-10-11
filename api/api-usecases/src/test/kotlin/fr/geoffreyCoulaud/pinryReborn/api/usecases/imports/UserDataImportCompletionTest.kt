@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test
 internal class UserDataImportCompletionTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given a walk that reaches the end, Then the row is completed and the archive it opened is deleted`() {
-        // Given: a key no derivation would produce, so the deletion is pinned to the column the row carries
+        // Given: a column no derivation would produce, so a walk reading it opens the wrong archive
         val promotedElsewhere = "imports/promoted-elsewhere.zip"
         val source =
             FakeArchiveSource(
@@ -40,8 +40,8 @@ internal class UserDataImportCompletionTest : UserDataImportRunnerFixtures() {
         assertEquals(UserDataImportState.COMPLETED, stored.state)
         assertEquals(now, stored.completedAt)
         assertEquals(1, stored.createdTags)
-        verify { archiveStore.open(promotedElsewhere) }
-        assertEquals(listOf(promotedElsewhere), deletedArchives)
+        verify { archiveStore.open(storageKey) }
+        assertEquals(listOf(storageKey), deletedArchives)
     }
 
     @Test

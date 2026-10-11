@@ -72,7 +72,8 @@ class UserDataExportRequester(
                 payload = export.id.toString(),
                 maxAttempts = UserDataExportTask.MAX_ATTEMPTS,
             )
-        repository.save(export.copy(taskId = task.id)) to ready?.storageKey
+        repository.save(export.copy(taskId = task.id)) to
+            ready?.let { ExportArchiveKey.forExport(it.id, archiveStore.format.fileExtension) }
     }
 
     /**

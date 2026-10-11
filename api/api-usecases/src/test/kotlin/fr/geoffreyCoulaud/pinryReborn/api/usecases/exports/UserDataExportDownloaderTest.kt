@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
+import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ExportGoneError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ExportNotReadyError
@@ -31,7 +32,6 @@ class UserDataExportDownloaderTest : BaseTest() {
     @Suppress("LongParameterList") // Test fixture builder: every parameter shapes a distinct scenario.
     private fun exportWith(
         state: UserDataExportState,
-        storageKey: String? = "exports/e1.zip",
         mediaType: String? = "application/zip",
         fileExtension: String? = "zip",
         byteSize: Long? = 100L,
@@ -44,7 +44,6 @@ class UserDataExportDownloaderTest : BaseTest() {
             state = state,
             formatVersion = 1,
             requestedAt = now,
-            storageKey = storageKey,
             mediaType = mediaType,
             fileExtension = fileExtension,
             byteSize = byteSize,
@@ -80,9 +79,9 @@ class UserDataExportDownloaderTest : BaseTest() {
     }
 
     @Test
-    fun `Given a ready export missing its storage key, Then downloading throws ExportNotReadyError`() {
+    fun `Given a ready export missing its digest, Then downloading throws ExportNotReadyError`() {
         // Given
-        every { getter.get(user, exportId) } returns exportWith(state = UserDataExportState.READY, storageKey = null)
+        every { getter.get(user, exportId) } returns exportWith(state = UserDataExportState.READY, sha256 = null)
 
         // When / Then
         assertThrows(ExportNotReadyError::class.java) { downloader.open(user, exportId, 0) }
@@ -108,17 +107,19 @@ class UserDataExportDownloaderTest : BaseTest() {
 
     @Test
     fun `Given a ready export, Then the stream is opened eagerly at the requested offset`() {
-        // Given
+        // Given: the row names no key, so only the derivation can reach the archive
         val export = exportWith(state = UserDataExportState.READY)
         every { getter.get(user, exportId) } returns export
+        every { archiveStore.format } returns ArchiveFormat("application/zip", "zip")
+        val derivedKey = ExportArchiveKey.forExport(exportId, "zip")
         val stream: InputStream = ByteArrayInputStream(byteArrayOf(1, 2, 3))
-        every { archiveStore.openStream("exports/e1.zip", 10) } returns stream
+        every { archiveStore.openStream(derivedKey, 10) } returns stream
 
         // When
         val result = downloader.open(user, exportId, 10)
 
         // Then
-        verify(exactly = 1) { archiveStore.openStream("exports/e1.zip", 10) }
+        verify(exactly = 1) { archiveStore.openStream(derivedKey, 10) }
         assertEquals(export.id, result.exportId)
         assertEquals(export.mediaType, result.mediaType)
         assertEquals(export.fileExtension, result.fileExtension)

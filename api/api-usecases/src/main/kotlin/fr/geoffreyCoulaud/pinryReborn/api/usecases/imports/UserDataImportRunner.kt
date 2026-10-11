@@ -147,18 +147,18 @@ class UserDataImportRunner(
             )
         }
 
-    /** The one validation site of spec section 5: only the storage key can be absent from a claimed row. */
-    private fun project(claimed: UserDataImport, runToken: UUID): RunnableImport =
-        RunnableImport(
+    /** The one validation site of spec section 5: only the archive can be missing from a claimed row. */
+    private fun project(claimed: UserDataImport, runToken: UUID): RunnableImport {
+        if (claimed.storageKey == null) {
+            markFailed(claimed.id, ARCHIVE_UNREADABLE, "the import names no archive") { it.holds(runToken) }
+        }
+        return RunnableImport(
             importId = claimed.id,
             userId = claimed.userId,
-            storageKey =
-                claimed.storageKey
-                    ?: markFailed(claimed.id, ARCHIVE_UNREADABLE, "the import names no archive") {
-                        it.holds(runToken)
-                    },
+            storageKey = ImportArchiveKey.forImport(claimed.id),
             runToken = runToken,
         )
+    }
 
     private fun walkArchive(runnable: RunnableImport, user: User, renewLeaseIfDue: () -> Unit) {
         readingArchive(runnable) { archiveStore.open(runnable.storageKey) }

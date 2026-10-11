@@ -480,9 +480,8 @@ class ReapUserDataExportsTest : BaseTest() {
     }
 
     @Test
-    fun `Given a terminal export whose column names another key, Then both keys go`() {
-        // Given: deleting only the derived key succeeds vacuously here, the column is then cleared, and
-        // the bytes it named become unreachable to every sweep. That is the defect of section 2.4.
+    fun `Given a terminal export whose column names another key, Then only the derived key goes`() {
+        // Given: the column says bytes may remain and nothing more, so its value is never a key
         stubSweep()
         stubRowWrites()
         stubArchiveDeletion()
@@ -493,47 +492,8 @@ class ReapUserDataExportsTest : BaseTest() {
 
         // Then
         assertEquals(ExportSweepCounts(failed = 0, expired = 0, reclaimed = 1), counts)
-        assertEquals(listOf(keyOf(divergent.id), DIVERGENT_KEY), deletedArchives)
-        assertNull(stored(divergent.id).storageKey)
-    }
-
-    @Test
-    fun `Given a terminal export whose column's bytes will not go, Then the row keeps naming them`() {
-        // Given: the derived key goes and the column's refuses. A second delete made quiet would report
-        // the row reclaimed and clear the column, stranding real bytes as section 2.4's defect did.
-        stubSweep()
-        val divergent = anExport(UserDataExportState.SUPERSEDED, storageKey = DIVERGENT_KEY)
-        stubArchiveDeletionRefusing(DIVERGENT_KEY)
-
-        // When
-        val counts = reaper.reap()
-
-        // Then
-        assertEquals(ExportSweepCounts(failed = 0, expired = 0, reclaimed = 0), counts)
         assertEquals(listOf(keyOf(divergent.id)), deletedArchives)
-        assertEquals(DIVERGENT_KEY, stored(divergent.id).storageKey)
-        // The fence is never opened, which is the half a swallowed refusal would reach anyway
-        verify(exactly = 0) { repository.findById(any()) }
-        verify(exactly = 0) { repository.save(any()) }
-    }
-
-    @Test
-    fun `Given a terminal export whose derived bytes will not go, Then the column keeps naming its own`() {
-        // Given: the mirror. Quieting this half hides the archive a dead builder left on the derived
-        // key, which is the residue the derivation exists to name.
-        stubSweep()
-        val divergent = anExport(UserDataExportState.SUPERSEDED, storageKey = DIVERGENT_KEY)
-        stubArchiveDeletionRefusing(keyOf(divergent.id))
-
-        // When
-        val counts = reaper.reap()
-
-        // Then: the derived key goes first, so the column's is not reached this run either
-        assertEquals(ExportSweepCounts(failed = 0, expired = 0, reclaimed = 0), counts)
-        assertEquals(emptyList<String>(), deletedArchives)
-        assertEquals(DIVERGENT_KEY, stored(divergent.id).storageKey)
-        verify(exactly = 0) { repository.findById(any()) }
-        verify(exactly = 0) { repository.save(any()) }
+        assertNull(stored(divergent.id).storageKey)
     }
 
     @Test
