@@ -17,7 +17,6 @@ create table media_downloads (
   source_url                    text not null,
   status                        text not null,
   reason_code                   text,
-  last_error                    text,
   task_id                       uuid not null,
   requested_at                  timestamp not null,
   updated_at                    timestamp not null,

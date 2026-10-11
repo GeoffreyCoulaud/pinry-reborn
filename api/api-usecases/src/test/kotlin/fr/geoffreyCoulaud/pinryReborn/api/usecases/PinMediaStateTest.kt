@@ -19,7 +19,7 @@ class PinMediaStateTest {
         Media.StillImage(randomUUID(), pinId, "image/png", 1, 1, 1, "h", "originals/x/$pinId/i.png", Instant.EPOCH)
 
     private fun download(status: DownloadStatus, reason: DownloadReason? = null) =
-        MediaDownload(pinId, sourceUrl, status, reason, null, randomUUID(), Instant.EPOCH, Instant.EPOCH)
+        MediaDownload(pinId, sourceUrl, status, reason, randomUUID(), Instant.EPOCH, Instant.EPOCH)
 
     @Test
     fun `Given no image and no download, Then NONE`() {

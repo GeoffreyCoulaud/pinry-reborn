@@ -107,7 +107,7 @@ class RequestPinMediaDownloadTest {
         every { pins.findPinById(pinId) } returns pin()
         every { enqueue.enqueue(any(), any(), any(), any(), any(), any()) } returns aTask(taskId)
         every { downloads.upsertPending(pinId, sourceUrl, taskId, now) } returns
-            MediaDownload(pinId, sourceUrl, DownloadStatus.PENDING, null, null, taskId, now, now)
+            MediaDownload(pinId, sourceUrl, DownloadStatus.PENDING, null, taskId, now, now)
         val kindSlot = slot<String>()
         val payloadSlot = slot<String>()
         val dedupSlot = slot<String?>()

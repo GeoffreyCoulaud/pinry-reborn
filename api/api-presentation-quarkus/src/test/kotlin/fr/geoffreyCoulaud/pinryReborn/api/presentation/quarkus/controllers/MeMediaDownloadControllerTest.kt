@@ -39,7 +39,6 @@ class MeMediaDownloadControllerTest {
                             checkNotNull(HttpUrl.parse("https://x/i.png")),
                             DownloadStatus.PENDING,
                             null,
-                            null,
                             randomUUID(),
                             Instant.EPOCH,
                             Instant.EPOCH,

@@ -25,7 +25,7 @@ class ClearPinDownloadTest {
     fun `Given a download row, Then it cancels the task and deletes the row`() {
         val taskId = randomUUID()
         every { downloads.findByPinId(pinId) } returns
-            MediaDownload(pinId, sourceUrl, DownloadStatus.PENDING, null, null, taskId, Instant.EPOCH, Instant.EPOCH)
+            MediaDownload(pinId, sourceUrl, DownloadStatus.PENDING, null, taskId, Instant.EPOCH, Instant.EPOCH)
         val result = subject.clear(pinId)
         assertTrue(result)
         verify { cancelTask.cancel(taskId) }
