@@ -30,6 +30,7 @@ import kotlin.streams.asSequence
  */
 class FilesystemZipExportArchiveStore(private val dataDir: String) : ExportArchiveStore {
 
+    // Every export derives its key from it, so changing it orphans the archives already written.
     override val format = ArchiveFormat(mediaType = "application/zip", fileExtension = "zip")
 
     // Internal, so a test can read its registered module ids: jackson-module-kotlin now sits on this

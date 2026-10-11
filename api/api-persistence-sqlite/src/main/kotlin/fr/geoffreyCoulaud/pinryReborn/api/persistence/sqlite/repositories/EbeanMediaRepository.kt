@@ -88,7 +88,7 @@ class EbeanMediaRepository(
     // `Media.animated` as the mapper reads it back: a video, or more than one frame.
     private fun QMediaModel.animatedIs(animated: Boolean): QMediaModel {
         if (!animated) not()
-        or().mimeType.startsWith("video/").frames.gt(1).endOr()
+        or().raw("mime_type glob 'video/*'").frames.gt(1).endOr()
         return if (animated) this else endNot()
     }
 }

@@ -40,8 +40,8 @@ interface UserDataExportRepositoryInterface {
     fun findPending(limit: Int): List<UserDataExport>
 
     /**
-     * Terminal rows that still name an archive, one page by `id` after [afterId] as above: a row is held here until its
-     * bytes are gone, and one whose delete is refused is passed by the next page.
+     * Terminal rows that still hold archive bytes, one page by `id` after [afterId] as above: a row is held here until
+     * its bytes are gone, and one whose delete is refused is passed by the next page.
      */
     fun findReclaimableTerminal(afterId: UUID?, limit: Int): List<UserDataExport>
 

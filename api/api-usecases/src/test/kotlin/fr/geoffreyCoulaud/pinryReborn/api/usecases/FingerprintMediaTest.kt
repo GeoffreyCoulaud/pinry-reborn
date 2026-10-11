@@ -12,8 +12,8 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.UndecodableVideoException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaFrameRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.storage.StagedFile
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import io.mockk.every
 import io.mockk.mockk
@@ -42,12 +42,17 @@ class FingerprintMediaTest : BaseTest() {
                 refusal?.let { throw it }
             }
         }
-    private val useCase = FingerprintMedia(mediaRepository, frames, duplicates, store, sampler, PassthroughRunner)
+    private val runner = PassthroughTransactionRunner()
+    private val useCase = FingerprintMedia(mediaRepository, frames, duplicates, store, sampler, runner)
 
     private val staged = StagedFile("/tmp/stored", 1, "hash")
 
-    init {
-        every { mediaRepository.findMissingMediaIds(any()) } returns emptySet()
+    /** [ids] are gone to a read inside the transaction alone, which is where the re-read has to be (ADR 0058). */
+    private fun deletedWhileHashing(vararg ids: UUID) {
+        every { mediaRepository.findMissingMediaIds(any()) } answers
+            {
+                if (runner.inside) firstArg<Collection<UUID>>().filter { it in ids }.toSet() else emptySet()
+            }
     }
 
     // Noise is detailed enough to keep, and two draws are about 128 bits apart.
@@ -182,7 +187,7 @@ class FingerprintMediaTest : BaseTest() {
         // Given: it would pair with the other media
         hashed(1)
         val media = media(listOf(noise(1)))
-        every { mediaRepository.findMissingMediaIds(any()) } returns setOf(media.id)
+        deletedWhileHashing(media.id)
 
         // When
         drain(media)
@@ -197,7 +202,7 @@ class FingerprintMediaTest : BaseTest() {
         // Given
         val other = hashed(1)
         val media = media(listOf(noise(1)))
-        every { mediaRepository.findMissingMediaIds(any()) } returns setOf(other.id)
+        deletedWhileHashing(other.id)
 
         // When
         drain(media)
@@ -267,10 +272,6 @@ class FingerprintMediaTest : BaseTest() {
         override fun findPinIdsWithPending(pinIds: Collection<UUID>): Set<UUID> = error("not used")
 
         override fun setRejected(pinId: UUID, otherPinIds: Collection<UUID>, rejectedAt: Instant) = error("not used")
-    }
-
-    private object PassthroughRunner : TransactionRunner {
-        override fun <T> inTransaction(block: () -> T): T = block()
     }
 
     private companion object {

@@ -79,6 +79,9 @@ class RawSqlOutsideInventory(config: Config) :
                         "is found by an upper-case search and not the reverse; toLowerCase() also takes no " +
                         "locale. And lower(name) is not the indexed expression, so a find-or-create could " +
                         "miss a row the constraint then refuses.",
+                "mime_type glob 'video/*'" to
+                    "The query beans' startsWith emits like, which SQLite folds for ASCII, where the mapper's " +
+                        "startsWith and ck_media_variant tell a video by a case-sensitive `video/`.",
                 "((hash_0 >> 48) & 65535) in (?1)" to FRAME_HASH_BAND,
                 "((hash_0 >> 32) & 65535) in (?1)" to FRAME_HASH_BAND,
                 "((hash_0 >> 16) & 65535) in (?1)" to FRAME_HASH_BAND,

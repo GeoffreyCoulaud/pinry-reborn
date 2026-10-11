@@ -1,19 +1,17 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.migration
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.RepositoryTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 
-/**
- * [MigrationDirectory.currentIndexes] cannot see a `drop table`, so a rebuild that loses one of its table's indexes
- * leaves it green. The migrated database is the only place that loss is observable.
- */
-class MigratedSchemaIndexesTest : RepositoryTest() {
+/** Reads the migrated database's structure from SQLite itself, where a lost index or a dropped CHECK shows. */
+class MigratedSchemaTest : RepositoryTest() {
     @Test
     fun `Given the migrated database, Then its indexes are exactly the ones the history leaves in place`() {
         // Given: SQLite names the index it creates for a column constraint itself, and no statement
-        // declares it.
+        // declares it. MigrationDirectory.currentIndexes cannot see a `drop table` that loses one.
         val present =
             database
                 .sqlQuery("select name from sqlite_master where type = 'index'")
@@ -125,6 +123,19 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         assertEquals(CHECK_CONSTRAINTS, checks.sorted())
     }
 
+    @Test
+    fun `Given the migrated database, Then the task CHECK's terminal states are the states no attempt is owed`() {
+        // Given: the CHECK spells the states by hand, and deleteTerminalBefore's filter rests on it
+        val tasks = database.sqlQuery("select sql from sqlite_master where name = 'tasks'").findOne()?.getString("sql")
+
+        // When
+        val checked = TERMINAL_STATES.find(tasks.orEmpty())?.groupValues?.get(1).orEmpty()
+        val states = Regex("""'(\w+)'""").findAll(checked).map { it.groupValues[1] }.toSet()
+
+        // Then
+        assertEquals(TaskState.entries.filterNot { it.isLiveAttempt }.map { it.name }.toSet(), states)
+    }
+
     private fun modelTables(): List<String> =
         database
             .sqlQuery("select name from sqlite_master where type = 'table' order by name")
@@ -174,6 +185,7 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
             )
         private val INLINE_CONSTRAINT = Regex("""constraint\s+(\w+)""", RegexOption.IGNORE_CASE)
         private val CHECK_CONSTRAINT = Regex("""constraint\s+(\w+)\s+check\b""", RegexOption.IGNORE_CASE)
+        private val TERMINAL_STATES = Regex("""ck_tasks_terminal_state_at\s+check\s*\(\s*\(state\s+in\s*\(([^)]*)\)""")
 
         // Ebean generates the enumerated column's; the others hold what comments held (ADR 0058, decision 6).
         private val CHECK_CONSTRAINTS =

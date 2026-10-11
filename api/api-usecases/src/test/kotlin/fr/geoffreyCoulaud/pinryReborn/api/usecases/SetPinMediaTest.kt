@@ -400,10 +400,10 @@ class SetPinMediaTest : BaseTest() {
 
     @Test
     fun `Given a pin deleted during the upload, Then it throws MediaPinDoesNotExistError and keeps no file or row`() {
-        // Given: the read inside the save's transaction finds the pin gone
+        // Given: the pin is gone to a read inside the save's transaction alone
         val p = pin()
         val storageKeySlot = slot<String>()
-        every { pins.findPinById(p.id) } returnsMany listOf(p, null)
+        every { pins.findPinById(p.id) } answers { if (runner.inside) null else p }
         every { store.stage(any(), 30) } returns staged
         every { probe.probe(staged) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1, bytes = 3)
         every { mediaRepository.findByPinId(p.id) } returns null

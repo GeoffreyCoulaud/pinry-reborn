@@ -236,6 +236,21 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun `Given a still image whose MIME type spells VIDEO in capitals, Then it compares with still images`() {
+        // Given: the mapper and ck_media_variant read `video/` case-sensitively
+        val author = savedUser()
+        val media = repository.save(mediaFor(savedPin(author).id))
+        val capitals = repository.save(mediaFor(savedPin(author).id).copy(mimeType = "VIDEO/PNG"))
+        listOf(media, capitals).forEach { repository.markFingerprinted(it.id, VERSION) }
+
+        // When
+        val found = repository.findComparable(media, listOf(capitals.id), VERSION)
+
+        // Then
+        assertEquals(listOf(capitals), found)
+    }
+
+    @Test
     fun `Given no pin ids, Then findByPinIds returns an empty map`() {
         // Given
         val pin = savedPin()

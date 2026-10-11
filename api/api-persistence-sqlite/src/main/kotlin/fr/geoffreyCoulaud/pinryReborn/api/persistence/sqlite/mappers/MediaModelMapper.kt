@@ -56,7 +56,7 @@ object MediaModelMapper {
                 )
         }
 
-    // The columns are nullable for an image's sake: a video row missing one is a defect, not a state.
+    // The columns are nullable for an image's sake: `ck_media_variant` refuses a video row missing one.
     private fun MediaModel.toVideo(): Media.Video {
         val durationMillis = checkNotNull(durationMillis) { "Video $id has no duration" }
         val sound =
