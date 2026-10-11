@@ -68,7 +68,7 @@ class EbeanTaskQueueTest : RepositoryTest() {
 
     @Test
     fun `Given a dedup key whose only task is terminal, Then enqueue creates a new task`() {
-        // Given: ux_tasks_dedup covers PENDING and RUNNING only (`1.3.sql:27`), so a settled row is not a duplicate
+        // Given: ux_tasks_dedup covers PENDING and RUNNING only, so a settled row is not a duplicate
         val dedupKey = createRandomString()
         val settled = queue.enqueue(newTask(dedupKey = dedupKey))
         val claimed = requireNotNull(queue.claimNext(now, Duration.ofMinutes(1)))

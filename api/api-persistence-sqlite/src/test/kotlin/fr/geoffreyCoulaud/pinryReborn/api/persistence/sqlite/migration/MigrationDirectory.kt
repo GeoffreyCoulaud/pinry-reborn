@@ -14,7 +14,7 @@ internal object MigrationDirectory {
     // statement, so a statement split over several lines is read like one written on a single line.
     private val indexCreation = Regex("""create\s+(?:unique\s+)?index\s+(\w+)[^;]*""", RegexOption.IGNORE_CASE)
 
-    // SQLite's form (sqlite.org/lang_dropindex.html); exercised by `1.19.sql`, which drops two indexes.
+    // SQLite's form (sqlite.org/lang_dropindex.html).
     private val indexRemoval = Regex("""drop\s+index\s+(?:if\s+exists\s+)?(\w+)""", RegexOption.IGNORE_CASE)
 
     private val versionNumber = Regex("""\d+""")

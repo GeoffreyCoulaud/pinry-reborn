@@ -10,7 +10,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "users")
-// Already created by `1.2.sql:2`, declared here to model it; only `definition` carries `collate nocase`.
+// Only `definition` carries `collate nocase`.
 @Index(
     name = "ix_users_name_nocase",
     definition = "create unique index ix_users_name_nocase on users (name collate nocase)",
