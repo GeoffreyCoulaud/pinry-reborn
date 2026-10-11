@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.AuthoredBaseModel
+import io.ebean.annotation.ConstraintMode
+import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
@@ -21,6 +23,6 @@ class RemoteCollectionModel(
     author: UserModel,
     val url: String,
     val name: String,
-    @ManyToOne val board: BoardModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) val board: BoardModel,
     createdAt: Instant,
 ) : AuthoredBaseModel(id = id, author = author, createdAt = createdAt)

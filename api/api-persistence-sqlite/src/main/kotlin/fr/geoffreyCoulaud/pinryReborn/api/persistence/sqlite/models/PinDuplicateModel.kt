@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
+import io.ebean.annotation.ConstraintMode
 import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
@@ -18,7 +19,7 @@ import java.util.UUID
     name = "ux_pin_duplicates_pins",
     definition = "create unique index ux_pin_duplicates_pins on pin_duplicates (first_pin_id, second_pin_id)",
 )
-// Every read by the other side; `noConstraint` drops the index a foreign key would bring.
+// Every read by the other side, and the deletion of its pin.
 @Index(name = "ix_pin_duplicates_second_pin", columnNames = ["second_pin_id"])
 class PinDuplicateModel(
     id: UUID,
@@ -26,15 +27,14 @@ class PinDuplicateModel(
     var secondPinId: UUID,
     var rejectedAt: Instant?,
 ) : BaseModel(id) {
-    // No constraints: the orphan sweep deletes a gone pin's pairs, so a pin's delete never waits on them.
-    // Not optional, so a read joins them inner and a gone pin's pair is dropped with a recycled one's.
+    // Not optional, so a read joins them inner.
     @ManyToOne(optional = false)
-    @DbForeignKey(noConstraint = true)
+    @DbForeignKey(onDelete = ConstraintMode.CASCADE)
     @JoinColumn(name = "first_pin_id", insertable = false, updatable = false)
     lateinit var firstPin: PinModel
 
     @ManyToOne(optional = false)
-    @DbForeignKey(noConstraint = true)
+    @DbForeignKey(onDelete = ConstraintMode.CASCADE)
     @JoinColumn(name = "second_pin_id", insertable = false, updatable = false)
     lateinit var secondPin: PinModel
 }

@@ -10,10 +10,12 @@ import com.lemonappdev.konsist.api.ext.list.withFunctions
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import com.lemonappdev.konsist.api.ext.list.withProperty
 import com.lemonappdev.konsist.api.ext.list.withType
+import com.lemonappdev.konsist.api.ext.list.withoutAnnotation
 import com.lemonappdev.konsist.api.ext.list.withoutAnnotationOf
 import com.lemonappdev.konsist.api.verify.assertEmpty
 import com.lemonappdev.konsist.api.verify.assertNotEmpty
 import jakarta.persistence.Entity
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.MappedSuperclass
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -123,6 +125,30 @@ class ModelsPackageArchTest {
     @Test
     fun `Given the models package, Then every index name starts with its table's name`() {
         assertEquals(emptyList<String>(), misnamedIndexes(modelClasses))
+    }
+
+    /** The relations that do not declare what their parent's deletion does (ADR 0058, decision 4). */
+    private fun undeclaredDeletions(models: List<KoClassDeclaration>): List<String> =
+        models
+            .properties()
+            .withAnnotationOf(ManyToOne::class)
+            .withoutAnnotation {
+                it.name == "DbForeignKey" &&
+                    it.hasArgumentWithName("onDelete") &&
+                    !it.hasArgumentWithName("noConstraint")
+            }
+            .map { it.name }
+
+    @Test
+    fun `Given a fixture model with keys declaring no deletion or no constraint, Then the key rule flags both`() {
+        val fixture =
+            Konsist.scopeFromFile("api-persistence-sqlite/src/test/resources/konsist/ForeignKeyModel.kt").classes()
+        assertEquals(listOf("tag", "board"), undeclaredDeletions(fixture))
+    }
+
+    @Test
+    fun `Given the models package, Then every relation declares what its parent's deletion does`() {
+        assertEquals(emptyList<String>(), undeclaredDeletions(modelClasses))
     }
 
     private data class KeptTableName(val table: String, val reason: String)

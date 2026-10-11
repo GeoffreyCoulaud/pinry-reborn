@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
+import io.ebean.annotation.ConstraintMode
+import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
@@ -23,7 +25,7 @@ import java.util.UUID
 @Index(name = "ix_user_data_imports_user_state", columnNames = ["user_id", "state"])
 class UserDataImportModel(
     id: UUID,
-    @ManyToOne var user: UserModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var user: UserModel,
     var state: String,
     var requestedAt: Instant,
     var lastActivityAt: Instant,

@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.FrameHashBands
+import io.ebean.annotation.ConstraintMode
 import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Column
@@ -13,7 +14,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "media_frames")
-// A media's frames, read and replaced together; `noConstraint` drops the index a foreign key would bring.
+// A media's frames, read and replaced together, and deleted with it.
 @Index(name = "ix_media_frames_media", columnNames = ["media_id"])
 // One index per 16-bit band, which the lookup asks for its value and its sixteen one-bit neighbours.
 @Index(
@@ -88,9 +89,8 @@ class MediaFrameModel(
     @Column(name = "hash_2") var hash2: Long,
     @Column(name = "hash_3") var hash3: Long,
 ) : BaseModel(id) {
-    // No constraint: the orphan sweep deletes a gone media's frames, so a media's delete never waits on them.
     @ManyToOne
-    @DbForeignKey(noConstraint = true)
+    @DbForeignKey(onDelete = ConstraintMode.CASCADE)
     @JoinColumn(name = "media_id", insertable = false, updatable = false)
     lateinit var media: MediaModel
 }

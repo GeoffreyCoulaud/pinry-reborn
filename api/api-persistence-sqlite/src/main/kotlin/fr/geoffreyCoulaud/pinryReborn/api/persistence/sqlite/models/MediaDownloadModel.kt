@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
+import io.ebean.annotation.ConstraintMode
 import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
@@ -35,7 +36,7 @@ class MediaDownloadModel(
      * which is why this is a second property on the column.
      */
     @ManyToOne
-    @DbForeignKey(noIndex = true)
+    @DbForeignKey(onDelete = ConstraintMode.CASCADE, noIndex = true)
     @JoinColumn(name = "pin_id", insertable = false, updatable = false)
     lateinit var pin: PinModel
 }

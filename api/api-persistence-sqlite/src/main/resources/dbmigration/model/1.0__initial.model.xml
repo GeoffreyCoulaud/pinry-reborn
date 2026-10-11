@@ -3,7 +3,7 @@
     <changeSet type="apply">
         <createTable name="boards" identityType="external" pkName="pk_boards">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_boards_author_id" foreignKeyIndex="ix_boards_author_id"/>
+            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_boards_author_id" foreignKeyIndex="ix_boards_author_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="created_at" type="timestamp" notnull="true"/>
             <column name="name" type="varchar" notnull="true"/>
             <column name="description" type="varchar" notnull="true"/>
@@ -12,7 +12,7 @@
         </createTable>
         <createTable name="media_downloads" identityType="external" pkName="pk_media_downloads">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_media_downloads_pin_id" foreignKeyOnDelete="RESTRICT" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_media_downloads_pin_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="source_url" type="varchar" notnull="true"/>
             <column name="status" type="varchar" notnull="true"/>
             <column name="reason_code" type="varchar"/>
@@ -23,7 +23,7 @@
         </createTable>
         <createTable name="media_frames" identityType="external" pkName="pk_media_frames">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="media_id" type="uuid" notnull="true"/>
+            <column name="media_id" type="uuid" notnull="true" references="media.id" foreignKeyName="fk_media_frames_media_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="hash_0" type="bigint" notnull="true"/>
             <column name="hash_1" type="bigint" notnull="true"/>
             <column name="hash_2" type="bigint" notnull="true"/>
@@ -31,7 +31,7 @@
         </createTable>
         <createTable name="media" identityType="external" pkName="pk_media">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="pin_id" type="uuid" notnull="true" unique="uq_media_pin_id" references="pins.id" foreignKeyName="fk_media_pin_id" foreignKeyOnDelete="RESTRICT" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="pin_id" type="uuid" notnull="true" unique="uq_media_pin_id" references="pins.id" foreignKeyName="fk_media_pin_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="mime_type" type="varchar" notnull="true"/>
             <column name="width" type="integer" notnull="true"/>
             <column name="height" type="integer" notnull="true"/>
@@ -49,52 +49,52 @@
         </createTable>
         <createTable name="persons" identityType="external" pkName="pk_persons">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_persons_author_id" foreignKeyIndex="ix_persons_author_id"/>
+            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_persons_author_id" foreignKeyIndex="ix_persons_author_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="created_at" type="timestamp" notnull="true"/>
             <column name="name" type="varchar" notnull="true"/>
             <column name="urls" type="varchar" notnull="true"/>
         </createTable>
         <createTable name="pin_boards" pkName="pk_pin_boards">
-            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_boards_pin_id" foreignKeyIndex="ix_pin_boards_pin_id"/>
-            <column name="board_id" type="uuid" notnull="true" references="boards.id" foreignKeyName="fk_pin_boards_board_id"/>
+            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_boards_pin_id" foreignKeyIndex="ix_pin_boards_pin_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="board_id" type="uuid" notnull="true" references="boards.id" foreignKeyName="fk_pin_boards_board_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
         </createTable>
         <createTable name="pin_creators" pkName="pk_pin_creators">
-            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_creators_pin_id" foreignKeyIndex="ix_pin_creators_pin_id"/>
-            <column name="person_id" type="uuid" notnull="true" references="persons.id" foreignKeyName="fk_pin_creators_person_id"/>
+            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_creators_pin_id" foreignKeyIndex="ix_pin_creators_pin_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="person_id" type="uuid" notnull="true" references="persons.id" foreignKeyName="fk_pin_creators_person_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
         </createTable>
         <createTable name="pin_duplicates" identityType="external" pkName="pk_pin_duplicates">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="first_pin_id" type="uuid" notnull="true"/>
-            <column name="second_pin_id" type="uuid" notnull="true"/>
+            <column name="first_pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_duplicates_first_pin_id" foreignKeyIndex="ix_pin_duplicates_first_pin_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="second_pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_duplicates_second_pin_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="rejected_at" type="timestamp"/>
         </createTable>
         <createTable name="pins" identityType="external" pkName="pk_pins">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_pins_author_id" foreignKeyIndex="ix_pins_author_id"/>
+            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_pins_author_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="created_at" type="timestamp" notnull="true"/>
             <column name="source_context_url" type="varchar"/>
             <column name="source_media_url" type="varchar"/>
             <column name="description" type="varchar" notnull="true"/>
             <column name="updated_at" type="timestamp" notnull="true"/>
             <column name="soft_deleted_at" type="timestamp"/>
-            <column name="publisher_id" type="uuid" references="persons.id" foreignKeyName="fk_pins_publisher_id" foreignKeyOnDelete="RESTRICT" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="publisher_id" type="uuid" references="persons.id" foreignKeyName="fk_pins_publisher_id" foreignKeyOnDelete="SET_NULL" foreignKeyOnUpdate="RESTRICT"/>
             <column name="published_at" type="timestamp"/>
         </createTable>
         <createTable name="pin_tags" pkName="pk_pin_tags">
-            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_tags_pin_id" foreignKeyIndex="ix_pin_tags_pin_id"/>
-            <column name="tag_id" type="uuid" notnull="true" references="tags.id" foreignKeyName="fk_pin_tags_tag_id"/>
+            <column name="pin_id" type="uuid" notnull="true" references="pins.id" foreignKeyName="fk_pin_tags_pin_id" foreignKeyIndex="ix_pin_tags_pin_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
+            <column name="tag_id" type="uuid" notnull="true" references="tags.id" foreignKeyName="fk_pin_tags_tag_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
         </createTable>
         <createTable name="remote_collections" identityType="external" pkName="pk_remote_collections">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_remote_collections_author_id" foreignKeyIndex="ix_remote_collections_author_id"/>
+            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_remote_collections_author_id" foreignKeyIndex="ix_remote_collections_author_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="created_at" type="timestamp" notnull="true"/>
             <column name="url" type="varchar" notnull="true"/>
             <column name="name" type="varchar" notnull="true"/>
-            <column name="board_id" type="uuid" notnull="true" references="boards.id" foreignKeyName="fk_remote_collections_board_id"/>
+            <column name="board_id" type="uuid" notnull="true" references="boards.id" foreignKeyName="fk_remote_collections_board_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
         </createTable>
         <createTable name="session_tokens" identityType="external" pkName="pk_session_tokens">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_session_tokens_user_id" foreignKeyIndex="ix_session_tokens_user_id"/>
+            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_session_tokens_user_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="token_hash" type="varchar" notnull="true" unique="uq_session_tokens_token_hash"/>
             <column name="expires_at" type="timestamp" notnull="true"/>
             <column name="persistent" type="boolean" defaultValue="false" notnull="true"/>
@@ -102,7 +102,7 @@
         </createTable>
         <createTable name="tags" identityType="external" pkName="pk_tags">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_tags_author_id" foreignKeyIndex="ix_tags_author_id"/>
+            <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_tags_author_id" foreignKeyIndex="ix_tags_author_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="created_at" type="timestamp" notnull="true"/>
             <column name="name" type="varchar" notnull="true"/>
         </createTable>
@@ -125,7 +125,7 @@
         </createTable>
         <createTable name="user_data_exports" identityType="external" pkName="pk_user_data_exports">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_user_data_exports_user_id"/>
+            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_user_data_exports_user_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="state" type="varchar" notnull="true"/>
             <column name="format_version" type="integer" notnull="true"/>
             <column name="requested_at" type="timestamp" notnull="true"/>
@@ -141,7 +141,7 @@
         </createTable>
         <createTable name="user_data_import_issues" identityType="external" pkName="pk_user_data_import_issues">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="import_id" type="uuid" notnull="true" references="user_data_imports.id" foreignKeyName="fk_user_data_import_issues_import_id"/>
+            <column name="import_id" type="uuid" notnull="true" references="user_data_imports.id" foreignKeyName="fk_user_data_import_issues_import_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="kind" type="varchar" notnull="true"/>
             <column name="line" type="integer"/>
             <column name="subject" type="varchar"/>
@@ -149,7 +149,7 @@
         </createTable>
         <createTable name="user_data_imports" identityType="external" pkName="pk_user_data_imports">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_user_data_imports_user_id" foreignKeyIndex="ix_user_data_imports_user_id"/>
+            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_user_data_imports_user_id" foreignKeyIndex="ix_user_data_imports_user_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="state" type="varchar" notnull="true"/>
             <column name="requested_at" type="timestamp" notnull="true"/>
             <column name="last_activity_at" type="timestamp" notnull="true"/>
@@ -182,7 +182,7 @@
         </createTable>
         <createTable name="user_password_hashes" identityType="external" pkName="pk_user_password_hashes">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
-            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_user_password_hashes_user_id" foreignKeyIndex="ix_user_password_hashes_user_id"/>
+            <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_user_password_hashes_user_id" foreignKeyIndex="ix_user_password_hashes_user_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="hash" type="varchar" notnull="true"/>
             <column name="algorithm" type="varchar(6)" notnull="true" checkConstraint="check ( algorithm in ('BCRYPT'))" checkConstraintName="ck_user_password_hashes_algorithm"/>
             <column name="created_at" type="timestamp" notnull="true"/>
@@ -214,16 +214,20 @@
         <createIndex indexName="ix_pin_creators_person" tableName="pin_creators" columns="person_id"/>
         <createIndex indexName="ux_pin_duplicates_pins" tableName="pin_duplicates" columns="" definition="create unique index ux_pin_duplicates_pins on pin_duplicates (first_pin_id, second_pin_id)"/>
         <createIndex indexName="ix_pin_duplicates_second_pin" tableName="pin_duplicates" columns="second_pin_id"/>
+        <createIndex indexName="ix_pins_author" tableName="pins" columns="author_id"/>
+        <createIndex indexName="ix_pins_publisher" tableName="pins" columns="publisher_id"/>
         <createIndex indexName="ux_pin_tags_pin_tag" tableName="pin_tags" columns="" definition="create unique index ux_pin_tags_pin_tag on pin_tags (pin_id, tag_id)"/>
         <createIndex indexName="ix_pin_tags_tag" tableName="pin_tags" columns="tag_id"/>
         <createIndex indexName="ux_remote_collections_author_url" tableName="remote_collections" columns="" definition="create unique index ux_remote_collections_author_url on remote_collections (author_id, url)"/>
         <createIndex indexName="ix_remote_collections_board" tableName="remote_collections" columns="board_id"/>
         <createIndex indexName="ix_session_tokens_expires_at" tableName="session_tokens" columns="expires_at"/>
+        <createIndex indexName="ix_session_tokens_user" tableName="session_tokens" columns="user_id"/>
         <createIndex indexName="ix_tags_author_name_nocase" tableName="tags" columns="" definition="create unique index ix_tags_author_name_nocase on tags (author_id, name collate nocase)"/>
         <createIndex indexName="ix_tasks_state_terminal_state_at" tableName="tasks" columns="state,terminal_state_at"/>
         <createIndex indexName="ix_tasks_claim" tableName="tasks" columns="" definition="create index ix_tasks_claim on tasks (state, priority desc, available_at asc, id asc)"/>
         <createIndex indexName="ux_tasks_dedup" tableName="tasks" columns="" definition="create unique index ux_tasks_dedup on tasks (dedup_key) where dedup_key is not null and state in ('PENDING','RUNNING')"/>
         <createIndex indexName="uq_user_data_exports_pending" tableName="user_data_exports" columns="user_id" unique="true" definition="create unique index uq_user_data_exports_pending on user_data_exports (user_id) where state = 'PENDING'"/>
+        <createIndex indexName="ix_user_data_exports_user" tableName="user_data_exports" columns="user_id"/>
         <createIndex indexName="ix_user_data_import_issues_import" tableName="user_data_import_issues" columns="import_id"/>
         <createIndex indexName="uq_user_data_imports_active" tableName="user_data_imports" columns="" definition="create unique index uq_user_data_imports_active on user_data_imports (user_id) where state in ('AWAITING_ARCHIVE','PENDING','RUNNING')"/>
         <createIndex indexName="ix_user_data_imports_user_state" tableName="user_data_imports" columns="user_id,state"/>

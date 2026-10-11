@@ -2,6 +2,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PasswordHashAlgorithm
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
+import io.ebean.annotation.ConstraintMode
+import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -18,7 +20,7 @@ import java.time.Instant
         "create unique index ix_user_password_hashes_user_created " + "on user_password_hashes (user_id, created_at)",
 )
 class UserPasswordHashModel(
-    @ManyToOne var user: UserModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var user: UserModel,
     var hash: String,
     @Enumerated(EnumType.STRING) var algorithm: PasswordHashAlgorithm,
     // Written by the mapper from the domain `createdAt` the use case stamps, never generated (D19).
