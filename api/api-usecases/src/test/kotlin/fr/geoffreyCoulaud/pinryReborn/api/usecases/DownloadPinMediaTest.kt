@@ -224,13 +224,13 @@ class DownloadPinMediaTest {
     }
 
     @Test
-    fun `Given an unreachable origin below the attempt limit, Then it records the error and rethrows`() {
+    fun `Given an unreachable origin below the attempt limit, Then it rethrows without failing the download`() {
         stubUntilFetch()
         every { fetcher.openStream(any()) } throws FetchUnreachableException("timeout")
         assertThrows(FetchUnreachableException::class.java) {
             subject.download(pinId, ctx(attempt = 1, max = 3))
         }
-        verify { downloads.recordLastError(pinId, "timeout", now) }
+        verify(exactly = 0) { downloads.markFailed(any(), any(), any()) }
     }
 
     @Test
@@ -263,14 +263,14 @@ class DownloadPinMediaTest {
     }
 
     @Test
-    fun `Given a mid-stream stage failure below the attempt limit, Then it records the error and rethrows`() {
+    fun `Given a mid-stream stage failure below the attempt limit, Then it rethrows without failing the download`() {
         stubUntilFetch()
         every { fetcher.openStream(any()) } returns FetchedMedia(ByteArrayInputStream(byteArrayOf(1)), null)
         every { store.stage(any(), any()) } throws IOException("connection reset")
         assertThrows(IOException::class.java) {
             subject.download(pinId, ctx(attempt = 1, max = 3))
         }
-        verify { downloads.recordLastError(pinId, "connection reset", now) }
+        verify(exactly = 0) { downloads.markFailed(any(), any(), any()) }
     }
 
     @Test
@@ -466,7 +466,7 @@ class DownloadPinMediaTest {
     }
 
     @Test
-    fun `Given a processor timeout below the attempt limit, Then it records a retryable error`() {
+    fun `Given a processor timeout below the attempt limit, Then it rethrows without failing the download`() {
         // Given
         val video = mockk<VideoProcessor>()
         val withVideo =
@@ -491,7 +491,7 @@ class DownloadPinMediaTest {
         assertThrows(VideoProcessorTimeoutException::class.java) {
             withVideo.download(pinId, ctx(attempt = 1, max = 3))
         }
-        verify { downloads.recordLastError(pinId, "ffprobe ran past PT1S", now) }
+        verify(exactly = 0) { downloads.markFailed(any(), any(), any()) }
     }
 
     @Test
@@ -505,12 +505,12 @@ class DownloadPinMediaTest {
     }
 
     @Test
-    fun `Given a generic probe failure below the attempt limit, Then it discards and records a retryable error`() {
+    fun `Given a generic probe failure below the attempt limit, Then it discards and rethrows without failing`() {
         stubUntilStage()
         every { probe.probe(any()) } throws RuntimeException("boom")
         assertThrows(RuntimeException::class.java) { subject.download(pinId, ctx(attempt = 1, max = 3)) }
         verify { store.discard(staged()) }
-        verify { downloads.recordLastError(pinId, "boom", now) }
+        verify(exactly = 0) { downloads.markFailed(any(), any(), any()) }
     }
 
     @Test
@@ -587,14 +587,14 @@ class DownloadPinMediaTest {
     }
 
     @Test
-    fun `Given promote fails below the attempt limit, Then it cleans up and records a retryable INTERNAL_ERROR`() {
+    fun `Given promote fails below the attempt limit, Then it cleans up and rethrows without failing the download`() {
         stubUntilStage()
         every { probe.probe(any()) } returns ProbeResult(MediaFormat.PNG, 1, 1, frames = 1, bytes = 3)
         every { store.promote(any(), any()) } throws RuntimeException()
         assertThrows(RuntimeException::class.java) { subject.download(pinId, ctx(attempt = 1, max = 3)) }
         verify { store.discard(staged()) }
         verify { store.delete(any()) }
-        verify { downloads.recordLastError(pinId, "INTERNAL_ERROR", now) }
+        verify(exactly = 0) { downloads.markFailed(any(), any(), any()) }
         verify(exactly = 0) { mediaRepository.save(any()) }
         verify(exactly = 0) { renditionCache.evictMedia(any()) }
     }
@@ -612,10 +612,8 @@ class DownloadPinMediaTest {
                 subject.download(pinId, ctx(attempt = 1, max = 3))
             }
 
-        // The cleanup exception must not mask the original promote failure; the retry policy
-        // records the original cause and rethrows it.
+        // The cleanup exception must not mask the original promote failure, which the retry policy rethrows.
         assertEquals(promoteError, thrown)
-        verify { downloads.recordLastError(pinId, "disk full", now) }
     }
 
     @Test
@@ -631,10 +629,8 @@ class DownloadPinMediaTest {
                 subject.download(pinId, ctx(attempt = 1, max = 3))
             }
 
-        // The staged-temp discard failure must not mask the original promote failure; the retry
-        // policy records the original cause and rethrows it.
+        // The staged-temp discard failure must not mask the original promote failure, which the retry policy rethrows.
         assertEquals(promoteError, thrown)
-        verify { downloads.recordLastError(pinId, "disk full", now) }
     }
 
     @Test
@@ -649,7 +645,6 @@ class DownloadPinMediaTest {
 
         // A no-op swap is a success; the cleanup failure must not turn it into a retryable failure.
         verify(exactly = 0) { downloads.markFailed(any(), any(), any()) }
-        verify(exactly = 0) { downloads.recordLastError(any(), any(), any()) }
         verify(exactly = 0) { mediaRepository.save(any()) }
     }
 }

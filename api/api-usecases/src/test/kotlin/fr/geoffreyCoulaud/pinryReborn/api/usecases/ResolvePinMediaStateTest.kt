@@ -241,8 +241,6 @@ class ResolvePinMediaStateTest {
 
         override fun markFailed(pinId: UUID, reason: DownloadReason, now: Instant): Boolean = error("not used")
 
-        override fun recordLastError(pinId: UUID, lastError: String, now: Instant): Boolean = error("not used")
-
         override fun deleteIfPending(pinId: UUID): Int = error("not used")
 
         override fun deleteByPinId(pinId: UUID) = error("not used")

@@ -80,20 +80,6 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given a PENDING row, Then recordLastError keeps PENDING and returns true`() {
-        val pinId = savedPinId()
-        repository.upsertPending(pinId, "https://x/i.png", randomUUID(), now)
-        assertTrue(repository.recordLastError(pinId, "timeout", now))
-        assertEquals(DownloadStatus.PENDING, repository.findByPinId(pinId)?.status)
-        assertEquals("timeout", repository.findByPinId(pinId)?.lastError)
-    }
-
-    @Test
-    fun `Given no PENDING row, Then recordLastError returns false`() {
-        assertFalse(repository.recordLastError(randomUUID(), "x", now))
-    }
-
-    @Test
     fun `Given a PENDING row, Then deleteIfPending deletes it and returns 1`() {
         val pinId = savedPinId()
         repository.upsertPending(pinId, "https://x/i.png", randomUUID(), now)
