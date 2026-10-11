@@ -35,19 +35,45 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given the migrated database, Then every constraint and index of the media tables is named after its table`() {
+    fun `Given the migrated database, Then every constraint and index is named after its table`() {
         // Given: a table renamed by hand would keep the inline names of the table it was created as.
-        val namesByTable = MEDIA_TABLES.associateWith { constraintAndIndexNamesOf(it) }
+        val tables = modelTables()
+        val namesByTable = tables.associateWith { constraintAndIndexNamesOf(it) }
 
         // When
         val misnamed = namesByTable.flatMap { (table, names) ->
-            names.filterNot { it.matches(Regex("""[a-z]+_${table}_\w+|pk_$table""")) }
+            names.filterNot { it.matches(Regex("""(ix|ux|uq|ck)_${table}_\w+|pk_$table""")) }
         }
 
-        // Then: the second assertion is the first one's non-empty guard.
+        // Then: the second assertion is the first one's non-empty guard, every table holding a name.
         assertEquals(emptyList<String>(), misnamed)
-        assertEquals(MEDIA_TABLES, namesByTable.filterValues { it.isNotEmpty() }.keys.toList())
+        assertEquals(tables, namesByTable.filterValues { it.isNotEmpty() }.keys.toList())
     }
+
+    @Test
+    fun `Given the migrated database, Then no table or column keeps a name the models no longer give`() {
+        // Given: the join tables were once named after their class.
+        val tables = modelTables()
+        val columns = tables.flatMap { table ->
+            database.sqlQuery("select name from pragma_table_info(?)").setParameter(table).findList().map {
+                "$table.${it.getString("name")}"
+            }
+        }
+
+        // When
+        val legacy = (tables + columns).filter { name -> LEGACY_NAME_PARTS.any { it in name } }
+
+        // Then: the second assertion is the first one's non-empty guard.
+        assertEquals(emptyList<String>(), legacy)
+        assertNotEquals(emptyList<String>(), columns)
+    }
+
+    private fun modelTables(): List<String> =
+        database
+            .sqlQuery("select name from sqlite_master where type = 'table' order by name")
+            .findList()
+            .map { it.getString("name") }
+            .filterNot { it.startsWith("sqlite_") || it == MIGRATION_TABLE }
 
     private fun constraintAndIndexNamesOf(table: String): List<String> {
         val rows =
@@ -67,7 +93,9 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
 
     private companion object {
         private const val AUTO_INDEX_PREFIX = "sqlite_autoindex_"
-        private val MEDIA_TABLES = listOf("media", "media_download")
+        // Ebean's own table, whose names are Ebean's.
+        private const val MIGRATION_TABLE = "db_migration"
+        private val LEGACY_NAME_PARTS = listOf("_model")
         private val INLINE_CONSTRAINT = Regex("""constraint\s+(\w+)""", RegexOption.IGNORE_CASE)
     }
 }

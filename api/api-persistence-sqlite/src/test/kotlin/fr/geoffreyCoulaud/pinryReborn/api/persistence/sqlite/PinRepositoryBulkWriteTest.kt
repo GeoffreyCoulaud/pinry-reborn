@@ -83,7 +83,7 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
             }
 
         // Then: the join rows too, one INSERT sent once with ten rows bound
-        val inserts = ten.sql().filter { "insert into pin_board_model" in it }
+        val inserts = ten.sql().filter { "insert into pin_boards" in it }
         assertEquals(listOf(JOIN_INSERT, "-- executeBatch() size:10 sql:$JOIN_INSERT"), inserts, "ten ran $ten")
     }
 
@@ -211,6 +211,6 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
 
         const val RECYCLE_UPDATE = "update pins set when_modified=?, soft_deleted_at=? where id=?"
 
-        const val JOIN_INSERT = "insert into pin_board_model (pin_id, board_id) values (?,?)"
+        const val JOIN_INSERT = "insert into pin_boards (pin_id, board_id) values (?,?)"
     }
 }

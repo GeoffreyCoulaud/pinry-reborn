@@ -12,14 +12,14 @@ import java.util.UUID
 
 /** Two pins whose media look alike, [firstPinId] the lower id; [rejectedAt] is set once the user says they are not. */
 @Entity
-@Table(name = "pin_duplicate")
+@Table(name = "pin_duplicates")
 // A pair is held once; `first_pin_id` leads, so it also serves every read by that side.
 @Index(
-    name = "ux_pin_duplicate_pins",
-    definition = "create unique index ux_pin_duplicate_pins on pin_duplicate (first_pin_id, second_pin_id)",
+    name = "ux_pin_duplicates_pins",
+    definition = "create unique index ux_pin_duplicates_pins on pin_duplicates (first_pin_id, second_pin_id)",
 )
 // Every read by the other side; `noConstraint` drops the index a foreign key would bring.
-@Index(name = "ix_pin_duplicate_second_pin", columnNames = ["second_pin_id"])
+@Index(name = "ix_pin_duplicates_second_pin", columnNames = ["second_pin_id"])
 class PinDuplicateModel(
     id: UUID,
     var firstPinId: UUID,

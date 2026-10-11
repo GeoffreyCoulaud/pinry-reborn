@@ -164,7 +164,7 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
 
         // Then: read on a table with no statistics, so this pins the plan the planner picks unaided
         (0 until FrameHashBands.EXPRESSIONS.size).forEach { band ->
-            assertTrue(plan.contains("ix_media_frame_band_$band "), plan)
+            assertTrue(plan.contains("ix_media_frames_band_$band "), plan)
         }
         assertFalse(plan.contains("SCAN"), plan)
     }

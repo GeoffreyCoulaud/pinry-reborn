@@ -24,7 +24,7 @@ class UniqueConstraintOutcomeTest {
                     "live task the dedup key already names, which is the convergence TaskQueueInterface documents. " +
                     "A violation with no live task behind it has nothing to converge on and propagates, so the " +
                     "client sees 500.",
-            "ux_media_download_pin" to
+            "ux_media_downloads_pin" to
                 "No translation, deliberately: EbeanMediaDownloadRepository.upsertPending deletes by pinId " +
                     "then inserts, so a second download for a pin replaces the first instead of colliding. The " +
                     "same shape as uq_media_pin_id, and RequestPinMediaDownload holds the pair in one " +
@@ -67,19 +67,19 @@ class UniqueConstraintOutcomeTest {
                 "No translation, deliberately, for the tag's reason: the user data import reads the address " +
                     "before linking it and holds the pair in one transaction, and it is the only write path, so " +
                     "the violation is unreachable.",
-            "ux_pin_board_model_pin_board" to
+            "ux_pin_boards_pin_board" to
                 "No translation, deliberately: every write in PinRepository reads the memberships already " +
                     "there and inserts the missing ones, each once, so the index fires only when two writes of " +
                     "one pin interleave outside a transaction, and 500 is the answer then.",
-            "ux_pin_tag_model_pin_tag" to
+            "ux_pin_tags_pin_tag" to
                 "No translation, deliberately: PinRepository.savePin reads the pin's tags and inserts the " +
                     "missing ones, each once, so the index fires only when two writes of one pin interleave " +
                     "outside a transaction, and 500 is the answer then.",
-            "ux_pin_creator_model_pin_person" to
-                "No translation, deliberately, as ux_pin_tag_model_pin_tag: PinRepository.savePin reads the " +
+            "ux_pin_creators_pin_person" to
+                "No translation, deliberately, as ux_pin_tags_pin_tag:PinRepository.savePin reads the " +
                     "pin's creators and inserts the missing ones, each once, so the index fires only when two " +
                     "writes of one pin interleave outside a transaction, and 500 is the answer then.",
-            "ux_pin_duplicate_pins" to
+            "ux_pin_duplicates_pins" to
                 "No translation, deliberately: one fingerprint drain runs at a time, its task having one dedup " +
                     "key, and it inserts only the pairs its pin does not hold; a rejection or a restore updates an " +
                     "existing row. So the index fires only on a broken invariant, and 500 is the answer then.",

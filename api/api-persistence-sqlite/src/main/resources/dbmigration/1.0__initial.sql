@@ -11,7 +11,7 @@ create table boards (
   foreign key (author_id) references users (id) on delete restrict on update restrict
 );
 
-create table media_download (
+create table media_downloads (
   id                            uuid not null,
   pin_id                        uuid not null,
   source_url                    text not null,
@@ -21,18 +21,18 @@ create table media_download (
   task_id                       uuid not null,
   requested_at                  timestamp not null,
   updated_at                    timestamp not null,
-  constraint pk_media_download primary key (id),
+  constraint pk_media_downloads primary key (id),
   foreign key (pin_id) references pins (id) on delete restrict on update restrict
 );
 
-create table media_frame (
+create table media_frames (
   id                            uuid not null,
   media_id                      uuid not null,
   hash_0                        integer not null,
   hash_1                        integer not null,
   hash_2                        integer not null,
   hash_3                        integer not null,
-  constraint pk_media_frame primary key (id)
+  constraint pk_media_frames primary key (id)
 );
 
 create table media (
@@ -67,26 +67,26 @@ create table persons (
   foreign key (author_id) references users (id) on delete restrict on update restrict
 );
 
-create table pin_board_model (
+create table pin_boards (
   pin_id                        uuid not null,
   board_id                      uuid not null,
   foreign key (pin_id) references pins (id) on delete restrict on update restrict,
   foreign key (board_id) references boards (id) on delete restrict on update restrict
 );
 
-create table pin_creator_model (
+create table pin_creators (
   pin_id                        uuid not null,
   person_id                     uuid not null,
   foreign key (pin_id) references pins (id) on delete restrict on update restrict,
   foreign key (person_id) references persons (id) on delete restrict on update restrict
 );
 
-create table pin_duplicate (
+create table pin_duplicates (
   id                            uuid not null,
   first_pin_id                  uuid not null,
   second_pin_id                 uuid not null,
   rejected_at                   timestamp,
-  constraint pk_pin_duplicate primary key (id)
+  constraint pk_pin_duplicates primary key (id)
 );
 
 create table pins (
@@ -105,7 +105,7 @@ create table pins (
   foreign key (publisher_id) references persons (id) on delete restrict on update restrict
 );
 
-create table pin_tag_model (
+create table pin_tags (
   pin_id                        uuid not null,
   tag_id                        uuid not null,
   foreign key (pin_id) references pins (id) on delete restrict on update restrict,
@@ -245,34 +245,34 @@ create table user_password_hashes (
 
 -- foreign keys and indices
 create unique index ix_boards_author_name_nocase on boards (author_id, name collate nocase);
-create unique index ux_media_download_pin on media_download (pin_id);
-create index ix_media_frame_media on media_frame (media_id);
-create index ix_media_frame_band_0 on media_frame (((hash_0 >> 48) & 65535));
-create index ix_media_frame_band_1 on media_frame (((hash_0 >> 32) & 65535));
-create index ix_media_frame_band_2 on media_frame (((hash_0 >> 16) & 65535));
-create index ix_media_frame_band_3 on media_frame (((hash_0 >> 0) & 65535));
-create index ix_media_frame_band_4 on media_frame (((hash_1 >> 48) & 65535));
-create index ix_media_frame_band_5 on media_frame (((hash_1 >> 32) & 65535));
-create index ix_media_frame_band_6 on media_frame (((hash_1 >> 16) & 65535));
-create index ix_media_frame_band_7 on media_frame (((hash_1 >> 0) & 65535));
-create index ix_media_frame_band_8 on media_frame (((hash_2 >> 48) & 65535));
-create index ix_media_frame_band_9 on media_frame (((hash_2 >> 32) & 65535));
-create index ix_media_frame_band_10 on media_frame (((hash_2 >> 16) & 65535));
-create index ix_media_frame_band_11 on media_frame (((hash_2 >> 0) & 65535));
-create index ix_media_frame_band_12 on media_frame (((hash_3 >> 48) & 65535));
-create index ix_media_frame_band_13 on media_frame (((hash_3 >> 32) & 65535));
-create index ix_media_frame_band_14 on media_frame (((hash_3 >> 16) & 65535));
-create index ix_media_frame_band_15 on media_frame (((hash_3 >> 0) & 65535));
+create unique index ux_media_downloads_pin on media_downloads (pin_id);
+create index ix_media_frames_media on media_frames (media_id);
+create index ix_media_frames_band_0 on media_frames (((hash_0 >> 48) & 65535));
+create index ix_media_frames_band_1 on media_frames (((hash_0 >> 32) & 65535));
+create index ix_media_frames_band_2 on media_frames (((hash_0 >> 16) & 65535));
+create index ix_media_frames_band_3 on media_frames (((hash_0 >> 0) & 65535));
+create index ix_media_frames_band_4 on media_frames (((hash_1 >> 48) & 65535));
+create index ix_media_frames_band_5 on media_frames (((hash_1 >> 32) & 65535));
+create index ix_media_frames_band_6 on media_frames (((hash_1 >> 16) & 65535));
+create index ix_media_frames_band_7 on media_frames (((hash_1 >> 0) & 65535));
+create index ix_media_frames_band_8 on media_frames (((hash_2 >> 48) & 65535));
+create index ix_media_frames_band_9 on media_frames (((hash_2 >> 32) & 65535));
+create index ix_media_frames_band_10 on media_frames (((hash_2 >> 16) & 65535));
+create index ix_media_frames_band_11 on media_frames (((hash_2 >> 0) & 65535));
+create index ix_media_frames_band_12 on media_frames (((hash_3 >> 48) & 65535));
+create index ix_media_frames_band_13 on media_frames (((hash_3 >> 32) & 65535));
+create index ix_media_frames_band_14 on media_frames (((hash_3 >> 16) & 65535));
+create index ix_media_frames_band_15 on media_frames (((hash_3 >> 0) & 65535));
 create index ix_media_content_hash on media (content_hash);
 create unique index ix_persons_author_name_nocase_urls on persons (author_id, name collate nocase, urls);
-create unique index ux_pin_board_model_pin_board on pin_board_model (pin_id, board_id);
-create index ix_pin_board_model_board on pin_board_model (board_id);
-create unique index ux_pin_creator_model_pin_person on pin_creator_model (pin_id, person_id);
-create index ix_pin_creator_model_person on pin_creator_model (person_id);
-create unique index ux_pin_duplicate_pins on pin_duplicate (first_pin_id, second_pin_id);
-create index ix_pin_duplicate_second_pin on pin_duplicate (second_pin_id);
-create unique index ux_pin_tag_model_pin_tag on pin_tag_model (pin_id, tag_id);
-create index ix_pin_tag_model_tag on pin_tag_model (tag_id);
+create unique index ux_pin_boards_pin_board on pin_boards (pin_id, board_id);
+create index ix_pin_boards_board on pin_boards (board_id);
+create unique index ux_pin_creators_pin_person on pin_creators (pin_id, person_id);
+create index ix_pin_creators_person on pin_creators (person_id);
+create unique index ux_pin_duplicates_pins on pin_duplicates (first_pin_id, second_pin_id);
+create index ix_pin_duplicates_second_pin on pin_duplicates (second_pin_id);
+create unique index ux_pin_tags_pin_tag on pin_tags (pin_id, tag_id);
+create index ix_pin_tags_tag on pin_tags (tag_id);
 create unique index ux_remote_collections_author_url on remote_collections (author_id, url);
 create index ix_remote_collections_board on remote_collections (board_id);
 create index ix_session_tokens_expires_at on session_tokens (expires_at);
