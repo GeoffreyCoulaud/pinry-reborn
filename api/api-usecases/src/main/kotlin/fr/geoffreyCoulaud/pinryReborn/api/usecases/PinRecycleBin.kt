@@ -70,7 +70,6 @@ class PinRecycleBin(
         val pin = recycledOrRefused(pinRepository.findPinById(pinId), user)
         clearPinDownload.clear(pin.id)
         val media = mediaRepository.findByPinId(pin.id)
-        mediaRepository.deleteByPinId(pin.id)
         pinRepository.permanentlyDeletePin(pin)
         media?.let {
             mediaStore.deleteQuietly(it.storageKey)
@@ -82,9 +81,7 @@ class PinRecycleBin(
         val pins = pinRepository.findAllSoftDeletedPinsForUser(user)
         val deletedMedia = pins.mapNotNull { pin ->
             clearPinDownload.clear(pin.id)
-            val media = mediaRepository.findByPinId(pin.id)
-            mediaRepository.deleteByPinId(pin.id)
-            media
+            mediaRepository.findByPinId(pin.id)
         }
         pinRepository.permanentlyDeleteAllSoftDeletedPinsForUser(user)
         deletedMedia.forEach {

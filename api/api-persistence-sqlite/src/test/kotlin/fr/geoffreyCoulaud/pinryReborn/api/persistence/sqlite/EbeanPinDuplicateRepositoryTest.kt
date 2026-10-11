@@ -1,11 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActivePins
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanPinDuplicateRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
@@ -59,11 +57,6 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
             }
         stored.takeLast(recycled).forEach { pins.softDeletePin(it, storableNow()) }
         return stored
-    }
-
-    private fun withMedia(pin: Pin) {
-        EbeanMediaRepository(persistor, transactionRunner)
-            .save(Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1, "", "originals/x", storableNow()))
     }
 
     @Test
@@ -133,23 +126,6 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
         // Then
         val expected = setOf(setOf(pin, other) to true, setOf(pin, recycled) to false, setOf(other, third) to false)
         assertEquals(expected, pairs())
-    }
-
-    @Test
-    fun `Given stored, recycled and emptied pins' pairs, Then the sweep deletes the emptied pending pair alone`() {
-        // Given: two pins with no media
-        val (stored, recycled) = storedPins(2, recycled = 1).onEach(::withMedia)
-        val (emptied, emptiedRejected) = storedPins(2)
-        repository.addMissing(stored.id, listOf(recycled.id, emptied.id, emptiedRejected.id))
-        reject(stored.id, emptiedRejected.id)
-
-        // When
-        val deleted = repository.deleteOrphans()
-
-        // Then
-        assertEquals(1, deleted)
-        val kept = setOf(setOf(stored.id, recycled.id) to false, setOf(stored.id, emptiedRejected.id) to true)
-        assertEquals(kept, pairs())
     }
 
     @Test

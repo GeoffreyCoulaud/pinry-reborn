@@ -60,9 +60,8 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 - **Domain and wire states are independent nullable fields, not sealed variants**, null standing for a third state: the
   sealed states lot, after the types. Same `inventory.md`, T3, N1, N2, C3 and C5, and units 11 to 13, 22 and 23; it
   answers the two questions of ADR 0056, decision 8. New 2026-10-09.
-- **A write over many rows saves one row at a time, and some deletions and find-or-creates miss a dependent or a
-  transaction**: the batch writes and transactions lot, last. Same `inventory.md`, I3, I7, S5 and X2, and units 14, 15
-  and 21. New 2026-10-09.
+- **A write over many rows saves one row at a time, and some find-or-creates miss a transaction**: the batch writes
+  and transactions lot, last. Same `inventory.md`, I3, I7 and S5, and units 14 and 21. New 2026-10-09.
 - **`.dagger/` is neither linted nor formatted**, the clients' Biome stopping at `clients/`.
   See `docs/specs/2026-09-28-knip-and-biome-keep-the-clients-clean.md`, decision F. New 2026-09-29.
 

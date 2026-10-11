@@ -12,6 +12,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPinDoesNotExistError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -33,7 +34,16 @@ class DeletePinMediaTest : BaseTest() {
     private val clearPinDownload = mockk<ClearPinDownload>(relaxed = true)
     private val renditionCache = mockk<RenditionCache>()
     private val duplicates = mockk<PinDuplicateRepositoryInterface>(relaxed = true)
-    private val useCase = DeletePinMedia(pins, mediaRepository, duplicates, store, clearPinDownload, renditionCache)
+    private val useCase =
+        DeletePinMedia(
+            pins,
+            mediaRepository,
+            duplicates,
+            store,
+            clearPinDownload,
+            renditionCache,
+            PassthroughTransactionRunner(),
+        )
 
     init {
         every { renditionCache.evictMedia(any()) } returns Unit
