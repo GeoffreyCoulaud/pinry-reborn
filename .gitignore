@@ -35,3 +35,4 @@ api/.idea/*
 # Where a review writes its report (docs/adr/0032-a-number-carries-its-source-and-a-report-carries-its-file.md,
 # decision 1). Ignored so no closing block's git add can carry a review onto main.
 .reviews/
+.serena
