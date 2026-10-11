@@ -24,7 +24,7 @@ data class UserDataImport(
     val archiveCompletedAt: Instant? = null,
     val startedAt: Instant? = null,
     val completedAt: Instant? = null,
-    val storageKey: String? = null,
+    val archiveHeld: Boolean = false,
     val byteSize: Long? = null,
     val formatVersion: Int? = null,
     val announcedPins: Int? = null,

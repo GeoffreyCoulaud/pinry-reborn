@@ -89,8 +89,8 @@ class UserDataImportRepository(private val persistor: Persistor) : UserDataImpor
         QUserDataImportModel()
             .state
             .isIn(TerminalImportStates.all)
-            .storageKey
-            .isNotNull()
+            .archiveHeld
+            .isTrue()
             .pageByIdAfter(afterId, limit)
             .findList()
             .map { it.toDomain() }

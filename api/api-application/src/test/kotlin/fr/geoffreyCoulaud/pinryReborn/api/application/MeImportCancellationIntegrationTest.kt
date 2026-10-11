@@ -68,9 +68,7 @@ class MeImportCancellationIntegrationTest : MeImportFixtures() {
                 delay = Duration.ofHours(1),
             )
         val opened = requireNotNull(importRepository.findById(importId))
-        importRepository.save(
-            opened.copy(state = UserDataImportState.PENDING, taskId = task.id, storageKey = storageKey)
-        )
+        importRepository.save(opened.copy(state = UserDataImportState.PENDING, taskId = task.id, archiveHeld = true))
 
         // When
         given().authenticatedAs(auth).`when`().delete("/api/v1/me/imports/$importId").then().statusCode(204)

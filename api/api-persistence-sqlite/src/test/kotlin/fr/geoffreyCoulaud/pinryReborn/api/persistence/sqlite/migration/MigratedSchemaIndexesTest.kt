@@ -152,6 +152,7 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         private val UNREAD_COLUMNS =
             listOf(
                 "user_data_exports.storage_key",
+                "user_data_imports.storage_key",
                 "user_data_imports.processed_pins",
                 "media.animated",
                 "media_downloads.last_error",

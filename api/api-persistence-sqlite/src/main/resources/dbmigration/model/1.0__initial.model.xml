@@ -156,7 +156,7 @@
             <column name="archive_completed_at" type="timestamp"/>
             <column name="started_at" type="timestamp"/>
             <column name="completed_at" type="timestamp"/>
-            <column name="storage_key" type="varchar"/>
+            <column name="archive_held" type="boolean" defaultValue="false" notnull="true"/>
             <column name="byte_size" type="bigint"/>
             <column name="format_version" type="integer"/>
             <column name="announced_pins" type="integer"/>

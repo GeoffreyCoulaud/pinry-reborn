@@ -35,7 +35,7 @@ class UserDataImportModel(
     var archiveCompletedAt: Instant? = null,
     var startedAt: Instant? = null,
     var completedAt: Instant? = null,
-    var storageKey: String? = null,
+    var archiveHeld: Boolean = false,
     var byteSize: Long? = null,
     var formatVersion: Int? = null,
     var announcedPins: Int? = null,

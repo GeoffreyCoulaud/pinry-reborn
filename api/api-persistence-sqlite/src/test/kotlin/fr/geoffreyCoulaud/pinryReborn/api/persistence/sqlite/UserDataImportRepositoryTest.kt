@@ -73,7 +73,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
                         lastActivityAt = requestedAt.plusSeconds(10),
                         archiveCompletedAt = requestedAt.plusSeconds(20),
                         startedAt = requestedAt.plusSeconds(30),
-                        storageKey = "imports/a.zip",
+                        archiveHeld = true,
                         byteSize = 4096,
                         formatVersion = 1,
                         issueCount = 2,
@@ -279,7 +279,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         // Given
         val user = createAndSaveUser()
         val stored = repository.save(awaitingImport(user.id))
-        repository.save(stored.copy(state = UserDataImportState.CANCELLED, storageKey = "imports/${stored.id}.zip"))
+        repository.save(stored.copy(state = UserDataImportState.CANCELLED, archiveHeld = true))
 
         // When
         val reclaimable = repository.findReclaimableTerminal(afterId = null, limit = 10)
@@ -293,7 +293,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         // Given
         val user = createAndSaveUser()
         val stored = repository.save(awaitingImport(user.id))
-        repository.save(stored.copy(state = UserDataImportState.COMPLETED, storageKey = null))
+        repository.save(stored.copy(state = UserDataImportState.COMPLETED, archiveHeld = false))
 
         // When
         val reclaimable = repository.findReclaimableTerminal(afterId = null, limit = 10)
@@ -307,7 +307,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         // Given: the walk is still reading those bytes
         val user = createAndSaveUser()
         val stored = repository.save(awaitingImport(user.id))
-        repository.save(stored.copy(state = UserDataImportState.RUNNING, storageKey = "imports/${stored.id}.zip"))
+        repository.save(stored.copy(state = UserDataImportState.RUNNING, archiveHeld = true))
 
         // When
         val reclaimable = repository.findReclaimableTerminal(afterId = null, limit = 10)
@@ -373,7 +373,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         // Given
         val ids = seedThreeDescending { id ->
             val stored = repository.save(awaitingImport(createAndSaveUser().id, id = id))
-            repository.save(stored.copy(state = UserDataImportState.CANCELLED, storageKey = "imports/$id.zip")).id
+            repository.save(stored.copy(state = UserDataImportState.CANCELLED, archiveHeld = true)).id
         }
 
         // When / Then

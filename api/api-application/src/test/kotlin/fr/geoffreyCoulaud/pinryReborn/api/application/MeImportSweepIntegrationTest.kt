@@ -13,7 +13,6 @@ import java.time.Instant
 import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -79,16 +78,16 @@ class MeImportSweepIntegrationTest : MeImportFixtures() {
         importRepository.save(
             stored.copy(
                 state = UserDataImportState.CANCELLED,
-                storageKey = "imports/$importId.zip",
+                archiveHeld = true,
             )
         )
 
         // When
         reapUserDataImports.reap()
 
-        // Then: the row stops naming bytes that are gone, so the next hour reclaims nothing
+        // Then: the row stops holding bytes that are gone, so the next hour reclaims nothing
         assertFalse(Files.exists(archivePath), "the archive should be reclaimed once the row is terminal")
-        assertNull(requireNotNull(importRepository.findById(importId)).storageKey)
+        assertFalse(requireNotNull(importRepository.findById(importId)).archiveHeld)
     }
 
     @Test
