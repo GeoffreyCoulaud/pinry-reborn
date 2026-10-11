@@ -81,6 +81,21 @@ class RequestPinMediaDownloadTest {
     }
 
     @Test
+    fun `Given a pin permanently deleted as the transaction opens, Then it throws MediaPinDoesNotExistError and writes nothing`() {
+        // Given: the pin is there until the transaction runs its block
+        every { pins.findPinById(pinId) } returns pin()
+        every { runner.inTransaction<MediaDownload>(any()) } answers
+            {
+                every { pins.findPinById(pinId) } returns null
+                firstArg<() -> MediaDownload>().invoke()
+            }
+
+        // When / Then: `enqueue` is not stubbed, so reaching it would throw another error
+        assertThrows(MediaPinDoesNotExistError::class.java) { subject.request(pinId, owner, sourceUrl) }
+        verify(exactly = 0) { downloads.upsertPending(any(), any(), any(), any()) }
+    }
+
+    @Test
     fun `Given a non-owner, Then it throws MediaPermissionError`() {
         every { pins.findPinById(pinId) } returns pin(author = User(randomUUID(), "other", createdAt = TestTime.now))
         assertThrows(MediaPermissionError::class.java) { subject.request(pinId, owner, sourceUrl) }

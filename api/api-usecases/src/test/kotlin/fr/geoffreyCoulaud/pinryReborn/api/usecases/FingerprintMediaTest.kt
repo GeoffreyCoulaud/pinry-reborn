@@ -46,6 +46,10 @@ class FingerprintMediaTest : BaseTest() {
 
     private val staged = StagedFile("/tmp/stored", 1, "hash")
 
+    init {
+        every { mediaRepository.findMissingMediaIds(any()) } returns emptySet()
+    }
+
     // Noise is detailed enough to keep, and two draws are about 128 bits apart.
     private fun noise(seed: Int): LumaFrame {
         val random = Random(seed)
@@ -171,6 +175,36 @@ class FingerprintMediaTest : BaseTest() {
         // Then
         assertEquals(listOf(PdqHasher.hash(noise(1)).words), frames.of(media.id))
         assertEquals(setOf(setOf(media.pinId, rejected)), duplicates.pairs)
+    }
+
+    @Test
+    fun `Given a media deleted while it hashed, Then no frame or pair is saved and the drain completes`() {
+        // Given: it would pair with the other media
+        hashed(1)
+        val media = media(listOf(noise(1)))
+        every { mediaRepository.findMissingMediaIds(any()) } returns setOf(media.id)
+
+        // When
+        drain(media)
+
+        // Then
+        assertEquals(emptyList<List<Long>>(), frames.of(media.id))
+        assertEquals(emptySet<Set<UUID>>(), duplicates.pending)
+    }
+
+    @Test
+    fun `Given a duplicate's media deleted while the media hashed, Then the media's frames are saved and no pair`() {
+        // Given
+        val other = hashed(1)
+        val media = media(listOf(noise(1)))
+        every { mediaRepository.findMissingMediaIds(any()) } returns setOf(other.id)
+
+        // When
+        drain(media)
+
+        // Then
+        assertEquals(listOf(PdqHasher.hash(noise(1)).words), frames.of(media.id))
+        assertEquals(emptySet<Set<UUID>>(), duplicates.pending)
     }
 
     @ParameterizedTest

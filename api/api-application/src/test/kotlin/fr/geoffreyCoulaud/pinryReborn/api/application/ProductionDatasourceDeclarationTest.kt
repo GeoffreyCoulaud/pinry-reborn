@@ -37,6 +37,15 @@ class ProductionDatasourceDeclarationTest {
         )
     }
 
+    @Test
+    fun `Given the production properties, Then the SQLite address turns the foreign keys on`() {
+        // Given: the test address overrides this one, so no integration test sees it (ADR 0058, decision 8)
+        val address = readProductionProperties()["datasource.db.url"].orEmpty()
+
+        // Then
+        assertEquals(listOf("foreign_keys=true"), address.substringAfter('?').split('&').filter { "foreign" in it })
+    }
+
     private fun readProductionProperties(): Map<String, String> =
         File("src/main/resources/application.properties")
             .readLines()

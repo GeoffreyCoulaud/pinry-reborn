@@ -14,7 +14,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.enterprise.context.ApplicationScoped
 import java.io.IOException
-import java.util.UUID
 
 /** Hashes every media not hashed at [FINGERPRINT_VERSION], and pairs its pin with its duplicates' (ADR 0051). */
 @ApplicationScoped
@@ -36,11 +35,18 @@ class FingerprintMedia(
                 // Outside the transaction, so the band lookups never hold the write lock; its own pin is not compared.
                 val duplicates = duplicatesOf(media, hashes)
                 transactionRunner.inTransaction {
-                    frameRepository.deleteByMediaId(media.id)
-                    duplicateRepository.deletePending(media.pinId)
-                    frameRepository.save(media.id, hashes)
-                    duplicateRepository.addMissing(media.pinId, duplicates)
-                    mediaRepository.markFingerprinted(media.id, FINGERPRINT_VERSION)
+                    // A media deleted while it hashed is no parent to write under (ADR 0058).
+                    val gone = mediaRepository.findMissingMediaIds(duplicates.map { it.id } + media.id)
+                    if (media.id !in gone) {
+                        frameRepository.deleteByMediaId(media.id)
+                        duplicateRepository.deletePending(media.pinId)
+                        frameRepository.save(media.id, hashes)
+                        duplicateRepository.addMissing(
+                            media.pinId,
+                            duplicates.filterNot { it.id in gone }.map { it.pinId },
+                        )
+                        mediaRepository.markFingerprinted(media.id, FINGERPRINT_VERSION)
+                    }
                 }
             }
     }
@@ -77,12 +83,12 @@ class FingerprintMedia(
         return emptyList()
     }
 
-    private fun duplicatesOf(media: Media, hashes: List<PdqHash>): List<UUID> {
+    private fun duplicatesOf(media: Media, hashes: List<PdqHash>): List<Media> {
         val near = hashes.flatMap { frameRepository.findNear(it) }.map { it.mediaId }.toSet()
         val comparable = mediaRepository.findComparable(media, near, FINGERPRINT_VERSION)
         val framesOf = frameRepository.findByMediaIds(comparable.map { it.id }).groupBy({ it.mediaId }, { it.words })
         val own = hashes.map { it.words }
-        return comparable.filter { isPair(own, framesOf.getValue(it.id)) }.map { it.pinId }
+        return comparable.filter { isPair(own, framesOf.getValue(it.id)) }
     }
 
     private fun isPair(own: List<List<Long>>, other: List<List<Long>>) =

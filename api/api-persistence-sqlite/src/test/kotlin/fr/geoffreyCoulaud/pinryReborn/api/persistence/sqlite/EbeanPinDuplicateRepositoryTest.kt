@@ -68,14 +68,14 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given pending, rejected and hidden pairs, Then the pins asked that hold a shown pending pair are found`() {
-        // Given: the pending pair's second pin is not asked; a recycled or a gone pin hides a pair
+        // Given: the pending pair's second pin is not asked; a recycled pin hides a pair
         val (pending, unasked) = storedPins(2).map { it.id }
         val (rejectedFirst, rejectedSecond) = storedPins(2).map { it.id }
         val (active, recycled) = storedPins(2, recycled = 1).map { it.id }
         repository.addMissing(pending, listOf(unasked))
         repository.addMissing(rejectedFirst, listOf(rejectedSecond))
         reject(rejectedFirst, rejectedSecond)
-        repository.addMissing(active, listOf(recycled, randomUUID()))
+        repository.addMissing(active, listOf(recycled))
 
         // When
         val found = repository.findPinIdsWithPending(listOf(pending, rejectedFirst, rejectedSecond, active, recycled))
@@ -85,11 +85,11 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given a pin's pairs with active, recycled and gone pins, Then only the pairs of two active pins are shown`() {
+    fun `Given a pin's pairs with active and recycled pins, Then only the pairs of two active pins are shown`() {
         // Given
         val (pin, pending, rejected) = storedPins(3).map { it.id }
         val (recycled) = storedPins(1, recycled = 1).map { it.id }
-        repository.addMissing(pin, listOf(pending, rejected, recycled, randomUUID()))
+        repository.addMissing(pin, listOf(pending, rejected, recycled))
         reject(pin, rejected)
 
         // When: one pair read from both sides, so each pin is the lower id once
@@ -136,20 +136,18 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given stored, recycled, emptied and gone pins' pairs, Then the sweep deletes gone ones and emptied pending`() {
-        // Given: a gone pin on either side, since its id sorts first or second; two pins with no media
+    fun `Given stored, recycled and emptied pins' pairs, Then the sweep deletes the emptied pending pair alone`() {
+        // Given: two pins with no media
         val (stored, recycled) = storedPins(2, recycled = 1).onEach(::withMedia)
         val (emptied, emptiedRejected) = storedPins(2)
-        val (goneLow, goneHigh) =
-            listOf("00000000-0000-0000-0000-000000000000", "ffffffff-ffff-ffff-ffff-ffffffffffff").map(UUID::fromString)
-        repository.addMissing(stored.id, listOf(recycled.id, goneLow, goneHigh, emptied.id, emptiedRejected.id))
+        repository.addMissing(stored.id, listOf(recycled.id, emptied.id, emptiedRejected.id))
         reject(stored.id, emptiedRejected.id)
 
         // When
         val deleted = repository.deleteOrphans()
 
         // Then
-        assertEquals(3, deleted)
+        assertEquals(1, deleted)
         val kept = setOf(setOf(stored.id, recycled.id) to false, setOf(stored.id, emptiedRejected.id) to true)
         assertEquals(kept, pairs())
     }
@@ -157,8 +155,7 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     @Test
     fun `Given a pin's pending and rejected pairs, Then deleting the pending keeps the rejected and others'`() {
         // Given
-        val (pin, pending, rejected) = List(3) { randomUUID() }
-        val other = randomUUID()
+        val (pin, pending, rejected, other) = storedPins(4).map { it.id }
         repository.addMissing(pin, listOf(pending, rejected))
         repository.addMissing(other, listOf(pending))
         reject(pin, rejected)
@@ -173,8 +170,7 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     @Test
     fun `Given pairs already held from either side, Then only the missing ones are added and a rejection stays`() {
         // Given: the held pairs name the pin first and second, whichever order its id sorts in
-        val (heldFirst, heldRejected, added) = List(3) { randomUUID() }
-        val pin = randomUUID()
+        val (heldFirst, heldRejected, added, pin) = storedPins(4).map { it.id }
         repository.addMissing(heldFirst, listOf(pin))
         repository.addMissing(pin, listOf(heldRejected))
         reject(pin, heldRejected)

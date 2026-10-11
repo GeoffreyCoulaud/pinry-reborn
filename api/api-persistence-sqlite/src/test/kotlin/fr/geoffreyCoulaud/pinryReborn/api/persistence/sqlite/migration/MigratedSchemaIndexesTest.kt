@@ -68,6 +68,46 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         assertNotEquals(emptyList<String>(), columns)
     }
 
+    @Test
+    fun `Given the migrated database, Then its foreign keys are exactly the declared ones with their deletion`() {
+        // When
+        val keys =
+            modelTables().flatMap { table ->
+                database
+                    .sqlQuery("""select "from", "table", on_delete from pragma_foreign_key_list(?)""")
+                    .setParameter(table)
+                    .findList()
+                    .map { "$table.${it.getString("from")} -> ${it.getString("table")} ${it.getString("on_delete")}" }
+            }
+
+        // Then
+        assertEquals(FOREIGN_KEYS.sorted(), keys.sorted())
+    }
+
+    @Test
+    fun `Given the migrated database, Then every foreign key's column leads a non-partial index`() {
+        // Given: a cascade through a key whose column leads no index scans the child table once per parent row.
+        val unindexedKey =
+            """
+            select fk."from" as key_column from pragma_foreign_key_list(?) fk
+            where not exists (
+                select 1 from pragma_index_list(?) list join pragma_index_info(list.name) info
+                where list.partial = 0 and info.seqno = 0 and info.name = fk."from"
+            )
+            """
+
+        // When
+        val unindexed =
+            modelTables().flatMap { table ->
+                database.sqlQuery(unindexedKey).setParameter(table).setParameter(table).findList().map {
+                    "$table.${it.getString("key_column")}"
+                }
+            }
+
+        // Then: the foreign keys test above is this one's non-empty guard.
+        assertEquals(emptyList<String>(), unindexed)
+    }
+
     private fun modelTables(): List<String> =
         database
             .sqlQuery("select name from sqlite_master where type = 'table' order by name")
@@ -97,5 +137,33 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         private const val MIGRATION_TABLE = "db_migration"
         private val LEGACY_NAME_PARTS = listOf("_model", "when_")
         private val INLINE_CONSTRAINT = Regex("""constraint\s+(\w+)""", RegexOption.IGNORE_CASE)
+
+        // Every key cascades but a pin's publisher, a credit removed with its person (ADR 0058, decisions 1 and 2).
+        private val FOREIGN_KEYS =
+            listOf(
+                "boards.author_id -> users CASCADE",
+                "media.pin_id -> pins CASCADE",
+                "media_downloads.pin_id -> pins CASCADE",
+                "media_frames.media_id -> media CASCADE",
+                "persons.author_id -> users CASCADE",
+                "pin_boards.board_id -> boards CASCADE",
+                "pin_boards.pin_id -> pins CASCADE",
+                "pin_creators.person_id -> persons CASCADE",
+                "pin_creators.pin_id -> pins CASCADE",
+                "pin_duplicates.first_pin_id -> pins CASCADE",
+                "pin_duplicates.second_pin_id -> pins CASCADE",
+                "pin_tags.pin_id -> pins CASCADE",
+                "pin_tags.tag_id -> tags CASCADE",
+                "pins.author_id -> users CASCADE",
+                "pins.publisher_id -> persons SET NULL",
+                "remote_collections.author_id -> users CASCADE",
+                "remote_collections.board_id -> boards CASCADE",
+                "session_tokens.user_id -> users CASCADE",
+                "tags.author_id -> users CASCADE",
+                "user_data_exports.user_id -> users CASCADE",
+                "user_data_import_issues.import_id -> user_data_imports CASCADE",
+                "user_data_imports.user_id -> users CASCADE",
+                "user_password_hashes.user_id -> users CASCADE",
+            )
     }
 }
