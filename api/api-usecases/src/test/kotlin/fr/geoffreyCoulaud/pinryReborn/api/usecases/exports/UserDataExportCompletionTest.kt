@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test
 internal class UserDataExportCompletionTest : UserDataExportFakeStoreFixtures() {
 
     @Test
-    fun `Given a successful build, Then the row carries size, digest, media type and extension`() {
+    fun `Given a successful build, Then the row carries size and digest`() {
         // Given
         stubFakeStoreBuild()
 
@@ -30,8 +30,6 @@ internal class UserDataExportCompletionTest : UserDataExportFakeStoreFixtures() 
         assertTrue(published.archiveHeld)
         assertEquals(stagedByteSize, published.byteSize)
         assertEquals(stagedHash, published.sha256)
-        assertEquals("application/zip", published.mediaType)
-        assertEquals("zip", published.fileExtension)
         assertEquals(now, published.completedAt)
         assertEquals(now.plus(retention), published.expiresAt)
         assertEquals(listOf(storageKey), fakeArchiveStore.promoted.keys.toList())

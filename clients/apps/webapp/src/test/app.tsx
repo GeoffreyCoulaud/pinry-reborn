@@ -336,7 +336,6 @@ export function exportRow(
 		completedAt: null,
 		expiresAt: null,
 		byteSize: null,
-		mediaType: null,
 		sha256: null,
 		reasonCode: null,
 		formatVersion: 1,

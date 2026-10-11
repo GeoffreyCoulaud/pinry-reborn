@@ -24,8 +24,6 @@ object UserDataExportModelMapper {
             archiveHeld = archiveHeld,
             byteSize = byteSize,
             sha256 = sha256,
-            mediaType = mediaType,
-            fileExtension = fileExtension,
             failureCode = failureCode?.name,
         )
 
@@ -45,8 +43,6 @@ object UserDataExportModelMapper {
             archiveHeld = archiveHeld,
             byteSize = byteSize,
             sha256 = sha256,
-            mediaType = mediaType,
-            fileExtension = fileExtension,
             failureCode = failureCode?.let(UserDataExportFailure::valueOf),
         )
 

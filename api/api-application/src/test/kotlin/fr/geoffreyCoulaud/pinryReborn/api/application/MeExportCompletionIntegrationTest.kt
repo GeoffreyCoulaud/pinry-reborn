@@ -650,15 +650,14 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         assertEquals(REFUSAL, warning?.thrown?.message, "the line should carry the cause it absorbed")
     }
 
-    // --- Headers come from the stored row, not the adapter's current format ---
+    // --- Headers come from the archive store's format ---
 
     @Test
-    fun `Given a stored export with a divergent media type, Then downloading it serves the stored headers`() {
-        // Given: persisted directly through the injected repository, since the real adapter always
-        // produces application/zip -- there is no way to make a real build diverge from that.
+    fun `Given a ready export, Then downloading it serves a zip archive under a zip file name`() {
+        // Given: persisted directly through the injected repository, the row carrying no format of its own
         val auth = createAuthenticatedUser()
         val exportId = UUID.randomUUID()
-        val content = "hello divergent export".toByteArray()
+        val content = "hello export".toByteArray()
         val storageKey = "exports/$exportId.zip"
         val archivePath = Path.of(exportsConfig.dataDir()).resolve(storageKey)
         Files.createDirectories(archivePath.parent)
@@ -676,8 +675,6 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
                 archiveHeld = true,
                 byteSize = content.size.toLong(),
                 sha256 = sha256,
-                mediaType = "text/plain",
-                fileExtension = "txt",
             )
         )
 
@@ -692,11 +689,11 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
                 .extract()
 
         // Then
-        assertEquals("text/plain", extracted.header("Content-Type"))
+        assertEquals("application/zip", extracted.header("Content-Type"))
         assertEquals("\"$sha256\"", extracted.header("ETag"))
         assertTrue(
-            extracted.header("Content-Disposition").contains(".txt"),
-            "Content-Disposition should carry the stored file extension, not the adapter's",
+            extracted.header("Content-Disposition").contains(".zip\""),
+            "Content-Disposition should carry the store's file extension",
         )
         assertArrayEquals(content, extracted.asByteArray())
     }

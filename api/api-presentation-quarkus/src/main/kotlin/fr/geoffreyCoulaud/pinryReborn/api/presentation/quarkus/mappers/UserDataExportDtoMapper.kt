@@ -20,7 +20,6 @@ object UserDataExportDtoMapper {
             completedAt = completedAt,
             expiresAt = expiresAt,
             byteSize = byteSize,
-            mediaType = mediaType,
             sha256 = sha256,
             reasonCode = reason(),
             formatVersion = formatVersion,

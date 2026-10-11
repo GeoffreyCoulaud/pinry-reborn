@@ -174,8 +174,6 @@ class UserDataExportBuilder(
                     expiresAt = clock.now().plus(retention),
                     byteSize = staged.byteSize,
                     sha256 = staged.contentHash,
-                    mediaType = archiveStore.format.mediaType,
-                    fileExtension = archiveStore.format.fileExtension,
                 )
             )
             true

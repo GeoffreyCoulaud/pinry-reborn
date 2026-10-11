@@ -17,7 +17,5 @@ data class UserDataExport(
     val archiveHeld: Boolean = false,
     val byteSize: Long? = null,
     val sha256: String? = null,
-    val mediaType: String? = null,
-    val fileExtension: String? = null,
     val failureCode: UserDataExportFailure? = null,
 ) : Identifiable

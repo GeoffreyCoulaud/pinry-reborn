@@ -29,11 +29,8 @@ class UserDataExportDownloaderTest : BaseTest() {
     private val exportId = randomUUID()
     private val now = Instant.parse("2026-07-22T10:00:00Z")
 
-    @Suppress("LongParameterList") // Test fixture builder: every parameter shapes a distinct scenario.
     private fun exportWith(
         state: UserDataExportState,
-        mediaType: String? = "application/zip",
-        fileExtension: String? = "zip",
         byteSize: Long? = 100L,
         sha256: String? = "abc123",
         completedAt: Instant? = now,
@@ -44,8 +41,6 @@ class UserDataExportDownloaderTest : BaseTest() {
             state = state,
             formatVersion = 1,
             requestedAt = now,
-            mediaType = mediaType,
-            fileExtension = fileExtension,
             byteSize = byteSize,
             sha256 = sha256,
             completedAt = completedAt,
@@ -110,8 +105,9 @@ class UserDataExportDownloaderTest : BaseTest() {
         // Given: the row names no key, so only the derivation can reach the archive
         val export = exportWith(state = UserDataExportState.READY)
         every { getter.get(user, exportId) } returns export
-        every { archiveStore.format } returns ArchiveFormat("application/zip", "zip")
-        val derivedKey = ExportArchiveKey.forExport(exportId, "zip")
+        val format = ArchiveFormat("application/x-tar", "tar")
+        every { archiveStore.format } returns format
+        val derivedKey = ExportArchiveKey.forExport(exportId, "tar")
         val stream: InputStream = ByteArrayInputStream(byteArrayOf(1, 2, 3))
         every { archiveStore.openStream(derivedKey, 10) } returns stream
 
@@ -121,8 +117,8 @@ class UserDataExportDownloaderTest : BaseTest() {
         // Then
         verify(exactly = 1) { archiveStore.openStream(derivedKey, 10) }
         assertEquals(export.id, result.exportId)
-        assertEquals(export.mediaType, result.mediaType)
-        assertEquals(export.fileExtension, result.fileExtension)
+        assertEquals(format.mediaType, result.mediaType)
+        assertEquals(format.fileExtension, result.fileExtension)
         assertEquals(export.byteSize, result.totalByteSize)
         assertEquals(export.sha256, result.sha256)
         assertEquals(export.completedAt, result.completedAt)

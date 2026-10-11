@@ -33,8 +33,6 @@ class UserDataExportDtoMapperTest {
                 expiresAt = Instant.parse("2026-07-29T10:05:00Z"),
                 byteSize = 4096L,
                 sha256 = "abcd",
-                mediaType = "application/zip",
-                fileExtension = "zip",
             )
 
     @Test
@@ -51,7 +49,6 @@ class UserDataExportDtoMapperTest {
         assertEquals(export.formatVersion, dto.formatVersion)
         assertNull(dto.completedAt)
         assertNull(dto.byteSize)
-        assertNull(dto.mediaType)
         assertNull(dto.sha256)
         assertNull(dto.reasonCode)
     }
@@ -69,7 +66,6 @@ class UserDataExportDtoMapperTest {
         assertEquals(export.completedAt, dto.completedAt)
         assertEquals(export.expiresAt, dto.expiresAt)
         assertEquals(export.byteSize, dto.byteSize)
-        assertEquals(export.mediaType, dto.mediaType)
         assertEquals(export.sha256, dto.sha256)
     }
 

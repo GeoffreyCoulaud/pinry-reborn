@@ -864,7 +864,7 @@
       },
       "UserDataExportOutputDto" : {
         "type" : "object",
-        "required" : [ "id", "state", "requestedAt", "completedAt", "expiresAt", "byteSize", "mediaType", "sha256", "reasonCode", "formatVersion" ],
+        "required" : [ "id", "state", "requestedAt", "completedAt", "expiresAt", "byteSize", "sha256", "reasonCode", "formatVersion" ],
         "properties" : {
           "id" : {
             "$ref" : "#/components/schemas/UUID"
@@ -892,9 +892,6 @@
           "byteSize" : {
             "type" : [ "integer", "null" ],
             "format" : "int64"
-          },
-          "mediaType" : {
-            "type" : [ "string", "null" ]
           },
           "sha256" : {
             "type" : [ "string", "null" ]
@@ -4465,7 +4462,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "25.0.0"
+    "version" : "26.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",
