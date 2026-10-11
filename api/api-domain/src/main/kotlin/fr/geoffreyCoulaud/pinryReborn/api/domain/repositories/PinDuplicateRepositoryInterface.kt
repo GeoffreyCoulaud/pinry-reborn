@@ -11,9 +11,6 @@ interface PinDuplicateRepositoryInterface {
     /** Pair [pinId] with each of [otherPinIds] it is not paired with yet, rejected pairs included. */
     fun addMissing(pinId: UUID, otherPinIds: Collection<UUID>)
 
-    /** Delete every pair one of whose pins is gone, and every pending one whose pin has no media; returns how many. */
-    fun deleteOrphans(): Int
-
     /** [pinId]'s shown pairs, both pins active, keyed by the other pin's id; true when the user rejected it. */
     fun findShownFor(pinId: UUID): Map<UUID, Boolean>
 

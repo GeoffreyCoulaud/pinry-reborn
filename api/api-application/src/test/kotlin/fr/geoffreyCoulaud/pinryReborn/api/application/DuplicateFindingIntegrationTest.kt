@@ -3,15 +3,22 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaFrameModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.ClearPinDownload
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.DeletePinMedia
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.FingerprintMedia
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapFingerprints
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SetPinMedia
+import io.quarkus.arc.Arc
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
 import jakarta.inject.Inject
@@ -22,6 +29,7 @@ import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 
 /** The worker's drain over real media, which the `ffmpeg` on the `PATH` draws (ADR 0051). */
@@ -35,8 +43,6 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
     @Inject lateinit var fingerprintMedia: FingerprintMedia
 
     @Inject lateinit var deletePinMedia: DeletePinMedia
-
-    @Inject lateinit var reapFingerprints: ReapFingerprints
 
     @Inject lateinit var mediaConfig: MediaConfig
 
@@ -222,31 +228,42 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
         assertEquals(listOf(pending(kept, emptied), emptySet()), listOf(beforeTheDelete, pairs()))
     }
 
+    // The real deletion, its pair deletion refused; wired by hand as `MeExportCompletionIntegrationTest` does.
+    private fun deletePinMediaRefusingThePairs(): DeletePinMedia {
+        val arc = Arc.container()
+        val pairs = arc.instance(PinDuplicateRepositoryInterface::class.java).get()
+        return DeletePinMedia(
+            pinRepository = arc.instance(PinRepositoryInterface::class.java).get(),
+            mediaRepository = arc.instance(MediaRepositoryInterface::class.java).get(),
+            duplicateRepository =
+                object : PinDuplicateRepositoryInterface by pairs {
+                    override fun deletePending(pinId: UUID) = error(PAIRS_REFUSAL)
+                },
+            mediaStore = arc.instance(MediaStore::class.java).get(),
+            clearPinDownload = arc.instance(ClearPinDownload::class.java).get(),
+            renditionCache = arc.instance(RenditionCache::class.java).get(),
+            transactionRunner = arc.instance(TransactionRunner::class.java).get(),
+        )
+    }
+
     @Test
-    fun `Given a copy's media row deleted alone, Then the sweep deletes its pending pair and keeps its rejected one`() {
-        // Given: three copies, the first and the emptied one rejected; then a crash between `DeletePinMedia`'s deletes
+    fun `Given a pin's media whose pair deletion throws, Then deleting that media leaves its row in place`() {
+        // Given
         val author = createAuthenticatedUser().user
-        val still = still()
-        val (first, second, emptied) = List(3) { pinned(author, still) }
+        val media = pinned(author, still())
         awaitFingerprintDrain()
-        QPinDuplicateModel()
-            .firstPinId
-            .isIn(first.pinId, emptied.pinId)
-            .secondPinId
-            .isIn(first.pinId, emptied.pinId)
-            .asUpdate()
-            .set("rejectedAt", Instant.EPOCH)
-            .update()
-        QMediaModel().id.equalTo(emptied.id).delete()
 
         // When
-        reapFingerprints.reap()
+        val refused =
+            assertThrows<IllegalStateException> { deletePinMediaRefusingThePairs().delete(media.pinId, author) }
 
         // Then
-        assertEquals(pending(first, second) + (setOf(first.pinId, emptied.pinId) to true), pairs())
+        assertEquals(PAIRS_REFUSAL, refused.message)
+        assertEquals(1, QMediaModel().id.equalTo(media.id).findCount())
     }
 
     private companion object {
         val H264 = arrayOf("-c:v", "libx264", "-pix_fmt", "yuv420p")
+        const val PAIRS_REFUSAL = "the pair deletion is refused"
     }
 }

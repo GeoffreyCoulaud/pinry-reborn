@@ -97,7 +97,6 @@ class PinRecycleBinTest {
 
         // Then
         verify { pinRepository.softDeletePin(pin = pin, at = any()) }
-        verify(exactly = 0) { mediaRepository.deleteByPinId(any()) }
         verify(exactly = 0) { mediaStore.delete(any()) }
     }
 
@@ -174,7 +173,6 @@ class PinRecycleBinTest {
         // Then
         verify { pinRepository.restorePin(pin = pin, at = any()) }
         assert(result.softDeletedAt == null)
-        verify(exactly = 0) { mediaRepository.deleteByPinId(any()) }
         verify(exactly = 0) { mediaStore.delete(any()) }
     }
 
@@ -288,7 +286,7 @@ class PinRecycleBinTest {
     // --- Permanent delete ---
 
     @Test
-    fun `Given soft-deleted pin with an image, Then permanent delete removes the image row and file`() {
+    fun `Given soft-deleted pin with an image, Then permanent delete removes the pin, then the image file`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
         val pin = createPin(author = user, softDeletedAt = TestTime.now)
@@ -302,7 +300,7 @@ class PinRecycleBinTest {
 
         // Then
         verifyOrder {
-            mediaRepository.deleteByPinId(pin.id)
+            mediaRepository.findByPinId(pin.id)
             pinRepository.permanentlyDeletePin(pin)
             mediaStore.delete(media.storageKey)
         }
@@ -322,7 +320,6 @@ class PinRecycleBinTest {
         useCase.permanentlyDelete(pinId = pin.id, user = user)
 
         // Then
-        verify { mediaRepository.deleteByPinId(pin.id) }
         verify { pinRepository.permanentlyDeletePin(pin) }
         verify(exactly = 0) { mediaStore.delete(any()) }
         verify(exactly = 0) { renditionCache.evictMedia(any()) }
@@ -372,13 +369,12 @@ class PinRecycleBinTest {
 
         // Then
         verify { pinRepository.permanentlyDeleteAllSoftDeletedPinsForUser(user) }
-        verify(exactly = 0) { mediaRepository.deleteByPinId(any()) }
         verify(exactly = 0) { mediaStore.delete(any()) }
         verify(exactly = 0) { renditionCache.evictMedia(any()) }
     }
 
     @Test
-    fun `Given soft-deleted pins some with images, Then empty recycle bin deletes rows and files for those`() {
+    fun `Given soft-deleted pins some with images, Then empty recycle bin deletes the files of those`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
         val pinWithMedia = createPin(author = user, softDeletedAt = TestTime.now)
@@ -393,13 +389,11 @@ class PinRecycleBinTest {
         useCase.emptyRecycleBin(user = user)
 
         // Then
-        // Lock the cascade ordering: the enumerate + media-row deletes MUST happen before the
-        // bulk pin delete (else the collect-before-bulk-delete step would silently leak every
-        // file), and the file delete MUST happen after the bulk pin delete.
+        // The media are read before the bulk delete cascades to their rows, and their files deleted after it.
         verifyOrder {
             pinRepository.findAllSoftDeletedPinsForUser(user)
-            mediaRepository.deleteByPinId(pinWithMedia.id)
-            mediaRepository.deleteByPinId(pinWithoutMedia.id)
+            mediaRepository.findByPinId(pinWithMedia.id)
+            mediaRepository.findByPinId(pinWithoutMedia.id)
             pinRepository.permanentlyDeleteAllSoftDeletedPinsForUser(user)
             mediaStore.delete(media.storageKey)
         }
@@ -439,9 +433,8 @@ class PinRecycleBinTest {
         justRun { pinRepository.permanentlyDeletePin(pin) }
         every { mediaStore.delete(any()) } throws RuntimeException("disk down")
 
-        // When / Then: the row and pin are gone and no exception propagates
+        // When / Then: the pin is gone and no exception propagates
         assertDoesNotThrow { useCase.permanentlyDelete(pinId = pin.id, user = user) }
-        verify { mediaRepository.deleteByPinId(pin.id) }
         verify { pinRepository.permanentlyDeletePin(pin) }
         verify { mediaStore.delete(media.storageKey) }
     }

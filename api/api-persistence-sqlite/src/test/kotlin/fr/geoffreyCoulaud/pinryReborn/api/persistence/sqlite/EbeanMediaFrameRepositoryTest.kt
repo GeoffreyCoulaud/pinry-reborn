@@ -115,19 +115,17 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given frames of a kept media and of a deleted one, Then the deleted one's went with it and none is swept`() {
+    fun `Given frames of a kept media and of a deleted one, Then the deleted one's went with it`() {
         // Given
         val kept = savedMedia()
         val gone = savedMedia()
         repository.save(kept.id, listOf(stored))
         repository.save(gone.id, listOf(stored, storedFlipping(mapOf(0 to 1))))
-        mediaRepository.deleteByPinId(gone.pinId)
 
         // When
-        val deleted = repository.deleteOrphans()
+        mediaRepository.deleteByPinId(gone.pinId)
 
         // Then
-        assertEquals(0, deleted)
         assertEquals(listOf(MediaFrame(kept.id, stored.words)), repository.findByMediaIds(listOf(kept.id, gone.id)))
     }
 

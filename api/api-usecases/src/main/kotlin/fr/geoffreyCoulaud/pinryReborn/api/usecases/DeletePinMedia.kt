@@ -6,6 +6,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPinDoesNotExistError
@@ -13,6 +14,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 @ApplicationScoped
+@Suppress("LongParameterList") // CDI-injected: every parameter is a collaborator provided by the container.
 class DeletePinMedia(
     private val pinRepository: PinRepositoryInterface,
     private val mediaRepository: MediaRepositoryInterface,
@@ -20,15 +22,18 @@ class DeletePinMedia(
     private val mediaStore: MediaStore,
     private val clearPinDownload: ClearPinDownload,
     private val renditionCache: RenditionCache,
+    private val transactionRunner: TransactionRunner,
 ) {
     fun delete(pinId: UUID, requester: User) {
         val pin = pinRepository.findPinById(pinId) ?: throw MediaPinDoesNotExistError()
         if (pin.author.id != requester.id) throw MediaPermissionError()
         val media = mediaRepository.findByPinId(pinId)
         if (media != null) {
-            mediaRepository.deleteByPinId(pinId)
-            // A pin with no media is never hashed again, so nothing else would clear its pairs (ADR 0051).
-            duplicateRepository.deletePending(pinId)
+            transactionRunner.inTransaction {
+                mediaRepository.deleteByPinId(pinId)
+                // A pin with no media is never hashed again, so nothing else would clear its pairs (ADR 0051).
+                duplicateRepository.deletePending(pinId)
+            }
             mediaStore.deleteQuietly(media.storageKey)
             renditionCache.evictMediaQuietly(media.id)
             clearPinDownload.clear(pinId)
