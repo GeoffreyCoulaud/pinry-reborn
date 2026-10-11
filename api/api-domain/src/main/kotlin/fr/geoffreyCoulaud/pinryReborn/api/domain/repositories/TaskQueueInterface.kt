@@ -33,10 +33,10 @@ interface TaskQueueInterface {
     fun markSucceeded(id: UUID, leaseId: String, now: Instant): Boolean
 
     /** Fenced reschedule to PENDING at [availableAt] with an incremented-attempts row already claimed. */
-    fun markPendingRetry(id: UUID, leaseId: String, availableAt: Instant, now: Instant, lastError: String?): Boolean
+    fun markPendingRetry(id: UUID, leaseId: String, availableAt: Instant, now: Instant): Boolean
 
     /** Fenced settle to DEAD. */
-    fun markDead(id: UUID, leaseId: String, now: Instant, lastError: String?): Boolean
+    fun markDead(id: UUID, leaseId: String, now: Instant): Boolean
 
     /**
      * Fenced: if cancelRequested is set on the leased row, settle to CANCELLED and return true; otherwise return false.

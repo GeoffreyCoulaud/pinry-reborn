@@ -148,9 +148,14 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         // Ebean's own table, whose names are Ebean's.
         private const val MIGRATION_TABLE = "db_migration"
         private val LEGACY_NAME_PARTS = listOf("_model", "when_")
-        // Two derived from other columns, and an error no reader ever had (ADR 0058, decision 10).
+        // Two derived from other columns, and two errors no reader ever had (ADR 0058, decision 10).
         private val UNREAD_COLUMNS =
-            listOf("user_data_imports.processed_pins", "media.animated", "media_downloads.last_error")
+            listOf(
+                "user_data_imports.processed_pins",
+                "media.animated",
+                "media_downloads.last_error",
+                "tasks.last_error",
+            )
         private val INLINE_CONSTRAINT = Regex("""constraint\s+(\w+)""", RegexOption.IGNORE_CASE)
 
         // Every key cascades but a pin's publisher, a credit removed with its person (ADR 0058, decisions 1 and 2).

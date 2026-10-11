@@ -30,7 +30,7 @@ class TaskProcessor(
 
     private data object Success : Settled
 
-    private data class Retryable(val message: String) : Settled
+    private data object Retryable : Settled
 
     private data class Permanent(val message: String) : Settled
 
@@ -45,7 +45,7 @@ class TaskProcessor(
         val handler = registry.handlerFor(claimed.kind)
         if (handler == null) {
             logger.warn { "task ${claimed.id} has no handler for kind ${claimed.kind}, marking dead" }
-            taskQueue.markDead(claimed.id, claimed.leaseId, clock.now(), "no handler for kind ${claimed.kind}")
+            taskQueue.markDead(claimed.id, claimed.leaseId, clock.now())
             return
         }
         val context =
@@ -88,15 +88,15 @@ class TaskProcessor(
             is Success -> taskQueue.markSucceeded(claimed.id, claimed.leaseId, now)
             is Permanent -> {
                 logger.warn { "task ${claimed.id} failed permanently, marking dead: ${outcome.message}" }
-                taskQueue.markDead(claimed.id, claimed.leaseId, now, outcome.message)
+                taskQueue.markDead(claimed.id, claimed.leaseId, now)
             }
             is Retryable ->
                 if (claimed.attempts >= claimed.maxAttempts) {
-                    logger.warn { "task ${claimed.id} exhausted retries, marking dead: ${outcome.message}" }
-                    taskQueue.markDead(claimed.id, claimed.leaseId, now, outcome.message)
+                    logger.warn { "task ${claimed.id} exhausted retries, marking dead" }
+                    taskQueue.markDead(claimed.id, claimed.leaseId, now)
                 } else {
                     val retryAt = backoffPolicy.nextAttemptAt(claimed.attempts, now, retryFloor)
-                    taskQueue.markPendingRetry(claimed.id, claimed.leaseId, retryAt, now, outcome.message)
+                    taskQueue.markPendingRetry(claimed.id, claimed.leaseId, retryAt, now)
                 }
         }
     }
@@ -113,7 +113,7 @@ class TaskProcessor(
         } catch (e: Exception) {
             // Swallowed into a retryable outcome; logged so a repeatedly-failing handler is visible.
             logger.warn(e) { "task $taskId handler threw a retryable failure" }
-            Retryable(e.message ?: "transient failure")
+            Retryable
         }
 
     private companion object {

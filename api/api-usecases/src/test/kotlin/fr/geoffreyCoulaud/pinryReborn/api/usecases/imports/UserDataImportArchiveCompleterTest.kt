@@ -83,7 +83,6 @@ class UserDataImportArchiveCompleterTest : BaseTest() {
             leaseExpiresAt = null,
             cancelRequested = false,
             dedupKey = null,
-            lastError = null,
         )
 
     /** Reads answer the stored row, so every fence sees what the write before it committed. */

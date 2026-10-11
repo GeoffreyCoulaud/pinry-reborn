@@ -355,13 +355,12 @@ class EbeanTaskQueueTest : RepositoryTest() {
         val claimed = claimFresh()
         val retryAt = now.plusSeconds(30)
         // When
-        val ok = queue.markPendingRetry(claimed.id, claimed.leaseId, retryAt, now, "boom")
+        val ok = queue.markPendingRetry(claimed.id, claimed.leaseId, retryAt, now)
         // Then
         assertTrue(ok)
         val stored = queue.findById(claimed.id)
         assertEquals(TaskState.PENDING, stored?.state)
         assertEquals(retryAt, stored?.availableAt)
-        assertEquals("boom", stored?.lastError)
         assertNull(stored?.leaseId)
         // A retry keeps the task live, so terminalStateAt stays unset.
         assertNull(stored?.terminalStateAt)
@@ -373,7 +372,7 @@ class EbeanTaskQueueTest : RepositoryTest() {
         val claimed = claimFresh()
         val retryAt = now.plusSeconds(30)
         // When
-        val ok = queue.markPendingRetry(claimed.id, "wrong-lease", retryAt, now, "boom")
+        val ok = queue.markPendingRetry(claimed.id, "wrong-lease", retryAt, now)
         // Then
         assertFalse(ok)
         assertEquals(TaskState.RUNNING, queue.findById(claimed.id)?.state)
@@ -384,11 +383,10 @@ class EbeanTaskQueueTest : RepositoryTest() {
         // Given
         val claimed = claimFresh()
         // When
-        val ok = queue.markDead(claimed.id, claimed.leaseId, now, "fatal")
+        val ok = queue.markDead(claimed.id, claimed.leaseId, now)
         // Then
         assertTrue(ok)
         assertEquals(TaskState.DEAD, queue.findById(claimed.id)?.state)
-        assertEquals("fatal", queue.findById(claimed.id)?.lastError)
         assertEquals(now, queue.findById(claimed.id)?.terminalStateAt)
     }
 
@@ -397,7 +395,7 @@ class EbeanTaskQueueTest : RepositoryTest() {
         // Given
         val claimed = claimFresh()
         // When
-        val ok = queue.markDead(claimed.id, "wrong-lease", now, "fatal")
+        val ok = queue.markDead(claimed.id, "wrong-lease", now)
         // Then
         assertFalse(ok)
         assertEquals(TaskState.RUNNING, queue.findById(claimed.id)?.state)
@@ -648,7 +646,7 @@ class EbeanTaskQueueTest : RepositoryTest() {
         // last: claimFresh claims the earliest available task and not necessarily the one it just
         // added, so a PENDING row left lying around is claimed out from under this test.
         val succeeded = claimFresh().also { queue.markSucceeded(it.id, it.leaseId, now) }
-        val dead = claimFresh().also { queue.markDead(it.id, it.leaseId, now, "boom") }
+        val dead = claimFresh().also { queue.markDead(it.id, it.leaseId, now) }
         val cancelled = queue.enqueue(newTask()).also { queue.cancelPending(it.id, now) }
         val running = claimFresh()
         val pending = queue.enqueue(newTask())
@@ -691,8 +689,8 @@ class EbeanTaskQueueTest : RepositoryTest() {
 
         val staleSucceeded = claimFresh().also { queue.markSucceeded(it.id, it.leaseId, now) }
         val freshSucceeded = claimFresh().also { queue.markSucceeded(it.id, it.leaseId, now) }
-        val staleDead = claimFresh().also { queue.markDead(it.id, it.leaseId, now, "boom") }
-        val freshDead = claimFresh().also { queue.markDead(it.id, it.leaseId, now, "boom") }
+        val staleDead = claimFresh().also { queue.markDead(it.id, it.leaseId, now) }
+        val freshDead = claimFresh().also { queue.markDead(it.id, it.leaseId, now) }
         val staleCancelled = queue.enqueue(newTask()).also { queue.cancelPending(it.id, now) }
         val freshCancelled = queue.enqueue(newTask()).also { queue.cancelPending(it.id, now) }
         val oldPending = queue.enqueue(newTask())

@@ -70,7 +70,7 @@ class TaskProcessorTest {
         // When
         p.execute(c, leaseDuration)
         // Then
-        verify { queue.markDead(c.id, "lease-1", now, "no handler for kind unknown") }
+        verify { queue.markDead(c.id, "lease-1", now) }
     }
 
     @Test
@@ -112,7 +112,7 @@ class TaskProcessorTest {
         // When
         p.execute(c, leaseDuration)
         // Then
-        verify { queue.markPendingRetry(c.id, "lease-1", retryAt, now, "boom") }
+        verify { queue.markPendingRetry(c.id, "lease-1", retryAt, now) }
     }
 
     @Test
@@ -125,7 +125,7 @@ class TaskProcessorTest {
         // When
         p.execute(c, leaseDuration)
         // Then
-        verify { queue.markDead(c.id, "lease-1", now, "boom") }
+        verify { queue.markDead(c.id, "lease-1", now) }
     }
 
     @Test
@@ -138,21 +138,7 @@ class TaskProcessorTest {
         // When
         p.execute(c, leaseDuration)
         // Then
-        verify { queue.markDead(c.id, "lease-1", now, "nope") }
-    }
-
-    @Test
-    fun `Given a retryable failure with no message, Then a default message is used`() {
-        // Given
-        every { clock.now() } returns now
-        every { queue.markCancelledIfRequested(any(), any(), any()) } returns false
-        every { backoff.nextAttemptAt(1, now, Duration.ZERO) } returns now.plusSeconds(1)
-        val c = claimed(attempts = 1, maxAttempts = 3)
-        val p = processorWith(handler("k") { throw IllegalStateException() })
-        // When
-        p.execute(c, leaseDuration)
-        // Then
-        verify { queue.markPendingRetry(c.id, "lease-1", now.plusSeconds(1), now, "transient failure") }
+        verify { queue.markDead(c.id, "lease-1", now) }
     }
 
     @Test
@@ -185,7 +171,7 @@ class TaskProcessorTest {
         every { clock.now() } returns now
         every { queue.markCancelledIfRequested(any(), any(), any()) } returns false
         val retryAts = mutableListOf<Instant>()
-        every { queue.markPendingRetry(any(), any(), capture(retryAts), any(), any()) } returns true
+        every { queue.markPendingRetry(any(), any(), capture(retryAts), any()) } returns true
         val policy = ExponentialBackoffWithJitter(base = Duration.ofSeconds(2), cap = Duration.ofMinutes(1)) { 1.0 }
         val floor = Duration.ofMinutes(10)
         val boom = { throw IllegalStateException("boom") }
@@ -231,8 +217,8 @@ class TaskProcessorTest {
         // Then
         assertEquals(c.id, told?.taskId)
         verify(exactly = 0) { queue.markSucceeded(any(), any(), any()) }
-        verify(exactly = 0) { queue.markPendingRetry(any(), any(), any(), any(), any()) }
-        verify(exactly = 0) { queue.markDead(any(), any(), any(), any()) }
+        verify(exactly = 0) { queue.markPendingRetry(any(), any(), any(), any()) }
+        verify(exactly = 0) { queue.markDead(any(), any(), any()) }
         verify(exactly = 0) { queue.markCancelledIfRequested(any(), any(), any()) }
     }
 

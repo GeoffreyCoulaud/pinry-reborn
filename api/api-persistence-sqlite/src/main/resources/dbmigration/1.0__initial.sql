@@ -159,7 +159,6 @@ create table tasks (
   lease_expires_at              timestamp,
   cancel_requested              int default 0 not null,
   dedup_key                     text,
-  last_error                    text,
   terminal_state_at             timestamp,
   version                       integer not null,
   constraint pk_tasks primary key (id)

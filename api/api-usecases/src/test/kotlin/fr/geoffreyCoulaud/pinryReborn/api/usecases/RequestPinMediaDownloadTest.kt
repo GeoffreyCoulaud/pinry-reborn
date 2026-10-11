@@ -71,7 +71,6 @@ class RequestPinMediaDownloadTest {
             null,
             false,
             "${PinDownloadTask.KIND}:$pinId",
-            null,
         )
 
     @Test
