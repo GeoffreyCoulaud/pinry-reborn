@@ -28,9 +28,8 @@ class PinRepositoryPaginationTest : PinRepositoryFixtures() {
     private val maxPages = 10
 
     /**
-     * `@WhenCreated` and the soft-deletion instant are written by the persistence layer, so the shared instant is
-     * forced with raw SQL. Every pin in the (freshly truncated) database belongs to the test at hand, so collapsing
-     * them all is safe.
+     * Forces one instant on every pin with raw SQL, the soft-deletion instant being the repository's to write. Every
+     * pin in the (freshly truncated) database belongs to the test at hand, so collapsing them all is safe.
      */
     private fun collapseAllPinInstants(column: String) {
         database.sqlUpdate("update pins set $column = (select min($column) from pins)").execute()
