@@ -119,10 +119,7 @@ class ReapUserDataExports(
      * residue, so stamping over a failed delete hides it from the one pass that can name it.
      */
     private fun reclaim(export: UserDataExport): Boolean {
-        val derived = ExportArchiveKey.forExport(export.id, archiveStore.format.fileExtension)
-        // Both keys when they differ: the derived one names a dead builder's archive, the column's what
-        // this row claims, and deleting the derived one alone succeeds vacuously over the other.
-        setOfNotNull(derived, export.storageKey).forEach { archiveStore.delete(it) }
+        archiveStore.delete(ExportArchiveKey.forExport(export.id, archiveStore.format.fileExtension))
         return repository.saveFenced(transactionRunner, export.id, { it.state.isTerminal }) {
             it.copy(storageKey = null)
         } != null

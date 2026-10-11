@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
+import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportAlreadyInProgressException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -40,7 +41,8 @@ class UserDataExportRequesterTest : BaseTest() {
     private val now = Instant.parse("2026-07-22T10:00:00Z")
     private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
     private val factor = "good-password"
-    private val oldKey = "exports/old.zip"
+    /** Deliberately not what the derivation produces: a release of the column's key fails its case. */
+    private val oldKey = "exports/old.tgz"
     private val requester =
         UserDataExportRequester(
             repository,
@@ -243,38 +245,19 @@ class UserDataExportRequesterTest : BaseTest() {
         every { repository.findReadyForUser(user.id) } returns ready
         every { repository.save(any()) } answers { firstArg() }
         stubEnqueue()
-        every { archiveStore.delete(oldKey) } just runs
+        every { archiveStore.format } returns FORMAT
+        every { archiveStore.delete(keyOf(ready)) } just runs
 
         // When
         requester.request(user, factor)
 
-        // Then
+        // Then: the bytes go under the derived key, never the column's
         verify {
             repository.save(
                 match { it.id == ready.id && it.state == UserDataExportState.SUPERSEDED && it.storageKey == oldKey }
             )
         }
-        verify { archiveStore.delete(oldKey) }
-    }
-
-    @Test
-    fun `Given a ready export without a storage key, Then no delete is attempted`() {
-        // Given
-        stubTransactionPassthrough()
-        every { reauthenticator.reauthenticate(user, factor) } just runs
-        every { clock.now() } returns now
-        every { repository.findPendingForUser(user.id) } returns null
-        every { repository.findLastRequestedAtForUser(user.id) } returns null
-        val ready = readyExport(storageKey = null)
-        every { repository.findReadyForUser(user.id) } returns ready
-        every { repository.save(any()) } answers { firstArg() }
-        stubEnqueue()
-
-        // When
-        requester.request(user, factor)
-
-        // Then
-        verify(exactly = 0) { archiveStore.delete(any()) }
+        verify { archiveStore.delete(keyOf(ready)) }
     }
 
     @Test
@@ -330,13 +313,20 @@ class UserDataExportRequesterTest : BaseTest() {
         every { repository.findReadyForUser(user.id) } returns ready
         every { repository.save(any()) } answers { firstArg() }
         stubEnqueue()
-        every { archiveStore.delete(oldKey) } throws RuntimeException("io")
+        every { archiveStore.format } returns FORMAT
+        every { archiveStore.delete(keyOf(ready)) } throws RuntimeException("io")
 
         // When
         val result = requester.request(user, factor)
 
         // Then
         assertEquals(UserDataExportState.PENDING, result.state)
-        verify { archiveStore.delete(oldKey) }
+        verify { archiveStore.delete(keyOf(ready)) }
+    }
+
+    private companion object {
+        private val FORMAT = ArchiveFormat("application/zip", "zip")
+
+        private fun keyOf(export: UserDataExport): String = ExportArchiveKey.forExport(export.id, FORMAT.fileExtension)
     }
 }

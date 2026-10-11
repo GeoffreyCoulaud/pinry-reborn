@@ -27,7 +27,6 @@ import java.util.UUID
  * and no way to test it.
  */
 @ApplicationScoped
-@Suppress("UnsafeCallOnNullableType")
 class UserDataExportDeleter(
     private val getter: UserDataExportGetter,
     private val repository: UserDataExportRepositoryInterface,
@@ -60,7 +59,7 @@ class UserDataExportDeleter(
             // DELETE /me/exports/{id} operation, not a side-effect cleanup, so D1 (every storage
             // cleanup is best-effort) does not apply. The row moved first, so a disk failure leaves a
             // row promising less than it holds rather than more (`docs/adr/0016`, decision 4).
-            UserDataExportState.READY -> archiveStore.delete(deleted.storageKey!!)
+            UserDataExportState.READY -> archiveStore.delete(derivedKey(deleted.id))
             // FAILED, the only other state the fence lets through, and it can hold bytes: a promote
             // whose publish rolled back leaves some. Left to the sweep's third pass rather than
             // released here, the row naming them throughout and no client seeing the delay.
@@ -69,15 +68,16 @@ class UserDataExportDeleter(
     }
 
     /**
-     * Decided on the copy read before the fence, whose key no path here clears: a gone row still names the bytes a
-     * first release lost. Best-effort, the sweep's third pass being the guaranteed repair.
+     * Decided on the copy read before the fence, whose column no path here clears: a gone row still says bytes a first
+     * release lost may remain. Best-effort, the sweep's third pass being the guaranteed repair.
      */
     private fun releaseStranded(found: UserDataExport) {
         if (!found.state.isGone) return
-        found.storageKey?.let { archiveStore.deleteQuietly(it) }
+        if (found.storageKey == null) return
+        archiveStore.deleteQuietly(derivedKey(found.id))
     }
 
-    /** The key a build promotes onto, which the column carries only once the stamp has landed. */
+    /** The key a build promotes onto, and the only one released: the column only says whether bytes may remain. */
     private fun derivedKey(exportId: UUID): String =
         ExportArchiveKey.forExport(exportId, archiveStore.format.fileExtension)
 
