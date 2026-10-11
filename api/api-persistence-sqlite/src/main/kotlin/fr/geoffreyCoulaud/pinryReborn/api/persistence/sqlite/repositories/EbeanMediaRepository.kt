@@ -74,8 +74,7 @@ class EbeanMediaRepository(
             .isIn(candidates)
             .pinId
             .notEqualTo(media.pinId)
-            // `Media.animated` as the mapper reads it back: a video, or more than one frame.
-            .raw("(mime_type like 'video/%' or frames > 1) = ?", media.animated)
+            .animatedIs(media.animated)
             .fingerprintVersion
             .equalTo(version)
             .pin
@@ -84,5 +83,12 @@ class EbeanMediaRepository(
             .isIn(author.query())
             .findList()
             .map { it.toDomain() }
+    }
+
+    // `Media.animated` as the mapper reads it back: a video, or more than one frame.
+    private fun QMediaModel.animatedIs(animated: Boolean): QMediaModel {
+        if (!animated) not()
+        or().mimeType.startsWith("video/").frames.gt(1).endOr()
+        return if (animated) this else endNot()
     }
 }
