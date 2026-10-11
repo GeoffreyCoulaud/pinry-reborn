@@ -66,14 +66,11 @@ interface PinRepositoryInterface {
     /** Restores each pin as [restorePin] does, in a constant number of reads. */
     fun restorePins(pinIds: List<UUID>, at: Instant)
 
-    /** Permanently delete a pin and its tag associations */
+    /** Permanently delete a pin; the database deletes what depends on it. */
     fun permanentlyDeletePin(pin: Pin)
 
-    /** Permanently delete all soft-deleted pins for a user */
+    /** Permanently delete all soft-deleted pins for a user, as [permanentlyDeletePin] does. */
     fun permanentlyDeleteAllSoftDeletedPinsForUser(user: User)
-
-    /** Permanently delete all pins for a user regardless of state (active and soft-deleted). */
-    fun permanentlyDeleteAllPinsForUser(user: User)
 
     /** Find soft-deleted pins for a user with pagination support */
     fun findSoftDeletedPinsForUser(

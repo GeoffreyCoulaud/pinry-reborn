@@ -231,7 +231,6 @@ class BoardRepositoryTest : RepositoryTest() {
         val pin = createAndSavePin(user, boards = listOf(board))
 
         // When
-        // `foreign_keys` is off, so the store would not refuse a join row left behind.
         boardRepository.permanentlyDeleteBoard(board)
 
         // Then
@@ -253,7 +252,6 @@ class BoardRepositoryTest : RepositoryTest() {
         boardRepository.softDeleteBoard(recycledBoard2, storableNow())
 
         // When
-        // `foreign_keys` is off, so the store would not refuse a join row left behind.
         boardRepository.permanentlyDeleteAllRecycledBoardsForUser(user)
 
         // Then
@@ -276,40 +274,6 @@ class BoardRepositoryTest : RepositoryTest() {
 
         // Then
         assertNotNull(boardRepository.findActiveBoardById(activeBoard.id))
-    }
-
-    @Test
-    fun `Given active and recycled boards, Then permanentlyDeleteAllBoardsForUser removes all`() {
-        // Given
-        val user = createAndSaveUser()
-        val activeBoard = createAndSaveBoard("Active", user)
-        val recycledBoard = createAndSaveBoard("Recycled", user)
-        val pinInActiveBoard = createAndSavePin(user, boards = listOf(activeBoard))
-        boardRepository.softDeleteBoard(recycledBoard, storableNow())
-
-        // When
-        // `foreign_keys` is off, so the store would not refuse a join row left behind.
-        boardRepository.permanentlyDeleteAllBoardsForUser(user)
-
-        // Then
-        assertNull(boardRepository.findBoardById(activeBoard.id))
-        assertNull(boardRepository.findBoardById(recycledBoard.id))
-        val reloadedPin = pinRepository.findPinById(pinInActiveBoard.id)
-        assertNotNull(reloadedPin)
-        assertTrue(reloadedPin!!.boards.isEmpty())
-    }
-
-    @Test
-    fun `Given no boards for the user, Then permanentlyDeleteAllBoardsForUser is a no-op`() {
-        // Given
-        val user = createAndSaveUser()
-
-        // When
-        boardRepository.permanentlyDeleteAllBoardsForUser(user)
-
-        // Then
-        assertTrue(boardRepository.findActiveBoardsForUser(user).isEmpty())
-        assertTrue(boardRepository.findRecycledBoardsForUser(user).isEmpty())
     }
 
     @Test

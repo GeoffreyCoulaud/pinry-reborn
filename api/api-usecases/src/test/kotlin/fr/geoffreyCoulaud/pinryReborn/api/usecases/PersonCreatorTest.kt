@@ -74,8 +74,6 @@ class PersonCreatorTest {
         override fun findUserPersonsByIds(user: User, ids: Set<UUID>) = error("A creation reads no person back")
 
         override fun findAllPersonsForUser(user: User) = error("A creation lists no person")
-
-        override fun deleteAllPersonsForUser(user: User) = error("A creation deletes no person")
     }
 
     private companion object {

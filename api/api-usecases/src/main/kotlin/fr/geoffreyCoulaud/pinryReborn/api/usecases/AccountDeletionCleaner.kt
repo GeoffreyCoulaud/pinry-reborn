@@ -4,17 +4,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportIssueRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserPasswordHashRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.ExportArchiveKey
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ImportArchiveKey
@@ -22,27 +16,22 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 
 /**
- * Async worker erasure for a tombstoned account: loads the user, deletes all its rows in FK order inside one
- * transaction, then does best-effort on-disk cleanup (image bytes and export archives) after the commit.
+ * Async worker erasure for a tombstoned account: loads the user, deletes its row inside one transaction, the database
+ * deleting every row that depends on it, then does best-effort on-disk cleanup (image bytes and archives) after the
+ * commit.
  */
 @Suppress("LongParameterList")
 @ApplicationScoped
 class AccountDeletionCleaner(
     private val userRepository: UserRepositoryInterface,
     private val pinRepository: PinRepositoryInterface,
-    private val boardRepository: BoardRepositoryInterface,
-    private val tagRepository: TagRepositoryInterface,
-    private val personRepository: PersonRepositoryInterface,
     private val mediaRepository: MediaRepositoryInterface,
-    private val sessionTokenRepository: SessionTokenRepositoryInterface,
-    private val userPasswordRepository: UserPasswordHashRepositoryInterface,
     private val clearPinDownload: ClearPinDownload,
     private val mediaStore: MediaStore,
     private val renditionCache: RenditionCache,
     private val userDataExportRepository: UserDataExportRepositoryInterface,
     private val exportArchiveStore: ExportArchiveStore,
     private val userDataImportRepository: UserDataImportRepositoryInterface,
-    private val userDataImportIssueRepository: UserDataImportIssueRepositoryInterface,
     private val importArchiveStore: ImportArchiveStore,
     private val transactionRunner: TransactionRunner,
 ) {
@@ -57,19 +46,9 @@ class AccountDeletionCleaner(
             val pinIds = pinRepository.findAllPinIdsForUser(user)
             for (pinId in pinIds) {
                 mediaRepository.findByPinId(pinId)?.let { toEvict += it.storageKey to it.id }
+                // The download row goes with the pin; its task holds no key and is cancelled here.
                 clearPinDownload.clear(pinId)
-                mediaRepository.deleteByPinId(pinId)
             }
-            pinRepository.permanentlyDeleteAllPinsForUser(user)
-            personRepository.deleteAllPersonsForUser(user)
-            boardRepository.permanentlyDeleteAllBoardsForUser(user)
-            tagRepository.deleteAllTagsForUser(user)
-            sessionTokenRepository.deleteAllForUser(user.id)
-            userPasswordRepository.deleteForUser(user)
-            userDataExportRepository.deleteAllForUser(user.id)
-            // The issues before the rows they hang off, both before the user row.
-            userDataImportIssueRepository.deleteAllForUser(user.id)
-            userDataImportRepository.deleteAllForUser(user.id)
             userRepository.permanentlyDeleteUser(user)
         }
         for ((storageKey, mediaId) in toEvict) {

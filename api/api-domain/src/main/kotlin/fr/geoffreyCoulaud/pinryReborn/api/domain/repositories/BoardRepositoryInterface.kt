@@ -43,14 +43,11 @@ interface BoardRepositoryInterface {
     /** Restore a soft-deleted board by clearing its softDeletedAt, recording [at] as its updatedAt. */
     fun restoreBoard(board: Board, at: Instant): Board
 
-    /** Permanently delete a board, its pin memberships and its remote collections. */
+    /** Permanently delete a board; the database deletes its pin memberships and its remote collections. */
     fun permanentlyDeleteBoard(board: Board)
 
-    /** Permanently delete all recycled boards for a user (and their pin memberships and remote collections). */
+    /** Permanently delete all recycled boards for a user, as [permanentlyDeleteBoard] does. */
     fun permanentlyDeleteAllRecycledBoardsForUser(user: User)
-
-    /** Permanently delete all boards for a user regardless of state, and their remote collections. */
-    fun permanentlyDeleteAllBoardsForUser(user: User)
 
     /** Count active (non soft-deleted) pins currently in the board. */
     fun countActivePinsInBoard(boardId: UUID): Int

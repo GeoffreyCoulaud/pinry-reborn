@@ -122,19 +122,6 @@ class PinRepositoryPeopleTest : PinRepositoryFixtures() {
     }
 
     @Test
-    fun `Given an active pin with a creator, Then permanentlyDeleteAllPinsForUser leaves no creator row`() {
-        // Given
-        val user = createAndSaveUser()
-        val pin = savePinWithCreators(user, createAndSavePerson(user))
-
-        // When
-        repository.permanentlyDeleteAllPinsForUser(user)
-
-        // Then
-        assertEquals(0, creatorRowsOf(pin))
-    }
-
-    @Test
     fun `Given a pin whose publisher is deleted, Then the pin stays and its publisher column is null`() {
         // Given
         val user = createAndSaveUser()
