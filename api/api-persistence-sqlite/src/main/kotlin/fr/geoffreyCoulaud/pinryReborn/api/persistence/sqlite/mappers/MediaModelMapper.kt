@@ -14,7 +14,6 @@ object MediaModelMapper {
             mimeType = mimeType,
             width = width,
             height = height,
-            animated = animated,
             byteSize = byteSize,
             contentHash = contentHash,
             storageKey = storageKey,
@@ -30,7 +29,7 @@ object MediaModelMapper {
     fun MediaModel.toDomain(): Media =
         when {
             mimeType.startsWith("video/") -> toVideo()
-            animated ->
+            frames > 1 ->
                 Media.AnimatedImage(
                     id = id,
                     pinId = pinId,

@@ -28,7 +28,6 @@ data class UserDataImport(
     val byteSize: Long? = null,
     val formatVersion: Int? = null,
     val announcedPins: Int? = null,
-    val processedPins: Int = 0,
     val createdPins: Int = 0,
     val skippedPins: Int = 0,
     val createdBoards: Int = 0,
@@ -38,4 +37,8 @@ data class UserDataImport(
     val issueCount: Int = 0,
     val issueDetailTruncated: Boolean = false,
     val failureCode: UserDataImportFailure? = null,
-) : Identifiable
+) : Identifiable {
+    /** The pin lines settled, each created or skipped: the walk's resume cursor. */
+    val processedPins: Int
+        get() = createdPins + skippedPins
+}

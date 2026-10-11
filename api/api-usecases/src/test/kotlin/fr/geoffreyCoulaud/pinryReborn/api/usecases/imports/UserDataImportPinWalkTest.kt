@@ -286,6 +286,22 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
     }
 
     @Test
+    fun `Given an import that settled three lines, two created and one skipped, Then it resumes at the fourth`() {
+        // Given: the cursor is the two counters' sum, so neither counter alone lands on line four
+        val pins = (1..3).map { TestLine(it, aPin()) } + TestLine(4, aPin(path = BETA_PATH, bytes = betaBytes))
+        val resumed = anImport(UserDataImportState.RUNNING).copy(createdPins = 2, skippedPins = 1)
+        stubWalk(FakeArchiveSource(aManifest(), pins = pins, media = everyMedium), resumed)
+        stubMediaPath()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(listOf(sha256(betaBytes)), savedMedia.map { it.contentHash })
+        assertEquals(4, stored.processedPins)
+    }
+
+    @Test
     fun `Given a pin with no medium, Then it is reported and skipped`() {
         // Given: a pin is metadata over a medium, so nothing anchors this one
         val source = FakeArchiveSource(aManifest(), pins = listOf(TestLine(1, aPin(path = null))))

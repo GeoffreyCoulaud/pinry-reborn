@@ -54,11 +54,7 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
     fun `Given the migrated database, Then no table or column keeps a name the models no longer give`() {
         // Given: the join tables were once named after their class, and two instants after a legacy column.
         val tables = modelTables()
-        val columns = tables.flatMap { table ->
-            database.sqlQuery("select name from pragma_table_info(?)").setParameter(table).findList().map {
-                "$table.${it.getString("name")}"
-            }
-        }
+        val columns = modelColumns()
 
         // When
         val legacy = (tables + columns).filter { name -> LEGACY_NAME_PARTS.any { it in name } }
@@ -66,6 +62,15 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         // Then: the second assertion is the first one's non-empty guard.
         assertEquals(emptyList<String>(), legacy)
         assertNotEquals(emptyList<String>(), columns)
+    }
+
+    @Test
+    fun `Given the migrated database, Then no column stores what the others derive`() {
+        // When: the test above is this one's non-empty guard
+        val derived = modelColumns().filter { it in DERIVED_COLUMNS }
+
+        // Then
+        assertEquals(emptyList<String>(), derived)
     }
 
     @Test
@@ -115,6 +120,13 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
             .map { it.getString("name") }
             .filterNot { it.startsWith("sqlite_") || it == MIGRATION_TABLE }
 
+    private fun modelColumns(): List<String> =
+        modelTables().flatMap { table ->
+            database.sqlQuery("select name from pragma_table_info(?)").setParameter(table).findList().map {
+                "$table.${it.getString("name")}"
+            }
+        }
+
     private fun constraintAndIndexNamesOf(table: String): List<String> {
         val rows =
             database
@@ -136,6 +148,8 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         // Ebean's own table, whose names are Ebean's.
         private const val MIGRATION_TABLE = "db_migration"
         private val LEGACY_NAME_PARTS = listOf("_model", "when_")
+        // The created and skipped pins' sum, and a video or more than one frame (ADR 0058, decision 10).
+        private val DERIVED_COLUMNS = listOf("user_data_imports.processed_pins", "media.animated")
         private val INLINE_CONSTRAINT = Regex("""constraint\s+(\w+)""", RegexOption.IGNORE_CASE)
 
         // Every key cascades but a pin's publisher, a credit removed with its person (ADR 0058, decisions 1 and 2).

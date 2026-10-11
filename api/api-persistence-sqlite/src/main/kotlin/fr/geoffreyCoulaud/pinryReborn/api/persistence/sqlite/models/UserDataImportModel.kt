@@ -39,7 +39,6 @@ class UserDataImportModel(
     var byteSize: Long? = null,
     var formatVersion: Int? = null,
     var announcedPins: Int? = null,
-    var processedPins: Int = 0,
     var createdPins: Int = 0,
     var skippedPins: Int = 0,
     var createdBoards: Int = 0,

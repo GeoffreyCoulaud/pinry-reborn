@@ -49,7 +49,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         val user = createAndSaveUser()
 
         // When
-        val saved = repository.save(awaitingImport(user.id).copy(announcedPins = 12, processedPins = 3))
+        val saved = repository.save(awaitingImport(user.id).copy(announcedPins = 12, createdPins = 2, skippedPins = 1))
 
         // Then
         assertEquals(user.id, saved.userId)
@@ -211,10 +211,10 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         val stored = repository.save(awaitingImport(user.id))
 
         // When
-        val advanced = repository.save(stored.copy(state = UserDataImportState.RUNNING, processedPins = 7))
+        val advanced = repository.save(stored.copy(state = UserDataImportState.RUNNING, createdPins = 7))
 
         // Then
-        assertEquals(7, advanced.processedPins)
+        assertEquals(7, advanced.createdPins)
     }
 
     // --- abandonment sweep ---

@@ -73,28 +73,29 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
         assertEquals(saved, repository.findByPinId(pin.id))
     }
 
+    private fun videoFor(pinId: UUID, frames: Int = 25) =
+        mediaFor(pinId).run {
+            Media.Video(
+                id,
+                pinId,
+                "video/mp4",
+                width,
+                height,
+                byteSize,
+                contentHash,
+                storageKey,
+                createdAt,
+                frames,
+                Duration.ofMillis(1_023),
+                videoBitRate = 8_000,
+                sound = Media.Sound(2, 1_000),
+            )
+        }
+
     @Test
     fun `Given a video, Then findByPinId reads back its frames, duration, rates and sound`() {
         val pin = savedPin()
-        val video =
-            mediaFor(pin.id).run {
-                Media.Video(
-                    id,
-                    pinId,
-                    "video/mp4",
-                    width,
-                    height,
-                    byteSize,
-                    contentHash,
-                    storageKey,
-                    createdAt,
-                    25,
-                    Duration.ofMillis(1_023),
-                    videoBitRate = 8_000,
-                    sound = Media.Sound(2, 1_000),
-                )
-            }
-        val saved = repository.save(video)
+        val saved = repository.save(videoFor(pin.id))
         assertEquals(saved, repository.findByPinId(pin.id))
     }
 
@@ -213,6 +214,24 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
 
         // Then
         assertEquals(setOf(comparable, recycled), found.toSet())
+    }
+
+    @Test
+    fun `Given an animated image, Then it compares with animated images and videos, not with still images`() {
+        // Given: a one-frame video is animated by its type alone
+        val author = savedUser()
+        val media = repository.save(animatedFor(savedPin(author).id))
+        val animated = repository.save(animatedFor(savedPin(author).id))
+        val video = repository.save(videoFor(savedPin(author).id, frames = 1))
+        val still = repository.save(mediaFor(savedPin(author).id))
+        val candidates = listOf(media, animated, video, still)
+        candidates.forEach { repository.markFingerprinted(it.id, VERSION) }
+
+        // When
+        val found = repository.findComparable(media, candidates.map { it.id }, VERSION)
+
+        // Then
+        assertEquals(setOf(animated, video), found.toSet())
     }
 
     @Test

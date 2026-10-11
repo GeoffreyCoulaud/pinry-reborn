@@ -44,7 +44,12 @@ sealed interface Media : Identifiable {
         override val storageKey: String,
         override val createdAt: Instant,
         override val frames: Int,
-    ) : Media
+    ) : Media {
+        // The store reads an animated image back from its frame count alone.
+        init {
+            require(frames > 1) { "An animated image has more than one frame, not $frames" }
+        }
+    }
 
     /** Its rates in bits per second. */
     data class Video(
