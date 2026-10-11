@@ -50,9 +50,9 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 
 ### P2: Operational debt
 
-- **`foreign_keys` is off, so every declared key is unenforced**. The second lot of `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.2,
-  flattens the history into one baseline with `ON DELETE CASCADE`, turns the pragma on, and takes the items its
-  `inventory.md` tags [migration]. See also `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
+- **`foreign_keys` is off, so every declared key is unenforced**. The second lot of
+  `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.2, flattens the history into one baseline
+  with `ON DELETE CASCADE`, turns the pragma on, and takes the items its `inventory.md` tags [migration]. See also `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
 - **The domain names concepts with bare strings, and its types carry storage formats**: the types lot, after the
   importer. `docs/adr/0056-data-shapes-are-decided-in-the-specification/inventory.md`, T1, T2 and T4 to T7, section 2,
   and units 8 to 10, 17 to 20 (the database renames left to the foreign keys item) and 25. Lot `0.54.0` typed the
