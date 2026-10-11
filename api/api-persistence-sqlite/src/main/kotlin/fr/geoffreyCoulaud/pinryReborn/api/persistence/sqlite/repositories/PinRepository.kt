@@ -295,28 +295,11 @@ class PinRepository(private val persistor: Persistor) : PinRepositoryInterface {
     }
 
     override fun permanentlyDeletePin(pin: Pin) {
-        QPinTagModel().pin.id.equalTo(pin.id).delete()
-        QPinBoardModel().pin.id.equalTo(pin.id).delete()
-        QPinCreatorModel().pin.id.equalTo(pin.id).delete()
         PinQueries.any().id.equalTo(pin.id).delete()
     }
 
     override fun permanentlyDeleteAllSoftDeletedPinsForUser(user: User) {
-        val softDeletedPinIds = PinQueries.recycled().author.id.equalTo(user.id).findList().map { it.id }
-        if (softDeletedPinIds.isEmpty()) return
-        QPinTagModel().pin.id.isIn(softDeletedPinIds).delete()
-        QPinBoardModel().pin.id.isIn(softDeletedPinIds).delete()
-        QPinCreatorModel().pin.id.isIn(softDeletedPinIds).delete()
-        PinQueries.any().id.isIn(softDeletedPinIds).delete()
-    }
-
-    override fun permanentlyDeleteAllPinsForUser(user: User) {
-        val pinIds = PinQueries.any().author.id.equalTo(user.id).findList().map { it.id }
-        if (pinIds.isEmpty()) return
-        QPinTagModel().pin.id.isIn(pinIds).delete()
-        QPinBoardModel().pin.id.isIn(pinIds).delete()
-        QPinCreatorModel().pin.id.isIn(pinIds).delete()
-        PinQueries.any().id.isIn(pinIds).delete()
+        PinQueries.recycled().author.id.equalTo(user.id).delete()
     }
 
     override fun findAllSoftDeletedPinsForUser(user: User): List<Pin> =

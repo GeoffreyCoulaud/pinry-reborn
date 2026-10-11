@@ -1,9 +1,15 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
+import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PdqHash
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaDownloadRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaFrameRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanPinDuplicateRepository
 import java.time.Instant
+import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -17,17 +23,6 @@ import org.junit.jupiter.api.assertThrows
  * `PinRepositoryPaginationTest`'s precedent).
  */
 class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
-    /** The user's active pins, unpaginated in practice: no case here holds more than a handful. */
-    private fun activePinsOf(user: User): List<Pin> =
-        repository
-            .findPinsForUser(
-                reader = user,
-                cursor = null,
-                pageSize = 10,
-                sortStrategy = PinSortStrategy.CREATED_AT_ASC,
-            )
-            .items
-
     @Test
     fun `Given soft-deleted pin, Then findPinsForUser excludes it`() {
         // Given
@@ -220,21 +215,46 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
     }
 
     @Test
-    fun `Given soft-deleted pin, Then permanentlyDeletePin removes it and its board associations`() {
-        // Given
+    fun `Given a recycled pin with every kind of dependent, Then permanentlyDeletePin leaves none of them`() {
+        // Given: a join row of each kind, a media with a frame, a download and a pair with another pin
         val user = createAndSaveUser()
-        val board = createAndSaveBoard(name = "board1", user = user)
-        val pin = createPinWithBoards(board).copy(author = user)
-        repository.savePin(pin)
-        val softDeleted = repository.softDeletePin(pin, storableNow())
+        val pin =
+            repository.savePin(
+                createPin()
+                    .copy(
+                        author = user,
+                        tags = listOf(createAndSaveTag(name = "tag1", user = user)),
+                        boards = listOf(createAndSaveBoard(user)),
+                        creators = listOf(createAndSavePerson(user)),
+                    )
+            )
+        val media =
+            EbeanMediaRepository(persistor, transactionRunner)
+                .save(Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1, "", "originals/x", storableNow()))
+        EbeanMediaFrameRepository(persistor).save(media.id, listOf(PdqHash(List(4) { 0L }, quality = 100)))
+        EbeanMediaDownloadRepository(persistor)
+            .upsertPending(pin.id, checkNotNull(HttpUrl.parse("https://x/i.png")), randomUUID(), storableNow())
+        EbeanPinDuplicateRepository(persistor).addMissing(pin.id, listOf(createAndSavePin(user).id))
 
         // When
-        // `foreign_keys` is off, so the store would not refuse a join row left behind.
-        repository.permanentlyDeletePin(softDeleted)
+        repository.permanentlyDeletePin(repository.softDeletePin(pin, storableNow()))
 
         // Then
-        assertNull(repository.findPinById(pin.id))
+        val tables =
+            listOf(
+                "pin_tags",
+                "pin_boards",
+                "pin_creators",
+                "media",
+                "media_frames",
+                "media_downloads",
+                "pin_duplicates",
+            )
+        assertEquals(tables.associateWith { 0 }, tables.associateWith { rowsIn(it) })
     }
+
+    private fun rowsIn(table: String): Int? =
+        database.sqlQuery("select count(*) as n from $table").findOne()?.getInteger("n")
 
     @Test
     fun `Given multiple soft-deleted pins, Then permanentlyDeleteAllSoftDeletedPinsForUser removes all`() {
@@ -266,7 +286,6 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
         repository.softDeletePin(pin2, storableNow())
 
         // When
-        // `foreign_keys` is off, so the store would not refuse a join row left behind.
         repository.permanentlyDeleteAllSoftDeletedPinsForUser(user)
 
         // Then
@@ -285,40 +304,6 @@ class PinRepositorySoftDeleteTest : PinRepositoryFixtures() {
 
         // Then
         assertNotNull(repository.findPinById(activePin.id))
-    }
-
-    @Test
-    fun `Given active and soft-deleted pins, Then permanentlyDeleteAllPinsForUser removes all`() {
-        // Given
-        val user = createAndSaveUser()
-        val tag = createAndSaveTag(name = "tag1", user = user)
-        val board = createAndSaveBoard(name = "board1", user = user)
-        val activePin = repository.savePin(createPinWithTags(tag).copy(author = user, boards = listOf(board)))
-        val toSoftDelete = createAndSavePin(user)
-        repository.softDeletePin(toSoftDelete, storableNow())
-
-        // When
-        // `foreign_keys` is off, so the store would not refuse a join row left behind.
-        repository.permanentlyDeleteAllPinsForUser(user)
-
-        // Then
-        assertEquals(emptyList<Pin>(), activePinsOf(user))
-        assertEquals(emptyList<Pin>(), repository.findAllSoftDeletedPinsForUser(user))
-        assertNull(repository.findPinById(activePin.id))
-        assertNull(repository.findPinById(toSoftDelete.id))
-    }
-
-    @Test
-    fun `Given no pins for the user, Then permanentlyDeleteAllPinsForUser is a no-op`() {
-        // Given
-        val user = createAndSaveUser()
-
-        // When
-        repository.permanentlyDeleteAllPinsForUser(user)
-
-        // Then
-        assertEquals(emptyList<Pin>(), activePinsOf(user))
-        assertEquals(emptyList<Pin>(), repository.findAllSoftDeletedPinsForUser(user))
     }
 
     @Test

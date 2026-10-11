@@ -194,22 +194,6 @@ class PersonRepositoryTest : RepositoryTest() {
         assertEquals(emptyList<Any>(), found)
     }
 
-    @Test
-    fun `Given persons of two users, Then deleteAllPersonsForUser removes only the user's`() {
-        // Given
-        val user = createAndSaveUser()
-        val otherUser = createAndSaveUser()
-        savePerson(user, "Alice", listOf(FIRST_URL))
-        val kept = savePerson(otherUser, "Alice", listOf(FIRST_URL))
-
-        // When
-        repository.deleteAllPersonsForUser(user)
-
-        // Then
-        assertNull(find(user, "Alice", listOf(FIRST_URL)))
-        assertEquals(kept, find(otherUser, "Alice", listOf(FIRST_URL)))
-    }
-
     // --- Matching ---
 
     private fun matching(user: User, query: String, limit: Int = 10) =

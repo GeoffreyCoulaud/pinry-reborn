@@ -98,8 +98,6 @@ internal class FakePersonRepository : PersonRepositoryInterface {
     override fun findUserPersonsByIds(user: User, ids: Set<UUID>) = known.values.filter { it.id in ids }
 
     override fun findAllPersonsForUser(user: User) = error("An import lists no person")
-
-    override fun deleteAllPersonsForUser(user: User) = error("An import deletes no person")
 }
 
 internal data class TestLine<out T>(

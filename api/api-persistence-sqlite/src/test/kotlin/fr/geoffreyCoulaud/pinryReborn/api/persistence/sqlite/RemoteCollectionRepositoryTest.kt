@@ -163,7 +163,6 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
         link(deleted)
 
         // When
-        // `foreign_keys` is off, so the store would not refuse a collection row left behind.
         boardRepository.permanentlyDeleteBoard(deleted)
 
         // Then
@@ -181,23 +180,6 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
 
         // When
         boardRepository.permanentlyDeleteAllRecycledBoardsForUser(user)
-
-        // Then
-        assertEquals(listOf(kept.url.toString()), storedUrls())
-    }
-
-    @Test
-    fun `Given every board of a user deleted, Then their collections go and another user's stay`() {
-        // Given
-        val user = createAndSaveUser()
-        val recycled = createAndSaveBoard(user)
-        link(createAndSaveBoard(user))
-        link(recycled)
-        boardRepository.softDeleteBoard(recycled, storableNow())
-        val kept = link(createAndSaveBoard(createAndSaveUser()))
-
-        // When
-        boardRepository.permanentlyDeleteAllBoardsForUser(user)
 
         // Then
         assertEquals(listOf(kept.url.toString()), storedUrls())

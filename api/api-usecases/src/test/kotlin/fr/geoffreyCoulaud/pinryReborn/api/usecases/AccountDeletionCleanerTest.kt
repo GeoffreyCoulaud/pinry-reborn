@@ -9,17 +9,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.RenditionCache
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportIssueRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserPasswordHashRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.ExportArchiveKey
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
@@ -38,38 +32,26 @@ import org.junit.jupiter.api.Test
 class AccountDeletionCleanerTest : BaseTest() {
     private val users = mockk<UserRepositoryInterface>(relaxed = true)
     private val pins = mockk<PinRepositoryInterface>(relaxed = true)
-    private val boards = mockk<BoardRepositoryInterface>(relaxed = true)
-    private val tags = mockk<TagRepositoryInterface>(relaxed = true)
-    private val persons = mockk<PersonRepositoryInterface>(relaxed = true)
     private val mediaRepository = mockk<MediaRepositoryInterface>(relaxed = true)
-    private val sessions = mockk<SessionTokenRepositoryInterface>(relaxed = true)
-    private val passwords = mockk<UserPasswordHashRepositoryInterface>(relaxed = true)
     private val clearDownload = mockk<ClearPinDownload>(relaxed = true)
     private val mediaStore = mockk<MediaStore>(relaxed = true)
     private val renditions = mockk<RenditionCache>(relaxed = true)
     private val exports = mockk<UserDataExportRepositoryInterface>(relaxed = true)
     private val exportArchiveStore = mockk<ExportArchiveStore>(relaxed = true)
     private val imports = mockk<UserDataImportRepositoryInterface>(relaxed = true)
-    private val importIssues = mockk<UserDataImportIssueRepositoryInterface>(relaxed = true)
     private val importArchiveStore = mockk<ImportArchiveStore>(relaxed = true)
     private val tx = mockk<TransactionRunner>()
     private val cleaner =
         AccountDeletionCleaner(
             users,
             pins,
-            boards,
-            tags,
-            persons,
             mediaRepository,
-            sessions,
-            passwords,
             clearDownload,
             mediaStore,
             renditions,
             exports,
             exportArchiveStore,
             imports,
-            importIssues,
             importArchiveStore,
             tx,
         )
@@ -104,7 +86,7 @@ class AccountDeletionCleanerTest : BaseTest() {
         )
 
     @Test
-    fun `Given a tombstoned user with a pin+image, Then everything is erased in order and disk cleaned`() {
+    fun `Given a tombstoned user with a pin+image, Then its download is cleared, its row deleted and disk cleaned`() {
         // Given
         every { tx.inTransaction(any<() -> Any?>()) } answers { (firstArg<() -> Any?>())() }
         every { users.findUserByIdIncludingDeleted(userId) } returns user
@@ -119,13 +101,6 @@ class AccountDeletionCleanerTest : BaseTest() {
         // Then
         verifyOrder {
             clearDownload.clear(pin.id)
-            mediaRepository.deleteByPinId(pin.id)
-            pins.permanentlyDeleteAllPinsForUser(user)
-            persons.deleteAllPersonsForUser(user)
-            boards.permanentlyDeleteAllBoardsForUser(user)
-            tags.deleteAllTagsForUser(user)
-            sessions.deleteAllForUser(userId)
-            passwords.deleteForUser(user)
             users.permanentlyDeleteUser(user)
         }
         verify { mediaStore.delete(media.storageKey) }
@@ -160,7 +135,7 @@ class AccountDeletionCleanerTest : BaseTest() {
     }
 
     @Test
-    fun `Given a user with an export, Then its rows are deleted and its derived bytes erased after the commit`() {
+    fun `Given a user with an export, Then the user row is deleted and the export's derived bytes erased`() {
         // Given
         every { tx.inTransaction(any<() -> Any?>()) } answers { (firstArg<() -> Any?>())() }
         every { users.findUserByIdIncludingDeleted(userId) } returns user
@@ -176,10 +151,7 @@ class AccountDeletionCleanerTest : BaseTest() {
         cleaner.deleteAccountData(userId)
 
         // Then
-        verifyOrder {
-            exports.deleteAllForUser(userId)
-            users.permanentlyDeleteUser(user)
-        }
+        verify { users.permanentlyDeleteUser(user) }
         // The key is DERIVED from the id, not read from the row, so a build that died before writing
         // its row (leaving a promoted file with no storageKey column) is still reclaimed.
         verify { exportArchiveStore.delete("exports/$exportId.tar") }
@@ -197,12 +169,11 @@ class AccountDeletionCleanerTest : BaseTest() {
         cleaner.deleteAccountData(userId)
 
         // Then
-        verify { exports.deleteAllForUser(userId) }
         verify(exactly = 0) { exportArchiveStore.delete(any()) }
     }
 
     @Test
-    fun `Given a user with an import, Then its rows go before the user and its bytes after the commit`() {
+    fun `Given a user with an import, Then the user row is deleted and the import's bytes erased after the commit`() {
         // Given: the transaction says where it is, so "after the commit" is asserted rather than named.
         // A disk pass held inside it keeps the one writer connection for the length of an unlink.
         var insideTransaction = false
@@ -227,12 +198,8 @@ class AccountDeletionCleanerTest : BaseTest() {
         // When
         cleaner.deleteAccountData(userId)
 
-        // Then: the issues before the rows they hang off, and both before the user row
-        verifyOrder {
-            importIssues.deleteAllForUser(userId)
-            imports.deleteAllForUser(userId)
-            users.permanentlyDeleteUser(user)
-        }
+        // Then
+        verify { users.permanentlyDeleteUser(user) }
         // Derived from the id, not read from the row, so a completer that died after its promote and
         // before its row write is still reclaimed. The upload goes too, promoted or not.
         verify { importArchiveStore.delete("imports/$importId.zip") }
@@ -254,7 +221,6 @@ class AccountDeletionCleanerTest : BaseTest() {
         cleaner.deleteAccountData(userId)
 
         // Then
-        verify { imports.deleteAllForUser(userId) }
         verify(exactly = 0) { importArchiveStore.delete(any()) }
         verify(exactly = 0) { importArchiveStore.discardPartialUpload(any()) }
     }
@@ -278,7 +244,7 @@ class AccountDeletionCleanerTest : BaseTest() {
     }
 
     @Test
-    fun `Given a pin with no image, Then it is cleared and deleted but nothing is evicted`() {
+    fun `Given a pin with no image, Then its download is cleared but nothing is evicted`() {
         // Given
         every { tx.inTransaction(any<() -> Any?>()) } answers { (firstArg<() -> Any?>())() }
         every { users.findUserByIdIncludingDeleted(userId) } returns user
@@ -291,7 +257,6 @@ class AccountDeletionCleanerTest : BaseTest() {
 
         // Then
         verify { clearDownload.clear(pin.id) }
-        verify { mediaRepository.deleteByPinId(pin.id) }
         verify(exactly = 0) { mediaStore.delete(any()) }
         verify(exactly = 0) { renditions.evictMedia(any()) }
     }

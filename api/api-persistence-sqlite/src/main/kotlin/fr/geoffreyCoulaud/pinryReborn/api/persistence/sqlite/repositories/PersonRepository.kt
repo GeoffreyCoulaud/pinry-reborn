@@ -76,8 +76,4 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
 
     override fun findAllPersonsForUser(user: User): List<Person> =
         QPersonModel().author.id.equalTo(user.id).findList().map { it.toDomain() }
-
-    override fun deleteAllPersonsForUser(user: User) {
-        QPersonModel().author.id.equalTo(user.id).delete()
-    }
 }

@@ -5,7 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import java.util.UUID
 
-/** A board's deletion deletes its collections, through [BoardRepositoryInterface]. */
+/** A board's deletion deletes its collections, through the database's key. */
 interface RemoteCollectionRepositoryInterface {
     fun saveRemoteCollection(collection: RemoteCollection): RemoteCollection
 

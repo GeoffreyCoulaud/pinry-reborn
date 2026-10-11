@@ -30,7 +30,4 @@ interface PersonRepositoryInterface {
 
     /** Every person of the user, which the user data export lists. */
     fun findAllPersonsForUser(user: User): List<Person>
-
-    /** Called after the user's pins are deleted, which are what reference a person. */
-    fun deleteAllPersonsForUser(user: User)
 }
