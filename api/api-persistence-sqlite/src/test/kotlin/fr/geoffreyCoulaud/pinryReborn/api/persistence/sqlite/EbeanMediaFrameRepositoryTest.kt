@@ -115,7 +115,7 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given frames of a stored media and of a deleted one, Then the deletion took the deleted one's and the sweep none`() {
+    fun `Given frames of a kept media and of a deleted one, Then the deleted one's went with it and none is swept`() {
         // Given
         val kept = savedMedia()
         val gone = savedMedia()
