@@ -65,9 +65,9 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
     }
 
     @Test
-    fun `Given a claimed import with no storage key, Then it fails as unreadable after the claim`() {
+    fun `Given a claimed import whose archive is not held, Then it fails as unreadable after the claim`() {
         // Given: the projection is built after the claim, so the token it carries is never a null column
-        stubRunUpToOpen(anImport(UserDataImportState.PENDING, storageKey = null))
+        stubRunUpToOpen(anImport(UserDataImportState.PENDING, archiveHeld = false))
 
         // When / Then
         assertThrows(PermanentTaskException::class.java) { runner.run(importId, isLastAttempt = false, renewLease) }

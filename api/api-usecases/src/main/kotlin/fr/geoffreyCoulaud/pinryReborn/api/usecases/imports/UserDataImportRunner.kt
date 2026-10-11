@@ -149,8 +149,8 @@ class UserDataImportRunner(
 
     /** The one validation site of spec section 5: only the archive can be missing from a claimed row. */
     private fun project(claimed: UserDataImport, runToken: UUID): RunnableImport {
-        if (claimed.storageKey == null) {
-            markFailed(claimed.id, ARCHIVE_UNREADABLE, "the import names no archive") { it.holds(runToken) }
+        if (!claimed.archiveHeld) {
+            markFailed(claimed.id, ARCHIVE_UNREADABLE, "the import holds no archive") { it.holds(runToken) }
         }
         return RunnableImport(
             importId = claimed.id,

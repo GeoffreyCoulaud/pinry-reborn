@@ -85,13 +85,13 @@ class ReapUserDataImports(
             .count { swept(it.id) { reclaim(it.id) } }
 
     /**
-     * The bytes go before the row stops naming them: stamping over a failed delete would hide residue from the only
+     * The bytes go before the row stops holding them: clearing over a failed delete would hide residue from the only
      * sweep that can still name it. Derived key, so a dead completer's archive is named.
      */
     private fun reclaim(importId: UUID): Boolean {
         archiveStore.delete(ImportArchiveKey.forImport(importId))
         return repository.saveFenced(transactionRunner, importId, { it.state.isTerminal }) {
-            it.copy(storageKey = null)
+            it.copy(archiveHeld = false)
         } != null
     }
 

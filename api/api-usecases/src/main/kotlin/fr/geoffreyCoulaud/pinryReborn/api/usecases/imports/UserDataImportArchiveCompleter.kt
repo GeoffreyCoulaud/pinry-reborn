@@ -37,11 +37,11 @@ class UserDataImportArchiveCompleter(
         if (userDataImport.uploadedBytes == 0L) throw ImportArchiveEmptyError()
         val staged = onTheUpload { archiveStore.finishUpload(importId) }
         val storageKey = ImportArchiveKey.forImport(importId)
-        // Named before the bytes are there, as the export builder does: a completer that dies right
-        // after the promote still leaves an archive some row points at. Fenced ahead of the promote, so
+        // Held before the bytes are there, as the export builder does: a completer that dies right
+        // after the promote still leaves an archive some row holds. Fenced ahead of the promote, so
         // a cancellation caught here refuses before an upload the canceller unlinked is moved.
         repository.saveWhileAwaitingArchive(transactionRunner, importId) {
-            it.copy(storageKey = storageKey, byteSize = staged.byteSize)
+            it.copy(archiveHeld = true, byteSize = staged.byteSize)
         }
         onTheUpload { archiveStore.promote(staged, storageKey) }
         return try {

@@ -19,8 +19,9 @@ import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ReapUserDataImportsTest : BaseTest() {
@@ -55,7 +56,7 @@ class ReapUserDataImportsTest : BaseTest() {
 
     private fun anImport(
         state: UserDataImportState,
-        storageKey: String? = null,
+        archiveHeld: Boolean = false,
         taskId: UUID? = null,
     ) =
         UserDataImport(
@@ -64,7 +65,7 @@ class ReapUserDataImportsTest : BaseTest() {
                 state = state,
                 requestedAt = now.minus(Duration.ofDays(2)),
                 lastActivityAt = now.minus(Duration.ofDays(2)),
-                storageKey = storageKey,
+                archiveHeld = archiveHeld,
                 taskId = taskId,
             )
             .also { rows[it.id] = it }
@@ -100,7 +101,7 @@ class ReapUserDataImportsTest : BaseTest() {
         every { repository.findReclaimableTerminal(any(), any()) } answers
             {
                 reclaimPages++
-                pageAfter(firstArg(), secondArg()) { row -> row.state.isTerminal && row.storageKey != null }
+                pageAfter(firstArg(), secondArg()) { row -> row.state.isTerminal && row.archiveHeld }
             }
         every { archiveStore.discardOrphanedStagedFiles(any()) } answers
             {
@@ -180,7 +181,7 @@ class ReapUserDataImportsTest : BaseTest() {
         stubUploadDiscard()
         stubArchiveDeletion()
         val promoted = anImport(UserDataImportState.AWAITING_ARCHIVE)
-        rows[promoted.id] = stored(promoted.id).copy(storageKey = ImportArchiveKey.forImport(promoted.id))
+        rows[promoted.id] = stored(promoted.id).copy(archiveHeld = true)
 
         // When
         val reaped = sweep.reap()
@@ -189,7 +190,7 @@ class ReapUserDataImportsTest : BaseTest() {
         assertEquals(2, reaped)
         assertEquals(UserDataImportState.ABANDONED, stored(promoted.id).state)
         assertEquals(listOf(ImportArchiveKey.forImport(promoted.id)), deletedArchives)
-        assertNull(stored(promoted.id).storageKey)
+        assertFalse(stored(promoted.id).archiveHeld)
     }
 
     @Test
@@ -198,7 +199,7 @@ class ReapUserDataImportsTest : BaseTest() {
         stubSweep()
         stubRowWrites()
         stubArchiveDeletion()
-        val cancelled = anImport(UserDataImportState.CANCELLED, storageKey = "imports/reclaimable.zip")
+        val cancelled = anImport(UserDataImportState.CANCELLED, archiveHeld = true)
 
         // When
         val first = sweep.reap()
@@ -208,14 +209,14 @@ class ReapUserDataImportsTest : BaseTest() {
         assertEquals(1, first)
         assertEquals(0, second)
         assertEquals(listOf(ImportArchiveKey.forImport(cancelled.id)), deletedArchives)
-        assertNull(stored(cancelled.id).storageKey)
+        assertFalse(stored(cancelled.id).archiveHeld)
     }
 
     @Test
-    fun `Given a store that will not take an archive back, Then the row keeps naming those bytes`() {
-        // Given: stamping over a failed delete would hide the residue from the only sweep that names it
+    fun `Given a store that will not take an archive back, Then the row keeps holding those bytes`() {
+        // Given: clearing over a failed delete would hide the residue from the only sweep that names it
         stubSweep()
-        val cancelled = anImport(UserDataImportState.CANCELLED, storageKey = "imports/stuck.zip")
+        val cancelled = anImport(UserDataImportState.CANCELLED, archiveHeld = true)
         every { archiveStore.delete(any()) } throws IOException("permission denied")
 
         // When
@@ -223,7 +224,7 @@ class ReapUserDataImportsTest : BaseTest() {
 
         // Then
         assertEquals(0, reaped)
-        assertEquals("imports/stuck.zip", stored(cancelled.id).storageKey)
+        assertTrue(stored(cancelled.id).archiveHeld)
     }
 
     @Test
@@ -233,7 +234,7 @@ class ReapUserDataImportsTest : BaseTest() {
         stubRowWrites()
         val imports =
             List(SWEEP_BATCH_SIZE + 1) {
-                anImport(UserDataImportState.CANCELLED, storageKey = "imports/$it.zip")
+                anImport(UserDataImportState.CANCELLED, archiveHeld = true)
             }
         val refused = imports.minBy { it.id }
         every { archiveStore.delete(any()) } answers
@@ -248,7 +249,7 @@ class ReapUserDataImportsTest : BaseTest() {
 
         // Then: the page after the refused row's reaches the row beyond it, and the run ends on an empty one
         assertEquals(SWEEP_BATCH_SIZE, reaped)
-        imports.filter { it.id != refused.id }.forEach { assertNull(stored(it.id).storageKey) }
+        imports.filter { it.id != refused.id }.forEach { assertFalse(stored(it.id).archiveHeld) }
         assertEquals(3, reclaimPages)
     }
 
@@ -353,7 +354,7 @@ class ReapUserDataImportsTest : BaseTest() {
         // there is nothing left to stamp and the bytes it named are already gone
         stubSweep()
         stubArchiveDeletion()
-        val erased = anImport(UserDataImportState.CANCELLED, storageKey = "imports/erased.zip")
+        val erased = anImport(UserDataImportState.CANCELLED, archiveHeld = true)
         every { repository.findById(erased.id) } returns null
 
         // When

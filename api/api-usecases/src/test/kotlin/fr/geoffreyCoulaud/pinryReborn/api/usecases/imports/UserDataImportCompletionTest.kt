@@ -21,14 +21,13 @@ import org.junit.jupiter.api.Test
 internal class UserDataImportCompletionTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given a walk that reaches the end, Then the row is completed and the archive it opened is deleted`() {
-        // Given: a column no derivation would produce, so a walk reading it opens the wrong archive
-        val promotedElsewhere = "imports/promoted-elsewhere.zip"
+        // Given
         val source =
             FakeArchiveSource(
                 manifest = aManifest(),
                 tags = listOf(TestLine(1, ImportedTag(name = "voyage", createdAt = pastInstant))),
             )
-        stubWalk(source, anImport(UserDataImportState.PENDING, storageKey = promotedElsewhere))
+        stubWalk(source, anImport(UserDataImportState.PENDING))
         stubTagLookup()
         stubTagCreation()
         stubArchiveRelease()

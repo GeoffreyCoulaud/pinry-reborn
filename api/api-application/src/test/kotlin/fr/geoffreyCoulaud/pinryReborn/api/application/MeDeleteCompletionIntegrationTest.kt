@@ -98,7 +98,7 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
                 state = UserDataImportState.COMPLETED,
                 requestedAt = seededAt,
                 lastActivityAt = seededAt,
-                storageKey = "imports/$importId.zip",
+                archiveHeld = true,
             )
         )
         userDataImportIssueRepository.save(

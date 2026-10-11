@@ -206,7 +206,7 @@ create table user_data_imports (
   archive_completed_at          timestamp,
   started_at                    timestamp,
   completed_at                  timestamp,
-  storage_key                   text,
+  archive_held                  int default 0 not null,
   byte_size                     integer,
   format_version                integer,
   announced_pins                integer,

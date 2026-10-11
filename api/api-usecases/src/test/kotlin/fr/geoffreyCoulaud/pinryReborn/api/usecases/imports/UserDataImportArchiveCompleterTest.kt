@@ -26,6 +26,7 @@ import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class UserDataImportArchiveCompleterTest : BaseTest() {
@@ -227,16 +228,16 @@ class UserDataImportArchiveCompleterTest : BaseTest() {
     }
 
     @Test
-    fun `Given a finished upload, Then the storage key is written before the bytes are promoted`() {
+    fun `Given a finished upload, Then the archive is held before the bytes are promoted`() {
         // Given
         stubCompletion()
 
         // When
         completer.complete(user, importId)
 
-        // Then: bytes named before they exist, so a completer that dies leaves them reclaimable
+        // Then: bytes held before they exist, so a completer that dies leaves them reclaimable
         verifyOrder {
-            repository.save(match { it.storageKey == storageKey && it.byteSize == staged.byteSize })
+            repository.save(match { it.archiveHeld && it.byteSize == staged.byteSize })
             archiveStore.promote(staged, storageKey)
         }
     }
@@ -252,7 +253,7 @@ class UserDataImportArchiveCompleterTest : BaseTest() {
         // Then
         assertEquals(UserDataImportState.PENDING, completed.state)
         assertEquals(now, completed.archiveCompletedAt)
-        assertEquals(storageKey, completed.storageKey)
+        assertTrue(completed.archiveHeld)
         assertEquals(staged.byteSize, completed.byteSize)
         assertEquals(task.id, completed.taskId)
     }

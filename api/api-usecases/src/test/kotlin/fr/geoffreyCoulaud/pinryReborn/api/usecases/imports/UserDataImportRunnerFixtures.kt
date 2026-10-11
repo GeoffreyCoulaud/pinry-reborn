@@ -303,7 +303,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
     protected fun anImport(
         state: UserDataImportState,
         id: UUID = importId,
-        storageKey: String? = ImportArchiveKey.forImport(id),
+        archiveHeld: Boolean = true,
         startedAt: Instant? = null,
     ) =
         UserDataImport(
@@ -312,7 +312,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             state = state,
             requestedAt = now,
             lastActivityAt = now,
-            storageKey = storageKey,
+            archiveHeld = archiveHeld,
             startedAt = startedAt,
         )
 

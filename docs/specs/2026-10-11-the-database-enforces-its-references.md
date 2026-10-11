@@ -293,6 +293,8 @@ The operator waived both bounds for it on 2026-10-11, for the deletion of the hi
 - `storage_key`, `media_type` and `file_extension` absent from the migrated schema; `archive_held` present.
 - A `SUPERSEDED` export keeps `archive_held` until its reaper pass deletes the bytes, then clears it.
 - An import whose archive is not held fails `ARCHIVE_UNREADABLE`, as a null key fails today.
+  Block 64 touches 20 files: each is a compile break of the one field's rename, and a split would leave
+  `storage_key` and `archive_held` side by side.
 - `contract/openapi.json`'s `UserDataExportOutput` has no `mediaType`, and `info.version` is `26.0.0`; the download
   still answers `Content-Type: application/zip` and a `.zip` file name.
 
