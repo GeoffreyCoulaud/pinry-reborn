@@ -33,7 +33,6 @@ class EbeanMediaDownloadRepository(private val persistor: Persistor) : MediaDown
                     sourceUrl = sourceUrl,
                     status = DownloadStatus.PENDING,
                     reasonCode = null,
-                    lastError = null,
                     taskId = taskId,
                     requestedAt = now,
                     updatedAt = now,

@@ -65,12 +65,12 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given the migrated database, Then no column stores what the others derive`() {
+    fun `Given the migrated database, Then no column stores what nothing reads`() {
         // When: the test above is this one's non-empty guard
-        val derived = modelColumns().filter { it in DERIVED_COLUMNS }
+        val unread = modelColumns().filter { it in UNREAD_COLUMNS }
 
         // Then
-        assertEquals(emptyList<String>(), derived)
+        assertEquals(emptyList<String>(), unread)
     }
 
     @Test
@@ -148,8 +148,9 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         // Ebean's own table, whose names are Ebean's.
         private const val MIGRATION_TABLE = "db_migration"
         private val LEGACY_NAME_PARTS = listOf("_model", "when_")
-        // The created and skipped pins' sum, and a video or more than one frame (ADR 0058, decision 10).
-        private val DERIVED_COLUMNS = listOf("user_data_imports.processed_pins", "media.animated")
+        // Two derived from other columns, and an error no reader ever had (ADR 0058, decision 10).
+        private val UNREAD_COLUMNS =
+            listOf("user_data_imports.processed_pins", "media.animated", "media_downloads.last_error")
         private val INLINE_CONSTRAINT = Regex("""constraint\s+(\w+)""", RegexOption.IGNORE_CASE)
 
         // Every key cascades but a pin's publisher, a credit removed with its person (ADR 0058, decisions 1 and 2).

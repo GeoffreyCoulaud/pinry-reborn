@@ -39,7 +39,6 @@ class MediaDownloadsTest {
             sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png")),
             status = status,
             reasonCode = if (status == DownloadStatus.FAILED) DownloadReason.NOT_FOUND else null,
-            lastError = null,
             taskId = randomUUID(),
             requestedAt = Instant.EPOCH,
             updatedAt = Instant.EPOCH,

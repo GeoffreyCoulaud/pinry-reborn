@@ -26,7 +26,6 @@ class MediaDownloadModel(
     var sourceUrl: String,
     var status: String,
     var reasonCode: String?,
-    var lastError: String?,
     var taskId: UUID,
     var requestedAt: Instant,
     var updatedAt: Instant,

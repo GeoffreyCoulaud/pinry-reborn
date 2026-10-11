@@ -40,7 +40,6 @@ class ReapStaleMediaDownloadsTest : BaseTest() {
             sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png")),
             status = DownloadStatus.PENDING,
             reasonCode = null,
-            lastError = null,
             taskId = taskId,
             requestedAt = now,
             updatedAt = now,

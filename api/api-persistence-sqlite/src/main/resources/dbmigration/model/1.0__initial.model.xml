@@ -16,7 +16,6 @@
             <column name="source_url" type="varchar" notnull="true"/>
             <column name="status" type="varchar" notnull="true"/>
             <column name="reason_code" type="varchar"/>
-            <column name="last_error" type="varchar"/>
             <column name="task_id" type="uuid" notnull="true"/>
             <column name="requested_at" type="timestamp" notnull="true"/>
             <column name="updated_at" type="timestamp" notnull="true"/>

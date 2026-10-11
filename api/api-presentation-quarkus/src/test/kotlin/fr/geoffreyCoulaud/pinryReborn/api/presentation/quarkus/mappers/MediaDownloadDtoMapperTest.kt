@@ -26,7 +26,6 @@ class MediaDownloadDtoMapperTest {
             sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png")),
             status = status,
             reasonCode = reason,
-            lastError = "a transient error nobody outside the server reads",
             taskId = randomUUID(),
             requestedAt = Instant.EPOCH,
             updatedAt = Instant.EPOCH,

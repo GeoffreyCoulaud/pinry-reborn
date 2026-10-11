@@ -10,7 +10,6 @@ data class MediaDownload(
     val sourceUrl: HttpUrl,
     val status: DownloadStatus,
     val reasonCode: DownloadReason?,
-    val lastError: String?,
     val taskId: UUID,
     val requestedAt: Instant,
     val updatedAt: Instant,
