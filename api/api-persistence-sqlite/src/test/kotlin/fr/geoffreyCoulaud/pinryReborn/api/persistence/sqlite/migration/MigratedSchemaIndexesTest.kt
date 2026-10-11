@@ -52,7 +52,7 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
 
     @Test
     fun `Given the migrated database, Then no table or column keeps a name the models no longer give`() {
-        // Given: the join tables were once named after their class.
+        // Given: the join tables were once named after their class, and two instants after a legacy column.
         val tables = modelTables()
         val columns = tables.flatMap { table ->
             database.sqlQuery("select name from pragma_table_info(?)").setParameter(table).findList().map {
@@ -95,7 +95,7 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         private const val AUTO_INDEX_PREFIX = "sqlite_autoindex_"
         // Ebean's own table, whose names are Ebean's.
         private const val MIGRATION_TABLE = "db_migration"
-        private val LEGACY_NAME_PARTS = listOf("_model")
+        private val LEGACY_NAME_PARTS = listOf("_model", "when_")
         private val INLINE_CONSTRAINT = Regex("""constraint\s+(\w+)""", RegexOption.IGNORE_CASE)
     }
 }

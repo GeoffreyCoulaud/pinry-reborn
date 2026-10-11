@@ -20,7 +20,6 @@ class SessionTokenModel(
     @Column(unique = true) var tokenHash: String,
     var expiresAt: Instant,
     var persistent: Boolean,
-    // Reuses the historical `when_created` column: the property is now mapper-written from the
-    // domain `createdAt` the use case stamps, no longer auto-stamped (D19).
-    @Column(name = "when_created") var createdAt: Instant,
+    // Written by the mapper from the domain `createdAt` the use case stamps, never generated (D19).
+    var createdAt: Instant,
 ) : BaseModel(id = id)
