@@ -103,7 +103,7 @@ internal abstract class UserDataExportFakeStoreFixtures : UserDataExportFixtures
             seedRow(
                 row.copy(
                     state = UserDataExportState.READY,
-                    storageKey = storageKey,
+                    archiveHeld = true,
                     byteSize = rivalStaged.byteSize,
                     sha256 = rivalStaged.contentHash,
                 )

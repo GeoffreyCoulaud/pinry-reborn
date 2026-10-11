@@ -21,7 +21,7 @@ import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -57,7 +57,7 @@ class ReapUserDataExportsTest : BaseTest() {
     private fun anExport(
         state: UserDataExportState,
         id: UUID = randomUUID(),
-        storageKey: String? = null,
+        archiveHeld: Boolean = false,
         requestedAt: Instant = now.minus(Duration.ofDays(10)),
         taskId: UUID? = null,
     ) =
@@ -67,16 +67,13 @@ class ReapUserDataExportsTest : BaseTest() {
                 state = state,
                 formatVersion = 1,
                 requestedAt = requestedAt,
-                storageKey = storageKey,
+                archiveHeld = archiveHeld,
                 taskId = taskId,
             )
             .also { rows[it.id] = it }
 
-    /** A row naming the bytes its own id derives, which is what a build that completed leaves. */
-    private fun exportNamingItsBytes(state: UserDataExportState): UserDataExport {
-        val id = randomUUID()
-        return anExport(state, id = id, storageKey = keyOf(id))
-    }
+    /** A row holding the bytes its own id derives, which is what a build that completed leaves. */
+    private fun exportNamingItsBytes(state: UserDataExportState): UserDataExport = anExport(state, archiveHeld = true)
 
     private fun aTask(state: TaskState) =
         Task(
@@ -123,7 +120,7 @@ class ReapUserDataExportsTest : BaseTest() {
             {
                 selectionLimits += secondArg<Int>()
                 reclaimPages++
-                pageAfter(firstArg(), secondArg()) { row -> row.state.isTerminal && row.storageKey != null }
+                pageAfter(firstArg(), secondArg()) { row -> row.state.isTerminal && row.archiveHeld }
             }
     }
 
@@ -326,7 +323,7 @@ class ReapUserDataExportsTest : BaseTest() {
         assertEquals(ExportSweepCounts(failed = 1, expired = 0, reclaimed = 1), counts)
         assertEquals(UserDataExportState.FAILED, stored(stuck.id).state)
         assertEquals(listOf(keyOf(stuck.id)), deletedArchives)
-        assertNull(stored(stuck.id).storageKey)
+        assertFalse(stored(stuck.id).archiveHeld)
     }
 
     @Test
@@ -365,7 +362,7 @@ class ReapUserDataExportsTest : BaseTest() {
         assertEquals(ExportSweepCounts(failed = 0, expired = 1, reclaimed = 1), counts)
         assertEquals(UserDataExportState.EXPIRED, stored(export.id).state)
         assertEquals(listOf(keyOf(export.id)), deletedArchives)
-        assertNull(stored(export.id).storageKey)
+        assertFalse(stored(export.id).archiveHeld)
     }
 
     @Test
@@ -373,7 +370,7 @@ class ReapUserDataExportsTest : BaseTest() {
         // Given: pass 3 selects on the column, so a row that never named bytes leaves it nothing to do
         stubSweep()
         stubRowWrites()
-        val export = anExport(UserDataExportState.READY, storageKey = null)
+        val export = anExport(UserDataExportState.READY)
 
         // When
         val counts = reaper.reap()
@@ -408,7 +405,7 @@ class ReapUserDataExportsTest : BaseTest() {
 
         racedStates.forEach { state ->
             rows.clear()
-            val raced = anExport(UserDataExportState.READY, storageKey = null)
+            val raced = anExport(UserDataExportState.READY)
             stubRacedRow(raced, state)
 
             // When
@@ -427,8 +424,8 @@ class ReapUserDataExportsTest : BaseTest() {
         // Given: a fully refused sweep and a fully successful one would otherwise return the same number
         stubSweep()
         stubRowWrites()
-        val raced = anExport(UserDataExportState.READY, storageKey = null)
-        val swept = anExport(UserDataExportState.READY, storageKey = null)
+        val raced = anExport(UserDataExportState.READY)
+        val swept = anExport(UserDataExportState.READY)
         stubRacedRow(raced, UserDataExportState.DELETED)
 
         // When
@@ -445,8 +442,8 @@ class ReapUserDataExportsTest : BaseTest() {
         // Given: item-level isolation, as ReapUserDataImports has for the same reason
         stubSweep()
         stubRowWrites()
-        val refused = anExport(UserDataExportState.READY, storageKey = null)
-        val swept = anExport(UserDataExportState.READY, storageKey = null)
+        val refused = anExport(UserDataExportState.READY)
+        val swept = anExport(UserDataExportState.READY)
         every { repository.save(match { it.id == refused.id }) } throws RuntimeException("db down")
 
         // When
@@ -476,24 +473,7 @@ class ReapUserDataExportsTest : BaseTest() {
         assertEquals(ExportSweepCounts(failed = 0, expired = 0, reclaimed = 1), first)
         assertEquals(ExportSweepCounts(failed = 0, expired = 0, reclaimed = 0), second)
         assertEquals(listOf(keyOf(superseded.id)), deletedArchives)
-        assertNull(stored(superseded.id).storageKey)
-    }
-
-    @Test
-    fun `Given a terminal export whose column names another key, Then only the derived key goes`() {
-        // Given: the column says bytes may remain and nothing more, so its value is never a key
-        stubSweep()
-        stubRowWrites()
-        stubArchiveDeletion()
-        val divergent = anExport(UserDataExportState.SUPERSEDED, storageKey = DIVERGENT_KEY)
-
-        // When
-        val counts = reaper.reap()
-
-        // Then
-        assertEquals(ExportSweepCounts(failed = 0, expired = 0, reclaimed = 1), counts)
-        assertEquals(listOf(keyOf(divergent.id)), deletedArchives)
-        assertNull(stored(divergent.id).storageKey)
+        assertFalse(stored(superseded.id).archiveHeld)
     }
 
     @Test
@@ -512,8 +492,8 @@ class ReapUserDataExportsTest : BaseTest() {
         // Then
         assertEquals(ExportSweepCounts(failed = 0, expired = 0, reclaimed = 1), counts)
         assertEquals(listOf(keyOf(swept.id)), deletedArchives)
-        assertEquals(keyOf(refused.id), stored(refused.id).storageKey)
-        assertNull(stored(swept.id).storageKey)
+        assertTrue(stored(refused.id).archiveHeld)
+        assertFalse(stored(swept.id).archiveHeld)
     }
 
     @Test
@@ -529,7 +509,7 @@ class ReapUserDataExportsTest : BaseTest() {
 
         // Then: not counted either, so the next run retries it rather than reporting it done
         assertEquals(ExportSweepCounts(failed = 0, expired = 0, reclaimed = 0), counts)
-        assertEquals(keyOf(stuck.id), stored(stuck.id).storageKey)
+        assertTrue(stored(stuck.id).archiveHeld)
         verify(exactly = 0) { repository.save(any()) }
     }
 
@@ -552,7 +532,7 @@ class ReapUserDataExportsTest : BaseTest() {
     }
 
     @Test
-    fun `Given a terminal export read as pending at the stamp, Then its key is kept`() {
+    fun `Given a terminal export read as pending at the stamp, Then its archive stays held`() {
         // Given: nothing moves a terminal row back today, and the fence is what keeps the stamp from
         // depending on that. Refused, it must leave the column naming the bytes it just tried to free.
         stubSweep()
@@ -565,7 +545,7 @@ class ReapUserDataExportsTest : BaseTest() {
 
         // Then
         assertEquals(ExportSweepCounts(failed = 0, expired = 0, reclaimed = 0), counts)
-        assertEquals(keyOf(raced.id), stored(raced.id).storageKey)
+        assertTrue(stored(raced.id).archiveHeld)
         verify(exactly = 0) { repository.save(any()) }
     }
 
@@ -578,7 +558,7 @@ class ReapUserDataExportsTest : BaseTest() {
         stubRowWrites()
         stubArchiveDeletion()
         val interrupted = anExport(UserDataExportState.PENDING, taskId = null)
-        val expiring = anExport(UserDataExportState.READY, storageKey = null)
+        val expiring = anExport(UserDataExportState.READY)
         val reclaimable = exportNamingItsBytes(UserDataExportState.FAILED)
 
         // When
@@ -588,7 +568,7 @@ class ReapUserDataExportsTest : BaseTest() {
         assertEquals(ExportSweepCounts(failed = 1, expired = 1, reclaimed = 1), counts)
         assertEquals(UserDataExportState.FAILED, stored(interrupted.id).state)
         assertEquals(UserDataExportState.EXPIRED, stored(expiring.id).state)
-        assertNull(stored(reclaimable.id).storageKey)
+        assertFalse(stored(reclaimable.id).archiveHeld)
     }
 
     @Test
@@ -606,8 +586,8 @@ class ReapUserDataExportsTest : BaseTest() {
 
         // Then: the page after the refused row's reaches the row beyond it, and the run ends on an empty one
         assertEquals(SWEEP_BATCH_SIZE, counts.reclaimed)
-        exports.filter { it.id != refused.id }.forEach { assertNull(stored(it.id).storageKey) }
-        assertEquals(keyOf(refused.id), stored(refused.id).storageKey)
+        exports.filter { it.id != refused.id }.forEach { assertFalse(stored(it.id).archiveHeld) }
+        assertTrue(stored(refused.id).archiveHeld)
         assertEquals(3, reclaimPages)
     }
 
@@ -660,8 +640,5 @@ class ReapUserDataExportsTest : BaseTest() {
         private val STAGED_FILE_MAX_AGE: Duration = Duration.ofHours(2)
         private const val SWEEP_BATCH_SIZE = 500
         private val FORMAT = ArchiveFormat("application/zip", "zip")
-
-        /** A column naming bytes the derivation does not, which is what makes the double delete two. */
-        private const val DIVERGENT_KEY = "exports/divergent.txt"
     }
 }

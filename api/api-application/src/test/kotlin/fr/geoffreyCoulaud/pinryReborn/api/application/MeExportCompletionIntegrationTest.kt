@@ -411,7 +411,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given a superseded export whose archive delete failed, Then the next sweep takes its bytes and its key`() {
+    fun `Given a superseded export whose archive delete failed, Then the next sweep takes its bytes and its hold`() {
         // Given: the requester deletes a superseded archive best-effort, after its transaction
         // (`UserDataExportRequester.kt:53`). This module has no fault injection, so the bytes are
         // written back to stand for the delete that did not happen.
@@ -428,16 +428,16 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         Files.write(archivePath, archiveBytes)
         val superseded = requireNotNull(userDataExportRepository.findById(supersededId))
         assertEquals(UserDataExportState.SUPERSEDED, superseded.state)
-        assertNotNull(superseded.storageKey, "a superseded row keeps the key that names its residue")
+        assertTrue(superseded.archiveHeld, "a superseded row keeps holding its residue")
 
         // When
         reapUserDataExports.reap()
 
         // Then
         assertFalse(Files.exists(archivePath), "the residue should leave the disk")
-        assertNull(
-            requireNotNull(userDataExportRepository.findById(supersededId)).storageKey,
-            "the row should stop naming bytes the sweep has taken",
+        assertFalse(
+            requireNotNull(userDataExportRepository.findById(supersededId)).archiveHeld,
+            "the row should stop holding bytes the sweep has taken",
         )
     }
 
@@ -541,10 +541,9 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
         assertEquals(PUBLISH_REFUSAL, refused.message)
         val pending = requireNotNull(userDataExportRepository.findById(exportId))
         assertEquals(UserDataExportState.PENDING, pending.state, "the READY write should not outlive its transaction")
-        assertEquals(
-            "exports/$exportId.zip",
-            pending.storageKey,
-            "the key is stamped before the staging, so the row already names what the promote left",
+        assertTrue(
+            pending.archiveHeld,
+            "the archive is held before the staging, so the row already marks what the promote left",
         )
         assertTrue(Files.exists(archivePath), "the promote runs inside the transaction, and ahead of the write")
 
@@ -585,9 +584,8 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
     /** A row already past its expiry, so one sweep expires it and then reclaims whatever it names. */
     private fun seedExpiredReadyExport(auth: IntegrationTest.AuthenticatedUser, withBytes: Boolean) {
         val exportId = UUID.randomUUID()
-        val storageKey = "exports/$exportId.zip".takeIf { withBytes }
-        storageKey?.let {
-            val path = Path.of(exportsConfig.dataDir()).resolve(it)
+        if (withBytes) {
+            val path = Path.of(exportsConfig.dataDir()).resolve("exports/$exportId.zip")
             Files.createDirectories(path.parent)
             Files.write(path, "an archive past its retention".toByteArray())
         }
@@ -600,7 +598,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
                 requestedAt = Instant.now().minus(Duration.ofDays(8)),
                 completedAt = Instant.now().minus(Duration.ofDays(8)),
                 expiresAt = Instant.now().minus(Duration.ofDays(1)),
-                storageKey = storageKey,
+                archiveHeld = withBytes,
             )
         )
     }
@@ -675,7 +673,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
                 requestedAt = Instant.now(),
                 completedAt = Instant.now(),
                 expiresAt = Instant.now().plus(Duration.ofDays(1)),
-                storageKey = storageKey,
+                archiveHeld = true,
                 byteSize = content.size.toLong(),
                 sha256 = sha256,
                 mediaType = "text/plain",

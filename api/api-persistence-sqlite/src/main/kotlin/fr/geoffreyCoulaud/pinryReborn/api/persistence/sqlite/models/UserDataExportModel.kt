@@ -34,7 +34,7 @@ class UserDataExportModel(
     var taskId: UUID? = null,
     var completedAt: Instant? = null,
     var expiresAt: Instant? = null,
-    var storageKey: String? = null,
+    var archiveHeld: Boolean = false,
     var byteSize: Long? = null,
     var sha256: String? = null,
     var mediaType: String? = null,

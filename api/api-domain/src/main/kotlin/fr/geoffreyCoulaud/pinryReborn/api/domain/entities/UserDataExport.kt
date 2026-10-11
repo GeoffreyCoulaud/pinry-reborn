@@ -14,7 +14,7 @@ data class UserDataExport(
     val taskId: UUID? = null,
     val completedAt: Instant? = null,
     val expiresAt: Instant? = null,
-    val storageKey: String? = null,
+    val archiveHeld: Boolean = false,
     val byteSize: Long? = null,
     val sha256: String? = null,
     val mediaType: String? = null,

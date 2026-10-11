@@ -123,7 +123,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
                     .copy(
                         state = UserDataExportState.READY,
                         expiresAt = Instant.parse("2026-07-22T00:00:00Z"),
-                        storageKey = "archive.zip",
+                        archiveHeld = true,
                     )
             )
         userRepository.markPendingDeletion(user, storableNow())
@@ -300,8 +300,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         id: UUID = randomUUID(),
     ): UserDataExport {
         val export = pendingExport(createAndSaveUser().id, requestedAt, id)
-        val storageKey = if (archived) "exports/${export.id}.zip" else null
-        return repository.save(export.copy(state = state, storageKey = storageKey))
+        return repository.save(export.copy(state = state, archiveHeld = archived))
     }
 
     @Test

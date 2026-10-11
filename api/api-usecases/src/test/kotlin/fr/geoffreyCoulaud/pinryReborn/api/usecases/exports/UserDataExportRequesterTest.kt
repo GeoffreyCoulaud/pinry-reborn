@@ -41,8 +41,6 @@ class UserDataExportRequesterTest : BaseTest() {
     private val now = Instant.parse("2026-07-22T10:00:00Z")
     private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
     private val factor = "good-password"
-    /** Deliberately not what the derivation produces: a release of the column's key fails its case. */
-    private val oldKey = "exports/old.tgz"
     private val requester =
         UserDataExportRequester(
             repository,
@@ -73,14 +71,14 @@ class UserDataExportRequesterTest : BaseTest() {
             requestedAt = requestedAt,
         )
 
-    private fun readyExport(storageKey: String?) =
+    private fun readyExport() =
         UserDataExport(
             id = randomUUID(),
             userId = user.id,
             state = UserDataExportState.READY,
             formatVersion = 1,
             requestedAt = now.minus(Duration.ofDays(2)),
-            storageKey = storageKey,
+            archiveHeld = true,
         )
 
     private fun aTask() =
@@ -233,15 +231,15 @@ class UserDataExportRequesterTest : BaseTest() {
     }
 
     @Test
-    fun `Given a ready export, Then it is superseded, still names its bytes, and they are deleted after`() {
-        // Given: the row keeps the key, so a delete that fails leaves the residue named by the only
-        // column the sweep can select on (spec section 4.4). Nulling it hid the bytes from every pass.
+    fun `Given a ready export, Then it is superseded, still holds its bytes, and they are deleted after`() {
+        // Given: the row keeps its archive held, so a delete that fails leaves the residue marked by the
+        // only column the sweep can select on (spec section 4.4). Clearing it hid the bytes from every pass.
         stubTransactionPassthrough()
         every { reauthenticator.reauthenticate(user, factor) } just runs
         every { clock.now() } returns now
         every { repository.findPendingForUser(user.id) } returns null
         every { repository.findLastRequestedAtForUser(user.id) } returns null
-        val ready = readyExport(storageKey = oldKey)
+        val ready = readyExport()
         every { repository.findReadyForUser(user.id) } returns ready
         every { repository.save(any()) } answers { firstArg() }
         stubEnqueue()
@@ -251,11 +249,9 @@ class UserDataExportRequesterTest : BaseTest() {
         // When
         requester.request(user, factor)
 
-        // Then: the bytes go under the derived key, never the column's
+        // Then
         verify {
-            repository.save(
-                match { it.id == ready.id && it.state == UserDataExportState.SUPERSEDED && it.storageKey == oldKey }
-            )
+            repository.save(match { it.id == ready.id && it.state == UserDataExportState.SUPERSEDED && it.archiveHeld })
         }
         verify { archiveStore.delete(keyOf(ready)) }
     }
@@ -309,7 +305,7 @@ class UserDataExportRequesterTest : BaseTest() {
         every { clock.now() } returns now
         every { repository.findPendingForUser(user.id) } returns null
         every { repository.findLastRequestedAtForUser(user.id) } returns null
-        val ready = readyExport(storageKey = oldKey)
+        val ready = readyExport()
         every { repository.findReadyForUser(user.id) } returns ready
         every { repository.save(any()) } answers { firstArg() }
         stubEnqueue()

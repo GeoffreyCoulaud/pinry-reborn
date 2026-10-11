@@ -555,9 +555,9 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
     }
 
     @Test
-    fun `Given a build that stamped its key before it failed, Then the FAILED row still names those bytes`() {
-        // Given: the row read at the build's entry names no key, and the stamp writes one after it, so
-        // a failure marked from that first copy would erase the only name the residue has.
+    fun `Given a build that held its archive before it failed, Then the FAILED row still holds those bytes`() {
+        // Given: the row read at the build's entry holds no archive, and the stamp holds it after, so
+        // a failure marked from that first copy would erase the only mark the residue has.
         stubBuildToStaging()
         stubFailingStage()
 
@@ -565,7 +565,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         assertThrows(IllegalStateException::class.java) {
             builder.build(exportId, isLastAttempt = true, renewLease = {})
         }
-        assertEquals(storageKey, stored()?.storageKey)
+        assertEquals(true, stored()?.archiveHeld)
     }
 
     @Test

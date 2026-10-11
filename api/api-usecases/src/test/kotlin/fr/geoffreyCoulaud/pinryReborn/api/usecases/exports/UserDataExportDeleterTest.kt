@@ -46,8 +46,6 @@ class UserDataExportDeleterTest : BaseTest() {
     private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
     private val exportId = randomUUID()
     private val now = Instant.parse("2026-07-22T10:00:00Z")
-    /** Deliberately not what the derivation produces: an arm releasing the column's key fails its case. */
-    private val storageKey = "exports/$exportId.tgz"
 
     /** The key a build derives, and the one every arm releases. */
     private val derivedKey = ExportArchiveKey.forExport(exportId, FORMAT.fileExtension)
@@ -58,7 +56,7 @@ class UserDataExportDeleterTest : BaseTest() {
     private fun exportWith(
         state: UserDataExportState,
         taskId: UUID? = null,
-        storageKey: String? = null,
+        archiveHeld: Boolean = false,
     ) =
         UserDataExport(
             id = exportId,
@@ -67,7 +65,7 @@ class UserDataExportDeleterTest : BaseTest() {
             formatVersion = 1,
             requestedAt = now,
             taskId = taskId,
-            storageKey = storageKey,
+            archiveHeld = archiveHeld,
         )
 
     private fun stored(): UserDataExport? = rows[exportId]
@@ -193,7 +191,7 @@ class UserDataExportDeleterTest : BaseTest() {
     @Test
     fun `Given a ready export, Then deleting it removes the bytes and marks it DELETED`() {
         // Given
-        stubRow(exportWith(state = UserDataExportState.READY, storageKey = storageKey))
+        stubRow(exportWith(state = UserDataExportState.READY, archiveHeld = true))
         stubRowWrites()
         stubArchiveFormat()
         every { archiveStore.delete(derivedKey) } just runs
@@ -210,7 +208,7 @@ class UserDataExportDeleterTest : BaseTest() {
     fun `Given a store that refuses a ready export's bytes, Then the failure reaches the caller`() {
         // Given: this delete IS the user's DELETE, not a side-effect cleanup, so it keeps propagating
         // while the two residue paths around it do not
-        stubRow(exportWith(state = UserDataExportState.READY, storageKey = storageKey))
+        stubRow(exportWith(state = UserDataExportState.READY, archiveHeld = true))
         stubRowWrites()
         stubArchiveFormat()
         every { archiveStore.delete(derivedKey) } throws IOException("permission denied")
@@ -255,10 +253,10 @@ class UserDataExportDeleterTest : BaseTest() {
     }
 
     @Test
-    fun `Given a superseded export naming a key, Then deleting it releases those bytes`() {
-        // Given: a supersede keeps its key since the export build completion lot, so this is the first
+    fun `Given a superseded export holding its archive, Then deleting it releases those bytes`() {
+        // Given: a supersede keeps its archive held since the export build completion lot, so this is the first
         // gone state that reaches the stranded release with something to release
-        stubRow(exportWith(state = UserDataExportState.SUPERSEDED, storageKey = storageKey))
+        stubRow(exportWith(state = UserDataExportState.SUPERSEDED, archiveHeld = true))
         stubArchiveFormat()
         every { archiveStore.delete(derivedKey) } just runs
 
@@ -275,7 +273,7 @@ class UserDataExportDeleterTest : BaseTest() {
     fun `Given a store that refuses a superseded export's bytes, Then the deletion still succeeds`() {
         // Given: the row is already gone to its owner, so this release repairs residue rather than
         // performing the request, and a disk that refuses must not turn a 204 into a 500
-        stubRow(exportWith(state = UserDataExportState.SUPERSEDED, storageKey = storageKey))
+        stubRow(exportWith(state = UserDataExportState.SUPERSEDED, archiveHeld = true))
         stubArchiveFormat()
         every { archiveStore.delete(derivedKey) } throws IOException("permission denied")
 
@@ -289,7 +287,7 @@ class UserDataExportDeleterTest : BaseTest() {
         // Given: the state moves before the bytes, so a disk failure answered the first DELETE with a
         // 500 over a row already DELETED. Nothing else reclaims those bytes: ReapOrphanedStorage keys
         // on row absence, and the row is still there naming them.
-        stubRow(exportWith(state = UserDataExportState.DELETED, storageKey = storageKey))
+        stubRow(exportWith(state = UserDataExportState.DELETED, archiveHeld = true))
         stubArchiveFormat()
         every { archiveStore.delete(derivedKey) } just runs
 
@@ -307,7 +305,7 @@ class UserDataExportDeleterTest : BaseTest() {
         // Given: the build publishes between the owner check and the fence, so the state the request
         // read is one state old and the bytes it has to release did not exist when it started.
         val read = exportWith(state = UserDataExportState.PENDING, taskId = randomUUID())
-        stubRacedRow(read, read.copy(state = UserDataExportState.READY, storageKey = storageKey))
+        stubRacedRow(read, read.copy(state = UserDataExportState.READY, archiveHeld = true))
         stubRowWrites()
         stubArchiveFormat()
         every { archiveStore.delete(derivedKey) } just runs
@@ -325,7 +323,7 @@ class UserDataExportDeleterTest : BaseTest() {
     fun `Given a ready export expired while the request ran, Then nothing is written over it`() {
         // Given: the retention sweep takes the row in that window. The bytes are already gone, so a
         // deletion written over it would only lose the reason they went.
-        val read = exportWith(state = UserDataExportState.READY, storageKey = storageKey)
+        val read = exportWith(state = UserDataExportState.READY, archiveHeld = true)
         stubRacedRow(read, read.copy(state = UserDataExportState.EXPIRED))
 
         // When
@@ -341,7 +339,7 @@ class UserDataExportDeleterTest : BaseTest() {
     fun `Given an export erased while the request ran, Then nothing is released`() {
         // Given: the account deletion cleaner drops the row in that window, and merge is an upsert,
         // so a fence testing the copy read first would write the row back into existence.
-        val read = exportWith(state = UserDataExportState.READY, storageKey = storageKey)
+        val read = exportWith(state = UserDataExportState.READY, archiveHeld = true)
         stubRacedRow(read, null)
 
         // When
@@ -354,12 +352,12 @@ class UserDataExportDeleterTest : BaseTest() {
     }
 
     @Test
-    fun `Given a build that stamped its key while the request ran, Then the deleted row still names those bytes`() {
-        // Given: the build stamps the key it promotes onto in that same window, and writing the copy
-        // read first would erase the only name the bytes it leaves behind have.
+    fun `Given a build that held its archive while the request ran, Then the deleted row still holds it`() {
+        // Given: the build holds the archive it promotes in that same window, and writing the copy
+        // read first would erase the only mark the bytes it leaves behind have.
         val taskId = randomUUID()
         val read = exportWith(state = UserDataExportState.PENDING, taskId = taskId)
-        stubRacedRow(read, read.copy(storageKey = storageKey))
+        stubRacedRow(read, read.copy(archiveHeld = true))
         stubRowWrites()
         stubArchiveFormat()
         every { cancelTask.cancel(taskId) } returns true
@@ -370,7 +368,7 @@ class UserDataExportDeleterTest : BaseTest() {
 
         // Then
         assertEquals(UserDataExportState.DELETED, stored()?.state)
-        assertEquals(storageKey, stored()?.storageKey)
+        assertEquals(true, stored()?.archiveHeld)
     }
 
     private companion object {

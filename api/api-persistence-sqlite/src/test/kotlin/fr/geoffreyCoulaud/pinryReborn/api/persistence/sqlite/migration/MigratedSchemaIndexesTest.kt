@@ -148,9 +148,10 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         // Ebean's own table, whose names are Ebean's.
         private const val MIGRATION_TABLE = "db_migration"
         private val LEGACY_NAME_PARTS = listOf("_model", "when_")
-        // Two derived from other columns, and two errors no reader ever had (ADR 0058, decision 10).
+        // Derived from other values, and errors no reader ever had (ADR 0058, decision 10).
         private val UNREAD_COLUMNS =
             listOf(
+                "user_data_exports.storage_key",
                 "user_data_imports.processed_pins",
                 "media.animated",
                 "media_downloads.last_error",

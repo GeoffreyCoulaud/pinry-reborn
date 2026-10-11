@@ -131,8 +131,8 @@ class UserDataExportRepository(private val persistor: Persistor) : UserDataExpor
         QUserDataExportModel()
             .state
             .isIn(TerminalExportStates.all)
-            .storageKey
-            .isNotNull()
+            .archiveHeld
+            .isTrue()
             .pageByIdAfter(afterId, limit)
             .findList()
             .map { it.toDomain() }
