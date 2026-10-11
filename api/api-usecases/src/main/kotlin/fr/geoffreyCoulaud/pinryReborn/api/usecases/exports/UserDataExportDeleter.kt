@@ -73,7 +73,7 @@ class UserDataExportDeleter(
      */
     private fun releaseStranded(found: UserDataExport) {
         if (!found.state.isGone) return
-        if (found.storageKey == null) return
+        if (!found.archiveHeld) return
         archiveStore.deleteQuietly(derivedKey(found.id))
     }
 

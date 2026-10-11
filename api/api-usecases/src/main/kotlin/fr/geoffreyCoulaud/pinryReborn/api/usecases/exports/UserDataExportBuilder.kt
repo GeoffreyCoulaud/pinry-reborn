@@ -77,10 +77,10 @@ class UserDataExportBuilder(
         val user = requireUser(export)
         requireFreeSpace(export)
         val storageKey = ExportArchiveKey.forExport(exportId, archiveStore.format.fileExtension)
-        // Referenced BEFORE it exists: the purge and the account cleaner both derive this same key
+        // Held BEFORE it exists: the purge and the account cleaner both derive this same key
         // from the export id (spec §10), so a build that dies right after promote() is still
         // reclaimable even if this row never gets a further write.
-        val stamped = stampStorageKey(exportId, storageKey) ?: return
+        val stamped = holdArchive(exportId) ?: return
         val staged = stageOrFail(stamped, user, isLastAttempt, renewLease)
         completeOrFail(exportId, storageKey, staged, isLastAttempt)
     }
@@ -133,10 +133,8 @@ class UserDataExportBuilder(
     }
 
     /** The row this write left, not the copy read before it: what the staging reads is what it wrote. */
-    private fun stampStorageKey(exportId: UUID, storageKey: String): UserDataExport? =
-        exportRepository.saveFenced(transactionRunner, exportId, ::stillPending) {
-            it.copy(storageKey = storageKey)
-        }
+    private fun holdArchive(exportId: UUID): UserDataExport? =
+        exportRepository.saveFenced(transactionRunner, exportId, ::stillPending) { it.copy(archiveHeld = true) }
 
     /** Refused when the row moved on: the caller rethrows its own failure and this writes nothing. */
     private fun markFailed(exportId: UUID, failureCode: UserDataExportFailure) {

@@ -121,7 +121,7 @@ class ReapUserDataExports(
     private fun reclaim(export: UserDataExport): Boolean {
         archiveStore.delete(ExportArchiveKey.forExport(export.id, archiveStore.format.fileExtension))
         return repository.saveFenced(transactionRunner, export.id, { it.state.isTerminal }) {
-            it.copy(storageKey = null)
+            it.copy(archiveHeld = false)
         } != null
     }
 

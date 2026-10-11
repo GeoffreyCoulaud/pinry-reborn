@@ -27,7 +27,7 @@ internal class UserDataExportCompletionTest : UserDataExportFakeStoreFixtures() 
         // Then
         val published = requireNotNull(stored())
         assertEquals(UserDataExportState.READY, published.state)
-        assertEquals(storageKey, published.storageKey)
+        assertTrue(published.archiveHeld)
         assertEquals(stagedByteSize, published.byteSize)
         assertEquals(stagedHash, published.sha256)
         assertEquals("application/zip", published.mediaType)

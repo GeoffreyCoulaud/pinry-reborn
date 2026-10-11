@@ -129,7 +129,7 @@
             <column name="task_id" type="uuid"/>
             <column name="completed_at" type="timestamp"/>
             <column name="expires_at" type="timestamp"/>
-            <column name="storage_key" type="varchar"/>
+            <column name="archive_held" type="boolean" defaultValue="false" notnull="true"/>
             <column name="byte_size" type="bigint"/>
             <column name="sha256" type="varchar"/>
             <column name="media_type" type="varchar"/>

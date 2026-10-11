@@ -173,7 +173,7 @@ create table user_data_exports (
   task_id                       uuid,
   completed_at                  timestamp,
   expires_at                    timestamp,
-  storage_key                   text,
+  archive_held                  int default 0 not null,
   byte_size                     integer,
   sha256                        text,
   media_type                    text,

@@ -47,7 +47,7 @@ class UserDataExportRequester(
         // Outside the transaction on purpose: deleting inside means a later rollback leaves a READY
         // row pointing at bytes that no longer exist, which serves a 500 instead of a clean error.
         // Best-effort: the transaction has committed, so a disk failure here must not 500 a request
-        // that already succeeded; the superseded row still names those bytes, and the sweep reclaims them.
+        // that already succeeded; the superseded row still holds those bytes, and the sweep reclaims them.
         supersededKey?.let { archiveStore.deleteQuietly(it) }
         return export
     }
@@ -62,8 +62,8 @@ class UserDataExportRequester(
             throw ExportTooSoonError(ThrottledError.wholeSecondsBetween(earliest, last))
         }
         val ready = repository.findReadyForUser(user.id)
-        // The key stays: a delete that fails leaves the residue named by the only column pass 3 of
-        // the sweep can select on. Nulling it hid the bytes from every sweep (spec section 2.4).
+        // The archive stays held: a delete that fails leaves the residue marked by the only column pass 3
+        // of the sweep can select on. Clearing it hid the bytes from every sweep (spec section 2.4).
         ready?.let { repository.save(it.copy(state = UserDataExportState.SUPERSEDED)) }
         val export = savePending(user, now)
         val task =
