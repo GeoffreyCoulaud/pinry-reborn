@@ -206,10 +206,9 @@ class PinRepositoryBulkWriteTest : PinRepositoryFixtures() {
     private companion object {
         val TRANSACTION_PREFIX = Regex("""^txn\[[^]]*]\s*""")
 
-        /** `updatedAt` maps to the legacy `when_modified` column. */
-        const val PIN_UPDATE = "update pins set when_modified=? where id=?"
+        const val PIN_UPDATE = "update pins set updated_at=? where id=?"
 
-        const val RECYCLE_UPDATE = "update pins set when_modified=?, soft_deleted_at=? where id=?"
+        const val RECYCLE_UPDATE = "update pins set updated_at=?, soft_deleted_at=? where id=?"
 
         const val JOIN_INSERT = "insert into pin_boards (pin_id, board_id) values (?,?)"
     }

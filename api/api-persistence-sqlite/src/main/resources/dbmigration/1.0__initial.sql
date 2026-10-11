@@ -2,10 +2,10 @@
 create table boards (
   id                            uuid not null,
   author_id                     uuid not null,
-  when_created                  timestamp not null,
+  created_at                    timestamp not null,
   name                          text not null,
   description                   text not null,
-  when_modified                 timestamp not null,
+  updated_at                    timestamp not null,
   soft_deleted_at               timestamp,
   constraint pk_boards primary key (id),
   foreign key (author_id) references users (id) on delete restrict on update restrict
@@ -60,7 +60,7 @@ create table media (
 create table persons (
   id                            uuid not null,
   author_id                     uuid not null,
-  when_created                  timestamp not null,
+  created_at                    timestamp not null,
   name                          text not null,
   urls                          text not null,
   constraint pk_persons primary key (id),
@@ -92,11 +92,11 @@ create table pin_duplicates (
 create table pins (
   id                            uuid not null,
   author_id                     uuid not null,
-  when_created                  timestamp not null,
+  created_at                    timestamp not null,
   source_context_url            text,
   source_media_url              text,
   description                   text not null,
-  when_modified                 timestamp not null,
+  updated_at                    timestamp not null,
   soft_deleted_at               timestamp,
   publisher_id                  uuid,
   published_at                  timestamp,
@@ -115,7 +115,7 @@ create table pin_tags (
 create table remote_collections (
   id                            uuid not null,
   author_id                     uuid not null,
-  when_created                  timestamp not null,
+  created_at                    timestamp not null,
   url                           text not null,
   name                          text not null,
   board_id                      uuid not null,
@@ -130,7 +130,7 @@ create table session_tokens (
   token_hash                    text not null,
   expires_at                    timestamp not null,
   persistent                    int default 0 not null,
-  when_created                  timestamp not null,
+  created_at                    timestamp not null,
   constraint uq_session_tokens_token_hash unique (token_hash),
   constraint pk_session_tokens primary key (id),
   foreign key (user_id) references users (id) on delete restrict on update restrict
@@ -139,7 +139,7 @@ create table session_tokens (
 create table tags (
   id                            uuid not null,
   author_id                     uuid not null,
-  when_created                  timestamp not null,
+  created_at                    timestamp not null,
   name                          text not null,
   constraint pk_tags primary key (id),
   foreign key (author_id) references users (id) on delete restrict on update restrict
@@ -227,7 +227,7 @@ create table user_data_imports (
 create table users (
   id                            uuid not null,
   name                          text not null,
-  when_created                  timestamp not null,
+  created_at                    timestamp not null,
   soft_deleted_at               timestamp,
   constraint pk_users primary key (id)
 );
@@ -237,7 +237,7 @@ create table user_password_hashes (
   user_id                       uuid not null,
   hash                          text not null,
   algorithm                     text(6) not null,
-  when_created                  timestamp not null,
+  created_at                    timestamp not null,
   constraint ck_user_password_hashes_algorithm check ( algorithm in ('BCRYPT')),
   constraint pk_user_password_hashes primary key (id),
   foreign key (user_id) references users (id) on delete restrict on update restrict
@@ -285,4 +285,4 @@ create index ix_user_data_import_issues_import on user_data_import_issues (impor
 create unique index uq_user_data_imports_active on user_data_imports (user_id) where state in ('AWAITING_ARCHIVE','PENDING','RUNNING');
 create index ix_user_data_imports_user_state on user_data_imports (user_id,state);
 create unique index ix_users_name_nocase on users (name collate nocase);
-create unique index ix_user_password_hashes_user_created on user_password_hashes (user_id, when_created);
+create unique index ix_user_password_hashes_user_created on user_password_hashes (user_id, created_at);

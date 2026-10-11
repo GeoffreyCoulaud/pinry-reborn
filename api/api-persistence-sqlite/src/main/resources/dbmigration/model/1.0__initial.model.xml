@@ -4,10 +4,10 @@
         <createTable name="boards" identityType="external" pkName="pk_boards">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
             <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_boards_author_id" foreignKeyIndex="ix_boards_author_id"/>
-            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="created_at" type="timestamp" notnull="true"/>
             <column name="name" type="varchar" notnull="true"/>
             <column name="description" type="varchar" notnull="true"/>
-            <column name="when_modified" type="timestamp" notnull="true"/>
+            <column name="updated_at" type="timestamp" notnull="true"/>
             <column name="soft_deleted_at" type="timestamp"/>
         </createTable>
         <createTable name="media_downloads" identityType="external" pkName="pk_media_downloads">
@@ -50,7 +50,7 @@
         <createTable name="persons" identityType="external" pkName="pk_persons">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
             <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_persons_author_id" foreignKeyIndex="ix_persons_author_id"/>
-            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="created_at" type="timestamp" notnull="true"/>
             <column name="name" type="varchar" notnull="true"/>
             <column name="urls" type="varchar" notnull="true"/>
         </createTable>
@@ -71,11 +71,11 @@
         <createTable name="pins" identityType="external" pkName="pk_pins">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
             <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_pins_author_id" foreignKeyIndex="ix_pins_author_id"/>
-            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="created_at" type="timestamp" notnull="true"/>
             <column name="source_context_url" type="varchar"/>
             <column name="source_media_url" type="varchar"/>
             <column name="description" type="varchar" notnull="true"/>
-            <column name="when_modified" type="timestamp" notnull="true"/>
+            <column name="updated_at" type="timestamp" notnull="true"/>
             <column name="soft_deleted_at" type="timestamp"/>
             <column name="publisher_id" type="uuid" references="persons.id" foreignKeyName="fk_pins_publisher_id" foreignKeyOnDelete="RESTRICT" foreignKeyOnUpdate="RESTRICT"/>
             <column name="published_at" type="timestamp"/>
@@ -87,7 +87,7 @@
         <createTable name="remote_collections" identityType="external" pkName="pk_remote_collections">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
             <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_remote_collections_author_id" foreignKeyIndex="ix_remote_collections_author_id"/>
-            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="created_at" type="timestamp" notnull="true"/>
             <column name="url" type="varchar" notnull="true"/>
             <column name="name" type="varchar" notnull="true"/>
             <column name="board_id" type="uuid" notnull="true" references="boards.id" foreignKeyName="fk_remote_collections_board_id"/>
@@ -98,12 +98,12 @@
             <column name="token_hash" type="varchar" notnull="true" unique="uq_session_tokens_token_hash"/>
             <column name="expires_at" type="timestamp" notnull="true"/>
             <column name="persistent" type="boolean" defaultValue="false" notnull="true"/>
-            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="created_at" type="timestamp" notnull="true"/>
         </createTable>
         <createTable name="tags" identityType="external" pkName="pk_tags">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
             <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_tags_author_id" foreignKeyIndex="ix_tags_author_id"/>
-            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="created_at" type="timestamp" notnull="true"/>
             <column name="name" type="varchar" notnull="true"/>
         </createTable>
         <createTable name="tasks" identityType="external" pkName="pk_tasks">
@@ -177,7 +177,7 @@
         <createTable name="users" identityType="external" pkName="pk_users">
             <column name="id" type="uuid" primaryKey="true" identity="true"/>
             <column name="name" type="varchar" notnull="true"/>
-            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="created_at" type="timestamp" notnull="true"/>
             <column name="soft_deleted_at" type="timestamp"/>
         </createTable>
         <createTable name="user_password_hashes" identityType="external" pkName="pk_user_password_hashes">
@@ -185,7 +185,7 @@
             <column name="user_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_user_password_hashes_user_id" foreignKeyIndex="ix_user_password_hashes_user_id"/>
             <column name="hash" type="varchar" notnull="true"/>
             <column name="algorithm" type="varchar(6)" notnull="true" checkConstraint="check ( algorithm in ('BCRYPT'))" checkConstraintName="ck_user_password_hashes_algorithm"/>
-            <column name="when_created" type="timestamp" notnull="true"/>
+            <column name="created_at" type="timestamp" notnull="true"/>
         </createTable>
         <createIndex indexName="ix_boards_author_name_nocase" tableName="boards" columns="" definition="create unique index ix_boards_author_name_nocase on boards (author_id, name collate nocase)"/>
         <createIndex indexName="ux_media_downloads_pin" tableName="media_downloads" columns="" definition="create unique index ux_media_downloads_pin on media_downloads (pin_id)"/>
@@ -228,6 +228,6 @@
         <createIndex indexName="uq_user_data_imports_active" tableName="user_data_imports" columns="" definition="create unique index uq_user_data_imports_active on user_data_imports (user_id) where state in ('AWAITING_ARCHIVE','PENDING','RUNNING')"/>
         <createIndex indexName="ix_user_data_imports_user_state" tableName="user_data_imports" columns="user_id,state"/>
         <createIndex indexName="ix_users_name_nocase" tableName="users" columns="" definition="create unique index ix_users_name_nocase on users (name collate nocase)"/>
-        <createIndex indexName="ix_user_password_hashes_user_created" tableName="user_password_hashes" columns="" definition="create unique index ix_user_password_hashes_user_created on user_password_hashes (user_id, when_created)"/>
+        <createIndex indexName="ix_user_password_hashes_user_created" tableName="user_password_hashes" columns="" definition="create unique index ix_user_password_hashes_user_created on user_password_hashes (user_id, created_at)"/>
     </changeSet>
 </migration>

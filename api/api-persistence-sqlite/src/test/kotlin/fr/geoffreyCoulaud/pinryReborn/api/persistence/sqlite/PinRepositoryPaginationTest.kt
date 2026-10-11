@@ -81,7 +81,7 @@ class PinRepositoryPaginationTest : PinRepositoryFixtures() {
         // Given
         val user = createAndSaveUser()
         val expectedIds = (1..tiedPinCount).map { createAndSavePin(user).id }.toSet()
-        collapseAllPinInstants("when_created")
+        collapseAllPinInstants("created_at")
 
         // When
         val drain = drainActivePinsForward(user, PinSortStrategy.CREATED_AT_DESC)
@@ -96,7 +96,7 @@ class PinRepositoryPaginationTest : PinRepositoryFixtures() {
         // Given
         val user = createAndSaveUser()
         val expectedIds = (1..tiedPinCount).map { createAndSavePin(user).id }.toSet()
-        collapseAllPinInstants("when_created")
+        collapseAllPinInstants("created_at")
 
         // When
         val drain = drainActivePinsForward(user, PinSortStrategy.CREATED_AT_ASC)
@@ -111,7 +111,7 @@ class PinRepositoryPaginationTest : PinRepositoryFixtures() {
         // Given
         val user = createAndSaveUser()
         val expectedIds = (1..tiedPinCount).map { createAndSavePin(user).id }.toSet()
-        collapseAllPinInstants("when_created")
+        collapseAllPinInstants("created_at")
         val forward = drainActivePinsForward(user, PinSortStrategy.CREATED_AT_DESC)
 
         // When

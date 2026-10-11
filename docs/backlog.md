@@ -50,8 +50,7 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 
 ### P2: Operational debt
 
-- **`foreign_keys` is off, so every declared key is unenforced**, and the legacy `when_created`/`when_modified`
-  names stay. The second lot of `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.2,
+- **`foreign_keys` is off, so every declared key is unenforced**. The second lot of `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.2,
   flattens the history into one baseline with `ON DELETE CASCADE`, turns the pragma on, and takes the items its
   `inventory.md` tags [migration]. See also `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
 - **The domain names concepts with bare strings, and its types carry storage formats**: the types lot, after the

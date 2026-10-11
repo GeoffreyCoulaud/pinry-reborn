@@ -27,7 +27,7 @@ class UserPasswordHashRepository(persistor: Persistor) : UserPasswordHashReposit
         return try {
             sqlRepository.saveAndReturn(hashedPasswordModel).toDomain()
         } catch (error: PersistenceException) {
-            // Only a unique-constraint violation on (user_id, when_created) is a 409 collision.
+            // Only a unique-constraint violation on (user_id, created_at) is a 409 collision.
             SqliteConstraintViolations.translateUniqueConstraint(error) {
                 PasswordChangeCollisionException(cause = it)
             }
