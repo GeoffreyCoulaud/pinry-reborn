@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.worker
 
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapExpiredSessionTokens
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapFingerprints
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapOrphanedStorage
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapStaleMediaDownloads
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapTombstonedAccounts
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.RequestOutdatedFingerprintRefresh
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.ReapTerminalTasks
 import io.mockk.every
 import io.mockk.mockk
@@ -21,7 +21,7 @@ class GarbageCollectionLifecycleTest {
     private val reapTombstonedAccounts = mockk<ReapTombstonedAccounts>(relaxed = true)
     private val reapTerminalTasks = mockk<ReapTerminalTasks>(relaxed = true)
     private val reapStaleMediaDownloads = mockk<ReapStaleMediaDownloads>(relaxed = true)
-    private val reapFingerprints = mockk<ReapFingerprints>(relaxed = true)
+    private val requestOutdatedFingerprintRefresh = mockk<RequestOutdatedFingerprintRefresh>(relaxed = true)
     private val executor = mockk<PeriodicScheduler>(relaxed = true)
     private val config = mockk<GarbageCollectionConfig>()
 
@@ -32,7 +32,7 @@ class GarbageCollectionLifecycleTest {
             reapTombstonedAccounts = reapTombstonedAccounts,
             reapTerminalTasks = reapTerminalTasks,
             reapStaleMediaDownloads = reapStaleMediaDownloads,
-            reapFingerprints = reapFingerprints,
+            requestOutdatedFingerprintRefresh = requestOutdatedFingerprintRefresh,
             executor = executor,
             config = config,
         )
@@ -49,7 +49,7 @@ class GarbageCollectionLifecycleTest {
         verify(exactly = 1) { reapTombstonedAccounts.reap() }
         verify(exactly = 1) { reapTerminalTasks.reap() }
         verify(exactly = 1) { reapStaleMediaDownloads.reap() }
-        verify(exactly = 1) { reapFingerprints.reap() }
+        verify(exactly = 1) { requestOutdatedFingerprintRefresh.request() }
         // ... and safeAll is scheduled at the config interval (initial and fixed delay)
         verify { executor.scheduleWithFixedDelay(any(), 1000L, 1000L, TimeUnit.MILLISECONDS) }
     }
@@ -75,7 +75,7 @@ class GarbageCollectionLifecycleTest {
         verify(exactly = 1) { reapTombstonedAccounts.reap() }
         verify(exactly = 1) { reapTerminalTasks.reap() }
         verify(exactly = 1) { reapStaleMediaDownloads.reap() }
-        verify(exactly = 1) { reapFingerprints.reap() }
+        verify(exactly = 1) { requestOutdatedFingerprintRefresh.request() }
     }
 
     @Test
@@ -86,7 +86,7 @@ class GarbageCollectionLifecycleTest {
         every { reapTombstonedAccounts.reap() } throws RuntimeException("tomb boom")
         every { reapTerminalTasks.reap() } throws RuntimeException("tasks boom")
         every { reapStaleMediaDownloads.reap() } throws RuntimeException("downloads boom")
-        every { reapFingerprints.reap() } throws RuntimeException("fingerprints boom")
+        every { requestOutdatedFingerprintRefresh.request() } throws RuntimeException("fingerprints boom")
 
         // When / Then: no exception escapes (each throw is caught by its own catch arm and logged
         // at ERROR; the log itself is not asserted here, matching ExportRetentionLifecycleTest)
@@ -98,7 +98,7 @@ class GarbageCollectionLifecycleTest {
         verify(exactly = 1) { reapTombstonedAccounts.reap() }
         verify(exactly = 1) { reapTerminalTasks.reap() }
         verify(exactly = 1) { reapStaleMediaDownloads.reap() }
-        verify(exactly = 1) { reapFingerprints.reap() }
+        verify(exactly = 1) { requestOutdatedFingerprintRefresh.request() }
     }
 
     @Test

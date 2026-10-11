@@ -4,10 +4,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
 import jakarta.enterprise.context.ApplicationScoped
 
-/** Enqueues the drain, covering a lost enqueue (ADR 0051, decision 7); the database deletes orphans (ADR 0058). */
+/** Asks the fingerprint task to hash every outdated media, covering a lost enqueue (ADR 0051, decision 7). */
 @ApplicationScoped
-class ReapFingerprints(private val enqueueTask: EnqueueTask) {
-    fun reap() {
+class RequestOutdatedFingerprintRefresh(private val enqueueTask: EnqueueTask) {
+    fun request() {
         MediaFingerprintTask.enqueueOn(enqueueTask)
     }
 }

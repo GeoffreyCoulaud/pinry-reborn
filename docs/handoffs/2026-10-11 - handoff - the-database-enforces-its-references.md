@@ -28,7 +28,7 @@ the holistic review.
 - **The code deletes the row it targets, the database the rest.** Deleting an account deletes the user row; deleting
   a pin or a board deletes its row. The hand-written dependent deletions, both orphan sweeps and the repository
   methods that served them are gone; `SessionTokenRepositoryInterface.deleteAllForUser` stays for sign-out.
-  `DeletePinMedia` runs its two deletions in one transaction. `ReapFingerprints` only enqueues the drain.
+  `DeletePinMedia` runs its two deletions in one transaction. `RequestOutdatedFingerprintRefresh`, formerly `ReapFingerprints`, only enqueues the fingerprint task.
 - **A write whose parent may be gone checks it inside its transaction**: `SetPinMedia` re-reads the pin,
   `RequestPinMediaDownload` reads it there once, `FingerprintMedia` re-reads its media and the duplicates' media.
 - **A table is named after its model**, plural and snake case, `media` the one exception; `created_at` and
@@ -129,6 +129,11 @@ Discuss, 2026-10-10 and 2026-10-11, the letter of the question in brackets:
 After Discuss: block 40's three-way split, approved by the operator through the lead. The other splits and block 64's
 20 files were the lead's to approve.
 
+In the closing block, the holistic review's finding 8 (H): rename `ReapFingerprints`, rather than keep the name or
+delete the class, since `GarbageCollectionLifecycle` calls use cases alone. Named `RequestOutdatedFingerprintRefresh`
+after `RequestPinMediaDownload` (a request asks for work a task does later), "drain" having been found to be code
+jargon that also names the worker's shutdown.
+
 ## The holistic review
 
 `.reviews/the-database-enforces-its-references-holistic.md`, over
@@ -150,9 +155,9 @@ CRITICAL, 2 MAJOR, 8 MINOR. Each finding and its exit:
    failing on the former regular expressions.
 7. `MigratedSchemaIndexesTest`'s name: fixed in block 80, now `MigratedSchemaTest` with a one-line KDoc;
    `api/AGENTS.md` follows.
-8. `ReapFingerprints`' log line: fixed in block 80, "fingerprint drain enqueue failed". The class keeps its name: it
-   is one of `GarbageCollectionLifecycle`'s reapers and its KDoc says it only enqueues. A rename is the operator's call
-   (open question below).
+8. `ReapFingerprints` named a sweep it no longer runs: fixed in block 80, renamed
+   `RequestOutdatedFingerprintRefresh` with `request()` (answer H below), the lifecycle's log line "outdated
+   fingerprint refresh request failed".
 9. The export format constant carried no warning: fixed in block 80, a one-line comment.
 10. The re-read's place inside the transaction was not discriminated: fixed in block 80, `SetPinMediaTest` and
     `FingerprintMediaTest` see the parent gone only from inside it; moving each re-read out fails them.
@@ -173,8 +178,7 @@ threshold alone.
 
 ## Open question to the operator
 
-- `ReapFingerprints` only enqueues the fingerprint drain. Keep the name, or rename it (for example
-  `EnqueueFingerprintDrain`)? The lead recommends keeping it.
+None. The one this handoff asked, whether to rename `ReapFingerprints`, is answered (H, under Tier-2 questions).
 
 ## The lot's counts
 
