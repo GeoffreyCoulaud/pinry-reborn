@@ -81,7 +81,7 @@ class RequestPinMediaDownloadTest {
     }
 
     @Test
-    fun `Given a pin permanently deleted as the transaction opens, Then it throws MediaPinDoesNotExistError and writes nothing`() {
+    fun `Given a pin deleted as the transaction opens, Then it throws MediaPinDoesNotExistError and writes nothing`() {
         // Given: the pin is there until the transaction runs its block
         every { pins.findPinById(pinId) } returns pin()
         every { runner.inTransaction<MediaDownload>(any()) } answers
