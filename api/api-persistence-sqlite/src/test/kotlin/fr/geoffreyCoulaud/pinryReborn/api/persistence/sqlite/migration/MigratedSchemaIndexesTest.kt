@@ -113,6 +113,18 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
         assertEquals(emptyList<String>(), unindexed)
     }
 
+    @Test
+    fun `Given the migrated database, Then its CHECK constraints are exactly the declared ones`() {
+        // When: the baseline's are hand-written, which a regenerated baseline drops in silence
+        val checks =
+            database.sqlQuery("select sql from sqlite_master where type = 'table'").findList().flatMap { row ->
+                CHECK_CONSTRAINT.findAll(row.getString("sql")).map { it.groupValues[1] }
+            }
+
+        // Then
+        assertEquals(CHECK_CONSTRAINTS, checks.sorted())
+    }
+
     private fun modelTables(): List<String> =
         database
             .sqlQuery("select name from sqlite_master where type = 'table' order by name")
@@ -161,6 +173,17 @@ class MigratedSchemaIndexesTest : RepositoryTest() {
                 "tasks.last_error",
             )
         private val INLINE_CONSTRAINT = Regex("""constraint\s+(\w+)""", RegexOption.IGNORE_CASE)
+        private val CHECK_CONSTRAINT = Regex("""constraint\s+(\w+)\s+check\b""", RegexOption.IGNORE_CASE)
+
+        // Ebean generates the enumerated column's; the others hold what comments held (ADR 0058, decision 6).
+        private val CHECK_CONSTRAINTS =
+            listOf(
+                "ck_media_variant",
+                "ck_pin_duplicates_order",
+                "ck_tasks_terminal_state_at",
+                "ck_user_data_exports_ready",
+                "ck_user_password_hashes_algorithm",
+            )
 
         // Every key cascades but a pin's publisher, a credit removed with its person (ADR 0058, decisions 1 and 2).
         private val FOREIGN_KEYS =

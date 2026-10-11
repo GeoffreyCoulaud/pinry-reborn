@@ -7,7 +7,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanT
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.ebean.DB
 import io.ebean.Database
+import jakarta.persistence.PersistenceException
 import java.time.Instant
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a shared test base for concrete subclasses.
@@ -38,6 +41,15 @@ abstract class RepositoryTest {
      * reason; a nanosecond-precision instant would come back different and break equality on a re-read entity).
      */
     protected fun storableNow(): Instant = TestTime.now
+
+    /** Asserts the database refuses [write] under the CHECK constraint named [constraint]. */
+    protected fun assertRefusedByCheck(constraint: String, write: () -> Unit) {
+        val thrown = assertThrows(PersistenceException::class.java) { write() }
+        assertEquals(
+            "[SQLITE_CONSTRAINT_CHECK] A CHECK constraint failed (CHECK constraint failed: $constraint)",
+            thrown.cause?.message,
+        )
+    }
 
     /**
      * Truncate all non-internal tables in the database.

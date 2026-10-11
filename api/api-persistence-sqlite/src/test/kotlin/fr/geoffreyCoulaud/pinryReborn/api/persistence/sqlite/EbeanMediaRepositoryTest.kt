@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.MediaModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
@@ -245,6 +246,25 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
 
         // Then
         assertTrue(found.isEmpty())
+    }
+
+    @Test
+    fun `Given media rows whose columns contradict their variant, Then the database refuses each`() {
+        // Given: a video without its bit rate, an image with a duration, an image with sound, half a sound
+        val pinId = savedPin().id
+        val contradictions =
+            listOf(
+                videoFor(pinId).toModel().apply { videoBitRate = null },
+                mediaFor(pinId).toModel().apply { durationMillis = 1_000 },
+                mediaFor(pinId).toModel().apply {
+                    audioChannels = 2
+                    audioBitRate = 1_000
+                },
+                videoFor(pinId).toModel().apply { audioBitRate = null },
+            )
+
+        // When, Then
+        contradictions.forEach { row -> assertRefusedByCheck("ck_media_variant") { persistor.save(row) } }
     }
 
     private companion object {

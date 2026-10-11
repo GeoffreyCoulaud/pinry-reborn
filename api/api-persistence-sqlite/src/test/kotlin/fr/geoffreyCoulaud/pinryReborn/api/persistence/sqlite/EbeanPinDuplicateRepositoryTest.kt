@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActivePins
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanPinDuplicateRepository
@@ -162,5 +163,24 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
             pairs(),
         )
         assertTrue(QPinDuplicateModel().findList().all { it.firstPinId.toString() < it.secondPinId.toString() })
+    }
+
+    @Test
+    fun `Given a stored pair, Then its ids are text and the database refuses the pair in reverse order`() {
+        // Given: the constraint compares text, so it holds the repository's order only on ids stored as text
+        val (one, other) = storedPins(2).map { it.id }
+        repository.addMissing(one, listOf(other))
+        val types =
+            database
+                .sqlQuery("select typeof(first_pin_id) as first, typeof(second_pin_id) as second from pin_duplicates")
+                .findList()
+                .map { it.getString("first") to it.getString("second") }
+        assertEquals(listOf("text" to "text"), types)
+        val (lower, higher) = listOf(one, other).sortedBy { it.toString() }
+
+        // When, Then
+        assertRefusedByCheck("ck_pin_duplicates_order") {
+            persistor.save(PinDuplicateModel(randomUUID(), higher, lower, rejectedAt = null))
+        }
     }
 }

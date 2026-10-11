@@ -51,6 +51,12 @@ create table media (
   audio_channels                integer,
   audio_bit_rate                integer,
   fingerprint_version           integer,
+  constraint ck_media_variant check (
+    case when mime_type glob 'video/*'
+      then duration_millis is not null and video_bit_rate is not null
+      else duration_millis is null and video_bit_rate is null and audio_channels is null
+    end
+    and (audio_channels is null) = (audio_bit_rate is null)),
   constraint uq_media_pin_id unique (pin_id),
   constraint pk_media primary key (id),
   foreign key (pin_id) references pins (id) on delete cascade on update restrict
@@ -85,6 +91,7 @@ create table pin_duplicates (
   first_pin_id                  uuid not null,
   second_pin_id                 uuid not null,
   rejected_at                   timestamp,
+  constraint ck_pin_duplicates_order check (first_pin_id < second_pin_id),
   constraint pk_pin_duplicates primary key (id),
   foreign key (first_pin_id) references pins (id) on delete cascade on update restrict,
   foreign key (second_pin_id) references pins (id) on delete cascade on update restrict
@@ -161,6 +168,8 @@ create table tasks (
   dedup_key                     text,
   terminal_state_at             timestamp,
   version                       integer not null,
+  constraint ck_tasks_terminal_state_at check (
+    (state in ('SUCCEEDED','DEAD','CANCELLED')) = (terminal_state_at is not null)),
   constraint pk_tasks primary key (id)
 );
 
@@ -177,6 +186,8 @@ create table user_data_exports (
   byte_size                     integer,
   sha256                        text,
   failure_code                  text,
+  constraint ck_user_data_exports_ready check (
+    state <> 'READY' or (byte_size is not null and sha256 is not null and completed_at is not null)),
   constraint pk_user_data_exports primary key (id),
   foreign key (user_id) references users (id) on delete cascade on update restrict
 );
