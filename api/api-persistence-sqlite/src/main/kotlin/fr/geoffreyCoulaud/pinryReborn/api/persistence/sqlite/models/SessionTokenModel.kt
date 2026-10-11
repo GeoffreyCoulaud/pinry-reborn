@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
+import io.ebean.annotation.ConstraintMode
+import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -14,9 +16,11 @@ import java.util.UUID
 // Targets the expired-token garbage collection sweep: `deleteExpiredBefore` filters WHERE expires_at < ?, which is a
 // full scan on a growing table without this index (spec 2026-07-27-periodic-gc.md section 11, D6).
 @Index(columnNames = ["expires_at"])
+// A key's column leads an index, or the deletion of its parent scans the table.
+@Index(name = "ix_session_tokens_user", columnNames = ["user_id"])
 class SessionTokenModel(
     id: UUID,
-    @ManyToOne var user: UserModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var user: UserModel,
     @Column(unique = true) var tokenHash: String,
     var expiresAt: Instant,
     var persistent: Boolean,

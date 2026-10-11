@@ -1,5 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
+import io.ebean.annotation.ConstraintMode
+import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
@@ -15,6 +17,6 @@ import jakarta.persistence.Table
 )
 @Index(name = "ix_pin_creators_person", columnNames = ["person_id"])
 class PinCreatorModel(
-    @ManyToOne var pin: PinModel,
-    @ManyToOne var person: PersonModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var pin: PinModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var person: PersonModel,
 )

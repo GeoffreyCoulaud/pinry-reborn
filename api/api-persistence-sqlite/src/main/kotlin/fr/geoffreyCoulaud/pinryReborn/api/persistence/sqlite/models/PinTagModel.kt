@@ -1,5 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
+import io.ebean.annotation.ConstraintMode
+import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
@@ -16,6 +18,6 @@ import jakarta.persistence.Table
 // The search's tag subquery and the deletion of a tag's rows.
 @Index(name = "ix_pin_tags_tag", columnNames = ["tag_id"])
 class PinTagModel(
-    @ManyToOne var pin: PinModel,
-    @ManyToOne var tag: TagModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var pin: PinModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var tag: TagModel,
 )

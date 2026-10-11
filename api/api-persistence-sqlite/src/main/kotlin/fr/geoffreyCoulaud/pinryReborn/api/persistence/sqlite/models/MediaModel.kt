@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
+import io.ebean.annotation.ConstraintMode
 import io.ebean.annotation.DbDefault
 import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
@@ -43,7 +44,7 @@ class MediaModel(
      * already covers the column.
      */
     @ManyToOne
-    @DbForeignKey(noIndex = true)
+    @DbForeignKey(onDelete = ConstraintMode.CASCADE, noIndex = true)
     @JoinColumn(name = "pin_id", insertable = false, updatable = false)
     lateinit var pin: PinModel
 }

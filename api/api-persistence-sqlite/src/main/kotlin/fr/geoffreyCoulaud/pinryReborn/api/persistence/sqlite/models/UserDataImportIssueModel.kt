@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
+import io.ebean.annotation.ConstraintMode
+import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.JoinColumn
@@ -16,7 +18,10 @@ import java.util.UUID
 class UserDataImportIssueModel(
     id: UUID,
     // `import` is a Kotlin keyword, so the field is named around it and the column named back.
-    @ManyToOne @JoinColumn(name = "import_id") var userDataImport: UserDataImportModel,
+    @ManyToOne
+    @DbForeignKey(onDelete = ConstraintMode.CASCADE)
+    @JoinColumn(name = "import_id")
+    var userDataImport: UserDataImportModel,
     var kind: String,
     var line: Int? = null,
     var subject: String? = null,

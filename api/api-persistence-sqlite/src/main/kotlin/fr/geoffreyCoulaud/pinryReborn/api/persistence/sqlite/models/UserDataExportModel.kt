@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
+import io.ebean.annotation.ConstraintMode
+import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
@@ -21,9 +23,11 @@ import java.util.UUID
     definition =
         "create unique index uq_user_data_exports_pending " + "on user_data_exports (user_id) where state = 'PENDING'",
 )
+// The partial index above serves no cascade, which needs every row of a user.
+@Index(name = "ix_user_data_exports_user", columnNames = ["user_id"])
 class UserDataExportModel(
     id: UUID,
-    @ManyToOne var user: UserModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var user: UserModel,
     var state: String,
     var formatVersion: Int,
     var requestedAt: Instant,

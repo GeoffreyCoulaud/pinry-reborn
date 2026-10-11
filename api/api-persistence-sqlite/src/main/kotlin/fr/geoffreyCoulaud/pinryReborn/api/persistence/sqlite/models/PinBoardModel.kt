@@ -1,5 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
+import io.ebean.annotation.ConstraintMode
+import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
@@ -19,6 +21,6 @@ import jakarta.persistence.Table
 // Every read and delete by board: its pins, its count, recycling and emptying it.
 @Index(name = "ix_pin_boards_board", columnNames = ["board_id"])
 class PinBoardModel(
-    @ManyToOne var pin: PinModel,
-    @ManyToOne var board: BoardModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var pin: PinModel,
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var board: BoardModel,
 )

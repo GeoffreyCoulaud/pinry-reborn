@@ -1,7 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.AuthoredBaseModel
+import io.ebean.annotation.ConstraintMode
 import io.ebean.annotation.DbForeignKey
+import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
@@ -10,6 +12,9 @@ import java.util.UUID
 
 @Entity
 @Table(name = "pins")
+// A key's column leads an index, or the deletion of its parent scans the table.
+@Index(name = "ix_pins_author", columnNames = ["author_id"])
+@Index(name = "ix_pins_publisher", columnNames = ["publisher_id"])
 @Suppress("LongParameterList") // Ebean entity: every parameter is a persisted column.
 class PinModel(
     id: UUID,
@@ -21,8 +26,8 @@ class PinModel(
     // Written by the mapper from the domain entity, never generated. See AuthoredBaseModel.
     var updatedAt: Instant,
     override var softDeletedAt: Instant? = null,
-    // The catalogue filters by publisher inside a scan of the author's pins, so the key brings no index.
-    @ManyToOne @DbForeignKey(noIndex = true) var publisher: PersonModel? = null,
+    // A person's deletion removes their credits, never the pins (ADR 0058, decision 2).
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.SET_NULL) var publisher: PersonModel? = null,
     var publishedAt: Instant? = null,
 ) :
     AuthoredBaseModel(
