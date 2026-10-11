@@ -189,21 +189,20 @@ class DuplicateFindingIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given a media replaced on its pin, Then the new one is hashed and the sweep deletes the old one's frames`() {
+    fun `Given a media replaced on its pin, Then the new one is hashed and the old one's frames go with it`() {
         // Given
         val author = createAuthenticatedUser().user
         val old = pinned(author, still())
         awaitFingerprintDrain()
+        val beforeTheReplacement = framesOf(old)
         val other = drawn("other.png", "-f", "lavfi", "-i", "testsrc2=size=640x480", "-frames:v", "1")
 
         // When
         val replacement = Files.newInputStream(other).use { setPinMedia.set(old.pinId, author, it).media }
         awaitFingerprintDrain()
-        val beforeTheSweep = framesOf(old)
-        reapFingerprints.reap()
 
         // Then
-        assertEquals(listOf(1, 0, 1), listOf(beforeTheSweep, framesOf(old), framesOf(replacement)))
+        assertEquals(listOf(1, 0, 1), listOf(beforeTheReplacement, framesOf(old), framesOf(replacement)))
         assertEquals(FingerprintMedia.FINGERPRINT_VERSION, versionOf(replacement))
     }
 

@@ -34,7 +34,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     private fun saveUser(): User = users.saveUser(User(randomUUID(), createRandomString(), createdAt = now))
 
     private fun failedAt(updatedAt: Instant): UUID {
-        val pinId = randomUUID()
+        val pinId = savedPinId()
         repository.upsertPending(pinId, "https://x/i.png", randomUUID(), updatedAt)
         repository.markFailed(pinId, DownloadReason.NOT_FOUND, updatedAt)
         return pinId
@@ -43,9 +43,11 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     private fun savePin(author: User): Pin =
         pins.savePin(Pin(randomUUID(), author, null, null, "d", emptyList(), emptyList(), now, now))
 
+    private fun savedPinId(): UUID = savePin(saveUser()).id
+
     @Test
     fun `Given upsertPending, Then findByPinId returns a PENDING row`() {
-        val pinId = randomUUID()
+        val pinId = savedPinId()
         val saved = repository.upsertPending(pinId, "https://x/i.png", randomUUID(), now)
         assertEquals(DownloadStatus.PENDING, saved.status)
         assertEquals(saved, repository.findByPinId(pinId))
@@ -53,7 +55,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given an existing row, Then upsertPending replaces it with a fresh PENDING`() {
-        val pinId = randomUUID()
+        val pinId = savedPinId()
         repository.upsertPending(pinId, "https://x/a.png", randomUUID(), now)
         repository.markFailed(pinId, DownloadReason.NOT_FOUND, now)
         val replaced = repository.upsertPending(pinId, "https://x/b.png", randomUUID(), now)
@@ -64,7 +66,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given a PENDING row, Then markFailed sets FAILED and returns true`() {
-        val pinId = randomUUID()
+        val pinId = savedPinId()
         repository.upsertPending(pinId, "https://x/i.png", randomUUID(), now)
         assertTrue(repository.markFailed(pinId, DownloadReason.ACCESS_DENIED, now))
         val row = repository.findByPinId(pinId)
@@ -79,7 +81,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given a PENDING row, Then recordLastError keeps PENDING and returns true`() {
-        val pinId = randomUUID()
+        val pinId = savedPinId()
         repository.upsertPending(pinId, "https://x/i.png", randomUUID(), now)
         assertTrue(repository.recordLastError(pinId, "timeout", now))
         assertEquals(DownloadStatus.PENDING, repository.findByPinId(pinId)?.status)
@@ -93,7 +95,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given a PENDING row, Then deleteIfPending deletes it and returns 1`() {
-        val pinId = randomUUID()
+        val pinId = savedPinId()
         repository.upsertPending(pinId, "https://x/i.png", randomUUID(), now)
         assertEquals(1, repository.deleteIfPending(pinId))
         assertNull(repository.findByPinId(pinId))
@@ -101,7 +103,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given a FAILED row, Then deleteIfPending returns 0 and keeps the row`() {
-        val pinId = randomUUID()
+        val pinId = savedPinId()
         repository.upsertPending(pinId, "https://x/i.png", randomUUID(), now)
         repository.markFailed(pinId, DownloadReason.NOT_FOUND, now)
         assertEquals(0, repository.deleteIfPending(pinId))
@@ -110,7 +112,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given any row, Then deleteByPinId removes it and is a no-op when absent`() {
-        val pinId = randomUUID()
+        val pinId = savedPinId()
         repository.upsertPending(pinId, "https://x/i.png", randomUUID(), now)
         repository.deleteByPinId(pinId)
         assertNull(repository.findByPinId(pinId))
@@ -122,7 +124,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
         // Given
         val stale = failedAt(now)
         val recent = failedAt(now.plusSeconds(SIXTY_SECONDS))
-        val pending = repository.upsertPending(randomUUID(), "https://x/i.png", randomUUID(), now).pinId
+        val pending = repository.upsertPending(savedPinId(), "https://x/i.png", randomUUID(), now).pinId
 
         // When
         val deleted = repository.deleteFailedBefore(now.plusSeconds(1))
@@ -138,7 +140,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     fun `Given rows in both states, Then findPending returns the PENDING ones with their task id`() {
         // Given
         val taskId = randomUUID()
-        val pending = repository.upsertPending(randomUUID(), "https://x/i.png", taskId, now)
+        val pending = repository.upsertPending(savedPinId(), "https://x/i.png", taskId, now)
         failedAt(now)
 
         // When
@@ -172,7 +174,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     @Test
     fun `Given pins with and without a download, Then findByPinIds keys the rows it finds by pin id`() {
         // Given
-        val downloading = randomUUID()
+        val downloading = savedPinId()
         val bare = randomUUID()
         val row = repository.upsertPending(downloading, "https://x/i.png", randomUUID(), now)
 
@@ -186,7 +188,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     @Test
     fun `Given no pin ids, Then findByPinIds returns an empty map`() {
         // Given
-        repository.upsertPending(randomUUID(), "https://x/i.png", randomUUID(), now)
+        repository.upsertPending(savedPinId(), "https://x/i.png", randomUUID(), now)
 
         // When
         val found = repository.findByPinIds(emptyList())

@@ -134,6 +134,24 @@ class PinRepositoryPeopleTest : PinRepositoryFixtures() {
         assertEquals(0, creatorRowsOf(pin))
     }
 
+    @Test
+    fun `Given a pin whose publisher is deleted, Then the pin stays and its publisher column is null`() {
+        // Given
+        val user = createAndSaveUser()
+        val publisher = createAndSavePerson(user)
+        val pin = repository.savePin(createPin().copy(author = user, publisher = publisher))
+
+        // When: no route deletes a person, so the row goes through its query bean
+        QPersonModel().id.equalTo(publisher.id).delete()
+
+        // Then: the column, since a mapped pin would read a dangling key as no publisher too
+        val publisherIds =
+            database.sqlQuery("select publisher_id from pins where id = ?").setParameter(pin.id).findList().map {
+                it.getString("publisher_id")
+            }
+        assertEquals(listOf<String?>(null), publisherIds)
+    }
+
     private companion object {
         val PUBLISHED_AT: Instant = Instant.parse("2019-05-01T12:34:56Z")
     }

@@ -14,6 +14,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoProcessorTimeoutExce
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.VideoTooLongException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
+import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaCodecUnsupportedError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaInvalidError
@@ -44,6 +45,7 @@ class SetPinMedia(
     private val clearPinDownload: ClearPinDownload,
     private val renditionCache: RenditionCache,
     private val enqueueTask: EnqueueTask,
+    private val transactionRunner: TransactionRunner,
 ) {
     fun set(pinId: UUID, requester: User, upload: InputStream): SetPinMediaResult {
         val pin = pinRepository.findPinById(pinId) ?: throw MediaPinDoesNotExistError()
@@ -77,13 +79,15 @@ class SetPinMedia(
         // promoted-but-unsaved file at storageKey must never be left behind. Catch broadly,
         // clean up both paths, and rethrow unchanged so the caller still sees the original
         // failure.
-        // RowMergedOutsideTransaction: an insert of the row `MediaIngestion` just built, which the rule
-        // cannot see through the property.
-        @Suppress("TooGenericExceptionCaught", "RowMergedOutsideTransaction")
+        @Suppress("TooGenericExceptionCaught")
         val saved =
             try {
                 mediaIngestion.promote(ingested)
-                mediaRepository.save(ingested.media)
+                // The pin may have been deleted during the upload, leaving the media no parent (ADR 0058).
+                transactionRunner.inTransaction {
+                    if (pinRepository.findPinById(pinId) == null) throw MediaPinDoesNotExistError()
+                    mediaRepository.save(ingested.media)
+                }
             } catch (e: Exception) {
                 // Best-effort: a cleanup failure here must not mask `e`, which is the cause the caller
                 // needs to see. The orphan (if any) is reclaimed by the periodic garbage collection.

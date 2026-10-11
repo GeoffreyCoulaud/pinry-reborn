@@ -20,6 +20,21 @@ import org.junit.jupiter.api.Test
 /** The band lookup of ADR 0051, decision 4: found however the bits are spread, refused past 31 bits. */
 class EbeanMediaFrameRepositoryTest : RepositoryTest() {
     private val repository = EbeanMediaFrameRepository(persistor)
+    private val mediaRepository = EbeanMediaRepository(persistor, transactionRunner)
+
+    /** A media on a pin of a user, the parents a frame's key requires. */
+    private fun savedMedia(): Media {
+        val user =
+            UserRepository(persistor).saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
+        val pin =
+            PinRepository(persistor)
+                .savePin(
+                    Pin(randomUUID(), user, null, null, "", emptyList(), emptyList(), storableNow(), storableNow())
+                )
+        return mediaRepository.save(
+            Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1, "", "originals/x", storableNow())
+        )
+    }
 
     // The top bit of the first and last words is set, which an arithmetic shift in SQLite would carry into a band.
     private val stored =
@@ -41,7 +56,7 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
     @Test
     fun `Given a hash 31 bits from a stored one, spread across every band, Then the stored frame is found`() {
         // Given: two bits in each of fifteen bands and one in the last, so no band matches exactly
-        val mediaId = randomUUID()
+        val mediaId = savedMedia().id
         repository.save(mediaId, listOf(stored))
         val probe = storedFlipping((0 until 15).associateWith { 2 } + (15 to 1))
 
@@ -55,7 +70,7 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
     @Test
     fun `Given a hash 31 bits from a stored one, concentrated in the first word, Then the stored frame is found`() {
         // Given: the first band whole and fifteen bits of the second, every other band exact
-        val mediaId = randomUUID()
+        val mediaId = savedMedia().id
         repository.save(mediaId, listOf(stored))
         val probe = storedFlipping(mapOf(0 to 16, 1 to 15))
 
@@ -69,7 +84,7 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
     @Test
     fun `Given a hash 32 bits from a stored one in two bands, Then the index returns it and the distance refuses it`() {
         // Given: fourteen bands exact, so the index alone would call it a match
-        repository.save(randomUUID(), listOf(stored))
+        repository.save(savedMedia().id, listOf(stored))
         val probe = storedFlipping(mapOf(0 to 16, 1 to 16))
 
         // When
@@ -84,7 +99,7 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
     @Test
     fun `Given frames of three media, Then those of the asked media are read and those of one are deleted`() {
         // Given
-        val (kept, deleted, other) = List(3) { randomUUID() }
+        val (kept, deleted, other) = List(3) { savedMedia().id }
         val another = storedFlipping(mapOf(0 to 1))
         repository.save(kept, listOf(stored, another))
         repository.save(deleted, listOf(stored))
@@ -100,38 +115,20 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given frames of a stored media and of a gone one, Then the orphan sweep deletes the gone one's alone`() {
+    fun `Given frames of a stored media and of a deleted one, Then the deletion took the deleted one's and the sweep none`() {
         // Given
-        val user =
-            UserRepository(persistor).saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
-        val pin =
-            PinRepository(persistor)
-                .savePin(
-                    Pin(
-                        randomUUID(),
-                        user,
-                        null,
-                        null,
-                        "",
-                        emptyList(),
-                        emptyList(),
-                        createdAt = storableNow(),
-                        updatedAt = storableNow(),
-                    )
-                )
-        val media =
-            EbeanMediaRepository(persistor, transactionRunner)
-                .save(Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1, "", "originals/x", storableNow()))
-        val gone = randomUUID()
-        repository.save(media.id, listOf(stored))
-        repository.save(gone, listOf(stored, storedFlipping(mapOf(0 to 1))))
+        val kept = savedMedia()
+        val gone = savedMedia()
+        repository.save(kept.id, listOf(stored))
+        repository.save(gone.id, listOf(stored, storedFlipping(mapOf(0 to 1))))
+        mediaRepository.deleteByPinId(gone.pinId)
 
         // When
         val deleted = repository.deleteOrphans()
 
         // Then
-        assertEquals(2, deleted)
-        assertEquals(listOf(MediaFrame(media.id, stored.words)), repository.findByMediaIds(listOf(media.id, gone)))
+        assertEquals(0, deleted)
+        assertEquals(listOf(MediaFrame(kept.id, stored.words)), repository.findByMediaIds(listOf(kept.id, gone.id)))
     }
 
     @Test

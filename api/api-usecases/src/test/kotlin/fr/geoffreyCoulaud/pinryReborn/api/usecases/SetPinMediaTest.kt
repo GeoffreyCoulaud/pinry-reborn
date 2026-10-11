@@ -31,6 +31,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPermissionErr
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaPinDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLargeError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaTooLongError
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
@@ -64,8 +65,19 @@ class SetPinMediaTest : BaseTest() {
     private val limits = MediaLimits(30, maxVideoBytes = 0, Duration.ZERO, 50, 50, 1, Duration.ZERO, 0)
     private val ingestion = MediaIngestion(store, probe, NoVideoProcessor, limits)
     private val enqueueTask = mockk<EnqueueTask>(relaxed = true)
+    private val runner = PassthroughTransactionRunner()
     private val useCase =
-        SetPinMedia(pins, mediaRepository, store, ingestion, clock, clearPinDownload, renditionCache, enqueueTask)
+        SetPinMedia(
+            pins,
+            mediaRepository,
+            store,
+            ingestion,
+            clock,
+            clearPinDownload,
+            renditionCache,
+            enqueueTask,
+            runner,
+        )
 
     private val owner = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
 
@@ -241,6 +253,7 @@ class SetPinMediaTest : BaseTest() {
                 clearPinDownload,
                 renditionCache,
                 enqueueTask,
+                runner,
             )
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
@@ -287,6 +300,7 @@ class SetPinMediaTest : BaseTest() {
                 clearPinDownload,
                 renditionCache,
                 enqueueTask,
+                runner,
             )
         every { pins.findPinById(p.id) } returns p
         every { store.stage(any(), 30) } returns staged
@@ -381,6 +395,26 @@ class SetPinMediaTest : BaseTest() {
         assertThrows(RuntimeException::class.java) { useCase.set(p.id, owner, upload()) }
 
         verify { store.discard(staged) }
+        verify { store.delete(storageKeySlot.captured) }
+    }
+
+    @Test
+    fun `Given a pin deleted during the upload, Then it throws MediaPinDoesNotExistError and keeps no file or row`() {
+        // Given: the read inside the save's transaction finds the pin gone
+        val p = pin()
+        val storageKeySlot = slot<String>()
+        every { pins.findPinById(p.id) } returnsMany listOf(p, null)
+        every { store.stage(any(), 30) } returns staged
+        every { probe.probe(staged) } returns ProbeResult(MediaFormat.PNG, 4, 5, frames = 1, bytes = 3)
+        every { mediaRepository.findByPinId(p.id) } returns null
+        every { clock.now() } returns Instant.EPOCH
+        every { store.promote(staged, capture(storageKeySlot)) } just runs
+
+        // When
+        assertThrows(MediaPinDoesNotExistError::class.java) { useCase.set(p.id, owner, upload()) }
+
+        // Then
+        verify(exactly = 0) { mediaRepository.save(any()) }
         verify { store.delete(storageKeySlot.captured) }
     }
 

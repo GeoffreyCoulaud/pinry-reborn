@@ -69,7 +69,7 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
 
     @Test
     fun `Given a committed transaction, Then the enqueued task and the download row both exist`() {
-        val pinId = randomUUID()
+        val pinId = savedPin().id
         val taskId = runner.inTransaction {
             val task = queue.enqueue(newDownloadTask(pinId))
             downloads.upsertPending(pinId, sourceUrl, task.id, now)
@@ -81,7 +81,7 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
 
     @Test
     fun `Given a rolled-back transaction, Then neither the task nor the download row exists`() {
-        val pinId = randomUUID()
+        val pinId = savedPin().id
         assertThrows(IllegalStateException::class.java) {
             runner.inTransaction {
                 val task = queue.enqueue(newDownloadTask(pinId))

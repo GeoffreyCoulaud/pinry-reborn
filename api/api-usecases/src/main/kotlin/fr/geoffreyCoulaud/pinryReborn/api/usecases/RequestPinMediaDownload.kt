@@ -22,19 +22,18 @@ class RequestPinMediaDownload(
     private val transactionRunner: TransactionRunner,
     private val clock: Clock,
 ) {
-    fun request(pinId: UUID, requester: User, sourceUrl: HttpUrl): MediaDownload {
+    fun request(pinId: UUID, requester: User, sourceUrl: HttpUrl): MediaDownload = transactionRunner.inTransaction {
+        // Read inside the transaction, so the download never names a pin deleted meanwhile (ADR 0058).
         val pin = pinRepository.findPinById(pinId) ?: throw MediaPinDoesNotExistError()
         if (pin.author.id != requester.id) throw MediaPermissionError()
-        return transactionRunner.inTransaction {
-            val now = clock.now()
-            val task =
-                enqueueTask.enqueue(
-                    kind = PinDownloadTask.KIND,
-                    payload = pinId.toString(),
-                    maxAttempts = PinDownloadTask.MAX_ATTEMPTS,
-                    dedupKey = "${PinDownloadTask.KIND}:$pinId",
-                )
-            mediaDownloadRepository.upsertPending(pinId, sourceUrl, task.id, now)
-        }
+        val now = clock.now()
+        val task =
+            enqueueTask.enqueue(
+                kind = PinDownloadTask.KIND,
+                payload = pinId.toString(),
+                maxAttempts = PinDownloadTask.MAX_ATTEMPTS,
+                dedupKey = "${PinDownloadTask.KIND}:$pinId",
+            )
+        mediaDownloadRepository.upsertPending(pinId, sourceUrl, task.id, now)
     }
 }
