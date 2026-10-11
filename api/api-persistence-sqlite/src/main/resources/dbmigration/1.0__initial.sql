@@ -176,8 +176,6 @@ create table user_data_exports (
   archive_held                  int default 0 not null,
   byte_size                     integer,
   sha256                        text,
-  media_type                    text,
-  file_extension                text,
   failure_code                  text,
   constraint pk_user_data_exports primary key (id),
   foreign key (user_id) references users (id) on delete cascade on update restrict

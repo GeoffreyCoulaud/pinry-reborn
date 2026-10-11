@@ -37,7 +37,5 @@ class UserDataExportModel(
     var archiveHeld: Boolean = false,
     var byteSize: Long? = null,
     var sha256: String? = null,
-    var mediaType: String? = null,
-    var fileExtension: String? = null,
     var failureCode: String? = null,
 ) : BaseModel(id = id)

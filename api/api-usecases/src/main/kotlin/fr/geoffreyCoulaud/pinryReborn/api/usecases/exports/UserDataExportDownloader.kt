@@ -15,10 +15,10 @@ import java.util.UUID
  * purge racing the download fails right here, before any status line is sent, instead of truncating an
  * already-committed `200`.
  *
- * The five nullable fields a `READY` row carries (`mediaType`, `fileExtension`, `byteSize`, `sha256`, `completedAt`)
- * collapse into a SINGLE reachable branch (`presentFieldCount` below), instead of one null check per field:
- * dereferencing each of them separately would create branches whose "impossible" side no test could ever reach, which
- * breaks the 100% branch gate. See spec §5.
+ * The three nullable fields a `READY` row carries (`byteSize`, `sha256`, `completedAt`) collapse into a SINGLE
+ * reachable branch (`presentFieldCount` below), instead of one null check per field: dereferencing each of them
+ * separately would create branches whose "impossible" side no test could ever reach, which breaks the 100% branch gate.
+ * See spec §5.
  */
 @ApplicationScoped
 @Suppress("UnsafeCallOnNullableType")
@@ -39,20 +39,12 @@ class UserDataExportDownloader(
     }
 
     /**
-     * The single validation site for the five nullable fields a `READY` row carries: their presence collapses into ONE
+     * The single validation site for the three nullable fields a `READY` row carries: their presence collapses into ONE
      * reachable branch (`presentFieldCount`), instead of one null check per field.
      */
     private fun requireReady(export: UserDataExport) {
         if (export.state != UserDataExportState.READY) throw ExportNotReadyError()
-        val presentFieldCount =
-            listOfNotNull(
-                    export.mediaType,
-                    export.fileExtension,
-                    export.byteSize,
-                    export.sha256,
-                    export.completedAt,
-                )
-                .size
+        val presentFieldCount = listOfNotNull(export.byteSize, export.sha256, export.completedAt).size
         if (presentFieldCount != REQUIRED_FIELD_COUNT) throw ExportNotReadyError()
     }
 
@@ -61,22 +53,20 @@ class UserDataExportDownloader(
         if (skipBytes >= byteSize) throw ExportNotReadyError()
     }
 
-    private fun toOpenedExport(export: UserDataExport, skipBytes: Long): OpenedExport =
-        OpenedExport(
+    private fun toOpenedExport(export: UserDataExport, skipBytes: Long): OpenedExport {
+        val format = archiveStore.format
+        return OpenedExport(
             exportId = export.id,
-            mediaType = export.mediaType!!,
-            fileExtension = export.fileExtension!!,
+            mediaType = format.mediaType,
+            fileExtension = format.fileExtension,
             totalByteSize = export.byteSize!!,
             sha256 = export.sha256!!,
             completedAt = export.completedAt!!,
-            stream =
-                archiveStore.openStream(
-                    ExportArchiveKey.forExport(export.id, archiveStore.format.fileExtension),
-                    skipBytes,
-                ),
+            stream = archiveStore.openStream(ExportArchiveKey.forExport(export.id, format.fileExtension), skipBytes),
         )
+    }
 
     private companion object {
-        const val REQUIRED_FIELD_COUNT = 5
+        const val REQUIRED_FIELD_COUNT = 3
     }
 }

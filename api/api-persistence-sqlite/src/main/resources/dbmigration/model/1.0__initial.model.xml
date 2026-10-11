@@ -132,8 +132,6 @@
             <column name="archive_held" type="boolean" defaultValue="false" notnull="true"/>
             <column name="byte_size" type="bigint"/>
             <column name="sha256" type="varchar"/>
-            <column name="media_type" type="varchar"/>
-            <column name="file_extension" type="varchar"/>
             <column name="failure_code" type="varchar"/>
         </createTable>
         <createTable name="user_data_import_issues" identityType="external" pkName="pk_user_data_import_issues">
