@@ -61,7 +61,8 @@ review.
 
 - A table renamed apart from its model costs one line in the exception list, or one hand-edited migration: Ebean's
   generator reads a rename as a drop and a create.
-- Until PostgreSQL, a referenced table (`users`, `pins`, `boards`, `persons`, `tags`, `user_data_imports`) changes
+- Until PostgreSQL, a referenced table (`users`, `pins`, `boards`, `persons`, `tags`, `user_data_imports`
+  (Corrected: and `media`, which `media_frames.media_id` references; holistic review, block 80)) changes
   only by what SQLite's `ALTER TABLE` does: add, rename or drop a plain column, and its indexes. A type, a
   nullability, a default, a `CHECK` or a key action waits. A later rebuild of
   any table carries its `CHECK` constraints by hand, the model files not recording them.

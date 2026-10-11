@@ -9,7 +9,16 @@ Branches: one stack, each block on the one before it: 10 `chore/the-history-is-o
 `refactor/a-table-is-named-after-its-model`, 30 `feat/the-database-holds-its-references`, 40
 `refactor/the-database-deletes-dependents`, 50 `refactor/a-derived-column-is-computed`, 60
 `refactor/an-archive-key-is-derived`, 70 `feat/the-database-checks-its-invariants`, 80
-`chore/the-references-lot-closes`.
+`chore/the-references-lot-closes`. (Corrected: seventeen code blocks ran, #396 to #413: 10
+`chore/the-history-is-one-baseline`, 20 `refactor/a-table-is-named-after-its-model`, 25
+`refactor/a-timestamp-is-created-at`, 30 `feat/the-database-holds-its-references`, 35
+`feat/the-database-enforces-its-references`, 40 `refactor/the-database-deletes-dependents`, 43
+`refactor/the-account-rows-go-with-the-user`, 46 `refactor/the-orphan-sweeps-go`, 50
+`refactor/a-derived-column-is-computed`, 53 `refactor/an-unread-download-error-goes`, 54
+`refactor/a-download-keeps-no-error`, 56 `refactor/an-unread-task-error-goes`, 60 `refactor/an-archive-key-is-derived`,
+62 `refactor/an-export-holds-its-archive`, 64 `refactor/an-import-holds-its-archive`, 66
+`refactor/an-export-format-is-the-stores`, 70 `feat/the-database-checks-its-invariants`, then the closing block 80
+`chore/the-references-lot-closes`.)
 ADR: `docs/adr/0058-the-database-enforces-its-references.md` records decisions B to G, and amends ADR 0056,
 decision 7.2.
 
@@ -134,7 +143,10 @@ or the archive (`sha256`, `mediaType`, `failureCode`) stay in the types lot.
   overriding it, and requires `foreign_keys=true` in its `datasource.db.url`.
 - A write whose parent may have gone re-reads it inside its own transaction and writes nothing if it is gone (the
   lead's). `FingerprintMedia` re-reads its media, and each duplicate pin with its media; `SetPinMedia` and
-  `RequestPinMediaDownload` re-read the pin and answer as for a pin not found.
+  `RequestPinMediaDownload` re-read the pin and answer as for a pin not found. (Corrected: `RequestPinMediaDownload`
+  reads the pin once, inside its transaction, leaving no window to re-read across; `FingerprintMedia` re-reads the
+  ids of its media and of the duplicates' media through `findMissingMediaIds`, a deleted pin taking its media by
+  cascade. Blocks 30 and 35.)
 
 **D. The database deletes dependents** (B).
 - The code deletes the row it targets. The repository methods that delete dependents alone go:
@@ -159,6 +171,8 @@ or the archive (`sha256`, `mediaType`, `failureCode`) stay in the types lot.
 - An index or constraint name is `ix_`, `ux_`, `uq_` or `ck_` followed by its table's name and `_`, or
   `pk_<table>`; SQLite's keys carry no name. A Konsist test reads every `@Index` name against its model's `@Table`;
   `MigratedSchemaIndexesTest`'s rule over the media tables extends to every table, for the names Ebean generates.
+  (Corrected: its prefix narrows from `[a-z]+_` to these four, block 20; the test is `MigratedSchemaTest` since
+  block 80.)
 
 **F. A derived column is computed, an unread one deleted** (C).
 - `processed_pins` goes; `UserDataImport.processedPins` becomes `createdPins + skippedPins`, computed, and stays on
@@ -189,9 +203,24 @@ or the archive (`sha256`, `mediaType`, `failureCode`) stay in the types lot.
   the database refuse a row that breaks it.
 - The pair's order compares text: the test establishes that `typeof(first_pin_id)` is `text` before relying on it.
 - `EbeanTaskQueueTest`'s case that back-dates `terminal_state_at` on a `PENDING` and a `RUNNING` row to prove the
-  sweep's state filter goes: the constraint refuses those rows, and holds the filter's premise.
+  sweep's state filter goes: the constraint refuses those rows, and holds the filter's premise. (Corrected: the case
+  is cut rather than deleted, its stale and fresh terminal rows staying as the time filter's only test, block 70; the
+  premise holds while the constraint's states are `TaskState`'s terminal ones, which `MigratedSchemaTest` binds since
+  block 80.)
 - The task and export constraints are not in the inventory: found by this lot's reading of the models, and taken
   because each is one line here and a migration later.
+
+(Corrected: behaviour the blocks changed beyond these decisions, accepted by the lead and endorsed by the holistic
+review, `.reviews/the-database-enforces-its-references-holistic.md`:
+- A retryable download failure no longer bumps `media_downloads.updated_at`, which only `recordLastError` wrote, so
+  the wire's `MediaDownloadOutput.updatedAt` on a `PENDING` row stays at the request instant (block 53).
+- `TaskProcessor`'s `Retryable` carries no message, and the "exhausted retries" log line no longer repeats the cause,
+  which `runHandler` logs with its stack just before (block 56).
+- The export reaper deletes the derived key alone, no column remaining to diverge from it (block 60).
+- The export downloader requires a `READY` row's size, digest and completion instant, three fields where it required
+  six (blocks 60 and 66).
+- `PinRecycleBin` no longer deletes a pin's media by hand, a dependent deletion under decision D though not in its
+  list (block 46).)
 
 ## 4. Data shape
 
@@ -228,6 +257,15 @@ disposable.
 | 70 | `feat/the-database-checks-its-invariants` | Decision G. |
 | 80 | `chore/the-references-lot-closes` | The holistic review's findings and the documents (Wrap). |
 
+(Corrected: seventeen code blocks ran, their branches listed at the head of this document. The splits, each approved
+by the lead and recorded in the report of the block it split: 20 into 20 (tables, indexes, the Konsist rules) and 25
+(`created_at` and `updated_at`); 30 into 30 (the keys declared, their indexes, the onDelete rule) and 35 (the pragma
+on, the re-reads, the fixtures); 40 into 40 (the user row, the pin and board repositories), 43 (the account's
+repository methods) and 46 (the sweeps, `DeletePinMedia`'s transaction); 50 into 50 (`processed_pins`,
+`media.animated`), 53 (`recordLastError`), 54 (`media_downloads.last_error`) and 56 (`tasks.last_error`); 60 into 60
+(every key derived), 62 (an export's `archive_held`), 64 (an import's) and 66 (an export's format, the contract
+`26.0.0`). Block 80 holds its bounds and does not split.)
+
 Each block is measured after its first commit with the command of `agents/workflow.md`; one that passes a bound
 splits at a number between its own and the next. **Block 10 cannot hold either bound**: deleting the history is 71
 files and 1034 lines before the baseline is written, and it cannot split, the gate refusing a half-deleted history.
@@ -260,7 +298,8 @@ The operator waived both bounds for it on 2026-10-11, for the deletion of the hi
   `CASCADE` everywhere but `pins.publisher_id`, `SET NULL`. Each key's column leads an index whose
   `pragma_index_list(...).partial` is `0`.
 - The production address test of decision C fails on `main`'s `application.properties`.
-- The migration test of decision B fails on a fixture script that drops `pins` after the baseline.
+- The migration test of decision B fails on a fixture script that drops `pins` after the baseline. (Corrected: it
+  landed in block 10, `ReferencedTableDropTest`.)
 - Deleting a person a pin names as publisher leaves the pin, its `publisher_id` null.
 - `FingerprintMedia` on a media deleted while it hashed saves no frame and no pair, and its task succeeds; on a
   duplicate pin whose media was deleted while it hashed, it saves no pair naming that pin.
@@ -293,8 +332,9 @@ The operator waived both bounds for it on 2026-10-11, for the deletion of the hi
 - `storage_key`, `media_type` and `file_extension` absent from the migrated schema; `archive_held` present.
 - A `SUPERSEDED` export keeps `archive_held` until its reaper pass deletes the bytes, then clears it.
 - An import whose archive is not held fails `ARCHIVE_UNREADABLE`, as a null key fails today.
-  Block 64 touches 20 files: each is a compile break of the one field's rename, and a split would leave
-  `storage_key` and `archive_held` side by side.
+- Block 64 touches 20 files: each is a compile break of the one field's rename, and a split would leave
+  `storage_key` and `archive_held` side by side. (Corrected: a line of its own, not a continuation of the criterion
+  above.)
 - `contract/openapi.json`'s `UserDataExportOutput` has no `mediaType`, and `info.version` is `26.0.0`; the download
   still answers `Content-Type: application/zip` and a `.zip` file name.
 
