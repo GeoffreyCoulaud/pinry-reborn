@@ -50,13 +50,13 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 
 ### P2: Operational debt
 
-- **`foreign_keys` is off, so every declared key is unenforced**. The second lot of
-  `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.2, flattens the history into one baseline
-  with `ON DELETE CASCADE`, turns the pragma on, and takes the items its `inventory.md` tags [migration]. See also `docs/handoffs/2026-09-11 - handoff - web-application.md`. New 2026-09-12.
+- **SQLite changes a referenced table's column only by a rebuild, which the keys forbid**: the move to PostgreSQL,
+  next lot, before ADR 0055's importer. See `docs/adr/0058-the-database-enforces-its-references.md`. New 2026-10-11.
 - **The domain names concepts with bare strings, and its types carry storage formats**: the types lot, after the
   importer. `docs/adr/0056-data-shapes-are-decided-in-the-specification/inventory.md`, T1, T2 and T4 to T7, section 2,
-  and units 8 to 10, 17 to 20 (the database renames left to the foreign keys item) and 25. Lot `0.54.0` typed the
-  addresses and a person's name (`docs/specs/2026-10-10-addresses-and-people-take-their-shape.md`). New 2026-10-09.
+  and units 8 to 10, 17 to 20 (but their database renames, lot `0.55.0`'s), 24's factories (`RenditionSpec`, the
+  import's counters, `ExportMediaExtension`) and 25. Lot `0.54.0` typed the addresses and a person's name
+  (`docs/specs/2026-10-10-addresses-and-people-take-their-shape.md`). New 2026-10-09.
 - **Domain and wire states are independent nullable fields, not sealed variants**, null standing for a third state: the
   sealed states lot, after the types. Same `inventory.md`, T3, N1, N2, C3 and C5, and units 11 to 13, 22 and 23; it
   answers the two questions of ADR 0056, decision 8. New 2026-10-09.
