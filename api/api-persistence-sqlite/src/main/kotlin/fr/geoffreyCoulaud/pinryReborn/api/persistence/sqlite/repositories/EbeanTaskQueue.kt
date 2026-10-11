@@ -116,7 +116,6 @@ class EbeanTaskQueue(
         // here is at most one heartbeat gap behind. Killing rather than skipping keeps the claim one row.
         if (model.attempts >= model.maxAttempts) {
             model.state = TaskState.DEAD.name
-            model.lastError = "attempts exhausted"
             model.leaseId = null
             model.leaseExpiresAt = null
             model.terminalStateAt = now
@@ -170,13 +169,11 @@ class EbeanTaskQueue(
         leaseId: String,
         availableAt: Instant,
         now: Instant,
-        lastError: String?,
     ): Boolean =
         leaseGuard(id, leaseId)
             .asUpdate()
             .set("state", TaskState.PENDING.name)
             .set("availableAt", availableAt)
-            .set("lastError", lastError)
             .setNull("leaseId")
             .setNull("leaseExpiresAt")
             .setRaw("version = version + 1")
@@ -186,12 +183,10 @@ class EbeanTaskQueue(
         id: UUID,
         leaseId: String,
         now: Instant,
-        lastError: String?,
     ): Boolean =
         leaseGuard(id, leaseId)
             .asUpdate()
             .set("state", TaskState.DEAD.name)
-            .set("lastError", lastError)
             .set("terminalStateAt", now)
             .setRaw("version = version + 1")
             .update() > 0
@@ -246,7 +241,6 @@ class EbeanTaskQueue(
                 QTaskModel().state.equalTo(TaskState.RUNNING.name).leaseExpiresAt.le(now).setMaxRows(limit).findList()
             expired.forEach { model ->
                 model.state = TaskState.PENDING.name
-                model.lastError = "reclaimed after lease expiry"
                 model.leaseId = null
                 model.leaseExpiresAt = null
                 // A reap spends an attempt, so it delays the next one as a returned failure does,

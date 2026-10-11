@@ -43,7 +43,6 @@ class EnqueueTaskTest {
                 leaseExpiresAt = null,
                 cancelRequested = false,
                 dedupKey = dedupKey,
-                lastError = null,
             )
         every { clock.now() } returns now
         val newTaskSlot = slot<NewTask>()
@@ -82,7 +81,6 @@ class EnqueueTaskTest {
                 leaseExpiresAt = null,
                 cancelRequested = false,
                 dedupKey = null,
-                lastError = null,
             )
         every { clock.now() } returns now
         val newTaskSlot = slot<NewTask>()

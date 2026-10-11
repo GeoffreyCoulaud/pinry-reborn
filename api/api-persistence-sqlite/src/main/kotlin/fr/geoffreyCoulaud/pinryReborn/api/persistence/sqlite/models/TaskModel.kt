@@ -45,7 +45,6 @@ constructor(
     var leaseExpiresAt: Instant? = null,
     var cancelRequested: Boolean = false,
     var dedupKey: String? = null,
-    var lastError: String? = null,
     var terminalStateAt: Instant? = null,
 ) : BaseModel(id = id) {
     @Version var version: Long = 0

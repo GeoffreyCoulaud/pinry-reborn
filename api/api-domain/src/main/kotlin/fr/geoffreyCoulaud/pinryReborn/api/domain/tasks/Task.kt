@@ -17,6 +17,5 @@ data class Task(
     val leaseExpiresAt: Instant?,
     val cancelRequested: Boolean,
     val dedupKey: String?,
-    val lastError: String?,
     val terminalStateAt: Instant? = null,
 ) : Identifiable

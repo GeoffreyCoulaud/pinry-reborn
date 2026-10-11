@@ -95,7 +95,6 @@ class UserDataExportRequesterTest : BaseTest() {
             leaseExpiresAt = null,
             cancelRequested = false,
             dedupKey = null,
-            lastError = null,
         )
 
     private fun stubEnqueue(task: Task = aTask()): Task {

@@ -92,7 +92,6 @@ class ReapUserDataExportsTest : BaseTest() {
             leaseExpiresAt = null,
             cancelRequested = false,
             dedupKey = null,
-            lastError = null,
         )
 
     private fun stored(id: UUID): UserDataExport = requireNotNull(rows[id])

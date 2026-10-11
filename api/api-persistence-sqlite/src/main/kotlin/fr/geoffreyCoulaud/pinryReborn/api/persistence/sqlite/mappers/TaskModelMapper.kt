@@ -19,7 +19,6 @@ object TaskModelMapper {
             leaseExpiresAt = leaseExpiresAt,
             cancelRequested = cancelRequested,
             dedupKey = dedupKey,
-            lastError = lastError,
             terminalStateAt = terminalStateAt,
         )
 }

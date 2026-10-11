@@ -83,7 +83,6 @@ class ReapUserDataImportsTest : BaseTest() {
             leaseExpiresAt = null,
             cancelRequested = false,
             dedupKey = null,
-            lastError = null,
         )
 
     /** What every run reads, whether or not it finds anything: the three selections and the tmp sweep. */
