@@ -4,6 +4,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 class MediaTest {
@@ -58,5 +59,13 @@ class MediaTest {
         // Then
         val kinds = listOf(still, animated, video).map { it.animated to it.frames }
         assertEquals(listOf(false to 1, true to 3, true to 25), kinds)
+    }
+
+    @Test
+    fun `Given an animated image of a single frame, Then it is refused`() {
+        // When / Then: the store reads an animated image back from its frame count alone
+        assertThrows(IllegalArgumentException::class.java) {
+            Media.AnimatedImage(randomUUID(), randomUUID(), "image/gif", 1, 1, 1, "h", "k", Instant.EPOCH, 1)
+        }
     }
 }

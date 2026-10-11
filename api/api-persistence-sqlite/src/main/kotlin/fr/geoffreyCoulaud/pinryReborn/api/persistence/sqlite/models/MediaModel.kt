@@ -25,7 +25,6 @@ class MediaModel(
     var mimeType: String,
     var width: Int,
     var height: Int,
-    @DbDefault("false") var animated: Boolean,
     var byteSize: Long,
     var contentHash: String,
     var storageKey: String,

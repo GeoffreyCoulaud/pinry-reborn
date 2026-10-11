@@ -38,7 +38,6 @@ class UserDataImportDtoMapperTest {
                 completedAt = Instant.parse("2026-08-14T10:09:00Z"),
                 formatVersion = 1,
                 announcedPins = 12,
-                processedPins = 12,
                 createdPins = 9,
                 skippedPins = 3,
                 createdBoards = 2,

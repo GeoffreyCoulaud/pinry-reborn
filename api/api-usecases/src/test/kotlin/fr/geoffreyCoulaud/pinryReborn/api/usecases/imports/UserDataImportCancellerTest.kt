@@ -266,7 +266,7 @@ class UserDataImportCancellerTest : BaseTest() {
         // Given: the runner settles a pin between the read that answers this request and the write that
         // cancels it, and only a read taken inside that write's transaction sees the settlement
         val read = importWith(state = UserDataImportState.RUNNING, taskId = randomUUID())
-        val advanced = read.copy(processedPins = SETTLED_PINS, createdPins = SETTLED_PINS)
+        val advanced = read.copy(createdPins = SETTLED_PINS, skippedPins = SETTLED_PINS)
         every { repository.findById(importId) } answers { if (transactions.inside) advanced else read }
         every { repository.save(any()) } answers { firstArg() }
 
@@ -278,8 +278,8 @@ class UserDataImportCancellerTest : BaseTest() {
             repository.save(
                 match {
                     it.state == UserDataImportState.CANCELLED &&
-                        it.processedPins == SETTLED_PINS &&
-                        it.createdPins == SETTLED_PINS
+                        it.createdPins == SETTLED_PINS &&
+                        it.skippedPins == SETTLED_PINS
                 }
             )
         }

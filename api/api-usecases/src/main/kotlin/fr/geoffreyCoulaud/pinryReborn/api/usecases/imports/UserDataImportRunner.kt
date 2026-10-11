@@ -563,7 +563,6 @@ class UserDataImportRunner(
         outcome.issues.forEach { walk.recorder.record(it.kind, line, it.subject, it.detail) }
         val delta = if (created == null) 0 else 1
         return current.copy(
-            processedPins = current.processedPins + 1,
             createdPins = current.createdPins + delta,
             skippedPins = current.skippedPins + (1 - delta),
             issueCount = current.issueCount + outcome.issues.size,

@@ -74,8 +74,8 @@ class EbeanMediaRepository(
             .isIn(candidates)
             .pinId
             .notEqualTo(media.pinId)
-            .animated
-            .equalTo(media.animated)
+            // `Media.animated` as the mapper reads it back: a video, or more than one frame.
+            .raw("(mime_type like 'video/%' or frames > 1) = ?", media.animated)
             .fingerprintVersion
             .equalTo(version)
             .pin
