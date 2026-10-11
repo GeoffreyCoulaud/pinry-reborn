@@ -11,6 +11,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
@@ -37,6 +38,14 @@ class UserPasswordHashRepositoryTest : RepositoryTest() {
         // When / Then
         assertEquals("new", repository.findCurrentPasswordHash(user)?.hash)
         assertEquals(setOf("old", "new"), repository.findAllPasswordHashesForUser(user).map { it.hash }.toSet())
+    }
+
+    @Test
+    fun `Given a user with no saved hash, Then findCurrentPasswordHash returns null`() {
+        // Given
+        val user = user()
+        // When / Then
+        assertNull(repository.findCurrentPasswordHash(user))
     }
 
     @Test
