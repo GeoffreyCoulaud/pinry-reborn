@@ -599,6 +599,8 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
                 completedAt = Instant.now().minus(Duration.ofDays(8)),
                 expiresAt = Instant.now().minus(Duration.ofDays(1)),
                 archiveHeld = withBytes,
+                byteSize = 1,
+                sha256 = "digest",
             )
         )
     }
