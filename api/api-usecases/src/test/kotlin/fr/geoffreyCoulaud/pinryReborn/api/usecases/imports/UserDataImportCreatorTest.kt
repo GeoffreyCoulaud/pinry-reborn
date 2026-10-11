@@ -102,8 +102,6 @@ class UserDataImportCreatorTest : BaseTest() {
 
         override fun findMissingImportIds(candidates: Collection<UUID>) = refuse("findMissingImportIds")
 
-        override fun deleteAllForUser(userId: UUID) = refuse("deleteAllForUser")
-
         private fun refuse(name: String): Nothing =
             throw AssertionError("$name: creating an import reads nothing, the index is the authority")
     }

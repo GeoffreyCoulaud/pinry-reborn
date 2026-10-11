@@ -48,8 +48,4 @@ class UserPasswordHashRepository(persistor: Persistor) : UserPasswordHashReposit
 
     override fun findAllPasswordHashesForUser(user: User): List<HashedPassword> =
         QUserPasswordHashModel().user.id.equalTo(user.id).findList().map { it.toDomain() }
-
-    override fun deleteForUser(user: User) {
-        QUserPasswordHashModel().user.id.equalTo(user.id).delete()
-    }
 }

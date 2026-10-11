@@ -12,6 +12,4 @@ interface UserPasswordHashRepositoryInterface {
     fun findCurrentPasswordHash(user: User): HashedPassword?
 
     fun findAllPasswordHashesForUser(user: User): List<HashedPassword>
-
-    fun deleteForUser(user: User)
 }

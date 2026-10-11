@@ -53,6 +53,4 @@ interface UserDataExportRepositoryInterface {
      * chunks it).
      */
     fun findMissingExportIds(candidates: Collection<UUID>): Set<UUID>
-
-    fun deleteAllForUser(userId: UUID)
 }

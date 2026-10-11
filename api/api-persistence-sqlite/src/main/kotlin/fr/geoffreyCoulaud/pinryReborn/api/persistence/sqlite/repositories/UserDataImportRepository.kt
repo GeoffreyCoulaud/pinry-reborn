@@ -112,10 +112,6 @@ class UserDataImportRepository(private val persistor: Persistor) : UserDataImpor
         return candidates.toSet() - existing.toSet()
     }
 
-    override fun deleteAllForUser(userId: UUID) {
-        QUserDataImportModel().user.id.equalTo(userId).delete()
-    }
-
     /** The states nothing more will happen to, spelled as the column stores them. */
     private object TerminalImportStates {
         val all: Set<String> = UserDataImportState.entries.filter { it.isTerminal }.map { it.name }.toSet()
