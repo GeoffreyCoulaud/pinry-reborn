@@ -48,6 +48,4 @@ interface UserDataImportRepositoryInterface {
      * (...)` lookup, so the call is bounded by the size of [candidates].
      */
     fun findMissingImportIds(candidates: Collection<UUID>): Set<UUID>
-
-    fun deleteAllForUser(userId: UUID)
 }

@@ -146,10 +146,6 @@ class UserDataExportRepository(private val persistor: Persistor) : UserDataExpor
         return candidates.toSet() - existing.toSet()
     }
 
-    override fun deleteAllForUser(userId: UUID) {
-        QUserDataExportModel().user.id.equalTo(userId).delete()
-    }
-
     /** The states nothing more will happen to, spelled as the column stores them. */
     private object TerminalExportStates {
         val all: Set<String> = UserDataExportState.entries.filter { it.isTerminal }.map { it.name }.toSet()

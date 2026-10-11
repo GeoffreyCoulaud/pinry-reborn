@@ -436,22 +436,6 @@ class UserDataImportRepositoryTest : RepositoryTest() {
         assertEquals(setOf(first.id, second.id), ids.toSet())
     }
 
-    @Test
-    fun `Given imports for two users, Then deleteAllForUser removes only that user's rows`() {
-        // Given
-        val user = createAndSaveUser()
-        val otherUser = createAndSaveUser()
-        repository.save(awaitingImport(user.id))
-        val otherImport = repository.save(awaitingImport(otherUser.id))
-
-        // When
-        repository.deleteAllForUser(user.id)
-
-        // Then
-        assertTrue(repository.findAllImportIdsForUser(user.id).isEmpty())
-        assertEquals(listOf(otherImport.id), repository.findAllImportIdsForUser(otherUser.id))
-    }
-
     // --- paging ---
 
     @Test

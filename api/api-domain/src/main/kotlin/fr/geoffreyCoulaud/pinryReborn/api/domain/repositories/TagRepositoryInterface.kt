@@ -28,7 +28,4 @@ interface TagRepositoryInterface {
         query: String,
         limit: Int,
     ): List<Tag>
-
-    /** Delete all tags for a user */
-    fun deleteAllTagsForUser(user: User)
 }

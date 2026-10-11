@@ -474,22 +474,6 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         assertEquals(setOf(first.id, second.id), ids.toSet())
     }
 
-    @Test
-    fun `Given exports for two users, Then deleteAllForUser removes only that user's rows`() {
-        // Given
-        val user = createAndSaveUser()
-        val otherUser = createAndSaveUser()
-        repository.save(pendingExport(user.id))
-        val otherExport = repository.save(pendingExport(otherUser.id))
-
-        // When
-        repository.deleteAllForUser(user.id)
-
-        // Then
-        assertTrue(repository.findAllExportIdsForUser(user.id).isEmpty())
-        assertEquals(listOf(otherExport.id), repository.findAllExportIdsForUser(otherUser.id))
-    }
-
     // --- findMissingExportIds (orphan sweep) ---
 
     @Test

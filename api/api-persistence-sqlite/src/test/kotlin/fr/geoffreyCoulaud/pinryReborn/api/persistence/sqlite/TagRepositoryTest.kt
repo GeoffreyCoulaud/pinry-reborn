@@ -1,10 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.TagRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -20,28 +17,9 @@ import org.junit.jupiter.api.assertThrows
 class TagRepositoryTest : RepositoryTest() {
     private val repository = TagRepository(persistor)
     private val userRepository = UserRepository(persistor)
-    private val pinRepository = PinRepository(persistor)
 
     private fun createAndSaveUser(): User =
         userRepository.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
-
-    private fun createPinWithTag(
-        author: User,
-        tag: Tag,
-    ): Pin =
-        pinRepository.savePin(
-            Pin(
-                id = randomUUID(),
-                author = author,
-                sourceContextUrl = HttpUrl.parse("https://example.com"),
-                sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpeg"),
-                description = "Something",
-                tags = listOf(tag),
-                boards = emptyList(),
-                createdAt = storableNow(),
-                updatedAt = storableNow(),
-            )
-        )
 
     @Test
     fun `Given a new tag, Then saveTag persists it`() {
@@ -96,50 +74,6 @@ class TagRepositoryTest : RepositoryTest() {
 
         // Then
         assertEquals(setOf(tag1, tag2), tags.toSet())
-    }
-
-    @Test
-    fun `Given tags owned by the user, Then deleteAllTagsForUser removes them`() {
-        // Given
-        val user = createAndSaveUser()
-        repository.saveTag(Tag(id = randomUUID(), author = user, name = "tag1", createdAt = storableNow()))
-        repository.saveTag(Tag(id = randomUUID(), author = user, name = "tag2", createdAt = storableNow()))
-
-        // When
-        repository.deleteAllTagsForUser(user)
-
-        // Then
-        assertEquals(emptyList<Tag>(), repository.findAllTagsForUser(user))
-    }
-
-    @Test
-    fun `Given a tag used by a pin, Then deleteAllTagsForUser removes it and its pin_tag junction row`() {
-        // Given
-        val user = createAndSaveUser()
-        val tag = repository.saveTag(Tag(id = randomUUID(), author = user, name = "tag1", createdAt = storableNow()))
-        val pin = createPinWithTag(author = user, tag = tag)
-
-        // When
-        // `foreign_keys` is off, so the store would not refuse a join row left behind.
-        repository.deleteAllTagsForUser(user)
-
-        // Then
-        assertEquals(emptyList<Tag>(), repository.findAllTagsForUser(user))
-        val reloadedPin = pinRepository.findPinById(pin.id)
-        assertNotNull(reloadedPin)
-        assertTrue(reloadedPin!!.tags.isEmpty())
-    }
-
-    @Test
-    fun `Given a user with no tags, Then deleteAllTagsForUser is a no-op`() {
-        // Given
-        val user = createAndSaveUser()
-
-        // When
-        repository.deleteAllTagsForUser(user)
-
-        // Then
-        assertEquals(emptyList<Tag>(), repository.findAllTagsForUser(user))
     }
 
     // --- Names as identities ---
