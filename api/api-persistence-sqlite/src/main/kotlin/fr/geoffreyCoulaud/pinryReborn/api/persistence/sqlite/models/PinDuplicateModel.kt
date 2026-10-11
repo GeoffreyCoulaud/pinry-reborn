@@ -11,7 +11,10 @@ import jakarta.persistence.Table
 import java.time.Instant
 import java.util.UUID
 
-/** Two pins whose media look alike, [firstPinId] the lower id; [rejectedAt] is set once the user says they are not. */
+/**
+ * Two pins whose media look alike, [firstPinId] the lower id (`ck_pin_duplicates_order`); [rejectedAt] is set once the
+ * user says they are not.
+ */
 @Entity
 @Table(name = "pin_duplicates")
 // A pair is held once; `first_pin_id` leads, so it also serves every read by that side.

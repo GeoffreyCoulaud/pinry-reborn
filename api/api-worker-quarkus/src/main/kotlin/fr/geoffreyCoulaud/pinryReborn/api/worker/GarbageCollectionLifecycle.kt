@@ -82,7 +82,7 @@ class GarbageCollectionLifecycle(
         try {
             reapFingerprints.reap()
         } catch (e: Exception) {
-            logger.error(e) { "fingerprint sweep failed" }
+            logger.error(e) { "fingerprint drain enqueue failed" }
         }
     }
 

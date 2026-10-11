@@ -55,8 +55,8 @@ class AccountDeletionCleaner(
             mediaStore.deleteQuietly(storageKey)
             renditionCache.evictMediaQuietly(mediaId)
         }
-        // Derive each archive key from its id, not from the (now-deleted) row: this reclaims an
-        // archive promoted by a builder that died before writing its storageKey column.
+        // Derive each archive key from its id, the row being gone: every export is reclaimed, whether
+        // its row held an archive or not, a delete of nothing being quiet.
         for (exportId in exportIds) {
             exportArchiveStore.deleteQuietly(
                 ExportArchiveKey.forExport(exportId, exportArchiveStore.format.fileExtension)
