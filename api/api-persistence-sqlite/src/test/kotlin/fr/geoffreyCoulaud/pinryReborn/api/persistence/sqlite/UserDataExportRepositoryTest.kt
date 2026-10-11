@@ -40,6 +40,10 @@ class UserDataExportRepositoryTest : RepositoryTest() {
             requestedAt = requestedAt,
         )
 
+    // A READY row holds its archive's size, digest and completion instant, or the database refuses it.
+    private fun UserDataExport.ready() =
+        copy(state = UserDataExportState.READY, byteSize = 1, sha256 = "digest", completedAt = requestedAt)
+
     // --- save / findById ---
 
     @Test
@@ -120,8 +124,8 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         val export =
             repository.save(
                 pendingExport(user.id)
+                    .ready()
                     .copy(
-                        state = UserDataExportState.READY,
                         expiresAt = Instant.parse("2026-07-22T00:00:00Z"),
                         archiveHeld = true,
                     )
@@ -203,7 +207,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
     fun `Given only a ready export, Then no pending export is found`() {
         // Given
         val user = createAndSaveUser()
-        repository.save(pendingExport(user.id).copy(state = UserDataExportState.READY))
+        repository.save(pendingExport(user.id).ready())
 
         // When
         val found = repository.findPendingForUser(user.id)
@@ -216,7 +220,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
     fun `Given a ready export, Then it is found for its user`() {
         // Given
         val user = createAndSaveUser()
-        val export = repository.save(pendingExport(user.id).copy(state = UserDataExportState.READY))
+        val export = repository.save(pendingExport(user.id).ready())
 
         // When
         val found = repository.findReadyForUser(user.id)
@@ -238,6 +242,16 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         assertNull(found)
     }
 
+    @Test
+    fun `Given a ready export missing its size, digest or completion instant, Then the database refuses it`() {
+        // Given
+        val ready = pendingExport(createAndSaveUser().id).ready()
+        val incomplete = listOf(ready.copy(byteSize = null), ready.copy(sha256 = null), ready.copy(completedAt = null))
+
+        // When, Then
+        incomplete.forEach { export -> assertRefusedByCheck("ck_user_data_exports_ready") { repository.save(export) } }
+    }
+
     // --- expiry ---
 
     @Test
@@ -245,13 +259,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         // Given
         val user = createAndSaveUser()
         val export =
-            repository.save(
-                pendingExport(user.id)
-                    .copy(
-                        state = UserDataExportState.READY,
-                        expiresAt = Instant.parse("2026-07-22T00:00:00Z"),
-                    )
-            )
+            repository.save(pendingExport(user.id).ready().copy(expiresAt = Instant.parse("2026-07-22T00:00:00Z")))
         val now = Instant.parse("2026-07-23T00:00:00Z")
 
         // When
@@ -265,13 +273,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
     fun `Given a ready export before its expiry, Then it is not listed as expired`() {
         // Given
         val user = createAndSaveUser()
-        repository.save(
-            pendingExport(user.id)
-                .copy(
-                    state = UserDataExportState.READY,
-                    expiresAt = Instant.parse("2026-07-24T00:00:00Z"),
-                )
-        )
+        repository.save(pendingExport(user.id).ready().copy(expiresAt = Instant.parse("2026-07-24T00:00:00Z")))
         val now = Instant.parse("2026-07-23T00:00:00Z")
 
         // When
@@ -299,7 +301,8 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         archived: Boolean = true,
         id: UUID = randomUUID(),
     ): UserDataExport {
-        val export = pendingExport(createAndSaveUser().id, requestedAt, id)
+        val pending = pendingExport(createAndSaveUser().id, requestedAt, id)
+        val export = if (state == UserDataExportState.READY) pending.ready() else pending
         return repository.save(export.copy(state = state, archiveHeld = archived))
     }
 
@@ -387,8 +390,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
                 .map { n ->
                     repository
                         .save(
-                            pendingExport(createAndSaveUser().id, id = orderedId(n))
-                                .copy(state = UserDataExportState.READY, expiresAt = expiredAt)
+                            pendingExport(createAndSaveUser().id, id = orderedId(n)).ready().copy(expiresAt = expiredAt)
                         )
                         .id
                 }
@@ -461,10 +463,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
         // Given
         val user = createAndSaveUser()
         val first = repository.save(pendingExport(user.id))
-        val second =
-            repository.save(
-                pendingExport(user.id, Instant.parse("2026-07-22T11:00:00Z")).copy(state = UserDataExportState.READY)
-            )
+        val second = repository.save(pendingExport(user.id, Instant.parse("2026-07-22T11:00:00Z")).ready())
 
         // When
         val ids = repository.findAllExportIdsForUser(user.id)

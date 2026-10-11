@@ -677,11 +677,10 @@ class EbeanTaskQueueTest : RepositoryTest() {
     // --- deleteTerminalBefore ---
 
     @Test
-    fun `Given terminal and non-terminal tasks, Then deleteTerminalBefore deletes only stale terminals`() {
+    fun `Given stale and fresh terminal tasks, Then deleteTerminalBefore deletes only the stale ones`() {
         // Given: for each terminal state (SUCCEEDED, DEAD, CANCELLED) one stale row back-dated before
-        // the cutoff and one fresh row back-dated after it, plus a PENDING and a RUNNING task
-        // back-dated before the cutoff. `terminal_state_at` is a plain column, but it is back-dated
-        // via raw SQL rather than a re-save, to place the row on a specific side of the cutoff
+        // the cutoff and one fresh row back-dated after it. `terminal_state_at` is a plain column, but it
+        // is back-dated via raw SQL rather than a re-save, to place the row on a specific side of the cutoff
         // independently of the `now` the transition itself stamped.
         val cutoff = storableNow()
         val beforeCutoff = cutoff.minus(2, ChronoUnit.HOURS)
@@ -693,8 +692,6 @@ class EbeanTaskQueueTest : RepositoryTest() {
         val freshDead = claimFresh().also { queue.markDead(it.id, it.leaseId, now) }
         val staleCancelled = queue.enqueue(newTask()).also { queue.cancelPending(it.id, now) }
         val freshCancelled = queue.enqueue(newTask()).also { queue.cancelPending(it.id, now) }
-        val oldPending = queue.enqueue(newTask())
-        val oldRunning = claimFresh()
 
         backDateTerminalStateAt(staleSucceeded.id, beforeCutoff)
         backDateTerminalStateAt(freshSucceeded.id, afterCutoff)
@@ -702,14 +699,11 @@ class EbeanTaskQueueTest : RepositoryTest() {
         backDateTerminalStateAt(freshDead.id, afterCutoff)
         backDateTerminalStateAt(staleCancelled.id, beforeCutoff)
         backDateTerminalStateAt(freshCancelled.id, afterCutoff)
-        backDateTerminalStateAt(oldPending.id, beforeCutoff)
-        backDateTerminalStateAt(oldRunning.id, beforeCutoff)
 
         // When
         val deleted = queue.deleteTerminalBefore(cutoff)
 
-        // Then: the three stale terminals are gone; fresh terminals and non-terminals are untouched
-        // (the state filter excludes PENDING/RUNNING, the time filter excludes fresh terminals).
+        // Then: the three stale terminals are gone, the fresh ones untouched
         assertEquals(3, deleted)
         assertNull(queue.findById(staleSucceeded.id))
         assertNull(queue.findById(staleDead.id))
@@ -717,8 +711,6 @@ class EbeanTaskQueueTest : RepositoryTest() {
         assertNotNull(queue.findById(freshSucceeded.id))
         assertNotNull(queue.findById(freshDead.id))
         assertNotNull(queue.findById(freshCancelled.id))
-        assertNotNull(queue.findById(oldPending.id))
-        assertNotNull(queue.findById(oldRunning.id))
     }
 
     @Test
@@ -735,6 +727,18 @@ class EbeanTaskQueueTest : RepositoryTest() {
         assertEquals(0, deleted)
         assertNotNull(queue.findById(freshTerminal.id))
         assertNotNull(queue.findById(runningTask.id))
+    }
+
+    @Test
+    fun `Given a task whose terminal instant contradicts its state, Then the database refuses it`() {
+        // Given: a live task stamped terminal, and a terminal task left unstamped
+        val stampedLive = liveTaskModel(createRandomString()).apply { terminalStateAt = now }
+        val unstampedTerminal = liveTaskModel(createRandomString()).apply { state = TaskState.SUCCEEDED.name }
+
+        // When, Then
+        listOf(stampedLive, unstampedTerminal).forEach { row ->
+            assertRefusedByCheck("ck_tasks_terminal_state_at") { persistor.save(row) }
+        }
     }
 
     private fun backDateTerminalStateAt(id: UUID, terminalStateAt: Instant) {
