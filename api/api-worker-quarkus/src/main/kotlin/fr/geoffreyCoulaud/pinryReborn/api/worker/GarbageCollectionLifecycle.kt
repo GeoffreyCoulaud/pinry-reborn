@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.worker
 
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapExpiredSessionTokens
-import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapFingerprints
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapOrphanedStorage
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapStaleMediaDownloads
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ReapTombstonedAccounts
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.RequestOutdatedFingerprintRefresh
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.ReapTerminalTasks
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.quarkus.runtime.ShutdownEvent
@@ -14,14 +14,14 @@ import jakarta.enterprise.event.Observes
 import java.util.concurrent.TimeUnit
 
 /**
- * Drives the periodic garbage collection lifecycle: runs the `Reap*` sweeps on application startup, keeps sweeping on a
- * fixed delay so inert rows and orphaned files do not accumulate, and stops the scheduler on shutdown. Mirrors
- * [ExportRetentionLifecycle]; the only structural difference is several sweeps instead of one, each isolated in its own
- * try/catch inside [safeAll] so one throwing sweep is logged and does not stop the others (spec
- * docs/specs/2026-07-27-periodic-gc.md, D4). The scheduler is a [PeriodicScheduler] wired as a `@Dependent` producer
- * (one instance per lifecycle injection, so one thread per role), so the orphan disk scan and the tombstone re-drive do
- * heavy filesystem and database work on a thread isolated from task claiming, the lease reaper, and archive purging
- * without relying on a distinct type or a string qualifier.
+ * Drives the periodic garbage collection lifecycle: runs the `Reap*` sweeps and the fingerprint refresh request on
+ * application startup, keeps sweeping on a fixed delay so inert rows and orphaned files do not accumulate, and stops
+ * the scheduler on shutdown. Mirrors [ExportRetentionLifecycle]; the only structural difference is several sweeps
+ * instead of one, each isolated in its own try/catch inside [safeAll] so one throwing sweep is logged and does not stop
+ * the others (spec docs/specs/2026-07-27-periodic-gc.md, D4). The scheduler is a [PeriodicScheduler] wired as a
+ * `@Dependent` producer (one instance per lifecycle injection, so one thread per role), so the orphan disk scan and the
+ * tombstone re-drive do heavy filesystem and database work on a thread isolated from task claiming, the lease reaper,
+ * and archive purging without relying on a distinct type or a string qualifier.
  */
 @ApplicationScoped
 // One injected collection of sweeps is the structural answer, and that refactor was not asked for.
@@ -32,7 +32,7 @@ class GarbageCollectionLifecycle(
     private val reapTombstonedAccounts: ReapTombstonedAccounts,
     private val reapTerminalTasks: ReapTerminalTasks,
     private val reapStaleMediaDownloads: ReapStaleMediaDownloads,
-    private val reapFingerprints: ReapFingerprints,
+    private val requestOutdatedFingerprintRefresh: RequestOutdatedFingerprintRefresh,
     private val executor: PeriodicScheduler,
     private val config: GarbageCollectionConfig,
 ) {
@@ -80,9 +80,9 @@ class GarbageCollectionLifecycle(
             logger.error(e) { "stale media download sweep failed" }
         }
         try {
-            reapFingerprints.reap()
+            requestOutdatedFingerprintRefresh.request()
         } catch (e: Exception) {
-            logger.error(e) { "fingerprint drain enqueue failed" }
+            logger.error(e) { "outdated fingerprint refresh request failed" }
         }
     }
 

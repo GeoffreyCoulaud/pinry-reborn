@@ -7,14 +7,14 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 
-class ReapFingerprintsTest : BaseTest() {
+class RequestOutdatedFingerprintRefreshTest : BaseTest() {
     private val enqueueTask = mockk<EnqueueTask>(relaxed = true)
-    private val reaper = ReapFingerprints(enqueueTask)
+    private val useCase = RequestOutdatedFingerprintRefresh(enqueueTask)
 
     @Test
-    fun `Given a reap, Then the drain is enqueued`() {
+    fun `Given an outdated fingerprint refresh request, Then the fingerprint task is enqueued`() {
         // When
-        reaper.reap()
+        useCase.request()
 
         // Then
         verify { enqueueTask.enqueue(MediaFingerprintTask.KIND, "", any(), any(), any(), MediaFingerprintTask.KIND) }
