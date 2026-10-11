@@ -1,9 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
 
 import com.lemonappdev.konsist.api.Konsist
+import com.lemonappdev.konsist.api.declaration.KoAnnotationDeclaration
 import com.lemonappdev.konsist.api.declaration.KoClassDeclaration
 import com.lemonappdev.konsist.api.declaration.KoPropertyDeclaration
 import com.lemonappdev.konsist.api.ext.list.properties
+import com.lemonappdev.konsist.api.ext.list.withAnnotationOf
 import com.lemonappdev.konsist.api.ext.list.withFunctions
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import com.lemonappdev.konsist.api.ext.list.withProperty
@@ -70,5 +72,64 @@ class ModelsPackageArchTest {
     @Test
     fun `Given the models package, Then no property's type is a value class`() {
         valueClassProperties(modelClasses).assertEmpty()
+    }
+
+    /** The entities whose `@Table` is not the name their class gives (ADR 0058, decision 5), or that carry none. */
+    private fun misnamedTables(models: List<KoClassDeclaration>): List<KoClassDeclaration> =
+        models.withAnnotationOf(Entity::class).filterNot { tableOf(it) == expectedTableOf(it.name) }
+
+    private fun expectedTableOf(className: String): String =
+        KEPT_TABLE_NAMES[className]?.table ?: pluralOf(snakeCaseOf(className.removeSuffix("Model")))
+
+    private fun snakeCaseOf(name: String): String = name.replace(Regex("(?<!^)([A-Z])"), "_$1").lowercase()
+
+    private fun pluralOf(noun: String): String = if (noun.contains(Regex("(s|sh|ch|x)$"))) "${noun}es" else "${noun}s"
+
+    private fun tableOf(model: KoClassDeclaration): String? =
+        model.annotations.firstOrNull { it.name == "Table" }?.let { nameArgumentOf(it) }
+
+    private fun nameArgumentOf(annotation: KoAnnotationDeclaration): String? =
+        annotation.arguments.firstOrNull { it.name == "name" }?.value
+
+    /** The `@Index` names that do not start with their entity's table name (ADR 0058, decision 5). */
+    private fun misnamedIndexes(models: List<KoClassDeclaration>): List<String> =
+        models.withAnnotationOf(Entity::class).flatMap { model ->
+            val prefix = Regex("(ix|ux|uq|ck)_${tableOf(model)}_\\w+")
+            model.annotations
+                .filter { it.name == "Index" }
+                .mapNotNull { nameArgumentOf(it) }
+                .filterNot { it.matches(prefix) }
+        }
+
+    @Test
+    fun `Given a fixture model whose table is pin_tag_model, Then the table rule flags it`() {
+        val fixture =
+            Konsist.scopeFromFile("api-persistence-sqlite/src/test/resources/konsist/TableNameModel.kt").classes()
+        assertEquals(listOf("PinTagModel"), misnamedTables(fixture).map { it.name })
+    }
+
+    @Test
+    fun `Given the models package, Then every entity's table is the name its class gives`() {
+        misnamedTables(modelClasses).assertEmpty()
+    }
+
+    @Test
+    fun `Given a fixture model with an index named after another table, Then the index rule flags it alone`() {
+        val fixture =
+            Konsist.scopeFromFile("api-persistence-sqlite/src/test/resources/konsist/IndexNameModel.kt").classes()
+        assertEquals(listOf("ix_pin_tag_model_tag"), misnamedIndexes(fixture))
+    }
+
+    @Test
+    fun `Given the models package, Then every index name starts with its table's name`() {
+        assertEquals(emptyList<String>(), misnamedIndexes(modelClasses))
+    }
+
+    private data class KeptTableName(val table: String, val reason: String)
+
+    private companion object {
+        /** The models whose table keeps another name, each with its reason (`api/AGENTS.md`, Gotchas). */
+        private val KEPT_TABLE_NAMES =
+            mapOf("MediaModel" to KeptTableName(table = "media", reason = "The word is its own plural."))
     }
 }

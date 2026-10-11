@@ -11,12 +11,12 @@ import java.time.Instant
 import java.util.UUID
 
 @Entity
-@Table(name = "media_download")
+@Table(name = "media_downloads")
 // One download row per pin, which `upsertPending` replaces rather than duplicates. It was the
 // primary key until the row gained a surrogate id, and the uniqueness has to survive that.
 @Index(
-    name = "ux_media_download_pin",
-    definition = "create unique index ux_media_download_pin on media_download (pin_id)",
+    name = "ux_media_downloads_pin",
+    definition = "create unique index ux_media_downloads_pin on media_downloads (pin_id)",
 )
 @Suppress("LongParameterList") // Ebean entity: every parameter is a persisted column.
 class MediaDownloadModel(

@@ -93,6 +93,9 @@ How this build applies `agents/data-modelling.md`
   `unique = true` (Ebean emits an unsupported `ALTER TABLE` that becomes a silent no-op comment).
   `DbMigrationModelCoverageTest` fails on the no-op marker.
 - **Partial or expression index**: `definition` alone, no `columnNames`, no `unique = true`.
+- **A table is named after its model** (`ModelsPackageArchTest`): `@Table` holds the class name without `Model`, in
+  snake case, plural, and each index name starts with that table's. A model renamed without paying the migration
+  keeps its table through an entry, with its reason, in that test's exception list.
 - **A changed detekt rule is not picked up by a live Gradle daemon** (cached classpath: false green). Run
   `./gradlew --stop` before trusting a local gate after a rule change.
 - **detekt baselines are per module and source set** (`api/config/detekt/baseline-<module>-<sourceSet>.xml`):

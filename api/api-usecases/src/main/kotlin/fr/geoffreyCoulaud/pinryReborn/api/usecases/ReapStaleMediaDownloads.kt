@@ -8,7 +8,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.ReapExpiredTasks
 import java.time.Duration
 
 /**
- * Bounds `media_download`, whose rows are otherwise immortal: a PENDING row whose task is terminal or gone becomes
+ * Bounds `media_downloads`, whose rows are otherwise immortal: a PENDING row whose task is terminal or gone becomes
  * FAILED, which stops the client's polling, and past [failedGrace] it is deleted.
  */
 class ReapStaleMediaDownloads(
