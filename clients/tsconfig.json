@@ -1,0 +1,8 @@
+{
+	"files": [],
+	"references": [
+		{ "path": "apps/webapp" },
+		{ "path": "packages/auth" },
+		{ "path": "packages/api-client" }
+	]
+}
