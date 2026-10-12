@@ -1,9 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.bases.AuthoredBaseModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.Collations
 import io.ebean.annotation.ConstraintMode
 import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
@@ -22,7 +24,7 @@ class RemoteCollectionModel(
     id: UUID,
     author: UserModel,
     val url: String,
-    val name: String,
+    @Column(columnDefinition = Collations.CASE_INSENSITIVE_TEXT) val name: String,
     @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) val board: BoardModel,
     createdAt: Instant,
 ) : AuthoredBaseModel(id = id, author = author, createdAt = createdAt)

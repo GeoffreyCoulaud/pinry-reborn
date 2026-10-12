@@ -175,23 +175,22 @@ class UserRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `findUserByName is case-insensitive`() {
-        // Given
-        val user = User(id = randomUUID(), name = "Bob", createdAt = storableNow())
+    fun `Given a saved user, Then findUserByName finds it in another case outside ASCII`() {
+        // Given: the API admits ASCII names alone, so the column's own fold is pinned here
+        val user = User(id = randomUUID(), name = "élodie", createdAt = storableNow())
         repository.saveUser(user)
 
         // When
-        val foundUser = repository.findUserByName("bob")
+        val foundUser = repository.findUserByName("ÉLODIE")
 
         // Then
-        assertNotNull(foundUser)
-        assertEquals("Bob", foundUser!!.name)
+        assertEquals("élodie", foundUser?.name)
     }
 
     @Test
-    fun `Given a name already taken up to case, Then saveUser throws UsernameAlreadyTakenException`() {
-        // Given: ix_users_name_nocase folds case, so the store sees these two names as one
-        val takenName = "Alice${createRandomString()}"
+    fun `Given a name taken in another case outside ASCII, Then saveUser throws UsernameAlreadyTakenException`() {
+        // Given: the column's collation folds case in every script, so the store sees these two names as one
+        val takenName = "Élodie${createRandomString()}"
         saveUser(takenName)
 
         // When, Then

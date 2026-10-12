@@ -58,16 +58,16 @@ class BoardsIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given a name already held up to case, Then creating another board returns 409`() {
-        // Given: the unique index folds A to Z, so these two names are one name
+    fun `Given a name already held in another case outside ASCII, Then creating another board returns 409`() {
+        // Given: the column's collation folds case in every script, so these two names are one name
         val auth = createAuthenticatedUser()
-        boardCreator.create(author = auth.user, name = "voyage", description = "")
+        boardCreator.create(author = auth.user, name = "élodie", description = "")
 
         // When / Then
         given()
             .authenticatedAs(auth)
             .contentType(ContentType.JSON)
-            .body("""{"name": "Voyage", "description": ""}""")
+            .body("""{"name": "ÉLODIE", "description": ""}""")
             .`when`()
             .post("/api/v1/boards")
             .then()
@@ -169,24 +169,21 @@ class BoardsIntegrationTest : IntegrationTest() {
     // --- List ---
 
     @Test
-    fun `Given boards with mixed-case names, Then listing sorts them case-insensitively`() {
-        // Given
+    fun `Given boards with mixed-case names, Then listing sorts them case-insensitively, Émile beside emile`() {
+        // Given: code point order, lower-cased or not, would put Émile after emma
         val auth = createAuthenticatedUser()
-        boardCreator.create(author = auth.user, name = "Banana", description = "")
-        boardCreator.create(author = auth.user, name = "apple", description = "")
-        boardCreator.create(author = auth.user, name = "cherry", description = "")
+        boardCreator.create(author = auth.user, name = "Émile", description = "")
+        boardCreator.create(author = auth.user, name = "emma", description = "")
+        boardCreator.create(author = auth.user, name = "emile", description = "")
 
         // When / Then
-        // Naive case-sensitive ASCII order would be "Banana", "apple", "cherry" (B=66 < a=97 < c=99).
-        // The correct case-insensitive order is "apple", "Banana", "cherry", so this data discriminates
-        // a correct implementation from a regression to case-sensitive sorting.
         given()
             .authenticatedAs(auth)
             .`when`()
             .get("/api/v1/boards")
             .then()
             .statusCode(200)
-            .body("boards.name", contains("apple", "Banana", "cherry"))
+            .body("boards.name", contains("emile", "Émile", "emma"))
     }
 
     // --- Update ---

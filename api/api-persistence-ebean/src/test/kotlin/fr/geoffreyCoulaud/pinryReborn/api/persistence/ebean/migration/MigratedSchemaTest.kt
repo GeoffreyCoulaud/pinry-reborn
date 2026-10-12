@@ -67,7 +67,7 @@ class MigratedSchemaTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given the migrated database, Then its names are the columns that compare without case`() {
+    fun `Given the migrated database, Then the columns a reader names, searches or sorts compare without case`() {
         // When
         val collated =
             database
@@ -288,7 +288,15 @@ class MigratedSchemaTest : RepositoryTest() {
             )
 
         // The names a user identifies a thing by (ADR 0059, decision 4).
-        private val CASE_INSENSITIVE_COLUMNS = listOf("boards.name", "persons.name", "tags.name", "users.name")
+        private val CASE_INSENSITIVE_COLUMNS =
+            listOf(
+                "boards.name",
+                "persons.name",
+                "pins.description",
+                "remote_collections.name",
+                "tags.name",
+                "users.name",
+            )
 
         private val BOOLEAN_COLUMNS =
             listOf(

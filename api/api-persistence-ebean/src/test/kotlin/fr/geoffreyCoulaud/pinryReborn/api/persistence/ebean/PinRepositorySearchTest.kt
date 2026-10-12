@@ -136,7 +136,7 @@ class PinRepositorySearchTest : PinRepositoryFixtures() {
 
     @Test
     fun `Given a tag stored Cat, Then a lower-case term finds it`() {
-        // Given: SQLite's LIKE folds the English alphabet, which is the fold the tag index defines
+        // Given: LIKE folds under the column's collation, as the tag index does
         val author = createAndSaveUser()
         val pin = savePin(author, description = "A photograph", tags = listOf(createAndSaveTag("Cat", author)))
 
@@ -145,6 +145,21 @@ class PinRepositorySearchTest : PinRepositoryFixtures() {
 
         // Then
         assertEquals(listOf(pin.id), found.items.map { it.id })
+    }
+
+    @Test
+    fun `Given a description stored A Cat, Then the terms cat and CAT both find it`() {
+        // Given
+        val author = createAndSaveUser()
+        val pin = savePin(author, description = "A Cat")
+
+        // When
+        val lower = search(author, "cat")
+        val upper = search(author, "CAT")
+
+        // Then
+        assertEquals(listOf(pin.id), lower.items.map { it.id })
+        assertEquals(listOf(pin.id), upper.items.map { it.id })
     }
 
     @Test

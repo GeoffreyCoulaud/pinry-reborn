@@ -96,7 +96,7 @@ create table pins (
   published_at                  timestamptz,
   source_context_url            varchar,
   source_media_url              varchar,
-  description                   varchar not null,
+  description                   varchar collate case_insensitive not null,
   constraint pk_pins primary key (id)
 );
 
@@ -111,7 +111,7 @@ create table remote_collections (
   created_at                    timestamptz not null,
   board_id                      uuid not null,
   url                           varchar not null,
-  name                          varchar not null,
+  name                          varchar collate case_insensitive not null,
   constraint pk_remote_collections primary key (id)
 );
 
