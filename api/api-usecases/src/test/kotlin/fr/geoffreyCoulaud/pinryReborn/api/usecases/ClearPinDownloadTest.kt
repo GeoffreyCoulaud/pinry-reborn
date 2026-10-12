@@ -13,6 +13,7 @@ import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class ClearPinDownloadTest {
     private val downloads: MediaDownloadRepositoryInterface = mockk(relaxed = true)
@@ -30,6 +31,19 @@ class ClearPinDownloadTest {
         assertTrue(result)
         verify { cancelTask.cancel(taskId) }
         verify { downloads.deleteByPinId(pinId) }
+    }
+
+    @Test
+    fun `Given a cancellation that fails, Then the failure reaches the caller and the row stays`() {
+        // Given: a failed statement aborts the caller's transaction (ADR 0059, decision 10)
+        val taskId = randomUUID()
+        every { downloads.findByPinId(pinId) } returns
+            MediaDownload(pinId, sourceUrl, DownloadStatus.PENDING, null, taskId, Instant.EPOCH, Instant.EPOCH)
+        every { cancelTask.cancel(taskId) } throws IllegalStateException("current transaction is aborted")
+
+        // When, Then
+        assertThrows<IllegalStateException> { subject.clear(pinId) }
+        verify(exactly = 0) { downloads.deleteByPinId(any()) }
     }
 
     @Test
