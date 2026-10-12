@@ -31,7 +31,7 @@ import { PinSides } from "./PinSides";
 import { PublishedAtField } from "./PublishedAtField";
 import { PublisherField } from "./PublisherField";
 
-/** A tag is its name: the server folds names to ASCII and says which are one tag (specification 2026-09-20, decision L). */
+/** A tag is its name: the server folds their case and says which are one tag (specification 2026-09-20, decision L). */
 function tagName(name: string): string {
 	return name;
 }

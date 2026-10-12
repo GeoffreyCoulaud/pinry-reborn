@@ -169,9 +169,9 @@ class PinController(
         summary = "Replace the pin",
         description =
             "Every field is replaced by what is sent, so an unchanged field is sent as it was " +
-                "read and an empty list clears. A tag name is an identity per author under an ASCII fold: " +
-                "`Landscape` and `landscape` are one tag, and the response carries the stored spelling, not " +
-                "the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags. A person is " +
+                "read and an empty list clears. A tag name is an identity per author, case folded in every " +
+                "script: `Landscape` and `landscape` are one tag, as are `ÉTÉ` and `été`, and the response " +
+                "carries the stored spelling, not the one sent. A person is " +
                 "an identity per author by its name, under the same fold, and its addresses together, in any " +
                 "order: one more address names another person.",
     )

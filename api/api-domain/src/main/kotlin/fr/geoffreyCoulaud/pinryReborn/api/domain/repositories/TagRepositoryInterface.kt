@@ -8,8 +8,8 @@ interface TagRepositoryInterface {
     fun saveTag(tag: Tag): Tag
 
     /**
-     * Find a tag with the given name for the specific user. The fold is the index's own, ASCII case only, so two names
-     * differing outside A to Z are two names.
+     * Find a tag with the given name for the specific user. The fold is the store's own, case and width in every
+     * script.
      */
     fun findUserTagByName(
         user: User,
@@ -19,10 +19,7 @@ interface TagRepositoryInterface {
     /** Find all tags for a user */
     fun findAllTagsForUser(user: User): List<Tag>
 
-    /**
-     * Find at most [limit] of the user's tags whose name holds [query], those beginning with it first. The fold is the
-     * index's own, ASCII case only.
-     */
+    /** Find at most [limit] of the user's tags whose name holds [query], those beginning with it first, case folded. */
     fun findTagsForUserMatching(
         user: User,
         query: String,

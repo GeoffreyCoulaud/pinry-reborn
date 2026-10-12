@@ -243,7 +243,7 @@ export function usePin(pinId: string | undefined) {
 
 /**
  * The author's own tags, matched as the server matches them: a name is one identity per author
- * under an ASCII fold, so a spelling it already holds comes back rather than being invented here.
+ * with its case folded, so a spelling it already holds comes back rather than being invented here.
  */
 export function useTagSearch(query: string) {
 	const asked = query.trim();
