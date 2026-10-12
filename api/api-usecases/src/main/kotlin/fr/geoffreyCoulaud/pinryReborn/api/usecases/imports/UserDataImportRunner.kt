@@ -45,6 +45,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.TaskLeaseLos
 import java.io.IOException
 import java.io.InputStream
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import java.util.UUID.randomUUID
 
@@ -721,7 +722,7 @@ class UserDataImportRunner(
                             updatedAt = walk.clamp.clampUpdate(pin.updatedAt, createdAt),
                             softDeletedAt = pin.softDeletedAt?.let { walk.clamp.clamp(it) },
                             // A work often predates the account: not clamped (specification 2026-10-08, decision D).
-                            publishedAt = pin.publishedAt,
+                            publishedAt = pin.publishedAt?.truncatedTo(ChronoUnit.MILLIS),
                         ),
                     ingested = ingested,
                     tagNames = pin.tags.map { it.name },

@@ -106,6 +106,22 @@ class PinUpdaterTest {
     }
 
     @Test
+    fun `Given a publication instant finer than the millisecond, Then update stores it truncated to the millisecond`() {
+        // Given
+        val pin = pin(author = user)
+        every { pinRepository.findPinById(pin.id) } returns pin
+        every { pinTagger.resolveTags(emptyList(), user) } returns emptyList()
+        every { pinBoardSetter.resolveBoards(emptyList(), user) } returns emptyList()
+        every { pinRepository.savePin(any()) } answers { firstArg() }
+
+        // When
+        val result = update(pin.id, publishedAt = Instant.parse("2019-05-01T12:00:00.123456Z"))
+
+        // Then: the store keeps what the clock stamps, so a microsecond would not survive a round trip
+        assertEquals(Instant.parse("2019-05-01T12:00:00.123Z"), result.publishedAt)
+    }
+
+    @Test
     fun `Given a missing pin, Then throws PinUpdatePinDoesNotExistError`() {
         // Given
         val missingPinId = randomUUID()
