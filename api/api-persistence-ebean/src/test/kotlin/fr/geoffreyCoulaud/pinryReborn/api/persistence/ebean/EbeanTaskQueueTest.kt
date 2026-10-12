@@ -8,7 +8,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.TaskModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanTaskQueue
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.ebean.test.LoggedSql
-import jakarta.persistence.PersistenceException
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -18,12 +17,9 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.sqlite.SQLiteErrorCode
-import org.sqlite.SQLiteException
 
 class EbeanTaskQueueTest : RepositoryTest() {
     // The real policy at full jitter, so the delay a reap writes is exactly computable rather than
@@ -117,74 +113,37 @@ class EbeanTaskQueueTest : RepositoryTest() {
         assertEquals(true, witness.sawTransactionOnTaskInsert)
     }
 
-    // --- enqueue: the dedup insert loses the race ---
+    // --- enqueue: the dedup insert collides ---
 
     @Test
-    fun `Given the dedup insert loses the race, Then enqueue returns the live task it collided with`() {
-        // Given: a live task appears under the same dedup key between enqueue's check and its insert
-        val dedupKey = createRandomString()
-        val conflict = liveTaskModel(dedupKey)
-        val racingQueue =
-            EbeanTaskQueue(LosingDedupRacePersistor(persistor, conflict), transactionRunner, backoffPolicy)
-
-        // When: no ambient transaction, so enqueue opens and commits its own
-        val converged = racingQueue.enqueue(newTask(dedupKey = dedupKey))
-
-        // Then
-        assertEquals(conflict.id, converged.id)
-        assertEquals(1, queue.countByState(TaskState.PENDING))
-    }
-
-    @Test
-    fun `Given an ambient transaction, Then a lost dedup race still converges on the live task`() {
+    fun `Given an enclosing transaction, Then a colliding enqueue returns the live task and a later write commits`() {
         // Given
         val dedupKey = createRandomString()
-        val conflict = liveTaskModel(dedupKey)
-        val racingQueue =
-            EbeanTaskQueue(LosingDedupRacePersistor(persistor, conflict), transactionRunner, backoffPolicy)
+        val live = queue.enqueue(newTask(dedupKey = dedupKey))
 
-        // When: the caller owns the transaction, so committing it shows the caught violation left it usable
+        // When: the caller owns the transaction, writes after the collision, and commits
         val converged =
             transactionControl.beginTransaction().use { transaction ->
-                val task = racingQueue.enqueue(newTask(dedupKey = dedupKey))
+                val task = queue.enqueue(newTask(dedupKey = dedupKey))
+                queue.enqueue(newTask())
                 transaction.commit()
                 task
             }
 
-        // Then: the committed transaction holds the conflicting row and not the refused insert
-        assertEquals(conflict.id, converged.id)
-        assertEquals(1, queue.countByState(TaskState.PENDING))
+        // Then: a refused insert would have left the transaction unusable, and the later write with it
+        assertEquals(live.id, converged.id)
+        assertEquals(2, queue.countByState(TaskState.PENDING))
     }
 
     @Test
-    fun `Given a non-unique failure on the dedup insert, Then enqueue propagates it`() {
-        // Given: a live task is there to converge on, so only the discriminator stops it being handed over
-        val dedupKey = createRandomString()
-        val conflict = liveTaskModel(dedupKey)
-        val violation = notNullConstraintViolation()
-        val persistorRaising = ForeignFailurePersistor(persistor, conflict, violation)
-        val racingQueue = EbeanTaskQueue(persistorRaising, transactionRunner, backoffPolicy)
+    fun `Given a dedup insert declined with no live task behind it, Then enqueue fails`() {
+        // Given: what a primary key collision would leave, the statement declining every conflict
+        val decliningQueue = EbeanTaskQueue(DecliningPersistor(persistor), transactionRunner, backoffPolicy)
 
-        // When, Then: a NOT NULL violation answered by convergence would hide a broken column
-        val thrown =
-            assertThrows(PersistenceException::class.java) {
-                racingQueue.enqueue(newTask(dedupKey = dedupKey))
-            }
-        assertSame(violation, thrown)
-    }
-
-    @Test
-    fun `Given a dedup violation with no live task behind it, Then enqueue propagates the violation`() {
-        // Given: the violation carries no row to converge on, so propagating it is the honest answer
-        val violation = uniqueConstraintViolation()
-        val racingQueue = EbeanTaskQueue(NoConflictRowPersistor(persistor, violation), transactionRunner, backoffPolicy)
-
-        // When, Then
-        val thrown =
-            assertThrows(PersistenceException::class.java) {
-                racingQueue.enqueue(newTask(dedupKey = createRandomString()))
-            }
-        assertSame(violation, thrown)
+        // When, Then: handing back no task would lose the work the caller asked for in silence
+        assertThrows(IllegalStateException::class.java) {
+            decliningQueue.enqueue(newTask(dedupKey = createRandomString()))
+        }
     }
 
     /** A live row under [dedupKey]: what a lost race leaves for the losing insert to collide with. */
@@ -199,26 +158,6 @@ class EbeanTaskQueueTest : RepositoryTest() {
             attempts = 0,
             maxAttempts = 3,
             dedupKey = dedupKey,
-        )
-
-    /** The exception shape Ebean-on-SQLite raises for a unique-index violation. */
-    private fun uniqueConstraintViolation() =
-        PersistenceException(
-            "[SQLITE_CONSTRAINT_UNIQUE] A UNIQUE constraint failed",
-            SQLiteException(
-                "[SQLITE_CONSTRAINT_UNIQUE] A UNIQUE constraint failed",
-                SQLiteErrorCode.SQLITE_CONSTRAINT_UNIQUE,
-            ),
-        )
-
-    /** The shape of a failure that must never converge: same vendor errorCode 19, other resultCode. */
-    private fun notNullConstraintViolation() =
-        PersistenceException(
-            "[SQLITE_CONSTRAINT_NOTNULL] A NOT NULL constraint failed",
-            SQLiteException(
-                "[SQLITE_CONSTRAINT_NOTNULL] A NOT NULL constraint failed",
-                SQLiteErrorCode.SQLITE_CONSTRAINT_NOTNULL,
-            ),
         )
 
     /** Records whether a transaction was open on the thread when the insert reached the store. */
@@ -237,50 +176,9 @@ class EbeanTaskQueueTest : RepositoryTest() {
         }
     }
 
-    /**
-     * Stages a lost dedup race by writing [conflict] just before the insert: the real race does not reproduce while
-     * `enqueue` holds its check and its insert in one transaction (`docs/adr/0009-unique-index-named-outcomes.md`,
-     * findings).
-     */
-    private class LosingDedupRacePersistor(
-        private val delegate: Persistor,
-        private val conflict: TaskModel,
-    ) : Persistor by delegate {
-        private var raced = false
-
-        override fun save(bean: Any) {
-            if (bean is TaskModel && !raced) {
-                raced = true
-                delegate.save(conflict)
-            }
-            delegate.save(bean)
-        }
-    }
-
-    /** Writes [conflict], then fails the insert with [violation]: only the discriminator stops convergence. */
-    private class ForeignFailurePersistor(
-        private val delegate: Persistor,
-        private val conflict: TaskModel,
-        private val violation: PersistenceException,
-    ) : Persistor by delegate {
-        override fun save(bean: Any) {
-            if (bean is TaskModel && bean.dedupKey == conflict.dedupKey) {
-                delegate.save(conflict)
-                throw violation
-            }
-            delegate.save(bean)
-        }
-    }
-
-    /** Raises [violation] on a task insert without writing anything, so the re-read finds nothing. */
-    private class NoConflictRowPersistor(
-        private val delegate: Persistor,
-        private val violation: PersistenceException,
-    ) : Persistor by delegate {
-        override fun save(bean: Any) {
-            if (bean is TaskModel) throw violation
-            delegate.save(bean)
-        }
+    /** Runs no raw statement, answering that it wrote nothing. */
+    private class DecliningPersistor(private val delegate: Persistor) : Persistor by delegate {
+        override fun executeRaw(statement: String, vararg parameters: Any?): Int = 0
     }
 
     // --- claimNext ---

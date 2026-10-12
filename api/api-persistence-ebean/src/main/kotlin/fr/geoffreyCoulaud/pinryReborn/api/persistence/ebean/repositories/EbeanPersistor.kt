@@ -25,4 +25,7 @@ class EbeanPersistor(private val database: Database) : Persistor {
     override fun <T : Any> reference(type: Class<T>, id: Any): T {
         return database.reference(type, id)
     }
+
+    override fun executeRaw(statement: String, vararg parameters: Any?): Int =
+        database.sqlUpdate(statement).setParameters(*parameters).execute()
 }
