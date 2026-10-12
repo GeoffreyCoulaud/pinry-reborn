@@ -7,7 +7,8 @@ PostgreSQL".
 Amends: `docs/adr/0009-unique-index-named-outcomes.md` (the violation's shape),
 `docs/adr/0013-in-memory-authentication-attempt-limiting.md` (decision 1's "the SQLite store enforces", and the limit
 "grouping is wider than the database's"), `docs/adr/0040-search-is-a-parameter-of-the-catalogue.md` (the ASCII fold),
-`docs/adr/0056-data-shapes-are-decided-in-the-specification.md` (the equality rule).
+`docs/adr/0056-data-shapes-are-decided-in-the-specification.md` (the equality rule). (Corrected: and
+`docs/adr/0008-structural-soft-delete-read-isolation.md`, decision 2, `Persistor` gaining `executeRaw`.)
 Specification: `docs/specs/2026-10-12-the-database-is-postgresql.md`.
 
 ## Context
@@ -37,7 +38,8 @@ of each in brackets; the others are the lead's, from the specification and its r
    canonical text: `jsonb` would need a raw cast in the one lookup that compares it, and a task's payload is not JSON.
 6. **PostgreSQL runs as a service of its own** (G), beside the API in `compose.yml`, reached through environment
    variables. The API's image holds no database. The database is initialised with the `builtin` provider's
-   `C.UTF-8`, so no index depends on the C library's collation tables.
+   `C.UTF-8`, so no index depends on the C library's collation tables. (Corrected: the indexes over the
+   `case_insensitive` columns depend on ICU's, which the image ships; see the Consequences.)
 7. **The persistence module is named after Ebean** (H): `api-persistence-ebean`, package `persistence.ebean`.
 8. **The domain never folds more than the database does** (J, L). `PersonName` compares its text as written, the
    collation being one the domain cannot reproduce; two references to one person meet once a find-or-create has
@@ -46,7 +48,9 @@ of each in brackets; the others are the lead's, from the specification and its r
 9. **A violation the code translates is recognised by its constraint's name**, which PostgreSQL reports, rather than
    by "the table's only unique index".
 10. **A violation never leaves a transaction to recover in.** PostgreSQL aborts a transaction on any error, so the
-    task queue's deduplicating insert says `on conflict do nothing` rather than catching the error.
+    task queue's deduplicating insert says `on conflict do nothing` rather than catching the error. (Corrected: and a
+    use case that caught a failure and went on, `ClearPinDownload` inside the account deletion's transaction, lets it
+    through; holistic review, block 110.)
 11. **A login name outside the account alphabet resolves to no account.** Account names are `[A-Za-z0-9._-]`, where
     the collation and the attempt key's `lowercase` agree; a name outside it would reach an account through the
     collation's width fold under a key of its own. It answers as an unknown name does, so the key stays a function
@@ -83,3 +87,12 @@ of each in brackets; the others are the lead's, from the specification and its r
 - A workstation runs the suite with Docker. Without it, ebean-test's `useDocker: false` reaches any PostgreSQL the
   environment names.
 - The backlog's search tolerant of typos no longer waits on an engine, only on its own lot.
+
+(Corrected: three consequences the lot met, from the holistic review, `.reviews/the-database-is-postgresql-holistic.md`:
+- `Persistor` gains `executeRaw` for decision 10's statement, widening ADR 0008's write port, and
+  `RawSqlOutsideInventory` guards it as it guards `raw` (block 40).
+- A tag name is bounded at 200 characters on every route that writes one, for the index entry's bound:
+  `PUT /api/v1/pins/{id}` gained it, a break that made the contract `27.0.0` (block 80, the operator's answer).
+- The collated indexes are ordered by the ICU of the image's digest, and PostgreSQL records that version per
+  collation: an image whose ICU differs needs those indexes rebuilt and the collation's version refreshed
+  (`api/AGENTS.md`, Gotchas).)

@@ -1,6 +1,8 @@
 # 0013. In-memory authentication attempt limiting
 
-Status: Proposed
+Status: Proposed; amended by `docs/adr/0059-the-database-is-postgresql.md`: decision 1's one instance is assumed and
+no longer enforced by the store (its decision 2), and the limit "grouping is wider than the database's" no longer
+holds, a login name outside the account alphabet reading no account (its decision 11).
 Date: 2026-08-13
 
 ## Context

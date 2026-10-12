@@ -9,7 +9,12 @@ Branches: one stack, each block on the one before it: 10 `refactor/the-persisten
 `refactor/a-write-declines-what-postgresql-refuses`, 50 `feat/the-database-is-postgresql`, 60
 `feat/a-name-ignores-case-in-every-script`, 70 `refactor/a-violation-names-its-constraint`, 80
 `test/the-schema-holds-on-postgresql`, 90 `chore/the-image-holds-no-database`, 100 `docs/the-sources-name-postgresql`,
-then the closing block 110 `chore/the-postgresql-lot-closes`.
+then the closing block 110 `chore/the-postgresql-lot-closes`. (Corrected: fifteen pull requests ran, #419, #420 and
+#422 to #433, then the closing one. Block 60 split into 60 `feat/a-name-ignores-case-in-every-script` (#425) and 65
+`feat/a-login-name-keeps-to-the-account-alphabet` (#426); block 100 into 100 `docs/the-sources-name-postgresql` (#430)
+and 105 `docs/the-tests-name-postgresql` (#431); the closing block into 110 `fix/the-holistic-findings-for-postgresql`
+(#432), 112 `test/the-index-bounds-read-their-writers` (#433) and 115 `chore/the-postgresql-lot-closes`. Each split
+approved by the lead and recorded in the report of the block it split.)
 ADR: `docs/adr/0059-the-database-is-postgresql.md` records the decisions below; it supersedes ADR 0058, decisions 8
 and 9.
 
@@ -97,6 +102,8 @@ decision says it is the lead's. Tier: Spec (A).
 - The database is initialised with `--locale-provider=builtin --locale=C.UTF-8` (`POSTGRES_INITDB_ARGS`) in
   `compose.yml` and the gate's services, and in ebean-test's container if its configuration carries initdb arguments;
   if not, the workstation's container keeps the image's default, no ordering of the suite depending on it (the lead's).
+  (Corrected: it carries none, so the workstation keeps the image's default (#424); the gate's services read the
+  arguments from `compose.yml`, as they read the image, since block 110.)
 
 **C. Still one connection.** `minConnections` and `maxConnections` stay 1 in the three datasources. A test reads the
 pool's maximum in each suite, ebean-test rewriting the address and not the pool. One API process is an assumption
@@ -112,7 +119,9 @@ pool's maximum in each suite, ebean-test rewriting the address and not the pool.
   `POSTGRES_PASSWORD` (`test`), the user owning the database and its `public` schema. Environment variables turn
   `useDocker` off and name each address; the test properties read them with the workstation's values as defaults.
 - The tables are emptied before each test in one `truncate ... cascade` statement over every table but
-  `db_migration`. The pull request of block 50 records the gate's duration before and after.
+  `db_migration`. The pull request of block 50 records the gate's duration before and after. (Corrected: #424
+  recorded its local gate alone, 6 min 25 s; on continuous integration `verify` took 12 min 04 s at block 40 (#423)
+  and 13 min 59 s at block 50 (#424), read with `gh pr checks`.)
 
 **E. A text compares without case through its column's collation.**
 - Ebean's `extra-ddl.xml` declares an init script for PostgreSQL, `create collation if not exists case_insensitive
@@ -133,7 +142,11 @@ pool's maximum in each suite, ebean-test rewriting the address and not the pool.
 **G. PostgreSQL is a service of its own.**
 - `compose.yml` runs `postgres` on its own volume, with a health check the API waits on.
 - Production reads `DB_URL`, `DB_USERNAME` and `DB_PASSWORD`. A startup check refuses to boot when `DB_PASSWORD` is
-  unset and names it, avaje-config leaving an unresolved placeholder as its literal text (block 90).
+  unset and names it, avaje-config leaving an unresolved placeholder as its literal text (block 90). (Corrected:
+  `DB_URL` and `DB_USERNAME` default to the development database the README names,
+  `jdbc:postgresql://localhost:5432/pinry` and `pinry`, and `DB_PASSWORD` has none (block 110, the lead's answer). The
+  check is two classes: `DatasourcePasswordCheck` in the persistence module reads the password as Ebean does, and
+  `DatasourcePasswordStartupCheck` in `api-application` runs it before every other startup observer (#429).)
 - `dagger call smoke` and the compose smoke start the API with a bound PostgreSQL service.
 - The `Dockerfile` loses `DB_PATH`, and `/data` keeps the media and the archives. `--enable-native-access` leaves
   the entry point and the test JVMs.
@@ -153,13 +166,19 @@ words: concise.)
 the constraint's name; `ConstraintViolations` reads it from `PSQLException.serverErrorMessage.constraint` and rethrows
 any other violation, the primary key's included. The four unique indexes named `*_nocase` take a name without it
 (`ux_users_name`, `ux_boards_author_name`, `ux_tags_author_name`, `ux_persons_author_name_urls`), and
-`UniqueConstraintOutcomeTest` follows.
+`UniqueConstraintOutcomeTest` follows. (Corrected: the name alone is read, not the SQLState, a `NOT NULL` violation
+naming no constraint (#427). `UserPasswordHashRepository` names `ix_user_password_hashes_user_created`, a unique index
+whose prefix stays `ix_`, this decision renaming the four `*_nocase` alone.)
 
 **N. The task queue's deduplication declines the collision** (lead's). The insert is a raw
 `insert ... on conflict do nothing`, in the inventory with its reason, then the live task is read. No conflict target:
 `ux_tasks_dedup` is partial, and Ebean's `InsertOptions` always names a target, which PostgreSQL then refuses. The
 bare form would also absorb a primary-key collision, which a fresh `randomUUID()` rules out. SQLite has accepted the
 statement since 3.24, so it lands before the switch (block 40). `onUniqueConstraint` leaves the code with its caller.
+(Corrected: the statement runs through `Persistor.executeRaw`, which widens ADR 0008's write port, and
+`RawSqlOutsideInventory` keys on `raw` and `executeRaw`, a literal's whitespace collapsed so that a statement may span
+lines (#423). ADR 0059's decision 10 also reached `ClearPinDownload`, which swallowed a failed cancellation inside the
+account deletion's transaction; the failure reaches the caller since block 110.)
 
 **O. A login name outside the account alphabet resolves to no account** (lead's). `UserAuthenticator` reads no user
 for a name outside `^[A-Za-z0-9._-]+$` and answers as for an unknown name: the dummy hash, the failure counted, 401.
@@ -170,12 +189,14 @@ pattern moves to the domain, read by `UserInputDto` and `UserAuthenticator`.
 **P. An imported instant is restored at the millisecond** (lead's). `ImportInstantClamp` truncates, as `SystemClock`
 does, so an archive's sub-millisecond instants do not survive into PostgreSQL's microseconds and out again (block 40).
 `SystemClock` keeps the millisecond. `PinIdsInputDto.MAX_IDENTIFIERS` stays 10 000, under PostgreSQL's 65 535 bound
-parameters.
+parameters. (Corrected: a pin's `publishedAt`, which the clamp leaves alone, kept the microsecond until block 110; it
+is now truncated where it enters, on import and in `PinUpdater` behind `PUT /api/v1/pins/{id}`.)
 
 ## 4. Data shape
 
 The archive changes nowhere: `ExportContentGoldenJsonTest`'s expected text is unchanged at every block. The wire
-changes in descriptions alone (block 60).
+changes in descriptions alone (block 60). (Corrected: and in a tag name's bound on `PUT /api/v1/pins/{id}`, 200
+characters, the operator's answer in block 80, which oasdiff reads as a break: the contract is `27.0.0`.)
 
 | Datum | Domain type | Optional | Identity and uniqueness | Storage | Wire | Archive |
 |---|---|---|---|---|---|---|
@@ -219,13 +240,16 @@ takes the rest.
   catalogue, syntax or error text changes with it; blocks 20 to 40 take what SQLite can already run, and 60 to 90
   what can follow. About 38 files and 800 lines, the regenerated baseline's 300 and `MigratedSchemaTest`'s rewrite
   included. The operator confirmed the waiver on this estimate, after the review moved the deduplication out and the
-  test bases' truncation in.
+  test bases' truncation in. (Corrected: it came to 927 lines and 51 files (#424); the operator accepted the overrun
+  on 2026-10-12.)
 
 ### Block 10
 
 - `git mv` of the module and the package; settings, build files, detekt's configuration and baselines, Konsist's
   module names, `ebean.packages` in the three property files, the imports outside the module.
 - `git diff -M --name-status main...HEAD -- api` lists every file of the module as `R`, none as `A` or `D`.
+  (Corrected: the move is a commit of its own, `5eb13ff4`, every file `R100` in it; against `main` three short files
+  read as `A` and `D` at git's default similarity and as `R` at `-M30%` (#419).)
 - `git grep -n -E 'persistence\.sqlite|persistence-sqlite' -- api` prints nothing.
 - Carries this specification and ADR 0059.
 
@@ -256,6 +280,9 @@ takes the rest.
 
 - Dependencies, `ebean-test` in `api-application`, `GenerateDbMigration` on `PostgresPlatform`, `CustomSqlitePlatform`
   gone, `extra-ddl.xml`, the regenerated baseline with its init script and its four `CHECK` constraints.
+  (Corrected: seven keys declare `@DbForeignKey(noIndex = true)`, Ebean otherwise adding an index beside each one
+  declared by definition; `EbeanDatabaseProducer` shuts the database down on disposal, ebean-test dropping and
+  recreating it on each Quarkus restart (#424).)
 - The three datasources, `ProductionDatasourceDeclarationTest` requiring a `jdbc:postgresql:` address and one
   connection. A test per suite reads the pool's maximum, 1.
 - `compose.yml`'s `postgres` service with its initdb arguments, and the API's environment; Dagger's gate, smoke and
@@ -281,12 +308,16 @@ takes the rest.
   outside ASCII (`élodie` and `ÉLODIE`); the users case is a repository test, account names being ASCII. Searches
   find `élodie` from `ÉLO`, and a description stored `A Cat` from `cat` and `CAT`.
 - `pins.description` and `remote_collections.name` carry the collation; the two sorts are query order, `Émile` beside
-  `emile`.
+  `emile`. (Corrected: two remote collections whose names tie under the collation order by the `uuid`'s bytes, where
+  the in-memory sort used Java's signed `UUID.compareTo` (#425).)
 - Decision O: a login as `ａｄｍｉｎ` when `admin` exists answers 401 and counts under its own key, as when `admin`
   does not exist; `admin`'s counter is untouched.
 - The descriptions of `BoardController` and `PinController`, and the sites of section 2's list, say "case folded";
-  the contract is regenerated, `info.version` `26.1.0`.
+  the contract is regenerated, `info.version` `26.1.0`. (Corrected: `26.1.0` at block 65, then `27.0.0` at block 80
+  for the tag name's bound.)
 - `git grep -n -i -E 'ascii (case|fold)|folds? .*ascii|to ascii' -- api clients/apps contract` prints nothing.
+- (Corrected: the block split at 32 files into 60, the collation's reach (#425), and 65, decision O and the
+  descriptions (#426).)
 
 ### Block 70
 
@@ -298,9 +329,14 @@ takes the rest.
 - A person holding 20 addresses of 2000 characters saves, and is found by them; the unique index reads
   `md5(urls)`.
 - Every other index over a text column has a bound that keeps its entry under 2704 bytes, or reads a digest; the
-  pull request lists each with its bound.
+  pull request lists each with its bound. (Corrected: a tag name took no bound on `PUT /api/v1/pins/{id}` and is
+  bounded at 200 there, the operator's answer (#428). The bounds the test held as literals are the domain's constants
+  since block 112, `User`, `Board` and `Tag`'s `MAX_NAME_LENGTH` and `NewTask.MAX_DEDUP_KEY_LENGTH`, which the input
+  DTOs and `NewTask` enforce.)
 - `ReferencedTableDropTest` is replaced by its inverse: inside one transaction, as Ebean runs a migration, altering
-  the type of a column of each referenced table keeps every child row.
+  the type of a column of each referenced table keeps every child row. (Corrected: `ReferencedTableAlterTest`, over
+  the seven referenced tables. The baseline's index line is edited by hand rather than regenerated, which would drop
+  the hand-written `CHECK` constraints; `generateDbMigration` then reports no change (#428).)
 
 ### Block 90
 
@@ -317,12 +353,17 @@ takes the rest.
 - `git grep -n -i sqlite -- api agents AGENTS.md` prints nothing outside the dated documents.
 - The backlog's similarity search item no longer waits on an engine; the known limit on per-process counters names
   the unenforced single process.
-- Splits at production and tests if it passes 20 files.
+- Splits at production and tests if it passes 20 files. (Corrected: it did, at 24 files: 100, production and the
+  living documents (#430), and 105, the tests' comments (#431). `api/AGENTS.md`'s gotcha "Unique constraint on
+  SQLite" goes rather than being restated, PostgreSQL's dialect enforcing `unique = true` (#430's generator probe).)
 
 ### Block 110
 
 - The holistic review's findings, then the documents: this specification, the handoff, the `Status:` lines of ADR
-  0058, 0009, 0013, 0040 and 0056 naming ADR 0059, and the backlog.
+  0058, 0009, 0013, 0040 and 0056 naming ADR 0059, and the backlog. (Corrected: split into 110, the code findings
+  (#432), 112, the index bounds (#433), and 115, the documents, the backlog and the handoff. The handoff is written
+  in 115 rather than in the last code block, on the lead's brief; ADR 0008's `Status:` names ADR 0059 too, its write
+  port gaining `executeRaw`.)
 
 ## 6. Adjacent backlog items
 

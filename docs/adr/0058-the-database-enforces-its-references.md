@@ -1,6 +1,7 @@
 # 0058. The database enforces its references
 
-Status: Accepted
+Status: Accepted; decisions 8 and 9 and the Consequences' "Until PostgreSQL" are superseded by
+`docs/adr/0059-the-database-is-postgresql.md`, a referenced table now changing in place.
 Date: 2026-10-11
 Amends: `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7.2 ("declares `ON DELETE CASCADE`").
 Specification: `docs/specs/2026-10-11-the-database-enforces-its-references.md`.

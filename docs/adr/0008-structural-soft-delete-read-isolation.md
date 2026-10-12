@@ -1,6 +1,7 @@
 # 0008. Structural isolation of soft-delete reads (confining the Database capability)
 
-Status: Accepted
+Status: Accepted; decision 2 is amended by `docs/adr/0059-the-database-is-postgresql.md`: `Persistor` also exposes
+`executeRaw`, for a statement the query beans cannot send, which `RawSqlOutsideInventory` guards.
 Date: 2026-08-03
 Extends: `docs/adr/0007-single-representation-soft-delete.md`, whose decision 5 (build-time prohibition,
 not compile-time impossibility) this leaves in force.

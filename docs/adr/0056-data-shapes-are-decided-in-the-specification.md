@@ -3,7 +3,9 @@
 Status: Accepted; decision 13 and decision 7.1's "pin lines naming theirs by `{name, urls}`" are superseded by
 `docs/adr/0057-the-archive-references-by-key-and-an-address-is-refused-alike.md`; decision 7.1 is delivered by lot
 `0.54.0` (`docs/specs/2026-10-10-addresses-and-people-take-their-shape.md`); decision 7.2 is amended by
-`docs/adr/0058-the-database-enforces-its-references.md` and delivered by lot `0.55.0`.
+`docs/adr/0058-the-database-enforces-its-references.md` and delivered by lot `0.55.0`; the rule "the domain's equality
+matches the database's identity" is superseded by `docs/adr/0059-the-database-is-postgresql.md`, decision 8: the
+domain never folds more than the database does.
 Date: 2026-10-09
 Amends: `docs/adr/0043-blocks-stack-and-a-pull-request-is-written-for-a-tech-lead.md`, decisions 3 (the fix-back)
 and 7 (the closing block on top); `agents/engineering.md`, Design invariants, "The migration history is append-only
