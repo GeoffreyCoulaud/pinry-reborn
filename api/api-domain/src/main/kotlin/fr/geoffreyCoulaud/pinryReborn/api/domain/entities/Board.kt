@@ -11,4 +11,8 @@ data class Board(
     val createdAt: Instant,
     val updatedAt: Instant,
     val softDeletedAt: Instant? = null,
-) : Identifiable
+) : Identifiable {
+    companion object {
+        const val MAX_NAME_LENGTH = 200
+    }
+}

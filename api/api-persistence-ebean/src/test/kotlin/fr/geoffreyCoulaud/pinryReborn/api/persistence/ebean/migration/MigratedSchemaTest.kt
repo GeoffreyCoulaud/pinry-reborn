@@ -1,8 +1,12 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
+import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.NewTask
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.RepositoryTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -337,25 +341,23 @@ class MigratedSchemaTest : RepositoryTest() {
 
         // The API's length bounds count UTF-16 units, each at most three bytes in UTF-8.
         private const val UTF8_BYTES_PER_UNIT = 3
-        private const val NAME_LENGTH = 200
         private const val SHA256_HEX_LENGTH = 64
         private const val MD5_HEX_LENGTH = 32
 
-        // The longest text each index's keys can hold, in bytes, and where its bound is enforced.
+        // The longest text each index's keys can hold, in bytes, from the bound its writers read.
         private val TEXT_KEY_BYTES =
             mapOf(
-                // UserInputDto: 50 characters of the account alphabet, ASCII.
-                "ux_users_name" to 50,
-                // BoardInputDto, BoardCreationInputDto and ImportFieldBounds.
-                "ux_boards_author_name" to NAME_LENGTH * UTF8_BYTES_PER_UNIT,
-                // PinUpdateInputDto and ImportFieldBounds.
-                "ux_tags_author_name" to NAME_LENGTH * UTF8_BYTES_PER_UNIT,
+                // The account alphabet is ASCII.
+                "ux_users_name" to User.MAX_NAME_LENGTH,
+                // ImportFieldBounds restates the bound for the import.
+                "ux_boards_author_name" to Board.MAX_NAME_LENGTH * UTF8_BYTES_PER_UNIT,
+                "ux_tags_author_name" to Tag.MAX_NAME_LENGTH * UTF8_BYTES_PER_UNIT,
                 // The addresses by their digest, whatever their length.
                 "ux_persons_author_name_urls" to PersonName.MAX_LENGTH * UTF8_BYTES_PER_UNIT + MD5_HEX_LENGTH,
                 // HttpUrl percent-encodes every byte outside ASCII.
                 "ux_remote_collections_author_url" to HttpUrl.MAX_LENGTH,
-                // A task kind, a colon and an identifier, written by the use cases alone.
-                "ux_tasks_dedup" to 100,
+                // Written by the use cases alone, in ASCII.
+                "ux_tasks_dedup" to NewTask.MAX_DEDUP_KEY_LENGTH,
                 "ix_media_content_hash" to SHA256_HEX_LENGTH,
                 "uq_session_tokens_token_hash" to SHA256_HEX_LENGTH,
                 "ix_tasks_claim" to TaskState.entries.maxOf { it.name.length },

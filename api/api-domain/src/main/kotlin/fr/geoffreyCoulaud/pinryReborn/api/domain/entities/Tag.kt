@@ -8,4 +8,8 @@ data class Tag(
     val author: User,
     val name: String,
     val createdAt: Instant,
-) : Identifiable
+) : Identifiable {
+    companion object {
+        const val MAX_NAME_LENGTH = 200
+    }
+}
