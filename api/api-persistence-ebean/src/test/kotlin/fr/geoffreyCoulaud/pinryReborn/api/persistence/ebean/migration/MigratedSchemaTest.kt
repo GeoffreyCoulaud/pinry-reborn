@@ -319,7 +319,7 @@ class MigratedSchemaTest : RepositoryTest() {
                 "tasks.last_error",
             )
 
-        // The names a user identifies a thing by (ADR 0059, decision 4).
+        // The columns a reader names, searches or sorts by (ADR 0059, decision 4).
         private val CASE_INSENSITIVE_COLUMNS =
             listOf(
                 "boards.name",
