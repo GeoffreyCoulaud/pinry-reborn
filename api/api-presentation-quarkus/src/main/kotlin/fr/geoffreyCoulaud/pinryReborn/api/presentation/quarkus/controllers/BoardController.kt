@@ -277,7 +277,7 @@ class BoardController(
     companion object {
         const val DEFAULT_PAGE_SIZE = 20
         private const val NAME_TAKEN =
-            "This account already holds a board of that name, ASCII case folded, " +
+            "This account already holds a board of that name, case folded, " +
                 "and a recycled board holds its name until the bin is emptied"
     }
 }

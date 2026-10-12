@@ -12,13 +12,13 @@ import java.util.UUID
 interface BoardRepositoryInterface {
     /**
      * Create or update a board from the given domain data. Throws [BoardNameAlreadyTakenException] when the author
-     * already holds the name, ASCII case folded.
+     * already holds the name, case folded.
      */
     fun saveBoard(board: Board): Board
 
     /**
      * Find the board holding [name] for [user] in **any** state, or null: a recycled board holds its name. The fold is
-     * the index's own, ASCII case only, so two names differing outside A to Z are two names.
+     * the store's own, case and width in every script.
      */
     fun findBoardForUserByName(user: User, name: String): Board?
 

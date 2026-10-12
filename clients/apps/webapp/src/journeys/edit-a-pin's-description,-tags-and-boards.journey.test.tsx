@@ -157,7 +157,7 @@ describe("edit a pin's description, tags and boards", () => {
 			"Landscape",
 		);
 
-		// The server folds to ASCII for identity, so the field asks it before inventing a tag.
+		// The server folds case for identity, so the field asks it before inventing a tag.
 		expect(
 			await screen.findByRole("button", { name: "landscape" }),
 		).toBeVisible();

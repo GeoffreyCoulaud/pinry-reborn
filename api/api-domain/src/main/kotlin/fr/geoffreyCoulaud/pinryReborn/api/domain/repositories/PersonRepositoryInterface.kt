@@ -9,16 +9,14 @@ import java.util.UUID
 interface PersonRepositoryInterface {
     fun savePerson(person: Person): Person
 
-    /** The user's person of this name, folded on ASCII case, holding these addresses. */
+    /** The user's person of this name, case folded, holding these addresses. */
     fun findUserPerson(
         user: User,
         name: PersonName,
         urls: Set<HttpUrl>,
     ): Person?
 
-    /**
-     * At most [limit] of the user's persons whose name holds [query], those beginning with it first, ASCII case folded.
-     */
+    /** At most [limit] of the user's persons whose name holds [query], those beginning with it first, case folded. */
     fun findPersonsForUserMatching(
         user: User,
         query: String,

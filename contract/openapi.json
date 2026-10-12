@@ -1656,7 +1656,7 @@
             "$ref" : "#/components/responses/PinInBodyNotFound"
           },
           "409" : {
-            "description" : "This account already holds a board of that name, ASCII case folded, and a recycled board holds its name until the bin is emptied, or a pin the body names is in the recycle bin",
+            "description" : "This account already holds a board of that name, case folded, and a recycled board holds its name until the bin is emptied, or a pin the body names is in the recycle bin",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -1915,7 +1915,7 @@
             "$ref" : "#/components/responses/BoardNotFound"
           },
           "409" : {
-            "description" : "This account already holds a board of that name, ASCII case folded, and a recycled board holds its name until the bin is emptied",
+            "description" : "This account already holds a board of that name, case folded, and a recycled board holds its name until the bin is emptied",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -3578,7 +3578,7 @@
     "/api/v1/pins/{pinId}" : {
       "put" : {
         "summary" : "Replace the pin",
-        "description" : "Every field is replaced by what is sent, so an unchanged field is sent as it was read and an empty list clears. A tag name is an identity per author under an ASCII fold: `Landscape` and `landscape` are one tag, and the response carries the stored spelling, not the one sent. The fold covers A to Z only, so `ÉTÉ` and `été` stay two tags. A person is an identity per author by its name, under the same fold, and its addresses together, in any order: one more address names another person.",
+        "description" : "Every field is replaced by what is sent, so an unchanged field is sent as it was read and an empty list clears. A tag name is an identity per author, case folded in every script: `Landscape` and `landscape` are one tag, as are `ÉTÉ` and `été`, and the response carries the stored spelling, not the one sent. A person is an identity per author by its name, under the same fold, and its addresses together, in any order: one more address names another person.",
         "parameters" : [ {
           "name" : "pinId",
           "in" : "path",
@@ -4462,7 +4462,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "26.0.0"
+    "version" : "26.1.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",
