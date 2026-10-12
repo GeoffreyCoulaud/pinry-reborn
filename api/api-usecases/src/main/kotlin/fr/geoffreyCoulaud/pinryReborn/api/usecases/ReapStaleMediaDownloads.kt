@@ -21,7 +21,7 @@ class ReapStaleMediaDownloads(
     fun reap(): Int {
         val now = clock.now()
         val pending = mediaDownloadRepository.findPending()
-        // Chunked because findLiveIds spends one host parameter per id: past SQLite's ceiling the
+        // Chunked because findLiveIds spends one host parameter per id: past the driver's ceiling the
         // statement throws, safeAll logs it, and the sweep that bounds this table stops bounding it.
         val live =
             pending.chunked(LOOKUP_BATCH_SIZE).flatMapTo(mutableSetOf()) { batch ->

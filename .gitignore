@@ -2,9 +2,6 @@
 .kotlin
 .gradle
 contract/openapi.yaml
-*.db
-*.db-shm
-*.db-wal
 # IntelliJ : tout ignorer par defaut...
 # Anchored on api/, the project IntelliJ opens: an unanchored .idea/* would stop
 # re-including the shared files below.

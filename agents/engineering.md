@@ -177,16 +177,17 @@ client the other is refused.
 - **Dependencies are injected by type, not by string qualifier**: a new dependency is a dedicated type
   (`PeriodicScheduler`); no `@Identifier("...")` for new code.
 - **One connection; a transaction is what serializes a pair of statements.** `minConnections`/`maxConnections` pinned
-  to 1, WAL, `synchronous=NORMAL`, `busy_timeout=5000`, no `transaction_mode=IMMEDIATE`.
+  to 1 in every datasource, and one API process (`docs/adr/0059-the-database-is-postgresql.md`, decision 2).
 - **A pair of statements that must not interleave holds a transaction**, as `EbeanTaskQueue.enqueue` does; a new pair
   that does not is a defect.
 - **A unique constraint is not complete until its outcome is named**: every one appears in
   `UniqueConstraintOutcomeTest`'s table with the answer a client gets, "no translation, deliberately" included.
 
-**Detail.** SQLite is single-writer, and the single connection serialises each statement but *not* a pair: a
-check-then-insert inside one transaction is safe, the same pair as two autocommit statements is racy, measured at
-about 340 of 400 interleavings without the transaction and zero with it. `transaction_mode=IMMEDIATE` was tried once
-and reintroduced a deadlock.
+**Detail.** The single connection serialises each statement but *not* a pair: a check-then-insert inside one
+transaction is safe, the same pair as two autocommit statements is racy, measured at about 340 of 400 interleavings
+without the transaction and zero with it, on the engine before ADR 0059. The guarantees of ADR 0009, 0016 and 0017 and
+the task queue's claim rest on that one connection, so it stays until a lot opens a pool and reviews each race. Nothing
+enforces the single process: `compose.yml` keeps it.
 
 ## Test conventions
 

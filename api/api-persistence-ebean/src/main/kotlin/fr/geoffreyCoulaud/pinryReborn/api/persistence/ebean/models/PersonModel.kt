@@ -21,7 +21,7 @@ class PersonModel(
     id: UUID,
     author: UserModel,
     @Column(columnDefinition = Collations.CASE_INSENSITIVE_TEXT) val name: String,
-    // PersonModelMapper.canonicalUrls: a JSON array held as text, SQLite having no array type.
+    // PersonModelMapper.canonicalUrls: a JSON array held as text, which the lookup compares whole (ADR 0059).
     val urls: String,
     createdAt: Instant,
 ) : AuthoredBaseModel(id = id, author = author, createdAt = createdAt)

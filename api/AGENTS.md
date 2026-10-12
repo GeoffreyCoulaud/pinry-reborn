@@ -1,8 +1,8 @@
 # AGENTS.md
 
 Pinry Reborn's API server: business logic of a self-hosted pin board (users, pins, boards, tags, media, exports),
-exposed as an HTTP API. Kotlin + Quarkus, Clean Architecture, SQLite store, filesystem media storage, task worker for
-long operations.
+exposed as an HTTP API. Kotlin + Quarkus, Clean Architecture, PostgreSQL store, filesystem media storage, task worker
+for long operations.
 
 This file holds what is true of the Kotlin build alone: its norms, its commands and its gate
 (`docs/adr/0024-three-projects-share-one-repository.md`, decision 2). The process, the phases and the writing rules are
@@ -18,7 +18,7 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
 |----------------------------|---------------------------------------------------------------------------|
 | `api-domain`               | Pure: entities, enums, ports. No project dependency.                      |
 | `api-usecases`             | Business logic, exceptions, search, exports, task contracts.              |
-| `api-persistence-ebean`   | Ebean/SQLite: models, mappers, repositories, migrations (`dbmigration/`). |
+| `api-persistence-ebean`    | Ebean/PostgreSQL: models, mappers, repositories, migrations (`dbmigration/`). |
 | `api-presentation-quarkus` | Jakarta REST: controllers, DTOs, mappers, security, OpenAPI.              |
 | `api-storage-filesystem`   | Media store, rendition cache, export archives.                            |
 | `api-imaging-vips`         | vipsheader and vips thumbnail adapter, run as processes.                  |
@@ -43,6 +43,9 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
   (`pip install --require-hashes -r` in a venv) and copying deno from `denoland/deno:bin`. That file is
   `pip-compile`'s output: edit `requirements.in` and recompile with the command its comment names, not the one in
   `requirements.txt`'s header, whose `--no-index` resolves nothing from PyPI.
+- **Docker**, in which ebean-test starts the suites' PostgreSQL. Without it, `TEST_POSTGRES_USE_DOCKER=false` and
+  the two `TEST_POSTGRES_*_HOST` variables the test properties read name servers holding each suite's database, as
+  the gate's services do (`docs/adr/0059-the-database-is-postgresql.md`, decision 3).
 - **`JAVA_HOME` on JDK 25**, exported before any `./gradlew`:
   `export JAVA_HOME=$(printf '%s\n' ~/.sdkman/candidates/java/25* | tail -1)`. The candidate's name carries the patch
   version, so the glob is what survives a bump, and one match per line is what keeps a second JDK 25 from putting two
@@ -90,16 +93,14 @@ How this build applies `agents/data-modelling.md`
 - **Never edit an applied migration**: the checksum changes and Ebean refuses the history. A correction is a new
   migration.
 - **The baseline's `CHECK` constraints are hand-written**: Ebean generates one only for an enumerated column and the
-  model files record none, so a regenerated baseline or a rebuilt table carries them back by hand.
+  model files record none, so a regenerated baseline carries them back by hand.
   `MigratedSchemaTest` lists them.
 - **A migration changes a referenced table in place** (`docs/adr/0059-the-database-is-postgresql.md`): PostgreSQL
   alters it inside Ebean's transaction and its children stay, which `ReferencedTableAlterTest` holds.
 - **An index entry is bounded at 2704 bytes**: a text index declares its bound in `MigratedSchemaTest`, or reads a
   digest as the persons' addresses do.
-- **Unique constraint on SQLite**: `@Index(definition = "create unique index ...")`, never
-  `unique = true` (Ebean emits an unsupported `ALTER TABLE` that becomes a silent no-op comment).
-  `DbMigrationModelCoverageTest` fails on the no-op marker.
-- **Partial or expression index**: `definition` alone, no `columnNames`, no `unique = true`.
+- **Partial or expression index**: `definition` alone, no `columnNames`, no `unique = true`: Ebean ignores both
+  beside a `definition`.
 - **A table is named after its model** (`ModelsPackageArchTest`): `@Table` holds the class name without `Model`, in
   snake case, plural, and each index name starts with that table's. A model renamed without paying the migration
   keeps its table through an entry, with its reason, in that test's exception list.

@@ -91,7 +91,8 @@ Recorded where the decision lives. None is a copy: follow the pointer.
   cheap.** `docs/adr/0013-in-memory-authentication-attempt-limiting.md`: decision 1 (counters reset
   on restart, correct only while the deployment is one instance), decision 3 (the measured cost of
   keeping a named account out, and the `forget_after` / last-step interaction behind it), decision 4
-  (eviction is a bypass, and nothing purges outside a recorded failure).
+  (eviction is a bypass, and nothing purges outside a recorded failure); and
+  `docs/adr/0059-the-database-is-postgresql.md`, decision 2 (the one instance is no longer enforced by the store).
 - **Two tabs can upload one import's archive at once**, no guard keeping the second out.
   `docs/handoffs/2026-09-25 - handoff - the-data-travels.md`, What is not validated.
 
@@ -106,7 +107,7 @@ Dated events. No session starts these early.
 ## Features
 
 - **Search matches by substring and tolerates no typo**, similarity matching having left the
-  product; restoring it wants an engine that can index for it, which is a standalone Postgres.
+  product; PostgreSQL can index for it (`pg_trgm`), so it waits on its own lot alone.
   See `docs/specs/2026-09-21-the-header-searches-and-wears-the-name.md`, decision G and section 6.
 - **A video's excerpt is not found as such**: frames sampled a quarter second apart are too far for PDQ. See
   `docs/specs/2026-10-05-the-pin-knows-its-duplicates.md`, decision E. New 2026-10-05.

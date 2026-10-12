@@ -16,7 +16,7 @@ class TagRepository(persistor: Persistor) : TagRepositoryInterface {
 
     override fun saveTag(tag: Tag): Tag = sqlRepository.saveAndReturn(tag.toModel()).toDomain()
 
-    // A plain equality, the column's collation folding as ix_tags_author_name_nocase does: a fold of
+    // A plain equality, the column's collation folding as ux_tags_author_name does: a fold of
     // its own would let find-or-create depend on which case was stored first.
     override fun findUserTagByName(
         user: User,
@@ -27,7 +27,7 @@ class TagRepository(persistor: Persistor) : TagRepositoryInterface {
         QTagModel().author.id.equalTo(user.id).findList().map { it.toDomain() }
 
     // `contains` and `startsWith` rather than their case-insensitive twins: LIKE folds under the
-    // column's collation as ix_tags_author_name_nocase does, and ILIKE refuses that collation.
+    // column's collation as ux_tags_author_name does, and ILIKE refuses that collation.
     override fun findTagsForUserMatching(
         user: User,
         query: String,
