@@ -141,7 +141,7 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
         // When: ebean-test rewrites the address and leaves the pool as the properties declare it
         val maximum = (database.dataSource() as DataSourcePool).status(false).maxSize()
 
-        // Then: the guarantees ADR 0059, decision 2, lists rest on one connection
+        // Then: the task queue's claim and each check-then-insert pair rest on one connection (ADR 0059, decision 2)
         assertEquals(1, maximum)
     }
 
