@@ -120,9 +120,9 @@ const COMPOSE = "compose.yml"
 const PROXY_IMAGE_LINE = /^\s+proxy:\s*\n\s+image:\s*(\S+)\s*$/m
 const PROXY_PORT = 6258
 
-/** The database's image, read from `compose.yml`, and the initialisation `compose.yml` gives it (ADR 0059, decision 6). */
+/** The database's image and its initialisation, both read from `compose.yml` (ADR 0059, decision 6). */
 const POSTGRES_IMAGE_LINE = /^\s+postgres:\s*\n\s+image:\s*(\S+)\s*$/m
-const POSTGRES_INITDB_ARGS = "--locale-provider=builtin --locale=C.UTF-8"
+const POSTGRES_INITDB_ARGS_LINE = /^\s+POSTGRES_INITDB_ARGS:\s*(\S.*?)\s*$/m
 const POSTGRES_PORT = 5432
 
 /** The API's database in the smoke tests, named and reached as `compose.yml` names and reaches it. */
@@ -393,9 +393,9 @@ export class PinryReborn {
 
   /**
    * The image starts and reports healthy, refuses to start without its database's password, and its
-   * yt-dlp has what YouTube needs. The test suite never reads production's `application.properties`,
-   * its own sharing that name and winning by classpath order, so this is the only thing in the
-   * repository that starts what ships.
+   * yt-dlp has what YouTube needs. The test suite's Ebean never reads production's datasource keys,
+   * avaje-config taking the suite's own `application.properties` alone, so this is the only thing in
+   * the repository that starts what ships.
    */
   @func()
   async smoke(
@@ -554,11 +554,11 @@ export class PinryReborn {
   private async database(source: Directory, name: string, password: string): Promise<Service> {
     return dag
       .container()
-      .from(await this.composeImage(source, POSTGRES_IMAGE_LINE))
+      .from(await this.composeValue(source, POSTGRES_IMAGE_LINE))
       .withEnvVariable("POSTGRES_DB", name)
       .withEnvVariable("POSTGRES_USER", name)
       .withEnvVariable("POSTGRES_PASSWORD", password)
-      .withEnvVariable("POSTGRES_INITDB_ARGS", POSTGRES_INITDB_ARGS)
+      .withEnvVariable("POSTGRES_INITDB_ARGS", await this.composeValue(source, POSTGRES_INITDB_ARGS_LINE))
       .withExposedPort(POSTGRES_PORT)
       .asService({ useEntrypoint: true })
   }
@@ -570,7 +570,7 @@ export class PinryReborn {
     // The two names are the ones `proxy.conf` passes to, and nginx resolves them once, at startup.
     const proxy = dag
       .container()
-      .from(await this.composeImage(source, PROXY_IMAGE_LINE))
+      .from(await this.composeValue(source, PROXY_IMAGE_LINE))
       .withFile(PROXY_CONF_PATH, source.file(PROXY_CONF))
       .withServiceBinding("api", this.served(api, HTTP_PORT))
       .withServiceBinding("webapp", this.served(webapp, WEBAPP_PORT))
@@ -821,12 +821,12 @@ export class PinryReborn {
     return context.withFile("Dockerfile", source.file(dockerfile)).dockerBuild()
   }
 
-  /** An image `compose.yml` names, so the gate runs what ships. */
-  private async composeImage(source: Directory, line: RegExp): Promise<string> {
-    const image = (await source.file(COMPOSE).contents()).match(line)?.[1]
-    if (!image) {
-      throw new Error(`No image found in ${COMPOSE}: no line matches ${line}.`)
+  /** A value `compose.yml` holds, an image or a service's setting, so the gate runs what ships. */
+  private async composeValue(source: Directory, line: RegExp): Promise<string> {
+    const value = (await source.file(COMPOSE).contents()).match(line)?.[1]
+    if (!value) {
+      throw new Error(`Nothing found in ${COMPOSE}: no line matches ${line}.`)
     }
-    return image
+    return value
   }
 }
