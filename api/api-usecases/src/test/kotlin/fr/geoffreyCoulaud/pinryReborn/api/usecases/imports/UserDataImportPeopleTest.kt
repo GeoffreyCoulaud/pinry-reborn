@@ -57,6 +57,26 @@ internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
     }
 
     @Test
+    fun `Given a pin published finer than the millisecond, Then its instant is restored at the millisecond`() {
+        // Given: a publication instant is not clamped, so only the precision changes it
+        val line = aPin().copy(publishedAt = Instant.parse("2001-01-01T00:00:00.123456Z"))
+        stubWalk(
+            FakeArchiveSource(
+                manifest = aManifest(),
+                pins = listOf(TestLine(1, line)),
+                media = everyMedium,
+            )
+        )
+        stubMediaPath()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then: the store keeps what the clock stamps, so a microsecond would not survive a round trip
+        assertEquals(Instant.parse("2001-01-01T00:00:00.123Z"), savedPins.single().publishedAt)
+    }
+
+    @Test
     fun `Given a pin naming two absent ids and a refused line's, Then it is created without them, each reported`() {
         // Given: ghost is named twice, and blank's line is refused
         val persons = listOf(TestLine(1, aPersonLine("ada", "Ada")), TestLine(2, aPersonLine("blank", " ")))

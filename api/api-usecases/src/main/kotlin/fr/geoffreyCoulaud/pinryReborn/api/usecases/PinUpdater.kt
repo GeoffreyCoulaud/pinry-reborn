@@ -11,6 +11,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinUpdatePinDoesNo
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinUpdateSoftDeletedPinError
 import jakarta.enterprise.context.ApplicationScoped
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @ApplicationScoped
@@ -55,7 +56,8 @@ class PinUpdater(
                 boards = boards,
                 publisher = resolvedPublisher,
                 creators = resolvedCreators,
-                publishedAt = publishedAt,
+                // At the millisecond, as the clock stamps, so the store gives back what was sent.
+                publishedAt = publishedAt?.truncatedTo(ChronoUnit.MILLIS),
                 updatedAt = clock.now(),
             )
         } ?: throw PinUpdatePinDoesNotExistError()
