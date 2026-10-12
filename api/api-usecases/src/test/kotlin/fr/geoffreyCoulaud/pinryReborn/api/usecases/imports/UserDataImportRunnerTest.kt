@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ArchiveBoundExceededExc
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.PermanentTaskException
 import io.mockk.every
 import io.mockk.verify
+import java.time.Instant
 import java.util.UUID.randomUUID
 import java.util.zip.ZipException
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -188,6 +189,27 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         assertEquals(0, stored.skippedTags)
         // The metadata bound has no other caller in this codebase, so this is where it is pinned
         assertEquals(MAX_METADATA_BYTES, source.metadataBound)
+    }
+
+    @Test
+    fun `Given an instant finer than the millisecond, Then it is restored truncated to the millisecond`() {
+        // Given: inside the account's span, so only the precision changes it
+        val archived = Instant.parse("2026-01-01T00:00:00.123456Z")
+        val restored = Instant.parse("2026-01-01T00:00:00.123Z")
+        val source =
+            FakeArchiveSource(
+                manifest = aManifest(),
+                tags = listOf(TestLine(1, ImportedTag(name = "precise", createdAt = archived))),
+            )
+        stubWalk(source)
+        stubTagLookup()
+        stubTagCreation()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then: the store keeps what the clock stamps, so a microsecond would not survive a round trip
+        assertEquals(restored, savedTag("precise").createdAt)
     }
 
     @Test
