@@ -1,5 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.RepositoryTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -97,6 +100,35 @@ class MigratedSchemaTest : RepositoryTest() {
         assertEquals(emptyList<String>(), keysNotUuid)
         assertEquals(emptySet<String>(), instantsWithoutZone)
         assertNotEquals(emptyList<String>(), keyColumns)
+    }
+
+    @Test
+    fun `Given the migrated database, Then every index over text declares a bound under the entry limit`() {
+        // Given: PostgreSQL refuses an index entry over 2704 bytes, where SQLite bounded none
+        val indexesOverText =
+            database
+                .sqlQuery(
+                    """
+                    select distinct ind.relname as index_name
+                    from pg_index entry
+                    join pg_class ind on ind.oid = entry.indexrelid
+                    join pg_class tab on tab.oid = entry.indrelid
+                    join pg_namespace space on space.oid = tab.relnamespace
+                    join pg_attribute key on key.attrelid = entry.indexrelid
+                    where space.nspname = current_schema() and tab.relname <> ?
+                      and key.atttypid in ('text'::regtype, 'varchar'::regtype, 'bpchar'::regtype)
+                    """
+                )
+                .setParameter(MIGRATION_TABLE)
+                .findList()
+                .map { it.getString("index_name") }
+
+        // When
+        val overLimit = TEXT_KEY_BYTES.filterValues { it + OTHER_KEY_BYTES > MAX_INDEX_ENTRY_BYTES }.keys
+
+        // Then: an index over text with no declared bound fails the first assertion
+        assertEquals(TEXT_KEY_BYTES.keys.sorted(), indexesOverText.sorted())
+        assertEquals(emptySet<String>(), overLimit)
     }
 
     @Test
@@ -296,6 +328,39 @@ class MigratedSchemaTest : RepositoryTest() {
                 "remote_collections.name",
                 "tags.name",
                 "users.name",
+            )
+
+        private const val MAX_INDEX_ENTRY_BYTES = 2704
+
+        // A uuid, an instant and an integer at most beside the text, with the entry's headers.
+        private const val OTHER_KEY_BYTES = 64
+
+        // The API's length bounds count UTF-16 units, each at most three bytes in UTF-8.
+        private const val UTF8_BYTES_PER_UNIT = 3
+        private const val NAME_LENGTH = 200
+        private const val SHA256_HEX_LENGTH = 64
+        private const val MD5_HEX_LENGTH = 32
+
+        // The longest text each index's keys can hold, in bytes, and where its bound is enforced.
+        private val TEXT_KEY_BYTES =
+            mapOf(
+                // UserInputDto: 50 characters of the account alphabet, ASCII.
+                "ux_users_name" to 50,
+                // BoardInputDto, BoardCreationInputDto and ImportFieldBounds.
+                "ux_boards_author_name" to NAME_LENGTH * UTF8_BYTES_PER_UNIT,
+                // PinUpdateInputDto and ImportFieldBounds.
+                "ux_tags_author_name" to NAME_LENGTH * UTF8_BYTES_PER_UNIT,
+                // The addresses by their digest, whatever their length.
+                "ux_persons_author_name_urls" to PersonName.MAX_LENGTH * UTF8_BYTES_PER_UNIT + MD5_HEX_LENGTH,
+                // HttpUrl percent-encodes every byte outside ASCII.
+                "ux_remote_collections_author_url" to HttpUrl.MAX_LENGTH,
+                // A task kind, a colon and an identifier, written by the use cases alone.
+                "ux_tasks_dedup" to 100,
+                "ix_media_content_hash" to SHA256_HEX_LENGTH,
+                "uq_session_tokens_token_hash" to SHA256_HEX_LENGTH,
+                "ix_tasks_claim" to TaskState.entries.maxOf { it.name.length },
+                "ix_tasks_state_terminal_state_at" to TaskState.entries.maxOf { it.name.length },
+                "ix_user_data_imports_user_state" to UserDataImportState.entries.maxOf { it.name.length },
             )
 
         private val BOOLEAN_COLUMNS =

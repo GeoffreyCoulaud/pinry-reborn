@@ -12,9 +12,10 @@ import java.util.UUID
 @Entity
 @Table(name = "persons")
 // A name and its addresses together are an identity per author, the name folded as a tag's is.
+// The addresses by their digest: 20 of 2000 characters pass an index entry's 2704 bytes (ADR 0059).
 @Index(
     name = "ux_persons_author_name_urls",
-    definition = "create unique index ux_persons_author_name_urls on persons (author_id, name, urls)",
+    definition = "create unique index ux_persons_author_name_urls on persons (author_id, name, md5(urls))",
 )
 class PersonModel(
     id: UUID,
