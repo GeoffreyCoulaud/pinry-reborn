@@ -99,18 +99,33 @@ class BoardRepositoryTest : RepositoryTest() {
         )
 
     @Test
-    fun `Given active boards, Then findActiveBoardsForUser returns them sorted by name case-insensitively`() {
-        // Given
+    fun `Given active boards, Then findActiveBoardsForUser sorts them by name, Émile beside emile`() {
+        // Given: code point order would put Émile after emma, lower-cased or not
         val user = createAndSaveUser()
-        createAndSaveBoard("banana", user)
-        createAndSaveBoard("Apple", user)
-        createAndSaveBoard("cherry", user)
+        createAndSaveBoard("Émile", user)
+        createAndSaveBoard("emma", user)
+        createAndSaveBoard("emile", user)
 
         // When
         val names = boardRepository.findActiveBoardsForUser(user).map { it.name }
 
         // Then
-        assertEquals(listOf("Apple", "banana", "cherry"), names)
+        assertEquals(listOf("emile", "Émile", "emma"), names)
+    }
+
+    @Test
+    fun `Given recycled boards, Then findRecycledBoardsForUser sorts them by name, Émile beside emile`() {
+        // Given
+        val user = createAndSaveUser()
+        listOf("Émile", "emma", "emile").forEach {
+            boardRepository.softDeleteBoard(createAndSaveBoard(it, user), storableNow())
+        }
+
+        // When
+        val names = boardRepository.findRecycledBoardsForUser(user).map { it.name }
+
+        // Then
+        assertEquals(listOf("emile", "Émile", "emma"), names)
     }
 
     @Test
@@ -346,13 +361,13 @@ class BoardRepositoryTest : RepositoryTest() {
     // --- Names as identities ---
 
     @Test
-    fun `Given a name already held up to ASCII case, Then saveBoard throws BoardNameAlreadyTakenException`() {
-        // Given: ix_boards_author_name_nocase folds A to Z, so the store sees these two names as one
+    fun `Given a name held in another case outside ASCII, Then saveBoard throws BoardNameAlreadyTakenException`() {
+        // Given: the column's collation folds case in every script, so the store sees these two names as one
         val user = createAndSaveUser()
-        createAndSaveBoard("voyage", user)
+        createAndSaveBoard("élodie", user)
 
         // When / Then
-        assertThrows<BoardNameAlreadyTakenException> { createAndSaveBoard("Voyage", user) }
+        assertThrows<BoardNameAlreadyTakenException> { createAndSaveBoard("ÉLODIE", user) }
     }
 
     @Test
@@ -381,13 +396,13 @@ class BoardRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given an active board, Then findBoardForUserByName finds it whatever the ASCII case`() {
+    fun `Given an active board, Then findBoardForUserByName finds it in another case outside ASCII`() {
         // Given
         val user = createAndSaveUser()
-        val board = createAndSaveBoard("voyage", user)
+        val board = createAndSaveBoard("élodie", user)
 
         // When
-        val found = boardRepository.findBoardForUserByName(user = user, name = "VOYAGE")
+        val found = boardRepository.findBoardForUserByName(user = user, name = "ÉLODIE")
 
         // Then
         assertEquals(board.id, found?.id)

@@ -108,19 +108,34 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given collections on two boards, Then findRemoteCollectionsForBoard sorts one board's by folded name`() {
-        // Given
+    fun `Given collections on two boards, Then one board's are sorted by name, Émile beside emile`() {
+        // Given: code point order would put Émile after emma, lower-cased or not
         val user = createAndSaveUser()
         val board = createAndSaveBoard(user)
-        val zebra = link(board, name = "Zebras")
-        val apple = link(board, name = "apples")
+        val accented = link(board, name = "Émile")
+        val emma = link(board, name = "emma")
+        val bare = link(board, name = "emile")
         link(createAndSaveBoard(user))
 
         // When
         val found = repository.findRemoteCollectionsForBoard(board.id)
 
         // Then
-        assertEquals(listOf(apple, zebra), found)
+        assertEquals(listOf(bare, accented, emma), found)
+    }
+
+    @Test
+    fun `Given two collections of one name in two cases, Then findRemoteCollectionsForBoard orders them by id`() {
+        // Given: the collation reads the two names as one, so the id breaks the tie
+        val user = createAndSaveUser()
+        val board = createAndSaveBoard(user)
+        val collections = listOf(link(board, name = "élodie"), link(board, name = "ÉLODIE"))
+
+        // When
+        val found = repository.findRemoteCollectionsForBoard(board.id)
+
+        // Then: PostgreSQL orders a uuid by its bytes, as its text sorts, where Java's compareTo is signed
+        assertEquals(collections.sortedBy { it.id.toString() }, found)
     }
 
     @Test

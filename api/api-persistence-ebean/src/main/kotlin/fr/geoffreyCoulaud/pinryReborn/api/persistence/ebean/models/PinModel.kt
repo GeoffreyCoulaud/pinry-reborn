@@ -1,9 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.bases.AuthoredBaseModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.Collations
 import io.ebean.annotation.ConstraintMode
 import io.ebean.annotation.DbForeignKey
 import io.ebean.annotation.Index
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
@@ -21,7 +23,7 @@ class PinModel(
     author: UserModel,
     var sourceContextUrl: String?,
     var sourceMediaUrl: String?,
-    var description: String,
+    @Column(columnDefinition = Collations.CASE_INSENSITIVE_TEXT) var description: String,
     createdAt: Instant,
     // Written by the mapper from the domain entity, never generated. See AuthoredBaseModel.
     var updatedAt: Instant,

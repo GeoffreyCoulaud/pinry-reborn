@@ -82,27 +82,27 @@ class TagRepositoryTest : RepositoryTest() {
         repository.saveTag(Tag(id = randomUUID(), author = user, name = name, createdAt = storableNow()))
 
     @Test
-    fun `Given a tag owned by the user, Then findUserTagByName finds it whatever the ASCII case`() {
+    fun `Given a tag owned by the user, Then findUserTagByName finds it in another case outside ASCII`() {
         // Given
         val user = createAndSaveUser()
-        val tag = saveTag("landscape", user)
+        val tag = saveTag("élodie", user)
 
         // When
-        val found = repository.findUserTagByName(user = user, name = "LandScape")
+        val found = repository.findUserTagByName(user = user, name = "ÉLODIE")
 
         // Then
         assertEquals(tag.id, found?.id)
     }
 
     @Test
-    fun `Given a tag name already held up to ASCII case, Then saveTag is refused by the store`() {
+    fun `Given a tag name already held in another case outside ASCII, Then saveTag is refused by the store`() {
         // Given: no translation, deliberately. TagCreator.findOrCreate reads through the same fold
         // first, so this violation is unreachable from the API and stays a PersistenceException.
         val user = createAndSaveUser()
-        saveTag("landscape", user)
+        saveTag("élodie", user)
 
         // When / Then
-        assertThrows<PersistenceException> { saveTag("Landscape", user) }
+        assertThrows<PersistenceException> { saveTag("ÉLODIE", user) }
     }
 
     @Test
@@ -153,13 +153,13 @@ class TagRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given a tag stored Cat, Then a lower-case term finds it`() {
-        // Given: SQLite's LIKE folds A to Z, which is the fold ix_tags_author_name_nocase defines
+    fun `Given a tag stored élodie, Then the term ÉLO finds it`() {
+        // Given: LIKE folds under the column's collation, as the unique index does
         val user = createAndSaveUser()
-        val tag = saveTag("Cat", user)
+        val tag = saveTag("élodie", user)
 
         // When
-        val found = matching(user, "cat")
+        val found = matching(user, "ÉLO")
 
         // Then
         assertEquals(listOf(tag.id), found.map { it.id })

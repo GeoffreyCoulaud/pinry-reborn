@@ -23,13 +23,9 @@ class RemoteCollectionRepository(persistor: Persistor) : RemoteCollectionReposit
         QRemoteCollectionModel().author.id.equalTo(user.id).url.equalTo(url.toString()).findOne()?.toDomain()
 
     override fun findRemoteCollectionsForBoard(boardId: UUID): List<RemoteCollection> =
-        QRemoteCollectionModel()
-            .board
-            .id
-            .equalTo(boardId)
-            .findList()
-            .sortedWith(compareBy({ it.name.lowercase() }, { it.id }))
-            .map { it.toDomain() }
+        QRemoteCollectionModel().board.id.equalTo(boardId).orderBy().name.asc().id.asc().findList().map {
+            it.toDomain()
+        }
 
     override fun findAllRemoteCollectionsForUser(user: User): List<RemoteCollection> =
         QRemoteCollectionModel().author.id.equalTo(user.id).findList().map { it.toDomain() }

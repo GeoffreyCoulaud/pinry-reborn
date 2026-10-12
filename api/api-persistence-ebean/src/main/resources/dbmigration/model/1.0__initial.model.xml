@@ -72,7 +72,7 @@
             <column name="created_at" type="timestamp" notnull="true"/>
             <column name="source_context_url" type="varchar"/>
             <column name="source_media_url" type="varchar"/>
-            <column name="description" type="varchar" notnull="true"/>
+            <column name="description" type="varchar collate case_insensitive" notnull="true"/>
             <column name="updated_at" type="timestamp" notnull="true"/>
             <column name="soft_deleted_at" type="timestamp"/>
             <column name="publisher_id" type="uuid" references="persons.id" foreignKeyName="fk_pins_publisher_id" foreignKeyOnDelete="SET_NULL" foreignKeyOnUpdate="RESTRICT"/>
@@ -87,7 +87,7 @@
             <column name="author_id" type="uuid" notnull="true" references="users.id" foreignKeyName="fk_remote_collections_author_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
             <column name="created_at" type="timestamp" notnull="true"/>
             <column name="url" type="varchar" notnull="true"/>
-            <column name="name" type="varchar" notnull="true"/>
+            <column name="name" type="varchar collate case_insensitive" notnull="true"/>
             <column name="board_id" type="uuid" notnull="true" references="boards.id" foreignKeyName="fk_remote_collections_board_id" foreignKeyOnDelete="CASCADE" foreignKeyOnUpdate="RESTRICT"/>
         </createTable>
         <createTable name="session_tokens" identityType="external" pkName="pk_session_tokens">

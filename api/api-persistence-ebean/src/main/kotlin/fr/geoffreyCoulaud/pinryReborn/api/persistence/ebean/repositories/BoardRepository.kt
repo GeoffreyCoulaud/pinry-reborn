@@ -11,6 +11,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.BoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QMediaModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinBoardModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.BoardQueries
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.orderedByName
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.withActivePin
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.PersistenceException
@@ -18,18 +19,13 @@ import java.time.Instant
 import java.util.UUID
 
 @ApplicationScoped
-// BoardRepositoryInterface's surface (13 methods) plus the private sortedForListing helper trips
-// detekt's default per-class threshold. Suppressed rather than split, since splitting would
+// BoardRepositoryInterface's surface (13 methods) trips detekt's default per-class threshold.
+// Suppressed rather than split, since splitting would
 // fragment one cohesive adapter across artificial classes for no readability gain (mirrors
 // PinRepository's precedent for the same rule).
 @Suppress("TooManyFunctions")
 class BoardRepository(private val persistor: Persistor) : BoardRepositoryInterface {
     private val sqlRepository = ModelRepository<BoardModel>(persistor = persistor)
-
-    // Case-insensitive name sort with id tie-breaker, applied in-memory after the DB fetch
-    // (SQLite collation for `lower()` ordering is simplest handled here; sets are small).
-    private fun List<BoardModel>.sortedForListing(): List<BoardModel> =
-        sortedWith(compareBy({ it.name.lowercase() }, { it.id }))
 
     override fun saveBoard(board: Board): Board =
         try {
@@ -52,10 +48,10 @@ class BoardRepository(private val persistor: Persistor) : BoardRepositoryInterfa
     override fun findActiveBoardById(id: UUID): Board? = BoardQueries.active().id.equalTo(id).findOne()?.toDomain()
 
     override fun findActiveBoardsForUser(user: User): List<Board> =
-        BoardQueries.active().author.id.equalTo(user.id).findList().sortedForListing().map { it.toDomain() }
+        BoardQueries.active().author.id.equalTo(user.id).orderedByName().findList().map { it.toDomain() }
 
     override fun findRecycledBoardsForUser(user: User): List<Board> =
-        BoardQueries.recycled().author.id.equalTo(user.id).findList().sortedForListing().map { it.toDomain() }
+        BoardQueries.recycled().author.id.equalTo(user.id).orderedByName().findList().map { it.toDomain() }
 
     override fun softDeleteBoard(board: Board, at: Instant): Board {
         val model =

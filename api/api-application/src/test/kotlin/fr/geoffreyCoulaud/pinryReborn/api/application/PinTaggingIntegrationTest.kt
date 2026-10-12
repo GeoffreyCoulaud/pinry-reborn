@@ -39,8 +39,8 @@ class PinTaggingIntegrationTest : IntegrationTest() {
     }
 
     @Test
-    fun `Given a stored tag, Then tagging with a different case reuses it and returns its spelling`() {
-        // Given: a pin already carrying `landscape`, stored in that spelling.
+    fun `Given a stored tag, Then tagging with a different case outside ASCII reuses it and returns its spelling`() {
+        // Given: a pin already carrying `été`, stored in that spelling.
         val auth = createAuthenticatedUser()
         val pin =
             pinCreator.createPin(
@@ -48,7 +48,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
                 sourceContextUrl = HttpUrl.parse("https://example.com/page"),
                 sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "My pin",
-                tags = listOf("landscape"),
+                tags = listOf("été"),
             )
 
         // When: the client tags a second pin with the same name in another case.
@@ -60,12 +60,12 @@ class PinTaggingIntegrationTest : IntegrationTest() {
                 description = "Another pin",
                 tags = emptyList(),
             )
-        replacePin(auth, other, tags = listOf("Landscape"))
+        replacePin(auth, other, tags = listOf("ÉTÉ"))
             .statusCode(200)
             // Then: the stored spelling comes back, not the one that was sent. Before the fold
-            // reached the read, this created a second tag named `Landscape`.
+            // reached the read, this created a second tag named `ÉTÉ`.
             .body("tags", hasSize<Any>(1))
-            .body("tags.name", containsInAnyOrder("landscape"))
+            .body("tags.name", containsInAnyOrder("été"))
 
         // And: the first pin still carries the one tag, which is the same row.
         given()
@@ -74,7 +74,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
             .get("/api/v1/pins/${pin.id}")
             .then()
             .statusCode(200)
-            .body("tags.name", containsInAnyOrder("landscape"))
+            .body("tags.name", containsInAnyOrder("été"))
     }
 
     @Test

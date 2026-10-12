@@ -76,13 +76,13 @@ class PersonRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given a saved person, Then findUserPerson finds it in another ASCII case and address order`() {
+    fun `Given a saved person, Then findUserPerson finds it in another case outside ASCII and address order`() {
         // Given
         val user = createAndSaveUser()
-        val person = savePerson(user, "Alice", listOf(FIRST_URL, SECOND_URL))
+        val person = savePerson(user, "élodie", listOf(FIRST_URL, SECOND_URL))
 
         // When
-        val found = find(user, "aLICE", listOf(SECOND_URL, FIRST_URL))
+        val found = find(user, "ÉLODIE", listOf(SECOND_URL, FIRST_URL))
 
         // Then
         assertEquals(person.id, found?.id)
@@ -141,13 +141,13 @@ class PersonRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given a person held up to ASCII case and address order, Then saving it again is refused by the store`() {
+    fun `Given a person held in another case outside ASCII and address order, Then saving it is refused`() {
         // Given: no translation, deliberately. PersonCreator reads through the same identity first.
         val user = createAndSaveUser()
-        savePerson(user, "Alice", listOf(FIRST_URL, SECOND_URL))
+        savePerson(user, "élodie", listOf(FIRST_URL, SECOND_URL))
 
         // When / Then
-        assertThrows<PersistenceException> { savePerson(user, "ALICE", listOf(SECOND_URL, FIRST_URL)) }
+        assertThrows<PersistenceException> { savePerson(user, "ÉLODIE", listOf(SECOND_URL, FIRST_URL)) }
     }
 
     @Test
@@ -254,6 +254,19 @@ class PersonRepositoryTest : RepositoryTest() {
 
         // Then
         assertEquals(emptyList<Person>(), found)
+    }
+
+    @Test
+    fun `Given a person stored élodie, Then the term ÉLO finds it`() {
+        // Given
+        val user = createAndSaveUser()
+        val person = savePerson(user, "élodie", emptyList())
+
+        // When
+        val found = matching(user, "ÉLO")
+
+        // Then
+        assertEquals(listOf(person), found)
     }
 
     @Test
