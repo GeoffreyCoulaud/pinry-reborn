@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.RepositoryTest
+import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -21,7 +22,9 @@ class ReferencedTableAlterTest : RepositoryTest() {
 
         // When: one transaction, as Ebean runs a migration, closed without a commit
         val (notRewritten, rowsAfter) =
-            database.beginTransaction().use { referenced.filterNot { alterRewrites(it) } to rowCounts(children) }
+            database.beginTransaction().use {
+                referenced.filterNot { table -> alterRewrites(table) } to rowCounts(children)
+            }
 
         // Then: the rewrite is what SQLite's rebuild was; the last assertion is the third one's non-empty guard
         assertEquals(emptyList<String>(), notRewritten)
@@ -91,7 +94,8 @@ class ReferencedTableAlterTest : RepositoryTest() {
                 "insert into pin_boards (pin_id, board_id) values ('$pin', '$board')",
                 "insert into pin_tags (pin_id, tag_id) values ('$pin', '$tag')",
                 "insert into pin_creators (pin_id, person_id) values ('$pin', '$person')",
-                "insert into pin_duplicates (id, first_pin_id, second_pin_id) values ('${id(12)}', '$pin', '$otherPin')",
+                "insert into pin_duplicates (id, first_pin_id, second_pin_id) " +
+                    "values ('${id(12)}', '$pin', '$otherPin')",
                 "insert into media (id, pin_id, width, height, byte_size, created_at, mime_type, content_hash, " +
                     "storage_key) values ('$media', '$pin', 1, 1, 1, now(), 'image/png', 'hash', 'key')",
                 "insert into media_frames (id, media_id, hash_0, hash_1, hash_2, hash_3) " +
@@ -110,7 +114,7 @@ class ReferencedTableAlterTest : RepositoryTest() {
             .forEach { database.sqlUpdate(it).execute() }
     }
 
-    private fun id(number: Int): String = "00000000-0000-0000-0000-%012d".format(number)
+    private fun id(number: Long): UUID = UUID(0, number)
 
     private companion object {
         // An instant column of each referenced table, which the test narrows to the millisecond.
