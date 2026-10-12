@@ -45,8 +45,8 @@ right.
 - **A join table is unique on its pair and indexed on each side.**
 - **A symmetric pair is stored in a canonical order.**
 - **A find-or-create runs inside the transaction of the write that needs it.**
-- **The domain's equality matches the database's identity**: a case fold or an order the unique index applies, the
-  domain type applies too.
+- **The domain never folds more than the database does**: a fold it cannot reproduce is left to the database, through
+  a find-or-create.
 
 ## Storage
 
@@ -99,5 +99,5 @@ right.
 objects are `data class` or `@JvmInline value class`" for the first and third rules of Types; "Nullability at the
 boundary is resolved at the boundary" for the fallible factory only a mapper calls; "The wire format is not the domain
 model" for the type that carries no format; "Identifiers, casing and normalisation are decided once" for the
-normalisation in the type and the equality that matches the database; "Anything a client depends on is versioned or
+normalisation in the type and the fold left to the database; "Anything a client depends on is versioned or
 additive" for the alpha rule of Contract; and "The database is the authority on uniqueness" under its own name.

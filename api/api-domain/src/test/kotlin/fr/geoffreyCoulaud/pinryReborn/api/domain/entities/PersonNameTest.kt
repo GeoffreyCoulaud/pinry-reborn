@@ -9,18 +9,17 @@ import org.junit.jupiter.api.Test
 
 class PersonNameTest {
     @Test
-    fun `Given two names differing by ASCII case, Then they are equal with equal hash codes`() {
-        val lower = PersonName.parse("Alice")
-        val upper = PersonName.parse("ALICE")
+    fun `Given two names of the same text, Then they are equal with equal hash codes`() {
+        val first = PersonName.parse("Alice")
+        val second = PersonName.parse("Alice")
 
-        assertEquals(lower, upper)
-        assertEquals(lower.hashCode(), upper.hashCode())
+        assertEquals(first, second)
+        assertEquals(first.hashCode(), second.hashCode())
     }
 
     @Test
-    fun `Given two names holding characters below the ASCII letters, Then those characters fold to themselves`() {
-        assertEquals(PersonName.parse("Ada Lovelace 2"), PersonName.parse("ada lovelace 2"))
-        assertNotEquals(PersonName.parse("Ada Lovelace"), PersonName.parse("Ada-Lovelace"))
+    fun `Given two names differing by an ASCII letter's case, Then they are not equal`() {
+        assertNotEquals(PersonName.parse("Alice"), PersonName.parse("alice"))
     }
 
     @Test
