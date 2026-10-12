@@ -49,6 +49,12 @@ allOpen {
     annotation("io.quarkus.test.junit.QuarkusTest")
 }
 
+// Dev mode loads avaje-config in Quarkus's base class loader, which cannot see this module's resources: Ebean would
+// read no datasource. Its props.file names the one declaration instead (docs/adr/0012, decision 1).
+tasks.quarkusDev {
+    jvmArguments.add("-Dprops.file=${file("src/main/resources/application.properties")}")
+}
+
 tasks.withType<Test> {
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
