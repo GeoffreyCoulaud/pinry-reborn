@@ -18,6 +18,7 @@ import jakarta.persistence.Table
 // The search's tag subquery and the deletion of a tag's rows.
 @Index(name = "ix_pin_tags_tag", columnNames = ["tag_id"])
 class PinTagModel(
-    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var pin: PinModel,
+    // No index of Ebean's: the unique pair index leads with pin_id.
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE, noIndex = true) var pin: PinModel,
     @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var tag: TagModel,
 )

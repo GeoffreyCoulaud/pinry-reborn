@@ -149,19 +149,15 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
         // Given
         val query = repository.nearQuery(stored)
         query.findList()
-        val explain = database.sqlQuery("explain query plan ${query.query().generatedSql}")
-        FrameHashBands.valuesNear(stored).flatten().forEachIndexed { index, value ->
-            explain.setParameter(index + 1, value)
-        }
 
         // When
-        val plan = explain.findList().joinToString("\n") { "${it["detail"]}" }
+        val plan = planOf(query.query().generatedSql)
 
-        // Then: read on a table with no statistics, so this pins the plan the planner picks unaided
+        // Then
         (0 until FrameHashBands.EXPRESSIONS.size).forEach { band ->
             assertTrue(plan.contains("ix_media_frames_band_$band "), plan)
         }
-        assertFalse(plan.contains("SCAN"), plan)
+        assertFalse(plan.contains("Seq Scan"), plan)
     }
 
     private companion object {

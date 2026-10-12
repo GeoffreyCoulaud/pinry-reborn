@@ -103,17 +103,10 @@ class PinRepositoryContentHashTest : PinRepositoryFixtures() {
         query.findSingleAttributeList<UUID>()
 
         // When
-        // Rooted on the image, the content hash is the first predicate and so binds first.
-        val plan =
-            database
-                .sqlQuery("explain query plan ${query.query().generatedSql}")
-                .setParameter(1, contentHash)
-                .setParameter(2, author.id.toString())
-                .findList()
-                .joinToString("\n") { "${it["detail"]}" }
+        val plan = planOf(query.query().generatedSql)
 
-        // Then: read on a table with no statistics, so this pins the plan the planner picks unaided
+        // Then
         assertTrue(plan.contains("ix_media_content_hash"), plan)
-        assertFalse(plan.contains("SCAN"), plan)
+        assertFalse(plan.contains("Seq Scan"), plan)
     }
 }

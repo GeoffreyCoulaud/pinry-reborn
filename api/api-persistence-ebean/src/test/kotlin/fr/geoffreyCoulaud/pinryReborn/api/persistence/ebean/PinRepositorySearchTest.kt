@@ -15,6 +15,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -189,14 +190,11 @@ class PinRepositorySearchTest : PinRepositoryFixtures() {
         query.findList()
 
         // When
-        val sql = query.query().generatedSql
-        val explain = database.sqlQuery("explain query plan $sql")
-        // The count and the order of the binds are the predicate's: bound from the statement's own
-        // placeholders, a clause added to it fails this case on the plan rather than on a mismatch.
-        for (position in 1..sql.count { character -> character == '?' }) explain.setParameter(position, "%cat%")
-        val plan = explain.findList().joinToString("\n") { "${it["detail"]}" }
+        val plan = planOf(query.query().generatedSql)
 
-        // Then: the pin table is scanned here by design, so the absence of SCAN would prove nothing
-        assertTrue(plan.contains("SUBQUERY"), plan)
+        // Then: the tags are read once, by index, into a hashed set each pin is looked up in
+        assertTrue(plan.contains("hashed SubPlan"), plan)
+        assertTrue(plan.contains("Index Scan on ix_pin_tags_tag"), plan)
+        assertFalse(plan.contains("Seq Scan on pin_tags"), plan)
     }
 }

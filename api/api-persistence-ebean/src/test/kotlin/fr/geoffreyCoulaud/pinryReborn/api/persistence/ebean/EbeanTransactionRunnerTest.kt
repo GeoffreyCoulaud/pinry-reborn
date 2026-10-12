@@ -13,6 +13,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanTa
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
+import io.ebean.datasource.DataSourcePool
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -133,6 +134,15 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
             }
         }
         assertNull(mediaRepository.findByPinId(pin.id))
+    }
+
+    @Test
+    fun `Given the suite's database, Then its pool holds one connection`() {
+        // When: ebean-test rewrites the address and leaves the pool as the properties declare it
+        val maximum = (database.dataSource() as DataSourcePool).status(false).maxSize()
+
+        // Then: the guarantees ADR 0059, decision 2, lists rest on one connection
+        assertEquals(1, maximum)
     }
 
     private companion object {

@@ -12,7 +12,8 @@ import java.util.UUID
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a mapped-superclass, never instantiated directly.
 abstract class AuthoredBaseModel(
     id: UUID,
-    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var author: UserModel,
+    // No index of Ebean's: each table declares one leading with author_id, which MigratedSchemaTest holds.
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE, noIndex = true) var author: UserModel,
     // Written by the mapper from the domain entity, never generated: the use case that creates it owns the instant.
     var createdAt: Instant,
 ) : BaseModel(id = id)

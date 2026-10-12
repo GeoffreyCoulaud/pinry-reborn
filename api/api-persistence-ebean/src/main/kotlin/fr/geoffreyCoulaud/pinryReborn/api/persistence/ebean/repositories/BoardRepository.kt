@@ -45,11 +45,9 @@ class BoardRepository(private val persistor: Persistor) : BoardRepositoryInterfa
     override fun findBoardById(id: UUID): Board? = BoardQueries.any().id.equalTo(id).findOne()?.toDomain()
 
     // Reads every state through BoardQueries.any(): a recycled board holds its name (ADR 0008 asks
-    // the state be named). The comparison goes through the column's own collation rather than
-    // Ebean's `ieq`, which renders lower(column) = ? with the bind lowercased in Java: that fold is
-    // Unicode aware while `collate nocase` is ASCII only, so the two disagree in one direction.
+    // the state be named). A plain equality, the column's collation folding as its unique index does.
     override fun findBoardForUserByName(user: User, name: String): Board? =
-        BoardQueries.any().author.id.equalTo(user.id).raw("name collate nocase = ?", name).findOne()?.toDomain()
+        BoardQueries.any().author.id.equalTo(user.id).name.eq(name).findOne()?.toDomain()
 
     override fun findActiveBoardById(id: UUID): Board? = BoardQueries.active().id.equalTo(id).findOne()?.toDomain()
 

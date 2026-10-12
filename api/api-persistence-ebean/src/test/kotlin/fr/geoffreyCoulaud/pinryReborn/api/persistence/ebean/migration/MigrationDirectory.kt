@@ -12,9 +12,10 @@ internal object MigrationDirectory {
 
     // Name and the rest of the statement in one pattern, matched over the whole file: `[^;]` cannot leave the
     // statement, so a statement split over several lines is read like one written on a single line.
-    private val indexCreation = Regex("""create\s+(?:unique\s+)?index\s+(\w+)[^;]*""", RegexOption.IGNORE_CASE)
+    private val indexCreation =
+        Regex("""create\s+(?:unique\s+)?index\s+(?:if\s+not\s+exists\s+)?(\w+)[^;]*""", RegexOption.IGNORE_CASE)
 
-    // SQLite's form (sqlite.org/lang_dropindex.html).
+    // PostgreSQL's form (postgresql.org/docs/18/sql-dropindex.html).
     private val indexRemoval = Regex("""drop\s+index\s+(?:if\s+exists\s+)?(\w+)""", RegexOption.IGNORE_CASE)
 
     private val versionNumber = Regex("""\d+""")

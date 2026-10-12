@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test
 class SweepIndexesMigrationTest {
     private val sessionTokenExpiresAtIndex =
         Regex(
-            """create\s+(unique\s+)?index\s+\S+\s+on\s+session_tokens\s*\(\s*expires_at\s*\)""",
+            """create\s+(unique\s+)?index\s+(if\s+not\s+exists\s+)?\S+\s+on\s+session_tokens\s*\(\s*expires_at\s*\)""",
             RegexOption.IGNORE_CASE,
         )
 
@@ -32,7 +32,8 @@ class SweepIndexesMigrationTest {
     // (three terminal values out of the full state space) and leads, `terminal_state_at` follows.
     private val taskStateTerminalStateAtIndex =
         Regex(
-            """create\s+(unique\s+)?index\s+\S+\s+on\s+tasks\s*\(\s*state\s*,\s*terminal_state_at\s*\)""",
+            """create\s+(unique\s+)?index\s+(if\s+not\s+exists\s+)?\S+\s+on\s+tasks\s*""" +
+                """\(\s*state\s*,\s*terminal_state_at\s*\)""",
             RegexOption.IGNORE_CASE,
         )
 

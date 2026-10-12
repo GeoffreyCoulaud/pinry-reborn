@@ -65,7 +65,7 @@ class RawSqlOutsideInventory(config: Config) :
                 "predicate would leave the junction and the cursor would be wrong in silence."
 
         private const val FRAME_HASH_BAND =
-            "SQLite uses an expression index only where the query spells the expression it indexes, and the " +
+            "PostgreSQL uses an expression index only where the query spells the expression it indexes, and the " +
                 "query beans have no bit shift or bitwise and to spell ((hash_k >> s) & 65535) with. One band per " +
                 "expression, because Ebean expands a collection bound to ?1 by substring replacement, which would " +
                 "also rewrite a ?10 (ADR 0051, decision 4)."
@@ -76,18 +76,6 @@ class RawSqlOutsideInventory(config: Config) :
                 "id <= ?" to NO_ORDERED_COMPARISON,
                 "id >= ?" to NO_ORDERED_COMPARISON,
                 "id > ?" to NO_ORDERED_COMPARISON,
-                "name collate nocase = ?" to
-                    "The lookup has to ask what the unique index asks, and that index is " +
-                        "(author_id, name collate nocase). ieq asks something else: " +
-                        "CaseInsensitiveEqualExpression emits lower(col) = ? and binds value.toLowerCase(), " +
-                        "so the column is folded by SQLite and the value by Java. SQLite's lower() is " +
-                        "limited to the English alphabet and Java's is full Unicode, so a row `ete` accented " +
-                        "is found by an upper-case search and not the reverse; toLowerCase() also takes no " +
-                        "locale. And lower(name) is not the indexed expression, so a find-or-create could " +
-                        "miss a row the constraint then refuses.",
-                "mime_type glob 'video/*'" to
-                    "The query beans' startsWith emits like, which SQLite folds for ASCII, where the mapper's " +
-                        "startsWith and ck_media_variant tell a video by a case-sensitive `video/`.",
                 "insert into tasks (id, kind, payload, state, priority, available_at, attempts, max_attempts, " +
                     "cancel_requested, dedup_key, version) values (?, ?, ?, ?, ?, ?, 0, ?, false, ?, 1) " +
                     "on conflict do nothing" to

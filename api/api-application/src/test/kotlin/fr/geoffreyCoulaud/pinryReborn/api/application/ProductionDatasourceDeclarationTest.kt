@@ -13,8 +13,10 @@ import org.junit.jupiter.api.Test
 class ProductionDatasourceDeclarationTest {
     private val requiredKeys =
         mapOf(
-            "datasource.db.username" to "pinry",
-            "datasource.db.password" to "",
+            "datasource.db.url" to "\${DB_URL:jdbc:postgresql://localhost:5432/pinry}",
+            "datasource.db.driver" to "org.postgresql.Driver",
+            "datasource.db.username" to "\${DB_USERNAME:pinry}",
+            "datasource.db.password" to "\${DB_PASSWORD}",
             "datasource.db.minConnections" to "1",
             "datasource.db.maxConnections" to "1",
             "ebean.migration.run" to "true",
@@ -35,15 +37,6 @@ class ProductionDatasourceDeclarationTest {
             "Expected these keys in src/main/resources/application.properties with these values; " +
                 "declared instead: ${wrong.keys.associateWith { declared[it] }}",
         )
-    }
-
-    @Test
-    fun `Given the production properties, Then the SQLite address turns the foreign keys on`() {
-        // Given: the test address overrides this one, so no integration test sees it (ADR 0058, decision 8)
-        val address = readProductionProperties()["datasource.db.url"].orEmpty()
-
-        // Then
-        assertEquals(listOf("foreign_keys=true"), address.substringAfter('?').split('&').filter { "foreign" in it })
     }
 
     private fun readProductionProperties(): Map<String, String> =

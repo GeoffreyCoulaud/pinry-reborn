@@ -1,7 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models
 
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.bases.AuthoredBaseModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.Collations
 import io.ebean.annotation.Index
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
 import java.time.Instant
@@ -12,13 +14,12 @@ import java.util.UUID
 // A name and its addresses together are an identity per author, the name folded as a tag's is.
 @Index(
     name = "ix_persons_author_name_nocase_urls",
-    definition =
-        "create unique index ix_persons_author_name_nocase_urls on persons (author_id, name collate nocase, urls)",
+    definition = "create unique index ix_persons_author_name_nocase_urls on persons (author_id, name, urls)",
 )
 class PersonModel(
     id: UUID,
     author: UserModel,
-    val name: String,
+    @Column(columnDefinition = Collations.CASE_INSENSITIVE_TEXT) val name: String,
     // PersonModelMapper.canonicalUrls: a JSON array held as text, SQLite having no array type.
     val urls: String,
     createdAt: Instant,

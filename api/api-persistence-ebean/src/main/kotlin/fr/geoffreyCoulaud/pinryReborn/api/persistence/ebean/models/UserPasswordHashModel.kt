@@ -20,7 +20,8 @@ import java.time.Instant
         "create unique index ix_user_password_hashes_user_created " + "on user_password_hashes (user_id, created_at)",
 )
 class UserPasswordHashModel(
-    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var user: UserModel,
+    // No index of Ebean's: ix_user_password_hashes_user_created leads with user_id.
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE, noIndex = true) var user: UserModel,
     var hash: String,
     @Enumerated(EnumType.STRING) var algorithm: PasswordHashAlgorithm,
     // Written by the mapper from the domain `createdAt` the use case stamps, never generated (D19).

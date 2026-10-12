@@ -102,14 +102,13 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
         val pin = randomUUID()
         val query = QPinDuplicateModel().firstPinId.equalTo(pin).withActivePins()
         query.findList()
-        val explain = database.sqlQuery("explain query plan ${query.query().generatedSql}").setParameter(1, pin)
 
         // When
-        val plan = explain.findList().map { "${it["detail"]}" }
+        val plan = planOf(query.query().generatedSql)
 
         // Then: each pin by its primary key, rather than a list of every active pin
-        assertEquals(2, plan.count { it.startsWith("SEARCH") && it.contains("(id=?)") }, "$plan")
-        assertFalse(plan.any { it.contains("LIST SUBQUERY") || it.startsWith("SCAN") }, "$plan")
+        assertEquals(2, Regex("""Index Scan using pk_pins on pins""").findAll(plan).count(), plan)
+        assertFalse(plan.contains("Seq Scan"), plan)
     }
 
     @Test
@@ -166,16 +165,20 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun `Given a stored pair, Then its ids are text and the database refuses the pair in reverse order`() {
-        // Given: the constraint compares text, so it holds the repository's order only on ids stored as text
+    fun `Given a stored pair, Then its ids are uuids and the database refuses the pair in reverse order`() {
+        // Given: the constraint compares uuids, whose order is their text's, which the repository's order reads
         val (one, other) = storedPins(2).map { it.id }
         repository.addMissing(one, listOf(other))
         val types =
             database
-                .sqlQuery("select typeof(first_pin_id) as first, typeof(second_pin_id) as second from pin_duplicates")
+                .sqlQuery(
+                    "select cast(pg_typeof(first_pin_id) as text) as first, " +
+                        "cast(pg_typeof(second_pin_id) as text) as second " +
+                        "from pin_duplicates"
+                )
                 .findList()
                 .map { it.getString("first") to it.getString("second") }
-        assertEquals(listOf("text" to "text"), types)
+        assertEquals(listOf("uuid" to "uuid"), types)
         val (lower, higher) = listOf(one, other).sortedBy { it.toString() }
 
         // When, Then

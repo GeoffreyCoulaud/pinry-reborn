@@ -24,7 +24,7 @@ class UserRepository(private val persistor: Persistor) : UserRepositoryInterface
 
     override fun findUserById(id: UUID): User? = UserQueries.active().id.equalTo(id).findOne()?.toDomain()
 
-    override fun findUserByName(name: String): User? = UserQueries.active().name.ieq(name).findOne()?.toDomain()
+    override fun findUserByName(name: String): User? = UserQueries.active().name.eq(name).findOne()?.toDomain()
 
     override fun findUserByIdIncludingDeleted(id: UUID): User? = UserQueries.any().id.equalTo(id).findOne()?.toDomain()
 

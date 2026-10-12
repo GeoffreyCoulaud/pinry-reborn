@@ -20,7 +20,7 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
 
     override fun savePerson(person: Person): Person = sqlRepository.saveAndReturn(person.toModel()).toDomain()
 
-    // `collate nocase` folds ASCII alone, as the unique index does, where Ebean's `ieq` would fold Unicode.
+    // A plain equality, the column's collation folding as the unique index does.
     override fun findUserPerson(
         user: User,
         name: PersonName,
@@ -30,7 +30,8 @@ class PersonRepository(persistor: Persistor) : PersonRepositoryInterface {
             .author
             .id
             .equalTo(user.id)
-            .raw("name collate nocase = ?", name.text)
+            .name
+            .eq(name.text)
             .urls
             .equalTo(canonicalUrls(urls))
             .findOne()

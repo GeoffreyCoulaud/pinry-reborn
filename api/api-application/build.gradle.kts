@@ -38,6 +38,7 @@ dependencies {
     testImplementation(project(":api-utilities"))
     testImplementation(libs.bundles.integration.testing)
     testImplementation(libs.ebean)
+    testImplementation(libs.ebean.test)
     // Konsist architecture guardrails (reads source across all modules)
     testImplementation(libs.konsist)
 }

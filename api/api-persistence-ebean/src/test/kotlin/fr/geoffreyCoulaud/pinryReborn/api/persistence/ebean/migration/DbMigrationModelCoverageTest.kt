@@ -30,7 +30,11 @@ class DbMigrationModelCoverageTest {
     // `1.2` rested on never applied (`docs/adr/0009-unique-index-named-outcomes.md`, decision 5).
     private val handWritten = emptySet<String>()
 
-    private val createIndexStatement = Regex("""create\s+(?:unique\s+)?index\s+(\w+)""", RegexOption.IGNORE_CASE)
+    // Ebean's prefix for a script that runs once, before the versioned ones.
+    private val initScriptPrefix = "I__"
+
+    private val createIndexStatement =
+        Regex("""create\s+(?:unique\s+)?index\s+(?:if\s+not\s+exists\s+)?(\w+)""", RegexOption.IGNORE_CASE)
 
     // Anchored on the element, not on the attribute: `<dropIndex indexName="..."/>` takes the index
     // back out of the prior model, so a name whose only record is its removal is not recorded at all.
@@ -89,6 +93,8 @@ class DbMigrationModelCoverageTest {
         val withoutModel =
             MigrationDirectory.sqlScripts
                 .map { it.name.removeSuffix(".sql") }
+                // An init script is generated from extra-ddl.xml, which no model records.
+                .filterNot { it.startsWith(initScriptPrefix) }
                 .filterNot { MigrationDirectory.modelFileFor(it).exists() }
         assertEquals(handWritten, withoutModel.toSet())
     }
@@ -207,7 +213,7 @@ class DbMigrationModelCoverageTest {
     }
 
     /**
-     * Whitespace runs and the statement terminator are the only differences forgiven. Case is not: SQLite compares
+     * Whitespace runs and the statement terminator are the only differences forgiven. Case is not: PostgreSQL compares
      * string literals case-sensitively, so a `'PENDING'` predicate is not a `'pending'` one.
      */
     private fun normalised(statement: String): String =
@@ -217,9 +223,13 @@ class DbMigrationModelCoverageTest {
     private fun xmlUnescaped(attribute: String): String =
         attribute.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&amp;", "&")
 
-    /** The statement a `<createIndex>` claims through its column list alone, which is all Ebean renders from it. */
+    /**
+     * The statement a `<createIndex>` claims through its column list alone, which is all Ebean renders from it, with
+     * the `if not exists` its PostgreSQL dialect adds (`PostgresDdl.createIndexIfNotExists`).
+     */
     private fun columnListStatement(index: ModelIndex): String =
-        "create ${if (index.unique) "unique " else ""}index ${index.name} " + "on ${index.tableName} (${index.columns})"
+        "create ${if (index.unique) "unique " else ""}index if not exists ${index.name} " +
+            "on ${index.tableName} (${index.columns})"
 
     private fun appliedStatementFor(index: ModelIndex): String? = appliedIndexStatements[index.version]?.get(index.name)
 
