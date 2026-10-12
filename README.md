@@ -10,11 +10,25 @@ browser extension when it arrives.
 
 ## Running
 
-To start the API locally in dev mode
+The API stores its data in PostgreSQL 18.6. To start the database `compose.yml` declares, alone and on
+`localhost:5432`, with a password of your choosing:
 
 ```sh
-cd api && ./gradlew quarkusDev
+POSTGRES_PASSWORD=<password> docker compose run --rm --publish 5432:5432 postgres
 ```
+
+The password is set when the database's volume is created; a later one must match it.
+
+To start the API locally in dev mode against it, from another terminal:
+
+```sh
+cd api && DB_PASSWORD=<password> MEDIA_DATA_DIR=/tmp/pinry/media EXPORTS_DATA_DIR=/tmp/pinry/exports \
+  IMPORTS_DATA_DIR=/tmp/pinry/imports ./gradlew quarkusDev
+```
+
+`DB_URL` and `DB_USERNAME` default to that database, `jdbc:postgresql://localhost:5432/pinry` and `pinry`. The
+password has no default, and the API refuses to boot without it. The three directories default to directories under
+`/var/lib/pinry`, which the API must be able to write to.
 
 To start the web application against it, with Node 26 and any recent pnpm installed
 (`clients/package.json` names the exact pnpm and an installed one switches itself to it):
@@ -32,8 +46,11 @@ To run the whole product the way it is released, the containers `compose.yml` de
 <http://localhost:6258>:
 
 ```sh
-(cd api && ./gradlew :api-application:quarkusBuild) && docker compose up --build
+(cd api && ./gradlew :api-application:quarkusBuild) && POSTGRES_PASSWORD=<password> docker compose up --build
 ```
+
+`POSTGRES_PASSWORD` is the database's password, which compose hands to the API as well, and compose refuses to start
+without it.
 
 The Gradle task is not optional: the API's image copies a fast jar Gradle produced before
 `docker build` ran, so a stale one builds a stale API in silence and a missing one fails the build

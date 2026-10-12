@@ -97,6 +97,9 @@ How this build applies `agents/data-modelling.md`
   `MigratedSchemaTest` lists them.
 - **A migration changes a referenced table in place** (`docs/adr/0059-the-database-is-postgresql.md`): PostgreSQL
   alters it inside Ebean's transaction and its children stay, which `ReferencedTableAlterTest` holds.
+- **The collated indexes follow the ICU of `compose.yml`'s `postgres` image.** After a bump, a `case_insensitive`
+  whose `pg_collation_actual_version(oid)` differs from its `collversion` needs its indexes reindexed, then
+  `alter collation case_insensitive refresh version` (`docs/adr/0059-the-database-is-postgresql.md`, Consequences).
 - **An index entry is bounded at 2704 bytes**: a text index declares its bound in `MigratedSchemaTest`, or reads a
   digest as the persons' addresses do.
 - **Partial or expression index**: `definition` alone, no `columnNames`, no `unique = true`: Ebean ignores both
