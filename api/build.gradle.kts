@@ -63,11 +63,6 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
-        // sqlite-jdbc loads a native library via the restricted System::load; on JDK 25
-        // this warns ("Restricted methods will be blocked in a future release unless
-        // native access is enabled"). Grant it explicitly so tests run clean and stay
-        // forward-compatible. (The runtime image passes the same flag; see Dockerfile.)
-        jvmArgs("--enable-native-access=ALL-UNNAMED")
         // Gradle's default console prints the assertion's location and drops its message, and CI
         // keeps no HTML report, so a failure there names a line number and nothing else. Assertions
         // written to enumerate their violations are worth nothing read that way.

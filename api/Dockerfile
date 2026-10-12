@@ -4,9 +4,8 @@
 # BEFORE `docker build` runs. The JVM jars are architecture-independent, so a
 # single Gradle build feeds every target platform of a multi-arch buildx run.
 #
-# Base is glibc (eclipse-temurin:25-jre), NOT alpine/musl: sqlite-jdbc ships
-# native libraries and glibc is the safe choice to load them, which the smoke
-# test confirms by running the SQLite migrations at startup.
+# Base is glibc (eclipse-temurin:25-jre), NOT alpine/musl: deno below is a
+# binary linked against glibc.
 # The binary alone, linked against glibc: it runs once copied below, not in its own image.
 FROM denoland/deno:bin-2.9.7@sha256:bc5aa4466e21b6d3021226a85ba2e1911f7c386254d97b9d797903ab74edace2 AS deno
 
@@ -35,14 +34,12 @@ RUN groupadd --system --gid 1001 pinry \
 
 WORKDIR /app
 
-# The SQLite database lives on a mounted volume. DB_PATH is wired into
-# datasource.db.url by application.properties and read by EbeanDatabaseProducer;
-# Ebean runs the migrations against it at startup.
-ENV DB_PATH=/data/pinry.db
+# The database is a service of its own (ADR 0059, decision 6), reached through
+# DB_URL, DB_USERNAME and DB_PASSWORD; /data holds the bytes below.
 RUN mkdir -p /data && chown 1001:1001 /data
 VOLUME /data
 
-# On-disk bytes live outside the database (no blobs in SQLite): original media
+# On-disk bytes live outside the database (no blobs in the database): original media
 # bytes under media.data_dir, user data export archives under exports.data_dir,
 # and uploaded import archives under imports.data_dir. All three default to
 # /var/lib/pinry/* (see application.properties) and MUST be redirected to
@@ -84,7 +81,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --start-interval=1s --retries=3 \
     CMD curl -fsS http://localhost:8080/q/health || exit 1
 
-# --enable-native-access: sqlite-jdbc loads its native library via the restricted
-# System::load, which JDK 25 warns about and will block in a future release unless
-# native access is granted.
-ENTRYPOINT ["java", "--enable-native-access=ALL-UNNAMED", "-jar", "quarkus-run.jar"]
+ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]

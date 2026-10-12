@@ -129,6 +129,9 @@ const POSTGRES_PORT = 5432
 const SMOKE_DATABASE = "pinry"
 const SMOKE_DATABASE_PASSWORD = "smoke"
 
+/** The variable the API's log has to name when it refuses to boot without it (ADR 0059, decision 6). */
+const DATABASE_PASSWORD_VARIABLE = "DB_PASSWORD"
+
 /**
  * One database per test suite, each a service of its own, at the host its test properties read from the environment.
  * ebean-test then reaches it instead of starting a container (ADR 0059, decision 3).
@@ -247,13 +250,14 @@ export class PinryReborn {
     const image = await this.imageReport(context, [])
     const tampered = await this.tamperedRequirementsReport(context)
     const smoke = await this.smokeReport(await this.apiRuntime(source, context), "api", HTTP_PORT, POLL)
+    const secretless = await this.secretlessReport(context)
     const extractor = await this.extractorReport(context)
     const webapp = this.webappContext(source)
     const webappImage = await this.imageReport(webapp, [])
     const webappSmoke = await this.smokeReport(await this.runtime(webapp), "webapp", WEBAPP_PORT, WEBAPP_POLL)
     // The context the API's own smoke built, so the topology costs one probe and no second build.
     const compose = await this.composeReport(source, context)
-    return [gate, image, tampered, smoke, extractor, webappImage, webappSmoke, compose].join("\n")
+    return [gate, image, tampered, smoke, secretless, extractor, webappImage, webappSmoke, compose].join("\n")
   }
 
   /**
@@ -388,9 +392,10 @@ export class PinryReborn {
   }
 
   /**
-   * The image starts and reports healthy, and its yt-dlp has what YouTube needs. The test suite
-   * never reads production's `application.properties`, its own sharing that name and winning by
-   * classpath order, so this is the only thing in the repository that starts what ships.
+   * The image starts and reports healthy, refuses to start without its database's password, and its
+   * yt-dlp has what YouTube needs. The test suite never reads production's `application.properties`,
+   * its own sharing that name and winning by classpath order, so this is the only thing in the
+   * repository that starts what ships.
    */
   @func()
   async smoke(
@@ -398,8 +403,9 @@ export class PinryReborn {
   ): Promise<string> {
     const context = this.imageContext(source, this.fastJar(source))
     const healthy = await this.smokeReport(await this.apiRuntime(source, context), "api", HTTP_PORT, POLL)
+    const secretless = await this.secretlessReport(context)
     const extractor = await this.extractorReport(context)
-    return [healthy, extractor].join("\n")
+    return [healthy, secretless, extractor].join("\n")
   }
 
   /** The web application's image. `platforms` reads as it does on `image`. */
@@ -514,6 +520,18 @@ export class PinryReborn {
     // Each image is its own prober: the API's carries curl for its HEALTHCHECK, nginx's the wget
     // busybox gives it.
     return this.probeReport(runtime, name, this.served(runtime, port), poll)
+  }
+
+  /** The API's image started without its database's password, which has to exit naming the variable. */
+  private async secretlessReport(context: Directory): Promise<string> {
+    // No database bound: a boot that skipped the check would fail on the connection, naming nothing.
+    const run = (await this.runtime(context)).withExec([], { useEntrypoint: true, expect: ReturnType.Any })
+    const [status, stdout, stderr] = await Promise.all([run.exitCode(), run.stdout(), run.stderr()])
+    const log = `${stdout}${stderr}`
+    if (status === 0 || !log.includes(DATABASE_PASSWORD_VARIABLE)) {
+      throw new Error(`The API without ${DATABASE_PASSWORD_VARIABLE} did not refuse to boot naming it (exit ${status}):\n${log}`)
+    }
+    return `the API refused to boot without ${DATABASE_PASSWORD_VARIABLE} (exit ${status})`
   }
 
   /** The image built for the engine's own platform: an emulated container would measure the emulator. */
