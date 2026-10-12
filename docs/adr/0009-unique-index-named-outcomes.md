@@ -1,6 +1,8 @@
 # 0009. The database owns uniqueness, and every unique constraint names its outcome
 
-Status: Accepted
+Status: Accepted; amended by `docs/adr/0059-the-database-is-postgresql.md`: a translated violation is recognised by
+its constraint's name (its decision 9), and decision 3's lost race is an insert that declines the collision rather
+than a caught error (its decision 10); decision 2's `collate nocase` is the column's `case_insensitive` collation.
 Date: 2026-08-04
 Specification: `docs/specs/2026-08-04-unique-index-named-outcomes.md`
 Related: `docs/adr/0006-domain-owned-timestamps.md` (the password-hash index, the one constraint that

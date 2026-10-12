@@ -1,6 +1,7 @@
 # 0040. Search is a parameter of the catalogue
 
-Status: Accepted
+Status: Accepted; decision 2's fold is amended by `docs/adr/0059-the-database-is-postgresql.md`, decision 4: the
+match ignores case and width in every script, through the columns' collation, and still distinguishes accents.
 Date: 2026-09-21
 Specification: `docs/specs/2026-09-21-the-header-searches-and-wears-the-name.md`, decisions A to F.
 Related: `docs/adr/0024-three-projects-share-one-repository.md`, which makes
