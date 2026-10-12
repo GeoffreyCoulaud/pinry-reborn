@@ -7,8 +7,7 @@
 	},
 	"scripts": {
 		"generate": "node generate.mjs",
-		"prepare": "pnpm run generate",
-		"typecheck": "tsc --noEmit"
+		"prepare": "pnpm run generate"
 	},
 	"dependencies": {
 		"openapi-fetch": "0.17.0"

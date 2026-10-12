@@ -29,6 +29,7 @@ const IGNORE = [
   ".dagger/sdk",
   "**/node_modules",
   "**/dist",
+  "**/*.tsbuildinfo",
   "**/coverage",
   "**/src/paraglide",
 ]

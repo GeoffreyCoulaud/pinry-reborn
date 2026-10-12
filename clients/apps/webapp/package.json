@@ -6,7 +6,6 @@
 		"messages": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations",
 		"dev": "vite",
 		"build": "vite build",
-		"typecheck": "tsc --noEmit",
 		"test": "vitest run --coverage"
 	},
 	"dependencies": {
