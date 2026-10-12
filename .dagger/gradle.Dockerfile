@@ -2,7 +2,7 @@ FROM denoland/deno:bin-2.9.7@sha256:bc5aa4466e21b6d3021226a85ba2e1911f7c386254d9
 
 # The JDK is the toolchain the build asks for, so Gradle adopts it instead of provisioning one;
 # libvips-tools brings the vipsheader and vips api-imaging-vips runs; ffmpeg brings the ffprobe and ffmpeg api-video-ffmpeg's tests run; yt-dlp and deno as api/Dockerfile has them.
-FROM eclipse-temurin:25-jdk@sha256:97014c4b396021f9ddb7d592a7dbedb0c4e4215c29e03dc01c393558aefb71c2
+FROM eclipse-temurin:25-jdk@sha256:8c0a84ea11c8f6ed52600fc19f1040121f2a162998e9f50a5faebbbad9172dcc
 
 RUN apt-get update && apt-get install -y --no-install-recommends libvips-tools ffmpeg python3 python3-venv
 
