@@ -71,6 +71,12 @@ class UserAuthenticatorTest : BaseTest() {
         every { passwordHasher.matches(any(), any()) } returns false
     }
 
+    /** For a name the store is never asked about. */
+    private fun givenTheDummyHashAlone() {
+        every { passwordHasher.hash(any(), any()) } returns dummyHash
+        every { passwordHasher.matches(any(), any()) } returns false
+    }
+
     private fun failTimesWithoutAUser(login: BasicAuthLogin, count: Int) =
         repeat(count) { assertThrows<UserAuthenticationUserDoesNotExistError> { useCase.authenticate(login) } }
 
@@ -187,6 +193,31 @@ class UserAuthenticatorTest : BaseTest() {
         assertThrows<TooManyAuthenticationAttemptsError> {
             useCase.authenticate(BasicAuthLogin("Alice", createRandomString()))
         }
+    }
+
+    @Test
+    fun `Given a name outside the account alphabet, Then it is refused as an unknown name without reading a user`() {
+        // Given: the store would read ａｄｍｉｎ as admin, its collation folding width
+        val login = BasicAuthLogin("ａｄｍｉｎ", createRandomString())
+        givenTheDummyHashAlone()
+
+        // When
+        failTimesWithoutAUser(login, 1)
+
+        // Then: the dummy hash still paid, and the store never asked
+        verify(exactly = 1) { passwordHasher.matches(login.password, dummyHash) }
+        verify(exactly = 0) { userRepository.findUserByName(any()) }
+    }
+
+    @Test
+    fun `Given the threshold reached on a name outside the account alphabet, Then the next attempt is refused`() {
+        // Given
+        val login = BasicAuthLogin("ａｄｍｉｎ", createRandomString())
+        givenTheDummyHashAlone()
+        failTimesWithoutAUser(login, threshold)
+
+        // When, Then: counted under its own key, as an unknown name is
+        assertThrows<TooManyAuthenticationAttemptsError> { useCase.authenticate(login) }
     }
 
     @Test

@@ -38,7 +38,8 @@ class UserAuthenticator(
         // costs no bcrypt (spec D2 and D6).
         val attemptKey = AuthenticationAttemptKey.forLogin(login.userName)
         attemptLimiter.check(attemptKey)
-        val user = userRepository.findUserByName(login.userName)
+        // Outside the alphabet, the store's width fold reaches an account under another key (ADR 0059, decision 11).
+        val user = if (ACCOUNT_NAME.matches(login.userName)) userRepository.findUserByName(login.userName) else null
         val hash = user?.let { userPasswordRepository.findCurrentPasswordHash(it) }
         if (user == null || hash == null) {
             // Constant cost even without a user/hash: the result is ignored.
@@ -58,5 +59,9 @@ class UserAuthenticator(
         }
         attemptLimiter.recordSuccess(attemptKey)
         return user
+    }
+
+    private companion object {
+        val ACCOUNT_NAME = Regex(User.NAME_PATTERN)
     }
 }
