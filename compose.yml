@@ -6,7 +6,8 @@
 name: pinry-reborn
 
 services:
-  # One API process is assumed and nothing enforces it: the guarantees of ADR 0059, decision 2, need it.
+  # One API process is assumed and nothing enforces it: the task queue's claim and each check-then-insert
+  # pair need it (ADR 0059, decision 2).
   api:
     build: ./api
     environment:
@@ -34,7 +35,8 @@ services:
       # The image's volume from 18 on, which holds a directory per major.
       - database:/var/lib/postgresql
     healthcheck:
-      test: ["CMD", "pg_isready", "--username=pinry", "--dbname=pinry"]
+      # Over TCP: on a first boot the image's temporary server answers on the socket alone.
+      test: ["CMD", "pg_isready", "--host=127.0.0.1", "--username=pinry", "--dbname=pinry"]
       interval: 2s
       timeout: 5s
       retries: 30
