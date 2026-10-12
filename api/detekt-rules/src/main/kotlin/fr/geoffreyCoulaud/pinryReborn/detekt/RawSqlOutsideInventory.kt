@@ -11,44 +11,50 @@ import org.jetbrains.kotlin.psi.psiUtil.isPlain
 import org.jetbrains.kotlin.psi.psiUtil.plainContent
 
 /**
- * Reports a `raw(` call whose argument is not a fragment of [INVENTORY], or is not a plain string literal at all. The
- * reasons in that map are the record the prohibition rests on, and the argument for it is
+ * Reports a `raw(` or `executeRaw(` call whose argument is not a fragment of [INVENTORY], or is not a plain string
+ * literal at all; the literal's whitespace is read as one space, so a long statement may span lines. The reasons in
+ * that map are the record the prohibition rests on, and the argument for it is
  * `docs/specs/2026-09-15-raw-sql-audited.md`, section C.
  *
- * This closes one of Ebean's doors to SQL. The others (`sqlQuery`, `sqlUpdate`, `RawSqlBuilder`, `@Sql`) are shut by
- * `ArchitectureKonsistTest`'s confinement of `io.ebean.Database`, which is the other half of the closed-set claim.
+ * This closes two of Ebean's doors to SQL, `executeRaw` being `Persistor`'s. The others (`sqlQuery`, `sqlUpdate`,
+ * `RawSqlBuilder`, `@Sql`) are shut by `ArchitectureKonsistTest`'s confinement of `io.ebean.Database`, which is the
+ * other half of the closed-set claim.
  */
 class RawSqlOutsideInventory(config: Config) :
     Rule(
         config,
-        "Production raw SQL is a closed set, and a raw( call outside the inventory carries no reason " +
-            "for reaching past the query beans.",
+        "Production raw SQL is a closed set, and a raw( or executeRaw( call outside the inventory carries no " +
+            "reason for reaching past the query beans.",
     ) {
     override fun visitCallExpression(expression: KtCallExpression) {
         super.visitCallExpression(expression)
-        if (expression.calleeExpression.endsOnName() != RAW) return
+        val callee = expression.calleeExpression.endsOnName()
+        if (callee !in CALLEES) return
         val fragment = plainLiteralOf(expression.valueArguments.firstOrNull()?.getArgumentExpression())
         if (fragment == null || fragment !in INVENTORY) {
-            report(Finding(Entity.from(expression), messageFor(fragment)))
+            report(Finding(Entity.from(expression), messageFor(callee, fragment)))
         }
     }
 
-    /** The text of a string literal carrying no interpolation, null for anything else. */
-    private fun plainLiteralOf(expression: KtExpression?): String? =
-        (expression as? KtStringTemplateExpression)?.takeIf { it.isPlain() }?.plainContent
+    /** The text of a string literal carrying no interpolation, its whitespace collapsed; null for anything else. */
+    private fun plainLiteralOf(expression: KtExpression?): String? {
+        val literal = (expression as? KtStringTemplateExpression)?.takeIf { it.isPlain() } ?: return null
+        return literal.plainContent.replace(WHITESPACE, " ").trim()
+    }
 
-    private fun messageFor(fragment: String?): String =
+    private fun messageFor(callee: String, fragment: String?): String =
         if (fragment == null) {
-            "raw( takes something other than a string literal, so the inventory in " +
+            "$callee( takes something other than a string literal, so the inventory in " +
                 "RawSqlOutsideInventory can never see the SQL it runs. Pass the fragment inline."
         } else {
-            "raw(\"$fragment\") is not in the inventory in RawSqlOutsideInventory. Production raw SQL " +
+            "$callee(\"$fragment\") is not in the inventory in RawSqlOutsideInventory. Production raw SQL " +
                 "is a closed set: use the query beans, or add the fragment there with the reason they " +
                 "cannot express it."
         }
 
     internal companion object {
-        private const val RAW = "raw"
+        private val CALLEES = setOf("raw", "executeRaw")
+        private val WHITESPACE = Regex("\\s+")
 
         private const val NO_ORDERED_COMPARISON =
             "The property hierarchy PUuid to PBaseValueEqual to TQPropertyBase carries eq, ne, in, the " +
@@ -82,6 +88,13 @@ class RawSqlOutsideInventory(config: Config) :
                 "mime_type glob 'video/*'" to
                     "The query beans' startsWith emits like, which SQLite folds for ASCII, where the mapper's " +
                         "startsWith and ck_media_variant tell a video by a case-sensitive `video/`.",
+                "insert into tasks (id, kind, payload, state, priority, available_at, attempts, max_attempts, " +
+                    "cancel_requested, dedup_key, version) values (?, ?, ?, ?, ?, ?, 0, ?, false, ?, 1) " +
+                    "on conflict do nothing" to
+                    "A deduplicated enqueue declines a collision rather than raising it: a raised violation leaves a " +
+                        "PostgreSQL transaction unusable to the caller that opened it. No conflict target, because " +
+                        "ux_tasks_dedup is partial and Ebean's InsertOptions always names one, which PostgreSQL " +
+                        "then refuses (ADR 0059, decision 10).",
                 "((hash_0 >> 48) & 65535) in (?1)" to FRAME_HASH_BAND,
                 "((hash_0 >> 32) & 65535) in (?1)" to FRAME_HASH_BAND,
                 "((hash_0 >> 16) & 65535) in (?1)" to FRAME_HASH_BAND,

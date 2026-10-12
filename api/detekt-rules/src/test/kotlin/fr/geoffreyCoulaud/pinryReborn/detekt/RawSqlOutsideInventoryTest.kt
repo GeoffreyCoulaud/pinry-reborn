@@ -105,6 +105,54 @@ class RawSqlOutsideInventoryTest {
     }
 
     @Test
+    fun `Given a raw call laying an inventoried fragment over several lines, Then nothing is reported`() {
+        // Given: a statement too long for one line is written as a raw string, its layout no part of the SQL
+        val quotes = "\"\"\""
+        val code =
+            """
+            class Strategy {
+                fun page(query: Query, pivot: UUID) =
+                    query.raw(
+                        $quotes
+                        id <=
+                            ?
+                        $quotes,
+                        pivot,
+                    )
+            }
+            """
+                .trimIndent()
+
+        // When
+        val findings = rule.lint(code)
+
+        // Then
+        assertEquals(0, findings.size)
+    }
+
+    @Test
+    fun `Given a statement the inventory does not hold, Then executing it is reported`() {
+        // Given: the persistor's door to a whole statement, which the inventory guards as it does raw(
+        val code =
+            """
+            class Repository {
+                fun purge(persistor: Persistor) = persistor.executeRaw("delete from pins")
+            }
+            """
+                .trimIndent()
+
+        // When
+        val findings = rule.lint(code)
+
+        // Then
+        assertEquals(1, findings.size)
+        assertTrue(
+            findings.single().message.contains("delete from pins"),
+            "the finding should quote the statement: ${findings.single().message}",
+        )
+    }
+
+    @Test
     fun `Given the inventory, Then every fragment carries a reason and not a label`() {
         // Given: nothing else reads these values, so a one-word "forced" would pass the rule, this
         // suite and the gate, and the map would be a set with decoration.
@@ -115,7 +163,7 @@ class RawSqlOutsideInventoryTest {
     }
 
     @Test
-    fun `Given a call that is not named raw, Then its string argument is not reported`() {
+    fun `Given a call named neither raw nor executeRaw, Then its string argument is not reported`() {
         // Given
         val code =
             """

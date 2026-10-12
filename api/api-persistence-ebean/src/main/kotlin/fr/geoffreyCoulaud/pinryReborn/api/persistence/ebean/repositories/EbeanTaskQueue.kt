@@ -12,7 +12,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.TaskModelMap
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.TaskModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QTaskModel
 import jakarta.enterprise.context.ApplicationScoped
-import jakarta.persistence.PersistenceException
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -25,7 +24,7 @@ import java.util.UUID.randomUUID
  * returned by [io.ebean.UpdateQuery.update] as the success signal instead of loading, mutating and saving the entity.
  * This avoids racing with a concurrent claim/settle on the same row.
  *
- * [enqueue]'s dedup check-then-insert, [claimNext]'s select-then-update and [reapExpired]'s select-then-save are each
+ * [enqueue]'s dedup insert-then-read, [claimNext]'s select-then-update and [reapExpired]'s select-then-save are each
  * wrapped in one [TransactionRunner.inTransaction] block, so the pair serializes instead of racing across two
  * auto-commit statements. A caller's transaction is joined, which is Ebean's REQUIRED semantics.
  */
@@ -47,18 +46,26 @@ class EbeanTaskQueue(
         return if (dedupKey == null) insert(task) else enqueueDeduplicated(task, dedupKey)
     }
 
-    /** Converges on the live task [dedupKey] already names, whether the read finds it or the insert collides. */
+    /** Converges on the live task [dedupKey] names, the insert declining a collision (ADR 0059, decision 10). */
     private fun enqueueDeduplicated(task: NewTask, dedupKey: String): Task {
-        val existing = findLiveTaskWithDedupKey(dedupKey)
-        if (existing != null) return existing.toDomain()
-        return try {
-            insert(task)
-        } catch (error: PersistenceException) {
-            SqliteConstraintViolations.onUniqueConstraint(error) {
-                val live = findLiveTaskWithDedupKey(dedupKey) ?: throw error
-                live.toDomain()
-            }
-        }
+        persistor.executeRaw(
+            """
+            insert into tasks (id, kind, payload, state, priority, available_at, attempts, max_attempts,
+                cancel_requested, dedup_key, version)
+            values (?, ?, ?, ?, ?, ?, 0, ?, false, ?, 1)
+            on conflict do nothing
+            """,
+            randomUUID(),
+            task.kind,
+            task.payload,
+            TaskState.PENDING.name,
+            task.priority,
+            task.availableAt,
+            task.maxAttempts,
+            dedupKey,
+        )
+        val live = checkNotNull(findLiveTaskWithDedupKey(dedupKey)) { "No live task under its dedup key after insert" }
+        return live.toDomain()
     }
 
     private fun findLiveTaskWithDedupKey(dedupKey: String): TaskModel? =
@@ -75,7 +82,6 @@ class EbeanTaskQueue(
                 availableAt = task.availableAt,
                 attempts = 0,
                 maxAttempts = task.maxAttempts,
-                dedupKey = task.dedupKey,
             )
         persistor.save(model)
         return model.toDomain()

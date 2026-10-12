@@ -79,6 +79,20 @@ class EbeanPersistorTest : RepositoryTest() {
         assertEquals(model.id, reference.id)
     }
 
+    @Test
+    fun `Given a statement and its parameters, Then executeRaw runs it and answers the rows it wrote`() {
+        // Given
+        val model = newUser()
+        persistor.save(model)
+
+        // When
+        val written = persistor.executeRaw("update users set name = ? where id = ?", "renamed", model.id)
+
+        // Then
+        assertEquals(1, written)
+        assertEquals("renamed", QUserModel().id.equalTo(model.id).findOne()?.name)
+    }
+
     // UserModel is the root entity (no foreign key), so it is the simplest model to persist directly.
     private fun newUser(): UserModel =
         UserModel(id = UUID.randomUUID(), name = createRandomString(), createdAt = storableNow())
