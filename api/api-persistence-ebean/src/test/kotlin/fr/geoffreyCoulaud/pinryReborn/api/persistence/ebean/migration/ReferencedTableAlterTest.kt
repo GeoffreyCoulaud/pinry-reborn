@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 
 /**
  * PostgreSQL alters a table in place inside Ebean's migration transaction, so a referenced table's column changes type
- * and its children stay, where SQLite's rebuild cascaded to them (`docs/adr/0059-the-database-is-postgresql.md`).
+ * and its children stay (`docs/adr/0059-the-database-is-postgresql.md`).
  */
 class ReferencedTableAlterTest : RepositoryTest() {
     @Test
@@ -26,7 +26,7 @@ class ReferencedTableAlterTest : RepositoryTest() {
                 referenced.filterNot { table -> alterRewrites(table) } to rowCounts(children)
             }
 
-        // Then: the rewrite is what SQLite's rebuild was; the last assertion is the third one's non-empty guard
+        // Then: each alter rewrote its table; the last assertion is the third one's non-empty guard
         assertEquals(emptyList<String>(), notRewritten)
         assertEquals(rowsBefore, rowsAfter)
         assertEquals(emptySet<String>(), rowsBefore.filterValues { it == 0 }.keys)

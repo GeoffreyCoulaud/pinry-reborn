@@ -199,7 +199,7 @@ class UserRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given a name held by a tombstoned account, Then saveUser throws UsernameAlreadyTakenException`() {
-        // Given: ix_users_name_nocase covers every row, so a pending deletion does not release the name
+        // Given: ux_users_name covers every row, so a pending deletion does not release the name
         val tombstoned = saveUser()
         repository.markPendingDeletion(tombstoned, storableNow())
 
@@ -209,7 +209,7 @@ class UserRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given a non-unique persistence failure, Then saveUser propagates it untouched`() {
-        // Given: a NOT NULL violation, which carries the same vendor errorCode 19 as the unique one
+        // Given: a NOT NULL violation, in the same SQLState class 23 as the unique one
         val violation = notNullConstraintViolation()
         val failingRepository = UserRepository(NotNullViolatingPersistor(persistor, violation))
         val user = User(id = randomUUID(), name = createRandomString(), createdAt = storableNow())

@@ -175,7 +175,7 @@ class AccountDeletionCleanerTest : BaseTest() {
     @Test
     fun `Given a user with an import, Then the user row is deleted and the import's bytes erased after the commit`() {
         // Given: the transaction says where it is, so "after the commit" is asserted rather than named.
-        // A disk pass held inside it keeps the one writer connection for the length of an unlink.
+        // A disk pass held inside it keeps the one connection for the length of an unlink.
         var insideTransaction = false
         every { tx.inTransaction(any<() -> Any?>()) } answers
             {

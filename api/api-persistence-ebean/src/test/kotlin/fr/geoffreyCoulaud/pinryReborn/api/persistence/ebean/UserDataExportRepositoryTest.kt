@@ -323,7 +323,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
     fun `Given more pending exports than the limit, Then findPending answers the oldest ones in order`() {
         // Given: the sweep filters on the grace after the selection, so an unordered batch of recent
         // rows would starve the oldest ones for good
-        // Seeded newest first: an unordered scan answers rowid order, so seeding oldest first would
+        // Seeded newest first: an unordered scan answers insertion order, so seeding oldest first would
         // leave this green with no ORDER BY at all.
         val base = Instant.parse("2026-07-22T10:00:00Z")
         saveExport(UserDataExportState.PENDING, base.plusSeconds(120))
@@ -367,7 +367,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
 
     @Test
     fun `Given more reclaimable exports than the limit, Then the pages after each last id cover them once, by id`() {
-        // Given: seeded in descending id order, so a scan in rowid order fails on the first page alone
+        // Given: seeded in descending id order, so a scan in insertion order fails on the first page alone
         val ids = (3 downTo 1).map { saveExport(UserDataExportState.DELETED, id = orderedId(it)).id }.sorted()
 
         // When

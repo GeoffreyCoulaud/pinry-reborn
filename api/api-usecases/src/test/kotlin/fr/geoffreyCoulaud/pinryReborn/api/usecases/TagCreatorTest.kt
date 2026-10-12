@@ -63,7 +63,7 @@ class TagCreatorTest {
 
     @Test
     fun `Given two concurrent taggings of one new name, Then one tag exists and neither caller fails`() {
-        // Given: a store that folds and refuses like ix_tags_author_name_nocase, and a rendezvous that
+        // Given: a store that folds and refuses like ux_tags_author_name, and a rendezvous that
         // forces both readers to miss before either writes.
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
         val name = createRandomString()
@@ -122,8 +122,8 @@ class TagCreatorTest {
     }
 
     /**
-     * Stands in for `ix_tags_author_name_nocase`, refusing a second row as the untranslated violation does. Each read
-     * waits at [bothRead] for the other, bounded, so the race is forced, not sampled.
+     * Stands in for `ux_tags_author_name`, refusing a second row as the untranslated violation does. Each read waits at
+     * [bothRead] for the other, bounded, so the race is forced, not sampled.
      */
     private class IndexedTagRepository(private val bothRead: CountDownLatch) : TagRepositoryInterface {
         private val rows = ConcurrentHashMap<String, Tag>()
@@ -140,7 +140,7 @@ class TagCreatorTest {
 
         override fun saveTag(tag: Tag): Tag {
             val existing = rows.putIfAbsent(foldedKey(tag.author, tag.name), tag)
-            check(existing == null) { "[SQLITE_CONSTRAINT_UNIQUE] UNIQUE constraint failed: tags.author_id, tags.name" }
+            check(existing == null) { "duplicate key value violates unique constraint \"ux_tags_author_name\"" }
             return tag
         }
 

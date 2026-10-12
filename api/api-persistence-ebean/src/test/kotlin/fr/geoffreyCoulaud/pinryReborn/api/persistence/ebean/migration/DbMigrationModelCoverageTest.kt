@@ -108,11 +108,8 @@ class DbMigrationModelCoverageTest {
 
     @Test
     fun `Given the migration scripts, Then none carries an Ebean no-op marker`() {
-        // Ebean's SQLite dialect writes "-- not supported: ..." (and nothing else) when it cannot
-        // render a change: @Index(unique = true) becomes an unsupported ALTER TABLE ADD CONSTRAINT
-        // UNIQUE, so the migration applies silently and enforces nothing. Such a no-op must never be
-        // committed. A unique index on SQLite uses @Index(definition = "create unique index ..."),
-        // which the generator renders.
+        // Ebean writes "-- not supported: ..." and nothing else for a change its platform cannot render,
+        // so the migration would apply and enforce nothing.
         val noOpMigrations =
             MigrationDirectory.sqlScripts.filter { script ->
                 MigrationDirectory.textWithComments(script).lineSequence().any { it.startsWith("-- not supported") }

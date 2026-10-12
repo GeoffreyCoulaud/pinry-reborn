@@ -59,7 +59,7 @@ class PersonCreatorTest {
         override fun <T> inTransaction(block: () -> T): T = block()
     }
 
-    /** The identity itself is the store's, held by PersonRepositoryTest against SQLite. */
+    /** The identity itself is the store's, held by PersonRepositoryTest against PostgreSQL. */
     private class RecordingPersonRepository : PersonRepositoryInterface {
         var found: Person? = null
         val saved = mutableListOf<Person>()
