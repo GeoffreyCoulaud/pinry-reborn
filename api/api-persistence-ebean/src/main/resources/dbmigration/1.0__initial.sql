@@ -295,7 +295,7 @@ create index ix_media_frames_band_13 on media_frames (((hash_3 >> 32) & 65535));
 create index ix_media_frames_band_14 on media_frames (((hash_3 >> 16) & 65535));
 create index ix_media_frames_band_15 on media_frames (((hash_3 >> 0) & 65535));
 create index if not exists ix_media_content_hash on media (content_hash);
-create unique index ux_persons_author_name_urls on persons (author_id, name, urls);
+create unique index ux_persons_author_name_urls on persons (author_id, name, md5(urls));
 create unique index ux_pin_boards_pin_board on pin_boards (pin_id, board_id);
 create index if not exists ix_pin_boards_board on pin_boards (board_id);
 create unique index ux_pin_creators_pin_person on pin_creators (pin_id, person_id);

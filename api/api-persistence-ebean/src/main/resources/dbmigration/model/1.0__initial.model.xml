@@ -201,7 +201,7 @@
         <createIndex indexName="ix_media_frames_band_14" tableName="media_frames" columns="" definition="create index ix_media_frames_band_14 on media_frames (((hash_3 &gt;&gt; 16) &amp; 65535))"/>
         <createIndex indexName="ix_media_frames_band_15" tableName="media_frames" columns="" definition="create index ix_media_frames_band_15 on media_frames (((hash_3 &gt;&gt; 0) &amp; 65535))"/>
         <createIndex indexName="ix_media_content_hash" tableName="media" columns="content_hash"/>
-        <createIndex indexName="ux_persons_author_name_urls" tableName="persons" columns="" definition="create unique index ux_persons_author_name_urls on persons (author_id, name, urls)"/>
+        <createIndex indexName="ux_persons_author_name_urls" tableName="persons" columns="" definition="create unique index ux_persons_author_name_urls on persons (author_id, name, md5(urls))"/>
         <createIndex indexName="ux_pin_boards_pin_board" tableName="pin_boards" columns="" definition="create unique index ux_pin_boards_pin_board on pin_boards (pin_id, board_id)"/>
         <createIndex indexName="ix_pin_boards_board" tableName="pin_boards" columns="board_id"/>
         <createIndex indexName="ux_pin_creators_pin_person" tableName="pin_creators" columns="" definition="create unique index ux_pin_creators_pin_person on pin_creators (pin_id, person_id)"/>

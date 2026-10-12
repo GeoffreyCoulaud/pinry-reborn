@@ -92,11 +92,10 @@ How this build applies `agents/data-modelling.md`
 - **The baseline's `CHECK` constraints are hand-written**: Ebean generates one only for an enumerated column and the
   model files record none, so a regenerated baseline or a rebuilt table carries them back by hand.
   `MigratedSchemaTest` lists them.
-- **A migration may not drop a table a key references** (`docs/adr/0058-the-database-enforces-its-references.md`,
-  decision 9): Ebean migrates in one transaction, where `foreign_keys` cannot be turned off, so the drop cascades to
-  the children. `ReferencedTableDropTest` refuses one. Until PostgreSQL, a referenced table changes only by what
-  SQLite's `ALTER TABLE` does: add, rename or drop a plain column, and its indexes. A type, a nullability, a default,
-  a `CHECK` or a key action waits.
+- **A migration changes a referenced table in place** (`docs/adr/0059-the-database-is-postgresql.md`): PostgreSQL
+  alters it inside Ebean's transaction and its children stay, which `ReferencedTableAlterTest` holds.
+- **An index entry is bounded at 2704 bytes**: a text index declares its bound in `MigratedSchemaTest`, or reads a
+  digest as the persons' addresses do.
 - **Unique constraint on SQLite**: `@Index(definition = "create unique index ...")`, never
   `unique = true` (Ebean emits an unsupported `ALTER TABLE` that becomes a silent no-op comment).
   `DbMigrationModelCoverageTest` fails on the no-op marker.

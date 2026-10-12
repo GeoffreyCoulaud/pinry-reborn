@@ -76,6 +76,27 @@ class PersonRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun `Given a person at every bound, Then it saves and findUserPerson finds it by its addresses`() {
+        // Given: random addresses, which the index entry's compression cannot shrink below its bound
+        val user = createAndSaveUser()
+        val name = "あ".repeat(PersonName.MAX_LENGTH)
+        val urls = List(Person.MAX_URLS) { randomAddress(HttpUrl.MAX_LENGTH) }
+        val person = savePerson(user, name, urls)
+
+        // When
+        val found = find(user, name, urls.reversed())
+
+        // Then
+        assertEquals(person, found)
+    }
+
+    private fun randomAddress(length: Int): String {
+        val address = StringBuilder("https://a.test/")
+        while (address.length < length) address.append(randomUUID())
+        return address.substring(0, length)
+    }
+
+    @Test
     fun `Given a saved person, Then findUserPerson finds it in another case outside ASCII and address order`() {
         // Given
         val user = createAndSaveUser()
