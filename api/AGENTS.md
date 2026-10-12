@@ -83,7 +83,7 @@ How this build applies `agents/data-modelling.md`
   escapes it.
 - **A value type is a `@JvmInline value class` when it wraps one field, a `data class` otherwise.** Except a type whose
   equality is not its field's, which an inline value class cannot declare: a plain `class` with `equals` and
-  `hashCode`, as `PersonName` folds ASCII case as `collate nocase` does.
+  `hashCode`.
 
 ## Gotchas
 

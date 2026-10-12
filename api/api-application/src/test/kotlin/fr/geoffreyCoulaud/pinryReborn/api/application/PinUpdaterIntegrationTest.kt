@@ -310,6 +310,20 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given two creators whose names differ by case alone, Then the pin holds one creator, the first spelling`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+
+        // When
+        update(auth, pin, creators = listOf(person("Alice"), person("alice"))).statusCode(200)
+
+        // Then: the database resolves the second to the person the first created
+        readPin(auth, pin).body("creators.name", contains("Alice"))
+        assertEquals(1, personRowsOf(auth))
+    }
+
+    @Test
     fun `Given a person past a bound, or 101 creators, Then the write returns 400 and stores no person`() {
         // Given
         val auth = createAuthenticatedUser()

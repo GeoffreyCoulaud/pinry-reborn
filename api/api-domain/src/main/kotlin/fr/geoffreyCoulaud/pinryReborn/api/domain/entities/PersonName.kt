@@ -1,12 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.domain.entities
 
-/** A person's name as written, equal to another folded on ASCII case alone, as `collate nocase` compares it. */
-class PersonName private constructor(val text: String) {
-    private val folded = text.map { if (it in 'A'..'Z') it.lowercaseChar() else it }.joinToString("")
-
-    override fun equals(other: Any?): Boolean = other is PersonName && other.folded == folded
-
-    override fun hashCode(): Int = folded.hashCode()
+/** A person's name as written; the database alone compares it without case. */
+@JvmInline
+value class PersonName private constructor(val text: String) {
 
     override fun toString(): String = text
 
