@@ -33,23 +33,22 @@ abstract class IntegrationTest {
     data class AuthenticatedUser(val user: User, val token: String)
 
     /**
-     * Truncate all non-internal tables in the database.
-     *
-     * - Tables prefixed by "sqlite_" are ignored.
-     * - The "db_migration" table is ignored, as it's necessary for ebean.
+     * Empties every table but `db_migration`, which Ebean needs.
      *
      * The database is not the only state a case shares: `AuthenticationAttemptLimiter` counts failed password attempts
      * in memory and nothing empties those, so a case submitting a wrong credential takes an identity of its own.
      */
     @BeforeEach
     fun truncateAllTables() {
-        database
-            .sqlQuery("SELECT name FROM sqlite_master WHERE type='table'")
-            .findList()
-            .map { it.getString("name") }
-            .filterNot { it.startsWith("sqlite_") or it.equals("db_migration") }
-            .forEach { database.truncate(it) }
+        tables().forEach { database.truncate(it) }
     }
+
+    /** Every table of the connection's schema but `db_migration`, read through JDBC. */
+    protected fun tables(): List<String> =
+        database.dataSource().connection.use { connection ->
+            val rows = connection.metaData.getTables(connection.catalog, connection.schema, "%", arrayOf("TABLE"))
+            rows.use { buildList { while (rows.next()) add(rows.getString("TABLE_NAME")) } }
+        } - MIGRATION_TABLE
 
     /** Create a user and log it in, returning the user and a bearer token. */
     protected fun createAuthenticatedUser(
@@ -156,6 +155,7 @@ abstract class IntegrationTest {
 
     companion object {
         const val DEFAULT_PASSWORD = "password123"
+        private const val MIGRATION_TABLE = "db_migration"
         private const val HTTP_CREATED = 201
 
         /** Long enough to cross a millisecond boundary, the resolution stamped instants keep. */

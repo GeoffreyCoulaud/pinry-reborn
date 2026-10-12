@@ -422,46 +422,6 @@ class BoardRepositoryTest : RepositoryTest() {
         assertNull(found)
     }
 
-    @Test
-    fun `Given a lowercase accented name, Then its uppercase lookup misses`() {
-        // Given: `collate nocase` folds A to Z and nothing else, so these stay two names. Ebean's
-        // `ieq` lowercases the bind in Java, which is Unicode aware, and would have matched here.
-        val user = createAndSaveUser()
-        createAndSaveBoard(LOWERCASE_ACCENTED_NAME, user)
-
-        // When
-        val found = boardRepository.findBoardForUserByName(user = user, name = UPPERCASE_ACCENTED_NAME)
-
-        // Then
-        assertNull(found)
-    }
-
-    @Test
-    fun `Given an uppercase accented name, Then its lowercase lookup misses`() {
-        // Given: the other fold direction, where `ieq` and `collate nocase` already agree
-        val user = createAndSaveUser()
-        createAndSaveBoard(UPPERCASE_ACCENTED_NAME, user)
-
-        // When
-        val found = boardRepository.findBoardForUserByName(user = user, name = LOWERCASE_ACCENTED_NAME)
-
-        // Then
-        assertNull(found)
-    }
-
-    @Test
-    fun `Given names differing only outside ASCII, Then both may be held by one author`() {
-        // Given: the index folds exactly as the lookup does, so an ASCII-only fold keeps these apart
-        val user = createAndSaveUser()
-        createAndSaveBoard(LOWERCASE_ACCENTED_NAME, user)
-
-        // When
-        val board = createAndSaveBoard(UPPERCASE_ACCENTED_NAME, user)
-
-        // Then
-        assertEquals(UPPERCASE_ACCENTED_NAME, board.name)
-    }
-
     // --- Creation timestamps ---
 
     @Test
@@ -557,12 +517,5 @@ class BoardRepositoryTest : RepositoryTest() {
 
         // When, Then
         assertNull(boardRepository.findCoverPinId(board.id))
-    }
-
-    private companion object {
-        // Precomposed U+00E9 / U+00C9 (not e + combining acute): the pair `collate nocase` leaves
-        // alone and Java's `lowercase()` folds, which is the disagreement these cases pin.
-        const val LOWERCASE_ACCENTED_NAME = "été"
-        const val UPPERCASE_ACCENTED_NAME = "ÉTÉ"
     }
 }

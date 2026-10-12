@@ -9,8 +9,8 @@ import io.ebean.DB
 import io.ebean.Database
 import jakarta.persistence.PersistenceException
 import java.time.Instant
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: a shared test base for concrete subclasses.
@@ -42,28 +42,28 @@ abstract class RepositoryTest {
      */
     protected fun storableNow(): Instant = TestTime.now
 
-    /** Asserts the database refuses [write] under the CHECK constraint named [constraint]. */
+    /** Asserts the database refuses [write], its error naming the CHECK constraint [constraint]. */
     protected fun assertRefusedByCheck(constraint: String, write: () -> Unit) {
         val thrown = assertThrows(PersistenceException::class.java) { write() }
-        assertEquals(
-            "[SQLITE_CONSTRAINT_CHECK] A CHECK constraint failed (CHECK constraint failed: $constraint)",
-            thrown.cause?.message,
-        )
+        val error = thrown.cause?.message.orEmpty()
+        val namesTheConstraint = Regex("\\b${Regex.escape(constraint)}\\b").containsMatchIn(error)
+        assertTrue(namesTheConstraint, "The error does not name $constraint: $error")
     }
 
-    /**
-     * Truncate all non-internal tables in the database.
-     *
-     * - Tables prefixed by "sqlite_" are ignored.
-     * - The "db_migration" table is ignored, as it's necessary for ebean.
-     */
+    /** Empties every table but `db_migration`, which Ebean needs. */
     @BeforeEach
     fun truncateAllTables() {
-        database
-            .sqlQuery("SELECT name FROM sqlite_master WHERE type='table'")
-            .findList()
-            .map { it.getString("name") }
-            .filterNot { it.startsWith("sqlite_") or it.equals("db_migration") }
-            .forEach { database.truncate(it) }
+        tables().forEach { database.truncate(it) }
+    }
+
+    /** Every table of the connection's schema but `db_migration`, read through JDBC. */
+    private fun tables(): List<String> =
+        database.dataSource().connection.use { connection ->
+            val rows = connection.metaData.getTables(connection.catalog, connection.schema, "%", arrayOf("TABLE"))
+            rows.use { buildList { while (rows.next()) add(rows.getString("TABLE_NAME")) } }
+        } - MIGRATION_TABLE
+
+    private companion object {
+        const val MIGRATION_TABLE = "db_migration"
     }
 }

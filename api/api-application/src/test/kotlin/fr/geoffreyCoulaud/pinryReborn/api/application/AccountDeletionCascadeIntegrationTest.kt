@@ -73,17 +73,12 @@ class AccountDeletionCascadeIntegrationTest : IntegrationTest() {
     @Inject lateinit var importIssues: UserDataImportIssueRepositoryInterface
 
     /** Every table but `tasks`, which holds no key to a user. */
-    private fun tables(): List<String> =
-        DB.getDefault()
-            .sqlQuery("select name from sqlite_master where type = 'table'")
-            .findList()
-            .map { it.getString("name") }
-            .filterNot { it.startsWith("sqlite_") || it == "db_migration" || it == "tasks" }
+    private fun userTables(): List<String> = tables() - "tasks"
 
     private fun rowsIn(table: String): Int? =
         DB.getDefault().sqlQuery("select count(*) as n from $table").findOne()?.getInteger("n")
 
-    private fun emptyTables() = tables().filter { rowsIn(it) == 0 }
+    private fun emptyTables() = userTables().filter { rowsIn(it) == 0 }
 
     private fun url(text: String) = checkNotNull(HttpUrl.parse(text))
 
@@ -152,7 +147,7 @@ class AccountDeletionCascadeIntegrationTest : IntegrationTest() {
         cleaner.deleteAccountData(user.id)
 
         // Then
-        assertEquals(listOf<String>() to tables(), unseeded to emptyTables())
+        assertEquals(listOf<String>() to userTables(), unseeded to emptyTables())
         assertEquals("CANCELLED", QTaskModel().id.equalTo(downloadTask).findOne()?.state)
     }
 
