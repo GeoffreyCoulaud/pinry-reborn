@@ -87,7 +87,7 @@ class MigratedSchemaTest : RepositoryTest() {
 
     @Test
     fun `Given the migrated database, Then every key is a uuid and every instant carries its zone`() {
-        // Given: an identifier stored as text, or an instant without its zone, is SQLite's encoding carried over
+        // Given: an identifier stored as text, or an instant without its zone, is a model overriding its type
         val types = modelColumns()
         val keyColumns = keyColumns().map { (_, column) -> column }
 
@@ -104,7 +104,7 @@ class MigratedSchemaTest : RepositoryTest() {
 
     @Test
     fun `Given the migrated database, Then every index over text declares a bound under the entry limit`() {
-        // Given: PostgreSQL refuses an index entry over 2704 bytes, where SQLite bounded none
+        // Given: PostgreSQL refuses an index entry over 2704 bytes
         val indexesOverText =
             database
                 .sqlQuery(

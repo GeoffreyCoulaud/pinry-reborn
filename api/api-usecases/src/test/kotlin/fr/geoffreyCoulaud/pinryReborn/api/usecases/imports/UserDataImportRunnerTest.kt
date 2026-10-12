@@ -237,7 +237,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given a tag the archive creates, Then the lookup and the insert are one transaction`() {
         // Given: the single connection serialises each statement, not a pair, so a tagging landing
-        // between the two raises the untranslated violation of ix_tags_author_name_nocase
+        // between the two raises the untranslated violation of ux_tags_author_name
         val source =
             FakeArchiveSource(
                 manifest = aManifest(),

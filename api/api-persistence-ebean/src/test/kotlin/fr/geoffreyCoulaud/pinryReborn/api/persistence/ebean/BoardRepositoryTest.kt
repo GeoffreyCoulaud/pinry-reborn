@@ -342,8 +342,6 @@ class BoardRepositoryTest : RepositoryTest() {
         val result = boardRepository.findBoardById(board.id)
 
         // Then
-        // softDeletedAt is not compared for exact equality: SQLite truncates Instant precision
-        // to milliseconds on round-trip, unlike the nanosecond-precision in-memory value.
         assertNotNull(result)
         assertEquals(board.id, result!!.id)
         assertNotNull(result.softDeletedAt)

@@ -36,7 +36,7 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
         )
     }
 
-    // The top bit of the first and last words is set, which an arithmetic shift in SQLite would carry into a band.
+    // The top bit of the first and last words is set, which a sign-extending shift would carry into an unmasked band.
     private val stored =
         PdqHash(listOf(-0x123456789abcdefL, 0x0f0f0f0f0f0f0f0fL, 0x7a5a3c1e00ff55aaL, -1L), quality = 100)
 

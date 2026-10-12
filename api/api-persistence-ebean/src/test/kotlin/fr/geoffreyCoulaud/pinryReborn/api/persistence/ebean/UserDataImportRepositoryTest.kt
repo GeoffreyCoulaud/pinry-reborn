@@ -341,7 +341,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
     /** Ids that sort the same way whatever the column stores, so the seeding order can contradict them. */
     private fun orderedId(n: Int): UUID = UUID.fromString("00000000-0000-4000-8000-" + n.toString().padStart(12, '0'))
 
-    /** Three rows seeded in descending id order, so a scan in rowid order fails on the first page alone. */
+    /** Three rows seeded in descending id order, so a scan in insertion order fails on the first page alone. */
     private fun seedThreeDescending(save: (UUID) -> UUID): List<UUID> =
         (3 downTo 1).map { save(orderedId(it)) }.sorted()
 
