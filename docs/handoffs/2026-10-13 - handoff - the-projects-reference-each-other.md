@@ -39,6 +39,13 @@ referenced project may not disable emit (TS6310), hence the declarations and `ts
 No holistic review and no specification review: tier Direct runs neither. `.dagger/` is TypeScript too and
 stays outside Serena, having no `node_modules` of its own to resolve against.
 
+## The lot's counts
+
+- Fix-backs: 0. Fixes on top: 0. Cascaded rebases: 0. One run re-triggered, by this section pushed after the
+  first.
+- The operator's reading of the body: no remark; the operator enabled auto-merge.
+
 ## Next step
 
-Nothing this leaves open.
+The tag `lot/0.57.0-the-projects-reference-each-other` once auto-merge lands #437. Then ADR 0055's third-party
+importer.
