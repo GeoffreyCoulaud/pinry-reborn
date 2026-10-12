@@ -14,7 +14,7 @@ import java.util.UUID
 @Entity
 @Table(name = "user_data_imports")
 // One active import per user. Partial, so `definition` carries the `where` and nothing else is set:
-// `unique = true` alongside it makes Ebean emit an ALTER TABLE SQLite silently drops.
+// Ebean ignores `columnNames` and `unique = true` beside a `definition`.
 @Index(
     name = "uq_user_data_imports_active",
     definition =

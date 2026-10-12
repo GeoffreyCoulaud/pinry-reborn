@@ -17,7 +17,7 @@ import java.util.UUID
 // (spec 2026-07-27-periodic-gc.md section 11, D6).
 @Index(columnNames = ["state", "terminal_state_at"])
 // Serves `claimNext`, whose bound `state` equality leads and whose sort columns follow in order.
-// Not partial: SQLite skips a partial index whose predicate tests a bound parameter, and Ebean binds.
+// Not partial: PostgreSQL matches a partial index at planning, which a bound parameter never satisfies.
 // `definition` rather than `columnNames` because the desc/asc tokens are what remove the temp B-tree.
 @Index(
     name = "ix_tasks_claim",
