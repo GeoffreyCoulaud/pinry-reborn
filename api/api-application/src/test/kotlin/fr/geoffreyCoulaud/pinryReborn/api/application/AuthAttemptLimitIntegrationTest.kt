@@ -72,6 +72,26 @@ class AuthAttemptLimitIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given an account's name in full-width letters, Then its login is 401 and counts apart from the account's`() {
+        // Given: an account, and its name in full-width letters, which the column's collation reads as the same name
+        val name = "user" + createRandomString()
+        val fullWidth = name.map { it + FULL_WIDTH_OFFSET }.joinToString("")
+        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+
+        // When: the full-width spelling with the account's own password, up to the threshold
+        repeat(threshold) {
+            login(fullWidth, DEFAULT_PASSWORD)
+                .then()
+                .statusCode(UNAUTHORIZED)
+                .body(CODE, equalTo(AUTHENTICATION_FAILED))
+        }
+
+        // Then: the spelling's own key is blocked, and the account's counter is untouched
+        login(fullWidth).then().statusCode(TOO_MANY_REQUESTS).body(CODE, equalTo(TOO_MANY_ATTEMPTS))
+        login(name, DEFAULT_PASSWORD).then().statusCode(CREATED)
+    }
+
+    @Test
     fun `Given the threshold reached on a name that belongs to nobody, Then the next login is 429`() {
         // Given: a name no user carries, failed up to the threshold
         val name = createRandomString()
@@ -139,11 +159,11 @@ class AuthAttemptLimitIntegrationTest : IntegrationTest() {
     private fun spelling(name: String, attempt: Int): String =
         if (attempt % 2 == 0) name else name.uppercase(Locale.ROOT)
 
-    /** Every request this class sends carries the wrong secret: being refused is the point. */
-    private fun login(name: String): Response =
+    /** Every request this class sends carries the wrong secret unless told otherwise: being refused is the point. */
+    private fun login(name: String, password: String = WRONG_PASSWORD): Response =
         given()
             .contentType(JSON)
-            .body("""{"name":"$name","password":"$WRONG_PASSWORD","transport":"BEARER"}""")
+            .body("""{"name":"$name","password":"$password","transport":"BEARER"}""")
             .post("/api/v1/sessions")
 
     private fun changePassword(auth: AuthenticatedUser): Response =
@@ -167,6 +187,10 @@ class AuthAttemptLimitIntegrationTest : IntegrationTest() {
         const val WRONG_PASSWORD = "wrong-password"
         const val NEW_PASSWORD = "newpassword1"
 
+        /** From an ASCII character to its full-width form, `a` to `ａ`. */
+        const val FULL_WIDTH_OFFSET = 0xFEE0
+
+        const val CREATED = 201
         const val UNAUTHORIZED = 401
         const val FORBIDDEN = 403
         const val TOO_MANY_REQUESTS = 429
