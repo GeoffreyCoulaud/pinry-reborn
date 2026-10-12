@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.exceptions
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.exceptions
 
 @Suppress("AbstractClassCanBeConcreteClass") // Abstract by intent: the base of the persistence exception hierarchy.
 abstract class PersistenceException(

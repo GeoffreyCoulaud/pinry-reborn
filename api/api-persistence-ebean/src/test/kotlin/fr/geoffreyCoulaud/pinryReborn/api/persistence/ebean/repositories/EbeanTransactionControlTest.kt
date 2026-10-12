@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.RepositoryTest
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.RepositoryTest
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test

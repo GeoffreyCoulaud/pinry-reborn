@@ -1,14 +1,14 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.RemoteCollectionModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.RemoteCollectionModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.RemoteCollectionModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QRemoteCollectionModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.RemoteCollectionModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.RemoteCollectionModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.RemoteCollectionModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QRemoteCollectionModel
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 

@@ -3,8 +3,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPersonModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPersonModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.BoardCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator

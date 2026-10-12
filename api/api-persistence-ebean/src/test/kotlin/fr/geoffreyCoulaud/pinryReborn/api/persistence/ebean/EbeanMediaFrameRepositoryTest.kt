@@ -1,15 +1,15 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaFrame
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PdqHash
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaFrameRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.FrameHashBands
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaFrameRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.FrameHashBands
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PinRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals

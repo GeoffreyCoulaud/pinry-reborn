@@ -9,9 +9,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInt
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaFrameModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QMediaFrameModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QMediaModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ClearPinDownload
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.DeletePinMedia

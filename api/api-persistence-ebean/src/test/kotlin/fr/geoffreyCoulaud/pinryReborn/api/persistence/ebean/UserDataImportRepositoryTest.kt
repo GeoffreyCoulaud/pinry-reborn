@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -7,9 +7,9 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportAlreadyInProgressException
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.exceptions.UserModelDoesNotExistError
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserDataImportRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.exceptions.UserModelDoesNotExistError
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserDataImportRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
 import java.util.UUID

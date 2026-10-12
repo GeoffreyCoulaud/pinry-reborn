@@ -18,7 +18,7 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
 |----------------------------|---------------------------------------------------------------------------|
 | `api-domain`               | Pure: entities, enums, ports. No project dependency.                      |
 | `api-usecases`             | Business logic, exceptions, search, exports, task contracts.              |
-| `api-persistence-sqlite`   | Ebean/SQLite: models, mappers, repositories, migrations (`dbmigration/`). |
+| `api-persistence-ebean`   | Ebean/SQLite: models, mappers, repositories, migrations (`dbmigration/`). |
 | `api-presentation-quarkus` | Jakarta REST: controllers, DTOs, mappers, security, OpenAPI.              |
 | `api-storage-filesystem`   | Media store, rendition cache, export archives.                            |
 | `api-imaging-vips`         | vipsheader and vips thumbnail adapter, run as processes.                  |
@@ -64,10 +64,10 @@ sits beside it, so `./api/gradlew` from the repository root finds no build at al
   optional: a document edited by hand leaves the sources untouched, so an ordinary build is up to date and
   writes nothing.
 - One test: `./gradlew :api-usecases:test --tests "UserCreatorTest"`
-- New migration (after changing an entity model): `./gradlew :api-persistence-sqlite:generateDbMigration`.
+- New migration (after changing an entity model): `./gradlew :api-persistence-ebean:generateDbMigration`.
 - Destructive migration (drop): re-run the generator with the property **in the generator's JVM**, not on the Gradle
   CLI:
-  `JAVA_TOOL_OPTIONS="-Dddl.migration.pendingDropsFor=<version>" ./gradlew :api-persistence-sqlite:generateDbMigration`.
+  `JAVA_TOOL_OPTIONS="-Dddl.migration.pendingDropsFor=<version>" ./gradlew :api-persistence-ebean:generateDbMigration`.
   Commit both pairs together.
 - **Format the Kotlin code**: `./gradlew spotlessApply`, ktfmt's `kotlinlang` style at 120 columns
   (`docs/adr/0053-ktfmt-formats-the-kotlin-code.md`). The gate refuses what it would change. detekt's findings

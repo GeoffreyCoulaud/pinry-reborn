@@ -1,9 +1,9 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.users.UsernameAlreadyTakenException
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import jakarta.persistence.PersistenceException
 import java.time.temporal.ChronoUnit

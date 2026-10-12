@@ -1,7 +1,7 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.MediaDownloadModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaDownloadModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.MediaDownloadModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QMediaDownloadModel
 
 /**
  * The task centre's one order: most recently requested first, on the pair `(requestedAt, id)` and not the instant

@@ -1,12 +1,12 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataExportModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserDataExportModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelCursor
 
 object UserDataExportModelMapper {
     // `user` is passed in already resolved by the repository (see UserDataExportRepository.resolveUser):

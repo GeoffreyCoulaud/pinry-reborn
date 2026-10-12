@@ -1,12 +1,12 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.SessionTokenModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.SessionTokenModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QSessionTokenModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActiveUser
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.SessionTokenModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.SessionTokenModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QSessionTokenModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.withActiveUser
 import jakarta.enterprise.context.ApplicationScoped
 import java.time.Instant
 import java.util.UUID

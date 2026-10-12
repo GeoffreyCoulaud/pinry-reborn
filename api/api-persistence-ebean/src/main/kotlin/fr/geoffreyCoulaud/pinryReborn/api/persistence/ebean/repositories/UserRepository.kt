@@ -1,13 +1,13 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.users.UsernameAlreadyTakenException
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.UserQueries
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.UserModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.UserModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.UserQueries
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.PersistenceException
 import java.time.Instant

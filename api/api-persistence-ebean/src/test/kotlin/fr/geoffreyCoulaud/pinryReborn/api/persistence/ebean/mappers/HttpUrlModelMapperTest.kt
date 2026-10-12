@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.HttpUrlModelMapper.toHttpUrl
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.HttpUrlModelMapper.toHttpUrl
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 

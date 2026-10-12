@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin

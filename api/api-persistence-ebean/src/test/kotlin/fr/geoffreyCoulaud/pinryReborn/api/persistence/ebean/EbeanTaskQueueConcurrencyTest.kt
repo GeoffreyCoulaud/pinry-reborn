@@ -1,9 +1,9 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.ClaimedTask
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.ExponentialBackoffWithJitter
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.NewTask
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanTaskQueue
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanTaskQueue
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentLinkedQueue

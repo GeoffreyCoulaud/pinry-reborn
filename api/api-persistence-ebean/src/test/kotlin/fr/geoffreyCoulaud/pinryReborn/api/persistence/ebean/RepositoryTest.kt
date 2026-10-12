@@ -1,9 +1,9 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanPersistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanTransactionControl
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanTransactionRunner
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanPersistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanTransactionControl
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.ebean.DB
 import io.ebean.Database

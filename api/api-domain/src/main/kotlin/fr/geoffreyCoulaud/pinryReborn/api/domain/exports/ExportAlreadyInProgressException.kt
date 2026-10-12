@@ -5,7 +5,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.domain.exports
  * second `PENDING` export is requested for a user that already has one in flight (enforced by the persistence layer's
  * partial unique index).
  *
- * Deliberately a domain exception, not a use-case `BaseError`: `api-persistence-sqlite` must not depend on
+ * Deliberately a domain exception, not a use-case `BaseError`: `api-persistence-ebean` must not depend on
  * `api-usecases`. The adapter throws this; `UserDataExportRequester` (api-usecases) catches it and rethrows
  * `ExportAlreadyInProgressError` for the presentation layer, exactly as `MediaStore.stage` throws the domain
  * `MediaTooLargeException` and `SetPinMedia` translates it.

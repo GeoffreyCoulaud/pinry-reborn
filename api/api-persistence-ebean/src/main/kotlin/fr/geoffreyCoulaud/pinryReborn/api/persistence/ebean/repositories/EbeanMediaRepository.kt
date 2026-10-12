@@ -1,14 +1,14 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.MediaModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.MediaModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.PinQueries
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withPinInAnyState
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.MediaModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.MediaModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QMediaModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.PinQueries
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.withPinInAnyState
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 

@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 /**
  * Write capability over the database: persists, deletes, merges, and builds foreign-key references. Exposes nothing

@@ -1,7 +1,7 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataImportModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QUserDataImportModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserDataImportModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QUserDataImportModel
 
 /**
  * Most recently requested first, on the pair `(requestedAt, id)`: the instant alone stalls the cursor inside a group

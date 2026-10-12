@@ -1,11 +1,11 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.migration
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration
 
 import io.ebean.dbmigration.DbMigration
 
 /**
  * Generates database migration scripts.
  *
- * Run with: ./gradlew :persistence-sqlite:generateDbMigration The migration files will be created in
+ * Run with: ./gradlew :api-persistence-ebean:generateDbMigration The migration files will be created in
  * src/main/resources/dbmigration/
  */
 fun main() {

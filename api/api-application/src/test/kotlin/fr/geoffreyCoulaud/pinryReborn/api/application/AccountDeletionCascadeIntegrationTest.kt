@@ -28,7 +28,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInter
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportIssueRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QTaskModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QTaskModel
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.AccountDeletionCleaner
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
 import io.ebean.DB

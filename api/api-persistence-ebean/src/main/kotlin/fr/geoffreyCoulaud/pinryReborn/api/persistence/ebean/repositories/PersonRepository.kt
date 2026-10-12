@@ -1,16 +1,16 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.canonicalUrls
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PersonModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPersonModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.PersonModelMapper.canonicalUrls
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.PersonModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.PersonModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.PersonModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPersonModel
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 

@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TaskQueueInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -7,10 +7,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.ClaimedTask
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.NewTask
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.Task
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.TaskModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.TaskModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QTaskModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.TaskModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.TaskModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QTaskModel
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.PersistenceException
 import java.time.Duration

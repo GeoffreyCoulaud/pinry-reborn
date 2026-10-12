@@ -1,13 +1,13 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.TagModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.TagModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.TagModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QTagModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.TagModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.TagModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.TagModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QTagModel
 import jakarta.enterprise.context.ApplicationScoped
 
 @ApplicationScoped

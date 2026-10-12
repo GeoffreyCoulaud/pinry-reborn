@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import jakarta.persistence.PersistenceException
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -12,13 +12,13 @@ import org.sqlite.SQLiteException
  * Focused unit tests for the collision decision shared by the repositories that answer a unique-index violation with a
  * domain error or the row the insert collided with.
  *
- * They do not extend [fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.RepositoryTest]: the decision under test is
+ * They do not extend [fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.RepositoryTest]: the decision under test is
  * a pure function of the exception's cause structure, observed empirically as `PersistenceException` wrapping
  * `org.sqlite.SQLiteException` whose `resultCode` discriminates `SQLITE_CONSTRAINT_UNIQUE` from the other constraint
  * codes (NOT NULL, FOREIGN KEY, ...). The repository tests pin the end-to-end answer each caller asks for: a domain
- * error in [fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.UserPasswordHashRepositoryTest] and
- * [fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.UserDataExportRepositoryTest], the collided-with row in
- * [fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.EbeanTaskQueueTest]. These tests cover the decision itself and
+ * error in [fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.UserPasswordHashRepositoryTest] and
+ * [fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.UserDataExportRepositoryTest], the collided-with row in
+ * [fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.EbeanTaskQueueTest]. These tests cover the decision itself and
  * the rethrow of unrelated failures, which cannot be produced through a public save against a real store.
  */
 class SqliteConstraintViolationsTest {

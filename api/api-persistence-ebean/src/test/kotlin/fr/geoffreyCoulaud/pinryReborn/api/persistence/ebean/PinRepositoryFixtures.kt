@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
@@ -7,12 +7,12 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.BoardModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PersonRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.TagRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.BoardModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.BoardModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PersonRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PinRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.TagRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
 import java.util.UUID.randomUUID

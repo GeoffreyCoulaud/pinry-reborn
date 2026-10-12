@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.bases.BaseModel
 import io.ebean.annotation.Index
 import jakarta.persistence.Entity
 import jakarta.persistence.Table

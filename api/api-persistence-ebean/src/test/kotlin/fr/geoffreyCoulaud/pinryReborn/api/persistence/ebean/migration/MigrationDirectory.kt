@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.migration
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration
 
 import java.io.File
 

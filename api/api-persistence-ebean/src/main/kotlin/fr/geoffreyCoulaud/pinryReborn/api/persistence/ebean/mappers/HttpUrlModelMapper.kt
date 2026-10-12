@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 

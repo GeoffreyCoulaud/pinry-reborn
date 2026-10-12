@@ -26,7 +26,7 @@ all. The operator settled it that day.
 - **The bound is verified per package** (`groupBy = PACKAGE`), Kover being applied per module with no aggregation.
 - **Outside (not measured)**:
     - `api-application`: composition root, end-to-end tests only, Kover not applied.
-    - `...persistence.sqlite.models` and `models.bases`: Ebean's bytecode enhancement rewrites entity classes in place.
+    - `...persistence.ebean.models` and `models.bases`: Ebean's bytecode enhancement rewrites entity classes in place.
     - `...models.query.Q*` and every class annotated `io.ebean.typequery.Generated`
 - **Change the perimeter in `api/build.gradle.kts` first**, where it is enforced; this table is transcribed from it.
 - **Inside never shrinks, and widening Outside requires the user's explicit agreement.**

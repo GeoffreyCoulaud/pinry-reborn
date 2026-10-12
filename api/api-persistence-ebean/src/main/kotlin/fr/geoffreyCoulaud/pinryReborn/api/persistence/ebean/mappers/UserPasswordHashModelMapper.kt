@@ -1,8 +1,8 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HashedPassword
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserPasswordHashModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserPasswordHashModel
 
 object UserPasswordHashModelMapper {
     fun UserPasswordHashModel.toDomain(): HashedPassword =

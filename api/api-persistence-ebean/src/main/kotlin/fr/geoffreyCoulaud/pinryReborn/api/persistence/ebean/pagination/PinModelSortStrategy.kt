@@ -1,8 +1,8 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.PinModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinModel
 import io.ebean.typequery.PInstant
 import java.time.Instant
 import java.util.UUID

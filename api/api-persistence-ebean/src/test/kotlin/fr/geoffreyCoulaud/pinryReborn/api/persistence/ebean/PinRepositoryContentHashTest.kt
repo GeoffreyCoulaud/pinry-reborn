@@ -1,8 +1,8 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaRepository
 import java.util.UUID
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals

@@ -1,7 +1,7 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataExportModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QUserDataExportModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserDataExportModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QUserDataExportModel
 
 /**
  * A user's export listing has exactly one order: most recently requested first. Ordering on `requestedAt` alone stalls

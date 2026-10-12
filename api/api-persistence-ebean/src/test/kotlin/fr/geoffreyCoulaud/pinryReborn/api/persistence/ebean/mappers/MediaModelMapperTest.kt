@@ -1,8 +1,8 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.MediaModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.MediaModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.MediaModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.MediaModelMapper.toModel
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID.randomUUID

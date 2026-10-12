@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinBoardModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinBoardModel
 
 // A query constructor cannot cover a filter rooted on the pin-to-board join table: that root is not
 // itself recyclable, so there is no state to ask about until an association is navigated. An

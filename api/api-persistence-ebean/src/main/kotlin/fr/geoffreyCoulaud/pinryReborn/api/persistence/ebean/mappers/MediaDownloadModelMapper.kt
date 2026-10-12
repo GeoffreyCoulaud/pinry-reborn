@@ -1,12 +1,12 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.HttpUrlModelMapper.toHttpUrl
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.MediaDownloadModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.HttpUrlModelMapper.toHttpUrl
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.MediaDownloadModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelCursor
 import java.util.UUID
 
 object MediaDownloadModelMapper {

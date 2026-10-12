@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.bases
 
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass

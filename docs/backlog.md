@@ -83,7 +83,7 @@ Recorded where the decision lives. None is a copy: follow the pointer.
 - **The partial-index state guard has a declared reach**, and one part of it is a correctness gap
   rather than a documentation one: it pins the predicate, not the uniqueness columns that make
   `findOne()` return at most one row. `PartialUniqueIndexStates` and
-  `api-persistence-sqlite/src/test/kotlin/.../migration/PartialUniqueIndexStatesTest.kt`.
+  `api-persistence-ebean/src/test/kotlin/.../migration/PartialUniqueIndexStatesTest.kt`.
 - **The grid keeps every page it scrolls**, no component carrying both a waterfall and a capped
   bidirectional query. `docs/adr/0033-the-grid-keeps-every-page-it-scrolls.md`.
 - **Authentication attempt counters are per process, and holding one account's login closed is

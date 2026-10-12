@@ -1,7 +1,7 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.migration
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.RepositoryTest
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.RepositoryTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test

@@ -1,8 +1,8 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.exceptions.UserModelDoesNotExistError
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.UserQueries
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.exceptions.UserModelDoesNotExistError
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.UserQueries
 import java.util.UUID
 
 /**

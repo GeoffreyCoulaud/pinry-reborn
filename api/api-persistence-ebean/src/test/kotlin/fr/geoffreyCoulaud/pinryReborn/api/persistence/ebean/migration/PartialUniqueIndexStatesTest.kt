@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.migration
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PartialUniqueIndexStates
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PartialUniqueIndexStates
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

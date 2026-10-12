@@ -1,16 +1,16 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PinModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelPaginationHelper
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.PinModelSortStrategy
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.PinModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.PinModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelCursor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelPaginationHelper
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.PinModelSortStrategy
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
 import java.util.UUID.randomUUID

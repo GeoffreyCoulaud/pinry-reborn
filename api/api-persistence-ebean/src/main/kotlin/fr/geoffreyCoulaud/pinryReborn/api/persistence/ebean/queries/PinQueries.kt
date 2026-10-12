@@ -1,11 +1,11 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPersonModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinCreatorModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinTagModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.PinModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPersonModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinCreatorModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinTagModel
 
 /** Queries rooted on pins. */
 object PinQueries : SoftDeletableQueries<PinModel, QPinModel>(::QPinModel, { it.softDeletedAt })

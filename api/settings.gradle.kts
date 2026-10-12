@@ -15,7 +15,7 @@ plugins {
 include(
     ":api-domain",
     ":api-usecases",
-    ":api-persistence-sqlite",
+    ":api-persistence-ebean",
     ":api-presentation-quarkus",
     ":api-application",
     ":api-utilities",

@@ -1,14 +1,14 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.RepositoryTest
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinBoardModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.BoardRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.PinRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.RepositoryTest
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinBoardModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.BoardRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PinRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals

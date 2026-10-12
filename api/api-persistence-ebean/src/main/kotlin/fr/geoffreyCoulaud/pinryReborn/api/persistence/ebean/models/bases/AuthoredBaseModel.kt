@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.bases
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
 import io.ebean.annotation.ConstraintMode
 import io.ebean.annotation.DbForeignKey
 import jakarta.persistence.ManyToOne
