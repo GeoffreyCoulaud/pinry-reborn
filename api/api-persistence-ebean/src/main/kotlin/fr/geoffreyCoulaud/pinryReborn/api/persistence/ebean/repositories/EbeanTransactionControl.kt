@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.TransactionControl
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.TransactionControl
 import io.ebean.Database
 import io.ebean.Transaction
 import jakarta.enterprise.context.ApplicationScoped

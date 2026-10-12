@@ -120,7 +120,7 @@ subprojects {
                         // Companion). Scoped to the query package so the pattern cannot match a
                         // hand-written `Q*`-named class elsewhere. (Also covered by the `models`
                         // package rule below; kept explicit as defense in depth.)
-                        classes("fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.Q*")
+                        classes("fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.Q*")
                         // Other kapt-generated Ebean classes that don't match the `Q*` naming
                         // convention (e.g. EbeanEntityRegister). All Ebean querybean codegen
                         // carries this annotation (CLASS retention, readable by Kover's ASM-based
@@ -135,7 +135,7 @@ subprojects {
                         // decision B1 (calibration, Task 2 "KNOWN RISK"): exclude the whole
                         // `models` package (and its `models.bases` subpackage) from coverage.
                         // Harmless for other modules, which have no such package.
-                        packages("fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models")
+                        packages("fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models")
                     }
                 }
                 verify {

@@ -20,7 +20,7 @@ import com.lemonappdev.konsist.api.ext.list.withoutParentInterfaceOf
 import com.lemonappdev.konsist.api.ext.list.withoutPath
 import com.lemonappdev.konsist.api.verify.assertEmpty
 import com.lemonappdev.konsist.api.verify.assertNotEmpty
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.SoftDeletableModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.SoftDeletableModel
 import org.junit.jupiter.api.Test
 
 /**
@@ -38,7 +38,7 @@ class ArchitectureKonsistTest {
      * reach from instead of naming types.
      */
     private val recyclableModels =
-        Konsist.scopeFromProduction(moduleName = "api-persistence-sqlite")
+        Konsist.scopeFromProduction(moduleName = "api-persistence-ebean")
             .classes()
             .withParentInterfaceOf(SoftDeletableModel::class)
 
@@ -182,7 +182,7 @@ class ArchitectureKonsistTest {
     }
 
     @Test
-    fun `Given api-persistence-sqlite production, Then some model declares itself recyclable`() {
+    fun `Given api-persistence-ebean production, Then some model declares itself recyclable`() {
         recyclableModels.assertNotEmpty()
     }
 
@@ -191,9 +191,9 @@ class ArchitectureKonsistTest {
         // Opting out of the marker would be the way around every rule that reads it, so a model
         // that carries the instant has to declare itself. Scoped to the persistence models on
         // purpose: the domain entities carry the same property and answer to no query bean.
-        Konsist.scopeFromProduction(moduleName = "api-persistence-sqlite")
+        Konsist.scopeFromProduction(moduleName = "api-persistence-ebean")
             .classes()
-            .withPackage("..persistence.sqlite.models..")
+            .withPackage("..persistence.ebean.models..")
             .withPropertyNamed("softDeletedAt")
             .withoutParentInterfaceOf(SoftDeletableModel::class)
             .assertEmpty()
@@ -209,7 +209,7 @@ class ArchitectureKonsistTest {
         val queryBeanNames = recyclableModels.map { "Q${it.name}" }
         Konsist.scopeFromProduction()
             .files
-            .withoutPath("..persistence.sqlite.queries..", "..persistence.sqlite.pagination..")
+            .withoutPath("..persistence.ebean.queries..", "..persistence.ebean.pagination..")
             .withImport { it.name.substringAfterLast(".") in queryBeanNames }
             .assertEmpty()
     }

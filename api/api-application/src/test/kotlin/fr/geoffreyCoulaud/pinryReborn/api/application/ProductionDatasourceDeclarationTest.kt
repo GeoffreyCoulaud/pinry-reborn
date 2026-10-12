@@ -19,7 +19,7 @@ class ProductionDatasourceDeclarationTest {
             "datasource.db.maxConnections" to "1",
             "ebean.migration.run" to "true",
             "ebean.migration.path" to "dbmigration",
-            "ebean.packages" to "fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models",
+            "ebean.packages" to "fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models",
         )
 
     @Test

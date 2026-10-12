@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
@@ -6,16 +6,16 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportAlreadyInProgressException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserDataImportModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserDataImportModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataImportModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QUserDataImportModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelPaginationHelper
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.UserDataImportModelSortStrategy
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.pageByIdAfter
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.UserDataImportModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.UserDataImportModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserDataImportModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QUserDataImportModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelCursor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelPaginationHelper
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.UserDataImportModelSortStrategy
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.pageByIdAfter
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.PersistenceException
 import java.time.Instant

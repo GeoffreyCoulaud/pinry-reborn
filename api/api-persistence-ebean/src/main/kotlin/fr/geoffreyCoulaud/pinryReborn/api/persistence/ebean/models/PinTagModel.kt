@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models
 
 import io.ebean.annotation.ConstraintMode
 import io.ebean.annotation.DbForeignKey

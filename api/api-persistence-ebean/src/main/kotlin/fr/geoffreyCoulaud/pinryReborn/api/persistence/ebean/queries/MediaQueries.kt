@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QMediaModel
 
 // An image is not itself recyclable, so it has no state to ask about until its pin is navigated: an
 // extension, like the download row's, is how that reaches the queries package.

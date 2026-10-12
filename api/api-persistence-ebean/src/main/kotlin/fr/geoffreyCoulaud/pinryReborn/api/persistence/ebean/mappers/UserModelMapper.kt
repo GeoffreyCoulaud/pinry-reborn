@@ -1,7 +1,7 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
 
 object UserModelMapper {
     // The recycling instant is mapped both ways. Omitting it here would let any save of a

@@ -1,17 +1,17 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.BoardModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.BoardModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinBoardModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.BoardQueries
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.withActivePin
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.BoardModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.BoardModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.BoardModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QMediaModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinBoardModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.BoardQueries
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.withActivePin
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.PersistenceException
 import java.time.Instant

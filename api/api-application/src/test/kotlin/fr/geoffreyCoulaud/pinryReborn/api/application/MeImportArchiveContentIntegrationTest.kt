@@ -1,7 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPersonModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QRemoteCollectionModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPersonModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QRemoteCollectionModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile

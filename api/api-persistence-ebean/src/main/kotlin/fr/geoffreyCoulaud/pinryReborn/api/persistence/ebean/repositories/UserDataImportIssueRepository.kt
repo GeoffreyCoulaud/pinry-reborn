@@ -1,18 +1,18 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImportIssue
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportIssueRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserDataImportIssueModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.UserDataImportIssueModelMapper.toModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataImportIssueModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataImportModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QUserDataImportIssueModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelPaginationHelper
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.UserDataImportIssueModelSortStrategy
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.UserDataImportIssueModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.UserDataImportIssueModelMapper.toModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserDataImportIssueModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserDataImportModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QUserDataImportIssueModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelCursor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelPaginationHelper
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.UserDataImportIssueModelSortStrategy
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 

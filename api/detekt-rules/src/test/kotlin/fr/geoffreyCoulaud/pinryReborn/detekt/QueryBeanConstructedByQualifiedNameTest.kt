@@ -15,7 +15,7 @@ class QueryBeanConstructedByQualifiedNameTest {
             """
             class Repository {
                 fun find() =
-                    fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query
+                    fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query
                         .QPinModel()
                         .findList()
             }
@@ -41,7 +41,7 @@ class QueryBeanConstructedByQualifiedNameTest {
         // Given: the ordinary shape, which the Konsist import assertion covers instead
         val code =
             """
-            import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinModel
+            import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinModel
 
             class Repository {
                 fun find() = QPinModel().findList()

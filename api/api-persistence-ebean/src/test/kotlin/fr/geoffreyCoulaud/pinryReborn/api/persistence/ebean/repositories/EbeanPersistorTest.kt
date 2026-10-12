@@ -1,8 +1,8 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.RepositoryTest
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QUserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.RepositoryTest
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QUserModel
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals

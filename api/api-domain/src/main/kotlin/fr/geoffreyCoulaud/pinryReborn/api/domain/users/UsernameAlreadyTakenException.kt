@@ -6,7 +6,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.domain.users
  * differing only by case is the same name, and an account pending deletion still holds its own.
  *
  * A domain exception, not a use-case [fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BaseError]:
- * `api-persistence-sqlite` must not depend on `api-usecases`. The adapter throws this; `UserCreator` catches it and
+ * `api-persistence-ebean` must not depend on `api-usecases`. The adapter throws this; `UserCreator` catches it and
  * rethrows `UsernameAlreadyTakenError`, the same layering as `PasswordChangeCollisionException`.
  */
 class UsernameAlreadyTakenException(cause: Throwable) : Exception("This username is already taken", cause)

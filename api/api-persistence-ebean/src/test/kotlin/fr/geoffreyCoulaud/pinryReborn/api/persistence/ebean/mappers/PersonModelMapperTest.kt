@@ -1,8 +1,8 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.mappers.PersonModelMapper.toDomain
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PersonModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.PersonModelMapper.toDomain
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.PersonModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
 import java.time.Instant
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Test

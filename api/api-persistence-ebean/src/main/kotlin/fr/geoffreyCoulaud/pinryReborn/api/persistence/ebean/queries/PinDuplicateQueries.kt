@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinDuplicateModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinDuplicateModel
 
 /** Pairs whose two pins are out of the recycle bin; one recycled hides the pair (ADR 0051, decision 7). */
 fun QPinDuplicateModel.withActivePins(): QPinDuplicateModel =

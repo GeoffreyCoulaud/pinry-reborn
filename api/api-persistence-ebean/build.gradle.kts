@@ -55,7 +55,7 @@ noArg {
 tasks.register<JavaExec>("generateDbMigration") {
     group = "ebean"
     description = "Generate Ebean database migration"
-    mainClass.set("fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.migration.GenerateDbMigrationKt")
+    mainClass.set("fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration.GenerateDbMigrationKt")
     classpath = sourceSets["test"].runtimeClasspath
     dependsOn("compileTestKotlin")
 }

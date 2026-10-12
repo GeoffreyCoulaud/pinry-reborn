@@ -875,7 +875,7 @@ pinry-reborn:
     # is a domain value that may legitimately be compared, and `pin.softDeletedAt.isBefore(x)` would
     # be a false positive. The `queries` package is excluded because that predicate is its whole
     # content. Excludes win over includes, so the two compose as written.
-    includes: ['**/api-persistence-sqlite/**']
+    includes: ['**/api-persistence-ebean/**']
     excludes: ['**/test/**', '**/testFixtures/**', '**/queries/**']
   WallClockRead:
     active: true

@@ -1,7 +1,7 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.BoardModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QBoardModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.BoardModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QBoardModel
 
 /** Queries rooted on boards. */
 object BoardQueries : SoftDeletableQueries<BoardModel, QBoardModel>(::QBoardModel, { it.softDeletedAt })

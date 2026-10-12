@@ -7,7 +7,7 @@
     <ID>CommentCarriesDocumentation:EbeanTaskQueue.kt:EbeanTaskQueue : TaskQueueInterface</ID>
     <ID>CommentCarriesDocumentation:PartialUniqueIndexStates.kt:PartialUniqueIndexStates</ID>
     <ID>CommentCarriesDocumentation:Persistor.kt:Persistor</ID>
-    <ID>CommentCarriesDocumentation:PinBoardQueries.kt:fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries.PinBoardQueries.kt</ID>
+    <ID>CommentCarriesDocumentation:PinBoardQueries.kt:fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.PinBoardQueries.kt</ID>
     <ID>CommentCarriesDocumentation:PinModelSortStrategy.kt:PinModelSortStrategy : ModelSortStrategy</ID>
     <ID>CommentCarriesDocumentation:PinRepository.kt:PinRepository : PinRepositoryInterface</ID>
     <ID>CommentCarriesDocumentation:SoftDeletableModel.kt:SoftDeletableModel</ID>

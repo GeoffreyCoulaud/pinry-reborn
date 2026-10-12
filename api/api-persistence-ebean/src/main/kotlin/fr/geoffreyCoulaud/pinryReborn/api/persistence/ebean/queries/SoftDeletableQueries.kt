@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.SoftDeletableModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.SoftDeletableModel
 import io.ebean.typequery.PInstant
 import io.ebean.typequery.QueryBean
 

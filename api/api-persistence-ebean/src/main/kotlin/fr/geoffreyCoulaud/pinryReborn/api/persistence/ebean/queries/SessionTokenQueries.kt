@@ -1,6 +1,6 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.queries
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QSessionTokenModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QSessionTokenModel
 
 // A query constructor cannot cover a filter rooted on session_tokens: that root is not itself
 // recyclable, so there is no state to ask about until the user association is navigated. An

@@ -1,13 +1,13 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PdqHash
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaDownloadRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaFrameRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanMediaRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanPinDuplicateRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaDownloadRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaFrameRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanPinDuplicateRepository
 import java.time.Instant
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals

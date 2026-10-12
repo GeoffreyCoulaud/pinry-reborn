@@ -7,7 +7,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.domain.security
  * `(user_id, created_at)` unique index (`ix_user_password_hashes_user_created`).
  *
  * A domain exception, not a use-case [fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BaseError]:
- * `api-persistence-sqlite` must not depend on `api-usecases`. The adapter throws this; `PasswordChanger` catches it and
+ * `api-persistence-ebean` must not depend on `api-usecases`. The adapter throws this; `PasswordChanger` catches it and
  * rethrows `PasswordChangeCollisionError`, the same layering as `ExportAlreadyInProgressException`.
  */
 class PasswordChangeCollisionException(cause: Throwable) :

@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.SessionTokenModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.SessionTokenModel
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.ebean.DB
 import io.quarkus.test.junit.QuarkusTest

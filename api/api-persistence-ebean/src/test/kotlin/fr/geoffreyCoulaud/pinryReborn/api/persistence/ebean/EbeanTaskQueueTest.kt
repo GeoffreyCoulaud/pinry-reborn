@@ -1,11 +1,11 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.ClaimedTask
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.ExponentialBackoffWithJitter
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.NewTask
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.TaskModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.EbeanTaskQueue
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.TaskModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanTaskQueue
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.ebean.test.LoggedSql
 import jakarta.persistence.PersistenceException

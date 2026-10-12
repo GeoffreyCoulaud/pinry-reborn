@@ -1,11 +1,11 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.PinModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QPinModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelCursor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.ModelSortStrategy
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.PinModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelCursor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelSortStrategy
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 /**
  * [ModelSortStrategy] routing logic (`filterCursorAndNeighbors`, `sortCursorNeighbors`) is exercised through a minimal
  * test double that just records which abstract member got called, instead of a real
- * [fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination.PinModelSortStrategy], to keep the assertions
+ * [fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.PinModelSortStrategy], to keep the assertions
  * focused on the routing itself.
  */
 class ModelSortStrategyTest : RepositoryTest() {

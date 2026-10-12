@@ -1,4 +1,4 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models
 
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.declaration.KoAnnotationDeclaration
@@ -34,9 +34,9 @@ import org.junit.jupiter.api.Test
  */
 class ModelsPackageArchTest {
     private val modelClasses: List<KoClassDeclaration> =
-        Konsist.scopeFromProduction(moduleName = "api-persistence-sqlite")
+        Konsist.scopeFromProduction(moduleName = "api-persistence-ebean")
             .classes()
-            .withPackage("..persistence.sqlite.models..")
+            .withPackage("..persistence.ebean.models..")
 
     @Test
     fun `Given the models package, Then it holds classes (the scope is not mis-configured)`() {
@@ -65,9 +65,9 @@ class ModelsPackageArchTest {
     @Test
     fun `Given a fixture model holding a value class, Then the value class rule flags its property`() {
         val fixture =
-            Konsist.scopeFromFile("api-persistence-sqlite/src/test/resources/konsist/ValueClassPropertyModel.kt")
+            Konsist.scopeFromFile("api-persistence-ebean/src/test/resources/konsist/ValueClassPropertyModel.kt")
                 .classes()
-                .withPackage("..persistence.sqlite.models..")
+                .withPackage("..persistence.ebean.models..")
         assertEquals(listOf("address"), valueClassProperties(fixture).map { it.name })
     }
 
@@ -106,7 +106,7 @@ class ModelsPackageArchTest {
     @Test
     fun `Given a fixture model whose table is pin_tag_model, Then the table rule flags it`() {
         val fixture =
-            Konsist.scopeFromFile("api-persistence-sqlite/src/test/resources/konsist/TableNameModel.kt").classes()
+            Konsist.scopeFromFile("api-persistence-ebean/src/test/resources/konsist/TableNameModel.kt").classes()
         assertEquals(listOf("PinTagModel"), misnamedTables(fixture).map { it.name })
     }
 
@@ -118,7 +118,7 @@ class ModelsPackageArchTest {
     @Test
     fun `Given a fixture model with an index named after another table, Then the index rule flags it alone`() {
         val fixture =
-            Konsist.scopeFromFile("api-persistence-sqlite/src/test/resources/konsist/IndexNameModel.kt").classes()
+            Konsist.scopeFromFile("api-persistence-ebean/src/test/resources/konsist/IndexNameModel.kt").classes()
         assertEquals(listOf("ix_pin_tag_model_tag"), misnamedIndexes(fixture))
     }
 
@@ -142,7 +142,7 @@ class ModelsPackageArchTest {
     @Test
     fun `Given a fixture model with keys declaring no deletion or no constraint, Then the key rule flags both`() {
         val fixture =
-            Konsist.scopeFromFile("api-persistence-sqlite/src/test/resources/konsist/ForeignKeyModel.kt").classes()
+            Konsist.scopeFromFile("api-persistence-ebean/src/test/resources/konsist/ForeignKeyModel.kt").classes()
         assertEquals(listOf("tag", "board"), undeclaredDeletions(fixture))
     }
 

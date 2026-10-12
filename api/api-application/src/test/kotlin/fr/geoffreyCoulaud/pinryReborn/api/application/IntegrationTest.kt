@@ -3,8 +3,8 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QTaskModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QMediaModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QTaskModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.LoggingRequestResponseFilter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.UserCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask

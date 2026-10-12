@@ -1,7 +1,7 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination
 
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.UserDataImportIssueModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QUserDataImportIssueModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserDataImportIssueModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QUserDataImportIssueModel
 
 /**
  * Ordered on `id` alone, which is arbitrary but total and stable: an issue carries no instant, and its `line` is null

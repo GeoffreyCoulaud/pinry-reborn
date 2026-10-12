@@ -1,12 +1,12 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaFrame
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PdqHash
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PdqHasher
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaFrameRepositoryInterface
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.Persistor
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.MediaFrameModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QMediaFrameModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.MediaFrameModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QMediaFrameModel
 import jakarta.enterprise.context.ApplicationScoped
 import java.util.UUID
 import java.util.UUID.randomUUID

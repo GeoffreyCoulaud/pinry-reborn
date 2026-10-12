@@ -1,8 +1,8 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.pagination
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection.BACKWARD
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection.FORWARD
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.bases.BaseModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.bases.BaseModel
 import io.ebean.typequery.QueryBean
 
 abstract class ModelSortStrategy<M : BaseModel, Q : QueryBean<M, Q>> {

@@ -1,13 +1,13 @@
-package fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite
+package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.models.query.QRemoteCollectionModel
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.BoardRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.RemoteCollectionRepository
-import fr.geoffreyCoulaud.pinryReborn.api.persistence.sqlite.repositories.UserRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QRemoteCollectionModel
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.BoardRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.RemoteCollectionRepository
+import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals

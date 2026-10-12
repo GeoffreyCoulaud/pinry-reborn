@@ -8,7 +8,7 @@ dependencies {
     // All modules
     implementation(project(":api-domain"))
     implementation(project(":api-usecases"))
-    implementation(project(":api-persistence-sqlite"))
+    implementation(project(":api-persistence-ebean"))
     implementation(project(":api-presentation-quarkus"))
     implementation(project(":api-storage-filesystem"))
     implementation(project(":api-imaging-vips"))
