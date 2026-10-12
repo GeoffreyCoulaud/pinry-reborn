@@ -12,5 +12,7 @@ data class User(
     companion object {
         /** The account alphabet, where the store's case fold and a lower-casing agree (ADR 0059, decision 11). */
         const val NAME_PATTERN = "^[A-Za-z0-9._-]+$"
+
+        const val MAX_NAME_LENGTH = 50
     }
 }

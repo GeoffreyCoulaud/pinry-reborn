@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input.PinIdsInputDto.Companion.MAX_IDENTIFIERS
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -7,7 +8,7 @@ import java.util.UUID
 
 /** [BoardInputDto] plus the pins filed under the new board; empty is allowed, this being a write of one board. */
 data class BoardCreationInputDto(
-    @field:NotBlank @field:Size(max = 200) val name: String,
+    @field:NotBlank @field:Size(max = Board.MAX_NAME_LENGTH) val name: String,
     @field:Size(max = 2000) val description: String,
     @field:Size(max = MAX_IDENTIFIERS) val pinIds: List<UUID> = emptyList(),
 )
