@@ -147,6 +147,8 @@ After Discuss:
 - Block 80, bound a tag name at 200 on `PUT /api/v1/pins/{id}` in this lot: "a", every route that writes a tag name
   checked.
 - Block 115, `./gradlew quarkusDev` boots no API, before this lot too: "a", fixed in block 113 below 115.
+- Block 113's hot reload, broken in dev mode, and block 90's journey test that failed once: "1 a 2 a", a P2
+  backlog item each.
 
 The splits of 60, 100 and the closing block were the lead's to approve; the `DB_URL` and `DB_USERNAME` defaults were
 the lead's answer to the holistic review (kept, the README names them).
@@ -187,8 +189,12 @@ the lead's answer to the holistic review (kept, the README names them).
   each band (#430, #431).
 - **That `ImportFieldBounds.MAX_NAME_LENGTH` stays at the domain's 200**: it restates the bound by design (#433).
 - **The web application declares no tag name bound**: a name over 200 characters gets a `400` (#428).
-- **Hot reload in dev mode**: after a restart Ebean's default database, static in the base class loader, survives
-  the old application (#434), pre-existing; the operator's answer is pending.
+- **Hot reload in dev mode is broken**: after a restart Ebean's default database, static in the base class loader,
+  survives the old application, `ClassCastException` between two `TaskModel` classes (#434). Pre-existing; the
+  backlog.
+- **A web application journey test failed once**: "Given the last tag and board taken off"
+  (`edit-a-pin's-description,-tags-and-boards.journey.test.tsx`) answered `Unable to find role="img"` after 6046 ms in
+  one gate run of block 90 and passed on the rerun; no block of this lot touched it (#429). The backlog.
 - **No check in the gate keeps `quarkusDev` booting**: `@QuarkusTest` has no class loader split (#434).
 
 ## The lot's counts

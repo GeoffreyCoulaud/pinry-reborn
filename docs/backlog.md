@@ -63,6 +63,10 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
   answers the two questions of ADR 0056, decision 8. New 2026-10-09.
 - **A write over many rows saves one row at a time, and some find-or-creates miss a transaction**: the batch writes
   and transactions lot, last. Same `inventory.md`, I3, I7 and S5, and units 14 and 21. New 2026-10-09.
+- **Hot reload is broken in dev mode**: Ebean's default database, static in Quarkus's base class loader, survives a
+  restart. See `docs/handoffs/2026-10-12 - handoff - the-database-is-postgresql.md`, What is not validated. New 2026-10-12.
+- **A web application journey test failed once and passed on its rerun**, "Given the last tag and board taken off".
+  See `docs/handoffs/2026-10-12 - handoff - the-database-is-postgresql.md`, What is not validated. New 2026-10-12.
 - **`.dagger/` is neither linted nor formatted**, the clients' Biome stopping at `clients/`.
   See `docs/specs/2026-09-28-knip-and-biome-keep-the-clients-clean.md`, decision F. New 2026-09-29.
 
