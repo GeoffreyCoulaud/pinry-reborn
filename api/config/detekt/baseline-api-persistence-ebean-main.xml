@@ -12,8 +12,6 @@
     <ID>CommentCarriesDocumentation:PinRepository.kt:PinRepository : PinRepositoryInterface</ID>
     <ID>CommentCarriesDocumentation:SoftDeletableModel.kt:SoftDeletableModel</ID>
     <ID>CommentCarriesDocumentation:SoftDeletableQueries.kt:SoftDeletableQueries&lt;M : SoftDeletableModel, Q : QueryBean&lt;M, Q&gt;&gt;</ID>
-    <ID>CommentCarriesDocumentation:SqliteConstraintViolations.kt:SqliteConstraintViolations</ID>
-    <ID>CommentCarriesDocumentation:SqliteConstraintViolations.kt:SqliteConstraintViolations$fun &lt;T&gt; onUniqueConstraint: T</ID>
     <ID>CommentCarriesDocumentation:TaskModel.kt:TaskModel : BaseModel</ID>
     <ID>CommentCarriesDocumentation:TransactionControl.kt:TransactionControl</ID>
     <ID>CommentCarriesDocumentation:UserDataExportModelSortStrategy.kt:UserDataExportModelSortStrategy : ModelSortStrategy</ID>

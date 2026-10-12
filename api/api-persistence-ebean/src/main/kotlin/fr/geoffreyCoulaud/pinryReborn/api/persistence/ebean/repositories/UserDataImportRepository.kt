@@ -43,7 +43,7 @@ class UserDataImportRepository(private val persistor: Persistor) : UserDataImpor
         return try {
             persist(model)
         } catch (error: PersistenceException) {
-            SqliteConstraintViolations.translateUniqueConstraint(error) {
+            ConstraintViolations.translateUniqueConstraint(error, "uq_user_data_imports_active") {
                 ImportAlreadyInProgressException(cause = it)
             }
         }

@@ -13,8 +13,8 @@ import java.util.UUID
 @Table(name = "tags")
 // A tag name is an identity per author.
 @Index(
-    name = "ix_tags_author_name_nocase",
-    definition = "create unique index ix_tags_author_name_nocase on tags (author_id, name)",
+    name = "ux_tags_author_name",
+    definition = "create unique index ux_tags_author_name on tags (author_id, name)",
 )
 class TagModel(
     id: UUID,

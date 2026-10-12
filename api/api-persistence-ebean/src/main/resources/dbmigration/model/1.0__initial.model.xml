@@ -181,7 +181,7 @@
             <column name="algorithm" type="varchar(6)" notnull="true" checkConstraint="check ( algorithm in ('BCRYPT'))" checkConstraintName="ck_user_password_hashes_algorithm"/>
             <column name="created_at" type="timestamp" notnull="true"/>
         </createTable>
-        <createIndex indexName="ix_boards_author_name_nocase" tableName="boards" columns="" definition="create unique index ix_boards_author_name_nocase on boards (author_id, name)"/>
+        <createIndex indexName="ux_boards_author_name" tableName="boards" columns="" definition="create unique index ux_boards_author_name on boards (author_id, name)"/>
         <createIndex indexName="ux_media_downloads_pin" tableName="media_downloads" columns="" definition="create unique index ux_media_downloads_pin on media_downloads (pin_id)"/>
         <createIndex indexName="ix_media_frames_media" tableName="media_frames" columns="media_id"/>
         <createIndex indexName="ix_media_frames_band_0" tableName="media_frames" columns="" definition="create index ix_media_frames_band_0 on media_frames (((hash_0 &gt;&gt; 48) &amp; 65535))"/>
@@ -201,7 +201,7 @@
         <createIndex indexName="ix_media_frames_band_14" tableName="media_frames" columns="" definition="create index ix_media_frames_band_14 on media_frames (((hash_3 &gt;&gt; 16) &amp; 65535))"/>
         <createIndex indexName="ix_media_frames_band_15" tableName="media_frames" columns="" definition="create index ix_media_frames_band_15 on media_frames (((hash_3 &gt;&gt; 0) &amp; 65535))"/>
         <createIndex indexName="ix_media_content_hash" tableName="media" columns="content_hash"/>
-        <createIndex indexName="ix_persons_author_name_nocase_urls" tableName="persons" columns="" definition="create unique index ix_persons_author_name_nocase_urls on persons (author_id, name, urls)"/>
+        <createIndex indexName="ux_persons_author_name_urls" tableName="persons" columns="" definition="create unique index ux_persons_author_name_urls on persons (author_id, name, urls)"/>
         <createIndex indexName="ux_pin_boards_pin_board" tableName="pin_boards" columns="" definition="create unique index ux_pin_boards_pin_board on pin_boards (pin_id, board_id)"/>
         <createIndex indexName="ix_pin_boards_board" tableName="pin_boards" columns="board_id"/>
         <createIndex indexName="ux_pin_creators_pin_person" tableName="pin_creators" columns="" definition="create unique index ux_pin_creators_pin_person on pin_creators (pin_id, person_id)"/>
@@ -216,7 +216,7 @@
         <createIndex indexName="ix_remote_collections_board" tableName="remote_collections" columns="board_id"/>
         <createIndex indexName="ix_session_tokens_expires_at" tableName="session_tokens" columns="expires_at"/>
         <createIndex indexName="ix_session_tokens_user" tableName="session_tokens" columns="user_id"/>
-        <createIndex indexName="ix_tags_author_name_nocase" tableName="tags" columns="" definition="create unique index ix_tags_author_name_nocase on tags (author_id, name)"/>
+        <createIndex indexName="ux_tags_author_name" tableName="tags" columns="" definition="create unique index ux_tags_author_name on tags (author_id, name)"/>
         <createIndex indexName="ix_tasks_state_terminal_state_at" tableName="tasks" columns="state,terminal_state_at"/>
         <createIndex indexName="ix_tasks_claim" tableName="tasks" columns="" definition="create index ix_tasks_claim on tasks (state, priority desc, available_at asc, id asc)"/>
         <createIndex indexName="ux_tasks_dedup" tableName="tasks" columns="" definition="create unique index ux_tasks_dedup on tasks (dedup_key) where dedup_key is not null and state in ('PENDING','RUNNING')"/>
@@ -225,7 +225,7 @@
         <createIndex indexName="ix_user_data_import_issues_import" tableName="user_data_import_issues" columns="import_id"/>
         <createIndex indexName="uq_user_data_imports_active" tableName="user_data_imports" columns="" definition="create unique index uq_user_data_imports_active on user_data_imports (user_id) where state in ('AWAITING_ARCHIVE','PENDING','RUNNING')"/>
         <createIndex indexName="ix_user_data_imports_user_state" tableName="user_data_imports" columns="user_id,state"/>
-        <createIndex indexName="ix_users_name_nocase" tableName="users" columns="" definition="create unique index ix_users_name_nocase on users (name)"/>
+        <createIndex indexName="ux_users_name" tableName="users" columns="" definition="create unique index ux_users_name on users (name)"/>
         <createIndex indexName="ix_user_password_hashes_user_created" tableName="user_password_hashes" columns="" definition="create unique index ix_user_password_hashes_user_created on user_password_hashes (user_id, created_at)"/>
     </changeSet>
 </migration>

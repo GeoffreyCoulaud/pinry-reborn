@@ -32,8 +32,7 @@ class UserRepository(private val persistor: Persistor) : UserRepositoryInterface
         try {
             sqlRepository.saveAndReturn(user.toModel()).toDomain()
         } catch (error: PersistenceException) {
-            // ix_users_name_nocase is the only unique index on users, so a violation is a taken name.
-            SqliteConstraintViolations.translateUniqueConstraint(error) {
+            ConstraintViolations.translateUniqueConstraint(error, "ux_users_name") {
                 UsernameAlreadyTakenException(cause = it)
             }
         }
