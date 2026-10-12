@@ -9,12 +9,14 @@ Branches: one stack, each block on the one before it: 10 `refactor/the-persisten
 `refactor/a-write-declines-what-postgresql-refuses`, 50 `feat/the-database-is-postgresql`, 60
 `feat/a-name-ignores-case-in-every-script`, 70 `refactor/a-violation-names-its-constraint`, 80
 `test/the-schema-holds-on-postgresql`, 90 `chore/the-image-holds-no-database`, 100 `docs/the-sources-name-postgresql`,
-then the closing block 110 `chore/the-postgresql-lot-closes`. (Corrected: fifteen pull requests ran, #419, #420 and
-#422 to #433, then the closing one. Block 60 split into 60 `feat/a-name-ignores-case-in-every-script` (#425) and 65
+then the closing block 110 `chore/the-postgresql-lot-closes`. (Corrected: sixteen pull requests ran, #419, #420 and
+#422 to #434, then the closing one. Block 60 split into 60 `feat/a-name-ignores-case-in-every-script` (#425) and 65
 `feat/a-login-name-keeps-to-the-account-alphabet` (#426); block 100 into 100 `docs/the-sources-name-postgresql` (#430)
 and 105 `docs/the-tests-name-postgresql` (#431); the closing block into 110 `fix/the-holistic-findings-for-postgresql`
 (#432), 112 `test/the-index-bounds-read-their-writers` (#433) and 115 `chore/the-postgresql-lot-closes`. Each split
-approved by the lead and recorded in the report of the block it split.)
+approved by the lead and recorded in the report of the block it split. Block 113
+`fix/quarkus-dev-reads-its-configuration` (#434), below 115, is the operator's answer to a defect 115 found:
+`./gradlew quarkusDev` booted no API, before this lot too.)
 ADR: `docs/adr/0059-the-database-is-postgresql.md` records the decisions below; it supersedes ADR 0058, decisions 8
 and 9.
 
@@ -361,7 +363,8 @@ takes the rest.
 
 - The holistic review's findings, then the documents: this specification, the handoff, the `Status:` lines of ADR
   0058, 0009, 0013, 0040 and 0056 naming ADR 0059, and the backlog. (Corrected: split into 110, the code findings
-  (#432), 112, the index bounds (#433), and 115, the documents, the backlog and the handoff. The handoff is written
+  (#432), 112, the index bounds (#433), and 115, the documents, the backlog and the handoff, with 113, dev mode's
+  configuration (#434), inserted below 115. The handoff is written
   in 115 rather than in the last code block, on the lead's brief; ADR 0008's `Status:` names ADR 0059 too, its write
   port gaining `executeRaw`.)
 
