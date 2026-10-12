@@ -275,7 +275,7 @@ alter table user_data_imports add constraint fk_user_data_imports_user_id foreig
 
 alter table user_password_hashes add constraint fk_user_password_hashes_user_id foreign key (user_id) references users (id) on delete cascade on update restrict;
 
-create unique index ix_boards_author_name_nocase on boards (author_id, name);
+create unique index ux_boards_author_name on boards (author_id, name);
 create unique index ux_media_downloads_pin on media_downloads (pin_id);
 create index if not exists ix_media_frames_media on media_frames (media_id);
 create index ix_media_frames_band_0 on media_frames (((hash_0 >> 48) & 65535));
@@ -295,7 +295,7 @@ create index ix_media_frames_band_13 on media_frames (((hash_3 >> 32) & 65535));
 create index ix_media_frames_band_14 on media_frames (((hash_3 >> 16) & 65535));
 create index ix_media_frames_band_15 on media_frames (((hash_3 >> 0) & 65535));
 create index if not exists ix_media_content_hash on media (content_hash);
-create unique index ix_persons_author_name_nocase_urls on persons (author_id, name, urls);
+create unique index ux_persons_author_name_urls on persons (author_id, name, urls);
 create unique index ux_pin_boards_pin_board on pin_boards (pin_id, board_id);
 create index if not exists ix_pin_boards_board on pin_boards (board_id);
 create unique index ux_pin_creators_pin_person on pin_creators (pin_id, person_id);
@@ -310,7 +310,7 @@ create unique index ux_remote_collections_author_url on remote_collections (auth
 create index if not exists ix_remote_collections_board on remote_collections (board_id);
 create index if not exists ix_session_tokens_expires_at on session_tokens (expires_at);
 create index if not exists ix_session_tokens_user on session_tokens (user_id);
-create unique index ix_tags_author_name_nocase on tags (author_id, name);
+create unique index ux_tags_author_name on tags (author_id, name);
 create index if not exists ix_tasks_state_terminal_state_at on tasks (state,terminal_state_at);
 create index ix_tasks_claim on tasks (state, priority desc, available_at asc, id asc);
 create unique index ux_tasks_dedup on tasks (dedup_key) where dedup_key is not null and state in ('PENDING','RUNNING');
@@ -319,5 +319,5 @@ create index if not exists ix_user_data_exports_user on user_data_exports (user_
 create index if not exists ix_user_data_import_issues_import on user_data_import_issues (import_id);
 create unique index uq_user_data_imports_active on user_data_imports (user_id) where state in ('AWAITING_ARCHIVE','PENDING','RUNNING');
 create index if not exists ix_user_data_imports_user_state on user_data_imports (user_id,state);
-create unique index ix_users_name_nocase on users (name);
+create unique index ux_users_name on users (name);
 create unique index ix_user_password_hashes_user_created on user_password_hashes (user_id, created_at);

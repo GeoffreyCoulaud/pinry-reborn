@@ -13,8 +13,8 @@ import java.util.UUID
 @Table(name = "boards")
 // A board name is an identity per author. Covers every row, so the recycle bin holds its names.
 @Index(
-    name = "ix_boards_author_name_nocase",
-    definition = "create unique index ix_boards_author_name_nocase on boards (author_id, name)",
+    name = "ux_boards_author_name",
+    definition = "create unique index ux_boards_author_name on boards (author_id, name)",
 )
 @Suppress("LongParameterList") // Ebean entity: every parameter is a persisted column.
 class BoardModel(

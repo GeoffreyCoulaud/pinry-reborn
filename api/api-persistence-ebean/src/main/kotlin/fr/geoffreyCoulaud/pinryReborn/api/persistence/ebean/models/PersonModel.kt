@@ -13,8 +13,8 @@ import java.util.UUID
 @Table(name = "persons")
 // A name and its addresses together are an identity per author, the name folded as a tag's is.
 @Index(
-    name = "ix_persons_author_name_nocase_urls",
-    definition = "create unique index ix_persons_author_name_nocase_urls on persons (author_id, name, urls)",
+    name = "ux_persons_author_name_urls",
+    definition = "create unique index ux_persons_author_name_urls on persons (author_id, name, urls)",
 )
 class PersonModel(
     id: UUID,

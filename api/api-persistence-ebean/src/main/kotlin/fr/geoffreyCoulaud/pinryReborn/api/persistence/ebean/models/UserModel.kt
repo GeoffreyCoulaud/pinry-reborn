@@ -11,7 +11,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "users")
-@Index(name = "ix_users_name_nocase", definition = "create unique index ix_users_name_nocase on users (name)")
+@Index(name = "ux_users_name", definition = "create unique index ux_users_name on users (name)")
 class UserModel(
     id: UUID,
     @Column(columnDefinition = Collations.CASE_INSENSITIVE_TEXT) var name: String,

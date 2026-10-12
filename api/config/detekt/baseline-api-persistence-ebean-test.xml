@@ -24,7 +24,6 @@
     <ID>CommentCarriesDocumentation:RepositoryTest.kt:RepositoryTest$@BeforeEach fun truncateAllTables</ID>
     <ID>CommentCarriesDocumentation:RepositoryTest.kt:RepositoryTest$protected fun storableNow: Instant</ID>
     <ID>CommentCarriesDocumentation:SoftDeletableQueriesTest.kt:SoftDeletableQueriesTest : RepositoryTest</ID>
-    <ID>CommentCarriesDocumentation:SqliteConstraintViolationsTest.kt:SqliteConstraintViolationsTest</ID>
     <ID>CommentCarriesDocumentation:SweepIndexesMigrationTest.kt:SweepIndexesMigrationTest</ID>
     <ID>CommentCarriesDocumentation:UniqueConstraintOutcomeTest.kt:UniqueConstraintOutcomeTest</ID>
   </CurrentIssues>

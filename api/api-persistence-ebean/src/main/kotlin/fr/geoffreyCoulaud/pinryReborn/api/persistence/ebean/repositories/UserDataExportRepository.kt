@@ -51,8 +51,7 @@ class UserDataExportRepository(private val persistor: Persistor) : UserDataExpor
         return try {
             persist(model)
         } catch (error: PersistenceException) {
-            // Only a unique-constraint violation is an export already in progress (409).
-            SqliteConstraintViolations.translateUniqueConstraint(error) {
+            ConstraintViolations.translateUniqueConstraint(error, "uq_user_data_exports_pending") {
                 ExportAlreadyInProgressException(cause = it)
             }
         }

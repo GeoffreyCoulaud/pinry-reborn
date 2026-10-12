@@ -31,9 +31,8 @@ class BoardRepository(private val persistor: Persistor) : BoardRepositoryInterfa
         try {
             sqlRepository.saveAndReturn(board.toModel()).toDomain()
         } catch (error: PersistenceException) {
-            // ix_boards_author_name_nocase is the only unique index on boards, so a violation is a
-            // taken name. Covers creation and renaming; restoreBoard changes no indexed column.
-            SqliteConstraintViolations.translateUniqueConstraint(error) {
+            // A taken name, on creation and renaming; restoreBoard changes no indexed column.
+            ConstraintViolations.translateUniqueConstraint(error, "ux_boards_author_name") {
                 BoardNameAlreadyTakenException(cause = it)
             }
         }

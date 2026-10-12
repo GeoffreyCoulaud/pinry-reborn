@@ -16,14 +16,13 @@ import org.junit.jupiter.api.Test
 class UniqueConstraintOutcomeTest {
     private val namedOutcomes =
         mapOf(
-            "ix_users_name_nocase" to
+            "ux_users_name" to
                 "UserRepository.saveUser translates it to UsernameAlreadyTakenException and UserCreator " +
                     "rethrows UsernameAlreadyTakenError, so the client sees 409 USERNAME_ALREADY_EXISTS.",
             "ux_tasks_dedup" to
-                "No error while a live task exists: EbeanTaskQueue.enqueueDeduplicated catches it and returns the " +
-                    "live task the dedup key already names, which is the convergence TaskQueueInterface documents. " +
-                    "A violation with no live task behind it has nothing to converge on and propagates, so the " +
-                    "client sees 500.",
+                "No error: EbeanTaskQueue.enqueueDeduplicated inserts with on conflict do nothing, then returns the " +
+                    "live task the dedup key names, which is the convergence TaskQueueInterface documents. The " +
+                    "statement never raises the violation, so it leaves no aborted transaction behind.",
             "ux_media_downloads_pin" to
                 "No translation, deliberately: EbeanMediaDownloadRepository.upsertPending deletes by pinId " +
                     "then inserts, so a second download for a pin replaces the first instead of colliding. The " +
@@ -41,7 +40,7 @@ class UniqueConstraintOutcomeTest {
             "ix_user_password_hashes_user_created" to
                 "UserPasswordHashRepository translates it to PasswordChangeCollisionException, so the client " +
                     "sees 409 PASSWORD_CHANGE_COLLISION.",
-            "ix_boards_author_name_nocase" to
+            "ux_boards_author_name" to
                 "BoardRepository translates it to BoardNameAlreadyTakenException at saveBoard, the one write " +
                     "that can collide; BoardCreator and BoardUpdater rethrow BoardNameAlreadyExistsError, so the " +
                     "client sees 409 BOARD_NAME_ALREADY_EXISTS on creation and on rename. Restoring is not a third " +
@@ -52,14 +51,14 @@ class UniqueConstraintOutcomeTest {
                 "UserDataImportRepository translates it to ImportAlreadyInProgressException and " +
                     "UserDataImportCreator rethrows ImportAlreadyInProgressError, so the client sees 409 " +
                     "IMPORT_ALREADY_IN_PROGRESS. The index is the only authority: no read asks the question first.",
-            "ix_tags_author_name_nocase" to
+            "ux_tags_author_name" to
                 "No translation, deliberately: TagCreator reads through the same fold before writing and " +
                     "holds that pair in one transaction, which ADR 0009 measured is what serialises a pair on " +
                     "the single connection. Every write path that can create a tag goes through it, the API " +
                     "ones through findOrCreate and the user data import through resolve, which differ only in " +
                     "the createdAt they stamp; so the violation is unreachable and a concurrent tagging " +
                     "converges on one row rather than a 500.",
-            "ix_persons_author_name_nocase_urls" to
+            "ux_persons_author_name_urls" to
                 "No translation, deliberately, for the tag's reason: PersonCreator.findOrCreate reads through " +
                     "the same fold and the same canonical addresses before writing, holding the pair in one " +
                     "transaction, so the violation is unreachable and a concurrent creation converges on one row.",
