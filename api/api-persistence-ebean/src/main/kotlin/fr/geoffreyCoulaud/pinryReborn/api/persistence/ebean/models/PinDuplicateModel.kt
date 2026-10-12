@@ -32,7 +32,8 @@ class PinDuplicateModel(
 ) : BaseModel(id) {
     // Not optional, so a read joins them inner.
     @ManyToOne(optional = false)
-    @DbForeignKey(onDelete = ConstraintMode.CASCADE)
+    // No index of Ebean's: ux_pin_duplicates_pins leads with first_pin_id.
+    @DbForeignKey(onDelete = ConstraintMode.CASCADE, noIndex = true)
     @JoinColumn(name = "first_pin_id", insertable = false, updatable = false)
     lateinit var firstPin: PinModel
 

@@ -16,21 +16,18 @@ class TagRepository(persistor: Persistor) : TagRepositoryInterface {
 
     override fun saveTag(tag: Tag): Tag = sqlRepository.saveAndReturn(tag.toModel()).toDomain()
 
-    // The comparison goes through the column's own collation rather than Ebean's `ieq`, which
-    // renders lower(column) = ? with the bind lowercased in Java: that fold is Unicode aware while
-    // `collate nocase` is ASCII only, so the read and ix_tags_author_name_nocase would disagree in
-    // one direction and find-or-create would depend on which case was stored first.
+    // A plain equality, the column's collation folding as ix_tags_author_name_nocase does: a fold of
+    // its own would let find-or-create depend on which case was stored first.
     override fun findUserTagByName(
         user: User,
         name: String,
-    ): Tag? = QTagModel().author.id.equalTo(user.id).raw("name collate nocase = ?", name).findOne()?.toDomain()
+    ): Tag? = QTagModel().author.id.equalTo(user.id).name.eq(name).findOne()?.toDomain()
 
     override fun findAllTagsForUser(user: User): List<Tag> =
         QTagModel().author.id.equalTo(user.id).findList().map { it.toDomain() }
 
-    // `contains` and `startsWith` rather than their case-insensitive twins: a bare LIKE folds A to Z
-    // as ix_tags_author_name_nocase does, where `icontains` lowercases the bind in Java and would
-    // disagree with the index on a name outside ASCII, as findUserTagByName's comment records.
+    // `contains` and `startsWith` rather than their case-insensitive twins: LIKE folds under the
+    // column's collation as ix_tags_author_name_nocase does, and ILIKE refuses that collation.
     override fun findTagsForUserMatching(
         user: User,
         query: String,

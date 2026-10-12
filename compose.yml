@@ -6,14 +6,38 @@
 name: pinry-reborn
 
 services:
+  # One API process is assumed and nothing enforces it: the guarantees of ADR 0059, decision 2, need it.
   api:
     build: ./api
     environment:
       MEDIA_DATA_DIR: /data/media
       EXPORTS_DATA_DIR: /data/exports
       IMPORTS_DATA_DIR: /data/imports
+      DB_URL: jdbc:postgresql://postgres:5432/pinry
+      DB_USERNAME: pinry
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD, the database's password}
     volumes:
       - data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18.6@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    environment:
+      POSTGRES_DB: pinry
+      POSTGRES_USER: pinry
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD, the database's password}
+      # No index depends on the C library's collation tables (ADR 0059, decision 6).
+      POSTGRES_INITDB_ARGS: --locale-provider=builtin --locale=C.UTF-8
+    volumes:
+      # The image's volume from 18 on, which holds a directory per major.
+      - database:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "--username=pinry", "--dbname=pinry"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
 
   webapp:
     build:
@@ -36,3 +60,4 @@ services:
 
 volumes:
   data:
+  database:

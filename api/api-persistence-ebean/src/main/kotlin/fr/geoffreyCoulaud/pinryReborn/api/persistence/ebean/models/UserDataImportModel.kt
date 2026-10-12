@@ -25,7 +25,8 @@ import java.util.UUID
 @Index(name = "ix_user_data_imports_user_state", columnNames = ["user_id", "state"])
 class UserDataImportModel(
     id: UUID,
-    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var user: UserModel,
+    // No index of Ebean's: ix_user_data_imports_user_state leads with user_id.
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE, noIndex = true) var user: UserModel,
     var state: String,
     var requestedAt: Instant,
     var lastActivityAt: Instant,

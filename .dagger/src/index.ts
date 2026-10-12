@@ -120,6 +120,27 @@ const COMPOSE = "compose.yml"
 const PROXY_IMAGE_LINE = /^\s+proxy:\s*\n\s+image:\s*(\S+)\s*$/m
 const PROXY_PORT = 6258
 
+/** The database's image, read from `compose.yml`, and the initialisation `compose.yml` gives it (ADR 0059, decision 6). */
+const POSTGRES_IMAGE_LINE = /^\s+postgres:\s*\n\s+image:\s*(\S+)\s*$/m
+const POSTGRES_INITDB_ARGS = "--locale-provider=builtin --locale=C.UTF-8"
+const POSTGRES_PORT = 5432
+
+/** The API's database in the smoke tests, named and reached as `compose.yml` names and reaches it. */
+const SMOKE_DATABASE = "pinry"
+const SMOKE_DATABASE_PASSWORD = "smoke"
+
+/**
+ * One database per test suite, each a service of its own, at the host its test properties read from the environment.
+ * ebean-test then reaches it instead of starting a container (ADR 0059, decision 3).
+ */
+const TEST_DATABASES = [
+  { name: "pinry_persistence", hostVariable: "TEST_POSTGRES_PERSISTENCE_HOST" },
+  { name: "pinry_application", hostVariable: "TEST_POSTGRES_APPLICATION_HOST" },
+]
+
+/** The password ebean-test connects with when the test properties name none. */
+const TEST_DATABASE_PASSWORD = "test"
+
 /** The routing, and where the nginx image reads it from. Both as `compose.yml` mounts them. */
 const PROXY_CONF = "proxy.conf"
 const PROXY_CONF_PATH = "/etc/nginx/conf.d/default.conf"
@@ -207,7 +228,7 @@ export class PinryReborn {
   async gate(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
   ): Promise<string> {
-    return this.gateReport(source, this.gateBuild(source))
+    return this.gateReport(source, await this.gateBuild(source))
   }
 
   /**
@@ -219,17 +240,17 @@ export class PinryReborn {
   async ci(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
   ): Promise<string> {
-    const built = this.gateBuild(source)
+    const built = await this.gateBuild(source)
     const gate = await this.gateReport(source, built)
     // Sequential: a gate that fails has to stop the run before any image is built.
     const context = this.imageContext(source, built.directory(`/src/api/${FAST_JAR}`))
     const image = await this.imageReport(context, [])
     const tampered = await this.tamperedRequirementsReport(context)
-    const smoke = await this.smokeReport(context, "api", HTTP_PORT, POLL)
+    const smoke = await this.smokeReport(await this.apiRuntime(source, context), "api", HTTP_PORT, POLL)
     const extractor = await this.extractorReport(context)
     const webapp = this.webappContext(source)
     const webappImage = await this.imageReport(webapp, [])
-    const webappSmoke = await this.smokeReport(webapp, "webapp", WEBAPP_PORT, WEBAPP_POLL)
+    const webappSmoke = await this.smokeReport(await this.runtime(webapp), "webapp", WEBAPP_PORT, WEBAPP_POLL)
     // The context the API's own smoke built, so the topology costs one probe and no second build.
     const compose = await this.composeReport(source, context)
     return [gate, image, tampered, smoke, extractor, webappImage, webappSmoke, compose].join("\n")
@@ -256,10 +277,10 @@ export class PinryReborn {
    * The Gradle gate alone, in a container pinning the JDK 25 toolchain and libvips.
    */
   @func()
-  apiGate(
+  async apiGate(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
-  ): Container {
-    return this.gradleRun(source, "gate")
+  ): Promise<Container> {
+    return this.gradleTestRun(source, "gate")
   }
 
   /**
@@ -341,10 +362,10 @@ export class PinryReborn {
    * second build.
    */
   @func()
-  quarkusApp(
+  async quarkusApp(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
-  ): Directory {
-    return this.gateBuild(source).directory(`/src/api/${FAST_JAR}`)
+  ): Promise<Directory> {
+    return (await this.gateBuild(source)).directory(`/src/api/${FAST_JAR}`)
   }
 
   /**
@@ -376,7 +397,7 @@ export class PinryReborn {
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
   ): Promise<string> {
     const context = this.imageContext(source, this.fastJar(source))
-    const healthy = await this.smokeReport(context, "api", HTTP_PORT, POLL)
+    const healthy = await this.smokeReport(await this.apiRuntime(source, context), "api", HTTP_PORT, POLL)
     const extractor = await this.extractorReport(context)
     return [healthy, extractor].join("\n")
   }
@@ -395,7 +416,7 @@ export class PinryReborn {
   async webappSmoke(
     @argument({ defaultPath: "/", ignore: IGNORE }) source: Directory,
   ): Promise<string> {
-    return this.smokeReport(this.webappContext(source), "webapp", WEBAPP_PORT, WEBAPP_POLL)
+    return this.smokeReport(await this.runtime(this.webappContext(source)), "webapp", WEBAPP_PORT, WEBAPP_POLL)
   }
 
   /**
@@ -410,10 +431,10 @@ export class PinryReborn {
   }
 
   /** The gate's own Gradle invocation, and the only one continuous integration ever runs. */
-  private gateBuild(source: Directory): Container {
+  private async gateBuild(source: Directory): Promise<Container> {
     // One Gradle invocation for both parts. Two would serialize on the shared cache volume and
     // the second would recompile what the first had just compiled.
-    return this.gradleRun(source, "gate", QUARKUS_BUILD)
+    return this.gradleTestRun(source, "gate", QUARKUS_BUILD)
   }
 
   /** The gate's five reports, read off a build the caller may also take artefacts from. */
@@ -485,29 +506,53 @@ export class PinryReborn {
 
   /** The image started and probed by itself. */
   private async smokeReport(
-    context: Directory,
+    runtime: Container,
     name: string,
     port: number,
     poll: string,
   ): Promise<string> {
-    // The engine's own platform: an emulated container would measure the emulator. Named rather
-    // than defaulted, so this is the variant `image` built and not a second build of it.
-    const platform = await dag.defaultPlatform()
-    const runtime = context.dockerBuild({ platform })
     // Each image is its own prober: the API's carries curl for its HEALTHCHECK, nginx's the wget
     // busybox gives it.
     return this.probeReport(runtime, name, this.served(runtime, port), poll)
   }
 
+  /** The image built for the engine's own platform: an emulated container would measure the emulator. */
+  private async runtime(context: Directory): Promise<Container> {
+    // Named rather than defaulted, so this is the variant `image` built and not a second build of it.
+    return context.dockerBuild({ platform: await dag.defaultPlatform() })
+  }
+
+  /** The API's image, bound to its database as `compose.yml` binds it. */
+  private async apiRuntime(source: Directory, context: Directory): Promise<Container> {
+    const database = await this.database(source, SMOKE_DATABASE, SMOKE_DATABASE_PASSWORD)
+    return (await this.runtime(context))
+      .withServiceBinding("postgres", database)
+      .withEnvVariable("DB_URL", `jdbc:postgresql://postgres:${POSTGRES_PORT}/${SMOKE_DATABASE}`)
+      .withEnvVariable("DB_USERNAME", SMOKE_DATABASE)
+      .withEnvVariable("DB_PASSWORD", SMOKE_DATABASE_PASSWORD)
+  }
+
+  /** A database [name] owns, on the image `compose.yml` names, initialised as it initialises it. */
+  private async database(source: Directory, name: string, password: string): Promise<Service> {
+    return dag
+      .container()
+      .from(await this.composeImage(source, POSTGRES_IMAGE_LINE))
+      .withEnvVariable("POSTGRES_DB", name)
+      .withEnvVariable("POSTGRES_USER", name)
+      .withEnvVariable("POSTGRES_PASSWORD", password)
+      .withEnvVariable("POSTGRES_INITDB_ARGS", POSTGRES_INITDB_ARGS)
+      .withExposedPort(POSTGRES_PORT)
+      .asService({ useEntrypoint: true })
+  }
+
   /** The whole topology started behind the frontal proxy, and probed through it. */
   private async composeReport(source: Directory, apiContext: Directory): Promise<string> {
-    const platform = await dag.defaultPlatform()
-    const api = apiContext.dockerBuild({ platform })
-    const webapp = this.webappContext(source).dockerBuild({ platform })
+    const api = await this.apiRuntime(source, apiContext)
+    const webapp = await this.runtime(this.webappContext(source))
     // The two names are the ones `proxy.conf` passes to, and nginx resolves them once, at startup.
     const proxy = dag
       .container()
-      .from(await this.proxyImage(source))
+      .from(await this.composeImage(source, PROXY_IMAGE_LINE))
       .withFile(PROXY_CONF_PATH, source.file(PROXY_CONF))
       .withServiceBinding("api", this.served(api, HTTP_PORT))
       .withServiceBinding("webapp", this.served(webapp, WEBAPP_PORT))
@@ -699,7 +744,25 @@ export class PinryReborn {
 
   /** The build, asked for one set of tasks. Every Gradle call in this module goes through here. */
   private gradleRun(source: Directory, ...tasks: string[]): Container {
-    return this.gradle(source).withExec(["./gradlew", ...tasks, "--no-daemon", MAX_WORKERS])
+    return this.gradleExec(this.gradle(source), tasks)
+  }
+
+  /** The build with a database per test suite bound, for the tasks that run the suites. */
+  private async gradleTestRun(source: Directory, ...tasks: string[]): Promise<Container> {
+    let gradle = this.gradle(source).withEnvVariable("TEST_POSTGRES_USE_DOCKER", "false")
+    for (const { name, hostVariable } of TEST_DATABASES) {
+      // A host name admits no underscore.
+      const host = name.replaceAll("_", "-")
+      gradle = gradle
+        .withServiceBinding(host, await this.database(source, name, TEST_DATABASE_PASSWORD))
+        .withEnvVariable(hostVariable, host)
+    }
+    return this.gradleExec(gradle, tasks)
+  }
+
+  /** The one place the wrapper is called. */
+  private gradleExec(gradle: Container, tasks: string[]): Container {
+    return gradle.withExec(["./gradlew", ...tasks, "--no-daemon", MAX_WORKERS])
   }
 
   /** The Gradle environment, `GRADLE_DOCKERFILE` says what it holds. */
@@ -740,11 +803,11 @@ export class PinryReborn {
     return context.withFile("Dockerfile", source.file(dockerfile)).dockerBuild()
   }
 
-  /** The proxy image `compose.yml` names, so the gate runs what ships. */
-  private async proxyImage(source: Directory): Promise<string> {
-    const image = (await source.file(COMPOSE).contents()).match(PROXY_IMAGE_LINE)?.[1]
+  /** An image `compose.yml` names, so the gate runs what ships. */
+  private async composeImage(source: Directory, line: RegExp): Promise<string> {
+    const image = (await source.file(COMPOSE).contents()).match(line)?.[1]
     if (!image) {
-      throw new Error(`No image found in ${COMPOSE}: no line matches ${PROXY_IMAGE_LINE}.`)
+      throw new Error(`No image found in ${COMPOSE}: no line matches ${line}.`)
     }
     return image
   }

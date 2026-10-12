@@ -17,6 +17,7 @@ import jakarta.persistence.Table
 )
 @Index(name = "ix_pin_creators_person", columnNames = ["person_id"])
 class PinCreatorModel(
-    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var pin: PinModel,
+    // No index of Ebean's: the unique pair index leads with pin_id.
+    @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE, noIndex = true) var pin: PinModel,
     @ManyToOne @DbForeignKey(onDelete = ConstraintMode.CASCADE) var person: PersonModel,
 )

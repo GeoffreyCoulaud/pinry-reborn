@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<extra-ddl xmlns="http://ebean-orm.github.io/xml/ns/extraddl">
+  <!-- Written once as dbmigration/I__case_insensitive.sql, which runs before the baseline (ADR 0059, decision 12). -->
+  <ddl-script name="case_insensitive" platforms="postgres" init="true">create collation if not exists case_insensitive (provider = icu, locale = 'und-u-ks-level2', deterministic = false);
+</ddl-script>
+</extra-ddl>

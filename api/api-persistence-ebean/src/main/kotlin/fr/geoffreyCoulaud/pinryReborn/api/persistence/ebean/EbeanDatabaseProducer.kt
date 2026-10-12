@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import io.ebean.Database
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.inject.Disposes
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
 
@@ -19,4 +20,10 @@ class EbeanDatabaseProducer {
     @Produces
     @Singleton
     fun produceDatabase(): Database = Database.builder().defaultDatabase(true).loadFromProperties().build()
+
+    /**
+     * Closes the pool when the application stops: PostgreSQL refuses to drop a database a connection is still open on,
+     * which the test suites' restarts do. The driver stays registered for the next start in the same JVM.
+     */
+    fun closeDatabase(@Disposes database: Database) = database.shutdown(true, false)
 }

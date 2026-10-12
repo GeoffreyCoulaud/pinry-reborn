@@ -50,8 +50,9 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 
 ### P2: Operational debt
 
-- **SQLite changes a referenced table's column only by a rebuild, which the keys forbid**: the move to PostgreSQL,
-  next lot, before ADR 0055's importer. See `docs/adr/0058-the-database-enforces-its-references.md`. New 2026-10-11.
+- **The API holds one database connection, and one API process is assumed rather than enforced**: a pool, its own
+  lot, which reviews each race the single connection serialises. See `docs/adr/0059-the-database-is-postgresql.md`,
+  decision 2. New 2026-10-12.
 - **The domain names concepts with bare strings, and its types carry storage formats**: the types lot, after the
   importer. `docs/adr/0056-data-shapes-are-decided-in-the-specification/inventory.md`, T1, T2 and T4 to T7, section 2,
   and units 8 to 10, 17 to 20 (but their database renames, lot `0.55.0`'s), 24's factories (`RenditionSpec`, the

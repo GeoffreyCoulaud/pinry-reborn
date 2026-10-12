@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.sqlite.SQLiteErrorCode
-import org.sqlite.SQLiteException
+import org.postgresql.util.PSQLException
+import org.postgresql.util.PSQLState
 
 class UserRepositoryTest : RepositoryTest() {
     private val repository = UserRepository(persistor)
@@ -220,14 +220,11 @@ class UserRepositoryTest : RepositoryTest() {
         assertSame(violation, thrown)
     }
 
-    /** The shape of a failure that must never be translated: same vendor errorCode 19, other resultCode. */
+    /** The shape of a failure that must never be translated: a constraint violation of another SQLState. */
     private fun notNullConstraintViolation() =
         PersistenceException(
-            "[SQLITE_CONSTRAINT_NOTNULL] A NOT NULL constraint failed",
-            SQLiteException(
-                "[SQLITE_CONSTRAINT_NOTNULL] A NOT NULL constraint failed",
-                SQLiteErrorCode.SQLITE_CONSTRAINT_NOTNULL,
-            ),
+            "null value violates not-null constraint",
+            PSQLException("null value violates not-null constraint", PSQLState.NOT_NULL_VIOLATION),
         )
 
     /** Raises [violation] on a user merge, which is the call saveUser's translation wraps. */

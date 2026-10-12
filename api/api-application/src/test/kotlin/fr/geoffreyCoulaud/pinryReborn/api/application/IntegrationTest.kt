@@ -33,22 +33,26 @@ abstract class IntegrationTest {
     data class AuthenticatedUser(val user: User, val token: String)
 
     /**
-     * Empties every table but `db_migration`, which Ebean needs.
+     * Empties every table but `db_migration`, which Ebean needs, in one statement.
      *
      * The database is not the only state a case shares: `AuthenticationAttemptLimiter` counts failed password attempts
      * in memory and nothing empties those, so a case submitting a wrong credential takes an identity of its own.
      */
     @BeforeEach
     fun truncateAllTables() {
-        tables().forEach { database.truncate(it) }
+        database.sqlUpdate("truncate table ${tables().joinToString()} cascade").execute()
     }
 
-    /** Every table of the connection's schema but `db_migration`, read through JDBC. */
+    /** Every table of the connection's schema but `db_migration`. */
     protected fun tables(): List<String> =
-        database.dataSource().connection.use { connection ->
-            val rows = connection.metaData.getTables(connection.catalog, connection.schema, "%", arrayOf("TABLE"))
-            rows.use { buildList { while (rows.next()) add(rows.getString("TABLE_NAME")) } }
-        } - MIGRATION_TABLE
+        database
+            .sqlQuery(
+                "select table_name from information_schema.tables " +
+                    "where table_schema = current_schema() and table_type = 'BASE TABLE' and table_name <> ?"
+            )
+            .setParameter(MIGRATION_TABLE)
+            .findList()
+            .map { it.getString("table_name") }
 
     /** Create a user and log it in, returning the user and a bearer token. */
     protected fun createAuthenticatedUser(

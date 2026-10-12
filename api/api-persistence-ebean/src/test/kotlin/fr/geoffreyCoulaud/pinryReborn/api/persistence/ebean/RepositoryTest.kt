@@ -50,18 +50,45 @@ abstract class RepositoryTest {
         assertTrue(namesTheConstraint, "The error does not name $constraint: $error")
     }
 
-    /** Empties every table but `db_migration`, which Ebean needs. */
-    @BeforeEach
-    fun truncateAllTables() {
-        tables().forEach { database.truncate(it) }
+    /**
+     * PostgreSQL's generic plan for [sql], sequential scans priced out so the plan shows the indexes it can use. Each
+     * `?` becomes a numbered placeholder, executed with nulls a generic plan never reads.
+     */
+    protected fun planOf(sql: String): String {
+        val numbered = sql.split('?').reduceIndexed { position, statement, rest -> "$statement\$$position$rest" }
+        val arguments = List(sql.count { character -> character == '?' }) { "null" }
+        // `set local` ends with the transaction, closed here without a commit; a prepared statement outlives it.
+        database.beginTransaction().use {
+            database.sqlUpdate("set local enable_seqscan = off").execute()
+            database.sqlUpdate("set local plan_cache_mode = force_generic_plan").execute()
+            database.sqlUpdate("prepare plan_probe as $numbered").execute()
+            try {
+                return database
+                    .sqlQuery("explain execute plan_probe(${arguments.joinToString()})")
+                    .findList()
+                    .joinToString("\n") { row -> "${row.values.single()}" }
+            } finally {
+                database.sqlUpdate("deallocate plan_probe").execute()
+            }
+        }
     }
 
-    /** Every table of the connection's schema but `db_migration`, read through JDBC. */
+    /** Empties every table but `db_migration`, which Ebean needs, in one statement. */
+    @BeforeEach
+    fun truncateAllTables() {
+        database.sqlUpdate("truncate table ${tables().joinToString()} cascade").execute()
+    }
+
+    /** Every table of the connection's schema but `db_migration`. */
     private fun tables(): List<String> =
-        database.dataSource().connection.use { connection ->
-            val rows = connection.metaData.getTables(connection.catalog, connection.schema, "%", arrayOf("TABLE"))
-            rows.use { buildList { while (rows.next()) add(rows.getString("TABLE_NAME")) } }
-        } - MIGRATION_TABLE
+        database
+            .sqlQuery(
+                "select table_name from information_schema.tables " +
+                    "where table_schema = current_schema() and table_type = 'BASE TABLE' and table_name <> ?"
+            )
+            .setParameter(MIGRATION_TABLE)
+            .findList()
+            .map { it.getString("table_name") }
 
     private companion object {
         const val MIGRATION_TABLE = "db_migration"

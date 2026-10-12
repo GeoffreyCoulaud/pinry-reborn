@@ -15,13 +15,13 @@ dependencies {
 
     // Ebean ORM
     implementation(libs.ebean)
-    implementation(libs.ebean.sqlite)
+    implementation(libs.ebean.postgres)
     implementation(libs.ebean.ddl.generator)
     implementation(libs.ebean.migration)
     kapt(libs.ebean.querybean.generator)
 
-    // SQLite JDBC driver
-    implementation(libs.sqlite.jdbc)
+    // PostgreSQL JDBC driver
+    implementation(libs.postgresql)
 
     // CDI API for annotations - implementation provided by Quarkus at runtime
     compileOnly(libs.jakarta.cdi.api)

@@ -1,17 +1,15 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import jakarta.persistence.PersistenceException
-import org.sqlite.SQLiteErrorCode
-import org.sqlite.SQLiteException
+import java.sql.SQLException
 
 /**
  * Tells a unique-index violation apart from every other persistence failure, for the repositories that answer one with
  * a domain error.
  *
- * The cause structure (`PersistenceException` wrapping `org.sqlite.SQLiteException`) was observed empirically against
- * Ebean-on-SQLite and is pinned by the duplicate-insert repository tests. The unique and the NOT NULL violation were
- * both observed carrying vendor `errorCode` 19, so the typed `resultCode` is the discriminator between them: a NOT NULL
- * violation or a dropped connection must stay a genuine 500, not become the caller's 409.
+ * Ebean wraps the driver's `SQLException` in a `PersistenceException`, pinned by the duplicate-insert repository tests.
+ * The SQLState is the discriminator: a NOT NULL violation or a dropped connection must stay a genuine 500, not become
+ * the caller's 409.
  */
 internal object SqliteConstraintViolations {
     /**
@@ -26,9 +24,10 @@ internal object SqliteConstraintViolations {
         throw error
     }
 
-    /** True when [error] is SQLite refusing a row that already exists under a unique index. */
-    private fun isUniqueConstraint(error: PersistenceException): Boolean {
-        val sqliteException = error.cause as? SQLiteException ?: return false
-        return sqliteException.resultCode == SQLiteErrorCode.SQLITE_CONSTRAINT_UNIQUE
-    }
+    /** True when [error] is PostgreSQL refusing a row that already exists under a unique index. */
+    private fun isUniqueConstraint(error: PersistenceException): Boolean =
+        (error.cause as? SQLException)?.sqlState == UNIQUE_VIOLATION
+
+    /** PostgreSQL's `unique_violation` (postgresql.org/docs/18/errcodes-appendix.html). */
+    private const val UNIQUE_VIOLATION = "23505"
 }
