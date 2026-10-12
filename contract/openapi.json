@@ -644,7 +644,8 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "pattern" : "\\S"
+              "pattern" : "\\S",
+              "maxLength" : 200
             }
           },
           "boardIds" : {
@@ -4462,7 +4463,7 @@
   },
   "info" : {
     "title" : "Pinry Reborn API",
-    "version" : "26.1.0"
+    "version" : "27.0.0"
   },
   "servers" : [ {
     "url" : "http://localhost:8080",

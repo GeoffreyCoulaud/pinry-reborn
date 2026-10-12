@@ -212,6 +212,33 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun `Given a tag name of 200 three-byte characters, Then the write accepts it`() {
+        // Given: the longest name a UTF-16 length of 200 holds in UTF-8
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth)
+        val longest = "あ".repeat(200)
+
+        // When
+        update(auth, pin, tags = listOf(longest)).statusCode(200)
+
+        // Then
+        readPin(auth, pin).body("tags.name", contains(longest))
+    }
+
+    @Test
+    fun `Given a tag name of 201 characters, Then the write returns 400 and keeps the pin's tags`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth, tags = listOf("old"))
+
+        // When
+        update(auth, pin, tags = listOf("t".repeat(201))).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
+
+        // Then
+        readPin(auth, pin).body("tags.name", contains("old"))
+    }
+
+    @Test
     fun `Given a null among the board ids, Then the write returns 400`() {
         // Given
         val auth = createAuthenticatedUser()
