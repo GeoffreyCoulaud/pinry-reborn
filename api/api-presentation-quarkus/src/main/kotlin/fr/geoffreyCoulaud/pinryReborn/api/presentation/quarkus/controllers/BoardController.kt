@@ -10,6 +10,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.Board
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PinListOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.ProblemDetail
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BoardMapper.toBoardName
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.BoardMapper.toDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
@@ -93,7 +94,7 @@ class BoardController(
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun createBoard(@Valid @NotNull dto: BoardCreationInputDto): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
-        val board = boardCreator.create(user, dto.name, dto.description, dto.pinIds)
+        val board = boardCreator.create(user, dto.name.toBoardName(), dto.description, dto.pinIds)
         return ResponseBuilder.created<BoardOutputDto>(URI("/api/v1/boards/${board.id}"))
             .entity(board.toDto(boardGetter.summarizeActiveBoardForUser(board.id, user)))
             .build()
@@ -175,7 +176,13 @@ class BoardController(
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun updateBoard(boardId: UUID, @Valid @NotNull dto: BoardInputDto): RestResponse<BoardOutputDto> {
         val user = securityIdentity.getUser()
-        val board = boardUpdater.update(boardId = boardId, name = dto.name, description = dto.description, user = user)
+        val board =
+            boardUpdater.update(
+                boardId = boardId,
+                name = dto.name.toBoardName(),
+                description = dto.description,
+                user = user,
+            )
         return RestResponse.ok(board.toDto(boardGetter.summarizeActiveBoardForUser(boardId, user)))
     }
 

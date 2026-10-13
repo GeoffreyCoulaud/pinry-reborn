@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
@@ -67,7 +68,7 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
             Board(
                 id = randomUUID(),
                 author = user,
-                name = name,
+                name = boardName(name),
                 description = "",
                 createdAt = storableNow(),
                 updatedAt = storableNow(),

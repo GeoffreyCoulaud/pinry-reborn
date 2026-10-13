@@ -429,9 +429,9 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         every { boardRepository.saveBoard(any()) } answers
             {
                 val board = firstArg<Board>()
-                if (board.name == "Taken") throw BoardNameAlreadyTakenException(IllegalStateException("ix_boards"))
+                if (board.name.text == "Taken") throw BoardNameAlreadyTakenException(IllegalStateException("ix_boards"))
                 savedBoards += board
-                existingBoards[board.name] = board
+                existingBoards[board.name.text] = board
                 board
             }
 

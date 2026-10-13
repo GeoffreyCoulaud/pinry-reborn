@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
@@ -38,7 +39,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given an owned board with a pin, Then soft delete hides it from the board list but keeps the pin active`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val pin =
             pinCreator.createPin(
                 author = auth.user,
@@ -88,7 +89,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given an active board, Then soft delete moves its updatedAt to the deletion instant`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val updatedAtBeforeDeletion = reloadBoard(board.id).updatedAt
         waitForTheClockToTick()
 
@@ -110,7 +111,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given a recycled board, Then restoring it moves its updatedAt again`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}")
         val updatedAtWhileRecycled = reloadBoard(board.id).updatedAt
         waitForTheClockToTick()
@@ -134,7 +135,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given a soft-deleted board, Then restoring it brings back its membership`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val pin =
             pinCreator.createPin(
                 author = auth.user,
@@ -181,7 +182,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given a recycled board, Then it holds its name until the bin is emptied`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "voyage", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("voyage"), description = "")
         given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}")
 
         // When / Then - the recycled homonym blocks the new board, and the detail says so
@@ -214,7 +215,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given a soft-deleted board, Then permanent delete drops it from its pins' boards but the pins survive`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val pin =
             pinCreator.createPin(
                 author = auth.user,
@@ -255,8 +256,8 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given multiple soft-deleted boards, Then emptying the recycle bin removes them all`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board1 = boardCreator.create(author = auth.user, name = "Board 1", description = "")
-        val board2 = boardCreator.create(author = auth.user, name = "Board 2", description = "")
+        val board1 = boardCreator.create(author = auth.user, name = boardName("Board 1"), description = "")
+        val board2 = boardCreator.create(author = auth.user, name = boardName("Board 2"), description = "")
         given().authenticatedAs(auth).delete("/api/v1/boards/${board1.id}")
         given().authenticatedAs(auth).delete("/api/v1/boards/${board2.id}")
 
@@ -279,7 +280,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given an already soft-deleted board, Then soft-deleting it again returns 409`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}").then().statusCode(204)
 
         // When / Then - a second soft-delete conflicts instead of 404-ing
@@ -291,7 +292,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         // Given
         val owner = createAuthenticatedUser()
         val attacker = createAuthenticatedUser()
-        val board = boardCreator.create(author = owner.user, name = "Private", description = "")
+        val board = boardCreator.create(author = owner.user, name = boardName("Private"), description = "")
         given().authenticatedAs(owner).delete("/api/v1/boards/${board.id}")
 
         // When / Then - ownership is checked before state, so a non-owner gets 403 not 404
@@ -304,7 +305,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given a pin in a board, Then permanently deleting the pin removes it from the board's pin listing`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val pin =
             pinCreator.createPin(
                 author = auth.user,
@@ -333,7 +334,7 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given a pin in a soft-deleted board, Then re-saving the pin and restoring the board keeps the membership`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val pin =
             pinCreator.createPin(
                 author = auth.user,
@@ -365,8 +366,8 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given a pin in two boards, Then soft-deleting one board drops it from the pin's boards but keeps the other`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board1 = boardCreator.create(author = auth.user, name = "Board 1", description = "")
-        val board2 = boardCreator.create(author = auth.user, name = "Board 2", description = "")
+        val board1 = boardCreator.create(author = auth.user, name = boardName("Board 1"), description = "")
+        val board2 = boardCreator.create(author = auth.user, name = boardName("Board 2"), description = "")
         val pin =
             pinCreator.createPin(
                 author = auth.user,
@@ -406,8 +407,8 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
     fun `Given two recycled boards, Then the bulk restore restores both`() {
         // Given
         val auth = createAuthenticatedUser()
-        val first = boardCreator.create(author = auth.user, name = "First", description = "")
-        val second = boardCreator.create(author = auth.user, name = "Second", description = "")
+        val first = boardCreator.create(author = auth.user, name = boardName("First"), description = "")
+        val second = boardCreator.create(author = auth.user, name = boardName("Second"), description = "")
         given().authenticatedAs(auth).delete("/api/v1/boards/${first.id}")
         given().authenticatedAs(auth).delete("/api/v1/boards/${second.id}")
 
@@ -457,8 +458,8 @@ class BoardRecycleBinIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val stranger = createAuthenticatedUser()
-        val own = boardCreator.create(author = auth.user, name = "Mine", description = "")
-        val theirs = boardCreator.create(author = stranger.user, name = "Theirs", description = "")
+        val own = boardCreator.create(author = auth.user, name = boardName("Mine"), description = "")
+        val theirs = boardCreator.create(author = stranger.user, name = boardName("Theirs"), description = "")
         given().authenticatedAs(auth).delete("/api/v1/boards/${own.id}")
         given().authenticatedAs(stranger).delete("/api/v1/boards/${theirs.id}")
 

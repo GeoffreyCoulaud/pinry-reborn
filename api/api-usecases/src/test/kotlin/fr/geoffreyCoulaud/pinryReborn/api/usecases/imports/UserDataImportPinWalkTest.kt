@@ -64,7 +64,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         assertEquals(pastInstant, created.createdAt)
         assertEquals(now, created.updatedAt)
         assertEquals(listOf("holidays"), created.tags.map { it.name.text })
-        assertEquals(listOf("Summer"), created.boards.map { it.name })
+        assertEquals(listOf("Summer"), created.boards.map { it.name.text })
         assertEquals(pastInstant, savedPins[1].softDeletedAt)
         assertEquals(null to "https://x.test/b.png", savedPins[1].let { it.sourceContextUrl to "${it.sourceMediaUrl}" })
         assertNull(created.softDeletedAt)
@@ -96,6 +96,23 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
 
         // Then
         assertEquals(listOf("holidays"), savedPins.single().tags.map { it.name.text })
+        assertTrue(savedIssues.isEmpty(), "$savedIssues")
+    }
+
+    @Test
+    fun `Given a pin line's board of 201 characters, Then the pin is created without it, unreported`() {
+        // Given
+        anExistingBoard("Summer")
+        val line = aPin(boards = listOf("Summer", "b".repeat(201)))
+        stubWalk(FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, line)), media = everyMedium))
+        stubBoardLookup()
+        stubMediaPath()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(listOf("Summer"), savedPins.single().boards.map { it.name.text })
         assertTrue(savedIssues.isEmpty(), "$savedIssues")
     }
 

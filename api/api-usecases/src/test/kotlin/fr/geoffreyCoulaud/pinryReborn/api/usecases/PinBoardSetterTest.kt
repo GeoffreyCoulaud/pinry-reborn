@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
@@ -205,7 +206,7 @@ class PinBoardSetterTest {
         Board(
             id = randomUUID(),
             author = author,
-            name = name,
+            name = boardName(name),
             description = "",
             createdAt = TestTime.now,
             updatedAt = TestTime.now,

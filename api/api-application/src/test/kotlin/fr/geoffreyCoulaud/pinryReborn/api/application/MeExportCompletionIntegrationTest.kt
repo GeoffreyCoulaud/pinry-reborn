@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
@@ -227,8 +228,9 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
             .statusCode(201)
         given().authenticatedAs(auth).`when`().delete("/api/v1/pins/${recycledPin.id}").then().statusCode(204)
 
-        val activeBoard = boardCreator.create(author = auth.user, name = "Active board", description = "")
-        val recycledBoard = boardCreator.create(author = auth.user, name = "Recycled board", description = "")
+        val activeBoard = boardCreator.create(author = auth.user, name = boardName("Active board"), description = "")
+        val recycledBoard =
+            boardCreator.create(author = auth.user, name = boardName("Recycled board"), description = "")
         replacePin(auth, taggedPin, boardIds = listOf(recycledBoard.id)).statusCode(200)
         given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${recycledBoard.id}").then().statusCode(204)
 
@@ -236,8 +238,8 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
             taggedPinUrl = taggedPin.sourceContextUrl.toString(),
             mediaPinUrl = mediaPin.sourceContextUrl.toString(),
             recycledPinUrl = recycledPin.sourceContextUrl.toString(),
-            activeBoardName = activeBoard.name,
-            recycledBoardName = recycledBoard.name,
+            activeBoardName = activeBoard.name.text,
+            recycledBoardName = recycledBoard.name.text,
         )
     }
 

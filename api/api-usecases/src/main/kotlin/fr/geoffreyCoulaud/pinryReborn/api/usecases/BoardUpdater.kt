@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.BoardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -18,7 +19,7 @@ class BoardUpdater(
     private val clock: Clock,
     private val transactionRunner: TransactionRunner,
 ) {
-    fun update(boardId: UUID, name: String, description: String, user: User): Board {
+    fun update(boardId: UUID, name: BoardName, description: String, user: User): Board {
         boardGetter.getActiveBoardForUser(boardId = boardId, reader = user)
         return try {
             // The fence re-reads the board, so a recycling landed since the read is kept, not restored.

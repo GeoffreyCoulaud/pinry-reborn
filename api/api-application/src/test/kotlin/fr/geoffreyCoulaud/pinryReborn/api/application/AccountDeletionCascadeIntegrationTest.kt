@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
@@ -102,7 +103,7 @@ class AccountDeletionCascadeIntegrationTest : IntegrationTest() {
 
     /** The rows a user's pin carries, its download's task returned. */
     private fun seedPinRows(user: User): UUID {
-        val board = boards.saveBoard(Board(randomUUID(), user, "board", "", AT, AT))
+        val board = boards.saveBoard(Board(randomUUID(), user, boardName("board"), "", AT, AT))
         collections.saveRemoteCollection(
             RemoteCollection(randomUUID(), user, url("https://example.com/c"), "c", board, AT)
         )

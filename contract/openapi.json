@@ -8,8 +8,8 @@
         "properties" : {
           "name" : {
             "type" : "string",
-            "pattern" : "\\S",
-            "maxLength" : 200
+            "maxLength" : 200,
+            "pattern" : "\\S"
           },
           "description" : {
             "type" : "string",
@@ -48,8 +48,8 @@
         "properties" : {
           "name" : {
             "type" : "string",
-            "pattern" : "\\S",
-            "maxLength" : 200
+            "maxLength" : 200,
+            "pattern" : "\\S"
           },
           "description" : {
             "type" : "string",

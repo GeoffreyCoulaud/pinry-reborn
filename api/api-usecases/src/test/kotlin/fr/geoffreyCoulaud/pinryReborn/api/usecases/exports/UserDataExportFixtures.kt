@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
@@ -244,7 +245,7 @@ internal abstract class UserDataExportFixtures : BaseTest() {
         Board(
             id = id,
             author = user,
-            name = name,
+            name = boardName(name),
             description = "d",
             softDeletedAt = softDeletedAt,
             createdAt = now,

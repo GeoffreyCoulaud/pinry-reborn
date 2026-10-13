@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.BoardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
@@ -366,49 +367,55 @@ class UserDataImportRunner(
         tally: MetadataTally,
     ) {
         val board = line.value
-        val fault = board?.let { boardFault(it) }
+        val name = board?.let { BoardName.parse(it.name) }
+        val descriptionFault = board?.let { ImportFieldBounds.descriptionFault(it.description) }
         when {
             board == null -> record(tally, UserDataImportIssueKind.LINE_MALFORMED, line.line, null, line.failure)
-            fault != null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, board.name, fault)
-            else -> importNamedBoard(user, board, clamp, line.line, tally)
+            name == null ->
+                record(
+                    tally,
+                    UserDataImportIssueKind.FIELD_INVALID,
+                    line.line,
+                    board.name,
+                    ImportFieldBounds.NAME_FAULT,
+                )
+            descriptionFault != null ->
+                record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, board.name, descriptionFault)
+            else -> {
+                val existing = boardRepository.findBoardForUserByName(user, name)
+                if (existing == null) createBoard(user, name, board, clamp, tally)
+                else keepBoard(existing, name, line.line, tally)
+            }
         }
     }
-
-    private fun boardFault(board: ImportedBoard): String? =
-        ImportFieldBounds.nameFault(board.name) ?: ImportFieldBounds.descriptionFault(board.description)
 
     /**
      * A board that already exists is left untouched whatever its state (spec section 8): only a board this import
      * creates carries the archive's description, timestamps and recycled state.
      */
-    private fun importNamedBoard(
-        user: User,
-        board: ImportedBoard,
-        clamp: ImportInstantClamp,
-        line: Int,
-        tally: MetadataTally,
-    ) {
-        val existing = boardRepository.findBoardForUserByName(user, board.name)
-        if (existing == null) {
-            createBoard(user, board, clamp, tally)
-            return
-        }
+    private fun keepBoard(existing: Board, name: BoardName, line: Int, tally: MetadataTally) {
         tally.skipped++
         // Nothing is restored and nothing is renamed, so the holder of the name is named instead. One
         // this walk recycled itself is excluded: the archive named it twice, which is not a conflict.
         if (existing.softDeletedAt != null && existing.id !in tally.recycled) {
-            record(tally, UserDataImportIssueKind.NAME_TAKEN_BY_RECYCLED, line, board.name, null)
+            record(tally, UserDataImportIssueKind.NAME_TAKEN_BY_RECYCLED, line, name.text, null)
         }
     }
 
-    private fun createBoard(user: User, board: ImportedBoard, clamp: ImportInstantClamp, tally: MetadataTally) {
+    private fun createBoard(
+        user: User,
+        name: BoardName,
+        board: ImportedBoard,
+        clamp: ImportInstantClamp,
+        tally: MetadataTally,
+    ) {
         val createdAt = clamp.clamp(board.createdAt)
         val created =
             boardRepository.saveBoard(
                 Board(
                     id = randomUUID(),
                     author = user,
-                    name = board.name,
+                    name = name,
                     description = board.description,
                     createdAt = createdAt,
                     updatedAt = clamp.clampUpdate(board.updatedAt, createdAt),
@@ -449,11 +456,14 @@ class UserDataImportRunner(
     ) {
         val collection = line.value
         val fault = collection?.let { collectionFault(it) }
+        val boardName = collection?.let { BoardName.parse((it.board ?: ImportedRef(it.name)).name) }
         when {
             collection == null -> record(tally, UserDataImportIssueKind.LINE_MALFORMED, line.line, null, line.failure)
             fault != null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, collection.url, fault)
+            // Reached for a named board alone: one named after the collection passed the name's fault above.
+            boardName == null ->
+                record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, collection.url, BOARD_NAME_FAULT)
             else -> {
-                val boardName = (collection.board ?: ImportedRef(collection.name)).name
                 val url = ImportedAddress.read(collection.url)
                 if (remoteCollectionLinker.link(user, url, collection.name, boardName, now)) tally.created++
             }
@@ -461,9 +471,7 @@ class UserDataImportRunner(
     }
 
     private fun collectionFault(collection: ImportedCollection): String? =
-        ImportFieldBounds.httpAddressFault(URL_FIELD, collection.url)
-            ?: ImportFieldBounds.nameFault(collection.name)
-            ?: collection.board?.let { board -> ImportFieldBounds.nameFault(board.name)?.let { "board $it" } }
+        ImportFieldBounds.httpAddressFault(URL_FIELD, collection.url) ?: ImportFieldBounds.nameFault(collection.name)
 
     /** Before the pins, which read the archive ids this walk maps to rows. */
     private fun walkPersons(
@@ -728,7 +736,7 @@ class UserDataImportRunner(
                         ),
                     ingested = ingested,
                     tagNames = pin.tags.mapNotNull { TagName.parse(it.name) },
-                    boardNames = pin.boards.map { it.name },
+                    boardNames = pin.boards.mapNotNull { BoardName.parse(it.name) },
                     credits = credits,
                     collectionUrls = pin.collections.map { ImportedAddress.read(it.url) },
                 ),
@@ -781,7 +789,7 @@ class UserDataImportRunner(
         val pin: Pin,
         val ingested: IngestedMedia,
         val tagNames: List<TagName>,
-        val boardNames: List<String>,
+        val boardNames: List<BoardName>,
         val credits: PinCredits,
         val collectionUrls: List<HttpUrl>,
     )
@@ -795,6 +803,7 @@ class UserDataImportRunner(
         const val SOURCE_CONTEXT_URL = "sourceContextUrl"
         const val SOURCE_MEDIA_URL = "sourceMediaUrl"
         const val URL_FIELD = "url"
+        const val BOARD_NAME_FAULT = "board ${ImportFieldBounds.NAME_FAULT}"
         const val COLLECTIONS_FIELD = "collections"
         const val TAGS_FIELD = "tags"
         const val BOARDS_FIELD = "boards"

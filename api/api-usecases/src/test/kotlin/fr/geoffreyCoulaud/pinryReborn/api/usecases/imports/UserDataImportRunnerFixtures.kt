@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
@@ -331,7 +332,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
         Board(
                 id = randomUUID(),
                 author = user,
-                name = name,
+                name = boardName(name),
                 description = "kept",
                 createdAt = accountCreatedAt,
                 updatedAt = accountCreatedAt,
@@ -416,6 +417,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             }
     }
 
+    // MockK hands a `BoardName` argument over unboxed, as its text.
     protected fun stubBoardLookup() {
         every { boardRepository.findBoardForUserByName(user, any()) } answers { existingBoards[secondArg<String>()] }
     }
@@ -425,7 +427,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             {
                 firstArg<Board>().also { board ->
                     savedBoards += board
-                    existingBoards[board.name] = board
+                    existingBoards[board.name.text] = board
                 }
             }
     }
@@ -539,7 +541,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
 
     protected fun savedTag(name: String) = savedTags.single { it.name.text == name }
 
-    protected fun savedBoard(name: String) = savedBoards.single { it.name == name }
+    protected fun savedBoard(name: String) = savedBoards.single { it.name.text == name }
 
     protected fun kinds() = savedIssues.map { it.kind }
 

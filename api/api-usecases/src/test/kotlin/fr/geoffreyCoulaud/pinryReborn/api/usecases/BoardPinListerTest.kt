@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
@@ -29,7 +30,7 @@ class BoardPinListerTest {
         Board(
             id = boardId,
             author = reader,
-            name = createRandomString(),
+            name = boardName(createRandomString()),
             description = createRandomString(),
             createdAt = TestTime.now,
             updatedAt = TestTime.now,
