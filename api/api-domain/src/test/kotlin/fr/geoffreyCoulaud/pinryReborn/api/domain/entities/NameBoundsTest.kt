@@ -16,6 +16,11 @@ class NameBoundsTest {
     }
 
     @Test
+    fun `Given a text of one em space, Then it is refused`() {
+        assertFalse(NameBounds.accepts(" "))
+    }
+
+    @Test
     fun `Given a text of 200 characters, Then it is accepted, and one of 201 is refused`() {
         assertTrue(NameBounds.accepts("a".repeat(200)))
         assertFalse(NameBounds.accepts("a".repeat(201)))

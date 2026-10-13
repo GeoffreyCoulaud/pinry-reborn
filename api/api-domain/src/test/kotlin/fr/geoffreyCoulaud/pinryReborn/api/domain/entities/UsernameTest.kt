@@ -19,7 +19,8 @@ class UsernameTest {
     }
 
     @Test
-    fun `Given an account name of two characters, Then it is refused`() {
+    fun `Given an account name of three characters, Then it parses, and one of two is refused`() {
+        assertNotNull(Username.parse("abc"))
         assertNull(Username.parse("ab"))
     }
 

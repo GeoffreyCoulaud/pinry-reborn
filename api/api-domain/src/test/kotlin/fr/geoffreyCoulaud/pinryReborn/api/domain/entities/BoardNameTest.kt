@@ -20,7 +20,7 @@ class BoardNameTest {
 
     @Test
     fun `Given a board name of one em space, Then it is refused`() {
-        assertNull(BoardName.parse(" "))
+        assertNull(BoardName.parse(" "))
     }
 
     @Test
