@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -41,12 +42,12 @@ class BoardUpdaterTest {
             Board(
                 id = randomUUID(),
                 author = user,
-                name = createRandomString(),
+                name = boardName(createRandomString()),
                 description = createRandomString(),
                 createdAt = TestTime.now,
                 updatedAt = TestTime.now,
             )
-        val newName = createRandomString()
+        val newName = boardName(createRandomString())
         val newDescription = createRandomString()
         every { boardGetter.getActiveBoardForUser(boardId = board.id, reader = user) } returns board
         every { boardRepository.findBoardById(board.id) } returns board
@@ -76,12 +77,12 @@ class BoardUpdaterTest {
             Board(
                 id = randomUUID(),
                 author = user,
-                name = createRandomString(),
+                name = boardName(createRandomString()),
                 description = createRandomString(),
                 createdAt = TestTime.now,
                 updatedAt = TestTime.now,
             )
-        val takenName = createRandomString()
+        val takenName = boardName(createRandomString())
         every { boardGetter.getActiveBoardForUser(boardId = board.id, reader = user) } returns board
         every { boardRepository.findBoardById(board.id) } returns board
         every { boardRepository.saveBoard(any()) } throws BoardNameAlreadyTakenException(cause = Exception("boom"))
@@ -106,7 +107,7 @@ class BoardUpdaterTest {
             Board(
                 id = randomUUID(),
                 author = user,
-                name = createRandomString(),
+                name = boardName(createRandomString()),
                 description = createRandomString(),
                 createdAt = TestTime.now,
                 updatedAt = TestTime.now,
@@ -117,7 +118,7 @@ class BoardUpdaterTest {
 
         // When, Then
         assertThrows<BoardRetrievalBoardDoesNotExistError> {
-            useCase.update(boardId = board.id, name = createRandomString(), description = "", user = user)
+            useCase.update(boardId = board.id, name = boardName(createRandomString()), description = "", user = user)
         }
         verify(exactly = 0) { boardRepository.saveBoard(any()) }
     }

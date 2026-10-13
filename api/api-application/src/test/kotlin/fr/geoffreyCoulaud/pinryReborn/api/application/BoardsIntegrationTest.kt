@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
@@ -61,7 +62,7 @@ class BoardsIntegrationTest : IntegrationTest() {
     fun `Given a name already held in another case outside ASCII, Then creating another board returns 409`() {
         // Given: the column's collation folds case in every script, so these two names are one name
         val auth = createAuthenticatedUser()
-        boardCreator.create(author = auth.user, name = "élodie", description = "")
+        boardCreator.create(author = auth.user, name = boardName("élodie"), description = "")
 
         // When / Then
         given()
@@ -79,8 +80,8 @@ class BoardsIntegrationTest : IntegrationTest() {
     fun `Given two boards, Then renaming one onto the other's name returns 409`() {
         // Given
         val auth = createAuthenticatedUser()
-        boardCreator.create(author = auth.user, name = "voyage", description = "")
-        val renamed = boardCreator.create(author = auth.user, name = "cuisine", description = "")
+        boardCreator.create(author = auth.user, name = boardName("voyage"), description = "")
+        val renamed = boardCreator.create(author = auth.user, name = boardName("cuisine"), description = "")
 
         // When / Then
         given()
@@ -99,7 +100,7 @@ class BoardsIntegrationTest : IntegrationTest() {
         // Given: the index is scoped to the author, so a name is an identity per account
         val other = createAuthenticatedUser()
         val auth = createAuthenticatedUser()
-        boardCreator.create(author = other.user, name = "voyage", description = "")
+        boardCreator.create(author = other.user, name = boardName("voyage"), description = "")
 
         // When / Then
         given()
@@ -112,13 +113,48 @@ class BoardsIntegrationTest : IntegrationTest() {
             .statusCode(201)
     }
 
+    @Test
+    fun `Given a board name of one em space, Then creating a board returns 400`() {
+        // Given: blank to Kotlin and to the contract's pattern, though not to `@NotBlank`
+        val auth = createAuthenticatedUser()
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .body("""{"name": " ", "description": ""}""")
+            .`when`()
+            .post("/api/v1/boards")
+            .then()
+            .statusCode(400)
+            .body("code", equalTo("VALIDATION_ERROR"))
+    }
+
+    @Test
+    fun `Given a board name of one em space, Then renaming a board to it returns 400`() {
+        // Given
+        val auth = createAuthenticatedUser()
+        val board = boardCreator.create(author = auth.user, name = boardName("voyage"), description = "")
+
+        // When / Then
+        given()
+            .authenticatedAs(auth)
+            .contentType(ContentType.JSON)
+            .body("""{"name": " ", "description": ""}""")
+            .`when`()
+            .put("/api/v1/boards/${board.id}")
+            .then()
+            .statusCode(400)
+            .body("code", equalTo("VALIDATION_ERROR"))
+    }
+
     // --- Get ---
 
     @Test
     fun `Given a created board, Then GET by id returns its data`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Recipes", description = "Cooking ideas")
+        val board = boardCreator.create(author = auth.user, name = boardName("Recipes"), description = "Cooking ideas")
 
         // When / Then
         given()
@@ -138,7 +174,7 @@ class BoardsIntegrationTest : IntegrationTest() {
     fun `Given a board with two linked collections, Then GET by id returns them sorted by name`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Harbours", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Harbours"), description = "")
         linkCollection(board, name = "Zeeland ports", url = "https://remote.example/zeeland")
         linkCollection(board, name = "breton ports", url = "https://remote.example/breton")
 
@@ -172,9 +208,9 @@ class BoardsIntegrationTest : IntegrationTest() {
     fun `Given boards with mixed-case names, Then listing sorts them case-insensitively, Émile beside emile`() {
         // Given: code point order, lower-cased or not, would put Émile after emma
         val auth = createAuthenticatedUser()
-        boardCreator.create(author = auth.user, name = "Émile", description = "")
-        boardCreator.create(author = auth.user, name = "emma", description = "")
-        boardCreator.create(author = auth.user, name = "emile", description = "")
+        boardCreator.create(author = auth.user, name = boardName("Émile"), description = "")
+        boardCreator.create(author = auth.user, name = boardName("emma"), description = "")
+        boardCreator.create(author = auth.user, name = boardName("emile"), description = "")
 
         // When / Then
         given()
@@ -192,7 +228,8 @@ class BoardsIntegrationTest : IntegrationTest() {
     fun `Given an existing board, Then updating its name and description is reflected on get`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Old name", description = "Old description")
+        val board =
+            boardCreator.create(author = auth.user, name = boardName("Old name"), description = "Old description")
 
         // When
         given()
@@ -224,7 +261,7 @@ class BoardsIntegrationTest : IntegrationTest() {
         // Given
         val owner = createAuthenticatedUser()
         val attacker = createAuthenticatedUser()
-        val board = boardCreator.create(author = owner.user, name = "Private", description = "")
+        val board = boardCreator.create(author = owner.user, name = boardName("Private"), description = "")
 
         // When / Then
         given().authenticatedAs(attacker).`when`().get("/api/v1/boards/${board.id}").then().statusCode(403)
@@ -244,7 +281,7 @@ class BoardsIntegrationTest : IntegrationTest() {
         // Given
         val owner = createAuthenticatedUser()
         val attacker = createAuthenticatedUser()
-        val board = boardCreator.create(author = owner.user, name = "Private", description = "")
+        val board = boardCreator.create(author = owner.user, name = boardName("Private"), description = "")
 
         // When / Then
         given()
@@ -278,7 +315,7 @@ class BoardsIntegrationTest : IntegrationTest() {
         // Given
         val owner = createAuthenticatedUser()
         val attacker = createAuthenticatedUser()
-        val board = boardCreator.create(author = owner.user, name = "Private", description = "")
+        val board = boardCreator.create(author = owner.user, name = boardName("Private"), description = "")
 
         // When / Then
         given().authenticatedAs(attacker).`when`().delete("/api/v1/boards/${board.id}").then().statusCode(403)
@@ -339,7 +376,8 @@ class BoardsIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val pin = imagedPin(auth)
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "", pinIds = listOf(pin.id))
+        val board =
+            boardCreator.create(author = auth.user, name = boardName("Trip"), description = "", pinIds = listOf(pin.id))
 
         // When / Then
         given()
@@ -356,7 +394,8 @@ class BoardsIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val pin = imagedPin(auth)
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "", pinIds = listOf(pin.id))
+        val board =
+            boardCreator.create(author = auth.user, name = boardName("Trip"), description = "", pinIds = listOf(pin.id))
 
         // When / Then
         given()
@@ -375,8 +414,8 @@ class BoardsIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val pin = imagedPin(auth)
-        boardCreator.create(author = auth.user, name = "Covered", description = "", pinIds = listOf(pin.id))
-        boardCreator.create(author = auth.user, name = "Empty", description = "")
+        boardCreator.create(author = auth.user, name = boardName("Covered"), description = "", pinIds = listOf(pin.id))
+        boardCreator.create(author = auth.user, name = boardName("Empty"), description = "")
 
         // When / Then
         given()
@@ -395,7 +434,8 @@ class BoardsIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val pin = imagedPin(auth)
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "", pinIds = listOf(pin.id))
+        val board =
+            boardCreator.create(author = auth.user, name = boardName("Trip"), description = "", pinIds = listOf(pin.id))
         given().authenticatedAs(auth).delete("/api/v1/boards/${board.id}").then().statusCode(204)
 
         // When / Then

@@ -59,8 +59,8 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         runner.run(importId, isLastAttempt = false, renewLease)
 
         // Then
-        assertEquals(listOf("Elsewhere"), savedBoards.map { it.name })
-        assertEquals("Elsewhere", linked.single().board.name)
+        assertEquals(listOf("Elsewhere"), savedBoards.map { it.name.text })
+        assertEquals("Elsewhere", linked.single().board.name.text)
     }
 
     @Test

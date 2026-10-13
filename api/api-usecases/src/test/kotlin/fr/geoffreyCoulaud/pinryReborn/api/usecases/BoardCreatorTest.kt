@@ -1,7 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.BoardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -56,7 +58,7 @@ class BoardCreatorTest {
     fun `Given valid input, Then create saves a new active board with the given fields`() {
         // Given
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val name = createRandomString()
+        val name = boardName(createRandomString())
         val description = createRandomString()
         every { boardRepository.saveBoard(any()) } answers { firstArg() }
 
@@ -74,7 +76,7 @@ class BoardCreatorTest {
     fun `Given the name held by an active board, Then create rethrows BoardNameAlreadyExistsError`() {
         // Given: the index is the authority, so the refusal arrives from the store
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val name = createRandomString()
+        val name = boardName(createRandomString())
         val holder = board(author = author, name = name)
         val readIn = mutableListOf<Int?>()
         every { boardRepository.saveBoard(any()) } throws BoardNameAlreadyTakenException(cause = Exception("boom"))
@@ -100,7 +102,7 @@ class BoardCreatorTest {
     fun `Given the name held by a recycled board, Then the refusal says the recycle bin holds it`() {
         // Given: the index covers every row, so a client with an empty board list needs telling why
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val name = createRandomString()
+        val name = boardName(createRandomString())
         val holder = board(author = author, name = name).copy(softDeletedAt = TestTime.now)
         every { boardRepository.saveBoard(any()) } throws BoardNameAlreadyTakenException(cause = Exception("boom"))
         every { boardRepository.findBoardForUserByName(user = author, name = name) } returns holder
@@ -119,7 +121,7 @@ class BoardCreatorTest {
     fun `Given the holder hard-deleted before it is read back, Then create still rethrows the collision`() {
         // Given: a concurrent empty-the-bin between the violation and the lookup that explains it
         val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val name = createRandomString()
+        val name = boardName(createRandomString())
         every { boardRepository.saveBoard(any()) } throws BoardNameAlreadyTakenException(cause = Exception("boom"))
         every { boardRepository.findBoardForUserByName(user = author, name = name) } returns null
 
@@ -145,7 +147,7 @@ class BoardCreatorTest {
         justRun { pinRepository.addPinsToBoard(any(), any(), any()) }
 
         // When
-        val board = useCase.create(author, createRandomString(), createRandomString(), pinIds)
+        val board = useCase.create(author, boardName(createRandomString()), createRandomString(), pinIds)
 
         // Then
         verify(exactly = 1) { pinRepository.addPinsToBoard(pinIds, board, clockInstant) }
@@ -160,7 +162,7 @@ class BoardCreatorTest {
         justRun { pinRepository.addPinsToBoard(any(), any(), any()) }
 
         // When
-        useCase.create(author, createRandomString(), createRandomString(), pinIds + pinIds)
+        useCase.create(author, boardName(createRandomString()), createRandomString(), pinIds + pinIds)
 
         // Then
         verify(exactly = 1) { pinRepository.addPinsToBoard(pinIds, any(), any()) }
@@ -180,7 +182,7 @@ class BoardCreatorTest {
         every { pinRepository.addPinsToBoard(any(), any(), any()) } answers { seen += transactions.current }
 
         // When
-        useCase.create(author, createRandomString(), createRandomString(), pinIds)
+        useCase.create(author, boardName(createRandomString()), createRandomString(), pinIds)
 
         // Then: two writes, one transaction, none outside it
         assertEquals(2, seen.size)
@@ -213,7 +215,7 @@ class BoardCreatorTest {
 
         // When, Then
         assertThrows<PinBoardSettingPinDoesNotExistError> {
-            useCase.create(author, createRandomString(), createRandomString(), listOf(unknownPinId))
+            useCase.create(author, boardName(createRandomString()), createRandomString(), listOf(unknownPinId))
         }
         verify(exactly = 0) { boardRepository.saveBoard(any()) }
     }
@@ -224,7 +226,7 @@ class BoardCreatorTest {
 
         // When, Then
         assertThrows<T> {
-            useCase.create(author, createRandomString(), createRandomString(), pinIds)
+            useCase.create(author, boardName(createRandomString()), createRandomString(), pinIds)
         }
         verify(exactly = 0) { boardRepository.saveBoard(any()) }
         verify(exactly = 0) { pinRepository.addPinsToBoard(any(), any(), any()) }
@@ -250,7 +252,7 @@ class BoardCreatorTest {
             updatedAt = TestTime.now,
         )
 
-    private fun board(author: User, name: String) =
+    private fun board(author: User, name: BoardName) =
         Board(
             id = randomUUID(),
             author = author,

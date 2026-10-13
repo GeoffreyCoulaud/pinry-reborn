@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
@@ -44,7 +45,7 @@ class BoardRepositoryTest : RepositoryTest() {
             Board(
                 id = randomUUID(),
                 author = user,
-                name = name,
+                name = boardName(name),
                 description = "",
                 createdAt = storableNow(),
                 updatedAt = storableNow(),
@@ -57,7 +58,7 @@ class BoardRepositoryTest : RepositoryTest() {
         Board(
             id = randomUUID(),
             author = user,
-            name = "Ghost",
+            name = boardName("Ghost"),
             description = "",
             createdAt = storableNow(),
             updatedAt = storableNow(),
@@ -107,7 +108,7 @@ class BoardRepositoryTest : RepositoryTest() {
         createAndSaveBoard("emile", user)
 
         // When
-        val names = boardRepository.findActiveBoardsForUser(user).map { it.name }
+        val names = boardRepository.findActiveBoardsForUser(user).map { it.name.text }
 
         // Then
         assertEquals(listOf("emile", "Émile", "emma"), names)
@@ -122,7 +123,7 @@ class BoardRepositoryTest : RepositoryTest() {
         }
 
         // When
-        val names = boardRepository.findRecycledBoardsForUser(user).map { it.name }
+        val names = boardRepository.findRecycledBoardsForUser(user).map { it.name.text }
 
         // Then
         assertEquals(listOf("emile", "Émile", "emma"), names)
@@ -356,6 +357,25 @@ class BoardRepositoryTest : RepositoryTest() {
         assertNull(result)
     }
 
+    @Test
+    fun `Given a stored board name the factory refuses, Then reading it throws rather than invent a name`() {
+        // Given: a row no write of the API makes
+        val user = createAndSaveUser()
+        database
+            .sqlUpdate(
+                "insert into boards (id, author_id, name, description, created_at, updated_at) " +
+                    "values (?, ?, ' ', '', ?, ?)"
+            )
+            .setParameter(1, randomUUID())
+            .setParameter(2, user.id)
+            .setParameter(3, storableNow())
+            .setParameter(4, storableNow())
+            .execute()
+
+        // When / Then
+        assertThrows<IllegalStateException> { boardRepository.findActiveBoardsForUser(user) }
+    }
+
     // --- Names as identities ---
 
     @Test
@@ -379,7 +399,7 @@ class BoardRepositoryTest : RepositoryTest() {
         val board = createAndSaveBoard("voyage", second)
 
         // Then
-        assertEquals("voyage", board.name)
+        assertEquals("voyage", board.name.text)
     }
 
     @Test
@@ -400,7 +420,7 @@ class BoardRepositoryTest : RepositoryTest() {
         val board = createAndSaveBoard("élodie", user)
 
         // When
-        val found = boardRepository.findBoardForUserByName(user = user, name = "ÉLODIE")
+        val found = boardRepository.findBoardForUserByName(user = user, name = boardName("ÉLODIE"))
 
         // Then
         assertEquals(board.id, found?.id)
@@ -414,7 +434,7 @@ class BoardRepositoryTest : RepositoryTest() {
         boardRepository.softDeleteBoard(board, storableNow())
 
         // When
-        val found = boardRepository.findBoardForUserByName(user = user, name = "Voyage")
+        val found = boardRepository.findBoardForUserByName(user = user, name = boardName("Voyage"))
 
         // Then
         assertEquals(board.id, found?.id)
@@ -429,7 +449,7 @@ class BoardRepositoryTest : RepositoryTest() {
         createAndSaveBoard("voyage", owner)
 
         // When
-        val found = boardRepository.findBoardForUserByName(user = other, name = "voyage")
+        val found = boardRepository.findBoardForUserByName(user = other, name = boardName("voyage"))
 
         // Then
         assertNull(found)

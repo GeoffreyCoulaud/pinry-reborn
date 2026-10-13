@@ -1,6 +1,5 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.NameBounds
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -348,8 +347,7 @@ class MigratedSchemaTest : RepositoryTest() {
             mapOf(
                 // The account alphabet is ASCII.
                 "ux_users_name" to User.MAX_NAME_LENGTH,
-                // ImportFieldBounds restates the bound for the import.
-                "ux_boards_author_name" to Board.MAX_NAME_LENGTH * UTF8_BYTES_PER_UNIT,
+                "ux_boards_author_name" to NameBounds.MAX_LENGTH * UTF8_BYTES_PER_UNIT,
                 "ux_tags_author_name" to NameBounds.MAX_LENGTH * UTF8_BYTES_PER_UNIT,
                 // The addresses by their digest, whatever their length.
                 "ux_persons_author_name_urls" to NameBounds.MAX_LENGTH * UTF8_BYTES_PER_UNIT + MD5_HEX_LENGTH,

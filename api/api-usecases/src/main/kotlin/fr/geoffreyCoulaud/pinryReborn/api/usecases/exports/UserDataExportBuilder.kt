@@ -211,12 +211,12 @@ class UserDataExportBuilder(
         val boards = boardRepository.findActiveBoardsForUser(user) + boardRepository.findRecycledBoardsForUser(user)
         val boardCount =
             writeCollection(sink, entries, "boards.jsonl", boards) { board ->
-                ExportedBoard(board.name, board.description, board.createdAt, board.updatedAt, board.softDeletedAt)
+                ExportedBoard(board.name.text, board.description, board.createdAt, board.updatedAt, board.softDeletedAt)
             }
         val collections = remoteCollectionRepository.findAllRemoteCollectionsForUser(user)
         val collectionCount =
             writeCollection(sink, entries, "collections.jsonl", collections) { collection ->
-                ExportedCollection(collection.url.toString(), collection.name, ExportedRef(collection.board.name))
+                ExportedCollection(collection.url.toString(), collection.name, ExportedRef(collection.board.name.text))
             }
         val tagCount =
             writeCollection(sink, entries, "tags.jsonl", tagRepository.findAllTagsForUser(user)) { tag ->
@@ -297,7 +297,8 @@ class UserDataExportBuilder(
             updatedAt = pin.updatedAt,
             softDeletedAt = pin.softDeletedAt,
             tags = pin.tags.map { tag -> ExportedRef(tag.name.text) },
-            boards = pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { board -> ExportedRef(board.name) },
+            boards =
+                pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { board -> ExportedRef(board.name.text) },
             collections = emptyList(),
             media = exportedMedia(pin, writtenMediaPaths),
             publisher = pin.publisher?.let { ExportedPersonRef(it.id) },

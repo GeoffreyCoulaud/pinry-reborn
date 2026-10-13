@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -29,8 +30,8 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given two owned boards, Then setting them on a pin returns both in the pin's boards`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board1 = boardCreator.create(author = auth.user, name = "Board 1", description = "")
-        val board2 = boardCreator.create(author = auth.user, name = "Board 2", description = "")
+        val board1 = boardCreator.create(author = auth.user, name = boardName("Board 1"), description = "")
+        val board2 = boardCreator.create(author = auth.user, name = boardName("Board 2"), description = "")
         val pin =
             pinCreator.createPin(
                 author = auth.user,
@@ -61,7 +62,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given two pins added to the same board, Then it lists both pins with pinCount 2`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Shared board", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Shared board"), description = "")
         val pin1 =
             pinCreator.createPin(
                 author = auth.user,
@@ -106,7 +107,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given a board with no pins, Then listing its pins returns an empty page`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Empty", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Empty"), description = "")
 
         // When / Then
         given()
@@ -142,7 +143,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         // Given
         val owner = createAuthenticatedUser()
         val attacker = createAuthenticatedUser()
-        val otherBoard = boardCreator.create(author = attacker.user, name = "Not yours", description = "")
+        val otherBoard = boardCreator.create(author = attacker.user, name = boardName("Not yours"), description = "")
         val pin =
             pinCreator.createPin(
                 author = owner.user,
@@ -183,7 +184,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given two owned pins, Then adding them to a board files both under it`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val first = createPin(auth.user, "First")
         val second = createPin(auth.user, "Second")
 
@@ -204,7 +205,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given a pin already on the board, Then adding it again leaves one membership`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val pin = createPin(auth.user)
         bulkMembership(auth, "POST", board.id, listOf(pin.id)).statusCode(204)
 
@@ -220,7 +221,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val stranger = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val own = createPin(auth.user)
         val theirs = createPin(stranger.user)
 
@@ -235,8 +236,8 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given two pins on a board, Then removing them takes both out and keeps their other boards`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
-        val kept = boardCreator.create(author = auth.user, name = "Kept", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
+        val kept = boardCreator.create(author = auth.user, name = boardName("Kept"), description = "")
         val first = createPin(auth.user, "First")
         val second = createPin(auth.user, "Second")
         bulkMembership(auth, "POST", board.id, listOf(first.id, second.id)).statusCode(204)
@@ -260,7 +261,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given an empty body, Then the bulk removal returns 400`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
 
         // When / Then: the body has to reach the resource method for @NotEmpty to ever be read.
         given()
@@ -276,7 +277,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given a null among the pinIds, Then adding to a board returns 400`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
 
         // When / Then
         bulkMembership(auth, "POST", board.id, listOf(null)).statusCode(400).body("code", equalTo("MALFORMED_BODY"))
@@ -286,7 +287,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given a recycled pin, Then adding it to a board returns 409`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val pin = createPin(auth.user)
         given().authenticatedAs(auth).`when`().delete("/api/v1/pins/${pin.id}").then().statusCode(204)
 
@@ -299,7 +300,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val stranger = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val own = createPin(auth.user)
         val theirs = createPin(stranger.user)
         bulkMembership(auth, "POST", board.id, listOf(own.id)).statusCode(204)
@@ -429,7 +430,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given more than ten thousand pinIds, Then creating a board or adding to one returns 400`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val pastTheCap = List(10_001) { UUID.randomUUID() }
 
         // When / Then
@@ -443,7 +444,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given a term, Then the board's page holds its own matching pins and no other`() {
         // Given: one match inside the board, one outside it, one inside matching nothing
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
         val inside = createPin(auth.user, "A cat indoors")
         createPin(auth.user, "A cat elsewhere")
         val unrelated = createPin(auth.user, "A dog")
@@ -465,7 +466,7 @@ class BoardMembershipIntegrationTest : IntegrationTest() {
     fun `Given a blank term, Then the board's page refuses it under SEARCH_EMPTY_QUERY`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(author = auth.user, name = "Trip", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Trip"), description = "")
 
         // When / Then: one refusal, one code, whichever catalogue route expresses it
         given()

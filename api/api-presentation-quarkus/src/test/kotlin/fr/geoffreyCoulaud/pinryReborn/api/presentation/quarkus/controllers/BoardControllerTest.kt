@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
@@ -69,7 +70,7 @@ class BoardControllerTest {
         Board(
             id = randomUUID(),
             author = author,
-            name = createRandomString(),
+            name = boardName(createRandomString()),
             description = createRandomString(),
             createdAt = TestTime.now,
             updatedAt = TestTime.now,
@@ -84,13 +85,13 @@ class BoardControllerTest {
             Board(
                 id = randomUUID(),
                 author = user,
-                name = dto.name,
+                name = boardName(dto.name),
                 description = dto.description,
                 createdAt = TestTime.now,
                 updatedAt = TestTime.now,
             )
         every { securityIdentity.getAttribute<User>("user") } returns user
-        every { boardCreator.create(user, dto.name, dto.description, emptyList()) } returns board
+        every { boardCreator.create(user, board.name, dto.description, emptyList()) } returns board
         every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(0, null, emptyList())
 
         // When
@@ -101,7 +102,7 @@ class BoardControllerTest {
         assertEquals("/api/v1/boards/${board.id}", response.getHeaderString("Location"))
         val body = response.entity as BoardOutputDto
         assertEquals(board.id, body.id)
-        assertEquals(board.name, body.name)
+        assertEquals(board.name.text, body.name)
         assertEquals(board.description, body.description)
         assertEquals(0, body.pinCount)
     }
@@ -112,7 +113,7 @@ class BoardControllerTest {
         val user = aUser()
         val board = aBoard(user)
         val pinIds = listOf(randomUUID(), randomUUID())
-        val dto = BoardCreationInputDto(name = board.name, description = board.description, pinIds = pinIds)
+        val dto = BoardCreationInputDto(name = board.name.text, description = board.description, pinIds = pinIds)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every { boardCreator.create(user, board.name, board.description, pinIds) } returns board
         every { boardGetter.summarizeActiveBoardForUser(board.id, user) } returns BoardSummary(2, null, emptyList())
@@ -147,7 +148,7 @@ class BoardControllerTest {
             listOf(
                 BoardOutputDto(
                     id = boardA.id,
-                    name = boardA.name,
+                    name = boardA.name.text,
                     description = boardA.description,
                     pinCount = 3,
                     coverUrl = "/api/v1/pins/$coverPinId/media",
@@ -155,7 +156,7 @@ class BoardControllerTest {
                 ),
                 BoardOutputDto(
                     id = boardB.id,
-                    name = boardB.name,
+                    name = boardB.name.text,
                     description = boardB.description,
                     pinCount = 0,
                     coverUrl = null,
@@ -209,14 +210,14 @@ class BoardControllerTest {
             Board(
                 id = boardId,
                 author = user,
-                name = dto.name,
+                name = boardName(dto.name),
                 description = dto.description,
                 createdAt = TestTime.now,
                 updatedAt = TestTime.now,
             )
         every { securityIdentity.getAttribute<User>("user") } returns user
         every {
-            boardUpdater.update(boardId = boardId, name = dto.name, description = dto.description, user = user)
+            boardUpdater.update(boardId = boardId, name = updated.name, description = dto.description, user = user)
         } returns updated
         every { boardGetter.summarizeActiveBoardForUser(boardId, user) } returns BoardSummary(2, null, emptyList())
 

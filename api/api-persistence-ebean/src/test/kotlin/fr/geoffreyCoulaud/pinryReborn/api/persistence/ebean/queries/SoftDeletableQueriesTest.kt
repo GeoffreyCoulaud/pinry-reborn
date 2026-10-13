@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
@@ -39,7 +40,7 @@ class SoftDeletableQueriesTest : RepositoryTest() {
             Board(
                 id = randomUUID(),
                 author = author,
-                name = createRandomString(),
+                name = boardName(createRandomString()),
                 description = "",
                 createdAt = storableNow(),
                 updatedAt = storableNow(),

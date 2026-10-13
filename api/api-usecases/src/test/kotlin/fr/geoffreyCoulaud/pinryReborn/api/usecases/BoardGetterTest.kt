@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
@@ -32,7 +33,7 @@ class BoardGetterTest {
             Board(
                 id = randomUUID(),
                 author = reader,
-                name = createRandomString(),
+                name = boardName(createRandomString()),
                 description = createRandomString(),
                 createdAt = TestTime.now,
                 updatedAt = TestTime.now,
@@ -68,7 +69,7 @@ class BoardGetterTest {
             Board(
                 id = randomUUID(),
                 author = author,
-                name = createRandomString(),
+                name = boardName(createRandomString()),
                 description = createRandomString(),
                 createdAt = TestTime.now,
                 updatedAt = TestTime.now,
@@ -89,7 +90,7 @@ class BoardGetterTest {
             Board(
                 id = randomUUID(),
                 author = reader,
-                name = createRandomString(),
+                name = boardName(createRandomString()),
                 description = createRandomString(),
                 createdAt = TestTime.now,
                 updatedAt = TestTime.now,
@@ -113,7 +114,7 @@ class BoardGetterTest {
             Board(
                 id = randomUUID(),
                 author = reader,
-                name = createRandomString(),
+                name = boardName(createRandomString()),
                 description = createRandomString(),
                 createdAt = TestTime.now,
                 updatedAt = TestTime.now,
@@ -151,7 +152,7 @@ class BoardGetterTest {
             Board(
                 id = randomUUID(),
                 author = author,
-                name = createRandomString(),
+                name = boardName(createRandomString()),
                 description = createRandomString(),
                 createdAt = TestTime.now,
                 updatedAt = TestTime.now,

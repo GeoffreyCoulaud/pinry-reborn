@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPersonModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QRemoteCollectionModel
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.config.MediaConfig
@@ -148,7 +149,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         // Given: the account holds tag `voyage` and board `Summer`, the archive carries `Voyage` and `summer`
         val auth = createAuthenticatedUser()
         val pin = createPin(auth, "held", tags = listOf("voyage"))
-        val board = boardCreator.create(auth.user, "Summer", "the account's own")
+        val board = boardCreator.create(auth.user, boardName("Summer"), "the account's own")
         replacePin(auth, pin, boardIds = listOf(board.id)).statusCode(200)
         val archive =
             ImportArchiveBuilder(objectMapper)
@@ -179,7 +180,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
     fun `Given a recycled board holding the name, Then the archive's board is refused and the bin is untouched`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(auth.user, "Summer", "recycled")
+        val board = boardCreator.create(auth.user, boardName("Summer"), "recycled")
         given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${board.id}").then().statusCode(204)
         val recycled = boardRepository.findRecycledBoardsForUser(auth.user).single()
         val archive =
@@ -301,14 +302,14 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
 
         // Then
         assertEquals(emptyList<String>(), issueKinds(auth, importId))
-        assertEquals(listOf("Feed", "Shared"), boardRepository.findActiveBoardsForUser(auth.user).map { it.name })
+        assertEquals(listOf("Feed", "Shared"), boardRepository.findActiveBoardsForUser(auth.user).map { it.name.text })
         assertEquals(
             mapOf(FEED_URL to "Feed", OTHER_URL to "Shared", THIRD_URL to "Shared"),
             QRemoteCollectionModel().findList().associate { it.url to it.board.name },
         )
         assertEquals(
             mapOf("https://example.test/sample.png" to "Feed", "https://example.test/sample.jpg" to "Shared"),
-            activePinsOf(auth.user).associate { it.sourceContextUrl.toString() to it.boards.single().name },
+            activePinsOf(auth.user).associate { it.sourceContextUrl.toString() to it.boards.single().name.text },
         )
     }
 
@@ -322,7 +323,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
             ImportArchiveBuilder(objectMapper).manifest(announcedPins = 0).collections(collection).bytes(),
         )
         val board = boardRepository.findActiveBoardsForUser(auth.user).single()
-        boardRepository.saveBoard(board.copy(name = "Renamed"))
+        boardRepository.saveBoard(board.copy(name = boardName("Renamed")))
         val builder = ImportArchiveBuilder(objectMapper).manifest(announcedPins = 1).collections(collection)
         builder.pins(pinNaming(builder, "sample.png", FEED_URL))
 
@@ -331,7 +332,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
 
         // Then
         assertEquals(emptyList<String>(), issueKinds(auth, importId))
-        assertEquals(listOf("Renamed"), boardRepository.findActiveBoardsForUser(auth.user).map { it.name })
+        assertEquals(listOf("Renamed"), boardRepository.findActiveBoardsForUser(auth.user).map { it.name.text })
         assertEquals(listOf(board.id), activePinsOf(auth.user).single().boards.map { it.id })
     }
 
@@ -339,7 +340,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
     fun `Given a collection naming a recycled board, Then it is linked with no issue and a pin line joins the board`() {
         // Given
         val auth = createAuthenticatedUser()
-        val board = boardCreator.create(auth.user, "Bin", "")
+        val board = boardCreator.create(auth.user, boardName("Bin"), "")
         given().authenticatedAs(auth).`when`().delete("/api/v1/boards/${board.id}").then().statusCode(204)
         val builder =
             ImportArchiveBuilder(objectMapper)
@@ -373,7 +374,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         // Then
         assertEquals(emptyList<String>(), issueKinds(auth, importId))
         assertEquals(listOf("https://x.test/c"), QRemoteCollectionModel().findList().map { it.url })
-        assertEquals(listOf("Feed"), activePinsOf(auth.user).single().boards.map { it.name })
+        assertEquals(listOf("Feed"), activePinsOf(auth.user).single().boards.map { it.name.text })
     }
 
     @Test

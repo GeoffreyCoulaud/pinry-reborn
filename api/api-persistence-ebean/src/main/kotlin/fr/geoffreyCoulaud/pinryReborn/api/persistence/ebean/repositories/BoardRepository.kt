@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.BoardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
@@ -41,8 +42,8 @@ class BoardRepository(private val persistor: Persistor) : BoardRepositoryInterfa
 
     // Reads every state through BoardQueries.any(): a recycled board holds its name (ADR 0008 asks
     // the state be named). A plain equality, the column's collation folding as its unique index does.
-    override fun findBoardForUserByName(user: User, name: String): Board? =
-        BoardQueries.any().author.id.equalTo(user.id).name.eq(name).findOne()?.toDomain()
+    override fun findBoardForUserByName(user: User, name: BoardName): Board? =
+        BoardQueries.any().author.id.equalTo(user.id).name.eq(name.text).findOne()?.toDomain()
 
     override fun findActiveBoardById(id: UUID): Board? = BoardQueries.active().id.equalTo(id).findOne()?.toDomain()
 

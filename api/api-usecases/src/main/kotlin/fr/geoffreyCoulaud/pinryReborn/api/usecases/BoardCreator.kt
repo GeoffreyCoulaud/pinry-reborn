@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.BoardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -21,7 +22,7 @@ class BoardCreator(
     private val transactionRunner: TransactionRunner,
 ) {
     /** All or nothing, as a batch route is (ADR 0039): a refused pin leaves no empty board behind. */
-    fun create(author: User, name: String, description: String, pinIds: List<UUID> = emptyList()): Board {
+    fun create(author: User, name: BoardName, description: String, pinIds: List<UUID> = emptyList()): Board {
         val now = clock.now()
         return try {
             transactionRunner.inTransaction {

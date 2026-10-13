@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
@@ -51,8 +52,8 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         // Beta's medium, not alpha's: the pair collapses into whichever line the archive lists first, so
         // the pin carrying the recycled membership must not be one of the two.
         uploadMedia(auth, delta.id, "sample.jpg", "image/jpeg")
-        val activeBoard = boardCreator.create(auth.user, "Active board", "kept")
-        val recycledBoard = boardCreator.create(auth.user, "Recycled board", "recycled")
+        val activeBoard = boardCreator.create(auth.user, boardName("Active board"), "kept")
+        val recycledBoard = boardCreator.create(auth.user, boardName("Recycled board"), "recycled")
         val credited =
             alpha.copy(
                 publisher = personCreator.findOrCreate("Studio", listOf("https://studio.example"), auth.user),
@@ -165,7 +166,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
             softDeletedAt = pin.softDeletedAt,
             tagNames = pin.tags.map { it.name.text }.toSet(),
             // Including the recycled ones, which is the membership the round trip is really about.
-            boardNames = pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { it.name }.toSet(),
+            boardNames = pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { it.name.text }.toSet(),
             mediaBytes = mediaStore.openStream(media.storageKey).use { it.readBytes() },
             publisher = pin.publisher?.let { factsOf(it) },
             creators = pin.creators.map { factsOf(it) }.toSet(),
@@ -180,12 +181,12 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         val boards = boardRepository.findActiveBoardsForUser(user) + boardRepository.findRecycledBoardsForUser(user)
         return AccountFacts(
             pins = pins.associate { it.sourceContextUrl?.toString() to factsOf(it) },
-            boards = boards.associate { it.name to it.softDeletedAt },
+            boards = boards.associate { it.name.text to it.softDeletedAt },
             tags = tagRepository.findAllTagsForUser(user).map { it.name.text }.toSet(),
             collections =
                 remoteCollectionRepository
                     .findAllRemoteCollectionsForUser(user)
-                    .map { CollectionFacts(it.url.toString(), it.name, it.board.name) }
+                    .map { CollectionFacts(it.url.toString(), it.name, it.board.name.text) }
                     .toSet(),
             persons = personRepository.findAllPersonsForUser(user).map { factsOf(it) }.toSet(),
         )

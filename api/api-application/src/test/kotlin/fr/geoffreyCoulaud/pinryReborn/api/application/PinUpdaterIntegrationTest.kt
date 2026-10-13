@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
@@ -95,7 +96,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         // Given
         val auth = createAuthenticatedUser()
         val pin = createPin(auth)
-        val board = boardCreator.create(author = auth.user, name = "Board", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Board"), description = "")
 
         // When
         update(auth, pin, boardIds = listOf(board.id)).statusCode(200)
@@ -109,7 +110,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         // Given: a pin carrying one of each
         val auth = createAuthenticatedUser()
         val pin = createPin(auth, tags = listOf("old"))
-        val board = boardCreator.create(author = auth.user, name = "Board", description = "")
+        val board = boardCreator.create(author = auth.user, name = boardName("Board"), description = "")
         update(auth, pin, tags = listOf("old"), boardIds = listOf(board.id)).statusCode(200)
 
         // When
@@ -168,7 +169,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         val auth = createAuthenticatedUser()
         val other = createAuthenticatedUser()
         val pin = createPin(auth)
-        val othersBoard = boardCreator.create(author = other.user, name = "Not yours", description = "")
+        val othersBoard = boardCreator.create(author = other.user, name = boardName("Not yours"), description = "")
 
         // When
         update(auth, pin, description = "Never stored", boardIds = listOf(othersBoard.id)).statusCode(403)
@@ -553,7 +554,9 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
         // Given: the open pin paired with the others, the rejected with the kept, the merged with an outsider
         val auth = createAuthenticatedUser()
         val (openBoard, mergedBoard) =
-            listOf("Open", "Merged").map { boardCreator.create(author = auth.user, name = it, description = "") }
+            listOf("Open", "Merged").map {
+                boardCreator.create(author = auth.user, name = boardName(it), description = "")
+            }
         val pins = createPinsPairedWithTheFirst(auth, 4)
         val (openPin, kept, merged) = pins
         val rejected = pins.last()

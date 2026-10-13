@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
@@ -147,7 +148,7 @@ class DuplicateResolverTest {
     fun `Given a kept pin with a description and a page, Then it keeps both and gains the absorbed tags and boards`() {
         // Given
         val tag = Tag(randomUUID(), user, tagName("absorbed"), TestTime.now)
-        val board = Board(randomUUID(), user, "Absorbed", "", TestTime.now, TestTime.now)
+        val board = Board(randomUUID(), user, boardName("Absorbed"), "", TestTime.now, TestTime.now)
         val open = pin("Kept").copy(sourceContextUrl = HttpUrl.parse("https://a.test/kept"))
         val absorbed =
             pin("Absorbed")

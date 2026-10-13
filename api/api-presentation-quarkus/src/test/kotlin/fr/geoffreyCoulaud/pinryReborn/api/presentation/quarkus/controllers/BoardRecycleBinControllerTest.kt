@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.BoardOutputDto
@@ -35,7 +36,7 @@ class BoardRecycleBinControllerTest {
         Board(
             id = randomUUID(),
             author = author,
-            name = createRandomString(),
+            name = boardName(createRandomString()),
             description = createRandomString(),
             createdAt = TestTime.now,
             updatedAt = TestTime.now,
@@ -58,8 +59,8 @@ class BoardRecycleBinControllerTest {
         val body = response.entity as RecycledBoardListOutputDto
         assertEquals(
             listOf(
-                RecycledBoardDto(id = boardA.id, name = boardA.name, description = boardA.description),
-                RecycledBoardDto(id = boardB.id, name = boardB.name, description = boardB.description),
+                RecycledBoardDto(id = boardA.id, name = boardA.name.text, description = boardA.description),
+                RecycledBoardDto(id = boardB.id, name = boardB.name.text, description = boardB.description),
             ),
             body.boards,
         )
@@ -81,7 +82,7 @@ class BoardRecycleBinControllerTest {
         assertEquals(200, response.status)
         val body = response.entity as BoardOutputDto
         assertEquals(board.id, body.id)
-        assertEquals(board.name, body.name)
+        assertEquals(board.name.text, body.name)
         assertEquals(board.description, body.description)
         assertEquals(4, body.pinCount)
     }

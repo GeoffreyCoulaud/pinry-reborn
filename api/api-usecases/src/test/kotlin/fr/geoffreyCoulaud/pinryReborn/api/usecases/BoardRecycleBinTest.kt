@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
@@ -43,7 +44,7 @@ class BoardRecycleBinTest {
         Board(
             id = randomUUID(),
             author = author,
-            name = createRandomString(),
+            name = boardName(createRandomString()),
             description = createRandomString(),
             softDeletedAt = softDeletedAt,
             createdAt = TestTime.now,

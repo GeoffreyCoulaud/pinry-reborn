@@ -161,7 +161,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
 
         // Then
         val exportedPin = sink.jsonLines.getValue("pins.jsonl").filterIsInstance<ExportedPin>().single()
-        assertEquals(listOf(ExportedRef(recycledBoard.name)), exportedPin.boards)
+        assertEquals(listOf(ExportedRef(recycledBoard.name.text)), exportedPin.boards)
     }
 
     @Test

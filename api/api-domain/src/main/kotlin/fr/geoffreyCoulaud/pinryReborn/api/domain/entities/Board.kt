@@ -6,13 +6,9 @@ import java.util.UUID
 data class Board(
     override val id: UUID,
     val author: User,
-    val name: String,
+    val name: BoardName,
     val description: String,
     val createdAt: Instant,
     val updatedAt: Instant,
     val softDeletedAt: Instant? = null,
-) : Identifiable {
-    companion object {
-        const val MAX_NAME_LENGTH = 200
-    }
-}
+) : Identifiable

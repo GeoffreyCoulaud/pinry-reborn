@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.domain.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.BoardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import java.time.Instant
 import java.util.UUID
@@ -20,7 +21,7 @@ interface BoardRepositoryInterface {
      * Find the board holding [name] for [user] in **any** state, or null: a recycled board holds its name. The fold is
      * the store's own, case and width in every script.
      */
-    fun findBoardForUserByName(user: User, name: String): Board?
+    fun findBoardForUserByName(user: User, name: BoardName): Board?
 
     /** Find a board by its ID regardless of state (active or recycled), or null. */
     fun findBoardById(id: UUID): Board?
