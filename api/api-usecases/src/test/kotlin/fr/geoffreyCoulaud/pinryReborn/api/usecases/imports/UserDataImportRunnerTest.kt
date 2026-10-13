@@ -373,7 +373,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
 
     @Test
     fun `Given lines past the field bounds, Then each is reported invalid and skipped`() {
-        // Given: spec section 4.1's bounds, restated because no entity carries them
+        // Given: names past their type's bounds, and spec section 4.1's bounds the import restates
         val longName = "n".repeat(OVER_LONG_NAME)
         val source =
             FakeArchiveSource(

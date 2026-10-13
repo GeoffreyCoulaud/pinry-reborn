@@ -5,10 +5,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.NameBounds
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 
 /**
- * Spec section 4.1's bounds, restated because the import is a second write path into tables whose only invariants live
- * on REST input DTOs. Each answers null when the field passes, else the reported reason.
+ * Spec section 4.1's bounds on the description, the addresses and the references, restated because their only
+ * invariants live on REST input DTOs. Each answers null when the field passes, else the reported reason.
  */
 object ImportFieldBounds {
+    /** The report's text for a name its type refuses. */
     const val NAME_FAULT = "name is blank or longer than ${NameBounds.MAX_LENGTH} characters"
     const val MAX_DESCRIPTION_LENGTH = 2000
     const val MAX_REFERENCES = 100
