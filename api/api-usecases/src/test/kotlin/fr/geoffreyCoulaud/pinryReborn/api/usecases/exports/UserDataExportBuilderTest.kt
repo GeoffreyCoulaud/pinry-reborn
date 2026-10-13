@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.collectionName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
@@ -215,7 +216,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
             id = randomUUID(),
             author = user,
             url = checkNotNull(HttpUrl.parse(url)),
-            name = "collection",
+            name = collectionName("collection"),
             board = board,
             createdAt = now,
         )

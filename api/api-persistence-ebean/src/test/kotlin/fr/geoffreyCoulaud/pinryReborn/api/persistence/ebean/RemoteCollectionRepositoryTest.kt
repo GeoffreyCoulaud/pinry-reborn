@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.collectionName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
@@ -14,6 +15,7 @@ import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class RemoteCollectionRepositoryTest : RepositoryTest() {
     private val repository = RemoteCollectionRepository(persistor)
@@ -41,7 +43,7 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
                 id = randomUUID(),
                 author = board.author,
                 url = checkNotNull(HttpUrl.parse("https://remote.test/${createRandomString()}")),
-                name = name,
+                name = collectionName(name),
                 board = board,
                 createdAt = storableNow(),
             )
@@ -137,6 +139,25 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
 
         // Then: PostgreSQL orders a uuid by its bytes, as its text sorts, where Java's compareTo is signed
         assertEquals(collections.sortedBy { it.id.toString() }, found)
+    }
+
+    @Test
+    fun `Given a stored collection name the factory refuses, Then reading it throws rather than invent a name`() {
+        // Given: a row no write of the API makes
+        val board = createAndSaveBoard(createAndSaveUser())
+        database
+            .sqlUpdate(
+                "insert into remote_collections (id, author_id, created_at, board_id, url, name) " +
+                    "values (?, ?, ?, ?, 'https://remote.test/blank', ' ')"
+            )
+            .setParameter(1, randomUUID())
+            .setParameter(2, board.author.id)
+            .setParameter(3, storableNow())
+            .setParameter(4, board.id)
+            .execute()
+
+        // When / Then
+        assertThrows<IllegalStateException> { repository.findRemoteCollectionsForBoard(board.id) }
     }
 
     @Test

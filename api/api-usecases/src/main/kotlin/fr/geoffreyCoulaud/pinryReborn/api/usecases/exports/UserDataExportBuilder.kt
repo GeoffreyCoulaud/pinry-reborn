@@ -216,7 +216,11 @@ class UserDataExportBuilder(
         val collections = remoteCollectionRepository.findAllRemoteCollectionsForUser(user)
         val collectionCount =
             writeCollection(sink, entries, "collections.jsonl", collections) { collection ->
-                ExportedCollection(collection.url.toString(), collection.name, ExportedRef(collection.board.name.text))
+                ExportedCollection(
+                    collection.url.toString(),
+                    collection.name.text,
+                    ExportedRef(collection.board.name.text),
+                )
             }
         val tagCount =
             writeCollection(sink, entries, "tags.jsonl", tagRepository.findAllTagsForUser(user)) { tag ->
