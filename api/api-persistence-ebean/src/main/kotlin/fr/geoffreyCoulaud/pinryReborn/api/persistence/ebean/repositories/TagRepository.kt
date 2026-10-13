@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
@@ -20,8 +21,8 @@ class TagRepository(persistor: Persistor) : TagRepositoryInterface {
     // its own would let find-or-create depend on which case was stored first.
     override fun findUserTagByName(
         user: User,
-        name: String,
-    ): Tag? = QTagModel().author.id.equalTo(user.id).name.eq(name).findOne()?.toDomain()
+        name: TagName,
+    ): Tag? = QTagModel().author.id.equalTo(user.id).name.eq(name.text).findOne()?.toDomain()
 
     override fun findAllTagsForUser(user: User): List<Tag> =
         QTagModel().author.id.equalTo(user.id).findList().map { it.toDomain() }

@@ -82,7 +82,7 @@ abstract class IntegrationTest {
     protected fun replacePin(
         auth: AuthenticatedUser,
         pin: Pin,
-        tags: List<String> = pin.tags.map { it.name },
+        tags: List<String> = pin.tags.map { it.name.text },
         boardIds: List<UUID> = pin.boards.map { it.id },
     ): ValidatableResponse =
         RestAssured.given()

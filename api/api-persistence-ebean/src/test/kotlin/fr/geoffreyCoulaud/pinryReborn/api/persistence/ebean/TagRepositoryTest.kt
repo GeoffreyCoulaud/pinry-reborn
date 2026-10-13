@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.TagRepository
@@ -25,7 +26,7 @@ class TagRepositoryTest : RepositoryTest() {
     fun `Given a new tag, Then saveTag persists it`() {
         // Given
         val user = createAndSaveUser()
-        val tag = Tag(id = randomUUID(), author = user, name = "landscape", createdAt = storableNow())
+        val tag = Tag(id = randomUUID(), author = user, name = tagName("landscape"), createdAt = storableNow())
 
         // When
         val saved = repository.saveTag(tag)
@@ -40,10 +41,12 @@ class TagRepositoryTest : RepositoryTest() {
         // Given
         val user = createAndSaveUser()
         val tag =
-            repository.saveTag(Tag(id = randomUUID(), author = user, name = "landscape", createdAt = storableNow()))
+            repository.saveTag(
+                Tag(id = randomUUID(), author = user, name = tagName("landscape"), createdAt = storableNow())
+            )
 
         // When
-        val found = repository.findUserTagByName(user = user, name = "landscape")
+        val found = repository.findUserTagByName(user = user, name = tagName("landscape"))
 
         // Then
         assertNotNull(found)
@@ -56,7 +59,7 @@ class TagRepositoryTest : RepositoryTest() {
         val user = createAndSaveUser()
 
         // When
-        val found = repository.findUserTagByName(user = user, name = "nonexistent")
+        val found = repository.findUserTagByName(user = user, name = tagName("nonexistent"))
 
         // Then
         assertNull(found)
@@ -66,8 +69,10 @@ class TagRepositoryTest : RepositoryTest() {
     fun `Given tags owned by the user, Then findAllTagsForUser returns them`() {
         // Given
         val user = createAndSaveUser()
-        val tag1 = repository.saveTag(Tag(id = randomUUID(), author = user, name = "tag1", createdAt = storableNow()))
-        val tag2 = repository.saveTag(Tag(id = randomUUID(), author = user, name = "tag2", createdAt = storableNow()))
+        val tag1 =
+            repository.saveTag(Tag(id = randomUUID(), author = user, name = tagName("tag1"), createdAt = storableNow()))
+        val tag2 =
+            repository.saveTag(Tag(id = randomUUID(), author = user, name = tagName("tag2"), createdAt = storableNow()))
 
         // When
         val tags = repository.findAllTagsForUser(user)
@@ -76,10 +81,25 @@ class TagRepositoryTest : RepositoryTest() {
         assertEquals(setOf(tag1, tag2), tags.toSet())
     }
 
+    @Test
+    fun `Given a stored tag name the factory refuses, Then reading it throws rather than invent a name`() {
+        // Given: a row no write of the API makes
+        val user = createAndSaveUser()
+        database
+            .sqlUpdate("insert into tags (id, author_id, name, created_at) values (?, ?, ' ', ?)")
+            .setParameter(1, randomUUID())
+            .setParameter(2, user.id)
+            .setParameter(3, storableNow())
+            .execute()
+
+        // When / Then
+        assertThrows<IllegalStateException> { repository.findAllTagsForUser(user) }
+    }
+
     // --- Names as identities ---
 
     private fun saveTag(name: String, user: User) =
-        repository.saveTag(Tag(id = randomUUID(), author = user, name = name, createdAt = storableNow()))
+        repository.saveTag(Tag(id = randomUUID(), author = user, name = tagName(name), createdAt = storableNow()))
 
     @Test
     fun `Given a tag owned by the user, Then findUserTagByName finds it in another case outside ASCII`() {
@@ -88,7 +108,7 @@ class TagRepositoryTest : RepositoryTest() {
         val tag = saveTag("élodie", user)
 
         // When
-        val found = repository.findUserTagByName(user = user, name = "ÉLODIE")
+        val found = repository.findUserTagByName(user = user, name = tagName("ÉLODIE"))
 
         // Then
         assertEquals(tag.id, found?.id)
@@ -116,7 +136,7 @@ class TagRepositoryTest : RepositoryTest() {
         val tag = saveTag("landscape", second)
 
         // Then
-        assertEquals("landscape", tag.name)
+        assertEquals("landscape", tag.name.text)
     }
 
     // --- Matching ---
@@ -193,7 +213,7 @@ class TagRepositoryTest : RepositoryTest() {
 
         // Then: the limit is the caller's, and it is spent before the second query is reached
         assertEquals(2, found.size)
-        assertTrue(found.none { it.name == "bobcat" }, "$found")
+        assertTrue(found.none { it.name.text == "bobcat" }, "$found")
     }
 
     @Test
@@ -207,7 +227,7 @@ class TagRepositoryTest : RepositoryTest() {
         val found = matching(user, "cat")
 
         // Then
-        assertEquals(listOf("cat", "bobcat"), found.map { it.name })
+        assertEquals(listOf("cat", "bobcat"), found.map { it.name.text })
     }
 
     @Test
@@ -245,10 +265,12 @@ class TagRepositoryTest : RepositoryTest() {
     fun `Given a saved tag, Then reading it back exposes its creation timestamp`() {
         // Given
         val user = createAndSaveUser()
-        repository.saveTag(Tag(id = randomUUID(), author = user, name = "landscape", createdAt = storableNow()))
+        repository.saveTag(
+            Tag(id = randomUUID(), author = user, name = tagName("landscape"), createdAt = storableNow())
+        )
 
         // When
-        val found = repository.findUserTagByName(user = user, name = "landscape")
+        val found = repository.findUserTagByName(user = user, name = tagName("landscape"))
 
         // Then
         assertNotNull(found?.createdAt)

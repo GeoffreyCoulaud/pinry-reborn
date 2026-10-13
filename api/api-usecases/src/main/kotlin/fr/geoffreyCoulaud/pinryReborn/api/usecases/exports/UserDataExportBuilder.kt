@@ -220,7 +220,7 @@ class UserDataExportBuilder(
             }
         val tagCount =
             writeCollection(sink, entries, "tags.jsonl", tagRepository.findAllTagsForUser(user)) { tag ->
-                ExportedTag(tag.name, tag.createdAt)
+                ExportedTag(tag.name.text, tag.createdAt)
             }
         val personCount = writePersons(sink, entries, user)
 
@@ -296,7 +296,7 @@ class UserDataExportBuilder(
             createdAt = pin.createdAt,
             updatedAt = pin.updatedAt,
             softDeletedAt = pin.softDeletedAt,
-            tags = pin.tags.map { tag -> ExportedRef(tag.name) },
+            tags = pin.tags.map { tag -> ExportedRef(tag.name.text) },
             boards = pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { board -> ExportedRef(board.name) },
             collections = emptyList(),
             media = exportedMedia(pin, writtenMediaPaths),

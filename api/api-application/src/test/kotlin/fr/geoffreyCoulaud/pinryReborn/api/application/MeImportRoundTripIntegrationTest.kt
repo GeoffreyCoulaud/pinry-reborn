@@ -163,7 +163,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
             createdAt = pin.createdAt,
             updatedAt = pin.updatedAt,
             softDeletedAt = pin.softDeletedAt,
-            tagNames = pin.tags.map { it.name }.toSet(),
+            tagNames = pin.tags.map { it.name.text }.toSet(),
             // Including the recycled ones, which is the membership the round trip is really about.
             boardNames = pinRepository.findBoardsForPinIncludingRecycled(pin.id).map { it.name }.toSet(),
             mediaBytes = mediaStore.openStream(media.storageKey).use { it.readBytes() },
@@ -181,7 +181,7 @@ class MeImportRoundTripIntegrationTest : MeImportFixtures() {
         return AccountFacts(
             pins = pins.associate { it.sourceContextUrl?.toString() to factsOf(it) },
             boards = boards.associate { it.name to it.softDeletedAt },
-            tags = tagRepository.findAllTagsForUser(user).map { it.name }.toSet(),
+            tags = tagRepository.findAllTagsForUser(user).map { it.name.text }.toSet(),
             collections =
                 remoteCollectionRepository
                     .findAllRemoteCollectionsForUser(user)

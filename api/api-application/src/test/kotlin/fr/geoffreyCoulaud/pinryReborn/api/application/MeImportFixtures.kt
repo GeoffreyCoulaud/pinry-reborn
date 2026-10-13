@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -157,7 +158,7 @@ abstract class MeImportFixtures : IntegrationTest() {
             sourceContextUrl = sourceContextUrl?.let(HttpUrl::parse),
             sourceMediaUrl = HttpUrl.parse("https://example.test/$slug.jpg"),
             description = "Pin $slug",
-            tags = tags,
+            tags = tags.map { tagName(it) },
         )
 
     /** The account's active pins. No case here seeds more than a handful, so one page holds them. */

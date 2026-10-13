@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -17,7 +18,7 @@ class TagCreator(
 ) {
     /** A tag this instance invents, stamped from the clock as every use case stamps what it invents. */
     fun findOrCreate(
-        name: String,
+        name: TagName,
         user: User,
     ): Tag = resolve(name = name, user = user, createdAt = clock.now()).tag
 
@@ -26,7 +27,7 @@ class TagCreator(
      * statement, not a pair. Here, not per caller, so every tag resolver is covered.
      */
     fun resolve(
-        name: String,
+        name: TagName,
         user: User,
         // Not the clock: the user data import restores the archive's instant (ADR 0015, decision 3).
         createdAt: Instant,

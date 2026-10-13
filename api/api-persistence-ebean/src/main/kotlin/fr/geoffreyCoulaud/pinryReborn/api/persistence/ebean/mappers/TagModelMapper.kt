@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.UserModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.UserModelMapper.toModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.TagModel
@@ -10,7 +11,7 @@ object TagModelMapper {
         TagModel(
             id = id,
             author = author.toModel(),
-            name = name,
+            name = name.text,
             createdAt = createdAt,
         )
 
@@ -18,7 +19,7 @@ object TagModelMapper {
         Tag(
             id = id,
             author = author.toDomain(),
-            name = name,
+            name = checkNotNull(TagName.parse(name)) { "The stored tag name is refused: $name" },
             createdAt = createdAt,
         )
 }

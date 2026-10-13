@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
@@ -258,7 +259,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         val pin = aPin()
         val media = aMedia(pinId = pin.id)
         val board = aBoard()
-        val tag = Tag(id = randomUUID(), author = user, name = "t", createdAt = now)
+        val tag = Tag(id = randomUUID(), author = user, name = tagName("t"), createdAt = now)
         stubActivePins(listOf(pin))
         stubRecycledPins(emptyList())
         every { boardRepository.findActiveBoardsForUser(user) } returns listOf(board)

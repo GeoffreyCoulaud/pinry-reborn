@@ -36,6 +36,7 @@ dependencies {
 
     // Integration testing
     testImplementation(project(":api-utilities"))
+    testImplementation(testFixtures(project(":api-domain")))
     testImplementation(libs.bundles.integration.testing)
     testImplementation(libs.ebean)
     testImplementation(libs.ebean.test)

@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportFailure
@@ -210,7 +211,7 @@ class MeExportCompletionIntegrationTest : IntegrationTest() {
             sourceContextUrl = HttpUrl.parse("https://example.com/$slug"),
             sourceMediaUrl = HttpUrl.parse("https://example.com/$slug.jpg"),
             description = "Pin $slug",
-            tags = tags,
+            tags = tags.map { tagName(it) },
         )
 
     private fun seedArchiveContent(auth: IntegrationTest.AuthenticatedUser): SeededContent {

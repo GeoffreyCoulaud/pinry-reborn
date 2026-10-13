@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import io.quarkus.test.junit.QuarkusTest
@@ -21,7 +22,7 @@ class TagAndPersonSearchIntegrationTest : IntegrationTest() {
 
     // The search reads the user's tags, not a pin's, so nothing here needs a pin to hang them on.
     private fun createTagsFor(auth: AuthenticatedUser, vararg tagNames: String) {
-        tagNames.forEach { tagCreator.findOrCreate(name = it, user = auth.user) }
+        tagNames.forEach { tagCreator.findOrCreate(name = tagName(it), user = auth.user) }
     }
 
     @Test

@@ -11,6 +11,7 @@ dependencies {
     compileOnly(libs.jakarta.cdi.api)
     compileOnly(libs.jakarta.transaction.api)
 
+    testImplementation(testFixtures(project(":api-domain")))
     testImplementation(testFixtures(project(":api-utilities")))
     testImplementation(libs.bundles.testing)
     testRuntimeOnly(libs.bundles.testing.runtime)

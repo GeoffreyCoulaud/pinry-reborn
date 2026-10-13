@@ -25,6 +25,7 @@ dependencies {
     compileOnly(libs.quarkus.hibernate.validator)
 
     // Tests
+    testImplementation(testFixtures(project(":api-domain")))
     testImplementation(testFixtures(project(":api-utilities")))
     testImplementation(platform(libs.quarkus.bom))
     testImplementation(libs.jakarta.ws.rs.api)

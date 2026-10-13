@@ -400,6 +400,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             }
     }
 
+    // MockK hands a `TagName` argument over unboxed, as its text.
     protected fun stubTagLookup() {
         every { tagRepository.findUserTagByName(user, any()) } answers { existingTags[secondArg<String>()] }
     }
@@ -410,7 +411,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
             {
                 firstArg<Tag>().also { tag ->
                     savedTags += tag
-                    existingTags[tag.name] = tag
+                    existingTags[tag.name.text] = tag
                 }
             }
     }
@@ -536,7 +537,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
         every { mediaStore.delete(any()) } answers { promoted -= firstArg<String>() }
     }
 
-    protected fun savedTag(name: String) = savedTags.single { it.name == name }
+    protected fun savedTag(name: String) = savedTags.single { it.name.text == name }
 
     protected fun savedBoard(name: String) = savedBoards.single { it.name == name }
 

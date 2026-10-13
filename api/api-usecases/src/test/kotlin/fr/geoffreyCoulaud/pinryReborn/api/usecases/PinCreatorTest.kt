@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -32,16 +33,11 @@ class PinCreatorTest {
         val sourceUrl = HttpUrl.parse("https://example.com/article")
         val mediaUrl = HttpUrl.parse("https://example.com/media.jpeg")
         val description = "some description"
-        val tags = listOf("blue", "landscape", "water")
-        every { tagCreator.findOrCreate(any(), any()) } answers
-            {
-                Tag(
-                    id = randomUUID(),
-                    name = firstArg(),
-                    author = secondArg(),
-                    createdAt = TestTime.now,
-                )
-            }
+        val tags = listOf(tagName("blue"), tagName("landscape"), tagName("water"))
+        tags.forEach { name ->
+            every { tagCreator.findOrCreate(name, user) } returns
+                Tag(id = randomUUID(), name = name, author = user, createdAt = TestTime.now)
+        }
         every { pinRepository.savePin(any()) } answers { firstArg() }
 
         // When
