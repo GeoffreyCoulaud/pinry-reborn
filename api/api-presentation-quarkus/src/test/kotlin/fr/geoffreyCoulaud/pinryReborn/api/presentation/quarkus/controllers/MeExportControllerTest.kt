@@ -131,7 +131,7 @@ class MeExportControllerTest {
     @Test
     fun `Given no Range header, Then downloadExport streams the whole body as 200`() {
         // Given
-        val user = aUser()
+        val user = aUser(name = "alice")
         val id = randomUUID()
         val bytes = byteArrayOf(1, 2, 3, 4, 5)
         val opened = anOpenedExport(id, bytes)
@@ -149,8 +149,7 @@ class MeExportControllerTest {
         assertEquals("bytes", response.getHeaderString("Accept-Ranges"))
         assertNull(response.getHeaderString("Content-Range"))
         val disposition = response.getHeaderString("Content-Disposition")
-        assertTrue(disposition.contains("2026-07-22-pinry-export-"))
-        assertTrue(disposition.contains(".zip"))
+        assertTrue(disposition.contains("2026-07-22-pinry-export-alice.zip"))
 
         val out = ByteArrayOutputStream()
         (response.entity as StreamingOutput).write(out)
