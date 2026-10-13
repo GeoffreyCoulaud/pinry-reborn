@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.NameBounds
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 
 /**
@@ -8,7 +9,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
  * on REST input DTOs. Each answers null when the field passes, else the reported reason.
  */
 object ImportFieldBounds {
-    const val MAX_NAME_LENGTH = 200
+    const val NAME_FAULT = "name is blank or longer than ${NameBounds.MAX_LENGTH} characters"
     const val MAX_DESCRIPTION_LENGTH = 2000
     const val MAX_REFERENCES = 100
 
@@ -16,12 +17,7 @@ object ImportFieldBounds {
     private val ENTRY_PATH = Regex("^media/[A-Za-z0-9._-]+$")
     private val TRAVERSAL_SEGMENTS = setOf(".", "..")
 
-    fun nameFault(name: String): String? =
-        when {
-            name.isBlank() -> "name is blank"
-            name.length > MAX_NAME_LENGTH -> "name is longer than $MAX_NAME_LENGTH characters"
-            else -> null
-        }
+    fun nameFault(name: String): String? = if (NameBounds.accepts(name)) null else NAME_FAULT
 
     fun descriptionFault(description: String): String? =
         if (description.length > MAX_DESCRIPTION_LENGTH) {

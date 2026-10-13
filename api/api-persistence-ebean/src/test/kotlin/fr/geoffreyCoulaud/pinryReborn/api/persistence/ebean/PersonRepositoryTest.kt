@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.NameBounds
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -79,7 +80,7 @@ class PersonRepositoryTest : RepositoryTest() {
     fun `Given a person at every bound, Then it saves and findUserPerson finds it by its addresses`() {
         // Given: random addresses, which the index entry's compression cannot shrink below its bound
         val user = createAndSaveUser()
-        val name = "あ".repeat(PersonName.MAX_LENGTH)
+        val name = "あ".repeat(NameBounds.MAX_LENGTH)
         val urls = List(Person.MAX_URLS) { randomAddress(HttpUrl.MAX_LENGTH) }
         val person = savePerson(user, name, urls)
 

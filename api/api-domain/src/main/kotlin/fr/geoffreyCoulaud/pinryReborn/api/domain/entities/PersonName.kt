@@ -7,10 +7,7 @@ value class PersonName private constructor(val text: String) {
     override fun toString(): String = text
 
     companion object {
-        const val MAX_LENGTH = 200
-
-        /** Null for a blank text or one longer than [MAX_LENGTH]. */
-        fun parse(text: String): PersonName? =
-            if (text.isBlank() || text.length > MAX_LENGTH) null else PersonName(text)
+        /** Null for a text [NameBounds] refuses. */
+        fun parse(text: String): PersonName? = if (NameBounds.accepts(text)) PersonName(text) else null
     }
 }
