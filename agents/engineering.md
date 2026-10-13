@@ -28,6 +28,7 @@ all. The operator settled it that day.
     - `api-application`: composition root, end-to-end tests only, Kover not applied.
     - `...persistence.ebean.models` and `models.bases`: Ebean's bytecode enhancement rewrites entity classes in place.
     - `...models.query.Q*` and every class annotated `io.ebean.typequery.Generated`
+    - `testFixtures` source sets: helpers for tests, measured by no test of their own.
 - **Change the perimeter in `api/build.gradle.kts` first**, where it is enforced; this table is transcribed from it.
 - **Inside never shrinks, and widening Outside requires the user's explicit agreement.**
 
@@ -199,6 +200,7 @@ enforces the single process: `compose.yml` keeps it.
 - **Maintainability**: helper methods for repeated setup, named variables over inline literals,
   `createRandomString()` for unique data, extend the fitting base class (`IntegrationTest`,
   `RepositoryTest`, `BaseTest`).
+- **Build a user with `DomainFixtures.aUser` and a name through its helper**, never a constructor.
 
 **Detail.** The mutation is pasted because an `assertEmpty()` chain passes just as well when the filter matches
 nothing, so the assertion proves nothing until something has been shown to break it. A new `@QuarkusTest` class costs a
