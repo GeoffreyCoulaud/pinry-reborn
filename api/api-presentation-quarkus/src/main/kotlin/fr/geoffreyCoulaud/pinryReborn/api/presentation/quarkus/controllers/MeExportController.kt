@@ -239,7 +239,7 @@ class MeExportController(
 
     private fun contentDispositionHeader(opened: OpenedExport, user: User): String {
         val extension = opened.fileExtension
-        val rawName = "${isoDate(opened.completedAt)}-pinry-export-${user.name}.$extension"
+        val rawName = "${isoDate(opened.completedAt)}-pinry-export-${user.name.text}.$extension"
         val fallback = "$FALLBACK_FILE_STEM.$extension"
         return ContentDispositionFileName.headerValue(rawName, fallback)
     }
