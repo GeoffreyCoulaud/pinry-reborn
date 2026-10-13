@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.personName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PersonOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonSearcher
@@ -31,7 +31,7 @@ class PersonSearchControllerTest {
             Person(
                 id = randomUUID(),
                 author = user,
-                name = checkNotNull(PersonName.parse("Alice")),
+                name = personName("Alice"),
                 urls = listOf(LATER_URL, URL).map { checkNotNull(HttpUrl.parse(it)) }.toSet(),
                 createdAt = TestTime.now,
             )

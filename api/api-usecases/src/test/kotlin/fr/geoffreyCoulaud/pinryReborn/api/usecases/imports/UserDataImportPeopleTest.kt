@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.personName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import io.mockk.verify
@@ -21,7 +21,7 @@ internal class UserDataImportPeopleTest : UserDataImportRunnerFixtures() {
             Person(
                 id = randomUUID(),
                 author = user,
-                name = checkNotNull(PersonName.parse("Ada")),
+                name = personName("Ada"),
                 urls = setOfNotNull(HttpUrl.parse("https://ada.example")),
                 createdAt = accountCreatedAt,
             )

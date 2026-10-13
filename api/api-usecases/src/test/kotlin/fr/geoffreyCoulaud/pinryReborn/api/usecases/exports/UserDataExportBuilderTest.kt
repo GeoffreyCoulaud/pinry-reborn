@@ -1,13 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.collectionName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.personName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
@@ -372,7 +372,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         Person(
             id = randomUUID(),
             author = user,
-            name = checkNotNull(PersonName.parse(name)),
+            name = personName(name),
             urls = urls.map { checkNotNull(HttpUrl.parse(it)) }.toSet(),
             createdAt = now,
         )

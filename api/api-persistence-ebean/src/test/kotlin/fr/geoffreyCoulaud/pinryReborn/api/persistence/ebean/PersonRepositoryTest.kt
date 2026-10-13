@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.personName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.NameBounds
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PersonRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
@@ -26,16 +26,14 @@ class PersonRepositoryTest : RepositoryTest() {
             Person(
                 id = randomUUID(),
                 author = user,
-                name = name(name),
+                name = personName(name),
                 urls = addresses(urls),
                 createdAt = storableNow(),
             )
         )
 
     private fun find(user: User, name: String, urls: List<String>): Person? =
-        repository.findUserPerson(user = user, name = name(name), urls = addresses(urls))
-
-    private fun name(text: String) = checkNotNull(PersonName.parse(text))
+        repository.findUserPerson(user = user, name = personName(name), urls = addresses(urls))
 
     private fun addresses(texts: List<String>) = texts.map { checkNotNull(HttpUrl.parse(it)) }.toSet()
 

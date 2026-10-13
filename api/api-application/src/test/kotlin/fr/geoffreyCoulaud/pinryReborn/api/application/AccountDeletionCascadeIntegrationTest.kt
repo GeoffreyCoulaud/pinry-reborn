@@ -2,12 +2,12 @@ package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.collectionName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.personName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
@@ -109,8 +109,7 @@ class AccountDeletionCascadeIntegrationTest : IntegrationTest() {
             RemoteCollection(randomUUID(), user, url("https://example.com/c"), collectionName("c"), board, AT)
         )
         val tag = tags.saveTag(Tag(randomUUID(), user, tagName("tag"), AT))
-        val person =
-            persons.savePerson(Person(randomUUID(), user, checkNotNull(PersonName.parse("Al")), emptySet(), AT))
+        val person = persons.savePerson(Person(randomUUID(), user, personName("Al"), emptySet(), AT))
         val pin = savePin(user, tag, board, person)
         val saved = media.save(Media.StillImage(randomUUID(), pin.id, "image/png", 1, 1, 1, "", "originals/x", AT))
         frames.save(saved.id, listOf(PdqHash(List(4) { 0L }, quality = 100)))
