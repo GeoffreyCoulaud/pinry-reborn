@@ -53,11 +53,17 @@ in git history, the handoffs under `docs/handoffs/`, and the annotated `lot/X.Y.
 - **The API holds one database connection, and one API process is assumed rather than enforced**: a pool, its own
   lot, which reviews each race the single connection serialises. See `docs/adr/0059-the-database-is-postgresql.md`,
   decision 2. New 2026-10-12.
-- **The domain names concepts with bare strings, and its types carry storage formats**: the types lot, after the
-  importer. `docs/adr/0056-data-shapes-are-decided-in-the-specification/inventory.md`, T1, T2 and T4 to T7, section 2,
-  and units 8 to 10, 17 to 20 (but their database renames, lot `0.55.0`'s), 24's factories (`RenditionSpec`, the
-  import's counters, `ExportMediaExtension`) and 25. Lot `0.54.0` typed the addresses and a person's name
-  (`docs/specs/2026-10-10-addresses-and-people-take-their-shape.md`). New 2026-10-09.
+- **A task's kind, lease, payload and deduplication key are bare values**: the tasks lot, second of the six types lots
+  of `docs/adr/0060-the-refactorings-come-before-the-importer.md`, decision 2.
+  `docs/adr/0056-data-shapes-are-decided-in-the-specification/inventory.md`, unit 17. New 2026-10-13.
+- **A medium's types are bare values carrying storage formats**: the media lot, third. `inventory.md`, units 18 and
+  19, 24's `RenditionSpec` and `ExportMediaExtension`, T2, `ck_media_variant`. Same ADR. New 2026-10-13.
+- **Distinct elements travel as lists**: the sets lot, fourth. `inventory.md`, units 9 and 10, T6, and
+  `PersonInputDto.urls` without `uniqueItems`. Same ADR. New 2026-10-13.
+- **A concept is named differently across layers, and the contract carries fields no client reads**: the renames and
+  contract lot, fifth. `inventory.md`, what unit 20 still holds, and unit 25. Same ADR. New 2026-10-13.
+- **The other concepts the domain names with bare values**: the last types lot. `inventory.md`, section 2's
+  remainder and 24's import counters, as that ADR's decision 2 lists them. New 2026-10-13.
 - **Domain and wire states are independent nullable fields, not sealed variants**, null standing for a third state: the
   sealed states lot, after the types. Same `inventory.md`, T3, N1, N2, C3 and C5, and units 11 to 13, 22 and 23; it
   answers the two questions of ADR 0056, decision 8. New 2026-10-09.
@@ -117,8 +123,8 @@ Dated events. No session starts these early.
   `docs/specs/2026-10-05-the-pin-knows-its-duplicates.md`, decision E. New 2026-10-05.
 - **Import from third-party sites**: whatever gallery-dl reads, through a companion tool that writes the user data
   archive. Two lots: the first, the pin's people and the remote collections, is done (lot `0.52.0`); the importer
-  is still to come, third in the order of `docs/adr/0056-data-shapes-are-decided-in-the-specification.md`, decision 7,
-  the first being done (lot `0.54.0`). See `docs/adr/0055-third-party-imports-write-the-user-data-archive.md`, and
+  is still to come, after the refactoring lots (`docs/adr/0060-the-refactorings-come-before-the-importer.md`,
+  decision 1). See `docs/adr/0055-third-party-imports-write-the-user-data-archive.md`, and
   `docs/adr/0057-the-archive-references-by-key-and-an-address-is-refused-alike.md` for the archive it writes.
 - **Sensitive content is not classified**: no reason, intensity or viewing context hides a pin, for any entry path.
   See ADR 0054, Consequences.
