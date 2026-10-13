@@ -210,6 +210,19 @@ class UserAuthenticatorTest : BaseTest() {
     }
 
     @Test
+    fun `Given login names in the alphabet of 2 and of 51 characters, Then each is refused without reading a user`() {
+        // Given: no account can hold either, so the store has nothing to answer
+        val logins = listOf("ab", "a".repeat(51)).map { BasicAuthLogin(it, createRandomString()) }
+        givenTheDummyHashAlone()
+
+        // When
+        logins.forEach { failTimesWithoutAUser(it, 1) }
+
+        // Then
+        verify(exactly = 0) { userRepository.findUserByName(any()) }
+    }
+
+    @Test
     fun `Given the threshold reached on a name outside the account alphabet, Then the next attempt is refused`() {
         // Given
         val login = BasicAuthLogin("ａｄｍｉｎ", createRandomString())

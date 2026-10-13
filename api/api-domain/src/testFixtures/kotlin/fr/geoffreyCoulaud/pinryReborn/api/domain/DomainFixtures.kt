@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.domain
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.BoardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.CollectionName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Username
 
 /** The domain's values as tests build them, each through its factory. */
 object DomainFixtures {
@@ -12,4 +13,6 @@ object DomainFixtures {
 
     fun collectionName(text: String): CollectionName =
         checkNotNull(CollectionName.parse(text)) { "Not a collection name: $text" }
+
+    fun username(text: String): Username = checkNotNull(Username.parse(text)) { "Not an account name: $text" }
 }

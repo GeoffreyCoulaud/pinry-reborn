@@ -1,14 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Username
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import org.eclipse.microprofile.openapi.annotations.media.Schema
 
 data class UserInputDto(
-    @field:NotBlank
-    @field:Size(min = 3, max = User.MAX_NAME_LENGTH)
-    @field:Pattern(regexp = User.NAME_PATTERN)
+    @field:AccountName
+    @field:Schema(pattern = Username.PATTERN, minLength = Username.MIN_LENGTH, maxLength = Username.MAX_LENGTH)
     val name: String,
     @field:NotBlank @field:Size(min = 8, max = 72) val password: String,
 )

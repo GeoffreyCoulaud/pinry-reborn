@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HashedPassword
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Login
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Login.BasicAuthLogin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Username
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserPasswordHashRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.PasswordHasher
@@ -39,7 +40,7 @@ class UserAuthenticator(
         val attemptKey = AuthenticationAttemptKey.forLogin(login.userName)
         attemptLimiter.check(attemptKey)
         // Outside the alphabet, the store's width fold reaches an account under another key (ADR 0059, decision 11).
-        val user = if (ACCOUNT_NAME.matches(login.userName)) userRepository.findUserByName(login.userName) else null
+        val user = Username.parse(login.userName)?.let { userRepository.findUserByName(it.text) }
         val hash = user?.let { userPasswordRepository.findCurrentPasswordHash(it) }
         if (user == null || hash == null) {
             // Constant cost even without a user/hash: the result is ignored.
@@ -59,9 +60,5 @@ class UserAuthenticator(
         }
         attemptLimiter.recordSuccess(attemptKey)
         return user
-    }
-
-    private companion object {
-        val ACCOUNT_NAME = Regex(User.NAME_PATTERN)
     }
 }

@@ -5,6 +5,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.Probl
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.UserOutputDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDtoMapper.toDto
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.UserDtoMapper.toUsername
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.UserCreator
 import jakarta.annotation.security.PermitAll
@@ -46,7 +47,7 @@ class UserController(private val userCreator: UserCreator) {
     )
     @APIResponse(responseCode = "415", ref = SharedRefusalsFilter.UNSUPPORTED_MEDIA_TYPE)
     fun createUser(@Valid @NotNull userDto: UserInputDto): RestResponse<UserOutputDto> {
-        val userOutputDto = userCreator.createUserWithPassword(name = userDto.name, password = userDto.password).toDto()
-        return RestResponse.ok(userOutputDto)
+        val user = userCreator.createUserWithPassword(name = userDto.name.toUsername(), password = userDto.password)
+        return RestResponse.ok(user.toDto())
     }
 }

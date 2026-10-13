@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Username
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserPasswordHashRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
@@ -20,7 +21,7 @@ class UserCreator(
     private val clock: Clock,
 ) {
     fun createUserWithPassword(
-        name: String,
+        name: Username,
         password: String,
     ): User = transactionRunner.inTransaction {
         val user = saveUser(name)
@@ -32,9 +33,9 @@ class UserCreator(
     }
 
     // The index is the sole authority on the name being free, case and tombstones included: no read here.
-    private fun saveUser(name: String): User =
+    private fun saveUser(name: Username): User =
         try {
-            userRepository.saveUser(User(id = UUID.randomUUID(), name = name.trim(), createdAt = clock.now()))
+            userRepository.saveUser(User(id = UUID.randomUUID(), name = name.text, createdAt = clock.now()))
         } catch (error: UsernameAlreadyTakenException) {
             throw UsernameAlreadyTakenError(error)
         }

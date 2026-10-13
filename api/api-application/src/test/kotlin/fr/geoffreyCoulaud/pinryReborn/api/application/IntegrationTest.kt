@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.username
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -60,7 +61,7 @@ abstract class IntegrationTest {
         password: String = DEFAULT_PASSWORD,
         rememberMe: Boolean = false,
     ): AuthenticatedUser {
-        val user = userCreator.createUserWithPassword(name = name, password = password)
+        val user = userCreator.createUserWithPassword(name = username(name), password = password)
         val token =
             RestAssured.given()
                 .contentType(ContentType.JSON)

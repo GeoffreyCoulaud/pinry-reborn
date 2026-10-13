@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.username
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
@@ -46,7 +47,7 @@ class AuthAttemptLimitIntegrationTest : IntegrationTest() {
     fun `Given the threshold reached on one name, Then the next login is 429 with Retry-After`() {
         // Given: a user of this case's own, failed up to the threshold
         val name = createRandomString()
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
         repeat(threshold) { login(name).then().statusCode(UNAUTHORIZED).body(CODE, equalTo(AUTHENTICATION_FAILED)) }
 
         // When / Then: the attempt past the threshold buys a refusal instead of another guess
@@ -62,7 +63,7 @@ class AuthAttemptLimitIntegrationTest : IntegrationTest() {
         // Given: a user whose name holds letters, so the two spellings below really differ
         val name = "user" + createRandomString()
         assertNotEquals(name, spelling(name, 1), "The alternated spelling must differ, or this case pins nothing")
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
 
         // When: every attempt is spelled in the other case
         repeat(threshold) { attempt -> login(spelling(name, attempt)).then().statusCode(UNAUTHORIZED) }
@@ -76,7 +77,7 @@ class AuthAttemptLimitIntegrationTest : IntegrationTest() {
         // Given: an account, and its name in full-width letters, which the column's collation reads as the same name
         val name = "user" + createRandomString()
         val fullWidth = name.map { it + FULL_WIDTH_OFFSET }.joinToString("")
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
 
         // When: the full-width spelling with the account's own password, up to the threshold
         repeat(threshold) {

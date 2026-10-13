@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.username
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HashedPassword
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PasswordHashAlgorithm
@@ -49,7 +50,7 @@ class UserCreatorTest : BaseTest() {
     @Test
     fun `When creating a user, then should succeed`() {
         // Given
-        val name = "John Doe"
+        val name = username("John.Doe")
         stubPasswordHashing()
         every { clock.now() } returns clockInstant
         every { userRepository.saveUser(any()) } answers { firstArg() }
@@ -58,7 +59,7 @@ class UserCreatorTest : BaseTest() {
         val created = useCase.createUserWithPassword(name = name, password = password)
 
         // Then
-        assertEquals(name, created.name)
+        assertEquals(name.text, created.name)
         assertEquals(clockInstant, created.createdAt)
     }
 
@@ -66,7 +67,7 @@ class UserCreatorTest : BaseTest() {
     fun `Given the store refuses a taken name, Then creation rethrows UsernameAlreadyTakenError`() {
         // Given: the index is the sole authority, so the refusal arrives as the adapter's exception.
         // No hashing stub, because the save refuses before the hash is reached.
-        val name = "John Doe"
+        val name = username("John.Doe")
         val collision = UsernameAlreadyTakenException(Exception("unique constraint violated"))
         every { clock.now() } returns clockInstant
         every { userRepository.saveUser(any()) } throws collision
@@ -81,7 +82,7 @@ class UserCreatorTest : BaseTest() {
     @Test
     fun `Given a clock, Then createUserWithPassword stamps the hash with the clock's instant`() {
         // Given
-        val name = "John Doe"
+        val name = username("John.Doe")
         every { clock.now() } returns clockInstant
         every { userRepository.saveUser(any()) } answers { firstArg() }
         val saved = stubPasswordHashing()

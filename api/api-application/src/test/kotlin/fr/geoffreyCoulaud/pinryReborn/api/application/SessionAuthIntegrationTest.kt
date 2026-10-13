@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.username
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.SessionTokenModel
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.ebean.DB
@@ -47,7 +48,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
     /** A user with a live cookie session, returning the cookie's value. */
     private fun cookieSession(rememberMe: Boolean? = null): String {
         val name = createRandomString()
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
         return login(name, rememberMe = rememberMe, transport = "COOKIE")
             .then()
             .statusCode(200)
@@ -58,7 +59,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
     @Test
     fun `Given valid credentials, Then POST sessions returns 201 with a token and ISO-8601 UTC metadata`() {
         val name = createRandomString()
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
         login(name)
             .then()
             .statusCode(201)
@@ -71,7 +72,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
     @Test
     fun `Given the bearer transport, Then POST sessions sets no cookie`() {
         val name = createRandomString()
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
         login(name).then().statusCode(201).header("Set-Cookie", nullValue())
     }
 
@@ -79,7 +80,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
     fun `Given the cookie transport, Then POST sessions answers 200 with a hardened cookie and no token`() {
         // Given
         val name = createRandomString()
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
 
         // When
         val response =
@@ -164,7 +165,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
     @Test
     fun `Given a bad password, Then POST sessions returns 401 AUTHENTICATION_FAILED`() {
         val name = createRandomString()
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
         login(name, password = "wrong-password")
             .then()
             .statusCode(401)
@@ -184,7 +185,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         // A revoked cookie stays in the browser, and signing in again must still work.
         // Given
         val name = createRandomString()
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
 
         // When
         val response =
@@ -267,7 +268,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
     @Test
     fun `Given two sessions for one user, Then DELETE sessions revokes them all`() {
         val name = createRandomString()
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
         val first = login(name).then().statusCode(201).extract().path<String>("token")
         val second = login(name).then().statusCode(201).extract().path<String>("token")
 
@@ -421,7 +422,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
         // Given
         val name = createRandomString()
         val password = createRandomString()
-        userCreator.createUserWithPassword(name, password)
+        userCreator.createUserWithPassword(username(name), password)
         var token = ""
 
         // When
@@ -452,7 +453,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
     fun `Given a session cookie set and then sent, Then the request log carries it neither time`() {
         // Given
         val name = createRandomString()
-        userCreator.createUserWithPassword(name, DEFAULT_PASSWORD)
+        userCreator.createUserWithPassword(username(name), DEFAULT_PASSWORD)
         var cookie = ""
 
         // When
