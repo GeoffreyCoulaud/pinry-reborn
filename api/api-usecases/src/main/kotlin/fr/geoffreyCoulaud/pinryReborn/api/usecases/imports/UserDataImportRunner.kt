@@ -3,6 +3,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.BoardName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.CollectionName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
@@ -42,6 +43,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.PersonCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.TagCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.deleteQuietly
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.UserDataExportRequester
+import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.ImportFieldBounds.NAME_FAULT
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.PermanentTaskException
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.exceptions.TaskLeaseLostException
 import java.io.IOException
@@ -325,8 +327,7 @@ class UserDataImportRunner(
         val name = tag?.let { TagName.parse(it.name) }
         when {
             tag == null -> record(tally, UserDataImportIssueKind.LINE_MALFORMED, line.line, null, line.failure)
-            name == null ->
-                record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, tag.name, ImportFieldBounds.NAME_FAULT)
+            name == null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, tag.name, NAME_FAULT)
             else -> resolveTag(user, name, clamp.clamp(tag.createdAt), tally)
         }
     }
@@ -371,14 +372,7 @@ class UserDataImportRunner(
         val descriptionFault = board?.let { ImportFieldBounds.descriptionFault(it.description) }
         when {
             board == null -> record(tally, UserDataImportIssueKind.LINE_MALFORMED, line.line, null, line.failure)
-            name == null ->
-                record(
-                    tally,
-                    UserDataImportIssueKind.FIELD_INVALID,
-                    line.line,
-                    board.name,
-                    ImportFieldBounds.NAME_FAULT,
-                )
+            name == null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, board.name, NAME_FAULT)
             descriptionFault != null ->
                 record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, board.name, descriptionFault)
             else -> {
@@ -455,23 +449,23 @@ class UserDataImportRunner(
         tally: MetadataTally,
     ) {
         val collection = line.value
-        val fault = collection?.let { collectionFault(it) }
-        val boardName = collection?.let { BoardName.parse((it.board ?: ImportedRef(it.name)).name) }
+        val fault = collection?.let { ImportFieldBounds.httpAddressFault(URL_FIELD, it.url) }
+        val name = collection?.let { CollectionName.parse(it.name) }
+        // A line naming no board names its board after itself.
+        val board = collection?.board
+        val boardName = if (board == null) name?.let(BoardName::namedAfter) else BoardName.parse(board.name)
         when {
             collection == null -> record(tally, UserDataImportIssueKind.LINE_MALFORMED, line.line, null, line.failure)
             fault != null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, collection.url, fault)
-            // Reached for a named board alone: one named after the collection passed the name's fault above.
+            name == null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, collection.url, NAME_FAULT)
             boardName == null ->
                 record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, collection.url, BOARD_NAME_FAULT)
             else -> {
                 val url = ImportedAddress.read(collection.url)
-                if (remoteCollectionLinker.link(user, url, collection.name, boardName, now)) tally.created++
+                if (remoteCollectionLinker.link(user, url, name, boardName, now)) tally.created++
             }
         }
     }
-
-    private fun collectionFault(collection: ImportedCollection): String? =
-        ImportFieldBounds.httpAddressFault(URL_FIELD, collection.url) ?: ImportFieldBounds.nameFault(collection.name)
 
     /** Before the pins, which read the archive ids this walk maps to rows. */
     private fun walkPersons(
@@ -803,7 +797,7 @@ class UserDataImportRunner(
         const val SOURCE_CONTEXT_URL = "sourceContextUrl"
         const val SOURCE_MEDIA_URL = "sourceMediaUrl"
         const val URL_FIELD = "url"
-        const val BOARD_NAME_FAULT = "board ${ImportFieldBounds.NAME_FAULT}"
+        const val BOARD_NAME_FAULT = "board $NAME_FAULT"
         const val COLLECTIONS_FIELD = "collections"
         const val TAGS_FIELD = "tags"
         const val BOARDS_FIELD = "boards"

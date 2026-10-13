@@ -8,7 +8,7 @@ data class RemoteCollection(
     override val id: UUID,
     val author: User,
     val url: HttpUrl,
-    val name: String,
+    val name: CollectionName,
     val board: Board,
     val createdAt: Instant,
 ) : Identifiable

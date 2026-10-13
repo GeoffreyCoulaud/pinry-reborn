@@ -9,5 +9,8 @@ value class BoardName private constructor(val text: String) {
     companion object {
         /** Null for a text [NameBounds] refuses. */
         fun parse(text: String): BoardName? = if (NameBounds.accepts(text)) BoardName(text) else null
+
+        /** Never refused: a collection's name passed the same [NameBounds]. */
+        fun namedAfter(collection: CollectionName): BoardName = BoardName(collection.text)
     }
 }

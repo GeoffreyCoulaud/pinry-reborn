@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.CollectionName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.BoardModelMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.BoardModelMapper.toModel
@@ -14,7 +15,7 @@ object RemoteCollectionModelMapper {
             id = id,
             author = author.toModel(),
             url = url.toString(),
-            name = name,
+            name = name.text,
             board = board.toModel(),
             createdAt = createdAt,
         )
@@ -24,7 +25,7 @@ object RemoteCollectionModelMapper {
             id = id,
             author = author.toDomain(),
             url = url.toHttpUrl(),
-            name = name,
+            name = checkNotNull(CollectionName.parse(name)) { "The stored collection name is refused: $name" },
             board = board.toDomain(),
             createdAt = createdAt,
         )

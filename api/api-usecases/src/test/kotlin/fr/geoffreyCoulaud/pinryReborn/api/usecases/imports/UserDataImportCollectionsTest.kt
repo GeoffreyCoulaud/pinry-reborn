@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.collectionName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportIssueKind
@@ -42,6 +43,7 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         assertNull(board.softDeletedAt)
         assertEquals(listOf(FEED_URL to board), linked.map { it.url.toString() to it.board })
         assertEquals(now, linked.single().createdAt)
+        assertEquals("Feed", linked.single().name.text)
         assertEquals(listOf(board), savedPins.single().boards)
         assertEquals(1, stored.createdBoards)
     }
@@ -94,7 +96,14 @@ internal class UserDataImportCollectionsTest : UserDataImportRunnerFixtures() {
         // Given
         val held = anExistingBoard("Held")
         val existing =
-            RemoteCollection(randomUUID(), user, checkNotNull(HttpUrl.parse(FEED_URL)), "Feed", held, accountCreatedAt)
+            RemoteCollection(
+                randomUUID(),
+                user,
+                checkNotNull(HttpUrl.parse(FEED_URL)),
+                collectionName("Feed"),
+                held,
+                accountCreatedAt,
+            )
         val line = ImportedCollection(url = FEED_URL, name = "Renamed", board = ImportedRef("Other"))
         val source =
             FakeArchiveSource(

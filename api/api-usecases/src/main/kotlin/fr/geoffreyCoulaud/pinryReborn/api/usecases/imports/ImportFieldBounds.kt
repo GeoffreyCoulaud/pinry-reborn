@@ -17,8 +17,6 @@ object ImportFieldBounds {
     private val ENTRY_PATH = Regex("^media/[A-Za-z0-9._-]+$")
     private val TRAVERSAL_SEGMENTS = setOf(".", "..")
 
-    fun nameFault(name: String): String? = if (NameBounds.accepts(name)) null else NAME_FAULT
-
     fun descriptionFault(description: String): String? =
         if (description.length > MAX_DESCRIPTION_LENGTH) {
             "description is longer than $MAX_DESCRIPTION_LENGTH characters"

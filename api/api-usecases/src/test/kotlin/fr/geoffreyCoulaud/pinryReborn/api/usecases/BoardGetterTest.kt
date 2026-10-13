@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.collectionName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
@@ -129,7 +130,7 @@ class BoardGetterTest {
                     id = randomUUID(),
                     author = reader,
                     url = checkNotNull(HttpUrl.parse("https://remote.test/${createRandomString()}")),
-                    name = createRandomString(),
+                    name = collectionName(createRandomString()),
                     board = board,
                     createdAt = TestTime.now,
                 )
