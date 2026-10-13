@@ -1082,9 +1082,9 @@
         "properties" : {
           "name" : {
             "type" : "string",
-            "pattern" : "^[A-Za-z0-9._-]+$",
+            "maxLength" : 50,
             "minLength" : 3,
-            "maxLength" : 50
+            "pattern" : "^[A-Za-z0-9._-]+$"
           },
           "password" : {
             "type" : "string",

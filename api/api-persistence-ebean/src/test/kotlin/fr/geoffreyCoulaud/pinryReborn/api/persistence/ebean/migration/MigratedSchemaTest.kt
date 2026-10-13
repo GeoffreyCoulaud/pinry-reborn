@@ -2,7 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.NameBounds
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Username
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.NewTask
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
@@ -346,7 +346,7 @@ class MigratedSchemaTest : RepositoryTest() {
         private val TEXT_KEY_BYTES =
             mapOf(
                 // The account alphabet is ASCII.
-                "ux_users_name" to User.MAX_NAME_LENGTH,
+                "ux_users_name" to Username.MAX_LENGTH,
                 "ux_boards_author_name" to NameBounds.MAX_LENGTH * UTF8_BYTES_PER_UNIT,
                 "ux_tags_author_name" to NameBounds.MAX_LENGTH * UTF8_BYTES_PER_UNIT,
                 // The addresses by their digest, whatever their length.
