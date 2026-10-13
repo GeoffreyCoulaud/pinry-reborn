@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.ExponentialBackoffWithJitter
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.NewTask
 import fr.geoffreyCoulaud.pinryReborn.api.domain.tasks.TaskState
@@ -12,7 +12,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMe
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanTaskQueue
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.ebean.datasource.DataSourcePool
 import java.time.Duration
 import java.time.Instant
@@ -39,7 +38,7 @@ class EbeanTransactionRunnerTest : RepositoryTest() {
     private fun newDownloadTask(pinId: UUID) = NewTask("pin.download", pinId.toString(), now, maxAttempts = 5)
 
     private fun savedPin(): Pin {
-        val user = userRepository.saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
+        val user = userRepository.saveUser(aUser())
         return pinRepository.savePin(
             Pin(
                 randomUUID(),

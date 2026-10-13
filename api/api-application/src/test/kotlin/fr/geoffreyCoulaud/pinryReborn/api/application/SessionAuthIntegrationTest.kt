@@ -118,7 +118,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
             .get("/api/v1/me")
             .then()
             .statusCode(200)
-            .body("name", equalTo(bearer.user.name))
+            .body("name", equalTo(bearer.user.name.text))
     }
 
     @Test
@@ -207,7 +207,7 @@ class SessionAuthIntegrationTest : IntegrationTest() {
             .get("/api/v1/me")
             .then()
             .statusCode(200)
-            .body("name", org.hamcrest.Matchers.equalTo(auth.user.name))
+            .body("name", org.hamcrest.Matchers.equalTo(auth.user.name.text))
     }
 
     @Test

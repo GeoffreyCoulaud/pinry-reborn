@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveFormat
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportArchiveStore
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
@@ -57,7 +57,7 @@ class AccountDeletionCleanerTest : BaseTest() {
         )
 
     private val userId = randomUUID()
-    private val user = User(id = userId, name = "u", softDeletedAt = TestTime.now, createdAt = TestTime.now)
+    private val user = aUser(id = userId, softDeletedAt = TestTime.now)
 
     private fun buildPin() =
         Pin(

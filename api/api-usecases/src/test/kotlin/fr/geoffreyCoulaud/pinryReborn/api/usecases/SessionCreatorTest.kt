@@ -1,23 +1,21 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.IssuedSession
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Login.BasicAuthLogin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.SessionExpiryPolicy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.TokenGenerator
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.UserAuthenticationInvalidPasswordError
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -34,7 +32,7 @@ class SessionCreatorTest {
         SessionCreator(userAuthenticator, repository, tokenGenerator, clock, policy, transactionRunner)
 
     private val now = Instant.parse("2026-07-21T00:00:00Z")
-    private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
 
     // Passthrough so the transactional block runs in the behavioral tests; overridden where a test
     // needs to prove the writes live inside the block.

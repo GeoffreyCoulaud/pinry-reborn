@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
@@ -10,7 +11,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaDownloadRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.ebean.test.LoggedSql
 import java.time.Instant
 import java.util.UUID
@@ -31,7 +31,7 @@ class EbeanMediaDownloadRepositoryTest : RepositoryTest() {
     private fun EbeanMediaDownloadRepository.upsertPending(pinId: UUID, sourceUrl: String, taskId: UUID, now: Instant) =
         upsertPending(pinId, checkNotNull(HttpUrl.parse(sourceUrl)), taskId, now)
 
-    private fun saveUser(): User = users.saveUser(User(randomUUID(), createRandomString(), createdAt = now))
+    private fun saveUser(): User = users.saveUser(aUser(createdAt = now))
 
     private fun failedAt(updatedAt: Instant): UUID {
         val pinId = savedPinId()

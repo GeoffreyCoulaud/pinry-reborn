@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -29,8 +30,6 @@ class BoardRecycleBinControllerTest {
             boardGetter = boardGetter,
             securityIdentity = securityIdentity,
         )
-
-    private fun aUser() = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
 
     private fun aBoard(author: User) =
         Board(

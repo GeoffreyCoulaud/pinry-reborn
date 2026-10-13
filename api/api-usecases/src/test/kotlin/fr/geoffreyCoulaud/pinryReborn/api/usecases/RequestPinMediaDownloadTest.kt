@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
@@ -33,7 +34,7 @@ class RequestPinMediaDownloadTest {
     private val runner: TransactionRunner = mockk()
     private val clock: Clock = mockk()
     private val now = Instant.parse("2026-07-10T00:00:00Z")
-    private val owner = User(randomUUID(), "o", createdAt = TestTime.now)
+    private val owner = aUser()
     private val pinId = randomUUID()
     private val sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png"))
 
@@ -96,7 +97,7 @@ class RequestPinMediaDownloadTest {
 
     @Test
     fun `Given a non-owner, Then it throws MediaPermissionError`() {
-        every { pins.findPinById(pinId) } returns pin(author = User(randomUUID(), "other", createdAt = TestTime.now))
+        every { pins.findPinById(pinId) } returns pin(author = aUser(name = "other"))
         assertThrows(MediaPermissionError::class.java) { subject.request(pinId, owner, sourceUrl) }
     }
 

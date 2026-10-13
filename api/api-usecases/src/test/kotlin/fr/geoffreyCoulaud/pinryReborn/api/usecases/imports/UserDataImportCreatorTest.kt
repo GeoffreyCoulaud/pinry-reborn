@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportAlreadyInProgressException
@@ -10,12 +10,10 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataImportRepo
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ImportAlreadyInProgressError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import java.time.Instant
 import java.util.UUID
-import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -23,7 +21,7 @@ import org.junit.jupiter.api.Test
 class UserDataImportCreatorTest : BaseTest() {
     private val clock = mockk<Clock>()
     private val now = Instant.parse("2026-08-14T10:00:00Z")
-    private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
 
     @Test
     fun `Given no active import, Then one is inserted without a single read`() {

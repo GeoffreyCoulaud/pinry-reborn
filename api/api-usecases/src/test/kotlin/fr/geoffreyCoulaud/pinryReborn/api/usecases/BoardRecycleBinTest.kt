@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -56,7 +57,7 @@ class BoardRecycleBinTest {
     @Test
     fun `Given an owned active board, Then softDelete recycles it`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board = createBoard(author = user)
         val recycled = board.copy(softDeletedAt = transitionInstant)
         every { boardRepository.findBoardById(board.id) } returns board
@@ -73,7 +74,7 @@ class BoardRecycleBinTest {
     @Test
     fun `Given an owned active board, Then softDelete hands the repository the clock's instant`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board = createBoard(author = user)
         val stampedInstant = slot<Instant>()
         every { boardRepository.findBoardById(board.id) } returns board
@@ -91,7 +92,7 @@ class BoardRecycleBinTest {
     @Test
     fun `Given an already recycled board, Then softDelete throws BoardDeletionBoardAlreadySoftDeletedError`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board = createBoard(author = user, softDeletedAt = TestTime.now)
         every { boardRepository.findBoardById(board.id) } returns board
 
@@ -104,7 +105,7 @@ class BoardRecycleBinTest {
     @Test
     fun `Given a missing board, Then softDelete throws BoardDeletionBoardDoesNotExistError`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val boardId = randomUUID()
         every { boardRepository.findBoardById(boardId) } returns null
 
@@ -117,8 +118,8 @@ class BoardRecycleBinTest {
     @Test
     fun `Given a board owned by another user, Then softDelete throws BoardDeletionPermissionError`() {
         // Given
-        val owner = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val otherUser = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val owner = aUser()
+        val otherUser = aUser()
         val board = createBoard(author = owner)
         every { boardRepository.findBoardById(board.id) } returns board
 
@@ -133,7 +134,7 @@ class BoardRecycleBinTest {
     @Test
     fun `Given an owned recycled board, Then restore restores it`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board = createBoard(author = user, softDeletedAt = TestTime.now)
         val restored = board.copy(softDeletedAt = null)
         every { boardRepository.findBoardById(board.id) } returns board
@@ -150,7 +151,7 @@ class BoardRecycleBinTest {
     @Test
     fun `Given an owned recycled board, Then restore hands the repository the clock's instant`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board = createBoard(author = user, softDeletedAt = TestTime.now)
         val stampedInstant = slot<Instant>()
         every { boardRepository.findBoardById(board.id) } returns board
@@ -167,7 +168,7 @@ class BoardRecycleBinTest {
     @Test
     fun `Given a board that is not recycled, Then restore throws BoardDeletionBoardNotSoftDeletedError`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board = createBoard(author = user)
         every { boardRepository.findBoardById(board.id) } returns board
 
@@ -180,8 +181,8 @@ class BoardRecycleBinTest {
     @Test
     fun `Given a board owned by another user, Then restore throws BoardDeletionPermissionError`() {
         // Given
-        val owner = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val otherUser = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val owner = aUser()
+        val otherUser = aUser()
         val board = createBoard(author = owner, softDeletedAt = TestTime.now)
         every { boardRepository.findBoardById(board.id) } returns board
 
@@ -196,7 +197,7 @@ class BoardRecycleBinTest {
     @Test
     fun `Given an owned recycled board, Then permanentlyDelete deletes it`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board = createBoard(author = user, softDeletedAt = TestTime.now)
         every { boardRepository.findBoardById(board.id) } returns board
         justRun { boardRepository.permanentlyDeleteBoard(board) }
@@ -211,7 +212,7 @@ class BoardRecycleBinTest {
     @Test
     fun `Given a board that is not recycled, Then permanentlyDelete throws BoardDeletionBoardNotSoftDeletedError`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board = createBoard(author = user)
         every { boardRepository.findBoardById(board.id) } returns board
 
@@ -224,8 +225,8 @@ class BoardRecycleBinTest {
     @Test
     fun `Given a board owned by another user, Then permanentlyDelete throws BoardDeletionPermissionError`() {
         // Given
-        val owner = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val otherUser = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val owner = aUser()
+        val otherUser = aUser()
         val board = createBoard(author = owner, softDeletedAt = TestTime.now)
         every { boardRepository.findBoardById(board.id) } returns board
 
@@ -240,7 +241,7 @@ class BoardRecycleBinTest {
     @Test
     fun `When emptyRecycleBin, Then it delegates to permanentlyDeleteAllRecycledBoardsForUser`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         justRun { boardRepository.permanentlyDeleteAllRecycledBoardsForUser(user) }
 
         // When
@@ -255,7 +256,7 @@ class BoardRecycleBinTest {
     @Test
     fun `When listRecycledBoardsForUser, Then it delegates to the repository`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board = createBoard(author = user, softDeletedAt = TestTime.now)
         val expected = listOf(board)
         every { boardRepository.findRecycledBoardsForUser(user) } returns expected

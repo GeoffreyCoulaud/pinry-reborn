@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
@@ -12,8 +13,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.UserDataExportDeleter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.UserDataExportDownloader
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.UserDataExportGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exports.UserDataExportRequester
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.quarkus.security.identity.SecurityIdentity
@@ -43,8 +42,6 @@ class MeExportControllerTest {
             deleter = deleter,
             securityIdentity = securityIdentity,
         )
-
-    private fun aUser() = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
 
     private fun pendingExport(userId: java.util.UUID) =
         UserDataExport(

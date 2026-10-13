@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -20,8 +21,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportChunkRe
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportCreator
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.UserDataImportIssueLister
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.quarkus.security.identity.SecurityIdentity
@@ -50,8 +49,6 @@ class MeImportControllerTest {
             canceller = canceller,
             securityIdentity = securityIdentity,
         )
-
-    private fun aUser() = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
 
     private fun awaitingImport(userId: UUID) =
         UserDataImport(

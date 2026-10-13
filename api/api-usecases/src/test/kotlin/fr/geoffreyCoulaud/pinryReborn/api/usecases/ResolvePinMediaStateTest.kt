@@ -1,12 +1,12 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
@@ -32,7 +32,7 @@ class ResolvePinMediaStateTest {
     private val mediaRepository: MediaRepositoryInterface = mockk()
     private val downloads: MediaDownloadRepositoryInterface = mockk()
     private val connection = SingleConnectionRunner()
-    private val owner = User(randomUUID(), "o", createdAt = TestTime.now)
+    private val owner = aUser()
     private val pinId = randomUUID()
     private val subject = ResolvePinMediaState(pins, mediaRepository, downloads, connection)
 
@@ -44,7 +44,7 @@ class ResolvePinMediaStateTest {
 
     @Test
     fun `Given a non-owner, Then it throws MediaPermissionError`() {
-        val otherUser = User(randomUUID(), "x", createdAt = TestTime.now)
+        val otherUser = aUser()
         every { pins.findPinById(pinId) } returns
             Pin(
                 pinId,

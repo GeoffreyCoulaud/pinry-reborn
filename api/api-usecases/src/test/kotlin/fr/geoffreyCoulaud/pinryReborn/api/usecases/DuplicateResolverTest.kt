@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
@@ -42,7 +43,7 @@ class DuplicateResolverTest {
     private val clock = mockk<Clock> { every { now() } returns TestTime.now }
     private val useCase = DuplicateResolver(pinRepository, duplicateRepository, clock, PassthroughTransactionRunner())
 
-    private val user = User(randomUUID(), "John Doe", createdAt = TestTime.now)
+    private val user = aUser()
 
     private fun pin(description: String = "", createdAt: Instant = TestTime.now, author: User = user) =
         Pin(randomUUID(), author, null, null, description, emptyList(), emptyList(), createdAt, createdAt)
@@ -87,7 +88,7 @@ class DuplicateResolverTest {
     fun `Given an unknown, foreign or recycled open pin, or a pin outside its list, Then nothing is written`() {
         // Given: the open pin lists [other] alone
         val (other, unlisted) = List(2) { pin() }
-        val foreign = pin(author = User(randomUUID(), "Other", createdAt = TestTime.now))
+        val foreign = pin(author = aUser(name = "Other"))
         val recycled = pin().copy(softDeletedAt = TestTime.now)
         val resolve = { open: Pin, named: Map<UUID, DuplicateDecision> ->
             stored(open, other)

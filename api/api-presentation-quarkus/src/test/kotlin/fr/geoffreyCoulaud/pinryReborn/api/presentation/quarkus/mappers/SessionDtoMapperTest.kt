@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.IssuedSession
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.SessionDtoMapper.toCreatedDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.SessionDtoMapper.toExistingDto
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
@@ -36,11 +36,7 @@ class SessionDtoMapperTest {
         val token =
             SessionToken(
                 randomUUID(),
-                User(
-                    randomUUID(),
-                    "alice",
-                    createdAt = TestTime.now,
-                ),
+                aUser(name = "alice"),
                 expiresAt,
                 persistent = true,
                 createdAt = TestTime.now,

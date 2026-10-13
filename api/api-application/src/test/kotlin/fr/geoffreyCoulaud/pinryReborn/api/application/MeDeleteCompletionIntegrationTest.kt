@@ -158,7 +158,7 @@ class MeDeleteCompletionIntegrationTest : IntegrationTest() {
         // Given: an authenticated user with a real pin carrying an uploaded image
         val password = "password123"
         val auth = createAuthenticatedUser(password = password)
-        val name = auth.user.name
+        val name = auth.user.name.text
         val pin =
             pinCreator.createPin(
                 author = auth.user,

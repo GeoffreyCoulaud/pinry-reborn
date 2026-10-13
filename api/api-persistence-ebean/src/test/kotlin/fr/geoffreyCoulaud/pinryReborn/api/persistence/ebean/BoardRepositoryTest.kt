@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
@@ -11,7 +12,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.BoardRe
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
@@ -28,14 +28,7 @@ class BoardRepositoryTest : RepositoryTest() {
     private val userRepository = UserRepository(persistor)
     private val mediaRepository = EbeanMediaRepository(persistor, transactionRunner)
 
-    private fun createAndSaveUser(): User =
-        userRepository.saveUser(
-            User(
-                id = randomUUID(),
-                name = createRandomString(),
-                createdAt = storableNow(),
-            )
-        )
+    private fun createAndSaveUser(): User = userRepository.saveUser(aUser())
 
     private fun createAndSaveBoard(
         name: String,

@@ -1,7 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.mockk
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 class SessionRevokerTest {
     private val repository = mockk<SessionTokenRepositoryInterface>(relaxed = true)
     private val revoker = SessionRevoker(repository)
-    private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
 
     @Test
     fun `Given a current token, Then revokeCurrent deletes it by id`() {

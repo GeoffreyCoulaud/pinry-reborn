@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveFormat
@@ -9,7 +9,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserDataExportRepo
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.imports.PassthroughTransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.CancelTask
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -43,7 +42,7 @@ class UserDataExportDeleterTest : BaseTest() {
             transactions,
         )
 
-    private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
     private val exportId = randomUUID()
     private val now = Instant.parse("2026-07-22T10:00:00Z")
 

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
@@ -20,7 +21,7 @@ class PersonSearchControllerTest {
     private val securityIdentity = mockk<SecurityIdentity>()
     private val controller =
         PersonSearchController(personSearcher = personSearcher, securityIdentity = securityIdentity)
-    private val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+    private val user = aUser()
 
     @Test
     fun `Given no limit, Then the searcher is asked the tag search's default and the addresses are answered sorted`() {

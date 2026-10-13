@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
@@ -36,7 +37,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.MediaFingerprintTask
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -79,7 +79,7 @@ class SetPinMediaTest : BaseTest() {
             runner,
         )
 
-    private val owner = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
+    private val owner = aUser()
 
     private fun pin(author: User = owner) =
         Pin(
@@ -188,7 +188,7 @@ class SetPinMediaTest : BaseTest() {
 
     @Test
     fun `Given a non-owner, Then it throws MediaPermissionError`() {
-        val p = pin(author = User(randomUUID(), createRandomString(), createdAt = TestTime.now))
+        val p = pin(author = aUser())
         every { pins.findPinById(p.id) } returns p
         assertThrows(MediaPermissionError::class.java) { useCase.set(p.id, owner, upload()) }
     }

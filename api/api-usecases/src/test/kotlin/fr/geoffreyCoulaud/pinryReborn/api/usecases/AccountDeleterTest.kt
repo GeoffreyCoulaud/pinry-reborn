@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
@@ -8,13 +8,11 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ReauthenticationEr
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.AccountDeletionTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import java.time.Instant
-import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -26,7 +24,7 @@ class AccountDeleterTest : BaseTest() {
     private val tx = mockk<TransactionRunner>()
     private val clock = mockk<Clock>()
     private val deleter = AccountDeleter(reauth, users, sessionRevoker, enqueue, tx, clock)
-    private val user = User(id = randomUUID(), name = "u", createdAt = TestTime.now)
+    private val user = aUser()
     private val deletionRequestedAt = Instant.parse("2026-07-29T09:15:00Z")
 
     @Test

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
@@ -7,7 +8,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
@@ -110,7 +110,7 @@ internal abstract class UserDataExportFixtures : BaseTest() {
     protected val retention: Duration = Duration.ofDays(7)
     protected val now: Instant = Instant.parse("2026-07-22T10:00:00Z")
     protected val userId: UUID = randomUUID()
-    protected val user = User(id = userId, name = "alice", createdAt = Instant.parse("2020-01-01T00:00:00Z"))
+    protected val user = aUser(name = "alice", id = userId, createdAt = Instant.parse("2020-01-01T00:00:00Z"))
     protected val exportId: UUID = randomUUID()
     protected val storageKey = ExportArchiveKey.forExport(exportId, "zip")
     protected val stagedByteSize = 2048L

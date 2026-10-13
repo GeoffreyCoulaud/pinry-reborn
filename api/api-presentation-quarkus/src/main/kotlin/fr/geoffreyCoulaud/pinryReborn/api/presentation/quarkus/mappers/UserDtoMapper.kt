@@ -8,7 +8,7 @@ object UserDtoMapper {
     fun User.toDto() =
         UserOutputDto(
             id = id,
-            name = name,
+            name = name.text,
         )
 
     /** Called on a DTO already validated, so a refused name here is a defect. */

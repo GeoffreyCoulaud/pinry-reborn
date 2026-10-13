@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.MediaStore
@@ -16,7 +17,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.SetPinMedia
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.SetPinMediaResult
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaRenditionSizeInvalidError
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
@@ -75,8 +75,6 @@ class MediaControllerTest {
             storageKey = "originals/x/$pinId/y.png",
             createdAt = Instant.EPOCH,
         )
-
-    private fun aUser() = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
 
     @Test
     fun `Given a pin with no existing image, Then setMedia returns 201 with the created image`() {

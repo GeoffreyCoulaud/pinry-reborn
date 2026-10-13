@@ -24,8 +24,8 @@ class MePasswordIntegrationTest : IntegrationTest() {
         // Then: old token rejected
         given().authenticatedAs(auth).get("/api/v1/me").then().statusCode(401)
         // Then: new password logs in, old does not
-        login(auth.user.name, "newpassword1").then().statusCode(201)
-        login(auth.user.name, "password123").then().statusCode(401)
+        login(auth.user.name.text, "newpassword1").then().statusCode(201)
+        login(auth.user.name.text, "password123").then().statusCode(401)
     }
 
     @Test
@@ -39,7 +39,7 @@ class MePasswordIntegrationTest : IntegrationTest() {
             .then()
             .statusCode(403)
             .body("code", equalTo("REAUTHENTICATION_FAILED"))
-        login(auth.user.name, "password123").then().statusCode(201)
+        login(auth.user.name.text, "password123").then().statusCode(201)
     }
 
     @Test
