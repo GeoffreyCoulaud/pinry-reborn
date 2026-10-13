@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
@@ -44,7 +45,7 @@ class PinBoardSetterTest {
     @Test
     fun `Given owned boards, Then resolveBoards answers them in order`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val first = board(user, "First")
         val second = board(user, "Second")
         every { boardRepository.findActiveBoardById(first.id) } returns first
@@ -60,7 +61,7 @@ class PinBoardSetterTest {
     @Test
     fun `Given an unknown boardId, Then resolveBoards throws BoardRetrievalBoardDoesNotExistError`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val unknownBoardId = randomUUID()
         every { boardRepository.findActiveBoardById(unknownBoardId) } returns null
 
@@ -73,8 +74,8 @@ class PinBoardSetterTest {
     @Test
     fun `Given a board owned by another user, Then resolveBoards throws BoardRetrievalPermissionError`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val stranger = User(id = randomUUID(), name = "Jane Roe", createdAt = TestTime.now)
+        val user = aUser()
+        val stranger = aUser()
         val theirs = board(stranger, "Not yours")
         every { boardRepository.findActiveBoardById(theirs.id) } returns theirs
 
@@ -89,7 +90,7 @@ class PinBoardSetterTest {
     @Test
     fun `Given owned pins, Then addPinsToBoard files them under the board at the clock's instant`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val target = board(user, "Target")
         val pinIds = givenPins(pin(user), pin(user))
         every { boardRepository.findActiveBoardById(target.id) } returns target
@@ -105,7 +106,7 @@ class PinBoardSetterTest {
     @Test
     fun `Given owned pins, Then removePinsFromBoard removes them from the board at the clock's instant`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val target = board(user, "Target")
         val pinIds = givenPins(pin(user), pin(user))
         every { boardRepository.findActiveBoardById(target.id) } returns target
@@ -121,8 +122,8 @@ class PinBoardSetterTest {
     @Test
     fun `Given another user's pin last, Then addPinsToBoard refuses before writing the first`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val stranger = User(id = randomUUID(), name = "Jane Roe", createdAt = TestTime.now)
+        val user = aUser()
+        val stranger = aUser()
         val target = board(user, "Target")
         val pinIds = givenPins(pin(user), pin(stranger))
         every { boardRepository.findActiveBoardById(target.id) } returns target
@@ -137,8 +138,8 @@ class PinBoardSetterTest {
     @Test
     fun `Given another user's pin before an unknown one, Then addPinsToBoard refuses the first as the batch orders`() {
         // Given: ADR 0039 answers the error the first refused identifier earns, not the unknown ids first
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val stranger = User(id = randomUUID(), name = "Jane Roe", createdAt = TestTime.now)
+        val user = aUser()
+        val stranger = aUser()
         val target = board(user, "Target")
         val theirs = pin(stranger)
         val pinIds = listOf(theirs.id, randomUUID())
@@ -154,7 +155,7 @@ class PinBoardSetterTest {
     @Test
     fun `Given a missing pin, Then addPinsToBoard throws PinBoardSettingPinDoesNotExistError`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val target = board(user, "Target")
         val missingPinId = randomUUID()
         every { boardRepository.findActiveBoardById(target.id) } returns target
@@ -170,7 +171,7 @@ class PinBoardSetterTest {
     @Test
     fun `Given a recycled pin, Then addPinsToBoard throws PinBoardSettingSoftDeletedPinError`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val target = board(user, "Target")
         val pinIds = givenPins(pin(user).copy(softDeletedAt = TestTime.now))
         every { boardRepository.findActiveBoardById(target.id) } returns target
@@ -185,7 +186,7 @@ class PinBoardSetterTest {
     @Test
     fun `Given an unknown board, Then removePinsFromBoard throws BoardRetrievalBoardDoesNotExistError`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val unknownBoardId = randomUUID()
         every { boardRepository.findActiveBoardById(unknownBoardId) } returns null
 

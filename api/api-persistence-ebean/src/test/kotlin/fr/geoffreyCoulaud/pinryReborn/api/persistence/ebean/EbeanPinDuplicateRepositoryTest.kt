@@ -1,14 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.PinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.query.QPinDuplicateModel
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.queries.withActivePins
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanPinDuplicateRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.util.UUID
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -38,8 +37,7 @@ class EbeanPinDuplicateRepositoryTest : RepositoryTest() {
 
     // Active pins of one user, the last [recycled] of them in the recycle bin.
     private fun storedPins(count: Int, recycled: Int = 0): List<Pin> {
-        val user =
-            UserRepository(persistor).saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
+        val user = UserRepository(persistor).saveUser(aUser())
         val stored =
             List(count) {
                 pins.savePin(

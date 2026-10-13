@@ -59,7 +59,7 @@ class UserCreatorTest : BaseTest() {
         val created = useCase.createUserWithPassword(name = name, password = password)
 
         // Then
-        assertEquals(name.text, created.name)
+        assertEquals(name, created.name)
         assertEquals(clockInstant, created.createdAt)
     }
 

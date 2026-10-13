@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.collectionName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
@@ -22,8 +23,7 @@ class RemoteCollectionRepositoryTest : RepositoryTest() {
     private val boardRepository = BoardRepository(persistor)
     private val userRepository = UserRepository(persistor)
 
-    private fun createAndSaveUser(): User =
-        userRepository.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
+    private fun createAndSaveUser(): User = userRepository.saveUser(aUser())
 
     private fun createAndSaveBoard(user: User): Board =
         boardRepository.saveBoard(

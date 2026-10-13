@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
@@ -9,7 +10,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.Curso
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.CursorDto
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.CursorMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.MediaDownloads
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class MeMediaDownloadControllerTest {
-    private val user = User(randomUUID(), "alice", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
     private val identity = mockk<SecurityIdentity> { every { getAttribute<User>("user") } returns user }
     private val mediaDownloads = mockk<MediaDownloads>(relaxed = true)
     private val pinId = randomUUID()

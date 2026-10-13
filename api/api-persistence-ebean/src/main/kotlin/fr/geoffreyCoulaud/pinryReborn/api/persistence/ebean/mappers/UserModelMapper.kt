@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Username
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.models.UserModel
 
 object UserModelMapper {
@@ -10,7 +11,7 @@ object UserModelMapper {
     fun User.toModel() =
         UserModel(
             id = id,
-            name = name,
+            name = name.text,
             createdAt = createdAt,
             softDeletedAt = softDeletedAt,
         )
@@ -18,7 +19,7 @@ object UserModelMapper {
     fun UserModel.toDomain() =
         User(
             id = id,
-            name = name,
+            name = checkNotNull(Username.parse(name)) { "The stored account name is refused: $name" },
             createdAt = createdAt,
             softDeletedAt = softDeletedAt,
         )

@@ -1,7 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HashedPassword
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PasswordHashAlgorithm
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserPasswordHashRepositoryInterface
@@ -21,7 +21,6 @@ import io.mockk.slot
 import io.mockk.verify
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -53,7 +52,7 @@ class PasswordChangerTest : BaseTest() {
     }
 
     private val now = Instant.parse("2026-07-29T00:00:00Z")
-    private val user = User(id = randomUUID(), name = "u", createdAt = TestTime.now)
+    private val user = aUser()
     // One minute before `now`, so the pre-existing tests sit outside the 30 s interval.
     private val current =
         HashedPassword("current-hash", PasswordHashAlgorithm.BCRYPT, createdAt = now.minus(Duration.ofMinutes(1)))

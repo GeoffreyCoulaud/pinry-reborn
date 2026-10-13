@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
@@ -10,7 +11,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ExportAlreadyInProgress
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.exceptions.UserModelDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserDataExportRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
@@ -24,8 +24,7 @@ class UserDataExportRepositoryTest : RepositoryTest() {
     private val repository = UserDataExportRepository(persistor)
     private val userRepository = UserRepository(persistor)
 
-    private fun createAndSaveUser(): User =
-        userRepository.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
+    private fun createAndSaveUser(): User = userRepository.saveUser(aUser())
 
     private fun pendingExport(
         userId: UUID,

@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.RepositoryTest
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.exceptions.UserModelDoesNotExistError
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID.randomUUID
@@ -19,8 +19,7 @@ class SessionTokenRepositoryTest : RepositoryTest() {
     private val repository = SessionTokenRepository(persistor = persistor)
     private val userRepository = UserRepository(persistor = persistor)
 
-    private fun createUser(): User =
-        userRepository.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
+    private fun createUser(): User = userRepository.saveUser(aUser())
 
     private fun sessionToken(
         user: User,
@@ -78,7 +77,7 @@ class SessionTokenRepositoryTest : RepositoryTest() {
     @Test
     fun `Given a nonexistent user, Then saveSessionToken throws UserModelDoesNotExistError`() {
         // Given
-        val nonexistentUser = User(id = randomUUID(), name = createRandomString(), createdAt = storableNow())
+        val nonexistentUser = aUser()
         val token = sessionToken(nonexistentUser)
 
         // When, Then

@@ -1,11 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.TagRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import jakarta.persistence.PersistenceException
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -19,8 +19,7 @@ class TagRepositoryTest : RepositoryTest() {
     private val repository = TagRepository(persistor)
     private val userRepository = UserRepository(persistor)
 
-    private fun createAndSaveUser(): User =
-        userRepository.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
+    private fun createAndSaveUser(): User = userRepository.saveUser(aUser())
 
     @Test
     fun `Given a new tag, Then saveTag persists it`() {

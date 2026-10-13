@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -17,7 +18,7 @@ class PersonSearcherTest {
     private val personRepository = mockk<PersonRepositoryInterface>()
     private val useCase = PersonSearcher(personRepository = personRepository)
 
-    private fun createUser() = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+    private fun createUser() = aUser()
 
     private fun createPerson(user: User, name: String) =
         Person(

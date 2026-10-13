@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
@@ -8,7 +9,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.mappers.MediaModelMa
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -23,8 +23,7 @@ class EbeanMediaRepositoryTest : RepositoryTest() {
     private val userRepository = UserRepository(persistor)
     private val pinRepository = PinRepository(persistor)
 
-    private fun savedUser() =
-        userRepository.saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
+    private fun savedUser() = userRepository.saveUser(aUser())
 
     private fun savedPin(user: User = savedUser()): Pin {
         return pinRepository.savePin(

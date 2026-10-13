@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardRetrievalBoardDoesNotExistError
@@ -24,7 +24,7 @@ class BoardPinListerTest {
     private val pinRepository: PinRepositoryInterface = mockk()
     private val useCase = BoardPinLister(boardGetter = boardGetter, pinRepository = pinRepository)
 
-    private val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+    private val reader = aUser()
     private val boardId = randomUUID()
     private val board =
         Board(

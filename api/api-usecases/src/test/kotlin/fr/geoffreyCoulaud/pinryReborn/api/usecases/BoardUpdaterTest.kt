@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardNameAlreadyExistsError
@@ -37,7 +37,7 @@ class BoardUpdaterTest {
     @Test
     fun `Given an owned active board, Then update saves a copy with the new name and description`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board =
             Board(
                 id = randomUUID(),
@@ -72,7 +72,7 @@ class BoardUpdaterTest {
     @Test
     fun `Given the new name held by another board, Then update rethrows BoardNameAlreadyExistsError`() {
         // Given: renaming is the second of the three sites the index refuses
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board =
             Board(
                 id = randomUUID(),
@@ -102,7 +102,7 @@ class BoardUpdaterTest {
     @Test
     fun `Given a board recycled between the read and the fence, Then update refuses it as absent and saves nothing`() {
         // Given: the first read answers an active board, the fence's re-read a recycled one
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val board =
             Board(
                 id = randomUUID(),

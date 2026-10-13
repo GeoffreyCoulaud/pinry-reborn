@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
@@ -23,7 +24,7 @@ class PersonCreatorTest {
             transactionRunner = PassthroughTransactionRunner(),
             clock = clock(),
         )
-    private val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+    private val user = aUser()
 
     @Test
     fun `Given a person the store finds, Then findOrCreate returns it and saves nothing`() {

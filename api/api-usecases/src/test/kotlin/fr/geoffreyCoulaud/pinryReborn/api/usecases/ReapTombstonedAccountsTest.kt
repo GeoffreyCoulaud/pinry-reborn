@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
@@ -9,7 +9,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -70,8 +69,7 @@ class ReapTombstonedAccountsTest : BaseTest() {
     }
 
     private fun userTombstone() =
-        User(
-            id = randomUUID(),
+        aUser(
             name = "tombstone",
             softDeletedAt = cutoff,
             createdAt = now,

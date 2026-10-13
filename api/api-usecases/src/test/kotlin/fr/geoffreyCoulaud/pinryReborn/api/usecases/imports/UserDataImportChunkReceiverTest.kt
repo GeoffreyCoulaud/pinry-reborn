@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
@@ -15,7 +16,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ImportInsufficient
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ImportNotAwaitingArchiveError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ImportPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -43,8 +43,8 @@ class UserDataImportChunkReceiverTest : BaseTest() {
             maxArchiveBytes,
             minimumFreeBytes,
         )
-    private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
-    private val stranger = User(id = randomUUID(), name = "mallory", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
+    private val stranger = aUser(name = "mallory")
     private val importId = randomUUID()
     private val now = Instant.parse("2026-08-14T10:00:00Z")
     private val chunk = byteArrayOf(1, 2, 3, 4)

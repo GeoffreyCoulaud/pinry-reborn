@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PinSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
@@ -12,7 +12,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinRetrievalPermis
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinRetrievalPinDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SearchEmptyQueryError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import java.util.UUID.randomUUID
@@ -27,7 +26,7 @@ class PinGetterTest {
     @Test
     fun `Given non-existent pin, Then getPinForUser throws`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
         val pinId = randomUUID()
         every { pinRepository.findPinById(pinId) } returns null
 
@@ -40,8 +39,8 @@ class PinGetterTest {
     @Test
     fun `Given reader reading another user's pin, Then getPinForUser throws`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
+        val author = aUser()
         val pin =
             Pin(
                 id = randomUUID(),
@@ -65,7 +64,7 @@ class PinGetterTest {
     @Test
     fun `Given reader reading their own pin, Then getPinForUser succeeds`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
         val pin =
             Pin(
                 id = randomUUID(),
@@ -90,7 +89,7 @@ class PinGetterTest {
     @Test
     fun `Given no cursor, Then listPinsPaginatedForUser lists the first page`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
         val expectedPage = Page<Pin>(items = emptyList(), previousCursor = null, nextCursor = null)
         every {
             pinRepository.findPinsForUser(
@@ -117,7 +116,7 @@ class PinGetterTest {
     @Test
     fun `Given cursor pointing to reader's own pin, Then listPinsPaginatedForUser lists the next page`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
         val pin =
             Pin(
                 id = randomUUID(),
@@ -158,7 +157,7 @@ class PinGetterTest {
     @Test
     fun `Given a term, Then listPinsPaginatedForUser hands it to the repository`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
         val expectedPage = Page<Pin>(items = emptyList(), previousCursor = null, nextCursor = null)
         every {
             pinRepository.findPinsForUser(
@@ -187,7 +186,7 @@ class PinGetterTest {
     @Test
     fun `Given a blank term, Then listPinsPaginatedForUser refuses it`() {
         // Given: absent is the whole catalogue, blank is a caller that did not mean to search
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
 
         // When, Then
         assertThrows<SearchEmptyQueryError> {

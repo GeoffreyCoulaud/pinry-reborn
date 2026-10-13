@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportArchiveStore
@@ -15,7 +15,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ImportNotAwaitingA
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ImportPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -36,8 +35,8 @@ class UserDataImportArchiveCompleterTest : BaseTest() {
     private val clock = mockk<Clock>()
     private val transactions = PassthroughTransactionRunner()
     private val completer = UserDataImportArchiveCompleter(repository, archiveStore, enqueueTask, clock, transactions)
-    private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
-    private val stranger = User(id = randomUUID(), name = "mallory", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
+    private val stranger = aUser(name = "mallory")
     private val importId = randomUUID()
     private val now = Instant.parse("2026-08-14T10:00:00Z")
     private val storageKey = "imports/$importId.zip"

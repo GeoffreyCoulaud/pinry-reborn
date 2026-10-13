@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
@@ -17,7 +17,7 @@ class PinTaggerTest {
     @Test
     fun `Given several names, Then resolveTags answers the tag each one resolves to, in order`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val first = Tag(id = randomUUID(), name = tagName("nature"), author = user, createdAt = TestTime.now)
         val second = Tag(id = randomUUID(), name = tagName("mountain"), author = user, createdAt = TestTime.now)
         every { tagCreator.findOrCreate(name = tagName("nature"), user = user) } returns first

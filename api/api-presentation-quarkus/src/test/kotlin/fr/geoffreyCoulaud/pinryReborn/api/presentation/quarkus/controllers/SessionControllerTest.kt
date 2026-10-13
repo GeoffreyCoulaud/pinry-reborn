@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.IssuedSession
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -35,7 +36,7 @@ class SessionControllerTest {
     private val identity = mockk<SecurityIdentity>()
     private val controller = SessionController(creator, renewer, revoker, policy, identity)
 
-    private val user = User(randomUUID(), "alice", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
     private val issued =
         IssuedSession(
             "tok",

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.common.SessionTransportDto
@@ -24,7 +25,7 @@ import org.junit.jupiter.api.assertThrows
 class BearerTokenIdentityProviderTest {
     private val authenticator = mockk<SessionTokenAuthenticator>()
     private val provider = BearerTokenIdentityProvider(authenticator)
-    private val user = User(randomUUID(), "alice", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
 
     // Execute the runBlocking supplier synchronously.
     private val context =

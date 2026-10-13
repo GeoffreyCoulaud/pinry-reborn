@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.NameBounds
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
@@ -7,7 +8,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PersonRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import jakarta.persistence.PersistenceException
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -19,8 +19,7 @@ class PersonRepositoryTest : RepositoryTest() {
     private val repository = PersonRepository(persistor)
     private val userRepository = UserRepository(persistor)
 
-    private fun createAndSaveUser(): User =
-        userRepository.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
+    private fun createAndSaveUser(): User = userRepository.saveUser(aUser())
 
     private fun savePerson(user: User, name: String, urls: List<String>): Person =
         repository.savePerson(

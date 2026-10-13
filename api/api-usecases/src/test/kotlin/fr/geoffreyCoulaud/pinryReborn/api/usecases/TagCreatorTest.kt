@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
@@ -37,7 +38,7 @@ class TagCreatorTest {
     @Test
     fun `When creating a new tag, should succeed`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val tagString = tagName(createRandomString())
         every { tagRepository.findUserTagByName(user, tagString) } returns null
         every { tagRepository.saveTag(any()) } answers { firstArg() }
@@ -51,7 +52,7 @@ class TagCreatorTest {
     @Test
     fun `When trying to re-create an existing tag, should return the existing tag`() {
         // Given
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val tagString = tagName(createRandomString())
         val tag = Tag(id = randomUUID(), name = tagString, author = user, createdAt = TestTime.now)
         every { tagRepository.findUserTagByName(user = user, name = tagString) } returns tag
@@ -67,7 +68,7 @@ class TagCreatorTest {
     fun `Given two concurrent taggings of one new name, Then one tag exists and neither caller fails`() {
         // Given: a store that folds and refuses like ux_tags_author_name, and a rendezvous that
         // forces both readers to miss before either writes.
-        val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val name = tagName(createRandomString())
         val bothRead = CountDownLatch(2)
         val repository = IndexedTagRepository(bothRead)

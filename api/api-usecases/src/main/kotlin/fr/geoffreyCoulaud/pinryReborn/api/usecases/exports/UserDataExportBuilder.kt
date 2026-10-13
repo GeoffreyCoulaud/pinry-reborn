@@ -195,7 +195,7 @@ class UserDataExportBuilder(
                 exportId = export.id,
                 createdAt = createdAt,
                 expiresAt = createdAt.plus(retention),
-                user = ExportedRef(user.name),
+                user = ExportedRef(user.name.text),
                 counts = ExportCounts(pins = 0, boards = 0, tags = 0, media = 0, persons = 0, collections = 0),
                 entries = emptyList(),
                 excluded = EXCLUSIONS,
@@ -206,7 +206,7 @@ class UserDataExportBuilder(
     private fun writeArchive(sink: ArchiveSink, header: ExportManifest, user: User, renewLease: () -> Unit) {
         val entries = mutableListOf<ArchiveEntryDigest>()
         entries += sink.putTextEntry("README.md", ExportReadme.render(header))
-        entries += sink.putJsonEntry("user.json", ExportedUser(user.name, user.createdAt))
+        entries += sink.putJsonEntry("user.json", ExportedUser(user.name.text, user.createdAt))
 
         val boards = boardRepository.findActiveBoardsForUser(user) + boardRepository.findRecycledBoardsForUser(user)
         val boardCount =

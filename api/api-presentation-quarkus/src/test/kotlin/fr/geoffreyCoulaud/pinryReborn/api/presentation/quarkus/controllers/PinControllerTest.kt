@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
@@ -57,7 +58,7 @@ class PinControllerTest {
         sourceMediaUrl: String? = null,
         sourceContextUrl: String? = "https://example.test/page",
     ): PinOutputDto {
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         every { securityIdentity.getAttribute<User>("user") } returns user
         every {
             pinCreator.createPin(
@@ -114,7 +115,7 @@ class PinControllerTest {
 
     /** Writes a pin through the controller, the use case answering only for the people it expects. */
     private fun updatePinWith(publisher: PersonInputDto?, expectedPublisher: PersonReference?, address: String?): Int {
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val pin =
             Pin(
                 id = randomUUID(),
@@ -174,7 +175,7 @@ class PinControllerTest {
     @Test
     fun `Given no cursor, no page size and no sort, Then listPins uses defaults`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val page = Page<Pin>(items = emptyList(), previousCursor = null, nextCursor = null)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every {
@@ -196,7 +197,7 @@ class PinControllerTest {
     @Test
     fun `Given cursor, page size and sort provided, Then listPins uses the provided values`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val pivotId = randomUUID()
         val cursorInput = CursorDto(pivotId = pivotId, direction = CursorDirectionDto.FORWARD)
         val pageSizeInput = 5

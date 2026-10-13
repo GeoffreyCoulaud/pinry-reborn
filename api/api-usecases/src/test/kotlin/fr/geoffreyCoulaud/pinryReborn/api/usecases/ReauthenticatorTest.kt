@@ -1,7 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HashedPassword
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PasswordHashAlgorithm
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserPasswordHashRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.PasswordHasher
@@ -14,7 +14,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import java.time.Duration
-import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
@@ -39,7 +38,7 @@ class ReauthenticatorTest : BaseTest() {
     }
     private val reauth by lazy { Reauthenticator(passwords, hasher, limiter) }
 
-    private val user = User(id = randomUUID(), name = "u", createdAt = TestTime.now)
+    private val user = aUser()
     private val hash = HashedPassword("h", PasswordHashAlgorithm.BCRYPT, createdAt = TestTime.now)
 
     private fun failTimes(count: Int) =
@@ -126,7 +125,7 @@ class ReauthenticatorTest : BaseTest() {
         failTimes(threshold)
 
         // When, Then: the counter is keyed by the user, not shared by every user (spec D4)
-        val other = User(id = randomUUID(), name = "other", createdAt = TestTime.now)
+        val other = aUser(name = "other")
         assertThrows<ReauthenticationError> { reauth.reauthenticate(other, "bad") }
     }
 }

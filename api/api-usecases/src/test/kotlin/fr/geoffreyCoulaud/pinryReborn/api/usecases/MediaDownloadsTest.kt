@@ -1,16 +1,15 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.MediaDownloadRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaDownloadDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.MediaDownloadInProgressError
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -24,7 +23,7 @@ import org.junit.jupiter.api.Test
 class MediaDownloadsTest {
     private val downloads: MediaDownloadRepositoryInterface = mockk(relaxed = true)
     private val runner: TransactionRunner = mockk()
-    private val requester = User(randomUUID(), "o", createdAt = TestTime.now)
+    private val requester = aUser()
     private val pinId = randomUUID()
 
     private val subject = MediaDownloads(downloads, runner)

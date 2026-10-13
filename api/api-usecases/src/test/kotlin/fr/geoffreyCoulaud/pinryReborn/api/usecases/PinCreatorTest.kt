@@ -1,9 +1,9 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
@@ -29,7 +29,7 @@ class PinCreatorTest {
     @Test
     fun `When creating a pin, then should succeed`() {
         // Given
-        val user = User(randomUUID(), "John Doe", createdAt = TestTime.now)
+        val user = aUser()
         val sourceUrl = HttpUrl.parse("https://example.com/article")
         val mediaUrl = HttpUrl.parse("https://example.com/media.jpeg")
         val description = "some description"

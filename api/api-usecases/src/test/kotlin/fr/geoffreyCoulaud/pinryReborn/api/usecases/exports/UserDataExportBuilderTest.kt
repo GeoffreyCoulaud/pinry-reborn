@@ -287,7 +287,7 @@ internal class UserDataExportBuilderTest : UserDataExportMockStoreFixtures() {
         assertEquals(export.formatVersion, manifest.formatVersion)
         assertEquals(now, manifest.createdAt)
         assertEquals(now.plus(retention), manifest.expiresAt)
-        assertEquals(ExportedRef(user.name), manifest.user)
+        assertEquals(ExportedRef(user.name.text), manifest.user)
         assertEquals(3, manifest.excluded.size)
         val entryPaths = manifest.entries.map { it.path }.toSet()
         assertEquals(

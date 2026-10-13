@@ -1,14 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.IssuedSession
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.SessionToken
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.SessionTokenRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.SessionExpiryPolicy
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.TokenGenerator
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -31,7 +30,7 @@ class SessionRenewerTest {
     private val renewer = SessionRenewer(repository, tokenGenerator, clock, policy, transactionRunner)
 
     private val now = Instant.parse("2026-07-21T00:00:00Z")
-    private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
     private val current =
         SessionToken(
             randomUUID(),

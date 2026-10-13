@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.exports
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataExport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataExportState
 import fr.geoffreyCoulaud.pinryReborn.api.domain.exports.ArchiveFormat
@@ -18,7 +18,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.ReauthenticationEr
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.EnqueueTask
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.tasks.UserDataExportTask
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.BaseTest
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -39,7 +38,7 @@ class UserDataExportRequesterTest : BaseTest() {
     private val clock = mockk<Clock>()
     private val transactionRunner = mockk<TransactionRunner>()
     private val now = Instant.parse("2026-07-22T10:00:00Z")
-    private val user = User(id = randomUUID(), name = "alice", createdAt = TestTime.now)
+    private val user = aUser(name = "alice")
     private val factor = "good-password"
     private val requester =
         UserDataExportRequester(

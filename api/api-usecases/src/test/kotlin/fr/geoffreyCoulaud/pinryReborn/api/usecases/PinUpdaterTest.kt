@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
@@ -44,7 +45,7 @@ class PinUpdaterTest {
             transactionRunner = PassthroughTransactionRunner(),
         )
 
-    private val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+    private val user = aUser()
     private val tag = Tag(id = randomUUID(), name = tagName("nature"), author = user, createdAt = TestTime.now)
     private val board =
         Board(
@@ -137,7 +138,7 @@ class PinUpdaterTest {
     @Test
     fun `Given a pin owned by another user, Then throws PinUpdatePermissionError`() {
         // Given
-        val other = User(id = randomUUID(), name = "Other", createdAt = TestTime.now)
+        val other = aUser(name = "Other")
         val pin = pin(author = other)
         every { pinRepository.findPinById(pin.id) } returns pin
 

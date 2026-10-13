@@ -1,12 +1,12 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.PinRetrievalPermissionError
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -22,7 +22,7 @@ class PinDuplicatesTest {
     private val pinRepository = mockk<PinRepositoryInterface>()
     private val useCase = PinDuplicates(duplicateRepository, pinRepository, PinGetter(pinRepository))
 
-    private val user = User(randomUUID(), createRandomString(), createdAt = TestTime.now)
+    private val user = aUser()
 
     private fun storedPin(author: User = user, createdAt: Instant = TestTime.now): Pin {
         val pin = Pin(randomUUID(), author, null, null, "", emptyList(), emptyList(), createdAt, createdAt)
@@ -49,7 +49,7 @@ class PinDuplicatesTest {
     @Test
     fun `Given another user's pin, Then its duplicates are refused before any pair is read`() {
         // Given
-        val pin = storedPin(author = User(randomUUID(), createRandomString(), createdAt = TestTime.now))
+        val pin = storedPin(author = aUser())
 
         // When, Then
         assertThrows<PinRetrievalPermissionError> { useCase.list(pin.id, user) }

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
@@ -214,7 +215,7 @@ internal abstract class UserDataImportRunnerFixtures : BaseTest() {
 
     protected val transactions = PassthroughTransactionRunner()
 
-    protected val user = User(id = randomUUID(), name = "alice", createdAt = accountCreatedAt)
+    protected val user = aUser(name = "alice", createdAt = accountCreatedAt)
     protected val importId: UUID = randomUUID()
     protected val storageKey: String = ImportArchiveKey.forImport(importId)
 

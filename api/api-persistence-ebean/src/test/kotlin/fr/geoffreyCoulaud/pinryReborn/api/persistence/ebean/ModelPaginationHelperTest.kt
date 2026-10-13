@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -11,7 +12,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelCurs
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.ModelPaginationHelper
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.pagination.PinModelSortStrategy
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -28,8 +28,7 @@ class ModelPaginationHelperTest : RepositoryTest() {
     private val userRepository = UserRepository(persistor)
     private val strategy = PinModelSortStrategy.CreatedAtAsc()
 
-    private fun createUser(): User =
-        userRepository.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
+    private fun createUser(): User = userRepository.saveUser(aUser())
 
     private fun baseQueryFor(user: User) = QPinModel().author.id.equalTo(user.id)
 

@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
@@ -10,7 +11,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.imports.ImportAlreadyInProgress
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.exceptions.UserModelDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserDataImportRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
 import java.util.UUID
 import java.util.UUID.randomUUID
@@ -25,8 +25,7 @@ class UserDataImportRepositoryTest : RepositoryTest() {
     private val userRepository = UserRepository(persistor)
     private val requestedAt = Instant.parse("2026-08-14T10:00:00Z")
 
-    private fun createAndSaveUser(): User =
-        userRepository.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
+    private fun createAndSaveUser(): User = userRepository.saveUser(aUser())
 
     private fun awaitingImport(
         userId: UUID,

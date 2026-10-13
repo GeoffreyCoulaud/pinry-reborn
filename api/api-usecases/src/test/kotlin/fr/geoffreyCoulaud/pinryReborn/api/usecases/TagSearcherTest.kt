@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -17,7 +18,7 @@ class TagSearcherTest {
     private val tagRepository = mockk<TagRepositoryInterface>()
     private val useCase = TagSearcher(tagRepository = tagRepository)
 
-    private fun createUser() = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
+    private fun createUser() = aUser()
 
     private fun createTag(user: User, name: String) =
         Tag(

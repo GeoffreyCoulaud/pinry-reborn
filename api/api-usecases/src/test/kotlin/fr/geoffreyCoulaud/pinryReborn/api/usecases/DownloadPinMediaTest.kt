@@ -1,10 +1,10 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaDownload
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadReason
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.DownloadStatus
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
@@ -76,7 +76,7 @@ class DownloadPinMediaTest {
     private val now = Instant.parse("2026-07-10T00:00:00Z")
     private val pinId = randomUUID()
     private val sourceUrl = checkNotNull(HttpUrl.parse("https://x/i.png"))
-    private val user = User(randomUUID(), "u", createdAt = TestTime.now)
+    private val user = aUser()
 
     private val imageLimits = MediaLimits(100, 0, Duration.ZERO, 100, 100, 1, Duration.ZERO, 0)
     private val videoLimits = imageLimits.copy(maxVideoBytes = 100, maxVideoDuration = Duration.ofSeconds(1))

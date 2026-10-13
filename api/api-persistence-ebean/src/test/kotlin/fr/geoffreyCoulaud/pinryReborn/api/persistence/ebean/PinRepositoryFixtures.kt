@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
@@ -38,14 +39,7 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
     protected val firstInstant: Instant = Instant.parse("2026-01-01T00:00:00Z")
     protected val secondInstant: Instant = firstInstant.plusSeconds(1)
 
-    protected fun createAndSaveUser(): User =
-        userRepository.saveUser(
-            User(
-                id = randomUUID(),
-                name = createRandomString(),
-                createdAt = storableNow(),
-            )
-        )
+    protected fun createAndSaveUser(): User = userRepository.saveUser(aUser())
 
     protected fun createAndSaveTag(
         name: String,

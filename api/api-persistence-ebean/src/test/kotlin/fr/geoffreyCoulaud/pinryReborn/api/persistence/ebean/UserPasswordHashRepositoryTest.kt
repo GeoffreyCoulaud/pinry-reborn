@@ -1,15 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HashedPassword
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PasswordHashAlgorithm
 import fr.geoffreyCoulaud.pinryReborn.api.domain.security.PasswordChangeCollisionException
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.exceptions.UserModelDoesNotExistError
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserPasswordHashRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.time.Instant
-import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -21,7 +19,7 @@ class UserPasswordHashRepositoryTest : RepositoryTest() {
 
     private val anInstant = Instant.parse("2026-07-01T00:00:00Z")
 
-    private fun user() = users.saveUser(User(id = randomUUID(), name = createRandomString(), createdAt = storableNow()))
+    private fun user() = users.saveUser(aUser())
 
     private fun hash(h: String, createdAt: Instant) =
         HashedPassword(hash = h, algorithm = PasswordHashAlgorithm.BCRYPT, createdAt = createdAt)
@@ -64,7 +62,7 @@ class UserPasswordHashRepositoryTest : RepositoryTest() {
     @Test
     fun `Given a nonexistent user, Then saveUserPasswordHash throws UserModelDoesNotExistError`() {
         // Given
-        val nonexistentUser = User(id = randomUUID(), name = createRandomString(), createdAt = storableNow())
+        val nonexistentUser = aUser()
         val hashedPassword = hash("hash", anInstant)
 
         // When, Then

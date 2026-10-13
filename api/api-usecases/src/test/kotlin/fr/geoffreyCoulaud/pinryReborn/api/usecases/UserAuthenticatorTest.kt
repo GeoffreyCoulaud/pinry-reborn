@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HashedPassword
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Login.BasicAuthLogin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.PasswordHashAlgorithm
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserPasswordHashRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
@@ -18,7 +18,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import java.time.Duration
-import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -50,7 +49,7 @@ class UserAuthenticatorTest : BaseTest() {
         )
     }
 
-    private val user = User(id = UUID.randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+    private val user = aUser()
     private val storedHash =
         HashedPassword(hash = createRandomString(), algorithm = PasswordHashAlgorithm.BCRYPT, createdAt = TestTime.now)
     private val dummyHash =
@@ -84,7 +83,7 @@ class UserAuthenticatorTest : BaseTest() {
     fun `When authenticating with basic auth, then should work`() {
         // Given
         val password = createRandomString()
-        val login = BasicAuthLogin(user.name, password)
+        val login = BasicAuthLogin(user.name.text, password)
         every { userRepository.findUserByName(any()) } returns user
         every { userPasswordRepository.findCurrentPasswordHash((any())) } returns storedHash
         every { passwordHasher.matches(any(), any()) } returns true
@@ -100,7 +99,7 @@ class UserAuthenticatorTest : BaseTest() {
     fun `When authenticating with basic auth and no saved password, then should throw`() {
         // Given
         val password = createRandomString()
-        val login = BasicAuthLogin(user.name, password)
+        val login = BasicAuthLogin(user.name.text, password)
         every { userRepository.findUserByName(any()) } returns user
         every { userPasswordRepository.findCurrentPasswordHash((any())) } returns null
         every { passwordHasher.hash(any(), any()) } returns dummyHash
@@ -115,7 +114,7 @@ class UserAuthenticatorTest : BaseTest() {
     @Test
     fun `When authenticating with basic auth with a bad username, then should throw`() {
         // Given
-        val login = BasicAuthLogin(user.name, createRandomString())
+        val login = BasicAuthLogin(user.name.text, createRandomString())
         every { userRepository.findUserByName(any()) } returns null
         every { passwordHasher.hash(any(), any()) } returns dummyHash
         every { passwordHasher.matches(any(), any()) } returns false
@@ -129,7 +128,7 @@ class UserAuthenticatorTest : BaseTest() {
     @Test
     fun `When authenticating with basic auth with a bad password, then should throw`() {
         // Given
-        val login = BasicAuthLogin(user.name, createRandomString())
+        val login = BasicAuthLogin(user.name.text, createRandomString())
         every { userRepository.findUserByName(any()) } returns user
         every { userPasswordRepository.findCurrentPasswordHash((any())) } returns storedHash
         every { passwordHasher.matches(any(), any()) } returns false
@@ -143,7 +142,7 @@ class UserAuthenticatorTest : BaseTest() {
     @Test
     fun `Given the threshold reached on wrong passwords, Then the next attempt is refused`() {
         // Given
-        val login = BasicAuthLogin(user.name, createRandomString())
+        val login = BasicAuthLogin(user.name.text, createRandomString())
         givenAKnownUserRefusingEveryPassword()
         failTimes(login, threshold)
 
@@ -236,7 +235,7 @@ class UserAuthenticatorTest : BaseTest() {
     @Test
     fun `Given a blocked name, Then no password reaches the hasher`() {
         // Given
-        val login = BasicAuthLogin(user.name, createRandomString())
+        val login = BasicAuthLogin(user.name.text, createRandomString())
         givenAKnownUserRefusingEveryPassword()
         failTimes(login, threshold)
 
@@ -251,7 +250,7 @@ class UserAuthenticatorTest : BaseTest() {
     @Test
     fun `Given a success before the threshold, Then the failures before it are dropped`() {
         // Given: one failure short of the threshold
-        val login = BasicAuthLogin(user.name, createRandomString())
+        val login = BasicAuthLogin(user.name.text, createRandomString())
         givenAKnownUserRefusingEveryPassword()
         failTimes(login, threshold - 1)
 

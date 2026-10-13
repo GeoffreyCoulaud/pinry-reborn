@@ -1,11 +1,11 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.collectionName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.RemoteCollection
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.BoardRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.RemoteCollectionRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.BoardRetrievalBoardDoesNotExistError
@@ -29,7 +29,7 @@ class BoardGetterTest {
     @Test
     fun `Given an owned active board, Then getActiveBoardForUser returns it`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
         val board =
             Board(
                 id = randomUUID(),
@@ -51,7 +51,7 @@ class BoardGetterTest {
     @Test
     fun `Given a missing or recycled board, Then getActiveBoardForUser throws BoardRetrievalBoardDoesNotExistError`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
         val boardId = randomUUID()
         every { boardRepository.findActiveBoardById(boardId) } returns null
 
@@ -64,8 +64,8 @@ class BoardGetterTest {
     @Test
     fun `Given a board owned by another user, Then getActiveBoardForUser throws BoardRetrievalPermissionError`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
+        val author = aUser()
         val board =
             Board(
                 id = randomUUID(),
@@ -86,7 +86,7 @@ class BoardGetterTest {
     @Test
     fun `Given a reader with boards, Then listActiveBoardsForUser delegates to the repository`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
         val board =
             Board(
                 id = randomUUID(),
@@ -110,7 +110,7 @@ class BoardGetterTest {
     @Test
     fun `Given an owned active board, Then summarizeActiveBoardForUser returns its count, cover and collections`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
         val board =
             Board(
                 id = randomUUID(),
@@ -147,8 +147,8 @@ class BoardGetterTest {
     @Test
     fun `Given a board owned by another user, Then summarizeActiveBoardForUser throws BoardRetrievalPermissionError`() {
         // Given
-        val reader = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
-        val author = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val reader = aUser()
+        val author = aUser()
         val board =
             Board(
                 id = randomUUID(),

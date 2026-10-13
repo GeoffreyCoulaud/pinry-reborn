@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.controllers
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -11,8 +12,6 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinRespon
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinDuplicates
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinRecycleBinGetter
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.ResolvePinMediaState
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.TestTime
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import io.mockk.every
 import io.mockk.mockk
 import io.quarkus.security.identity.SecurityIdentity
@@ -41,7 +40,7 @@ class PinRecycleBinControllerTest {
     @Test
     fun `Given no cursor, no page size and no sort, Then listRecycledPins uses defaults`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val page = Page<Pin>(items = emptyList(), previousCursor = null, nextCursor = null)
         every { securityIdentity.getAttribute<User>("user") } returns user
         every {
@@ -63,7 +62,7 @@ class PinRecycleBinControllerTest {
     @Test
     fun `Given cursor, page size and sort provided, Then listRecycledPins uses the provided values`() {
         // Given
-        val user = User(id = randomUUID(), name = createRandomString(), createdAt = TestTime.now)
+        val user = aUser()
         val pivotId = randomUUID()
         val cursorInput = CursorDto(pivotId = pivotId, direction = CursorDirectionDto.BACKWARD)
         val pageSizeInput = 7

@@ -1,16 +1,15 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.MediaFrame
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.media.PdqHash
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaFrameRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.EbeanMediaRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.FrameHashBands
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.PinRepository
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories.UserRepository
-import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
 import java.util.UUID.randomUUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -24,8 +23,7 @@ class EbeanMediaFrameRepositoryTest : RepositoryTest() {
 
     /** A media on a pin of a user, the parents a frame's key requires. */
     private fun savedMedia(): Media {
-        val user =
-            UserRepository(persistor).saveUser(User(randomUUID(), createRandomString(), createdAt = storableNow()))
+        val user = UserRepository(persistor).saveUser(aUser())
         val pin =
             PinRepository(persistor)
                 .savePin(

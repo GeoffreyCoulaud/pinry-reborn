@@ -25,7 +25,7 @@ class BearerTokenIdentityProvider(private val sessionTokenAuthenticator: Session
         try {
             val session = sessionTokenAuthenticator.authenticate(request.token.token)
             QuarkusSecurityIdentity.builder()
-                .setPrincipal { session.user.name }
+                .setPrincipal { session.user.name.text }
                 .addAttribute("userId", session.user.id)
                 .addAttribute("user", session.user)
                 .addAttribute("sessionToken", session)

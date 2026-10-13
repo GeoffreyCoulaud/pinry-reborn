@@ -35,7 +35,7 @@ class UserCreator(
     // The index is the sole authority on the name being free, case and tombstones included: no read here.
     private fun saveUser(name: Username): User =
         try {
-            userRepository.saveUser(User(id = UUID.randomUUID(), name = name.text, createdAt = clock.now()))
+            userRepository.saveUser(User(id = UUID.randomUUID(), name = name, createdAt = clock.now()))
         } catch (error: UsernameAlreadyTakenException) {
             throw UsernameAlreadyTakenError(error)
         }
