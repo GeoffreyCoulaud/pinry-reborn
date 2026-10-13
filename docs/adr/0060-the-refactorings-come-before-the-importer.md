@@ -39,6 +39,7 @@ below are the operator's, taken in Discuss on 2026-10-13.
 ## Consequences
 
 - **The backlog** files one item per lot of decision 2 in place of the types item, and the importer item points here
-  for its place.
+  for its place. (Corrected: one item per lot of decision 2 still to run, the names lot's own item being one it would have
+  filed and closed at once.)
 - **Each lot re-reads the code before its specification**: `inventory.md`'s line numbers are `1fc81bdc`'s, and its
   `P/` is now `api-persistence-ebean`.
