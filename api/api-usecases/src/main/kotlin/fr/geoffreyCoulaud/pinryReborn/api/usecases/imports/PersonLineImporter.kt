@@ -60,10 +60,9 @@ internal class PersonLineImporter(
         const val MAX_ID_LENGTH = 200
         private const val ID_FAULT = "id is blank or longer than $MAX_ID_LENGTH characters"
         private const val URL_FIELD = "a person's address"
-        private const val NAME_FAULT = "a person's name is blank or longer than ${PersonName.MAX_LENGTH} characters"
 
         private fun personFault(name: String, urls: List<String>): String? =
-            (if (PersonName.parse(name) == null) NAME_FAULT else null)
+            (if (PersonName.parse(name) == null) ImportFieldBounds.NAME_FAULT else null)
                 ?: ImportFieldBounds.personFault(urls)
                 ?: urls.firstNotNullOfOrNull { ImportFieldBounds.httpAddressFault(URL_FIELD, it) }
     }

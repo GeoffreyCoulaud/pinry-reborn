@@ -2,7 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.migration
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.NameBounds
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportState
@@ -353,7 +353,7 @@ class MigratedSchemaTest : RepositoryTest() {
                 "ux_boards_author_name" to Board.MAX_NAME_LENGTH * UTF8_BYTES_PER_UNIT,
                 "ux_tags_author_name" to Tag.MAX_NAME_LENGTH * UTF8_BYTES_PER_UNIT,
                 // The addresses by their digest, whatever their length.
-                "ux_persons_author_name_urls" to PersonName.MAX_LENGTH * UTF8_BYTES_PER_UNIT + MD5_HEX_LENGTH,
+                "ux_persons_author_name_urls" to NameBounds.MAX_LENGTH * UTF8_BYTES_PER_UNIT + MD5_HEX_LENGTH,
                 // HttpUrl percent-encodes every byte outside ASCII.
                 "ux_remote_collections_author_url" to HttpUrl.MAX_LENGTH,
                 // Written by the use cases alone, in ASCII.

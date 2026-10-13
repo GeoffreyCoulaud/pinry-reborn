@@ -45,7 +45,7 @@ class PersonNameTest {
 
     @Test
     fun `Given a name at the length bound, Then it parses, and one character more is refused`() {
-        assertNotNull(PersonName.parse("a".repeat(PersonName.MAX_LENGTH)))
-        assertNull(PersonName.parse("a".repeat(PersonName.MAX_LENGTH + 1)))
+        assertNotNull(PersonName.parse("a".repeat(NameBounds.MAX_LENGTH)))
+        assertNull(PersonName.parse("a".repeat(NameBounds.MAX_LENGTH + 1)))
     }
 }
