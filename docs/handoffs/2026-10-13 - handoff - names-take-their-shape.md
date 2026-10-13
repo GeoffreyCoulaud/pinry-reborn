@@ -154,7 +154,7 @@ Left for the closing block by the blocks themselves (Corrected: findings 3, 4 an
 ## The lot's counts
 
 - Fix-backs: 0. Fixes on top: 0. Cascaded rebases: 0. Runs re-triggered by them: 0.
-- The operator's reading of the bodies: to be filled before the merge.
+- The operator's reading of the bodies: no remark.
 
 ## Next step
 
