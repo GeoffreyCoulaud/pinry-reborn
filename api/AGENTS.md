@@ -16,7 +16,7 @@ The Gradle modules `api/settings.gradle.kts` declares. Layering enforced by the 
 
 | Module                     | Role                                                                      |
 |----------------------------|---------------------------------------------------------------------------|
-| `api-domain`               | Pure: entities, enums, ports. No project dependency.                      |
+| `api-domain`               | Pure: entities, enums, ports. No project dependency outside its test fixtures, which hold `DomainFixtures`. |
 | `api-usecases`             | Business logic, exceptions, search, exports, task contracts.              |
 | `api-persistence-ebean`    | Ebean/PostgreSQL: models, mappers, repositories, migrations (`dbmigration/`). |
 | `api-presentation-quarkus` | Jakarta REST: controllers, DTOs, mappers, security, OpenAPI.              |

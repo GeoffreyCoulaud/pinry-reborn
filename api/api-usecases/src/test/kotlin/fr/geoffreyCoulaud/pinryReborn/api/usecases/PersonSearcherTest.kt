@@ -1,8 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.personName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PersonRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.exceptions.SearchEmptyQueryError
@@ -18,13 +18,11 @@ class PersonSearcherTest {
     private val personRepository = mockk<PersonRepositoryInterface>()
     private val useCase = PersonSearcher(personRepository = personRepository)
 
-    private fun createUser() = aUser()
-
     private fun createPerson(user: User, name: String) =
         Person(
             id = randomUUID(),
             author = user,
-            name = checkNotNull(PersonName.parse(name)),
+            name = personName(name),
             urls = emptySet(),
             createdAt = TestTime.now,
         )
@@ -32,7 +30,7 @@ class PersonSearcherTest {
     @Test
     fun `Given a blank query, Then searchPersons throws SearchEmptyQueryError`() {
         // Given
-        val user = createUser()
+        val user = aUser()
 
         // When, Then
         assertThrows<SearchEmptyQueryError> { useCase.searchPersons(user = user, query = "   ", limit = 10) }
@@ -41,7 +39,7 @@ class PersonSearcherTest {
     @Test
     fun `Given a query, Then searchPersons returns what the repository matched, in its order`() {
         // Given
-        val user = createUser()
+        val user = aUser()
         val matched = listOf(createPerson(user, "Alice"), createPerson(user, "Malice"))
         every { personRepository.findPersonsForUserMatching(user = user, query = "alice", limit = 8) } returns matched
 

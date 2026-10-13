@@ -2,11 +2,11 @@ package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.personName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -80,7 +80,7 @@ abstract class PinRepositoryFixtures : RepositoryTest() {
             Person(
                 id = randomUUID(),
                 author = user,
-                name = checkNotNull(PersonName.parse(name)),
+                name = personName(name),
                 urls = urls.map { checkNotNull(HttpUrl.parse(it)) }.toSet(),
                 createdAt = storableNow(),
             )

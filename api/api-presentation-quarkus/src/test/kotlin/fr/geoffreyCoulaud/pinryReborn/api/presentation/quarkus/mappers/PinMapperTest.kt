@@ -1,12 +1,12 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.personName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Cursor
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Page
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.CursorDirection
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.output.PersonOutputDto
@@ -154,7 +154,7 @@ class PinMapperTest {
         Person(
             id = randomUUID(),
             author = pin.author,
-            name = checkNotNull(PersonName.parse(name)),
+            name = personName(name),
             urls = urls.map { checkNotNull(HttpUrl.parse(it)) }.toSet(),
             createdAt = TestTime.now,
         )

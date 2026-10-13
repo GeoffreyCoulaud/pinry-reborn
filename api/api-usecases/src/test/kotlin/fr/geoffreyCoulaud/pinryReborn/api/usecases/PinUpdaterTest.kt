@@ -2,11 +2,11 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.boardName
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.personName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
@@ -204,7 +204,7 @@ class PinUpdaterTest {
         )
 
     private fun reference(name: String, vararg urls: String) =
-        PersonReference(checkNotNull(PersonName.parse(name)), urls.map { checkNotNull(HttpUrl.parse(it)) }.toSet())
+        PersonReference(personName(name), urls.map { checkNotNull(HttpUrl.parse(it)) }.toSet())
 
     private fun person(reference: PersonReference) =
         Person(randomUUID(), author = user, reference.name, reference.urls, createdAt = TestTime.now)

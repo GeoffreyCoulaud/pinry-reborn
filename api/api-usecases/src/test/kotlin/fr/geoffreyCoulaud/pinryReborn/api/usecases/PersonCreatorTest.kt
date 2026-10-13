@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.aUser
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.personName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
@@ -78,7 +79,7 @@ class PersonCreatorTest {
     }
 
     private companion object {
-        val NAME = checkNotNull(PersonName.parse("Alice"))
+        val NAME = personName("Alice")
         val URLS = setOf(checkNotNull(HttpUrl.parse("https://a.test/alice")))
     }
 }

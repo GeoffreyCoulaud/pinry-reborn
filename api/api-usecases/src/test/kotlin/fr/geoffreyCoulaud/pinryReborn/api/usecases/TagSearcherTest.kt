@@ -18,8 +18,6 @@ class TagSearcherTest {
     private val tagRepository = mockk<TagRepositoryInterface>()
     private val useCase = TagSearcher(tagRepository = tagRepository)
 
-    private fun createUser() = aUser()
-
     private fun createTag(user: User, name: String) =
         Tag(
             id = randomUUID(),
@@ -31,7 +29,7 @@ class TagSearcherTest {
     @Test
     fun `Given empty query, Then throws SearchEmptyQueryError`() {
         // Given
-        val user = createUser()
+        val user = aUser()
 
         // When, Then
         assertThrows<SearchEmptyQueryError> {
@@ -42,7 +40,7 @@ class TagSearcherTest {
     @Test
     fun `Given blank query, Then throws SearchEmptyQueryError`() {
         // Given
-        val user = createUser()
+        val user = aUser()
 
         // When, Then
         assertThrows<SearchEmptyQueryError> {
@@ -53,7 +51,7 @@ class TagSearcherTest {
     @Test
     fun `Given a query, Then returns what the repository matched, in its order`() {
         // Given
-        val user = createUser()
+        val user = aUser()
         val matched = listOf(createTag(user, "scapegoat"), createTag(user, "landscape"))
         every {
             tagRepository.findTagsForUserMatching(user = user, query = "scape", limit = 8)
