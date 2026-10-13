@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.username
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
 import fr.geoffreyCoulaud.pinryReborn.api.utilities.createRandomString
@@ -232,11 +233,11 @@ class UserCreationIntegrationTest : IntegrationTest() {
             .post("/api/v1/users")
             .then()
             .statusCode(200)
-        val user = requireNotNull(userRepository.findUserByName(name))
+        val user = requireNotNull(userRepository.findUserByName(username(name)))
         userRepository.markPendingDeletion(user, clock.now())
         // The arrangement, asserted on the state itself: a 401 on a session attempt is also what a
         // merely credential-less account answers, and would leave this test pinning a plain duplicate.
-        assertNull(userRepository.findUserByName(name))
+        assertNull(userRepository.findUserByName(username(name)))
         assertNotNull(userRepository.findUserByIdIncludingDeleted(user.id))
 
         // When

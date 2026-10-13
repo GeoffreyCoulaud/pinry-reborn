@@ -40,7 +40,7 @@ class UserAuthenticator(
         val attemptKey = AuthenticationAttemptKey.forLogin(login.userName)
         attemptLimiter.check(attemptKey)
         // Outside the alphabet, the store's width fold reaches an account under another key (ADR 0059, decision 11).
-        val user = Username.parse(login.userName)?.let { userRepository.findUserByName(it.text) }
+        val user = Username.parse(login.userName)?.let(userRepository::findUserByName)
         val hash = user?.let { userPasswordRepository.findCurrentPasswordHash(it) }
         if (user == null || hash == null) {
             // Constant cost even without a user/hash: the result is ignored.

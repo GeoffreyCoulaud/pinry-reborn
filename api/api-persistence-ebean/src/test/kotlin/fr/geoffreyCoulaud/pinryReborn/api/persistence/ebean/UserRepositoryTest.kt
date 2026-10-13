@@ -69,7 +69,7 @@ class UserRepositoryTest : RepositoryTest() {
 
         // When / Then
         assertNull(repository.findUserById(user.id))
-        assertNull(repository.findUserByName(user.name.text))
+        assertNull(repository.findUserByName(user.name))
         val found = repository.findUserByIdIncludingDeleted(user.id)
         assertEquals(user.id, found?.id)
         assertNotNull(found?.softDeletedAt)
@@ -182,7 +182,7 @@ class UserRepositoryTest : RepositoryTest() {
         repository.saveUser(user)
 
         // When
-        val foundUser = repository.findUserByName("ALICE")
+        val foundUser = repository.findUserByName(username("ALICE"))
 
         // Then
         assertEquals("Alice", foundUser?.name?.text)
@@ -256,7 +256,7 @@ class UserRepositoryTest : RepositoryTest() {
     fun `Given no user with the given name, Then findUserByName returns null`() {
         // Given
         // When
-        val foundUser = repository.findUserByName("nobody")
+        val foundUser = repository.findUserByName(username("nobody"))
 
         // Then
         assertNull(foundUser)

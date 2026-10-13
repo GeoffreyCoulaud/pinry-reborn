@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.repositories
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Username
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.UserRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.users.UsernameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.persistence.ebean.Persistor
@@ -24,7 +25,7 @@ class UserRepository(private val persistor: Persistor) : UserRepositoryInterface
 
     override fun findUserById(id: UUID): User? = UserQueries.active().id.equalTo(id).findOne()?.toDomain()
 
-    override fun findUserByName(name: String): User? = UserQueries.active().name.eq(name).findOne()?.toDomain()
+    override fun findUserByName(name: Username): User? = UserQueries.active().name.eq(name.text).findOne()?.toDomain()
 
     override fun findUserByIdIncludingDeleted(id: UUID): User? = UserQueries.any().id.equalTo(id).findOne()?.toDomain()
 
