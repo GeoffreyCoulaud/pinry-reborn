@@ -87,18 +87,23 @@ its text. Equality is the text's: the database alone folds (ADR 0059, decision 8
   counts any text. `UserAuthenticator` reads the account only when `Username.parse` accepts the name, in place of its
   regex: **a login name of 2 or 51 characters in the alphabet now reads no account**, and answers as an unknown name
   does. The parse sits in a use case because a login name is not a datum the API holds: its refusal is a lookup miss,
-  not a defect.
+  not a defect. (Corrected: `findUserByName` takes the `Username`, so no caller can reach the store with a text outside
+  the alphabet; the closing block typed it.)
 
 **E. The contract does not change.** `@Schema` at each use site writes the schema the bean validation annotations
 wrote, as `PersonInputDto.kt:12` does. The items of `PinUpdateInputDto.tags`, a type-use position `@Schema` cannot
-reach, keep `@NotBlank @Size(max = NameBounds.MAX_LENGTH)` beside `@NameText` for their schema. SmallRye may reorder a
-schema's keys, so the check sorts them: `diff <(git show origin/main:contract/openapi.json | jq -S .) <(jq -S .
-contract/openapi.json)` prints nothing. `info.version` stays `27.0.0`.
+reach, keep `@NotBlank @Size(max = NameBounds.MAX_LENGTH)` beside `@NameText` for their schema. (Corrected: so a tag
+item of `"  "` or of 201 characters answers a `detail` joining two violations, where a board or person name answers
+one. Accepted as this decision's consequence, from the holistic review.) SmallRye may reorder a schema's keys, so the
+check sorts them: `diff <(git show origin/main:contract/openapi.json | jq -S .) <(jq -S . contract/openapi.json)`
+prints nothing. `info.version` stays `27.0.0`.
 
 **F. The test fixtures** (E, G).
-- `api-domain` gains `java-test-fixtures`, excluded from its Kover verification. `DomainFixtures` holds one helper per
-  name type (`tagName(text)`, ...) and `aUser(name: String = <random in the alphabet>, id = randomUUID(), createdAt =
-  TestTime.now, softDeletedAt = null)`, every test building a user through it.
+- `api-domain` gains `java-test-fixtures`, excluded from its Kover verification. (Corrected: the exclusion sits in
+  `api/build.gradle.kts`, for every module's test fixtures, and `agents/engineering.md` lists it; the fixtures depend
+  on `api-utilities`' for `TestTime`.) `DomainFixtures` holds one helper per name type (`tagName(text)`, ...) and
+  `aUser(name: String = <random in the alphabet>, id = randomUUID(), createdAt = TestTime.now, softDeletedAt = null)`,
+  every test building a user through it. (Corrected: `personName` came in the closing block.)
 - Blocks whose type change reaches every construction may pass the file bound (E). **Block 50 does the change of
   `User.name` and nothing else, and passes both bounds** (G): its review is mechanical.
 
@@ -135,8 +140,12 @@ bound and block 50 both (decision F).
 ### Block 10
 
 - This specification, ADR 0060, ADR 0056's `Status:` line naming it, and the backlog of ADR 0060's Consequences.
+  (Corrected: the backlog files the types lots after this one, this lot's own item being one it would have filed and
+  closed at once, #438.)
 - `NameBounds`; `PersonName` on it; `@NameText` in place of `@PersonNameText`; `ImportFieldBounds.nameFault` reading
-  `NameBounds.accepts` and answering `NAME_FAULT`, until blocks 20 to 40 call the factories.
+  `NameBounds.accepts` and answering `NAME_FAULT`, until blocks 20 to 40 call the factories. (Corrected:
+  `PersonName.MAX_LENGTH` and `ImportFieldBounds.MAX_NAME_LENGTH` went here too, their readers on
+  `NameBounds.MAX_LENGTH`, #438.)
 - `NameBounds.accepts` refuses `""`, `" "` and 201 characters, and accepts 200.
 - `UserDataImportCollectionsTest` reads `name is blank or longer than 200 characters` for a blank and a 201-character
   collection name, and the same prefixed `board ` for its board.
@@ -145,7 +154,8 @@ bound and block 50 both (decision F).
 
 - `TagName` through `Tag`, `TagRepositoryInterface`, `TagCreator`, `PinTagger`, `PinUpdater`, the mapper, the export
   and the import; `Tag.MAX_NAME_LENGTH` goes, `MigratedSchemaTest` reading `NameBounds.MAX_LENGTH`. Decision F's
-  fixtures start here, with `tagName`.
+  fixtures start here, with `tagName`. (Corrected: `PinCreator.createPin` took a `List<TagName>` too, a caller this
+  list missed, #439.)
 - `TagName.parse` refuses `" "` and 201 characters.
 - `PUT /api/v1/pins/{pinId}` with a tag `" "` answers 400 `VALIDATION_ERROR`.
 - A `tags` row whose name is blank, written by SQL, fails the mapper when read.
@@ -164,14 +174,16 @@ bound and block 50 both (decision F).
 
 - `CollectionName` through `RemoteCollection`, `RemoteCollectionLinker`, the mapper, the export and the import. A
   collection line without a board converts its `CollectionName` to the `BoardName` it names; `ImportFieldBounds.nameFault`
-  goes.
+  goes. (Corrected: through `BoardName.namedAfter(CollectionName)`, which cannot fail, where `parse` would leave a
+  branch no test reaches, #442.)
 - `CollectionName.parse` refuses `" "` and 201 characters.
 - A `remote_collections` row whose name is blank, written by SQL, fails the mapper when read.
 
 ### Block 45
 
 - `Username` and `@AccountName` on `UserInputDto`; `UserCreator` and `UserAuthenticator` call `Username.parse`, the
-  trim gone. `User.name` stays `String`.
+  trim gone. `User.name` stays `String`. (Corrected: `UserCreator` takes a `Username`, which
+  `UserDtoMapper.toUsername` parses, the mapper being where decision C puts it, #443.)
 - `Username.parse` refuses `"ab"`, `"a b"`, 51 characters and `"ａlice"` (U+FF41), and accepts `"Alice.B"`.
 - A login as `"ab"`, or as 51 characters in the alphabet, answers 401 and never calls `findUserByName`.
 - Decision E's contract check prints nothing.
@@ -186,7 +198,9 @@ bound and block 50 both (decision F).
 
 ### Block 60
 
-- The holistic review's findings, the handoff, and the backlog.
+- The holistic review's findings, the handoff, and the backlog. (Corrected: three pull requests past the file bound,
+  60 `chore/the-names-lot-closes` for the code, 62 `chore/the-names-lot-fixtures` for the fixtures, 65
+  `chore/the-names-lot-documents` for the documents.)
 
 ## 6. Adjacent backlog items
 
