@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
@@ -19,7 +20,7 @@ class PinCreator(
         sourceContextUrl: HttpUrl?,
         sourceMediaUrl: HttpUrl?,
         description: String,
-        tags: List<String>,
+        tags: List<TagName>,
     ): Pin {
 
         val resolvedTags = tags.map { tagCreator.findOrCreate(name = it, user = author) }

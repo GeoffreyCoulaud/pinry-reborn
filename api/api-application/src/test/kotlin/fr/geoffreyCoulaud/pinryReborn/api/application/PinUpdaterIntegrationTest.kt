@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinDuplicateRepositoryInterface
@@ -182,7 +183,7 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
             sourceContextUrl = HttpUrl.parse("https://example.com/page"),
             sourceMediaUrl = HttpUrl.parse("https://example.com/img.jpg"),
             description = "A pin",
-            tags = tags,
+            tags = tags.map { tagName(it) },
         )
 
     @Test
@@ -233,6 +234,19 @@ class PinUpdaterIntegrationTest : IntegrationTest() {
 
         // When
         update(auth, pin, tags = listOf("t".repeat(201))).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
+
+        // Then
+        readPin(auth, pin).body("tags.name", contains("old"))
+    }
+
+    @Test
+    fun `Given a tag name of one em space, Then the write returns 400 and keeps the pin's tags`() {
+        // Given: blank to Kotlin and to the contract's pattern, though not to `@NotBlank`
+        val auth = createAuthenticatedUser()
+        val pin = createPin(auth, tags = listOf("old"))
+
+        // When
+        update(auth, pin, tags = listOf(" ")).statusCode(400).body("code", equalTo("VALIDATION_ERROR"))
 
         // Then
         readPin(auth, pin).body("tags.name", contains("old"))

@@ -1,6 +1,7 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Media
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
@@ -400,14 +401,14 @@ class PinListIntegrationTest : IntegrationTest() {
                 sourceContextUrl = null,
                 sourceMediaUrl = null,
                 description = "A photograph",
-                tags = listOf("cat"),
+                tags = listOf(tagName("cat")),
             )
         pinCreator.createPin(
             author = auth.user,
             sourceContextUrl = null,
             sourceMediaUrl = null,
             description = "A dog",
-            tags = listOf("puppy"),
+            tags = listOf(tagName("puppy")),
         )
 
         // When / Then

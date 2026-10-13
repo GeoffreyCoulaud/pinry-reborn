@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenException
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
@@ -420,9 +421,9 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
         every { tagRepository.saveTag(any()) } answers
             {
                 val tag = firstArg<Tag>()
-                check(tag.name != "taken") { "UNIQUE constraint failed: tags.author_id, tags.name" }
+                check(tag.name.text != "taken") { "UNIQUE constraint failed: tags.author_id, tags.name" }
                 savedTags += tag
-                existingTags[tag.name] = tag
+                existingTags[tag.name.text] = tag
                 tag
             }
         every { boardRepository.saveBoard(any()) } answers
@@ -662,7 +663,7 @@ internal class UserDataImportRunnerTest : UserDataImportRunnerFixtures() {
     fun `Given an account already holding the archive's tags, Then a resumed attempt adds to the skip counter`() {
         // Given: against a fresh account the total would be the line count either way, which proves nothing
         val names = listOf("voyage", "ete")
-        names.forEach { existingTags[it] = Tag(randomUUID(), user, it, accountCreatedAt) }
+        names.forEach { existingTags[it] = Tag(randomUUID(), user, tagName(it), accountCreatedAt) }
         val tags = names.mapIndexed { index, name -> TestLine(index + 1, ImportedTag(name, pastInstant)) }
         val pins = listOf(TestLine(1, aPin()))
         stubWalk(FakeArchiveSource(aManifest(pins = null), tags = tags, pins = pins, failAtPinLine = 1))

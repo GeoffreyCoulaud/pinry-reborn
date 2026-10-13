@@ -4,6 +4,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.domain.boards.BoardNameAlreadyTakenExc
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.UserDataImport
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.UserDataImportFailure
@@ -320,17 +321,18 @@ class UserDataImportRunner(
         tally: MetadataTally,
     ) {
         val tag = line.value
-        val fault = tag?.let { ImportFieldBounds.nameFault(it.name) }
+        val name = tag?.let { TagName.parse(it.name) }
         when {
             tag == null -> record(tally, UserDataImportIssueKind.LINE_MALFORMED, line.line, null, line.failure)
-            fault != null -> record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, tag.name, fault)
-            else -> resolveTag(user, tag, clamp, tally)
+            name == null ->
+                record(tally, UserDataImportIssueKind.FIELD_INVALID, line.line, tag.name, ImportFieldBounds.NAME_FAULT)
+            else -> resolveTag(user, name, clamp.clamp(tag.createdAt), tally)
         }
     }
 
     /** Through the one resolver, so the pair the unique index needs is one transaction here too. */
-    private fun resolveTag(user: User, tag: ImportedTag, clamp: ImportInstantClamp, tally: MetadataTally) {
-        val resolved = tagCreator.resolve(name = tag.name, user = user, createdAt = clamp.clamp(tag.createdAt))
+    private fun resolveTag(user: User, name: TagName, createdAt: Instant, tally: MetadataTally) {
+        val resolved = tagCreator.resolve(name = name, user = user, createdAt = createdAt)
         if (resolved.created) tally.created++ else tally.skipped++
     }
 
@@ -725,7 +727,7 @@ class UserDataImportRunner(
                             publishedAt = pin.publishedAt?.truncatedTo(ChronoUnit.MILLIS),
                         ),
                     ingested = ingested,
-                    tagNames = pin.tags.map { it.name },
+                    tagNames = pin.tags.mapNotNull { TagName.parse(it.name) },
                     boardNames = pin.boards.map { it.name },
                     credits = credits,
                     collectionUrls = pin.collections.map { ImportedAddress.read(it.url) },
@@ -778,7 +780,7 @@ class UserDataImportRunner(
     private class CreatedPin(
         val pin: Pin,
         val ingested: IngestedMedia,
-        val tagNames: List<String>,
+        val tagNames: List<TagName>,
         val boardNames: List<String>,
         val credits: PinCredits,
         val collectionUrls: List<HttpUrl>,

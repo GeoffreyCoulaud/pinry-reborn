@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases.imports
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
 import fr.geoffreyCoulaud.pinryReborn.api.domain.enums.MediaFormat
@@ -36,7 +37,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
     @Test
     fun `Given a pin whose medium is new, Then it is created with its clamped instants, memberships and addresses`() {
         // Given: "ghost" resolves to nothing, since a name the metadata walk refused is never created here
-        existingTags["holidays"] = Tag(randomUUID(), user, "holidays", accountCreatedAt)
+        existingTags["holidays"] = Tag(randomUUID(), user, tagName("holidays"), accountCreatedAt)
         anExistingBoard("Summer")
         val line = aPin(tags = listOf("holidays", "ghost"), boards = listOf("Summer", "ghost"))
         val beta = aPin(BETA_PATH, betaBytes).copy(sourceContextUrl = null, sourceMediaUrl = "HTTPS://X.test/b.png")
@@ -62,7 +63,7 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         val created = savedPins.first()
         assertEquals(pastInstant, created.createdAt)
         assertEquals(now, created.updatedAt)
-        assertEquals(listOf("holidays"), created.tags.map { it.name })
+        assertEquals(listOf("holidays"), created.tags.map { it.name.text })
         assertEquals(listOf("Summer"), created.boards.map { it.name })
         assertEquals(pastInstant, savedPins[1].softDeletedAt)
         assertEquals(null to "https://x.test/b.png", savedPins[1].let { it.sourceContextUrl to "${it.sourceMediaUrl}" })
@@ -79,6 +80,23 @@ internal class UserDataImportPinWalkTest : UserDataImportRunnerFixtures() {
         assertEquals(MAX_ENTRIES, source.entryBound)
         // One renewal per pin, as spec section 8 step 6 requires
         assertEquals(2, renewals)
+    }
+
+    @Test
+    fun `Given a pin line's tag of 201 characters, Then the pin is created without it, unreported`() {
+        // Given
+        existingTags["holidays"] = Tag(randomUUID(), user, tagName("holidays"), accountCreatedAt)
+        val line = aPin(tags = listOf("holidays", "t".repeat(201)))
+        stubWalk(FakeArchiveSource(manifest = aManifest(), pins = listOf(TestLine(1, line)), media = everyMedium))
+        stubTagLookup()
+        stubMediaPath()
+
+        // When
+        runner.run(importId, isLastAttempt = false, renewLease)
+
+        // Then
+        assertEquals(listOf("holidays"), savedPins.single().tags.map { it.name.text })
+        assertTrue(savedIssues.isEmpty(), "$savedIssues")
     }
 
     @Test

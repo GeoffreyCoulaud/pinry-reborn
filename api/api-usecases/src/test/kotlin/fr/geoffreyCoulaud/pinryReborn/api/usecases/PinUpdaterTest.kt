@@ -1,11 +1,13 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Board
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Person
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.PersonName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.time.Clock
@@ -42,7 +44,7 @@ class PinUpdaterTest {
         )
 
     private val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-    private val tag = Tag(id = randomUUID(), name = "nature", author = user, createdAt = TestTime.now)
+    private val tag = Tag(id = randomUUID(), name = tagName("nature"), author = user, createdAt = TestTime.now)
     private val board =
         Board(
             id = randomUUID(),
@@ -58,12 +60,12 @@ class PinUpdaterTest {
         // Given
         val pin = pin(author = user)
         every { pinRepository.findPinById(pin.id) } returns pin
-        every { pinTagger.resolveTags(listOf("nature"), user) } returns listOf(tag)
+        every { pinTagger.resolveTags(listOf(tagName("nature")), user) } returns listOf(tag)
         every { pinBoardSetter.resolveBoards(listOf(board.id), user) } returns listOf(board)
         every { pinRepository.savePin(any()) } answers { firstArg() }
 
         // When
-        val result = update(pin.id, tagNames = listOf("nature"), boardIds = listOf(board.id))
+        val result = update(pin.id, tagNames = listOf(tagName("nature")), boardIds = listOf(board.id))
 
         // Then
         assertEquals("A new description", result.description)
@@ -180,7 +182,7 @@ class PinUpdaterTest {
     @Suppress("LongParameterList") // The whole pin, which is what the use case under test writes.
     private fun update(
         pinId: UUID,
-        tagNames: List<String> = emptyList(),
+        tagNames: List<TagName> = emptyList(),
         boardIds: List<UUID> = emptyList(),
         publisher: PersonReference? = null,
         creators: List<PersonReference> = emptyList(),

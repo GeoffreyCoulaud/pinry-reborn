@@ -2,6 +2,7 @@ package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Pin
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.PinRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -30,7 +31,7 @@ class PinUpdater(
         description: String,
         sourceContextUrl: HttpUrl?,
         sourceMediaUrl: HttpUrl?,
-        tagNames: List<String>,
+        tagNames: List<TagName>,
         boardIds: List<UUID>,
         publisher: PersonReference?,
         creators: List<PersonReference>,

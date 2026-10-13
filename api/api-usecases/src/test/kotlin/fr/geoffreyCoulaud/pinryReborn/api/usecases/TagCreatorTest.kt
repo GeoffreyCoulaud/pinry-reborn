@@ -1,6 +1,8 @@
 package fr.geoffreyCoulaud.pinryReborn.api.usecases
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.TagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.User
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TagRepositoryInterface
 import fr.geoffreyCoulaud.pinryReborn.api.domain.repositories.TransactionRunner
@@ -36,7 +38,7 @@ class TagCreatorTest {
     fun `When creating a new tag, should succeed`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val tagString = createRandomString()
+        val tagString = tagName(createRandomString())
         every { tagRepository.findUserTagByName(user, tagString) } returns null
         every { tagRepository.saveTag(any()) } answers { firstArg() }
 
@@ -50,7 +52,7 @@ class TagCreatorTest {
     fun `When trying to re-create an existing tag, should return the existing tag`() {
         // Given
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val tagString = createRandomString()
+        val tagString = tagName(createRandomString())
         val tag = Tag(id = randomUUID(), name = tagString, author = user, createdAt = TestTime.now)
         every { tagRepository.findUserTagByName(user = user, name = tagString) } returns tag
 
@@ -66,7 +68,7 @@ class TagCreatorTest {
         // Given: a store that folds and refuses like ux_tags_author_name, and a rendezvous that
         // forces both readers to miss before either writes.
         val user = User(id = randomUUID(), name = "John Doe", createdAt = TestTime.now)
-        val name = createRandomString()
+        val name = tagName(createRandomString())
         val bothRead = CountDownLatch(2)
         val repository = IndexedTagRepository(bothRead)
         val racingUseCase =
@@ -131,7 +133,7 @@ class TagCreatorTest {
         val rowCount: Int
             get() = rows.size
 
-        override fun findUserTagByName(user: User, name: String): Tag? {
+        override fun findUserTagByName(user: User, name: TagName): Tag? {
             val found = rows[foldedKey(user, name)]
             bothRead.countDown()
             bothRead.await(RENDEZVOUS_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
@@ -149,7 +151,7 @@ class TagCreatorTest {
         override fun findTagsForUserMatching(user: User, query: String, limit: Int): List<Tag> =
             error("A tagging matches no tag")
 
-        private fun foldedKey(user: User, name: String): String = "${user.id}:${name.lowercase()}"
+        private fun foldedKey(user: User, name: TagName): String = "${user.id}:${name.text.lowercase()}"
     }
 
     private companion object {

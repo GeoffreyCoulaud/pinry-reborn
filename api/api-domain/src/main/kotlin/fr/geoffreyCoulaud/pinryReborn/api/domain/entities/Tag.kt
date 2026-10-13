@@ -6,10 +6,6 @@ import java.util.UUID
 data class Tag(
     override val id: UUID,
     val author: User,
-    val name: String,
+    val name: TagName,
     val createdAt: Instant,
-) : Identifiable {
-    companion object {
-        const val MAX_NAME_LENGTH = 200
-    }
-}
+) : Identifiable

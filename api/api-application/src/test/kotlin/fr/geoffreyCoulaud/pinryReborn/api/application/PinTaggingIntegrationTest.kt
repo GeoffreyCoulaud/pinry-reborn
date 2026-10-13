@@ -1,5 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.application
 
+import fr.geoffreyCoulaud.pinryReborn.api.domain.DomainFixtures.tagName
 import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.HttpUrl
 import fr.geoffreyCoulaud.pinryReborn.api.usecases.PinCreator
 import io.quarkus.test.junit.QuarkusTest
@@ -48,7 +49,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
                 sourceContextUrl = HttpUrl.parse("https://example.com/page"),
                 sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "My pin",
-                tags = listOf("été"),
+                tags = listOf(tagName("été")),
             )
 
         // When: the client tags a second pin with the same name in another case.
@@ -87,7 +88,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
                 sourceContextUrl = HttpUrl.parse("https://example.com/page"),
                 sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "My pin",
-                tags = listOf("oldtag1", "oldtag2"),
+                tags = listOf(tagName("oldtag1"), tagName("oldtag2")),
             )
 
         replacePin(auth, pin, tags = listOf("newtag"))
@@ -106,7 +107,7 @@ class PinTaggingIntegrationTest : IntegrationTest() {
                 sourceContextUrl = HttpUrl.parse("https://example.com/page"),
                 sourceMediaUrl = HttpUrl.parse("https://example.com/media.jpg"),
                 description = "My pin",
-                tags = listOf("tag1", "tag2"),
+                tags = listOf(tagName("tag1"), tagName("tag2")),
             )
 
         replacePin(auth, pin, tags = emptyList()).statusCode(200).body("tags", emptyIterable<Any>())

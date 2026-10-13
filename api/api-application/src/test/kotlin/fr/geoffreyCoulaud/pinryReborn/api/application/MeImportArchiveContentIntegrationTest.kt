@@ -167,7 +167,7 @@ class MeImportArchiveContentIntegrationTest : MeImportFixtures() {
         assertEquals(1, counters.getInt("skippedTags"))
         assertEquals(0, counters.getInt("createdBoards"))
         assertEquals(1, counters.getInt("skippedBoards"))
-        assertEquals(setOf("voyage"), tagRepository.findAllTagsForUser(auth.user).map { it.name }.toSet())
+        assertEquals(setOf("voyage"), tagRepository.findAllTagsForUser(auth.user).map { it.name.text }.toSet())
         val kept = boardRepository.findActiveBoardsForUser(auth.user).single()
         assertEquals(board.name, kept.name)
         assertEquals(board.description, kept.description)

@@ -15,6 +15,7 @@ import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PersonMap
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinResponses
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.PinSortStrategyMapper.toDomain
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.ProblemResponses.PROBLEM_JSON_MEDIA_TYPE as PROBLEM_JSON
+import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.mappers.TagMapper.toTagName
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.openapi.SharedRefusalsFilter
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.security.getUser
 import fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.serialization.Base64Json
@@ -234,7 +235,7 @@ class PinController(
                 description = updateDto.description,
                 sourceContextUrl = updateDto.sourceContextUrl?.toHttpUrl(),
                 sourceMediaUrl = updateDto.sourceMediaUrl?.toHttpUrl(),
-                tagNames = updateDto.tags,
+                tagNames = updateDto.tags.map { it.toTagName() },
                 boardIds = updateDto.boardIds,
                 publisher = updateDto.publisher?.toReference(),
                 creators = updateDto.creators.map { it.toReference() },

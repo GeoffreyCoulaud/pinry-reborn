@@ -1,6 +1,6 @@
 package fr.geoffreyCoulaud.pinryReborn.api.presentation.quarkus.dtos.input
 
-import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.Tag
+import fr.geoffreyCoulaud.pinryReborn.api.domain.entities.NameBounds
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -16,7 +16,8 @@ data class PinUpdateInputDto(
     @field:HttpAddress @field:Schema(format = "uri") val sourceContextUrl: String?,
     @field:HttpAddress @field:Schema(format = "uri") val sourceMediaUrl: String?,
     @field:Size(max = 2000) val description: String,
-    val tags: List<@NotBlank @Size(max = Tag.MAX_NAME_LENGTH) String>,
+    // `@NotBlank` and `@Size` only write the items' schema, `@Schema` having no type-use target.
+    val tags: List<@NameText @NotBlank @Size(max = NameBounds.MAX_LENGTH) String>,
     val boardIds: List<UUID>,
     @field:Valid val publisher: PersonInputDto?,
     @field:Size(max = 100) val creators: List<@Valid PersonInputDto>,
