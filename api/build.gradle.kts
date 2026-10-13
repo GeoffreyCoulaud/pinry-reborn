@@ -107,6 +107,8 @@ subprojects {
         apply(plugin = "org.jetbrains.kotlinx.kover")
 
         extensions.configure<kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension> {
+            // Test fixtures are helpers for tests, measured by no test of their own.
+            currentProject { sources { excludedSourceSets.add("testFixtures") } }
             reports {
                 filters {
                     excludes {
