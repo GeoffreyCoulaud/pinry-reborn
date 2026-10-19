@@ -15,6 +15,6 @@ WORKDIR /src/clients
 RUN --mount=type=cache,target=/pnpm-store pnpm install --frozen-lockfile --store-dir /pnpm-store
 RUN pnpm --filter @pinry-reborn/webapp run build
 
-FROM nginx:1-alpine-slim@sha256:f761b94f2cb9e8e05e2943d5f773609596113ef69b54e2433a996d109a8f78b7
+FROM nginx:1-alpine-slim@sha256:ebd058041a732a2b2dc0b606e34572dd8e0034de6a4aa4d50d8c13a240ac6005
 COPY clients/apps/webapp/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /src/clients/apps/webapp/dist/ /srv/
