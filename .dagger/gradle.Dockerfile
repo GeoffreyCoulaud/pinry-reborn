@@ -1,4 +1,4 @@
-FROM denoland/deno:bin-2.9.7@sha256:bc5aa4466e21b6d3021226a85ba2e1911f7c386254d97b9d797903ab74edace2 AS deno
+FROM denoland/deno:bin-2.9.8@sha256:b507583d3c68ba69f3ed2ce5969ae5b8b70f43421c781279c7aea06435263543 AS deno
 
 # The JDK is the toolchain the build asks for, so Gradle adopts it instead of provisioning one;
 # libvips-tools brings the vipsheader and vips api-imaging-vips runs; ffmpeg brings the ffprobe and ffmpeg api-video-ffmpeg's tests run; yt-dlp and deno as api/Dockerfile has them.
