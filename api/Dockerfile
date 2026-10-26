@@ -7,7 +7,7 @@
 # Base is glibc (eclipse-temurin:25-jre), NOT alpine/musl: deno below is a
 # binary linked against glibc.
 # The binary alone, linked against glibc: it runs once copied below, not in its own image.
-FROM denoland/deno:bin-2.9.7@sha256:bc5aa4466e21b6d3021226a85ba2e1911f7c386254d97b9d797903ab74edace2 AS deno
+FROM denoland/deno:bin-2.9.8@sha256:b507583d3c68ba69f3ed2ce5969ae5b8b70f43421c781279c7aea06435263543 AS deno
 
 FROM eclipse-temurin:25-jre@sha256:bb036ed6cfdc57e3da7c22634d15f1b840d2caf76183861c80e81ca4b5104abb
 
